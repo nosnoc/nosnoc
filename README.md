@@ -24,6 +24,8 @@ x = ca.MX.sym('x',<insert state dimension>) # states
      git clone https://github.com/nurkanovic/nosnoc.git
      ```
 	 
+
+Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [Homepage](https://coin-or.github.io/Ipopt/ ) \
 	 
 ## Using NOS-NOC
 
@@ -63,7 +65,7 @@ A.Nurkanovic , M. Diehl \
 arXiv preprint 2022
 
 
-## Software
+## Literature - software
 
 ### NOS-NOC
 
@@ -82,8 +84,7 @@ Mathematical Programming Computation, 2019
 ### IPOPT
 [On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming](https://link.springer.com/article/10.1007/s10107-004-0559-y) \
 A. Wächter, L. T. Biegler
-Mathematical programming, 2006
-`IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [Homepage](https://coin-or.github.io/Ipopt/ ) \
+Mathematical programming, 2006 \
 
 ## Contact
 
