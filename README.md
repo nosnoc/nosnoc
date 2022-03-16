@@ -80,14 +80,16 @@ J.A.E. Andersson, J. Gillis, G. Horn, J.B. Rawlings, M. Diehl \
 Mathematical Programming Computation, 2019
 
 ### IPOPT
-
+[On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming](https://link.springer.com/article/10.1007/s10107-004-0559-y) \
+A. Wächter, L. T. Biegler
+Mathematical programming, 2006
 `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [Homepage](https://coin-or.github.io/Ipopt/ ) \
 
-### Contact
+## Contact
 
-If you have got questions, remarks or comments feel free to report them by creating a new issue on this github page.
+Feel free to contact the main author directly: Armin Nurkanovic, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
 
-You may contact the main author directly: Armin Nurkanovic, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
+If you have got questions, remarks or comments, you are strongly encouraged to report them by creating a new issue on this github page.
 
 Bug reports, success stories, source code contributions are very welcome.
 
