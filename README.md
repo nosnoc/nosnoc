@@ -2,13 +2,16 @@
 **NOS-NOC** is open source software package for NOnSmooth Numerical Optimal Control.
 It is a modular tool for numerically solving optimal control problems with piecewise smooth systems (PSS). It relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS. The time-freezing reformulation, which transforms several classes of systems with state jumps into PSS is supported as well. 
 Hence, it enables the treatment a broad class of nonsmooth systems in a unified way. The algorithms and reformulation yield nonsmooth nonlinear programs (NLP), which can be solved with techniques of continuous optimization in a homotopy procedure, without the use of integer variables.
-In summary, this enables highly accurate numerical optimal control by solving a few smooth NLP.  The goal of the packages is to automate all reformulations and to make nonsmooth numerical optimal control more practical, without too deep expert knowledge.
-Currently, a MATLAB version is avilable. Versions to come will also have a python interface
+
 ## Installation
 
 **NOS-NOC** requires CasADi versions 3.5.5.
 
+Currently, a `MATLAB` version is avilable. Versions to come will support a `python` interface as well.
 ### Instalation for MATLAB
+
+
+x = ca.MX.sym('x',<insert state dimension>) # states
 
 1.  Install  `CasADi` and make sure it is added to your `MATLAB` path:
 
@@ -22,15 +25,22 @@ Currently, a MATLAB version is avilable. Versions to come will also have a pytho
      ```
 	 
 	 
-# Using NOS-NOC
+## Using NOS-NOC
 
 The interface of **NOS-NOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
 User inputs should be given as `CasADi` expressions `Function` objects.	 
 
-`
-small code example 
-
-`
+minimal code example
+```matlab
+import casadi.* 
+x = var
+	[settings] = default_settings_fesd();  	
+	settings.N_homotopy = 15;
+	model = michael_schumacher_problem();
+		[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
+	[results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
+	plot_results(results,stats)
+````
 
 ## Literature - theory and algortihms
 
