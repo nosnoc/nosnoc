@@ -1,7 +1,8 @@
 # NOS-NOC
 **NOS-NOC** is open source software package for NOnSmooth Numerical Optimal Control.
 It is a modular tool for numerically solving optimal control problems with piecewise smooth systems (PSS). It relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS. The time-freezing reformulation, which transforms several classes of systems with state jumps into PSS is supported as well. 
-Hence, it enables the treatment a broad class of nonsmooth systems in a unified way. The algorithms and reformulation yield nonsmooth nonlinear programs (NLP), which can be solved with techniques of continuous optimization in a homotopy procedure, without the use of integer variables.
+Hence, it enables the treatment of a broad class of nonsmooth systems in a unified way. 
+
 
 ## Installation
 
