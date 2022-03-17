@@ -5,13 +5,12 @@ Hence, it enables the treatment a broad class of nonsmooth systems in a unified 
 
 ## Installation
 
-**NOS-NOC** requires CasADi versions 3.5.5.
+**NOS-NOC** requires `CasADi` versions 3.5.5.
 
 Currently, a `MATLAB` version is avilable. Versions to come will support a `python` interface as well.
 ### Instalation for MATLAB
 
 
-x = ca.MX.sym('x',<insert state dimension>) # states
 
 1.  Install  `CasADi` and make sure it is added to your `MATLAB` path:
 
@@ -25,7 +24,8 @@ x = ca.MX.sym('x',<insert state dimension>) # states
      ```
 	 
 
-Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [Homepage](https://coin-or.github.io/Ipopt/ ) \
+Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [Homepage](https://coin-or.github.io/Ipopt/ ) 
+
 	 
 ## Using NOS-NOC
 
@@ -46,22 +46,22 @@ x = var
 
 ## Literature - theory and algortihms
 
-## FESD
+### FESD
 [Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://github.com/nurkanovic/nosnoc) \
-A.Nurkanovic, M. Sperl, S. Albrecht, M. Diehl \
+A.Nurkanović, M. Sperl, S. Albrecht, M. Diehl \
 arXiv preprint 2022
 
-## Time - Freezing
+### Time - Freezing
 [A Time-Freezing Approach for Numerical Optimal Control of Nonsmooth Differential Equations with State Jumps](https://cdn.syscop.de/publications/Nurkanovic2021.pdf) \
-A. Nurkanovic, T. Sartor, S. Albrecht, M. Diehl \
+A. Nurkanović, T. Sartor, S. Albrecht, M. Diehl \
 IEEE Control Systems Letters 2021
 
 [The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps](https://cdn.syscop.de/publications/Nurkanovic2021a.pdf) \
-A. Nurkanovic, S. Albrecht, B. Brogliato, M. Diehl \
+A. Nurkanović, S. Albrecht, B. Brogliato, M. Diehl \
 arXiv preprint 2021
 
 [Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing](https://github.com/nurkanovic/nosnoc) \
-A.Nurkanovic , M. Diehl \
+A.Nurkanović , M. Diehl \
 arXiv preprint 2022
 
 
@@ -70,7 +70,7 @@ arXiv preprint 2022
 ### NOS-NOC
 
 [NOS-NOC: An Software Package for Numerical Optimal Control of Nonsmooth Systems](https://github.com/nurkanovic/nosnoc) \
-A.Nurkanovic , M. Diehl \
+A.Nurkanović , M. Diehl \
 arXiv preprint 2022
 
 
@@ -84,11 +84,11 @@ Mathematical Programming Computation, 2019
 ### IPOPT
 [On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming](https://link.springer.com/article/10.1007/s10107-004-0559-y) \
 A. Wächter, L. T. Biegler
-Mathematical programming, 2006 \
+Mathematical programming, 2006 
 
 ## Contact
 
-Feel free to contact the main author directly: Armin Nurkanovic, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
+Feel free to contact the main developer directly: Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
 
 If you have got questions, remarks or comments, you are strongly encouraged to report them by creating a new issue on this github page.
 
