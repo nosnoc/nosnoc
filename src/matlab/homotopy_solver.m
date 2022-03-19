@@ -1,4 +1,4 @@
-function [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization)
+function [varargout] = homotopy_solver(solver,model,settings,solver_initalization)
 import casadi.*
 
 %%  unfold data
@@ -86,7 +86,7 @@ complementarity_iter = 1;
         end
 
         if complementarity_iter > 1e1 && ii >= 0.75*N_homotopy
-            error('The homotopy loop is diverging. Try chaning parameters of the MPCC homotopy loop.')
+            error('The homotopy loop is diverging. Try chaning parameters of the homotopy loop or check is the OCP well posed.')
             break;
         end
         
@@ -103,5 +103,8 @@ stats.homotopy_iterations = ii;
 if store_all_homotopy_iterates
             sol.W = W;
 end
+    varargout{1} = sol;
+    varargout{2} = stats;
+    varargout{3} = solver_initalization;
 end
 

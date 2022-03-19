@@ -43,7 +43,7 @@ settings.gamma_h = 1;                    % how much can h addapt
 settings.regularize_h = 1;                 % add quadratic cost term rho_h = (h-hk)^2
 settings.rho_h = 0.1;                        % regularization penalty
 settings.piecewise_equidistant_grid = 0;
-settings.fesd_complementartiy_mode = 1;
+settings.cross_complementarity_mode = 3;
 settings.delta_h_regularization = 0;
 settings.piecewise_equidistant_grid_sigma = 0.1;
 settings.equidistant_control_grid = 1;
@@ -63,7 +63,7 @@ settings.stagewise_clock_constraint = 1;
 %% Generate Model
 model = throwing_ball_model();
 %% Reformulation of the PSS into a DCS
-[model,settings] = model_reformulation_fesd(model,settings);
+% [model,settings] = model_reformulation_fesd(model,settings);
 %% Formulate NLP;
 if 1
     [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);

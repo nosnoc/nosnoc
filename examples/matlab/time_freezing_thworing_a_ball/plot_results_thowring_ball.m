@@ -1,3 +1,11 @@
+unfold_struct(model,'base');
+unfold_struct(settings,'base');
+unfold_struct(solver_initalization,'base');
+
+sol = results;
+obj = full(sol.f);
+w_opt = full(sol.x);
+
 %  Colors
 extensive_plots = 0;
 blue = [0 0.4470 0.7410];
@@ -93,13 +101,14 @@ t_control_grid_pseudo = cumsum([0,sum(h_opt_stagewise)]);
 t_control_grid_pseudo_streched = cumsum([0,sum(h_opt_stagewise).*s_sot']);
 end
 %%
-figure
-stairs(tgrid(1:N_finite_elements:end),[s_sot;nan],'linewidth',1.2)
-xlabel('$\tau$','interpreter','latex');
-ylabel('$s(\tau)$','interpreter','latex');
-grid on
-ylim([0.5 3.2])
-
+if use_fesd
+    figure
+    stairs(tgrid(1:N_finite_elements:end),[s_sot;nan],'linewidth',1.2)
+    xlabel('$\tau$','interpreter','latex');
+    ylabel('$s(\tau)$','interpreter','latex');
+    grid on
+    ylim([0.5 3.2])
+end
 %% 
 if extensive_plots
 figure
@@ -195,6 +204,7 @@ figure
 plot(x5_opt,x3_opt,'linewidth',1.2,'color',0*ones(3,1),'LineStyle','--');
 hold on
 plot(x5_opt,x4_opt,'linewidth',1.2,'color',0*ones(3,1));
+
 xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$','interpreter','latex');
 grid on

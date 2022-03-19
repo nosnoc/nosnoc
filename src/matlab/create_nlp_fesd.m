@@ -1,9 +1,9 @@
-function [solver,solver_initalization, model,settings] = create_nlp_fesd_develop(model,settings)
+function [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings)
 % This functions creates the solver instance for the OCP discretized with FESD (or time stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
 % reformulations, see below.
 % -------------------
-% MPCC Wiki
+% Brief MPCC Wiki
 % There are several possible MPCC Solution strategies avilable, by setting mpcc_mode to :
 % 1 - treat complementarity conditions directly in the NLP, the bilinear term is tread as an inequality constraint.
 % 2 - Smooth the complementarity conditions.
@@ -18,8 +18,12 @@ function [solver,solver_initalization, model,settings] = create_nlp_fesd_develop
 % Main developer: Armin Nurkanovi\'c (armin.nurkanovic@imtek.uni-freiburg.de)
 %% Import CasADi in the workspace of this function
 import casadi.*
+
+%% Reformulation of the PSS into a DCS
+[model,settings] = model_reformulation_fesd(model,settings);
 %% Fillin missing settings with default settings
 [settings] = fill_in_missing_settings(settings,model);
+
 %% Load user settings and model details
 unfold_struct(settings,'caller')
 % Note that some default values of N_stages ect are overwritten by the model data, if provided.
@@ -282,7 +286,7 @@ for k=0:N_stages-1
         % State at collocation points
         X_kqj = {};
         Z_kqj = {}; % collects the vector of x and z at every collocation point/irk stage
-        if i>0
+        if i>0 && use_fesd 
             Lambda_end_previous_fe = {Z_kdq(n_theta+1:2*n_theta)};
         end
         Lambda_ki_this_fe = {};
@@ -401,7 +405,7 @@ for k=0:N_stages-1
             if use_fesd
                 g = {g{:}, h_kq*fj - xp};
             else
-                g = {g{:}, h_k*fj - xp};
+                g = {g{:}, h_k(k+1)*fj - xp};
             end
             g = {g{:}, gj};
             lbg = [lbg; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
@@ -420,7 +424,7 @@ for k=0:N_stages-1
             if use_fesd
                 g_irk = {g_irk{:} , h_kq*fj - xp};
             else
-                g_irk = {g_irk{:} , h_k*fj - xp};
+                g_irk = {g_irk{:} , h_k(k+1)*fj - xp};
             end
             g_irk = {g_irk{:}, gj};
             lbg_irk = [lbg_irk; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
@@ -671,7 +675,7 @@ end
 try
     J = J + f_q_T(Xk_end);
 catch
-    warning('terminal cost not defined');
+    warning('Terminal cost not defined');
 end
 J_objective = J;
 

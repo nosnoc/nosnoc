@@ -3,18 +3,10 @@ function [default_settings] = default_settings_fesd()
 % TODO: add descprition of function the list of default settings and their explanation.
 %% General
 solver_name = 'solver_fesd';
-
+use_fesd = 1;
 %% IRK anf FESD Settings
 d = 2;                            % Degree of interpolating polynomial
 collocation_scheme = 'radau';     % Collocation scheme: radau or legendre
-N_stages = 10;                     %   
-N_finite_elements = 3;            % Number of finite elments on a stage/control interval 
-
-use_fesd = 1;
-T = 2;
-h = T/N_stages;
-h_k = h/N_finite_elements;
-fesd_complementartiy_mode = 1; % is replaced by cross_complementarity_mode 
 cross_complementarity_mode = 3;
 gamma_h = 1;
 % initalization
@@ -26,17 +18,20 @@ initial_mu = 0;
 % an experimental variable. should be always one if no equdistant control
 % grid is
 couple_across_stages = 1;
+% N_stages = 10;                     %   
+% N_finite_elements = 3;            % Number of finite elments on a stage/control interval 
+% T = 2;
+% h = T/N_stages;
+% h_k = h/N_finite_elements;
 %% General NLP/OCP Settings
 general_nonlinear_constraint = 0;
 general_nonlinear_constraint_at_collocation_points = 0;
 terminal_constraint = 0;
 time_optimal_problem = 0;
-
 %% MPCC and Homotopy Settings	
 comp_tol = 1e-14;
 mpcc_mode = 5;
 objective_scaling_direct = 1;
-% pointwise_or_integral = 1;
 sigma_0	= 1;
 sigma_N	= comp_tol;
 kappa =	0.1;
@@ -85,6 +80,7 @@ equidistant_control_grid = 1;
 	
 %% Time-Settting	
 time_freezing  = 0;
+time_optimal_problem = 0;
 time_rescaling = 0;
 use_speed_of_time_variables = 1;
 local_speed_of_time_variable = 1;
@@ -110,9 +106,9 @@ opts_ipopt = opts_ipopt;
 
 %% Ingerator Specific 
 use_previous_solution_as_initial_guess = 0;
+simulation_problem  = 0;
 
 %% Misc
-explicit_z00 = 0; %% TODO: remove this when clear, it is an option during developemtn
 missing_settings_already_filled_in = 1;
 there_exist_free_x0 = 0;
 %% Save data into struct
