@@ -73,6 +73,8 @@ plot_result_ball(model,settings,results,stats)
 
 ````
 
+
+More details can be found in the [user manual](https://github.com/nurkanovic/nosnoc).
 ## Literature - theory and algortihms
 
 ### FESD
