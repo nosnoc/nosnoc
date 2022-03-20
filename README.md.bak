@@ -33,16 +33,41 @@ Note that `IPOPT` is shipped with `CasADi`, but more information including a det
 The interface of **NOS-NOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
 User inputs should be given as `CasADi` expressions `Function` objects.	 
 
-minimal code example
+Minimal code example
 ```matlab
-import casadi.* 
-x = var
-	[settings] = default_settings_fesd();  	
-	settings.N_homotopy = 15;
-	model = michael_schumacher_problem();
-		[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
-	[results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
-	plot_results(results,stats)
+import casadi.*
+% Call this function to have an overview of all options.
+[settings] = default_settings_fesd();  
+% Highlight that the problem is treated with time-freezing reformulation and change the number of IRK stages
+settings.time_freezing = 1; 
+settings.n_s = 3; 
+% Discretization data
+model.T = 5; 
+model.N_stages = 15; 
+model.N_finite_elements = 3;
+% Define states, controls and inital values
+q = MX.sym('q',2); v = MX.sym('v',2); t = MX.sym('t');
+model.x = [q;v;t];
+model.x0 = [0;0.5;0;0;0];
+u = MX.sym('u',2); 
+model.u = u;
+% Define regions of the PSS
+model.S = [1; -1];
+model.c = q(2); 
+% Define modes of PSS 
+f_1 = [v;u(1);u(2)-9.81;1];
+ f_2 = [0;v(2);0;-10*(q(2))-0.211989*v(2);0];
+model.F = [f_1 f_2];
+% Stage and terminal costs
+model.f_q = u'*u; model.f_q_T = 10*v'*v;
+% Path and terminal constraints
+model.g_ineq = u'*u-7^2;
+model.g_terminal = q-[4;0.25];
+% Solve OCP with MPCC homotopy and plot results
+[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
+[results,stats] = homotopy_solver(solver,model,settings,solver_initalization);
+plot_result_ball(model,settings,results,stats)
+
 ````
 
 ## Literature - theory and algortihms
