@@ -93,28 +93,7 @@ if use_fesd
     tgrid_z = cumsum(h_opt)';
 end
 
-%%
-if time_freezing
-    figure
-    tt = linspace(0,T,N_stages*N_finite_elements+1);
-    plot(tt,x5_opt,'linewidth',1.2)
-    hold on
-    plot(tt,x5_opt,'.','color',blue,'MarkerSize',7)
-    plot(tt(1:N_finite_elements:end),x5_opt(1:N_finite_elements:end),'k.','MarkerSize',9)
-    plot(tt,tt,'k:')
-    % grid on
-    h = T/N_stages;
-    for ii = 0:N_stages+1
-        xline(h*ii,'k--')
-    end
-    % xlim([0 0.6])
-    % ylim([0 0.6])
-    axis equal
-    xlim([0 T])
-    ylim([0 T])
-    xlabel('$\tau$ [Numerical Time]','interpreter','latex');
-    ylabel('$t(\tau)$ [Phyisical Time]','interpreter','latex');
-end
+
 %%
 
 %%
@@ -130,34 +109,6 @@ end
 t_control_grid_pseudo = cumsum([0,sum(h_opt_stagewise)]);
 t_control_grid_pseudo_streched = cumsum([0,sum(h_opt_stagewise).*s_sot']);
 
-%% speed of time
-if use_speed_of_time_variables
-    figure
-    stairs(tgrid(1:N_finite_elements:end),[s_sot;nan],'linewidth',1.2)
-    xlabel('$\tau$','interpreter','latex');
-    ylabel('$s(\tau)$','interpreter','latex');
-    grid on
-    hold on
-    plot(tgrid(1:N_finite_elements:end),tgrid(1:N_finite_elements:end)*0+s_sot_min,'k--')
-    plot(tgrid(1:N_finite_elements:end),tgrid(1:N_finite_elements:end)*0+s_sot_max,'k--')
-    ylim([0 max(s_sot)*1.05])
-end
-
-%% numerical time grid
-figure
-subplot(211)
-stairs(0:N_stages-1,sum(h_opt_stagewise),'k')
-ylim([(1-gamma_h)*h (1+gamma_h)*h])
-grid on
-xlabel('Stage n','interpreter','latex');
-ylabel('$h_n$','interpreter','latex');
-
-subplot(212)
-stairs(h_opt,'k')
-grid on
-xlabel('finite element','interpreter','latex');
-ylabel('$h_{n,m}$','interpreter','latex');
-ylim([(1-gamma_h)*h_k (1+gamma_h)*h_k])
 %%
 if mpcc_mode == 4
     ind_t = find([1;theta1_opt]>1e-2);
@@ -165,78 +116,9 @@ else
     ind_t = find(diff([nan;x5_opt;nan])>1e-5);
 end
 time_physical = x5_opt(ind_t);
-%% plots in numerical time
-figure
-subplot(321)
-plot(tgrid,x1_opt)
-xlabel('$\tau$','Interpreter','latex')
-ylabel('$q(\tau)$ ','Interpreter','latex')
-grid on
-subplot(322)
-plot(tgrid,x2_opt)
-xlabel('$\tau$','Interpreter','latex')
-ylabel('$v(\tau)$ ','Interpreter','latex')
-grid on
-hold on
-plot(tgrid,x2_opt*0+v1,'k-')
-plot(tgrid,x2_opt*0+v2,'k-')
-plot(tgrid,x2_opt*0+v_max,'r--')
-subplot(323)
-plot(tgrid,x3_opt)
-xlabel('$\tau$','Interpreter','latex')
-ylabel('$L(\tau)$ ','Interpreter','latex')
-grid on
-
-subplot(324)
-plot(tgrid,x4_opt)
-xlabel('$\tau$','Interpreter','latex')
-ylabel('$w(\tau)$ ','Interpreter','latex')
-grid on
-ylim([-0.1 1.1]);
-subplot(325)
-plot(tgrid,x5_opt)
-xlabel('$\tau$','Interpreter','latex')
-ylabel('$t(\tau)$ ','Interpreter','latex')
-grid on
-
-subplot(326)
-stairs(tgrid(1:N_finite_elements:end),[u1_opt;nan])
-xlabel('$\tau$','Interpreter','latex')
-ylabel('$u(\tau)$ ','Interpreter','latex')
-grid on
 
 
-%% plots in phyisicaltime
-figure
-subplot(221)
-plot(x5_opt,x1_opt)
-xlabel('$t$ ','Interpreter','latex')
-ylabel('$q(t)$ ','Interpreter','latex')
-grid on
-subplot(222)
-plot(x5_opt,x2_opt)
-hold on
-plot(x5_opt,x2_opt*0+v1,'k-')
-plot(x5_opt,x2_opt*0+v2,'k-')
-plot(x5_opt,x2_opt*0+v_max,'r--')
-xlabel('$t$ ','Interpreter','latex')
-ylabel('$v(t)$ ','Interpreter','latex')
 
-grid on
-
-subplot(223)
-plot(x5_opt,x4_opt)
-xlabel('$t$ ','Interpreter','latex')
-ylabel('$w(t)$ ','Interpreter','latex')
-ylim([-0.1 1.1]);
-grid on
-subplot(224)
-stairs(x5_opt(1:N_finite_elements:end),[u1_opt;nan])
-xlabel('$t$ ','Interpreter','latex')
-ylabel('$u(t)$ ','Interpreter','latex')
-grid on
-
-%%
 %% plots in phyisical time for paper
 figure
 subplot(221)
@@ -304,11 +186,6 @@ else
     xline(v2)
 end
 
-if use_hystereis_model
-%     plot_vector_fields_car_hysteresis
-end
-
-
 %%  Homotopy complementarity stats
 if nargin >= 4
 figure
@@ -318,17 +195,6 @@ xlabel('iter','interpreter','latex');
 ylabel('Complementarity residual','interpreter','latex');
 grid on
 end
-
-%% Time grids of numerical and physical time
-figure
-plot(tgrid,x5_opt,'k',LineWidth=1.5)
-% grid on
-% for ii = 1:N_stages
-xline(cumsum(sum(h_opt_stagewise)),'b-')
-yline(x5_opt(1:N_finite_elements:end),'r-')
-xlabel('$t_{\mathrm{num}}$','Interpreter','latex')
-ylabel('$t_{\mathrm{phy}}$','Interpreter','latex')
-axis equal
 
 %% Plot homotopy results
 if 0
@@ -346,52 +212,6 @@ if 0
     legend(legend_str);
 end
 
-
-
-%% Algebraic variavbles
-if 1
-    for ii = 1:n_simplex
-        figure
-        subplot(311);
-        for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-            eval( ['plot(tgrid_z,theta' num2str(i) '_opt);']);
-            if  i == m_ind_vec(ii)
-                hold on
-            end
-        end
-        xlabel('$t$','interpreter','latex');
-        ylabel('$\theta(t)$','interpreter','latex');
-        hold on
-        grid on
-        legend_str= {};
-        for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-            legend_str = [legend_str, ['$\theta_' num2str(i) '(t)$']];
-        end
-        legend(legend_str ,'interpreter','latex');
-        subplot(312);
-        for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-            eval( ['plot(tgrid_z,lambda' num2str(i) '_opt);']);
-            if  i == m_ind_vec(ii)
-                hold on
-            end
-        end
-        xlabel('$t$','interpreter','latex');
-        ylabel('$\lambda(t)$','interpreter','latex');
-        hold on
-        grid on
-        legend_str= {};
-        for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-            legend_str = [legend_str, ['$\lambda' num2str(i) '(t)$']];
-        end
-        legend(legend_str ,'interpreter','latex');
-        subplot(313);
-        eval( ['plot(tgrid_z,mu' num2str(ii) '_opt);']);
-        xlabel('$t$','interpreter','latex');
-        ylabel(['$\mu_' num2str(ii) '(t)$' ],'interpreter','latex');
-        grid on
-    end
-
-end
 
 end
 
