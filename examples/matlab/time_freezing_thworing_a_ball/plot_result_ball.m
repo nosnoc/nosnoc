@@ -2,7 +2,7 @@ function [varargout] = plot_result_ball(model,settings,results,stats)
 
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller')
-d= 3;
+d = 3;
 % unfold_struct(resultsver_initalization,'caller');
 
 obj = full(results.f);
@@ -83,8 +83,8 @@ plot(x1_opt(ind_t),x2_opt(ind_t),'linewidth',1.2,'color',0*ones(3,1));
 grid on
 hold on
 
-xlabel('$q_x$','interpreter','latex');
-ylabel('$q_y$','interpreter','latex');
+xlabel('$q_1$','interpreter','latex');
+ylabel('$q_2$','interpreter','latex');
 axis equal
 ylim([-0.4 max(x2_opt)*1.15])
 xlim([0.0 4])
@@ -100,17 +100,17 @@ plot(x5_opt,x4_opt,'linewidth',1.2,'color',matlab_red);
 xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$','interpreter','latex');
 grid on
-legend({'$v_x(t)$','$v_y(t)$'},'interpreter','latex');
+legend({'$v_1(t)$','$v_2(t)$'},'interpreter','latex');
 xlim([0 T]);
 subplot(122)
-stairs(x5_opt(1:N_finite_elements:end),[u1_opt;nan],'color',matlab_blue,'linewidth',1.2);
+stairs(x5_opt(1:N_finite_elements:end),[u1_opt;nan],'color',matlab_blue,'linewidth',1.2,'LineStyle','--');
 hold on
-stairs(x5_opt(1:N_finite_elements:end),[u2_opt;nan],'color',matlab_red,'LineStyle','--','linewidth',1.2);
+stairs(x5_opt(1:N_finite_elements:end),[u2_opt;nan],'color',matlab_red,'linewidth',1.2);
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$u(t)$','interpreter','latex');
 grid on
-legend({'$u_x(t)$','$u_y(t)$'},'interpreter','latex');
+legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
 xlim([0 T]);
 %
 

@@ -20,14 +20,8 @@ settings = fill_in_missing_settings(settings);
 model.time_optimal_problem = settings.time_optimal_problem;
 model.time_freezing = settings.time_freezing;
 model = simple_car_model(model);
-%% Reformulation of the PSS into a DCS
-[model,settings] = model_reformulation_fesd(model,settings);
 %% Formulate NLP;
-% if 0
-%     [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
-% else
-    [solver,solver_initalization, model,settings] = create_nlp_fesd_develop(model,settings);
-% end
+[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
 %% Get variables into main workspace
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller');

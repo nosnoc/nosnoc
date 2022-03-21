@@ -7,15 +7,13 @@ import casadi.*
 %% settings
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options. 
                                         % Missing settings are anyway filled in latter with their respecitve values.
-
 % collocation settings
 settings.d = 2;                            % Degree of interpolating polynomial
 settings.collocation_scheme = 'radau';     % Collocation scheme: radau or legendre
-settings.collocation_scheme = 'legendre';     % Collocation scheme: radau or legendre
 
 % MPCC settings
 settings.solver_name = 'solver_fesd';           % name of solver function.
-settings.mpcc_mode = 8;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - elastic mode
+settings.mpcc_mode = 5;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - elastic mode
 settings.s_elastic_max = 1e2;              % upper bound for elastic variables
 settings.s_elastic_min = 0;              % upper bound for elastic variables
 settings.s_elastic_0 = 1;              % upper bound for elastic variables
@@ -83,7 +81,6 @@ settings.local_speed_of_time_variable = 1;
 % Grid settings
 settings.equidistant_control_grid = 1;
 settings.stagewise_clock_constraint = 0;
-
 [results,stats,solver_initalization,settings,model] = solve_simple_car_ocp(settings);
 
 %% Read and plot Result
@@ -95,9 +92,6 @@ plot_results_simple_car(results,settings,model,stats)
 else
     fprintf('diverged.\n')
 end
-
-
-model.n_cross_comp
 %%
 figure
 stairs(results.w_opt(model.ind_h))

@@ -59,9 +59,9 @@ for ii = 1:N_sim
     tic
     [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
     time_per_iter = [time_per_iter; toc];
-    if stats.complementarity_stats(end) > 1e-3
-        error('NLP Solver did not converge for the current FESD Problem. \n')
-    end
+%     if stats.complementarity_stats(end) > 1e-3
+%         error('NLP Solver did not converge for the current FESD Problem. \n')
+%     end
     fprintf('Integration step %d of %d (%2.2.f s /%2.2.f s )converged in %2.2f seconds. \n',ii,N_sim,ii*T,T_sim,time_per_iter(end));
 
     % Store differentail states

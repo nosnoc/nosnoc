@@ -1,16 +1,12 @@
 function [model] = car_hystheresis_model(model_in)
 
 import casadi.*
-
 unfold_struct(model_in,'caller');
-
 %% Discretization parameters
 N_stages = 30;
 N_finite_elements = 3;
 
-
 active_control = 1; % for ocps
-% active_control = 0; % for sim
 
 smooth_model = 0;
 time_freezing_in_model = time_freezing;
@@ -70,8 +66,6 @@ x0 = [q0;v0;L0;a0;t0];
 h = T/N_stages;
 
 %% Model parameters for time freezing
-% paramter of auxliary dynamcis
-a_push = 5;
 %% Define model dimensions, equations, constraint functions, regions an so on.
 n_simplex = 1;% number of Carteisna products in the model ("independet switches"), we call this layer
 % number of modes in every simplex
@@ -96,28 +90,21 @@ else
     ubx = inf*ones(n_x,1);
 end
 % every constraint funcion corresponds to a simplex (note that the c_i might be vector valued)
-
-
-c_1 = v-v_trash_hold;
-
+c = v-v_trash_hold;
 
 % sign matrix for the modes
-S1 = [-1;...
+S = [-1;...
        1];
 
 % discrimnant functions
-h_1 = -S1*[c_1];
+h_1 = -S*[c];
 
-c = [c_1];
 h_indictaros = [h_1];
 
 %% control
 u = MX.sym('u');
 n_u = 1;
 u0 = [0];
-
-
-
 if active_control
     lbu = -umax*ones(n_u,1);
     ubu = umax*ones(n_u,1);
@@ -143,7 +130,7 @@ f_12 = f_nominal_2;
 
 % in matrix form
 f_1 = [f_11 f_12];
-
+F = f_1;
 %% objective
 
 f_q = fuel_cost_on*L+control_cost_on*u^2;
