@@ -4,21 +4,20 @@
 
 ## General
 It is a modular tool for numerically solving optimal control problems with piecewise smooth systems (PSS). It relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS. The time-freezing reformulation, which transforms several classes of systems with state jumps into PSS is supported as well. 
-Hence, it enables the treatment of a broad class of nonsmooth systems in a unified way. The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
+It enables the treatment of a broad class of nonsmooth systems in a unified way. The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
 
 
 ## Installation
 
-**NOS-NOC** requires `CasADi` versions 3.5.5.
+**NOS-NOC** requires `CasADi` version 3.5.5.
 
 Currently, a `MATLAB` version is avilable. Versions to come will support a `python` interface as well.
 ### Instalation for MATLAB
 
 
+1.  Install  `CasADi` and make sure it is added to your `MATLAB` path.
 
-1.  Install  `CasADi` and make sure it is added to your `MATLAB` path:
-
-     For installation instructions follow this [link](https://web.casadi.org/get/)
+     For `CasADi` installation instructions follow this [link](https://web.casadi.org/get/).
    
     
 2.   Clone this repository and add it to your `MATLAB` path:
@@ -28,7 +27,7 @@ Currently, a `MATLAB` version is avilable. Versions to come will support a `pyth
      ```
 	 
 
-Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [Homepage](https://coin-or.github.io/Ipopt/ ) 
+Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
 
 	 
 ## Using NOS-NOC
@@ -75,6 +74,9 @@ plot_result_ball(model,settings,results,stats)
 
 
 More details can be found in the [user manual](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
+
+A `python` version is work in progress.
+
 ## Literature - theory and algortihms
 
 ### FESD
@@ -120,12 +122,5 @@ Mathematical programming, 2006
 ## Contact
 
 Feel free to contact the main developer directly: Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
-
-If you have got questions, remarks or comments, you are strongly encouraged to report them by creating a new issue on this github page.
-
-Bug reports, success stories, source code contributions are very welcome.
-
-## Acknowledgments
-
-This research was supported by the DFG via Research Unit FOR 2401 and project 424107692 and by the EU via ELO-X 953348. 
+If you have got questions, remarks or comments, you are strongly encouraged to report them by creating a new issue on this github page. Success stories and source code contributions are very welcome.
 

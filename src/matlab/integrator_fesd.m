@@ -32,6 +32,8 @@ end
 %% Create solver functions for integrator step
 settings.opts_ipopt.ipopt.print_level=0;
 [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
+% [solver,solver_initalization, model,settings] = create_nlp_fesd_develop(model,settings);
+
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 unfold_struct(solver_initalization,'caller')
@@ -46,7 +48,7 @@ complementarity_stats  = [];
 homotopy_iteration_stats = [];
 if exist('N_sim')
     %     || isempty(N_sim)
-    if N_sim*(N_stage*h) ~= T_sim
+    if N_sim*(N_stages*h) ~= T_sim
         warning(' The given N_sim does not result in the desired, given T_sim. Do we fix it automatically now?')
     end
 else
