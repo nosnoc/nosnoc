@@ -1,173 +1,136 @@
-n = n_x+n_u;
-nn = n-1;
-tgrid = linspace(0, T, N_stages+1);
-tgrid_z = linspace(0, T, N_stages);
-%% read solutions
-
-diff_states = w_opt(ind_x);
-controls = w_opt(ind_u);
-alg_states = w_opt(ind_z);
-
+%% Read and plot Result 
 % differential states
 for i = 1:n_x
-    eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x+n_x*d:end);']);
+    eval( ['x' num2str(i) '_opt = results.x_res(' num2str(i) ',:);']);
 end
-% convex multiplers
 for i = 1:n_theta
-    eval( ['theta' num2str(i) '_opt = alg_states(' num2str(i) ':n_z+n_z*(d-1):end);']);
-    %     eval( ['theta' num2str(i) '_opt = alg_states(' num2str(i) ':n_z:end);']);
-end
-% lambdas
-for i = 1:n_theta
-    %     eval( ['lambda' num2str(i) '_opt = alg_states(' num2str(i+n_theta) ':n_z+n_z*d:end);']);
-    eval( ['lambda' num2str(i) '_opt = alg_states(' num2str(i+n_theta) ':n_z+n_z*(d-1):end);']);
+    eval( ['theta' num2str(i) '_opt = results.theta_res(' num2str(i) ',:);']);
 end
 
+for i = 1:n_theta
+    eval( ['lambda' num2str(i) '_opt = results.lambda_res(' num2str(i) ',:);']);
+end
 
-% mu
-% lambdas
 for i = 1:n_simplex
-    %     eval( ['mu_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*d:end);']);
-    eval( ['mu' num2str(i) '_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*(d-1):end);']);
+    eval( ['mu' num2str(i) '_opt = results.mu_res(' num2str(i) ',:);']);
 end
-
-for i = 1:n_u_DAE
-    %     eval( ['mu_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*d:end);']);
-    eval( ['u' num2str(i) '_opt = controls(' num2str(i) ':n_u:end);']);
-end
-
-
-if moving_finite_elements
-    eval( ['h_opt = controls(n_u:n_u:end);']);
-    tgrid = (cumsum([0;h_opt]));
-    tgrid_z = cumsum(h_opt)';
-end
-
-
-practical_complementarity = [];
-for i = 1:n_theta
-    practical_complementarity = [practical_complementarity;eval( ['lambda' num2str(i) '_opt' '.*theta' num2str(i) '_opt ;'])];
-end
-fprintf('practical comp %4.2e \n',max(practical_complementarity))
-%% controls
+%%
 figure
-stairs(tgrid_z,u1_opt)
+subplot(211)
+plot(t_grid,x1_opt);
 hold on
-plot(tgrid_z,F_input*cos(pi*tgrid_z))
+plot(t_grid,x2_opt);
+plot(t_grid,x3_opt);
 xlabel('$t$','interpreter','latex');
-ylabel('$u(t)$','interpreter','latex');
+ylabel('$q(t)$','interpreter','latex');
+legend({'$q_1(t)$','$q_2(t)$','$q_3(t)$'},'interpreter','latex');
 grid on
-
-% optimal step size
-if moving_finite_elements
-    figure
-    stairs(tgrid_z,h_opt)
-    hold on
-    stairs(tgrid_z,h_opt*0+h)
-    xlabel('$t$','interpreter','latex');
-    ylabel('$h_k(t)$','interpreter','latex');
-    grid on
-end
-%% plots
+subplot(212)
+plot(t_grid,x4_opt);
+hold on
+plot(t_grid,x5_opt);
+plot(t_grid,x6_opt);
+xlabel('$t$','interpreter','latex');
+ylabel('$v(t)$','interpreter','latex');
+legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex');
+grid on
+figure
+plot(t_grid,x7_opt);
+xlabel('$t$','interpreter','latex');
+ylabel('$t(t)$','interpreter','latex');
+grid on
+% N_switches = sum((abs(diff(h_opt)))>1e-4);
+% fprintf('Number of Switches is %d. \n',N_switches);
+figure
+subplot(311)
+plot(t_grid,[theta1_opt,nan])
+hold on
+grid on
+plot(t_grid,[theta2_opt,nan])
+xlabel('$t$','interpreter','latex');
+ylabel('$\theta(t)$','interpreter','latex');
+legend({'$\theta_1(t)$','$\theta_2(t)$'},'interpreter','latex');
+subplot(312)
+plot(t_grid,[theta3_opt,nan])
+hold on
+grid on
+plot(t_grid,[theta4_opt,nan])
+xlabel('$t$','interpreter','latex');
+ylabel('$\theta(t)$','interpreter','latex');
+legend({'$\theta_3(t)$','$\theta_4(t)$'},'interpreter','latex');
+subplot(313)
+plot(t_grid,[theta5_opt,nan])
+hold on
+grid on
+plot(t_grid,[theta6_opt,nan])
+xlabel('$t$','interpreter','latex');
+ylabel('$\theta(t)$','interpreter','latex');
+legend({'$\theta_5(t)$','$\theta_6(t)$'},'interpreter','latex');
 
 %%
-% algebraic
+figure
+subplot(311)
+plot(t_grid,[lambda1_opt,nan])
+hold on
+grid on
+plot(t_grid,[lambda2_opt,nan])
+xlabel('$t$','interpreter','latex');
+ylabel('$\lambda(t)$','interpreter','latex');
+legend({'$\lambda_1(t)$','$\lambda_2(t)$'},'interpreter','latex');
+subplot(312)
+plot(t_grid,[lambda3_opt,nan])
+hold on
+grid on
+plot(t_grid,[lambda4_opt,nan])
+xlabel('$t$','interpreter','latex');
+ylabel('$\lambda(t)$','interpreter','latex');
+legend({'$\lambda_3(t)$','$\lambda_4(t)$'},'interpreter','latex');
+subplot(313)
+plot(t_grid,[lambda5_opt,nan])
+hold on
+grid on
+plot(t_grid,[lambda6_opt,nan])
+xlabel('$t$','interpreter','latex');
+ylabel('$\lambda(t)$','interpreter','latex');
+legend({'$\lambda_5(t)$','$\lambda_6(t)$'},'interpreter','latex');
+%%
+figure
+plot(t_grid,[mu1_opt,nan])
+hold on
+grid on
+plot(t_grid,[mu2_opt,nan])
+plot(t_grid,[mu3_opt,nan])
+xlabel('$t$','interpreter','latex');
+ylabel('$\mu(t)$','interpreter','latex');
+legend({'$\mu_1(t)$','$\mu_2(t)$','$\mu_3(t)$'},'interpreter','latex');
+%%
+figure
+stairs(results.h_vec,'k')
+xlabel('finite element','interpreter','latex');
+ylabel('$h_{n}$','interpreter','latex');
+%%
+figure
+semilogy(stats.complementarity_stats+1e-20,'k','LineWidth',1.5)
+xlabel('integration step n','interpreter','latex');
+ylabel('comp residual','interpreter','latex');
+grid on
 
-for ii = 1:n_simplex
-    figure
-    subplot(311)
-    for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-        eval( ['plot(tgrid_z,theta' num2str(i) '_opt);']);
-        if  i == m_ind_vec(ii)
-            hold on
-        end
-    end
-    xlabel('$t$','interpreter','latex');
-    ylabel('$\theta(t)$','interpreter','latex');
-    hold on
-    grid on
-    legend_str= {};
-    for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-        legend_str = [legend_str, ['$\theta_' num2str(i) '(t)$']];
-    end
-    legend(legend_str ,'interpreter','latex');
-    subplot(312)
-    
-    for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-        eval( ['plot(tgrid_z,lambda' num2str(i) '_opt);']);
-        if  i == m_ind_vec(ii)
-            hold on
-        end
-    end
-    xlabel('$t$','interpreter','latex');
-    ylabel('$\lambda(t)$','interpreter','latex');
-    hold on
-    grid on
-    legend_str= {};
-    for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-        legend_str = [legend_str, ['$\lambda' num2str(i) '(t)$']];
-    end
-    legend(legend_str ,'interpreter','latex');
-    subplot(313)
-     eval( ['plot(tgrid_z,mu' num2str(ii) '_opt);']);
-    xlabel('$t$','interpreter','latex');
-    ylabel(['$\mu_' num2str(ii) '(t)$' ],'interpreter','latex');
-    grid on
+if model.N_stages == 2
+    number_of_switches = sum(abs(diff(h_vec))>1e-6)
 end
-
 
 %% Strong stationarity
-figure
-plot(theta1_opt+lambda1_opt)
-hold on
-plot(theta2_opt+lambda2_opt)
-plot(theta3_opt+lambda3_opt)
-grid on
-yline(0,'k')
-ylabel('$\theta+\lambda>0$','interpreter','latex');
-
-a = min(theta1_opt+lambda1_opt);
-b = min(theta2_opt+lambda2_opt);
-c = min(theta3_opt+lambda3_opt);
-biactivity = min([a;b;c])
-
-
-%%
 % figure
-% stairs(h_eval(1,:)>h_eval(2,:))
+% plot(theta1_opt+lambda1_opt)
+% hold on
+% plot(theta2_opt+lambda2_opt)
+% plot(theta3_opt+lambda3_opt)
+% grid on
+% yline(0,'k')
+% ylabel('$\theta+\lambda>0$','interpreter','latex');
+% 
+% a = min(theta1_opt+lambda1_opt);
+% b = min(theta2_opt+lambda2_opt);
+% c = min(theta3_opt+lambda3_opt);
+% biactivity = min([a;b;c])
 
-figure
-semilogy(complementarity_stats,'k')
-xlabel('iter','interpreter','latex');
-ylabel('complementarity','interpreter','latex');
-grid on
-
-%%
-figure
-subplot(611)
-plot(tgrid_z,lambda1_opt);
-hold on;
-grid on
-plot(tgrid_z,theta1_opt)
-subplot(612)
-stairs(tgrid_z,lambda1_opt.*theta1_opt);
-grid on
-
-subplot(613)
-plot(tgrid_z,lambda2_opt);
-hold on;
-grid on
-plot(tgrid_z,theta2_opt)
-subplot(614)
-stairs(tgrid_z,lambda2_opt.*theta2_opt);
-grid on
-
-subplot(615)
-plot(tgrid_z,lambda3_opt);
-hold on; 
-plot(tgrid_z,theta3_opt)
-grid on
-
-subplot(616)
-stairs(tgrid_z,lambda3_opt.*theta3_opt);
-grid on
