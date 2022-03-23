@@ -32,4 +32,5 @@ qt_temp*
 *.auxlock
 *.auxlock
 *.avi
+*.bak
 *.mp4
