@@ -195,16 +195,18 @@ n_cross_comp = zeros(max(N_finite_elements),N_stages);
 %% Formulate the NLP / Main Discretization loop
 for k=0:N_stages-1
     %% NLP variables for the controls
+    if n_u > 0
     Uk = MX.sym(['U_' num2str(k)],n_u);
     w = {w{:}, Uk};
     % intialize contros, lower and upper bounds
     w0 = [w0; u0];
+    
     lbw = [lbw;lbu];
     ubw = [ubw;ubu];
     % index colector for contorl variables
     ind_u = [ind_u,ind_total(end)+1:ind_total(end)+n_u];
     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_u];
-
+    end
     %%  Time rescaling of the stages (speed of time) to acchieve e.g., a desired final time in Time-Freezing or to solve time optimal control problems.
     %     If only time_rescaling is true, then the h_k also make sure to addapt the length of the subintervals, if both
     %     time_rescaling && use_speed_of_time_variables are true, new control variables are introduecd, they can be per stage or one for the whole interval.

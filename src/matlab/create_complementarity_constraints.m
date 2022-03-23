@@ -117,11 +117,11 @@ end
 
                             % cases 9 and 10 are fully integral options either vector or scalar valued.
                         case 9
-                            if k == N_stages-1 && j == d && i == N_finite_elements(end)-1
+                            if k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
                                 g_cross_comp_j = [g_cross_comp_j ;J_comp];
                             end
                         case 10
-                            if k == N_stages-1 && j == d && i == N_finite_elements(end)-1
+                            if k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
                                 g_cross_comp_j = [g_cross_comp_j ;sum(J_comp)];
                             end
                         otherwise

@@ -56,7 +56,7 @@ n_all_comp_j = length(g_all_comp_j); % outputdimension of the bilinear constrain
                         g_comp_lb = -inf*ones(n_all_comp_j,1);
                         g_comp_ub = zeros(n_all_comp_j,1);
                     case 4
-                        if k == N_stages-1 && j == d && i == N_finite_elements(end)-1
+                        if k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
 %                             if cross_complementarity_mode == 10 &&  k == N_stages-1 && j == d && i == N_finite_elements(end)-1
                             if objective_scaling_direct
                                 J = J + (1/p)*g_cross_comp_j;

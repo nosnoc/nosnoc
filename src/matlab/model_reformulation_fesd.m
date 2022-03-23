@@ -377,7 +377,9 @@ model.ubx = ubx;
 
 model.lbu = lbu;
 model.ubu = ubu;
-model.u0 = u0;
+if n_u > 0
+    model.u0 = u0;
+end
 
 if general_nonlinear_constraint
     model.g_ineq_lb = g_ineq_lb;
