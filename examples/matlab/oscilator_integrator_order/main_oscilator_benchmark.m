@@ -1,4 +1,24 @@
-
+%
+%    This file is part of NOS-NOC.
+%
+%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
+%
+%    NOS-NOC is free software; you can redistribute it and/or
+%    modify it under the terms of the GNU Lesser General Public
+%    License as published by the Free Software Foundation; either
+%    version 3 of the License, or (at your option) any later version.
+%
+%    NOS-NOC is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%    Lesser General Public License for more details.
+%
+%    You should have received a copy of the GNU Lesser General Public
+%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+%
+%
 clear all
 clc
 close all
@@ -12,8 +32,8 @@ use_fesd = 0;
 % discretization settings
 N_stages  = 3;
 N_finite_elements = 1;
-d_vec = [1 2 3 4 5];
-d_vec = [2 3];
+n_s_vec = [1 2 3 4 5];
+n_s_vec = [2 3];
 
 %% Experiment Set Up
 % preproces of step-size  %to avoid exact switch detection by hitting the switch exactly with the given grid
@@ -44,7 +64,7 @@ end
 
 legend_str = {'Implicit Euler','IRK Radau 3','IRK Radau 5','IRK Radau 7','IRK Radau 9','IRK Radau 11','IRK Radau 13'};
 % legend_str = {'IRK GL-2','IRK GL-3','IRK GL-4','IRK GL-5','IRK GL-6','IRK GL-7','IRK GL-8'};
-legend_str = [legend_str(d_vec)];
+legend_str = [legend_str(n_s_vec)];
 
 %% settings
 % collocation settings
@@ -92,10 +112,10 @@ M_true_all_experiment  = [];
 
 %% Run experiment
 h_opt_full = [];
-for i = 1:length(d_vec)
-    d = d_vec(i);
-    n_col = N_stages*(d+1); % number of collocation points per 2 finite elements
-    settings.d = d; % update collocation order
+for i = 1:length(n_s_vec)
+    n_s = n_s_vec(i);
+    n_col = N_stages*(n_s+1); % number of collocation points per 2 finite elements
+    settings.n_s = n_s; % update collocation order
     % store data for fixed d and variable M/h
     errors_current_experiment = [];
     complementarity_current_experiment = [];
@@ -114,7 +134,7 @@ for i = 1:length(d_vec)
         model.T_sim = h_outside;
         model.h = h_inside/N_stages;
         model.N_sim = N_sim;
-        fprintf('Scheme with d = %d, current collocattion points %d , run: %d of %d \n',d,M_true_current,j,length(N_sim_vec))
+        fprintf('Scheme with d = %d, current collocattion points %d , run: %d of %d \n',n_s,M_true_current,j,length(N_sim_vec))
         % generate new model with updated settings;
         model = oscilator(model);
         [results,stats] = integrator_fesd(model,settings);
@@ -125,7 +145,7 @@ for i = 1:length(d_vec)
         max_complementarity_exp = max(stats.complementarity_stats);
 
         errors_current_experiment = [errors_current_experiment,error_x];
-        fprintf('Error with (h = %2.5f, M = %d, d = %d ) is %5.2e : \n',h,M,d,error_x);
+        fprintf('Error with (h = %2.5f, M = %d, d = %d ) is %5.2e : \n',h,M,n_s,error_x);
         fprintf('Complementarity residual %5.2e : \n',max_complementarity_exp);
         % save date current experiemnt
         complementarity_current_experiment = [complementarity_current_experiment,max_complementarity_exp];
@@ -140,7 +160,7 @@ end
 
 %% Error plots
 figure
-for ii = 1:length(d_vec)
+for ii = 1:length(n_s_vec)
     loglog(M_true_all_experiment(ii,:),errors_all_experiments(ii,:),'-o','linewidth',1.5);
     hold on
 end
@@ -153,7 +173,7 @@ if save_results
     saveas(gcf,[scenario_name '_error_M'])
 end
 % some stats
-if length(M_vec) == 1
+if length(N_sim_vec) == 1
     figure
     subplot(211)
     stairs(stats.homotopy_iteration_stats)
@@ -179,7 +199,7 @@ if save_results
 end
 % error as fu
 figure
-for ii = 1:length(d_vec)
+for ii = 1:length(n_s_vec)
     loglog(nominal_h_all_experiments(ii,:),complementarity_all_experiments(ii,:)+1e-18,'-o','linewidth',1.5);
     hold on
 end
@@ -192,7 +212,7 @@ if save_results
 end
 %% as function of step size
 figure
-for ii = 1:length(d_vec)
+for ii = 1:length(n_s_vec)
     loglog(nominal_h_all_experiments(ii,:),errors_all_experiments(ii,:),'-o','linewidth',1.5);
     hold on
     xlabel('$h$','interpreter','latex');
@@ -213,7 +233,7 @@ end
 
 %%
 results.M_vec = M_vec;
-results.d_vec = d_vec;
+results.d_vec = n_s_vec;
 results.M_true_all_experiment =M_true_all_experiment;
 results.errors_switch_detection_1_all_experiments =errors_switch_detection_1_all_experiments;
 results.nominal_h_all_experiments =nominal_h_all_experiments;

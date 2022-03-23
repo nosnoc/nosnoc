@@ -122,3 +122,9 @@ ylim([0 max(x3_opt)])
 ylabel('$t(\tau)$ ','Interpreter','latex')
 xlabel('$t$ [phyisical time]','Interpreter','latex')
 grid on
+%% complementarity stats
+figure
+semilogy(complementarity_stats+1e-16,'k',LineWidth=1.5)
+grid on
+xlabel('$\tau$ [numerical time]','Interpreter','latex')
+ylabel('Complementarity residual','Interpreter','latex')

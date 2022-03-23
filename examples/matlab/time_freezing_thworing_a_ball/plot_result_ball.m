@@ -1,15 +1,34 @@
+%
+%    This file is part of NOS-NOC.
+%
+%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
+%
+%    NOS-NOC is free software; you can redistribute it and/or
+%    modify it under the terms of the GNU Lesser General Public
+%    License as published by the Free Software Foundation; either
+%    version 3 of the License, or (at your option) any later version.
+%
+%    NOS-NOC is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%    Lesser General Public License for more details.
+%
+%    You should have received a copy of the GNU Lesser General Public
+%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+%
+%
 function [varargout] = plot_result_ball(model,settings,results,stats)
 
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller')
 d = 3;
-% unfold_struct(resultsver_initalization,'caller');
 
 obj = full(results.f);
 w_opt = full(results.x);
 
 %  Colors
-extensive_plots = 0;
 blue = [0 0.4470 0.7410];
 red = [0.8500 0.3250 0.0980];
 organe = [0.9290 0.6940 0.1250];
@@ -29,10 +48,7 @@ alg_states = w_opt(ind_z);
 for i = 1:n_x
     eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x+n_x*d:end);']);
 end
-%
-% for i = 1:n_x
-%     eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x:end);']);
-% end
+
 
 % convex multiplers
 for i = 1:n_theta
@@ -45,7 +61,6 @@ for i = 1:n_theta
     eval( ['lambda' num2str(i) '_opt = alg_states(' num2str(i+n_theta) ':n_z+n_z*(d-1):end);']);
 end
 % mu
-% lambdas
 for i = 1:n_simplex
     %     eval( ['mu_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*d:end);']);
     eval( ['mu' num2str(i) '_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*(d-1):end);']);
@@ -55,7 +70,6 @@ for i = 1:n_u
     %     eval( ['mu_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*d:end);']);
     eval( ['u' num2str(i) '_opt = controls(' num2str(i) ':n_u:end);']);
 end
-
 
 if use_fesd
     h_opt = w_opt(ind_h);
@@ -114,66 +128,6 @@ legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
 xlim([0 T]);
 %
 
-
-
-%% Algebraic variavbles
-
-if 0
-
-    % algebraic
-
-    for ii = 1:n_simplex
-        figure
-        subplot(311);
-        for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-            eval( ['plot(tgrid_z,theta' num2str(i) '_opt);']);
-            if  i == m_ind_vec(ii)
-                hold on
-            end
-        end
-        xlabel('$t$','interpreter','latex');
-        ylabel('$\theta(t)$','interpreter','latex');
-        hold on
-        grid on
-        legend_str= {};
-        for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-            legend_str = [legend_str, ['$\theta_' num2str(i) '(t)$']];
-        end
-        legend(legend_str ,'interpreter','latex');
-        subplot(312);
-        for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-            eval( ['plot(tgrid_z,lambda' num2str(i) '_opt);']);
-            if  i == m_ind_vec(ii)
-                hold on
-            end
-        end
-        xlabel('$t$','interpreter','latex');
-        ylabel('$\lambda(t)$','interpreter','latex');
-        hold on
-        grid on
-        legend_str= {};
-        for i = m_ind_vec(ii):m_ind_vec(ii)+m_vec(ii)-1
-            legend_str = [legend_str, ['$\lambda' num2str(i) '(t)$']];
-        end
-        legend(legend_str ,'interpreter','latex');
-        subplot(313);
-        eval( ['plot(tgrid_z,mu' num2str(ii) '_opt);']);
-        xlabel('$t$','interpreter','latex');
-        ylabel(['$\mu_' num2str(ii) '(t)$' ],'interpreter','latex');
-        grid on
-    end
-
-
-
-    %%
-    complementarity_stats = stats.complementarity_stats;
-    figure
-    semilogy(complementarity_stats,'k')
-    xlabel('iter','interpreter','latex');
-    ylabel('complementarity','interpreter','latex');
-    grid on
-end
-
 %% spee of time plots
 if 0
     if use_fesd
@@ -210,8 +164,7 @@ if 0
     for ii = 0:N_stages+1
         xline(h*ii,'k--')
     end
-    % xlim([0 0.6])
-    % ylim([0 0.6])
+
     axis equal
     xlim([0 T])
     ylim([0 T])

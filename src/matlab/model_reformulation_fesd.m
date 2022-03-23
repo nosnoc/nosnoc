@@ -68,7 +68,6 @@ if exist('u')
     else
         ubu = inf*ones(n_u,1);
     end
-
     % check u0
     if exist('u0')
         if length(u0) ~= n_u
@@ -77,11 +76,6 @@ if exist('u')
     else
         u0 = 0*ones(n_u,1);
     end
-    %
-    %     if simulation_problem
-    %             lbu = 0*ones(n_u,1);
-    %             ubu = 0*ones(n_u,1);
-    %     end
 else
     n_u = 0;
     warning('No control vector u is provided.')
@@ -155,20 +149,22 @@ end
 if ~exist('n_simplex');
     n_simplex = 1;% number of Carteisna products in the model ("independet switches"), we call this layer
 end
-
-%% Stewart's representation of the sets R_i and discirimant functions g_i 
+%% Stewart's representation of the sets R_i and discirimant functions g_i
 g_ind_all = [ ];
 c_all = [];
 m_vec = [];
+
 if ~exist('F')
     error('Matrix F (or matrices F_i) with PSS modes not provided.');
 else
+    % check how many subsystems are present
     if iscell(F)
         n_simplex = length(F);
     else
         F = {F};
         n_simplex = 1;
     end
+    % extract dimensions of subystems
     for ii = 1:n_simplex
         eval(['m_' num2str(ii) '= size(F{ii},2);']);
         eval(['m_vec = [m_vec m_' num2str(ii) '];'])
@@ -178,35 +174,43 @@ end
 
 if ~exist('S')
     if exist('g_ind')
-        % TODO: see cell handling here
-        g_ind_1 = g_ind;
-        g_ind_all = [g_ind_all;g_ind_1];
+        if ~iscell(g_ind)
+            g_ind = {g_ind};
+        end
+        for ii = 1:n_simplex
+            % discrimnant functions
+            eval(['g_ind_' num2str(ii) '= g_ind{ii};']);
+            eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
+            eval(['c_all = [c_all; 0];']);
+        end
+%         % TODO: see cell handling here
+%         g_ind_1 = g_ind;
+%         g_ind_all = [g_ind_all;g_ind_1];
+%         c = 0;
     else
         error('Sign matrix S for regions is not provided.');
     end
 else
-        if ~iscell(S)
-            S = {S};
-        end
-        if length(S) ~= n_simplex
-            error('Number of matrices S does not match number of dynamics.')
-        end
-
+    % Check if all data is avilable and if dimensions match.
+    if ~iscell(S)
+        S = {S};
+    end
+    if length(S) ~= n_simplex
+        error('Number of matrices S does not match number of dynamics.')
+    end
+    % Check constraint function c
     if ~exist('c')
-        error('Region constraint function not provided.');      
+        error('Region constraint function not provided.');
     else
-        
         if ~iscell(c)
             c = {c};
         end
-
         if length(c) ~= n_simplex
             error('Number of constraint function does not match number of dynamics.')
         end
     end
-    
 
-        % if the g _ind fucntions were not provided by the usere, they are generated here
+    % Create Stewart's indicator functions g_ind_ii
     for ii = 1:n_simplex
         if size(S{ii},2) ~= length(c{ii})
             error('The matrix S and vector c do not have compatible dimension.');
@@ -273,7 +277,7 @@ f_x = zeros(n_x,1);
 for ii = 1:n_simplex
     ii_str = num2str(ii);
     eval(['f_x = f_x + F_' ii_str '*theta_'  ii_str  ';']);
-    
+
 end
 
 % basic algebraic equations and complementarty condtions of the DCS
@@ -296,7 +300,7 @@ for i = 1:n_simplex
     eval(['f_z_convex = [f_z_convex; ; e_' i_str '''*theta_'  i_str '-1];']);
     % Complementarty conditions arising from theta_i >= 0
     %     if pointwise_or_integral
-%     eval(['f_z_cc = [f_z_cc; lambda_' i_str '.*theta_'  i_str '];']);
+    %     eval(['f_z_cc = [f_z_cc; lambda_' i_str '.*theta_'  i_str '];']);
     %     else
     %         eval(['f_z_cc = [f_z_cc; lambda_' i_str '''*theta_'  i_str '];']);
     %     end
@@ -315,13 +319,13 @@ n_algebraic_constraints = n_theta+n_simplex;  % dim(g  - lambda - mu *e ) + dim(
 
 %% CasADi functions
 % model equations
-if n_u >0 
-   g_ind_all_fun = Function('g_ind_all_fun',{x,u},{g_ind_all});
-   c_fun = Function('c_fun',{x,u},{c_all}); 
+if n_u >0
+    g_ind_all_fun = Function('g_ind_all_fun',{x,u},{g_ind_all});
+    c_fun = Function('c_fun',{x,u},{c_all});
 else
     g_ind_all_fun = Function('g_ind_all_fun',{x},{g_ind_all});
     c_fun = Function('c_fun',{x},{c_all});
-   
+
 end
 %% TODO: fix with fun and without fun --> make consistsnet
 if n_u >0

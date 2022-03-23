@@ -65,9 +65,3 @@ settings.use_previous_solution_as_initial_guess = 1;
 [results,stats] = integrator_fesd(model,settings);
 %% Read and plot result
 plot_results_for_paper
-%% complementarity stats
-figure
-semilogy(complementarity_stats+1e-16,'k',LineWidth=1.5)
-grid on
-xlabel('$\tau$ [numerical time]','Interpreter','latex')
-ylabel('Complementarity residual','Interpreter','latex')

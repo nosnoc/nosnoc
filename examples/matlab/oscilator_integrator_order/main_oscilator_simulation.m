@@ -1,3 +1,24 @@
+%
+%    This file is part of NOS-NOC.
+%
+%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
+%
+%    NOS-NOC is free software; you can redistribute it and/or
+%    modify it under the terms of the GNU Lesser General Public
+%    License as published by the Free Software Foundation; either
+%    version 3 of the License, or (at your option) any later version.
+%
+%    NOS-NOC is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%    Lesser General Public License for more details.
+%
+%    You should have received a copy of the GNU Lesser General Public
+%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+%
+%
 clear all
 clc
 close all
@@ -11,10 +32,10 @@ N_stages  = 3;
 N_finite_elements = 1;
 
 %% Experiment Set Up
-n_s = 4; % number of irk stages
+n_s = 5; % number of irk stages
 T = 2;
 ts = 1; % eact switching time
-N_sim  = 10;
+N_sim  = 20;
 T_sim = T/N_sim;
 h = T_sim/(N_stages*N_finite_elements);
 %% settings
@@ -58,7 +79,7 @@ model.N_finite_elements = N_finite_elements;
 
 
 
-settings.d = n_s;
+settings.n_s = n_s;
 
 % update step size
 model.T = T_sim;

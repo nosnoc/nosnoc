@@ -65,7 +65,7 @@ if results.status == 1
     w_opt = full(sol.x);
     diff_states = w_opt(ind_x);
     for i = 1:n_x
-        eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x+n_x*d:end);']);
+        eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x+n_x*n_s:end);']);
     end
     % Check the objective
     if ~isempty(ind_t_final)

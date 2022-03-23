@@ -1,3 +1,24 @@
+%
+%    This file is part of NOS-NOC.
+%
+%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
+%
+%    NOS-NOC is free software; you can redistribute it and/or
+%    modify it under the terms of the GNU Lesser General Public
+%    License as published by the Free Software Foundation; either
+%    version 3 of the License, or (at your option) any later version.
+%
+%    NOS-NOC is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%    Lesser General Public License for more details.
+%
+%    You should have received a copy of the GNU Lesser General Public
+%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+%
+%
 function [model] = car_hystheresis_model(model_in)
 
 import casadi.*
@@ -64,13 +85,8 @@ x0 = [q0;v0;L0;a0;t0];
 
 %% Time horizon
 h = T/N_stages;
-
 %% Model parameters for time freezing
-%% Define model dimensions, equations, constraint functions, regions an so on.
-n_simplex = 1;% number of Carteisna products in the model ("independet switches"), we call this layer
-% number of modes in every simplex
-m_1 = 2;
-m_vec = [m_1];
+
 %% Variable defintion
 q = MX.sym('q');
 v = MX.sym('v');
@@ -96,10 +112,6 @@ c = v-v_trash_hold;
 S = [-1;...
        1];
 
-% discrimnant functions
-h_1 = -S*[c];
-
-h_indictaros = [h_1];
 
 %% control
 u = MX.sym('u');
