@@ -36,10 +36,8 @@ function [solver,solver_initalization, model,settings] = create_nlp_fesd(model,s
 % 8 - \ell__infty, same as 5 but the penalty/slack is controlled via the barier formulation
 % 9 - \ell__infty, same as 6 but the penalty/slack is controlled via the barier formulation
 % 10 - \ell__1, same as 4 but the penalty/slack is controlled via the barier formulation
-% Main developer: Armin Nurkanovi\'c (armin.nurkanovic@imtek.uni-freiburg.de)
 %% Import CasADi in the workspace of this function
 import casadi.*
-
 %% Reformulation of the PSS into a DCS
 [model,settings] = model_reformulation_fesd(model,settings);
 %% Fillin missing settings with default settings
@@ -58,8 +56,8 @@ elseif length(N_finite_elements) > 1 && length(N_finite_elements) < N_stages
     N_finite_elements = N_finite_elements(:); % make sure it is a column vector
     N_finite_elements = [N_finite_elements;N_finite_elements(end)*ones(N_stages-length(N_finite_elements),1)];
 end
-
 h_k = h./N_finite_elements; %(TODO:take care if this is a vector)
+
 %% Create a structure with dimensions, useful for some other functions
 %% TODO move this in one of the refinemnt functions
 dimensions.N_stages = N_stages;
@@ -154,7 +152,7 @@ g_eq = {};
 lbg_eq = [];
 ubg_eq = [];
 
-% "Lift" initial conditions
+
 X_kq = MX.sym('X0', n_x);
 w = {w{:}, X_kq};
 
@@ -187,11 +185,11 @@ sum_h_kq_stage_k = 0;
 
 % Initalization of forward and backward sums for the step-equilibration
 
-sigma_lambda_F_k = 0; % forward sum of lambda at stage k
-sigma_lambda_B_k = 0; % backward sum of lambda at stage k
+sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
+sigma_lambda_B_k = 0; % backward sum of lambda at finite element k
 
-sigma_theta_F_k = 0; % forward sum of theta at stage k
-sigma_theta_B_k = 0; % backward sum of theta at stage k
+sigma_theta_F_k = 0; % forward sum of theta at finite element k
+sigma_theta_B_k = 0; % backward sum of theta at finite element k
 
 nu_vector = [];
 
@@ -249,7 +247,7 @@ for k=0:N_stages-1
     % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
     if general_nonlinear_constraint
         g_ineq_k = g_ineq_fun(X_kq,Uk(1:n_u));
-        g = {g{:}, g_ineq_k };
+        g = {g{:}, g_ineq_k};
         lbg = [lbg; g_ineq_lb];
         ubg = [ubg; g_ineq_ub];
     end
@@ -269,7 +267,7 @@ for k=0:N_stages-1
             ubw = [ubw;ubh(i+1)];
             lbw = [lbw;lbh(i+1)];
 
-            % index colector for contorl variables
+            % index sets for step-size variables
             ind_h = [ind_h,ind_total(end)+1:ind_total(end)+1];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
 
@@ -300,21 +298,19 @@ for k=0:N_stages-1
 
             %% The crosscomplementartiy condtions: untilize sums of \lambda and \theta
             % \sum_{j=0}^{d} \lambda_{k,j}  amd % \sum_{i=1}^{d} \theta_{k,i}
-            % calculate algerbaric variale at t = t0,(needed for complementarity quadrature;)
-            %% TODO: Does this already inlcude coupling between all finite elements??
             if k == 0 && i == 0
                 Z_kdq = zeros(n_z,1);
             end
-            % initalize with last collocation point from previous finite element
+            % initalize with last stage point from previous finite element
             sum_lambda_ki = Z_kdq(n_theta+1:2*n_theta);
             % initalize sum of theta's (the pint at t_k is not included)
             sum_theta_ki = 0;
         end
 
-        %% Define Variables at Collocation Points (IRK stages) at all Finite Elements
-        % State at collocation points
+        %% Define Variables at Stage Points (IRK stages) at all Finite Elements
+        
         X_kqj = {};
-        Z_kqj = {}; % collects the vector of x and z at every collocation point/irk stage
+        Z_kqj = {}; % collects the vector of x and z at every irk stage
         if i>0 && use_fesd
             Lambda_end_previous_fe = {Z_kdq(n_theta+1:2*n_theta)};
         end
@@ -352,9 +348,9 @@ for k=0:N_stages-1
 
             % Sum \theta and \lambda over the current finite element.
             if use_fesd
-                % sum_{j = 0}^{d} lambda_{k,j} (sum lambdas over all collocation points)
+                % sum_{j = 0}^{d} lambda_{k,j} (sum lambdas over all stage points)
                 sum_lambda_ki =  sum_lambda_ki + Z_kqj{j}(n_theta+1:2*n_lambda);
-                % sum_{i = 1}^{d} lambda_{k,i} (sum thetas over all collocation points)
+                % sum_{i = 1}^{d} lambda_{k,i} (sum thetas over all stage points)
                 sum_theta_ki =  sum_theta_ki +  Z_kqj{j}(1:n_theta);
             end
             % collection of all lambda and theta for current finite element (stage), \lambda_{n,q}, \theta_{n,q} in the paper in Section 4 (or \lambda_{n}  and \theta_{n} in other sections
@@ -365,10 +361,10 @@ for k=0:N_stages-1
         n_cross_comp_i = 0;
         g_cross_comp_i = []; % all cross complementarites over a finite element
 
-        %% Additional variables in case of schemes not containting the boundary point as collocation point, e.g., Gauss-Legendre schemes
+        %% Additional variables in case of schemes not containting the boundary point as stage point, e.g., Gauss-Legendre schemes
         g_cont_i = [];
-        if use_fesd
-            %             &&  isequal(collocation_scheme,'legendre')
+        if use_fesd   
+%             &&  isequal(irk_scheme,'legendre')
             % define variables for terminal values
             Lambda_ki_end = MX.sym(['Lambda_' num2str(k) '_' num2str(i) '_end'], n_theta);
             Mu_ki_end = MX.sym(['Mu_' num2str(k) '_' num2str(i) '_end'], 1);
@@ -386,15 +382,12 @@ for k=0:N_stages-1
             g_cont_i = [g_cont_i;Mu_ki_end-Mu_ki_this_fe_vec*m_lagrange'];
             g_cont_i = [g_cont_i;Lambda_ki_end-Lambda_ki_this_fe_vec*m_lagrange'];
 
-
             g = {g{:}, g_cont_i};
             lbg = [lbg; zeros(n_theta+1,1)];
             ubg = [ubg; zeros(n_theta+1,1)];
-
             %                 % Index collector for algebraic and differential variables
             ind_boundary = [ind_boundary,ind_total(end)+1:(ind_total(end)+n_theta+1)];
             ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+n_theta+1)];
-
             %                 % Bounds
             %             lbw = [lbw; -inf*ones(n_theta+1,1)];
             lbw = [lbw; [0*ones(n_theta,1);-inf*ones(1,1)]];
@@ -406,7 +399,7 @@ for k=0:N_stages-1
             end
         end
 
-        %% ThE IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every collocation point)
+        %% ThE IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every stage point)
         switch irk_representation
             case 'integral'
                 Xk_end = D(1)*X_kq;
@@ -423,13 +416,13 @@ for k=0:N_stages-1
                 case 'integral'
 
                     % ODE r.h.s. and 'standard' algebraic equations
-                    % Expression for the state derivative at the collocation point
+                    % Expression for the state derivative at the stage point
                     xp = C(1,j+1)*X_kq;
                     % Lagrange polynomial with values at state
                     for r=1:n_s
                         xp = xp + C(r+1,j+1)*X_kqj{r};
                     end
-                    % Evaulate Differetinal and Algebraic Equations at Collocation Points
+                    % Evaulate Differetinal and Algebraic Equations at stage Points
                     if n_u > 0
                         [fj, qj] = f_x_fun(X_kqj{j},Z_kqj{j},Uk);
                         gj = f_z_fun(X_kqj{j},Z_kqj{j},Uk);
@@ -448,34 +441,47 @@ for k=0:N_stages-1
                 gj = S_sot_k*gj;
             end
 
-            % Append collocation equations. append differential states equations and algebraic complementarity conditions
-            if use_fesd
-                g = {g{:}, h_kq*fj - xp};
-            else
-                g = {g{:}, h_k(k+1)*fj - xp};
-            end
+             switch irk_representation
+            case 'integral'
+            % Append irk equations. append differential states equations and algebraic complementarity conditions
+                    if use_fesd
+                        g = {g{:}, h_kq*fj - xp};
+                    else
+                        g = {g{:}, h_k(k+1)*fj - xp};
+                    end
+
+                     % Add contribution to the end state
+                                Xk_end = Xk_end + D(j+1)*X_kqj{j};
+                                % Add contribution to quadrature function
+                                if use_fesd
+                                    J = J + B(j+1)*qj*h_k(i+1);
+                                else
+                                    J = J + B(j+1)*qj*h;
+                                end
+
+                 case 'differential'
+                     % TODO: update this
+                     if use_fesd
+%                         g = {g{:}, hh};
+                    else
+%                         g = {g{:}, hh};
+                    end
+             end
+
             g = {g{:}, gj};
             lbg = [lbg; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
             ubg = [ubg; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
+          
 
-            % Add contribution to the end state
-            Xk_end = Xk_end + D(j+1)*X_kqj{j};
-            % Add contribution to quadrature function
-            if use_fesd
-                J = J + B(j+1)*qj*h_k(i+1);
-            else
-                J = J + B(j+1)*qj*h;
-            end
-
-            % Collcet all IRK equations:
-            if use_fesd
-                g_irk = {g_irk{:} , h_kq*fj - xp};
-            else
-                g_irk = {g_irk{:} , h_k(k+1)*fj - xp};
-            end
-            g_irk = {g_irk{:}, gj};
-            lbg_irk = [lbg_irk; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
-            ubg_irk = [ubg_irk; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
+%             % Collcet all IRK equations:
+%             if use_fesd
+%                 g_irk = {g_irk{:} , h_kq*fj - xp};
+%             else
+%                 g_irk = {g_irk{:} , h_k(k+1)*fj - xp};
+%             end
+%             g_irk = {g_irk{:}, gj};
+%             lbg_irk = [lbg_irk; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
+%             ubg_irk = [ubg_irk; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
 
             %% Standard and cross complementarity constraints
             % Prepare Input for Cross Comp Function
@@ -490,14 +496,12 @@ for k=0:N_stages-1
             comp_var_this_fe.Lambda_ki_this_fe = Lambda_ki_this_fe;
             comp_var_this_fe.Theta_ki_this_fe = Theta_ki_this_fe;
             current_index.k = k;  current_index.i = i; current_index.j = j;
-
             % Create cross comp constraints
             [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_this_fe,dimensions,current_index);
 
             n_cross_comp_j = length(g_cross_comp_j);
             n_cross_comp_i = n_cross_comp_i+n_cross_comp_j;
             %             g_cross_comp_i = [g_cross_comp_i;g_cross_comp_j]; % IS THIS even used anywhere? Should be used for storing of FESD equations?
-
             n_cross_comp(i+1,k+1) = n_cross_comp_i;
             g_all_comp_j = [g_cross_comp_j];
             n_all_comp_j = length(g_all_comp_j);
@@ -517,13 +521,13 @@ for k=0:N_stages-1
             lbg = [lbg; g_comp_lb];
             ubg = [ubg; g_comp_ub];
 
-            %% General nonlinear constraint at colocation points
-            if general_nonlinear_constraint && general_nonlinear_constraint_at_collocation_points
-                g_ineq_k = g_ineq_fun(X_kqj{j},Uk(1:n_u));
-                g = {g{:}, g_ineq_k};
-                lbg = [lbg; g_ineq_lb];
-                ubg = [ubg; g_ineq_ub];
-            end
+            %% General nonlinear constraint at stage points
+%             if general_nonlinear_constraint && general_nonlinear_constraint_at_stage_points
+%                 g_ineq_k = g_ineq_fun(X_kqj{j},Uk(1:n_u));
+%                 g = {g{:}, g_ineq_k};
+%                 lbg = [lbg; g_ineq_lb];
+%                 ubg = [ubg; g_ineq_ub];
+%             end
         end
 
         %% Continuity conditions
@@ -532,7 +536,7 @@ for k=0:N_stages-1
                 case 'radau'
                     Z_kdq = Z_kqj{n_s};
                 case 'lobbato'
-                    Z_kdq = Z_kqj{d};
+                    Z_kdq = Z_kqj{n_s};
                 case 'legendre'
                     Z_kdq = [zeros(n_theta,1);Lambda_ki_end;Mu_ki_end];
                 otherwise
@@ -541,12 +545,10 @@ for k=0:N_stages-1
         end
 
         %% Step equlibration
-        % Define the functions for propper grid regularization, sigma, delta, pi ...
-        % TODO: MAKE A Function of the script below
         step_equilibration_constrains;
 
         %% Continuity condition  New NLP variable for state at end of a finite element
-        % TODO: This the novel variable for the contuinity, should be renamed such that it maches the other notation, cf defintion of collocation points X_kq --> X_kq0
+
         X_kq = MX.sym(['X_' num2str(k+1) '_' num2str(i+1)], n_x);
         w = {w{:}, X_kq};
 
@@ -818,7 +820,6 @@ model.comp_res = comp_res;
 % create CasADi function for objective gradient.
 nabla_J = J.jacobian(model.w);
 nabla_J_fun = Function('nabla_J_fun', {vertcat(w{:}),p},{nabla_J});
-
 model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
 
@@ -843,12 +844,8 @@ model.ind_g_clock_state = ind_g_clock_state;
 model.ind_tf = ind_tf;
 model.ind_t_final  = ind_t_final;
 model.ind_boundary = ind_boundary;
-
-model.n_u = n_u; % dimenison of control without variable step size
 model.n_cross_comp = n_cross_comp;
-
 model.ind_total = ind_total;
-model.nlp = prob;
 
 settings.h = h;
 settings.h_k = h_k;
