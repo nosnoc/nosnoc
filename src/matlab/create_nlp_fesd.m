@@ -474,7 +474,7 @@ for k=0:N_stages-1
             current_index.k = k;  current_index.i = i; current_index.j = j;
 
             % Create cross comp constraints
-            [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_complementarity_mode,comp_var_this_fe,dimensions,current_index);
+            [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_this_fe,dimensions,current_index);
 
             n_cross_comp_j = length(g_cross_comp_j);
             n_cross_comp_i = n_cross_comp_i+n_cross_comp_j;

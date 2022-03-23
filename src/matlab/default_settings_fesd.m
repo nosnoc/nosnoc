@@ -7,7 +7,7 @@ use_fesd = 1;
 %% IRK anf FESD Settings
 n_s = 2;                            % Number of IRK stages
 irk_scheme = 'radau';     % IRK scheme: radau or legendre
-cross_complementarity_mode = 3;
+cross_comp_mode = 3;
 gamma_h = 1;
 % initalization
 lp_initalization = 0;

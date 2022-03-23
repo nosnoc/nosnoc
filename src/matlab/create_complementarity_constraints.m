@@ -1,12 +1,13 @@
 function [J_comp,g_cross_comp_j] = create_complementarity_constraints(varargin)
 % A function for formulating the complementarity and cross % complementarity(orthogonaliy constaints)
 % Examples of calling this function
-% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_complementarity_mode,comp_var_this_fe,dimensions,current_index);
-% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_complementarity_mode,comp_var_this_fe,dimensions);
+% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_this_fe,dimensions,current_index);
+% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_this_fe,dimensions);
 
 import casadi.*
 %%
 g_cross_comp_j = [];
+g_cross_comp_temp = 0;
 % Sanity Chack
 if ~(nargin == 4 || nargin == 5)
     error('Wrong input number, see function help for required inputs.')
@@ -15,7 +16,7 @@ end
 % Assign variable names to all inputs
 % FESD settings
 use_fesd = varargin{1};
-cross_complementarity_mode = varargin{2};
+cross_comp_mode = varargin{2};
 % Complementarity variables
 comp_var_this_fe = varargin{3};
 unfold_struct(comp_var_this_fe,'caller')
@@ -26,7 +27,7 @@ unfold_struct(dimensions,'caller')
 
 % Indices
 if nargin == 4
-    cross_complementarity_mode = 10;
+    cross_comp_mode = 10;
     k = N_stages-1;
     i = N_finite_elements(end)-1;
     j = d;
@@ -49,7 +50,7 @@ end
                     
                     J_comp  = J_comp + diag(Theta_ki_j)*sum_lambda_ki(ind_temp_theta);
                     
-                    switch cross_complementarity_mode
+                    switch cross_comp_mode
                         case 1
                             % Full Sparsity. Every point with every gives a vector valued constraint
                             if i > 0
@@ -104,8 +105,8 @@ end
                             % Cases 7 and 8: a vector or single valued constraint per every finite element.
                         case 7
                             %  constraint via sum of \lambda
-                            g_cross_comp_temp = g_cross_comp_temp +diag(Theta_ki_j)*sum_lambda_ki;
-                            if j == d
+                            g_cross_comp_temp = g_cross_comp_temp +diag(Theta_ki_j)*sum_lambda_ki(ind_temp_theta);
+                            if j == n_s
                                 g_cross_comp_j = [g_cross_comp_j ;g_cross_comp_temp];
                             end
                         case 8
@@ -125,7 +126,7 @@ end
                                 g_cross_comp_j = [g_cross_comp_j ;sum(J_comp)];
                             end
                         otherwise
-                            error('Please pick cross_complementarity_mode between 1 and 10.')
+                            error('Please pick cross_comp_mode between 1 and 10.')
                         end
                 end
             else

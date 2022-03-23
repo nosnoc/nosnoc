@@ -34,11 +34,11 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$','interpreter','latex');
 legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex');
 grid on
-figure
-plot(t_grid,x7_opt);
-xlabel('$t$','interpreter','latex');
-ylabel('$t(t)$','interpreter','latex');
-grid on
+% figure
+% plot(t_grid,x7_opt);
+% xlabel('$t$','interpreter','latex');
+% ylabel('$t(t)$','interpreter','latex');
+% grid on
 % N_switches = sum((abs(diff(h_opt)))>1e-4);
 % fprintf('Number of Switches is %d. \n',N_switches);
 figure

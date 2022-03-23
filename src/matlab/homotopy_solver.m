@@ -28,7 +28,7 @@ sigma_k = sigma_0;
 x0 = model.x0;
 
 try
-complementarity_stats = [full(comp_res(w0))];
+    complementarity_stats = [full(comp_res(w0))];
 catch
     w0 = w0(1:length(model.w));
     complementarity_stats = [full(comp_res(w0))];

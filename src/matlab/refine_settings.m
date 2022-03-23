@@ -94,6 +94,10 @@ if use_speed_of_time_variables == 0
     local_speed_of_time_variable = 0;
 end
 
+if exist('cross_complementarity_mode')
+    cross_comp_mode = cross_complementarity_mode;
+end
+
 %% Impose time
 % this gets active only if time freezing is activated and the user had provided impose_terminal_phyisical_time = 0.
 if (time_freezing && ~impose_terminal_phyisical_time) 
@@ -122,8 +126,6 @@ end
 %     N_finite_elements = N_finite_elements(:); % make sure it is a column vector
 %     N_finite_elements = [N_finite_elements;N_finite_elements(end)*ones(N_stages-length(N_finite_elements),1)];
 % end
-
-
 
 
 %% Save data for output into struct

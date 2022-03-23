@@ -7,8 +7,6 @@ else
     model = varargin{2};
 end
     
-
-
 [default_settings] = default_settings_fesd();
 fields_settings = fieldnames(settings);
 fields_defualt_settings = fieldnames(default_settings);
@@ -23,8 +21,6 @@ for ii = 1:length(fields_defualt_settings)
 end
 
 fprintf('Added %d missing fields to the user provided settings.\n',jj);
-
-
 %% The updated settings field.
 fields_settings = fieldnames(settings);
 
@@ -36,13 +32,8 @@ for ii = 1:length(fields_model)
     end
 end
 fprintf('Total of %d default settings fields overwritten by model data.\n',jj);
-
-
-
 %% Correct contradicting and missing settings
 settings = refine_settings(settings);
-
-
 
 end
 

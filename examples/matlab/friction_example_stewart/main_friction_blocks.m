@@ -37,7 +37,7 @@ settings.n_s = 2;                            % Degree of interpolating polynomia
 settings.irk_scheme = 'radau';     % Collocation scheme: radau or legendre
 settings.mpcc_mode = 3;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - l1 penalty
 settings.s_elastic_max = 1e1;                    
-settings.cross_complementarity_mode = 8;
+settings.cross_comp_mode = 8;
 %% Generate Model
 model = blocks_with_friction();
 %% Simulation setings

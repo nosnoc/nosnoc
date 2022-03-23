@@ -17,8 +17,6 @@
 %    You should have received a copy of the GNU Lesser General Public
 %    License along with NOS-NOC; if not, write to the Free Software Foundation,
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-%
-%
 clear all
 clc
 close all
@@ -30,7 +28,6 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontenus switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-
 example_num = 2;
 %% NOS-NOC settings
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.

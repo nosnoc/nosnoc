@@ -12,9 +12,9 @@ lambda_guess = theta_guess;
 mu_guess = initial_theta*ones(n_simplex,1);
 %% objective gradient of the LP
 try
-    h_guess = full(h_fun(x0));
+    g_guess = full(g_ind_all_fun(x0));
 catch
-    h_guess = full(h_fun(x0,u0));
+    g_guess = full(g_ind_all_fun(x0,u0));
 end
 %% equality constraint for LP
 Aeq = (E');
@@ -41,11 +41,10 @@ beq = ones(n_simplex,1);
     %% Create LP 
     theta_lp = MX.sym('theta_lp',n_theta);
 
-    f_lp = h_guess'*theta_lp;
+    f_lp = g_guess'*theta_lp;
     g_lp = Aeq*theta_lp - beq;
     lbw_lp = 0*ones(n_theta,1);
     ubw_lp = inf*ones(n_theta,1);
-
     prob_lp = struct('f', f_lp, 'x', theta_lp, 'g',g_lp);
     solver_lp = nlpsol('slover_lp', 'ipopt', prob_lp,opts_ipopt_lp);
     % Solve LP 

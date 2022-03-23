@@ -19,7 +19,6 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-
 clear all
 clc
 close all
@@ -52,7 +51,7 @@ settings.N_homotopy = 8;
 
 % settings.N_homotopy = 1;% number of steps
 settings.comp_tol = 1e-14;
-settings.cross_complementarity_mode = 3;
+settings.cross_comp_mode = 3;
 
 %^ IPOPT Settings
 opts_ipopt.verbose = false;
