@@ -1,4 +1,25 @@
-function [results,stats] = integrator_fesd(model,settings)
+%
+%    This file is part of NOS-NOC.
+%
+%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
+%
+%    NOS-NOC is free software; you can redistribute it and/or
+%    modify it under the terms of the GNU Lesser General Public
+%    License as published by the Free Software Foundation; either
+%    version 3 of the License, or (at your option) any later version.
+%
+%    NOS-NOC is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%    Lesser General Public License for more details.
+%
+%    You should have received a copy of the GNU Lesser General Public
+%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+%
+%
+function [varargout] = integrator_fesd(model,settings)
 import casadi.*
 
 %%  unfold data
@@ -78,23 +99,23 @@ for ii = 1:N_sim
     mu_opt = [];
 
     for i = 1:n_x
-        eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x+n_x*d:end);']);
+        eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x+n_x*n_s:end);']);
         eval(['x_opt = [x_opt,; transpose(x' num2str(i) '_opt)];'])
     end
 
  % convex multiplers
     for i = 1:n_theta
-        eval( ['theta' num2str(i) '_opt = alg_states(' num2str(i) ':n_z+n_z*(d-1):end);']);
+        eval( ['theta' num2str(i) '_opt = alg_states(' num2str(i) ':n_z+n_z*(n_s-1):end);']);
         eval(['theta_opt = [theta_opt,; transpose(theta' num2str(i) '_opt)];'])
     end
 % lambdas
     for i = 1:n_theta
-        eval( ['lambda' num2str(i) '_opt = alg_states(' num2str(i+n_theta) ':n_z+n_z*(d-1):end);']);
+        eval( ['lambda' num2str(i) '_opt = alg_states(' num2str(i+n_theta) ':n_z+n_z*(n_s-1):end);']);
         eval(['lambda_opt = [lambda_opt,; transpose(lambda' num2str(i) '_opt)];'])
     end
 % mu
     for i = 1:n_simplex   
-        eval(['mu' num2str(i) '_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*(d-1):end);']);
+        eval(['mu' num2str(i) '_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*(n_s-1):end);']);
         eval(['mu_opt = [mu_opt,; transpose(mu' num2str(i) '_opt)];'])
     end
 
@@ -119,11 +140,11 @@ total_time = sum(time_per_iter);
 %% Verbose
 fprintf('\n');
 fprintf('-------------------------------------------------------------------------------------\n');
-switch collocation_scheme
+switch irk_scheme
     case 'radau'
-        fprintf('Integration procedure with the FESD Radau IIA - %d scheme completed in %2.3f seconds.\n',2*d-1,total_time);
+        fprintf('Integration procedure with the FESD Radau IIA - %d scheme completed in %2.3f seconds.\n',2*n_s-1,total_time);
     case 'legendre'
-        fprintf('Integration procedure with the FESD Gauss-Legendre - %d scheme completed in %2.3f seconds.\n',2*d,total_time);
+        fprintf('Integration procedure with the FESD Gauss-Legendre - %d scheme completed in %2.3f seconds.\n',2*n_s,total_time);
 end
 fprintf('Total integration steps: %d, with nominal step-size h =  %2.3f and %d stages.\n',N_sim,h,N_stages);
 fprintf('-------------------------------------------------------------------------------------\n');
@@ -141,5 +162,10 @@ results.h_vec  = h_vec;
 stats.complementarity_stats   = complementarity_stats;
 stats.time_per_iter = time_per_iter;
 stats.homotopy_iteration_stats = homotopy_iteration_stats;
+
+varargout{1} = results;
+varargout{2} = stats;
+varargout{3} = model;
+varargout{4} = settings;
 end
 

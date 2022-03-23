@@ -5,8 +5,8 @@ function [default_settings] = default_settings_fesd()
 solver_name = 'solver_fesd';
 use_fesd = 1;
 %% IRK anf FESD Settings
-d = 2;                            % Degree of interpolating polynomial
-collocation_scheme = 'radau';     % Collocation scheme: radau or legendre
+n_s = 2;                            % Number of IRK stages
+irk_scheme = 'radau';     % IRK scheme: radau or legendre
 cross_complementarity_mode = 3;
 gamma_h = 1;
 % initalization

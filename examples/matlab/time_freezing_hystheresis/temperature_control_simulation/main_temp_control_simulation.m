@@ -1,3 +1,24 @@
+%
+%    This file is part of NOS-NOC.
+%
+%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
+%
+%    NOS-NOC is free software; you can redistribute it and/or
+%    modify it under the terms of the GNU Lesser General Public
+%    License as published by the Free Software Foundation; either
+%    version 3 of the License, or (at your option) any later version.
+%
+%    NOS-NOC is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%    Lesser General Public License for more details.
+%
+%    You should have received a copy of the GNU Lesser General Public
+%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+%
+%
 clear all
 clc
 close all
@@ -9,7 +30,7 @@ import casadi.*
 % collocation settings
 settings = default_settings_fesd();
 
-settings.d = 2;                            % Degree of interpolating polynomial
+settings.n_s = 2;                            % Degree of interpolating polynomial
 % MPCC settings
 settings.mpcc_mode = 3;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - elastic mode
 settings.s_elastic_max = 1e1;              % upper bound for elastic variables
@@ -33,16 +54,16 @@ opts_ipopt.ipopt.mu_oracle = 'quality-function';
 settings.opts_ipopt = opts_ipopt;
 %% Generate Model
 model = temp_control_model_voronoi();
-%% Call FESD Integrator - Simulation
-model.T_sim = 4;
+%% - Simulation settings
+model.T_sim = 3;
 model.N_stages = 2;
 model.N_finite_elements = 1;
 model.h = 0.01;
-settings.gamma_h = 1;
 model.T = model.N_stages*model.h;
 settings.use_previous_solution_as_initial_guess = 1;
+%% Call FESD Integrator 
 [results,stats] = integrator_fesd(model,settings);
-%% Read and plot Result
+%% Read and plot result
 plot_results_for_paper
 %% complementarity stats
 figure

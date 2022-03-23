@@ -11,7 +11,7 @@ N_stages  = 3;
 N_finite_elements = 1;
 
 %% Experiment Set Up
-n_s = 9; % number of irk stages
+n_s = 4; % number of irk stages
 T = 2;
 ts = 1; % eact switching time
 N_sim  = 10;
@@ -31,12 +31,11 @@ settings.sigma_N = 1e-15;                     % starting smouothing parameter
 settings.N_homotopy = 15;% number of steps
 settings.kappa = 0.05;                      % decrease rate
 %^ IPOPT Settings
-opts_ipopt.verbose = false;
+opts_ipopt.verbose = 0;
 opts_ipopt.ipopt.max_iter = 800;
 opts_ipopt.ipopt.mu_strategy = 'adaptive';
 opts_ipopt.ipopt.mu_oracle = 'quality-function';
 opts_ipopt.ipopt.tol = comp_tol ;
-opts_ipopt.ipopt.print_level = 0;
 opts_ipopt.ipopt.honor_original_bounds = 'yes';
 opts_ipopt.ipopt.bound_relax_factor = 1e-16;
 settings.opts_ipopt = opts_ipopt;
@@ -67,6 +66,7 @@ model.T_sim = T_sim;
 model.h = h;
 model.N_sim = N_sim;
 model = oscilator(model);
+%% Call integrator
 [results,stats] = integrator_fesd(model,settings);
 % numerical error
 x_fesd = results.x_res(:,end);

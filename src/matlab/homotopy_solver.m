@@ -21,13 +21,18 @@ s_elastic_iter = 1;
 % else
 %     % take default value, sigma_0, provided by user
 % end
-sigma_0_scaled = max(full(nabla_J_fun(w0,inf)));
+% sigma_0_scaled = max(full(nabla_J_fun(w0,inf)));
 %% data for stats
 
 sigma_k = sigma_0;
 x0 = model.x0;
 
+try
 complementarity_stats = [full(comp_res(w0))];
+catch
+    w0 = w0(1:length(model.w));
+    complementarity_stats = [full(comp_res(w0))];
+end
 cpu_time = [];
 homotopy_iterations = [];
 w0_base = w0;

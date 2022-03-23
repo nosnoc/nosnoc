@@ -1,14 +1,12 @@
-function [B,C,D,tau_root] = collocation_times_fesd(d,collocation_scheme)
+function [B,C,D,tau_root] = collocation_times_fesd(n_s,irk_scheme)
 
 
 import casadi.*
 
 % Degree of interpolating polynomial
-% d = 2;
 % Get collocation points
-% tau_root = [0 collocation_points(d, 'legendre')];
-if isequal(collocation_scheme,'lobbato')
-    switch d
+if isequal(irk_scheme,'lobbato')
+    switch n_s
         case 1
             tau_root = [0  1];
         case 2
@@ -20,25 +18,25 @@ if isequal(collocation_scheme,'lobbato')
         otherwise
             error('Not implemented')
     end
-    collocation_scheme = 'radau';
+    irk_scheme = 'radau';
 else
-tau_root = [0 collocation_points(d, collocation_scheme)];
+tau_root = [0 collocation_points(n_s, irk_scheme)];
 end
 
 % Coefficients of the collocation equation
-C = zeros(d+1,d+1);
+C = zeros(n_s+1,n_s+1);
 
 % Coefficients of the continuity equation
-D = zeros(d+1, 1);
+D = zeros(n_s+1, 1);
 
 % Coefficients of the quadrature function
-B = zeros(d+1, 1);
+B = zeros(n_s+1, 1);
 
 % Construct polynomial basis
-for j=1:d+1
+for j=1:n_s+1
     % Construct Lagrange polynomials to get the polynomial basis at the collocation point
     coeff = 1;
-    for r=1:d+1
+    for r=1:n_s+1
         if r ~= j
             coeff = conv(coeff, [1, -tau_root(r)]);
             coeff = coeff / (tau_root(j)-tau_root(r));
@@ -49,7 +47,7 @@ for j=1:d+1
     
     % Evaluate the time derivative of the polynomial at all collocation points to get the coefficients of the continuity equation
     pder = polyder(coeff);
-    for r=1:d+1
+    for r=1:n_s+1
         C(j,r) = polyval(pder, tau_root(r));
     end
     

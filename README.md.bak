@@ -29,7 +29,6 @@ Currently, a `MATLAB` version is avilable. Versions to come will support a `pyth
 
 Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
 
-A `python` version is currently under development.
 	 
 ## Using NOS-NOC
 
@@ -76,7 +75,7 @@ plot_result_ball(model,settings,results,stats)
 
 More details can be found in the [user manual](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
 
-
+A `python` version is work in progress.
 
 ## Literature - theory and algortihms
 

@@ -46,8 +46,9 @@ end
                     Theta_ki_j = Theta_ki_this_fe{j}(ind_temp_theta);
 
                     % sum of all cross-complementarities (vector-valued) --> later put into scalar value for the complementarity residual
-                    J_comp  = J_comp + diag(Theta_ki_j)*sum_lambda_ki;
-
+                    
+                    J_comp  = J_comp + diag(Theta_ki_j)*sum_lambda_ki(ind_temp_theta);
+                    
                     switch cross_complementarity_mode
                         case 1
                             % Full Sparsity. Every point with every gives a vector valued constraint
@@ -56,7 +57,7 @@ end
                                 Lambda_ki_jj = Lambda_end_previous_fe{1}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j ;diag(Theta_ki_j)*(Lambda_ki_jj)];
                             end
-                            for jj = 1:d
+                            for jj = 1:n_s
                                 Lambda_ki_jj = Lambda_ki_this_fe{jj}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j ;diag(Theta_ki_j)*(Lambda_ki_jj)];
                             end
@@ -67,38 +68,38 @@ end
                                 Lambda_ki_jj = Lambda_end_previous_fe{1}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j ;(Theta_ki_j)'*(Lambda_ki_jj)];
                             end
-                            for jj = 1:d
+                            for jj = 1:n_s
                                 Lambda_ki_jj = Lambda_ki_this_fe{jj}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j ;(Theta_ki_j)'*(Lambda_ki_jj)];
                             end
 
-                            % Casese 3 and 4: for every collocation point a vector valued constraint
+                            % Casese 3 and 4: for every stage point a vector valued constraint
                         case 3
-                            %  For every collocation point one vector-valued  constraint via sum of all \lambda
-                            g_cross_comp_j = [g_cross_comp_j ;diag(Theta_ki_j)*sum_lambda_ki];
+                            %  For every stage point one vector-valued  constraint via sum of all \lambda
+                            g_cross_comp_j = [g_cross_comp_j ;diag(Theta_ki_j)*sum_lambda_ki(ind_temp_theta)];
                         case 4
-                            %  Case 4: For every collocation point one vector-valued constraint via sum of all \theta.
+                            %  Case 4: For every stage point one vector-valued constraint via sum of all \theta.
                             if j == 1 && i > 0
                                 % take care of lambda_{n,0} at same time as \lambda_{n,1}
                                 Lambda_ki_jj = Lambda_end_previous_fe{1}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j;diag(Lambda_ki_jj)*sum_theta_ki];
                             end
                             Lambda_ki_jj = Lambda_ki_this_fe{j}(ind_temp_lambda);
-                            g_cross_comp_j = [g_cross_comp_j;diag(Lambda_ki_jj)*sum_theta_ki];
+                            g_cross_comp_j = [g_cross_comp_j;diag(Lambda_ki_jj)*sum_theta_ki(ind_temp_theta)];
 
-                            % Cases 5 and 6: For every collocation point a scalarv alued constraint
+                            % Cases 5 and 6: For every stage point a scalarv alued constraint
                         case 5
-                            % Case 5: Per collocation point one scalar constraint via sum of \lambda.
-                            g_cross_comp_j = [g_cross_comp_j ;(Theta_ki_j)'*sum_lambda_ki];
+                            % Case 5: Per stage point one scalar constraint via sum of \lambda.
+                            g_cross_comp_j = [g_cross_comp_j ;(Theta_ki_j)'*sum_lambda_ki(ind_temp_theta)];
                         case 6
-                            %  Case 6: For every collocation point one scalar-valued constraint via sum of all \theta.
+                            %  Case 6: For every stage point one scalar-valued constraint via sum of all \theta.
                             if j == 1 && i > 0
                                 % take care of lambda_{n,0} at same time as \lambda_{n,1}
                                 Lambda_ki_jj = Lambda_end_previous_fe{1}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j;(Lambda_ki_jj)'*sum_theta_ki];
                             end
                             Lambda_ki_jj = Lambda_ki_this_fe{j}(ind_temp_lambda);
-                            g_cross_comp_j = [g_cross_comp_j;(Lambda_ki_jj)'*sum_theta_ki];
+                            g_cross_comp_j = [g_cross_comp_j;(Lambda_ki_jj)'*sum_theta_ki(ind_temp_theta)];
 
                             % Cases 7 and 8: a vector or single valued constraint per every finite element.
                         case 7
@@ -109,7 +110,7 @@ end
                             end
                         case 8
                             %  Case 8: Per stage (finite element) one scalar constraint via sum of \lambda.
-                            if j == d
+                            if j == n_s
                                 % add it only once during the loop
                                 g_cross_comp_j = [g_cross_comp_j ;(sum_lambda_ki)'*(sum_theta_ki)];
                             end

@@ -71,17 +71,15 @@ psi = (y-y1)/(y2-y1);
 z = [psi;w];
 % discriminant functions via voronoi
 
-h_11 = norm([psi;w]-z1)^2;
-h_12 = norm([psi;w]-z2)^2;
-h_13 = norm([psi;w]-z3)^2;
-h_14 = norm([psi;w]-z4)^2;
+g_11 = norm([psi;w]-z1)^2;
+g_12 = norm([psi;w]-z2)^2;
+g_13 = norm([psi;w]-z3)^2;
+g_14 = norm([psi;w]-z4)^2;
 
 
 
-h_1 = [h_11;h_12;h_13;h_14];
-h_indictaros = [h_1];
-g_discriminant = h_1;
-c = h_indictaros;
+g_ind = [g_11;g_12;g_13;g_14];
+c = g_ind;
 
 %% control
 u = MX.sym('u');

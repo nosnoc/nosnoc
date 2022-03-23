@@ -1,3 +1,24 @@
+%
+%    This file is part of NOS-NOC.
+%
+%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
+%
+%    NOS-NOC is free software; you can redistribute it and/or
+%    modify it under the terms of the GNU Lesser General Public
+%    License as published by the Free Software Foundation; either
+%    version 3 of the License, or (at your option) any later version.
+%
+%    NOS-NOC is distributed in the hope that it will be useful,
+%    but WITHOUT ANY WARRANTY; without even the implied warranty of
+%    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%    Lesser General Public License for more details.
+%
+%    You should have received a copy of the GNU Lesser General Public
+%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+%
+%
 function [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings)
 % This functions creates the solver instance for the OCP discretized with FESD (or time stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
@@ -46,7 +67,7 @@ dimensions.N_finite_elements = N_finite_elements;
 dimensions.n_x = n_x;
 dimensions.n_u = n_u;
 dimensions.n_z = n_z;
-dimensions.d= d;
+dimensions.n_s= n_s;
 dimensions.n_simplex = n_simplex;
 dimensions.m_vec = m_vec;
 dimensions.m_ind_vec = m_ind_vec;
@@ -93,7 +114,7 @@ if time_optimal_problem
 end
 
 %% Collocation related values, Butcher Tableu
-[B,C,D,tau_root] = collocation_times_fesd(d,collocation_scheme);
+[B,C,D,tau_root] = collocation_times_fesd(n_s,irk_scheme);
 %% Formulate NLP
 % Start with an empty NLP
 w = {};
@@ -293,7 +314,7 @@ for k=0:N_stages-1
         Theta_ki_this_fe = {};
         Mu_ki_this_fe = {};
 
-        for j=1:d
+        for j=1:n_s
             X_kqj{j} = MX.sym(['X_' num2str(k) '_' num2str(i) '_' num2str(j)], n_x);
             Z_kqj{j} = MX.sym(['Z_' num2str(k) '_' num2str(i) '_' num2str(j)], n_z);
 
@@ -347,7 +368,7 @@ for k=0:N_stages-1
 
             Mu_ki_this_fe_vec = [];
             Lambda_ki_this_fe_vec = [];
-            for j = 1:d
+            for j = 1:n_s
                 Mu_ki_this_fe_vec = [Mu_ki_this_fe_vec,Mu_ki_this_fe{j}];
                 Lambda_ki_this_fe_vec = [Lambda_ki_this_fe_vec,Lambda_ki_this_fe{j}];
             end
@@ -370,7 +391,7 @@ for k=0:N_stages-1
             ubw = [ubw; +inf*ones(n_theta+1,1)];
             %                % Trajectory initial guess
             w0 = [w0; z0(n_theta+1:end)];
-            if isequal(collocation_scheme,'legendre')
+            if isequal(irk_scheme,'legendre')
                 sum_lambda_ki =  sum_lambda_ki + Lambda_ki_end;
             end
         end
@@ -381,18 +402,23 @@ for k=0:N_stages-1
         % X_k+1 = X_k0 + sum_{j=1}^{d} D(j)*X_kj; Xk0 = D(1)*Xk
         Xk_end = D(1)*X_kq;
         g_cross_comp_temp = 0; % temporar sum for cross comp (whenever there is a single constraint per finite element, casese 4 and 6)
-        for j=1:d
+        for j=1:n_s
             % ODE r.h.s. and 'standard' algebraic equations
             % Expression for the state derivative at the collocation point
             xp = C(1,j+1)*X_kq;
 
             % Lagrange polynomial with values at state
-            for r=1:d
+            for r=1:n_s
                 xp = xp + C(r+1,j+1)*X_kqj{r};
             end
             % Evaulate Differetinal and Algebraic Equations at Collocation Points
-            [fj, qj] = f_x(X_kqj{j},Z_kqj{j},Uk(1:n_u));
-            gj = f_z(X_kqj{j},Z_kqj{j},Uk(1:n_u));
+            if n_u > 0
+                [fj, qj] = f_x_fun(X_kqj{j},Z_kqj{j},Uk);
+                gj = f_z_fun(X_kqj{j},Z_kqj{j},Uk);
+            else
+                [fj, qj] = f_x_fun(X_kqj{j},Z_kqj{j});
+                gj = f_z_fun(X_kqj{j},Z_kqj{j});
+            end
 
             if time_rescaling && use_speed_of_time_variables
                 % rescale equations
@@ -482,9 +508,9 @@ for k=0:N_stages-1
 
         %% Continuity conditions
         if use_fesd
-            switch collocation_scheme
+            switch irk_scheme
                 case 'radau'
-                    Z_kdq = Z_kqj{d};
+                    Z_kdq = Z_kqj{n_s};
                 case 'lobbato'
                       Z_kdq = Z_kqj{d};
                 case 'legendre'
@@ -517,8 +543,8 @@ for k=0:N_stages-1
         ubg = [ubg; zeros(n_x,1)];
 
         %% Switch detecting constraint
-        if isequal(collocation_scheme,'legendre') && k< N_stages-1
-            gj = f_z(X_kq,Z_kdq,Uk(1:n_u));
+        if isequal(irk_scheme,'legendre') && k< N_stages-1
+            gj = f_z_fun(X_kq,Z_kdq,Uk(1:n_u));
             g = {g{:}, gj(1:end-1)};
             lbg = [lbg; zeros(n_theta,1)];
             ubg = [ubg; zeros(n_theta,1)];
@@ -673,7 +699,7 @@ end
 
 %% Add Terminal Cost to objective
 try
-    J = J + f_q_T(Xk_end);
+    J = J + f_q_T_fun(Xk_end);
 catch
     warning('Terminal cost not defined');
 end

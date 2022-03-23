@@ -24,7 +24,7 @@ N_end = 2001;
 N_samples = 10;
 
 N_start = 11;
-N_end = 350;
+N_end = 100;
 N_samples = 3;
 
 N_sim_vec = round(logspace(log10(N_start),log10(N_end),N_samples));
@@ -50,7 +50,7 @@ legend_str = [legend_str(d_vec)];
 % collocation settings
 settings = default_settings_fesd();
 settings.collocation_scheme = 'radau';     % Collocation scheme: radau or legendre
-settings.mpcc_mode = 5;
+settings.mpcc_mode = 3;
 settings.s_elastic_max = 1e1;              % upper bound for elastic variables
 % Penalty/Relaxation paraemetr
 comp_tol = 1e-16;
