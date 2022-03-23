@@ -122,6 +122,9 @@ ylim([0 max(x3_opt)])
 ylabel('$t(\tau)$ ','Interpreter','latex')
 xlabel('$t$ [phyisical time]','Interpreter','latex')
 grid on
+
+saveas(gcf,'numerical_vs_physical_time')
+
 %% complementarity stats
 figure
 semilogy(complementarity_stats+1e-16,'k',LineWidth=1.5)

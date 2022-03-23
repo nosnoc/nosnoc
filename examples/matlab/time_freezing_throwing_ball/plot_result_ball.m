@@ -102,6 +102,7 @@ ylabel('$q_2$','interpreter','latex');
 axis equal
 ylim([-0.4 max(x2_opt)*1.15])
 xlim([0.0 4])
+saveas(gcf,'geometric_traj')
 %%
 matlab_blue = [0 0.4470 0.7410];
 matlab_red = [0.8500 0.3250 0.0980];
@@ -127,6 +128,7 @@ grid on
 legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
 xlim([0 T]);
 %
+saveas(gcf,'velocity_and_control')
 
 %% spee of time plots
 if 0

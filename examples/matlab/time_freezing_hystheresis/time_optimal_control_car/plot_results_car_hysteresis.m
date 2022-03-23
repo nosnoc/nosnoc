@@ -177,6 +177,7 @@ hold on
 plot(tt*0+v1,tt,'k--')
 plot(tt*0+v2,tt,'k--')
 %     xline(v2)
+saveas(gcf,'states_and_control')
 
 %% phase plot
 
