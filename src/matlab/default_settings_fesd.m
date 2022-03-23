@@ -7,6 +7,7 @@ use_fesd = 1;
 %% IRK anf FESD Settings
 n_s = 2;                            % Number of IRK stages
 irk_scheme = 'radau';     % IRK scheme: radau or legendre
+irk_representation = 'integral'; % are the IRK equations in differential from (derivative at stages are uknowns in the equations) or in integral form (state values are unkwnowns at stage points)
 cross_comp_mode = 3;
 gamma_h = 1;
 % initalization

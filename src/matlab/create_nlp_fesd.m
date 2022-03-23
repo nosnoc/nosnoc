@@ -113,8 +113,15 @@ if time_optimal_problem
     T_final_guess = T;
 end
 
-%% Collocation related values, Butcher Tableu
-[B,C,D,tau_root] = collocation_times_fesd(n_s,irk_scheme);
+%%  Butcher Tableu
+switch irk_representation
+    case 'integral'
+        [B,C,D,tau_root] = collocation_times_fesd(n_s,irk_scheme);
+    case 'differential'
+        [A_irk,b_irk,c_irk,order_irk] = generatre_butcher_tableu(n_s,irk_scheme);
+    otherwise
+        error('Choose irk_representation either: ''integral'' or ''differential''')
+end
 %% Formulate NLP
 % Start with an empty NLP
 w = {};
@@ -196,16 +203,16 @@ n_cross_comp = zeros(max(N_finite_elements),N_stages);
 for k=0:N_stages-1
     %% NLP variables for the controls
     if n_u > 0
-    Uk = MX.sym(['U_' num2str(k)],n_u);
-    w = {w{:}, Uk};
-    % intialize contros, lower and upper bounds
-    w0 = [w0; u0];
-    
-    lbw = [lbw;lbu];
-    ubw = [ubw;ubu];
-    % index colector for contorl variables
-    ind_u = [ind_u,ind_total(end)+1:ind_total(end)+n_u];
-    ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_u];
+        Uk = MX.sym(['U_' num2str(k)],n_u);
+        w = {w{:}, Uk};
+        % intialize contros, lower and upper bounds
+        w0 = [w0; u0];
+
+        lbw = [lbw;lbu];
+        ubw = [ubw;ubu];
+        % index colector for contorl variables
+        ind_u = [ind_u,ind_total(end)+1:ind_total(end)+n_u];
+        ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_u];
     end
     %%  Time rescaling of the stages (speed of time) to acchieve e.g., a desired final time in Time-Freezing or to solve time optimal control problems.
     %     If only time_rescaling is true, then the h_k also make sure to addapt the length of the subintervals, if both
@@ -284,7 +291,6 @@ for k=0:N_stages-1
                 switch heuristic_step_equilibration_mode
                     case 1
                         J_regularize_h  = J_regularize_h + (h_kq-h_k(i+1))^2;
-
                     case 2
                         J_regularize_h  = J_regularize_h + delta_h_kq^2;
                     otherwise
@@ -309,7 +315,7 @@ for k=0:N_stages-1
         % State at collocation points
         X_kqj = {};
         Z_kqj = {}; % collects the vector of x and z at every collocation point/irk stage
-        if i>0 && use_fesd 
+        if i>0 && use_fesd
             Lambda_end_previous_fe = {Z_kdq(n_theta+1:2*n_theta)};
         end
         Lambda_ki_this_fe = {};
@@ -317,39 +323,41 @@ for k=0:N_stages-1
         Mu_ki_this_fe = {};
 
         for j=1:n_s
-            X_kqj{j} = MX.sym(['X_' num2str(k) '_' num2str(i) '_' num2str(j)], n_x);
+            switch irk_representation
+                case 'integral'
+                    % define symbolic variables for values of diff. state a stage points
+                    X_kqj{j} = MX.sym(['X_' num2str(k) '_' num2str(i) '_' num2str(j)], n_x);
+                    w = {w{:}, X_kqj{j}};
+                    % Index collector for algebraic and differential variables
+                    ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
+                    ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
+                    % Bounds
+                    lbw = [lbw; lbx];
+                    ubw = [ubw; ubx];
+                    % Trajectory initial guess
+                    w0 = [w0; x0];
+                case 'differential'
+                    error('work in progress...')
+            end
+            % note that for algebraic variablies, in both irk formulation modes the alg. variables are treated the same way.
             Z_kqj{j} = MX.sym(['Z_' num2str(k) '_' num2str(i) '_' num2str(j)], n_z);
-
-            w = {w{:}, X_kqj{j}};
             w = {w{:}, Z_kqj{j}};
-
-            % Index collector for algebraic and differential variables
-            ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
-            ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
 
             ind_z = [ind_z,ind_total(end)+1:ind_total(end)+n_z];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_z];
 
-            % Bounds
-            lbw = [lbw; lbx];
-            ubw = [ubw; ubx];
-
             lbw = [lbw; lbz];
             ubw = [ubw; ubz];
-
-            % Trajectory initial guess
-            w0 = [w0; x0];
             w0 = [w0; z0];
 
+            % Sum \theta and \lambda over the current finite element.
             if use_fesd
                 % sum_{j = 0}^{d} lambda_{k,j} (sum lambdas over all collocation points)
                 sum_lambda_ki =  sum_lambda_ki + Z_kqj{j}(n_theta+1:2*n_lambda);
                 % sum_{i = 1}^{d} lambda_{k,i} (sum thetas over all collocation points)
                 sum_theta_ki =  sum_theta_ki +  Z_kqj{j}(1:n_theta);
             end
-
             % collection of all lambda and theta for current finite element (stage), \lambda_{n,q}, \theta_{n,q} in the paper in Section 4 (or \lambda_{n}  and \theta_{n} in other sections
-
             Theta_ki_this_fe = {Theta_ki_this_fe{:}, Z_kqj{j}(1:n_theta)};
             Lambda_ki_this_fe = {Lambda_ki_this_fe{:}, Z_kqj{j}(n_theta+1:2*n_lambda)};
             Mu_ki_this_fe = {Mu_ki_this_fe{:}, Z_kqj{j}(end)};
@@ -357,10 +365,10 @@ for k=0:N_stages-1
         n_cross_comp_i = 0;
         g_cross_comp_i = []; % all cross complementarites over a finite element
 
-        %% Additiona variables in case of schemes not containting the boundary point as collocation point, e.g., Gauss-Legendre schemes
+        %% Additional variables in case of schemes not containting the boundary point as collocation point, e.g., Gauss-Legendre schemes
         g_cont_i = [];
-        if use_fesd 
-%             &&  isequal(collocation_scheme,'legendre')
+        if use_fesd
+            %             &&  isequal(collocation_scheme,'legendre')
             % define variables for terminal values
             Lambda_ki_end = MX.sym(['Lambda_' num2str(k) '_' num2str(i) '_end'], n_theta);
             Mu_ki_end = MX.sym(['Mu_' num2str(k) '_' num2str(i) '_end'], 1);
@@ -388,7 +396,7 @@ for k=0:N_stages-1
             ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+n_theta+1)];
 
             %                 % Bounds
-%             lbw = [lbw; -inf*ones(n_theta+1,1)];
+            %             lbw = [lbw; -inf*ones(n_theta+1,1)];
             lbw = [lbw; [0*ones(n_theta,1);-inf*ones(1,1)]];
             ubw = [ubw; +inf*ones(n_theta+1,1)];
             %                % Trajectory initial guess
@@ -397,29 +405,40 @@ for k=0:N_stages-1
                 sum_lambda_ki =  sum_lambda_ki + Lambda_ki_end;
             end
         end
-        
-        %% Evaluate equations (dynamics, algebraic, complementarities standard and cross at every collocation point)
+
+        %% ThE IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every collocation point)
+        switch irk_representation
+            case 'integral'
+                Xk_end = D(1)*X_kq;
+            case 'differential'
+        end
+
         % Note that the polynomial is initalized with the previous value % (continuity connection)
         % Xk_end = D(1)*Xk;   % X_k+1 = X_k0 + sum_{j=1}^{d} D(j)*X_kj; Xk0 = D(1)*Xk
-        % X_k+1 = X_k0 + sum_{j=1}^{d} D(j)*X_kj; Xk0 = D(1)*Xk
-        Xk_end = D(1)*X_kq;
+        % X_k+1 = X_k0 + sum_{j=1}^{n_s} D(j)*X_kj; Xk0 = D(1)*Xk
+
         g_cross_comp_temp = 0; % temporar sum for cross comp (whenever there is a single constraint per finite element, casese 4 and 6)
         for j=1:n_s
-            % ODE r.h.s. and 'standard' algebraic equations
-            % Expression for the state derivative at the collocation point
-            xp = C(1,j+1)*X_kq;
+            switch irk_representation
+                case 'integral'
 
-            % Lagrange polynomial with values at state
-            for r=1:n_s
-                xp = xp + C(r+1,j+1)*X_kqj{r};
-            end
-            % Evaulate Differetinal and Algebraic Equations at Collocation Points
-            if n_u > 0
-                [fj, qj] = f_x_fun(X_kqj{j},Z_kqj{j},Uk);
-                gj = f_z_fun(X_kqj{j},Z_kqj{j},Uk);
-            else
-                [fj, qj] = f_x_fun(X_kqj{j},Z_kqj{j});
-                gj = f_z_fun(X_kqj{j},Z_kqj{j});
+                    % ODE r.h.s. and 'standard' algebraic equations
+                    % Expression for the state derivative at the collocation point
+                    xp = C(1,j+1)*X_kq;
+                    % Lagrange polynomial with values at state
+                    for r=1:n_s
+                        xp = xp + C(r+1,j+1)*X_kqj{r};
+                    end
+                    % Evaulate Differetinal and Algebraic Equations at Collocation Points
+                    if n_u > 0
+                        [fj, qj] = f_x_fun(X_kqj{j},Z_kqj{j},Uk);
+                        gj = f_z_fun(X_kqj{j},Z_kqj{j},Uk);
+                    else
+                        [fj, qj] = f_x_fun(X_kqj{j},Z_kqj{j});
+                        gj = f_z_fun(X_kqj{j},Z_kqj{j});
+                    end
+                case 'differential'
+                    % Todo: write the equations
             end
 
             if time_rescaling && use_speed_of_time_variables
@@ -458,7 +477,6 @@ for k=0:N_stages-1
             lbg_irk = [lbg_irk; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
             ubg_irk = [ubg_irk; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
 
-
             %% Standard and cross complementarity constraints
             % Prepare Input for Cross Comp Function
             comp_var_this_fe.J_comp = J_comp;
@@ -478,7 +496,7 @@ for k=0:N_stages-1
 
             n_cross_comp_j = length(g_cross_comp_j);
             n_cross_comp_i = n_cross_comp_i+n_cross_comp_j;
-%             g_cross_comp_i = [g_cross_comp_i;g_cross_comp_j]; % IS THIS even used anywhere? Should be used for storing of FESD equations?
+            %             g_cross_comp_i = [g_cross_comp_i;g_cross_comp_j]; % IS THIS even used anywhere? Should be used for storing of FESD equations?
 
             n_cross_comp(i+1,k+1) = n_cross_comp_i;
             g_all_comp_j = [g_cross_comp_j];
@@ -514,7 +532,7 @@ for k=0:N_stages-1
                 case 'radau'
                     Z_kdq = Z_kqj{n_s};
                 case 'lobbato'
-                      Z_kdq = Z_kqj{d};
+                    Z_kdq = Z_kqj{d};
                 case 'legendre'
                     Z_kdq = [zeros(n_theta,1);Lambda_ki_end;Mu_ki_end];
                 otherwise

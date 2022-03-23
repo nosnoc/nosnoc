@@ -27,6 +27,7 @@ import casadi.*
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
 settings.time_freezing = 1; 
 settings.n_s = 3; 
+% settings.mpcc_mode = 3;
 %% model equations
 model.T = 5; model.N_stages = 15; model.N_finite_elements = 3;
 model.x0 = [0;0.5;0;0;0];
