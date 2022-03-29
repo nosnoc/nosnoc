@@ -26,7 +26,7 @@ import casadi.*
 
 %% Settings
 [settings] = default_settings_fesd();
-settings.n_s = 2;                            % IRK order
+settings.n_s = 2;                            % IRK stages
 settings.mpcc_mode = 6;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - elastic mode
 settings.s_elastic_max = 1e0;              % upper bound for elastic variables
 settings.opts_ipopt.ipopt.max_iter = 1.5e3;

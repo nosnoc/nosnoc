@@ -98,10 +98,14 @@ for ii = 1:N_sim
     lambda_opt = [];
     mu_opt = [];
 
-    for i = 1:n_x
-        eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x+n_x*n_s:end);']);
-        eval(['x_opt = [x_opt,; transpose(x' num2str(i) '_opt)];'])
+
+    x_opt = w_opt(ind_x);
+    x_opt  = reshape(x_opt,n_x,length(x_opt)/n_x);
+    if isequal(irk_representation,'integral') || lift_irk_differential
+        % dont consider stage values
+        x_opt  = x_opt(:,1:n_s+1:end); 
     end
+
 
  % convex multiplers
     for i = 1:n_theta
@@ -131,6 +135,7 @@ for ii = 1:N_sim
     h_vec = [h_vec;h_opt];
     complementarity_stats  = [complementarity_stats; stats.complementarity_stats(end)];
     homotopy_iteration_stats = [homotopy_iteration_stats;stats.homotopy_iterations];
+    
     x_res = [x_res, x_opt(:,end-N_stages+1:end)];
     theta_res = [theta_res, theta_opt(:,end-N_stages+1:end)];
     lambda_res = [lambda_res, lambda_opt(:,end-N_stages+1:end)];

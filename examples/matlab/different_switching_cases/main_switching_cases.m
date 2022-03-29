@@ -28,7 +28,7 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontenus switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-example_num = 2;
+example_num = 4;
 %% NOS-NOC settings
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;

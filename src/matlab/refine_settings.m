@@ -109,24 +109,10 @@ if impose_terminal_phyisical_time == 0
     warning ('impose_terminal_phyisical_time = 0 is not recommended. It means T \neq T_phy (or T_final \neq T_phy). It is only supported for nonequdistant control grids \n')
 end
 
-%% N_finite_elements per stage
-%% Number of finite elements
-% make a vector
-% if length(settings.N_finite_elements) == 1  
-%     settings.N_finite_elements = settings.N_finite_elements*ones(settings.N_stages,1)
-% elseif length(settings.N_finite_elements) > 1 && length(settings.N_finite_elements) < settings.N_stages
-%     settings.N_finite_elements = settings.N_finite_elements(:); % make sure it is a column vector
-%     settings.N_finite_elements = [settings.N_finite_elements;settings.N_finite_elements(end)*ones(settings.N_stages-length(settings.N_finite_elements),1)];
-% end
-
-%% TODO: this should be in model reformulation
-% if length(N_finite_elements) == 1  
-%     N_finite_elements = N_finite_elements*ones(N_stages,1);
-% elseif length(N_finite_elements) > 1 && length(N_finite_elements) < N_stages
-%     N_finite_elements = N_finite_elements(:); % make sure it is a column vector
-%     N_finite_elements = [N_finite_elements;N_finite_elements(end)*ones(N_stages-length(N_finite_elements),1)];
-% end
-
+% lifting does not make sense in integral mode
+if isequal(irk_representation,'integral') 
+    lift_irk_differential = 0;
+end
 
 %% Save data for output into struct
 % settings = [];

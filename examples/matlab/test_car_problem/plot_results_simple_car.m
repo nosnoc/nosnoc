@@ -112,9 +112,9 @@ end
 if 1
 
     h_opt_stagewise = reshape(h_opt,N_finite_elements,N_stages);
-    if length(ind_tf)>1
-        s_sot = w_opt(ind_tf);
-    elseif length(ind_tf) == 0
+    if length(ind_sot)>1
+        s_sot = w_opt(ind_sot);
+    elseif length(ind_sot) == 0
         s_sot = ones(N_stages,1);    
     else
         s_sot = w_opt(ind_tf)*ones(N_stages,1);
@@ -183,7 +183,7 @@ if 0
 end
 
 %% Algebraic variavbles
-if 1
+if 0
     for ii = 1:n_simplex
         figure
         subplot(311);

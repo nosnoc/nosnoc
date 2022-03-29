@@ -20,6 +20,7 @@ u_max = 5;
 %% Discretization parameters
 N_stages = 10;
 N_finite_elements = 3;
+
 T = 5;
 %% Model Parameters
 % inital value
@@ -62,6 +63,14 @@ v = MX.sym('v');
 L = MX.sym('L');
 w = MX.sym('w');
 t = MX.sym('t');
+
+% q = SX.sym('q');
+% v = SX.sym('v');
+% L = SX.sym('L');
+% w = SX.sym('w');
+% t = SX.sym('t');
+
+
 x = [q;v;L;w;t];
 
 if active_control
@@ -103,14 +112,15 @@ c = g_ind_all;
 
 %% control
 u = MX.sym('u');
-n_u = 1;
+% u = SX.sym('u');
+
 
 if active_control
-    lbu = -u_max*ones(n_u,1);
-    ubu = u_max*ones(n_u,1);
+    lbu = -u_max;
+    ubu = u_max;
 else
-    lbu = u_max*ones(n_u,1);
-    ubu = u_max*ones(n_u,1);
+    lbu = u_max;
+    ubu = u_max;
 end
 %% modes of the ODEs layers (for all  i = 1,...,n_simplex);
 a_push_const = 0.5;

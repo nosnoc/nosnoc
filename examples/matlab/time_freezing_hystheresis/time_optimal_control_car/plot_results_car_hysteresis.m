@@ -109,6 +109,7 @@ end
 
 %%
 % figure
+try
 h_opt_stagewise = reshape(h_opt,N_finite_elements,N_stages);
 if length(ind_tf)>1
     s_sot = w_opt(ind_tf);
@@ -119,6 +120,9 @@ else
 end
 t_control_grid_pseudo = cumsum([0,sum(h_opt_stagewise)]);
 t_control_grid_pseudo_streched = cumsum([0,sum(h_opt_stagewise).*s_sot']);
+catch
+    
+end
 
 %%
 if mpcc_mode == 4

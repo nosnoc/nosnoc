@@ -6,7 +6,6 @@
 It is a modular tool for numerically solving optimal control problems with piecewise smooth systems (PSS). It relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS. The time-freezing reformulation, which transforms several classes of systems with state jumps into PSS is supported as well. 
 It enables the treatment of a broad class of nonsmooth systems in a unified way. The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
 
-
 ## Installation
 
 **NOS-NOC** requires `CasADi` version 3.5.5.
@@ -29,12 +28,14 @@ Currently, a `MATLAB` version is avilable. Versions to come will support a `pyth
 
 Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
 
+### Instalation for python
+
 A `python` version is currently under development.
 	 
 ## Using NOS-NOC
 
 The interface of **NOS-NOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
-User inputs should be given as `CasADi` expressions `Function` objects.	 
+User inputs should be given as `CasADi` expressions.
 
 Minimal code example
 ```matlab

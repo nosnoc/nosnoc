@@ -1,8 +1,8 @@
 function [J_comp,g_cross_comp_j] = create_complementarity_constraints(varargin)
 % A function for formulating the complementarity and cross % complementarity(orthogonaliy constaints)
 % Examples of calling this function
-% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_this_fe,dimensions,current_index);
-% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_this_fe,dimensions);
+% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions,current_index);
+% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions);
 
 import casadi.*
 %%
@@ -18,8 +18,8 @@ end
 use_fesd = varargin{1};
 cross_comp_mode = varargin{2};
 % Complementarity variables
-comp_var_this_fe = varargin{3};
-unfold_struct(comp_var_this_fe,'caller')
+comp_var_current_fe = varargin{3};
+unfold_struct(comp_var_current_fe,'caller')
 
 % Dimensions
 dimensions = varargin{4};
@@ -44,7 +44,7 @@ end
                     ind_temp_theta = m_ind_vec(r):m_ind_vec(r)+m_vec(r)-1;
                     ind_temp_lambda = ind_temp_theta;
 
-                    Theta_ki_j = Theta_ki_this_fe{j}(ind_temp_theta);
+                    Theta_ki_j = Theta_ki_current_fe{j}(ind_temp_theta);
 
                     % sum of all cross-complementarities (vector-valued) --> later put into scalar value for the complementarity residual
                     
@@ -59,7 +59,7 @@ end
                                 g_cross_comp_j = [g_cross_comp_j ;diag(Theta_ki_j)*(Lambda_ki_jj)];
                             end
                             for jj = 1:n_s
-                                Lambda_ki_jj = Lambda_ki_this_fe{jj}(ind_temp_lambda);
+                                Lambda_ki_jj = Lambda_ki_current_fe{jj}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j ;diag(Theta_ki_j)*(Lambda_ki_jj)];
                             end
                         case 2
@@ -70,7 +70,7 @@ end
                                 g_cross_comp_j = [g_cross_comp_j ;(Theta_ki_j)'*(Lambda_ki_jj)];
                             end
                             for jj = 1:n_s
-                                Lambda_ki_jj = Lambda_ki_this_fe{jj}(ind_temp_lambda);
+                                Lambda_ki_jj = Lambda_ki_current_fe{jj}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j ;(Theta_ki_j)'*(Lambda_ki_jj)];
                             end
 
@@ -85,7 +85,7 @@ end
                                 Lambda_ki_jj = Lambda_end_previous_fe{1}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j;diag(Lambda_ki_jj)*sum_theta_ki];
                             end
-                            Lambda_ki_jj = Lambda_ki_this_fe{j}(ind_temp_lambda);
+                            Lambda_ki_jj = Lambda_ki_current_fe{j}(ind_temp_lambda);
                             g_cross_comp_j = [g_cross_comp_j;diag(Lambda_ki_jj)*sum_theta_ki(ind_temp_theta)];
 
                             % Cases 5 and 6: For every stage point a scalarv alued constraint
@@ -99,7 +99,7 @@ end
                                 Lambda_ki_jj = Lambda_end_previous_fe{1}(ind_temp_lambda);
                                 g_cross_comp_j = [g_cross_comp_j;(Lambda_ki_jj)'*sum_theta_ki];
                             end
-                            Lambda_ki_jj = Lambda_ki_this_fe{j}(ind_temp_lambda);
+                            Lambda_ki_jj = Lambda_ki_current_fe{j}(ind_temp_lambda);
                             g_cross_comp_j = [g_cross_comp_j;(Lambda_ki_jj)'*sum_theta_ki(ind_temp_theta)];
 
                             % Cases 7 and 8: a vector or single valued constraint per every finite element.
@@ -130,7 +130,7 @@ end
                         end
                 end
             else
-                    g_cross_comp_j = diag(Lambda_ki_this_fe{j})*Theta_ki_this_fe{j};
+                    g_cross_comp_j = diag(Lambda_ki_current_fe{j})*Theta_ki_current_fe{j};
                     J_comp = J_comp+sum(g_cross_comp_j);
             end
 end

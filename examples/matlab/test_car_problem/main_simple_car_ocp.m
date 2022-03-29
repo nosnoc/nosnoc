@@ -29,19 +29,17 @@ import casadi.*
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options. 
                                         % Missing settings are anyway filled in latter with their respecitve values.
 % irk settings
-settings.n_s = 2;                            % Degree of interpolating polynomial
-settings.irk_scheme= 'radau';     % Collocation scheme: radau or legendre
+settings.n_s = 3;                   
+% settings.irk_scheme= 'radau';     
+settings.irk_scheme = 'Lobbato-IIIC';
+settings.irk_representation = 'differential';
 
 % MPCC settings
 settings.mpcc_mode = 5;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - elastic mode
 settings.s_elastic_max = 1e2;              % upper bound for elastic variables
-settings.s_elastic_min = 0;              % upper bound for elastic variables
 settings.s_elastic_0 = 1;              % upper bound for elastic variables
 settings.objective_scaling_direct = 1;      % in penalty methods  1: J = J+(1/p)*J_comp (direct)  , 0 : J = p*J+J_comp (inverse)
 settings.lp_initalization = 0;
-settings.initial_theta = 0.5*0;
-settings.initial_lambda = 0.5*0;
-settings.initial_mu = 0.5*0;
 % Penalty/Relaxation paraemetr
 settings.sigma_0 = 1e2;                     % starting smouothing parameter
 settings.sigma_N = 1e-14;                   % end smoothing parameter
@@ -80,6 +78,8 @@ settings.step_equilibration_penalty = 1e2;
 settings.convex_sigma_rho_constraint = 1;
 settings.sigma_penalty = 1e2;
 settings.rho_penalty = 1;
+
+% settings.irk_representation = 'differential'; 
 
 %% Time settings
 

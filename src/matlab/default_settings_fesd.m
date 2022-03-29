@@ -4,10 +4,12 @@ function [default_settings] = default_settings_fesd()
 %% General
 solver_name = 'solver_fesd';
 use_fesd = 1;
+casadi_symbolic_mode = 'MX';
 %% IRK anf FESD Settings
 n_s = 2;                            % Number of IRK stages
 irk_scheme = 'radau';     % IRK scheme: radau or legendre
 irk_representation = 'integral'; % are the IRK equations in differential from (derivative at stages are uknowns in the equations) or in integral form (state values are unkwnowns at stage points)
+lift_irk_differential = 1; % if differential mode is used, introduce new variables for intermediate stage values X_ki.
 cross_comp_mode = 3;
 gamma_h = 1;
 % initalization
@@ -25,10 +27,16 @@ couple_across_stages = 1;
 % h = T/N_stages;
 % h_k = h/N_finite_elements;
 %% General NLP/OCP Settings
-general_nonlinear_constraint = 0;
-general_nonlinear_constraint_at_collocation_points = 0;
+g_ineq_constraint = 0; % is nonlinear path constraint present (by default evaluated only on control grid points)
+g_ineq_at_fe = 0; % evaluate nonlinear path constraint at every finte element boundary
+g_ineq_at_stg = 0; % evaluate nonlinear path constraint at every stage 
+
+x_box_at_fe = 1; % evaluate box constraint for diff states at every finite element boundary point
+x_box_at_stg = 1; % evulate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
+
 terminal_constraint = 0;
 time_optimal_problem = 0;
+simple_v0_guess = 0;
 %% MPCC and Homotopy Settings	
 comp_tol = 1e-14;
 mpcc_mode = 5;
