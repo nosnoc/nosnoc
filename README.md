@@ -11,7 +11,7 @@ It enables the treatment of a broad class of nonsmooth systems in a unified way.
 **NOS-NOC** requires `CasADi` version 3.5.5.
 
 Currently, a `MATLAB` version is avilable. Versions to come will support a `python` interface as well.
-### Instalation for MATLAB
+### Installation for MATLAB
 
 
 1.  Install  `CasADi` and make sure it is added to your `MATLAB` path.
@@ -28,7 +28,7 @@ Currently, a `MATLAB` version is avilable. Versions to come will support a `pyth
 
 Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
 
-### Instalation for python
+### Installation for python
 
 A `python` version is currently under development.
 	 
