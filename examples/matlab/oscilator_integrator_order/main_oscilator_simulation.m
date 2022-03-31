@@ -37,28 +37,34 @@ h = T_sim/(N_stages*N_finite_elements);
 %% settings
 % collocation settings
 settings = default_settings_fesd();
-settings.n_s = 5;
+% settings.n_s = 5;
 % settings.irk_scheme = 'radau';     
-% settings.irk_representation = 'differential'; 
-% settings.irk_scheme = 'Radau-IIA'T; 
+% settings.irk_scheme = 'Radau-IIA'; 
 % settings.lift_irk_differential = 1;
-% settings.irk_scheme = 'Radau-IA';     
-settings.irk_scheme = 'Gauss-Legendre';     
-% settings.irk_scheme = 'Lobbato-IIIA';    
-% settings.irk_scheme = 'Lobbato-IIIB';    
-% settings.irk_scheme = 'Lobbato-IIIC';    
+% settings.irk_scheme = 'Radau-I';     
+% settings.irk_scheme = 'Gauss-Legendre';     
+% settings.lift_irk_differential = 0;
+% settings.irk_scheme = 'Lobbato-III'; 
+% settings.irk_scheme = 'Lobbato-IIIA';       
+% settings.irk_scheme = 'Lobbato-IIIB';  
+% settings.irk_scheme = 'Lobbato-IIIC';
+
+settings.irk_scheme = 'Explicit-RK';
+settings.n_s = 4;
+
 settings.irk_representation = 'differential'; 
 settings.mpcc_mode = 3;
 settings.s_elastic_max = 1e1;              % upper bound for elastic variables
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-16;
-settings.N_homotopy = 15;% number of steps
+settings.N_homotopy = 25;% number of steps
 settings.kappa = 0.05;                      % decrease rate
 % finite elements with switch detection
 settings.use_fesd = use_fesd;       % turn on moving finite elements algortihm
-settings.fesd_complementartiy_mode = 3;       % turn on moving finite elements algortihm
+settings.fesd_complementartiy_mode = 8;       % turn on moving finite elements algortihm
 settings.gamma_h = 1;
 settings.equidistant_control_grid = 0;
+
 %% Time settings
 omega = 2*pi;
 % analytic solution
@@ -124,6 +130,6 @@ ylim([min(h_opt_full)*0.8 max(h_opt_full)*1.2])
 xlabel('integration step')
 ylabel('$h$','Interpreter','latex');
 %% 
-[x1_opt(end);x2_opt(end)]
+% [x1_opt(end);x2_opt(end)]
 settings.irk_representation
 settings.irk_scheme

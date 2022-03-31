@@ -48,12 +48,17 @@ if N_stages*h ~= T
     model.T = N_stages*h;
 end
 
-
+%% develop
+integrator_output = 0;
 
 %% Create solver functions for integrator step
 settings.opts_ipopt.ipopt.print_level=0;
+settings.opts_ipopt.print_time=0;
+settings.opts_ipopt.ipopt.sb= 'yes';
+
+
+
 [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
-% [solver,solver_initalization, model,settings] = create_nlp_fesd_develop(model,settings);
 
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
@@ -69,9 +74,9 @@ complementarity_stats  = [];
 homotopy_iteration_stats = [];
 if exist('N_sim')
     %     || isempty(N_sim)
-    if N_sim*(N_stages*h) ~= T_sim
-        warning(' The given N_sim does not result in the desired, given T_sim. Do we fix it automatically now?')
-    end
+%     if N_sim*(N_stages*h) ~= T_sim
+%         warning(' The given N_sim does not result in the desired, given T_sim. Do we fix it automatically now?')
+%     end
 else
     N_sim = round(T_sim/(h*N_stages));
 end
@@ -82,11 +87,13 @@ for ii = 1:N_sim
     tic
     [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
     time_per_iter = [time_per_iter; toc];
-%     if stats.complementarity_stats(end) > 1e-3
-%         error('NLP Solver did not converge for the current FESD Problem. \n')
-%     end
-    fprintf('Integration step %d of %d (%2.2.f s /%2.2.f s )converged in %2.2f seconds. \n',ii,N_sim,ii*T,T_sim,time_per_iter(end));
 
+    if integrator_output
+        if stats.complementarity_stats(end) > 1e-3
+            error('NLP Solver did not converge for the current FESD Problem. \n')
+        end
+            fprintf('Integration step %d of %d (%2.2.f s /%2.2.f s) converged in %2.3f seconds. \n',ii,N_sim,ii*T,T_sim,time_per_iter(end));
+    end
     % Store differentail states
     w_opt = full(sol.x);
     diff_states = w_opt(ind_x);
@@ -146,7 +153,7 @@ total_time = sum(time_per_iter);
 fprintf('\n');
 fprintf('-------------------------------------------------------------------------------------\n');
 switch irk_scheme
-    case 'radau'
+    case 'radau' 
         fprintf('Integration procedure with the FESD Radau IIA - %d scheme completed in %2.3f seconds.\n',2*n_s-1,total_time);
     case 'legendre'
         fprintf('Integration procedure with the FESD Gauss-Legendre - %d scheme completed in %2.3f seconds.\n',2*n_s,total_time);

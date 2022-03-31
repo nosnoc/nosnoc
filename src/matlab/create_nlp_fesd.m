@@ -88,6 +88,10 @@ switch irk_representation
         end
     case 'differential'
         [A_irk,b_irk,c_irk,order_irk] = generatre_butcher_tableu(n_s,irk_scheme);
+        % sanity check
+        if ~(sum(b_irk) <= 1+1e-6 && sum(b_irk) >= 1-1e-6)
+            % error('IRK scheme not consistent. Try different IRK scheme and report this bug on github.');
+        end
         if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9;
             right_boundary_point_explicit  = 1;
         else

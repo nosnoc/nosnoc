@@ -58,6 +58,9 @@ complementarity_iter = 1;
         end
         tic
         sol = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',sigma_k);
+%         if clear_ipopt_verbose
+%             clc
+%         end
         cpu_time_iter = toc ;
         cpu_time = [cpu_time,cpu_time_iter];
         
@@ -79,7 +82,7 @@ complementarity_iter = 1;
         
         % update counter
         ii = ii+1;
-        fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed, complementarity resiudal %2.2e, CPU Iter Time:  %2.2f s .\n',ii,N_homotopy,sigma_k,complementarity_iter,cpu_time_iter);
+%         fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed, complementarity resiudal %2.2e, CPU Iter Time:  %2.2f s .\n',ii,N_homotopy,sigma_k,complementarity_iter,cpu_time_iter);
         if mpcc_mode >= 5
             fprintf('l_inf Slack value: %2.2e  .\n',w_opt(end));
 %             s_elastic_iter = w_opt(end);
@@ -96,7 +99,7 @@ complementarity_iter = 1;
         end
         
     end
-   fprintf('Total homotopy CPU Time : %4.4f s  ///  %2.2f min.  \n',sum(cpu_time),sum(cpu_time)/60);
+%    fprintf('Total homotopy CPU Time : %2.4f s  ///  %2.4f min.  \n',sum(cpu_time),sum(cpu_time)/60);
 %% output
 stats.complementarity_stats = complementarity_stats;
 stats.cpu_time = cpu_time;

@@ -43,6 +43,24 @@ end
 
 %% Butcher tabelus
 switch irk_scheme
+    case 'Radau-I'
+        order = 2*n_s-1;
+        switch n_s
+            case 2
+                A = [0 0;...
+                    1/3 1/3];
+                b = [1/4 3/4];
+                c = [0 2/3];
+            case 3
+                A = [0 0 0; ...
+                    (9+sqrt(6))/75 (24+sqrt(6))/120 (168-73*sqrt(6))/600;...
+                    (9-sqrt(6))/74 (168+73*sqrt(6))/600 (24-sqrt(6))/120];
+                b = [1/9 (16+sqrt(6))/36 (16-sqrt(6))/36];
+                c = [0 (6-sqrt(6))/10 (6+sqrt(6))/10];
+            otherwise
+                error('Radau-I IRK schemes avilable only for n_s =  {2,3}');
+        end
+
     case 'Radau-IA'
         order = 2*n_s-1;
         switch n_s
@@ -51,7 +69,8 @@ switch irk_scheme
                 b = [1];
                 c = [0];
             case 2
-                A = [1/4 -1/4; 1/4 5/12];
+                A = [1/4 -1/4;...
+                    1/4 5/12];
                 b = [1/4 3/4];
                 c = [0 2/3];
             case 3
@@ -225,51 +244,113 @@ switch irk_scheme
                 error('Gauss-Legendre IRK schemes avilable only for n_s =  {1,...,9}.');
         end
         %% LOBBATO
+    case 'Lobbato-III'
+        order = 2*n_s-2;
+        switch n_s
+            case 1
+                error('Lobbato-III with n_s = 1 does not exist.')
+            case 2
+                c = [0 1];
+                b = [0.5 0.5];
+                A = [ 0 0;...
+                    1 0];
+            case 3
+                c = [0 1/2 1];
+                b = [1/6 2/3 1/6];
+                A = [0 0 0;...
+                    1/4 1/4 0;...
+                    0 1 0];
+            case 4
+                c = [0 1/2-sqrt(5)/10 1/2+sqrt(5)/10 1];
+                b = [1/12 5/12 5/12 1/12];
+                A = [0 0 0 0 ;...
+                    (5+sqrt(5))/60 1/6 (15-7*sqrt(5))/60 0;...
+                    (5-sqrt(5))/60 (15+7*sqrt(5))/60 1/6 0;...
+                    1/6 (5-sqrt(5))/12 (5+sqrt(5))/12  0];
+            case 5
+                c = [0 (7-sqrt(21)/14) 1/2 (7+sqrt(21)/14) 1];
+                b = [1/20 49/180 16/45 49/180 1/20];
+                A = [0 0 0 0 0;...
+                    1/14 1/9 (13-3*sqrt(21))/63 (14-3*sqrt(21))/126 0;...
+                    1/32 (91+21*sqrt(21))/576 11/72 (91-21*sqrt(21))/576 0;...
+                    1/14 (14+3*sqrt(21))/126 (13+3*sqrt(21))/63 1/9 0;...
+                    0 7/18 2/9 7/18 0];
+            otherwise
+                error('Lobbato-III IRK schemes avilable only for n_s =  {2,3,4,5}.');
+        end
     case 'Lobbato-IIIA'
         order = 2*n_s-2;
         switch n_s
             case 1
+                error('Lobbato-IIIA IRK scheme does not exist for n_s =1.');
             case 2
                 c = [0 1];
-                b = [0.5 0.5];
-                A = [ 0 0; 0.5 0.5];
+                b = [1/2 1/2];
+                A = [ 0 0; ...
+                    1/2 1/2];
             case 3
-                c = [0 0.5 1];
+                c = [0 1/2 1];
                 b = [1/6 2/3 1/6];
-                A = [0 0 0; 5/25 1/3 -1/24; 1/6 2/3 1/6];
+                A = [0 0 0;...
+                    5/24 1/3 -1/24;...
+                    1/6 2/3 1/6];
             case 4
-                c = [0 (5-sqrt(5)/10) (5+sqrt(5)/10) 1];
+                c = [0 1/2-sqrt(5)/10 1/2+sqrt(5)/10 1];
                 b = [1/12 5/12 5/12 1/12];
                 A = [0 0 0 0 ;...
                     (11+sqrt(5))/120 (25-sqrt(5))/120 (25-13*sqrt(5))/120 (-1+sqrt(5))/120;...
-                    (11-sqrt(5))/120 (25+13*sqrt(5))/120 (25+5*sqrt(5))/120 (-1-sqrt(5))/120;...
+                    (11-sqrt(5))/120 (25+13*sqrt(5))/120 (25+sqrt(5))/120 (-1-sqrt(5))/120;...
                     1/12 5/12 5/12 1/12];
+            case 5
+                c = [0 (7-sqrt(21)/14) 1/2 (7+sqrt(21)/14) 1];
+                b = [1/20 49/180 16/45 49/180 1/20];
+                A = [0 0 0 0 0;...
+                    (119+3*sqrt(21))/1960 (343-9*sqrt(21))/2520 (392-96*sqrt(21))/2205 (343-69*sqrt(21))/2520 (-21+3*sqrt(21))/1960;...
+                    13/320 (392+105*sqrt(21))/2880 8/45 (392-105*sqrt(21))/2880 3/320;...
+                    (119-3*sqrt(21))/1960 (343+69*sqrt(21))/2520 (392+96*sqrt(21))/2205 (343+9*sqrt(21))/2520 (-21-3*sqrt(21))/1960;...
+                    1/20 49/180 16/45 49/180 1/20];
+
             otherwise
-                error('Lobbato-IIIA IRK schemes avilable only for n_s =  {2,3,4}');
+                error('Lobbato-IIIA IRK schemes avilable only for n_s =  {2,3,4,5}');
         end
 
 
     case 'Lobbato-IIIB'
         order = 2*n_s-2;
         switch n_s
+            case 1
+                error('Lobbato-IIIB IRK scheme does not exist for n_s =1.');
             case 2
+                % Accoriding to Butcher book this does not exist, but a table can be found in Hairers book.
                 c =[0 1];
                 b = [1/2 1/2];
-                A = [1/2 0; 1/2 0];
+                A = [1/2 0;...
+                    1/2 0];
             case 3
                 c = [0 1/2 1];
                 b = [1/6 2/3 1/6];
-                A = [1/6 -1/6 0 ; 1/6 1/3 0; 1/6 5/6 0];
+                A = [1/6 -1/6 0;...
+                    1/6 1/3 0;...
+                    1/6 5/6 0];
             case 4
-                c = [0 (5-sqrt(5))/10 (5+sqrt(5))/10 1];
+                c = [0 1/2-sqrt(5)/10 1/2+sqrt(5)/10 1];
                 b = [1/12 5/12 5/12 1/12];
-                A = [1/12 (-1-sqrt(5))/24 (-1+sqrt(5))/24 0; ...
-                    1/12 (25+sqrt(5))/120 (25-13*sqrt(5))/120 0; ...
-                    1/12 (25+13*sqrt(5))/120 (25-sqrt(5))/120 0; ...
-                    1/12 (11-sqrt(5))/24 (11+sqrt(5))/24 0; ...
+                A = [1/12 (-1-sqrt(5))/24       (-1+sqrt(5))/24      0; ...
+                     1/12 (25+sqrt(5))/120      (25-13*sqrt(5))/120  0; ...
+                     1/12 (25+13*sqrt(5))/120   (25-sqrt(5))/120     0; ...
+                     1/12 (11-sqrt(5))/24       (11+sqrt(5))/24    0];
+            case 5
+                c = [0 1/2-sqrt(21)/14 1/2 1/2+sqrt(21)/14 1];
+                b = [1/20 49/180 16/45 49/180 1/20];
+                A = [1/20    (-7-sqrt(21))/120       1/15                        (-7+sqrt(21))/120       0;...
+                     1/20    (343+9*sqrt(21))/2520   (56-15*sqrt(21))/315        (343-69*sqrt(21))/2520  0;...
+                     1/20    (49+12*sqrt(21))/360     8/45                       (49-12*sqrt(21))/360     0;...
+                     1/20    (343+69*sqrt(21))/2520  (56+15*sqrt(21))/315        (343-9*sqrt(21))/2520   0;...
+                     1/20    (119-3*sqrt(21))/360     13/45                      (119+3*sqrt(21))/360    0;...
                     ];
+
             otherwise
-                error('Lobbato-IIIB IRK schemes avilable only for n_s =  {2,3,4}');
+                error('Lobbato-IIIB IRK schemes avilable only for n_s =  {2,3,4,5}.');
         end
 
     case 'Lobbato-IIIC'
@@ -278,25 +359,84 @@ switch irk_scheme
             case 2
                 c =[0 1];
                 b = [1/2 1/2];
-                A = [1/2 -1/2; 1/2 1/2];
+                A = [1/2 -1/2;...
+                    1/2 1/2];
             case 3
                 c = [0 1/2 1];
                 b = [1/6 2/3 1/6];
-                A = [1/6 -1/3 1/6 ; 1/6 5/12 -1/12; 1/6 2/3 1/6];
+                A = [1/6 -1/3 1/6;...
+                    1/6 5/12 -1/12;...
+                    1/6 2/3 1/6];
             case 4
                 c = [0 (5-sqrt(5))/10 (5+sqrt(5))/10 1];
                 b = [1/12 5/12 5/12 1/12];
-                A = [1/12 (-sqrt(5))/12 (sqrt(5))/12 -1/12; ...
-                    1/12 1/4 (10-7*sqrt(5))/60 (sqrt(5))/60; ...
-                    1/12 (10+7*sqrt(5))/60 1/4 -(sqrt(5))/60; ...
-                    1/12 5/12 5/12 1/12; ...
+                A = [1/12  (-sqrt(5))/12    (sqrt(5))/12        -1/12; ...
+                    1/12  1/4              (10-7*sqrt(5))/60   (sqrt(5))/60; ...
+                    1/12  (10+7*sqrt(5))/60 1/4                -(sqrt(5))/60; ...
+                    1/12  5/12              5/12               1/12; ...
                     ];
+            case 5
+                c = [0 (7-sqrt(21)/14) 1/2 (7+sqrt(21)/14) 1];
+                b = [1/20 49/180 16/45 49/180 1/20];
+                A = [1/20   -7/60 2/15 -7/60 1/20;...
+                    1/20     29/180 (47-15*sqrt(21))/315 (203-30*sqrt(21))/1260 -3/140;...
+                    1/20    (329+105*sqrt(21))/2880 73/360 (329-105*sqrt(21))/2880 3/160;...
+                    1/20    (203+30*sqrt(21))/1260  (47+15*sqrt(21))/315 29/180 -3/140;...
+                    1/20 49/180 16/45 49/180 1/20];
+
             otherwise
-                error('Lobbato-IIIC IRK schemes avilable only for n_s =  {2,3,4}');
+                error('Lobbato-IIIC IRK schemes avilable only for n_s =  {2,3,4,5}.');
         end
-        % EXPLICIT RK
+
     case 'Explicit-RK'
-        error('not implemented yet')
+        switch n_s
+            case 1
+                % explicit Euler
+                A = [0];
+                c = [0];
+                b = [1];
+                order = 1;
+            case 2
+                % Heuns 2nd order
+                A  = [0 0; 1 0];
+                b = [1/2 1/2];
+                c = [0 1];
+                order = 2;
+            case 3
+                % Strong stability presserving Runge-Kutta
+                %                   A = [0 0 0; 1 0 0; 1/4 1/4 0];
+                %                   b = [1/6 1/6 2/3];
+                %                   c = [0 1 1/2];
+                % Kutta's 3rd oder method
+                A = [0 0 0; 1/2 0 0;-1 2 0];
+                b = [1/6 2/3 1/6];
+                c = [0 1/2 1];
+                order = 3;
+            case 4
+                %  "The" Runge-Kutta Methods
+                A = [0 0 0 0;...
+                    1/2 0 0 0;...
+                    0 1/2 0 0;...
+                    0 0 1 0];
+                b = [1/6 1/3 1/3 1/6];
+                c = [0 1/2 1/2 1];
+                order = 4;
+            case 5
+                error('noting implemented.')
+            case 6
+                % Nystrom(1925), Butcher's book pg 192
+                A = [0      0       0       0   0  0;...
+                    1/3     0       0       0   0  0;...
+                    4/25    6/25    0       0   0  0;...
+                    1/4     -3      15/5    0   0  0;...
+                    2/27     10/9   -50/81  8/81   0  0;...
+                    2/25     12/25   2/15  8/75   0  0;...
+                    ];
+                b = [23/192 0 125/192 0 -27/64 125/192];
+                c = [0 1/3 2/5 1 2/4 4/5];
+            otherwise
+                error('not implemented yet')
+        end
         % SEMI-EXPLICIT RK
     case 'Semi-Explicit-RK'
         error('not implemented yet')

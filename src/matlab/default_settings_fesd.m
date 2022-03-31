@@ -120,6 +120,7 @@ simulation_problem  = 0;
 %% Misc
 missing_settings_already_filled_in = 1;
 there_exist_free_x0 = 0;
+clear_ipopt_verbose = 0;
 %% Save data into struct
 names = who;
 
