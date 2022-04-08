@@ -39,6 +39,7 @@ function [solver,solver_initalization, model,settings] = create_nlp_fesd(model,s
 import casadi.*
 %% Reformulation of the PSS into a DCS
 [model,settings] = model_reformulation_fesd(model,settings);
+
 %% Fillin missing settings with default settings
 [settings] = fill_in_missing_settings(settings,model);
 
@@ -65,7 +66,7 @@ if use_fesd
         lbh = (1-gamma_h)*h_k/s_sot_min;
     end
     % initigal guess for the step-size
-    h0_k = h_k;
+    h0_k = h_k.*ones(N_stages,1);
 end
 
 %% Time optimal control problems without speed of time variables
@@ -116,7 +117,6 @@ g={};
 lbg = [];
 ubg = [];
 
-% X_ki = MX.sym('X0', n_x);
 eval(['X_ki  = ' casadi_symbolic_mode '.sym(''X0'',n_x);'])
 w = {w{:}, X_ki};
 
@@ -165,7 +165,6 @@ n_cross_comp = zeros(max(N_finite_elements),N_stages);
 for k=0:N_stages-1
     %% NLP variables for the controls
     if n_u > 0
-        %         Uk = MX.sym(['U_' num2str(k)],n_u);
         eval(['Uk  = ' casadi_symbolic_mode '.sym(''U_' num2str(k) ''',n_u);'])
         w = {w{:}, Uk};
         % intialize contros, lower and upper bounds
@@ -182,7 +181,6 @@ for k=0:N_stages-1
     if time_rescaling && use_speed_of_time_variables
         if local_speed_of_time_variable
             % at every stage
-            %             s_sot_k = MX.sym(['s_sot_' num2str(k)],1);
             eval(['s_sot_k  = ' casadi_symbolic_mode '.sym(''s_sot_' num2str(k) ''',1);'])
             w = {w{:}, s_sot_k};
             % intialize speed of time (sot), lower and upper bounds
@@ -195,7 +193,6 @@ for k=0:N_stages-1
         else
             % only once
             if k == 0
-                %                 s_sot_k = MX.sym(['s_sot_' num2str(k+1)],1);
                 eval(['s_sot_k  = ' casadi_symbolic_mode '.sym(''s_sot_' num2str(k+1) ''',1);'])
                 w = {w{:}, s_sot_k};
                 % intialize speed of time (sot), lower and upper bounds
@@ -219,19 +216,17 @@ for k=0:N_stages-1
     sum_h_ki_stage_k = 0; % Integral of the clock state (if not time freezing) on the current stage.
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
-
         if use_fesd
             % Define step-size variables, if FESD is used.
             if  k>0 || i>0
                 h_ki_previous = h_ki;
             end
             % define step-size
-            %             h_ki = MX.sym(['h_' num2str(k) '_' num2str(i)],1);
             eval(['h_ki  = ' casadi_symbolic_mode '.sym(''h_'  num2str(k) '_' num2str(i) ''',1);'])
             w = {w{:}, h_ki};
-            w0 = [w0; h0_k(i+1)];
-            ubw = [ubw;ubh(i+1)];
-            lbw = [lbw;lbh(i+1)];
+            w0 = [w0; h0_k(k+1)];
+            ubw = [ubw;ubh(k+1)];
+            lbw = [lbw;lbh(k+1)];
             % index sets for step-size variables
             ind_h = [ind_h,ind_total(end)+1:ind_total(end)+1];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
@@ -244,18 +239,20 @@ for k=0:N_stages-1
                 sum_of_s_sot_k = sum_of_s_sot_k + h_ki*s_sot_k;
             end
 
-            if (k > 0 && (i > 0 || couple_across_stages))
+%             if (k > 0 && (i > 0 || couple_across_stages))
+            if (i > 0 )
                 delta_h_ki = h_ki - h_ki_previous;
             else
                 delta_h_ki  = 0;
             end
 
             % Terms for heuristic step equilibration
-            if heuristic_step_equilibration && (k > 0 && (i > 0 || couple_across_stages))
-                % quadratic term for getting equidistant grid
+%             if heuristic_step_equilibration && (k > 0 && (i > 0 || couple_across_stages))
+%             if heuristic_step_equilibration && (i > 0 || couple_across_stages)
+            if heuristic_step_equilibration 
                 switch heuristic_step_equilibration_mode
                     case 1
-                        J_regularize_h  = J_regularize_h + (h_ki-h_k(i+1))^2;
+                        J_regularize_h  = J_regularize_h + (h_ki-h_k(k+1))^2;
                     case 2
                         J_regularize_h  = J_regularize_h + delta_h_ki^2;
                     otherwise
@@ -264,37 +261,44 @@ for k=0:N_stages-1
             end
             % initalize sums for cross comp.
             if k == 0 && i == 0
-                Z_kdq = zeros(n_z,1);
+                Z_kd_end = zeros(n_z,1);
             end
             % initalize with last stage point from previous finite element
-            sum_lambda_ki = Z_kdq(n_theta+1:2*n_theta);
-            % initalize sum of theta's (the pint at t_k is not included)
+            sum_lambda_ki = Z_kd_end(n_theta+1:2*n_theta);
+            % initalize sum of theta's (the pint at t_n is not included)
             sum_theta_ki = 0;
+
         end
 
         %% Define Variables at stage points (IRK stages) for the current finite elements
         switch irk_representation
             case 'integral'
-                X_kij = {};
+                X_ki_stages = {};
             case 'differential'
-                V_kij = {}; % for variables for derivative stage values
-                X_kij = {}; % for symbolic expressions of state stage values
-                X_kij_lift = {}; % for symbolic expressions if X_kij are lifted.
+                V_ki_stages = {}; % for variables for derivative stage values
+                X_ki_stages = {}; % for symbolic expressions of state stage values
+                X_ki_stages_lift = {}; % for symbolic expressions if X_ki_stages are lifted.
         end
         %algebraic states
-        Z_kij = {}; % collects the vector of x and z at every irk stage
+        Z_ki_stages = {}; % collects the vector of x and z at every irk stage
 
         Lambda_ki_current_fe = {};
         Theta_ki_current_fe = {};
         Mu_ki_current_fe = {};
+
+       if i>0 && use_fesd
+           %% TODO: resolve its use for proper cross comp
+            Lambda_end_previous_fe = {Z_kd_end(n_theta+1:2*n_theta)};
+        end
+
         % loop over all stage points to carry out defintions, initalizations and bounds
         for j=1:n_s
             switch irk_representation
                 case 'integral'
                     % define symbolic variables for values of diff. state a stage points
-                    %                     X_kij{j} = MX.sym(['X_' num2str(k) '_' num2str(i) '_' num2str(j)], n_x);
-                    eval(['X_kij{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
-                    w = {w{:}, X_kij{j}};
+                    %                     X_ki_stages{j} = MX.sym(['X_' num2str(k) '_' num2str(i) '_' num2str(j)], n_x);
+                    eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+                    w = {w{:}, X_ki_stages{j}};
                     % Index collector for algebraic and differential variables
                     ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
                     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
@@ -309,8 +313,8 @@ for k=0:N_stages-1
                     % Trajectory initial guess
                     w0 = [w0; x0];
                 case 'differential'
-                    eval(['V_kij{j}  = ' casadi_symbolic_mode '.sym(''V_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
-                    w = {w{:}, V_kij{j}};
+                    eval(['V_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''V_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+                    w = {w{:}, V_ki_stages{j}};
                     % Index collector for algebraic and differential variables
                     ind_v = [ind_v,ind_total(end)+1:ind_total(end)+n_x];
                     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
@@ -320,8 +324,8 @@ for k=0:N_stages-1
                     w0 = [w0; v0];
 
                     if lift_irk_differential
-                        eval(['X_kij{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
-                        w = {w{:}, X_kij{j}};
+                        eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+                        w = {w{:}, X_ki_stages{j}};
                         ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
                         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
                         % Bounds
@@ -338,8 +342,8 @@ for k=0:N_stages-1
             end
 
             % Note that for algebraic variablies, in both irk formulation modes the alg. variables are treated the same way.
-            eval(['Z_kij{j}  = ' casadi_symbolic_mode '.sym(''Z_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_z);'])
-            w = {w{:}, Z_kij{j}};
+            eval(['Z_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''Z_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_z);'])
+            w = {w{:}, Z_ki_stages{j}};
             % index sets
             ind_z = [ind_z,ind_total(end)+1:ind_total(end)+n_z];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_z];
@@ -350,17 +354,17 @@ for k=0:N_stages-1
 
             % Sum \theta and \lambda over the current finite element.
             if use_fesd
-                sum_lambda_ki =  sum_lambda_ki + Z_kij{j}(n_theta+1:2*n_lambda);
-                sum_theta_ki =  sum_theta_ki +  Z_kij{j}(1:n_theta);
+                sum_lambda_ki =  sum_lambda_ki + Z_ki_stages{j}(n_theta+1:2*n_lambda);
+                sum_theta_ki =  sum_theta_ki +  Z_ki_stages{j}(1:n_theta);
             end
             % collection of all lambda and theta for current finite element, they are used for cross complementarites and step equilibration
-            Theta_ki_current_fe = {Theta_ki_current_fe{:}, Z_kij{j}(1:n_theta)};
-            Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Z_kij{j}(n_theta+1:2*n_lambda)};
-            Mu_ki_current_fe = {Mu_ki_current_fe{:}, Z_kij{j}(end)};
+            Theta_ki_current_fe = {Theta_ki_current_fe{:}, Z_ki_stages{j}(1:n_theta)};
+            Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Z_ki_stages{j}(n_theta+1:2*n_lambda)};
+            Mu_ki_current_fe = {Mu_ki_current_fe{:}, Z_ki_stages{j}(end)};
         end
         % differential stage values (either as sym expresions or lifted variables)
         % define symbolic expression for diff state values at stage points. note that they are not degrees of
-        % freedom (V_kij) are, they are just used to increase readiblitiy.
+        % freedom (V_ki_stages) are, they are just used to increase readiblitiy.
         % X_{k,n,j} = x_n + h_n \sum_{i=1}^{n_s} a_{j,i}v_{n,j}
         if isequal(irk_representation,'differential')
             for j = 1:n_s
@@ -368,37 +372,37 @@ for k=0:N_stages-1
                 % irk equations for stages 
                 for r = 1:n_s
                         if use_fesd
-                            x_temp = x_temp + h_ki*A_irk(j,r)*V_kij{r};
+                            x_temp = x_temp + h_ki*A_irk(j,r)*V_ki_stages{r};
                         else
-                            x_temp = x_temp + h_k(k+1)*A_irk(j,r)*V_kij{r};
+                            x_temp = x_temp + h_k(k+1)*A_irk(j,r)*V_ki_stages{r};
                         end
                 end
                 if lift_irk_differential
-                    X_kij_lift{j} =  X_kij{j} - x_temp;
+                    X_ki_lift{j} =  X_ki_stages{j} - x_temp;
                 else
-                     X_kij{j} = x_temp;
+                     X_ki_stages{j} = x_temp;
                 end
             end
         end
 
         %% Additional variables in case of schemes not containting the boundary point as stage point, e.g., Gauss-Legendre schemes
-        if use_fesd && ~right_boundary_point_explicit
-            eval(['Theta_ki_end  = ' casadi_symbolic_mode '.sym(''Theta_' num2str(k) '_' num2str(i) '_end' ''',n_theta);'])
+%         if use_fesd && ~right_boundary_point_explicit &&  i< N_finite_elements(k+1)-1
+        if use_fesd && ~right_boundary_point_explicit &&  (k< N_stages-1 || i< N_finite_elements(k+1)-1)
             eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',n_theta);'])
-            eval(['Mu_ki_end  = ' casadi_symbolic_mode '.sym(''Mu_' num2str(k) '_' num2str(i) '_end' ''',1);'])
-            w = {w{:}, Theta_ki_end};
+            eval(['Mu_ki_end  = ' casadi_symbolic_mode '.sym(''Mu_' num2str(k) '_' num2str(i) '_end' ''',n_simplex);'])
             w = {w{:}, Lambda_ki_end};
             w = {w{:}, Mu_ki_end};
 
             Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
             Mu_ki_current_fe = {Mu_ki_current_fe{:}, Mu_ki_end};
+%             Theta_ki_current_fe = {Theta_ki_current_fe{:}, Theta_ki_end};
 
-            lbw = [lbw; lbz];
-            ubw = [ubw; ubz];
-            w0 = [w0; z0];
+            lbw = [lbw; lbz(n_theta+1:end)];
+            ubw = [ubw; ubz(n_theta+1:end)];
+            w0 = [w0; z0(n_theta+1:end)];
 
-            ind_boundary = [ind_boundary,ind_total(end)+1:(ind_total(end)+n_z)];
-            ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+n_z)];
+            ind_boundary = [ind_boundary,ind_total(end)+1:(ind_total(end)+n_z-n_theta)];
+            ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+n_z-n_theta)];
             
             sum_lambda_ki =  sum_lambda_ki + Lambda_ki_end;
         end
@@ -422,15 +426,15 @@ for k=0:N_stages-1
                     xp = C(1,j+1)*X_ki;
                     % Lagrange polynomial with values at state
                     for r=1:n_s
-                        xp = xp + C(r+1,j+1)*X_kij{r};
+                        xp = xp + C(r+1,j+1)*X_ki_stages{r};
                     end
                     % Evaulate Differetinal and Algebraic Equations at stage points
                     if n_u > 0
-                        [fj, qj] = f_x_fun(X_kij{j},Z_kij{j},Uk);
-                        gj = g_lp_fun(X_kij{j},Z_kij{j},Uk);
+                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                        gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                     else
-                        [fj, qj] = f_x_fun(X_kij{j},Z_kij{j});
-                        gj = g_lp_fun(X_kij{j},Z_kij{j});
+                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
+                        gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j});
                     end
                     if time_rescaling && use_speed_of_time_variables
                         % rescale equations
@@ -439,10 +443,10 @@ for k=0:N_stages-1
                         gj = s_sot_k*gj;
                     end
                     % Add contribution to the end state, Attention qj changes with time scaling!
-                    Xk_end = Xk_end + D(j+1)*X_kij{j};
+                    Xk_end = Xk_end + D(j+1)*X_ki_stages{j};
                     % Add contribution to quadrature function
                     if use_fesd
-                        J = J + B(j+1)*qj*h_k(i+1);
+                        J = J + B(j+1)*qj*h_k(k+1);
                     else
                         J = J + B(j+1)*qj*h;
                     end
@@ -456,11 +460,11 @@ for k=0:N_stages-1
                 case 'differential'
                     % Evaulate Differetinal and Algebraic Equations at stage points
                     if n_u > 0
-                        [fj, qj] = f_x_fun(X_kij{j},Z_kij{j},Uk);
-                        gj = g_lp_fun(X_kij{j},Z_kij{j},Uk);
+                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                        gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                     else
-                        [fj, qj] = f_x_fun(X_kij{j},Z_kij{j});
-                        gj = g_lp_fun(X_kij{j},Z_kij{j});
+                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
+                        gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j});
                     end
 
                     if time_rescaling && use_speed_of_time_variables
@@ -471,16 +475,16 @@ for k=0:N_stages-1
                     end
                     % Add contribution to the end state and quadrature term
                     if use_fesd
-                        Xk_end = Xk_end + h_ki*b_irk(j)*V_kij{j};
+                        Xk_end = Xk_end + h_ki*b_irk(j)*V_ki_stages{j};
                         J = J + h_ki*b_irk(j)*qj;
                     else
-                        Xk_end = Xk_end + h_k(k+1)*b_irk(j)*V_kij{j};
+                        Xk_end = Xk_end + h_k(k+1)*b_irk(j)*V_ki_stages{j};
                         J = J + h_k(k+1)*b_irk(j)*qj;
                     end
                     % Append IRK equations (differential part) to NLP constraint
                     % note that we dont distingiush if use_fesd is on/off
-                    % since it was done in the defintion of X_kij which enters f_j
-                    g = {g{:}, fj - V_kij{j}};
+                    % since it was done in the defintion of X_ki_stages which enters f_j
+                    g = {g{:}, fj - V_ki_stages{j}};
             end
             % Append IRK equations (algebraic part) to NLP constraint (same for both representations)
             g = {g{:}, gj};
@@ -489,14 +493,14 @@ for k=0:N_stages-1
 
 
             if lift_irk_differential
-                g = {g{:}, X_kij_lift{j}};
+                g = {g{:}, X_ki_lift{j}};
                 lbg = [lbg; zeros(n_x,1)];
                 ubg = [ubg; zeros(n_x,1)];
             end
 
             % General nonlinear constraint at stage points
             if g_ineq_constraint && g_ineq_at_stg
-                g_ineq_k = g_ineq_fun(X_kij{j},Uk);
+                g_ineq_k = g_ineq_fun(X_ki_stages{j},Uk);
                 g = {g{:}, g_ineq_k};
                 lbg = [lbg; g_ineq_lb];
                 ubg = [ubg; g_ineq_ub];
@@ -505,25 +509,31 @@ for k=0:N_stages-1
             %             % in case of differential, the box constraint on the stage are now linear constraints
             %             if isequal(irk_scheme,'differential') && x_box_at_stg &&~lift_irk_differential && 0
             %                 % TODO in integral this is default on, make this default off if differential
-            %                         g = {g{:};X_kij{j}};
+            %                         g = {g{:};X_ki_stages{j}};
             %                         lbg = [lbg; lbx];
             %                         ubg = [ubg; ubx];
             %             end
 
-            %% Standard and cross complementarity constraints
+            %% complementarity constraints (standard and cross)
             % Prepare Input for Cross Comp Function
             n_cross_comp_i = 0;
             comp_var_current_fe.J_comp = J_comp;
-            try
+            if use_fesd
                 comp_var_current_fe.sum_lambda_ki = sum_lambda_ki;
                 comp_var_current_fe.sum_theta_ki = sum_theta_ki;
-            catch
-                % not avilable if not use_fesd = 0. TODO: maybe still have
-                % it for different sparsity in the use_fesd =0 case.
             end
+            
+            % TODO: this should be outside the loop over j
             comp_var_current_fe.Lambda_ki_current_fe = Lambda_ki_current_fe;
             comp_var_current_fe.Theta_ki_current_fe = Theta_ki_current_fe;
-            current_index.k = k;  current_index.i = i; current_index.j = j;
+            if use_fesd && i>0
+                %% TODO: verify correctness
+            comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
+            end
+            % Updatet here
+            current_index.k = k;  current_index.i = i; current_index.j = j; 
+            current_index.n_total_stages = n_s;
+
             % Create cross comp constraints
             [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions,current_index);
 
@@ -546,11 +556,11 @@ for k=0:N_stages-1
             lbg = [lbg; g_comp_lb];
             ubg = [ubg; g_comp_ub];
         end
+
         %% Step equlibration
         step_equilibration_constrains;
 
         %% Continuity condition -  new NLP variable for state at end of a finite element
-    
         % Conntinuity conditions for differential state
         %         X_ki = MX.sym(['X_' num2str(k+1) '_' num2str(i+1)], n_x);
         eval(['X_ki  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k+1) '_' num2str(i+1) ''',n_x);']);
@@ -585,24 +595,27 @@ for k=0:N_stages-1
         %% G_LP constraint for boundary point and continuity of algebraic variables.
         if use_fesd
             if right_boundary_point_explicit
-                Z_kdq = Z_kij{n_s};
+                Z_kd_end = Z_ki_stages{n_s};
             else
-                Z_kdq = [Theta_ki_end;Lambda_ki_end;Mu_ki_end];
+                Z_kd_end = [zeros(n_theta,1);Lambda_ki_end;Mu_ki_end];
             end
         end
 
-        if ~right_boundary_point_explicit && use_fesd && k< N_stages-1
+%         if ~right_boundary_point_explicit && use_fesd && i< N_finite_elements(k+1)-1
+        if ~right_boundary_point_explicit && use_fesd && (k< N_stages-1 || i< N_finite_elements(k+1)-1)
               if n_u > 0
-                      gj = g_lp_fun(X_ki,Z_kdq,Uk);
-                   else
-                      gj = g_lp_fun(X_ki,Z_kdq);
+                      temp = g_lp_fun(X_ki,Z_kd_end,Uk);
+                      gj = temp(1:end-1);
+              else
+                      temp = g_lp_fun(X_ki,Z_kd_end);
+                      gj = temp(1:end-1);
                end
             g = {g{:}, gj};
-            lbg = [lbg; zeros(n_algebraic_constraints,1)];
-            ubg = [ubg; zeros(n_algebraic_constraints,1)];
-        end
-            % Continuity conditions for the boundary algebraic variables
-        
+%             lbg = [lbg; zeros(n_algebraic_constraints,1)];
+%             ubg = [ubg; zeros(n_algebraic_constraints,1)];
+            lbg = [lbg; zeros(n_algebraic_constraints-1,1)];
+            ubg = [ubg; zeros(n_algebraic_constraints-1,1)];
+        end      
     end
 
     %% Equdistant grid in numerical time (Multiple-shooting type discretization)
@@ -835,6 +848,8 @@ if step_equilibration
     nu_fun = Function('nu_fun', {vertcat(w{:})},{nu_vector});
 end
 
+%% settings update
+settings.right_boundary_point_explicit  = right_boundary_point_explicit  ;
 %% Outputs
 model.prob = prob;
 model.solver = solver;

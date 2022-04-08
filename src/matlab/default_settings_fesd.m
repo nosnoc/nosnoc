@@ -7,7 +7,7 @@ use_fesd = 1;
 casadi_symbolic_mode = 'MX';
 %% IRK anf FESD Settings
 n_s = 2;                            % Number of IRK stages
-irk_scheme = 'radau';     % IRK scheme: radau or legendre
+irk_scheme = 'radau';     % RK scheme
 irk_representation = 'integral'; % are the IRK equations in differential from (derivative at stages are uknowns in the equations) or in integral form (state values are unkwnowns at stage points)
 lift_irk_differential = 1; % if differential mode is used, introduce new variables for intermediate stage values X_ki.
 cross_comp_mode = 3;
@@ -26,6 +26,9 @@ couple_across_stages = 1;
 % T = 2;
 % h = T/N_stages;
 % h_k = h/N_finite_elements;
+list_of_all_rk_schemes = {'radau','legendre','Radau-IIA','Gauss-Legendre','Radau-I','Radau-IA',...
+                           'Lobatto-III','Lobatto-IIIA','Lobatto-IIIB','Lobatto-IIIC',...
+                           'Explicit-RK'};
 %% General NLP/OCP Settings
 g_ineq_constraint = 0; % is nonlinear path constraint present (by default evaluated only on control grid points)
 g_ineq_at_fe = 0; % evaluate nonlinear path constraint at every finte element boundary
@@ -68,6 +71,8 @@ sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0);
 nonlinear_sigma_rho_constraint = 1;
 convex_sigma_rho_constraint = 0;
 
+ratio_for_homotopy_stop = 0.75;
+
 %% Step equilibration	
 regularize_h =1;
 rho_h = 1;
@@ -92,17 +97,23 @@ time_freezing  = 0;
 time_optimal_problem = 0;
 time_rescaling = 0;
 use_speed_of_time_variables = 1;
-local_speed_of_time_variable = 1;
+local_speed_of_time_variable = 0;
 stagewise_clock_constraint = 1;
 s_sot0 = 1;
 s_sot_max =	25;
 s_sot_min =	1/s_sot_max;
 impose_terminal_phyisical_time = 1;
 
+%% Verbose
+print_level = 3;
+opts_ipopt.ipopt.print_level = 0;
+opts_ipopt.print_time = 0;
+opts_ipopt.ipopt.sb= 'yes';
+
 %% IPOPT Settings
 opts_ipopt.verbose = false;
 opts_ipopt.ipopt.max_iter = 500;
-opts_ipopt.ipopt.print_level = 5;
+% opts_ipopt.ipopt.print_level = 5;
 opts_ipopt.ipopt.bound_relax_factor = 0;
 tol_ipopt = 1e-16;
 opts_ipopt.ipopt.tol = tol_ipopt;
@@ -121,6 +132,9 @@ simulation_problem  = 0;
 missing_settings_already_filled_in = 1;
 there_exist_free_x0 = 0;
 clear_ipopt_verbose = 0;
+output_stage_values = 0;
+
+
 %% Save data into struct
 names = who;
 

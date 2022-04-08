@@ -19,48 +19,17 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [settings] = refine_settings(settings);
-
+function [settings] = refine_settings_integrator(settings);
+% This functions addapts the default/user provided settings so that they
+% make sense for the integrator.
 %% Unfold user structure
 unfold_struct(settings,'caller')
 
-%% MPCC and Homotopy
-% sigma_k = sigma_0;
-
-% Modify MPCC Settings
-if mpcc_mode == 1
-   N_homotopy = 1;
-   sigma_0 = 0;
-   sigma_N = 0;
-   mpcc_mode = 3;
-end
-
-if mpcc_mode == 4 || mpcc_mode == 10
-   cross_complementarity_mode = 10;
-end
-
-if mpcc_mode >= 8 && mpcc_mode <= 10;
-    s_elastic_max = inf;
-    N_homotopy = 1;   
-end
-
+%% Number of stages and times.
 if equidistant_control_grid == 0
     couple_across_stages = 1;
 end
 
-if nonlinear_sigma_rho_constraint
-    convex_sigma_rho_constraint = 1;
-end
-
-%% Correct contradictring settings, complete missing data (if any)
-step_equilibration = step_equilibration*use_fesd;
-there_exist_free_x0 = exist('ind_free_x0');
-
-    % if use_fesd & N_finite_elements < 2
-    %     N_finite_elements = 2;
-    %     warrning('Info:In FESD there must be at least 2 finite elements per control interval. Setting N_finite_elements = 2.')
-    % end
-%% Time Scaling
 
 if (time_freezing || time_optimal_problem) == 1
     time_rescaling = 1;

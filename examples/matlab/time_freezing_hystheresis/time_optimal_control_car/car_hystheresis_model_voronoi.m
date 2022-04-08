@@ -42,6 +42,7 @@ if fuel_cost_same
 else
     Pn = 1;
     Pt = 10;
+%     Pt = 100;
 end
 %% Inital Value
 x0 = [q0;v0;L0;a0;t0];
@@ -63,12 +64,6 @@ v = MX.sym('v');
 L = MX.sym('L');
 w = MX.sym('w');
 t = MX.sym('t');
-
-% q = SX.sym('q');
-% v = SX.sym('v');
-% L = SX.sym('L');
-% w = SX.sym('w');
-% t = SX.sym('t');
 
 
 x = [q;v;L;w;t];
@@ -161,7 +156,8 @@ end
 F = f_1;
 %% objective
 
-f_q = fuel_cost_on*L+(1-fuel_cost_on)*(1-time_optimal_problem)*u^2;
+% f_q = fuel_cost_on*L+(1-fuel_cost_on)*(1-time_optimal_problem)*u^2;
+f_q = fuel_cost_on*L;
 % Terminal Cost
 % f_q_T = 0;
 

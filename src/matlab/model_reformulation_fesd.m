@@ -25,6 +25,42 @@ import casadi.*
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller')
 
+%% Sanity check of RK Schmes
+if ~any(strcmp(list_of_all_rk_schemes,irk_scheme))
+    if print_level >=1
+    fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is not supported, switching to Radau-IIA. \n'])
+    fprintf(['See settings.list_of_all_rk_schemes in the default settings for an overview. \n'])
+    end
+    irk_scheme = 'Radau-IIA';
+    settings.irk_scheme  = irk_scheme ;
+end
+
+if any(strcmp(list_of_all_rk_schemes(5:end),irk_scheme))
+    if print_level >=1
+    fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is only avilabile in the differential representation.\n']);
+    end
+    irk_representation = 'differential';
+    settings.irk_representation = irk_representation;
+end
+
+
+%% Some settings refinments
+% update prin_level
+if print_level <4
+settings.opts_ipopt.ipopt.print_level=0;
+settings.opts_ipopt.print_time=0;
+settings.opts_ipopt.ipopt.sb= 'yes';
+elseif print_level == 4
+    settings.opts_ipopt.ipopt.print_level=0;
+    settings.opts_ipopt.print_time=1;
+    settings.opts_ipopt.ipopt.sb= 'no';
+else
+     settings.opts_ipopt.ipopt.print_level = 5;
+end
+
+if settings.time_freezing
+    settings.local_speed_of_time_variable = 1;
+end
 %% Determine is the SX or MX mode in CasADi used.
 casadi_symbolic_mode = model.x(1).type_name();
 settings.casadi_symbolic_mode  = casadi_symbolic_mode;
@@ -35,7 +71,9 @@ h = T/N_stages;
 N_finite_elements = N_finite_elements(:); % make a column vector of the input
 if length(N_finite_elements) > N_stages
     N_finite_elements = N_finite_elements(1:N_stages);
+    if print_level >=1
     fprintf('Info: Provided N_finite_elements had more antries then N_stages, the surplus of entries was removed. \n')
+    end
 end
 if length(N_finite_elements) == 1
     N_finite_elements = N_finite_elements*ones(N_stages,1);
@@ -99,19 +137,30 @@ if exist('u')
     end
 else
     n_u = 0;
-    warning('No control vector u is provided.')
+    if print_level >=1
+    fprintf('Info: No control vector u is provided. \n')
+    end
     lbu = [];
     ubu = [];
 end
+
+if n_u > 0
+    settings.couple_across_stages = 0;
+end
+
 %% Stage and terminal costs
 if ~exist('f_q')
+    if print_level >=1
     fprintf('Info: No stage cost is provided. \n')
+    end
     f_q = 0;
 end
 if exist('f_q_T')
     terminal_cost = 1;
 else
-    fprintf('Info: No terminal cost is provided. \n')
+    if print_level >=1
+        fprintf('Info: No terminal cost is provided. \n')
+    end
     f_q_T = 0;
 end
 
@@ -138,7 +187,9 @@ if exist('g_ineq')
 else
     n_g_ineq = 0;
     g_ineq_constraint  = 0;
-    fprintf('Info: No path constraints are provided. \n')
+    if print_level >=1
+     fprintf('Info: No path constraints are provided. \n')
+    end
 end
 %% Terminal constraints
 if exist('g_terminal')
@@ -163,7 +214,9 @@ if exist('g_terminal')
 else
     terminal_constraint = 0;
     n_g_terminal = 0;
+    if print_level >=1
     fprintf('Info: No terminal constraints are provided. \n')
+    end
 end
 %% Stewart's representation of the sets R_i and discirimant functions g_i
 g_ind_all = [ ];
@@ -377,35 +430,35 @@ f_q_T_fun = Function('f_q_T',{x},{f_q_T});
 
 
 %% Function for continious time output of algebraic variables.
-%% TODO: remove this after new treatmanet of boudnary is introduced;
-try
-[B,C,D,tau_root] = collocation_times_fesd(n_s,irk_scheme);
-tau_col = tau_root(2:end);
-eval(['tau = ' casadi_symbolic_mode '.sym(''tau'');'])
-eval(['h_scale = ' casadi_symbolic_mode '.sym(''h_scale'');']) % Rescale the intevral from [0 1] to [0 h_scale]; h_scale will usually be the step size
-eval(['y = ' casadi_symbolic_mode '.sym(''y'',n_s);'])
-eval(['y_vec = ' casadi_symbolic_mode '.sym(''y_vec'',n_s,n_theta);'])
-
-lagrange_poly = 0;
-m_lagrange = [];
-for ii = 1:n_s
-    term_ii = y(ii);
-    m_temp = 1;
-    tau_scaled= h_scale*tau;
-    tau_col_scaled = h_scale*tau_col;
-    for jj = 1:n_s
-        if jj~=ii
-            term_ii = term_ii.*((tau_scaled-tau_col_scaled(jj))./(tau_col_scaled(ii)-tau_col_scaled(jj)));
-            m_temp  = m_temp*((1-tau_col(jj))./(tau_col(ii)-tau_col(jj)));
-        end
-    end
-    m_lagrange = [m_lagrange,m_temp];
-    lagrange_poly = lagrange_poly + term_ii;
-end
-lagrange_poly_fun = Function('lagrange_poly',{y,tau,h_scale},{lagrange_poly}); % note that this is a scalar function
-catch
-
-end
+% %% TODO: remove this after new treatmanet of boudnary is introduced;
+% try
+% [B,C,D,tau_root] = collocation_times_fesd(n_s,irk_scheme);
+% tau_col = tau_root(2:end);
+% eval(['tau = ' casadi_symbolic_mode '.sym(''tau'');'])
+% eval(['h_scale = ' casadi_symbolic_mode '.sym(''h_scale'');']) % Rescale the intevral from [0 1] to [0 h_scale]; h_scale will usually be the step size
+% eval(['y = ' casadi_symbolic_mode '.sym(''y'',n_s);'])
+% eval(['y_vec = ' casadi_symbolic_mode '.sym(''y_vec'',n_s,n_theta);'])
+% 
+% lagrange_poly = 0;
+% m_lagrange = [];
+% for ii = 1:n_s
+%     term_ii = y(ii);
+%     m_temp = 1;
+%     tau_scaled= h_scale*tau;
+%     tau_col_scaled = h_scale*tau_col;
+%     for jj = 1:n_s
+%         if jj~=ii
+%             term_ii = term_ii.*((tau_scaled-tau_col_scaled(jj))./(tau_col_scaled(ii)-tau_col_scaled(jj)));
+%             m_temp  = m_temp*((1-tau_col(jj))./(tau_col(ii)-tau_col(jj)));
+%         end
+%     end
+%     m_lagrange = [m_lagrange,m_temp];
+%     lagrange_poly = lagrange_poly + term_ii;
+% end
+% lagrange_poly_fun = Function('lagrange_poly',{y,tau,h_scale},{lagrange_poly}); % note that this is a scalar function
+% catch
+% 
+% end
 %% Intigal guess for state derivatives at stage points
 if isequal(irk_representation,'differential')
     if simple_v0_guess
@@ -464,12 +517,12 @@ model.f_J_cc = f_J_cc;
 model.g_ind_all_fun = g_ind_all_fun;
 model.c_fun = c_fun;
 
-try
-model.lagrange_poly_fun = lagrange_poly_fun;
-model.m_lagrange = m_lagrange;
-catch
-    
-end
+% try
+% model.lagrange_poly_fun = lagrange_poly_fun;
+% model.m_lagrange = m_lagrange;
+% catch
+%     
+% end
 % Some Dimensions;
 model.n_x = n_x;
 model.n_z = n_z;

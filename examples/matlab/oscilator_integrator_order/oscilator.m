@@ -31,6 +31,8 @@ end
 %% Model parameters
 
 omega = 2*pi;
+
+% omega = pi;
 A1 = [1 omega;...
     -omega 1];
 A2 = [1 -omega;...
@@ -40,12 +42,17 @@ if smooth_model
 end
 %% Inital Value
 x0 = [exp(-1);0];
+% x0 = [2*exp(-1);0];
+if ~exist('R_osc')
+    R_osc = 1;
+end
+
 %% Variable defintion
 x1 = MX.sym('x1');
 x2 = MX.sym('x2');
 x = [x1;x2];
 % every constraint funcion corresponds to a simplex (note that the c_i might be vector valued)
-c = x1^2+x2^2-1;
+c = x1^2+x2^2-R_osc^2;
 % sign matrix for the modes
 S = [1;-1];
 c = [c];

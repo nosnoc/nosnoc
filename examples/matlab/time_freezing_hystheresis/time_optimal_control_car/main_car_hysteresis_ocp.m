@@ -34,7 +34,6 @@ settings.opts_ipopt.ipopt.print_level = 0;
 settings.initial_theta = 1/2;
 settings.initial_lambda = 1/2;
 settings.initial_mu = 1/2;
-
 % Step Equlibration
 settings.step_equilibration  = 1;
 settings.step_equilibration_mode  = 1;

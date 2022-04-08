@@ -21,10 +21,10 @@
 %
 function [A,b,c,order] = generatre_butcher_tableu(n_s,irk_scheme)
 
-% currently supported schmes are: Radau-IA, Radau-IIA, Gauss-Legendre, Lobbato-IIIA, Lobbato-IIIB, Lobbato-IIIC
+% currently supported schmes are: Radau-IA, Radau-IIA, Gauss-Legendre, Lobatto-IIIA, Lobatto-IIIB, Lobatto-IIIC
 %  if radau is passed then Radau-IIA is used
 %  if legendre is passed then Gauss-Legendre is used
-%  if lobbato is passed then Lobbato-IIIC is used
+%  if Lobatto is passed then Lobatto-IIIC is used
 
 order = [];
 A = [];
@@ -37,8 +37,8 @@ end
 if isequal(irk_scheme,'legendre')
     irk_scheme = 'Gauss-Legendre';
 end
-if isequal(irk_scheme,'lobbato')
-    irk_scheme = 'Lobbato-IIIC';
+if isequal(irk_scheme,'Lobatto')
+    irk_scheme = 'Lobatto-IIIC';
 end
 
 %% Butcher tabelus
@@ -243,12 +243,12 @@ switch irk_scheme
             otherwise
                 error('Gauss-Legendre IRK schemes avilable only for n_s =  {1,...,9}.');
         end
-        %% LOBBATO
-    case 'Lobbato-III'
+        %% Lobatto
+    case 'Lobatto-III'
         order = 2*n_s-2;
         switch n_s
             case 1
-                error('Lobbato-III with n_s = 1 does not exist.')
+                error('Lobatto-III with n_s = 1 does not exist.')
             case 2
                 c = [0 1];
                 b = [0.5 0.5];
@@ -276,13 +276,13 @@ switch irk_scheme
                     1/14 (14+3*sqrt(21))/126 (13+3*sqrt(21))/63 1/9 0;...
                     0 7/18 2/9 7/18 0];
             otherwise
-                error('Lobbato-III IRK schemes avilable only for n_s =  {2,3,4,5}.');
+                error('Lobatto-III IRK schemes avilable only for n_s =  {2,3,4,5}.');
         end
-    case 'Lobbato-IIIA'
+    case 'Lobatto-IIIA'
         order = 2*n_s-2;
         switch n_s
             case 1
-                error('Lobbato-IIIA IRK scheme does not exist for n_s =1.');
+                error('Lobatto-IIIA IRK scheme does not exist for n_s =1.');
             case 2
                 c = [0 1];
                 b = [1/2 1/2];
@@ -311,15 +311,15 @@ switch irk_scheme
                     1/20 49/180 16/45 49/180 1/20];
 
             otherwise
-                error('Lobbato-IIIA IRK schemes avilable only for n_s =  {2,3,4,5}');
+                error('Lobatto-IIIA IRK schemes avilable only for n_s =  {2,3,4,5}');
         end
 
 
-    case 'Lobbato-IIIB'
+    case 'Lobatto-IIIB'
         order = 2*n_s-2;
         switch n_s
             case 1
-                error('Lobbato-IIIB IRK scheme does not exist for n_s =1.');
+                error('Lobatto-IIIB IRK scheme does not exist for n_s =1.');
             case 2
                 % Accoriding to Butcher book this does not exist, but a table can be found in Hairers book.
                 c =[0 1];
@@ -350,10 +350,10 @@ switch irk_scheme
                     ];
 
             otherwise
-                error('Lobbato-IIIB IRK schemes avilable only for n_s =  {2,3,4,5}.');
+                error('Lobatto-IIIB IRK schemes avilable only for n_s =  {2,3,4,5}.');
         end
 
-    case 'Lobbato-IIIC'
+    case 'Lobatto-IIIC'
         order = 2*n_s-2;
         switch n_s
             case 2
@@ -385,7 +385,7 @@ switch irk_scheme
                     1/20 49/180 16/45 49/180 1/20];
 
             otherwise
-                error('Lobbato-IIIC IRK schemes avilable only for n_s =  {2,3,4,5}.');
+                error('Lobatto-IIIC IRK schemes avilable only for n_s =  {2,3,4,5}.');
         end
 
     case 'Explicit-RK'
@@ -404,13 +404,19 @@ switch irk_scheme
                 order = 2;
             case 3
                 % Strong stability presserving Runge-Kutta
-                %                   A = [0 0 0; 1 0 0; 1/4 1/4 0];
-                %                   b = [1/6 1/6 2/3];
-                %                   c = [0 1 1/2];
+                                  A = [0 0 0; 1 0 0; 1/4 1/4 0];
+                                  b = [1/6 1/6 2/3];
+                                  c = [0 1 1/2];
                 % Kutta's 3rd oder method
-                A = [0 0 0; 1/2 0 0;-1 2 0];
-                b = [1/6 2/3 1/6];
-                c = [0 1/2 1];
+%                 A = [0 0 0; 1/2 0 0;-1 2 0];
+%                 b = [1/6 2/3 1/6];
+%                 c = [0 1/2 1];
+                    % Heun's 3rd order
+                A = [0 0 0;...
+                     1/3 0 0;...
+                     0 2/3 0];
+                b = [1/4 0 3/4];
+                c = [0 1/3 2/3];
                 order = 3;
             case 4
                 %  "The" Runge-Kutta Methods
@@ -443,7 +449,7 @@ switch irk_scheme
         % INDEX2 TAILORED RK
         % BUTCHER METHODS
     otherwise
-        error('Option does not exist. Please pick some of the following options: IRK scheme: Radau-IA, Radau-IIA, Gauss-Legendre, Lobbato-IIIA, Lobbato-IIIB, Lobbato-IIIC')
+        error('Option does not exist. Please pick some of the following options: IRK scheme: Radau-IA, Radau-IIA, Gauss-Legendre, Lobatto-IIIA, Lobatto-IIIB, Lobatto-IIIC')
 end
 
 end

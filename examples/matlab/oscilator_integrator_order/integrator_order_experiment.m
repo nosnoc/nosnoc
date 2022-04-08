@@ -26,65 +26,54 @@ import casadi.*
 unfold_struct(settings,'caller')
 %% Benchmark settings
 % discretization settings
-N_stages  = 3;
+N_stages  = 2;
 N_finite_elements = 1;
-% n_s_vec = [2 3];
-
 list_of_markers = {'-o','-d','-s','-x','-v','-^','-<','->','-*'};
 %% Experiment Set Up
 % preproces of step-size  %to avoid exact switch detection by hitting the switch exactly with the given grid
-T = 2;
+T_sim = pi/2;
 ts = 1; % eact switching time
-
 N_sim_vec = round(logspace(log10(N_start),log10(N_end),N_samples));
 N_sim_vec = round(N_sim_vec);
 % make all number odd
-N_sim_vec(mod(N_sim_vec,2)==0) = N_sim_vec(mod(N_sim_vec,2)==0)+1;
-% vector with nonminal step sizes of "outer ingeration steps"
-h_sim_vec = T./N_sim_vec;
-% length of fintie elements
-h_i = h_sim_vec/(N_finite_elements*N_stages);
-% number of finite elements until switching point
-Ns = ts./h_i;
-% sanity check
-if any(abs(Ns - round(Ns)) == 0)
-    error('exact switch detection just by chance');
-end
-
-
+% N_sim_vec(mod(N_sim_vec,2)==0) = N_sim_vec(mod(N_sim_vec,2)==0)+1;
+% % vector with nonminal step sizes of "outer ingeration steps"
+h_sim_vec = T_sim./N_sim_vec;
+% % length of fintie elements
+% h_i = h_sim_vec/(N_finite_elements*N_stages);
+% % number of finite elements until switching point
+% Ns = ts./h_i;
+% % sanity check
+% if any(abs(Ns - round(Ns)) == 0)
+%     error('exact switch detection just by chance');
+% end
+% 
 legend_str = [legend_str(n_s_vec)];
 
 %% settings
 settings = default_settings_fesd();
-
-
 settings.irk_representation = irk_representation;
 settings.irk_scheme = irk_scheme;
 settings.use_fesd = use_fesd;
-
-
+settings.print_level = 0;
 settings.mpcc_mode = 3;
 % settings.mpcc_mode = 5;
-settings.s_elastic_max = 1e1;              % upper bound for elastic variables
 comp_tol = 1e-16;
 settings.comp_tol = comp_tol;
-settings.N_homotopy = 17 ;% number of steps
+settings.N_homotopy = 40 ;% number of steps
 settings.kappa = 0.05;                      % decrease rate
-settings.fesd_complementartiy_mode = 8;       % turn on moving finite elements algortihm
-settings.gamma_h = 1;
+settings.fesd_complementartiy_mode = 3;       % turn on moving finite elements algortihm
 settings.equidistant_control_grid = 0;
 settings.use_previous_solution_as_initial_guess = 1; % warm start integrator
 %% Time settings
+% T = 2;                            
 omega = 2*pi;
-% analytic solution
-x_star = [exp(1);0];
-s_star = [exp(2)  0; exp(2)*2*omega exp(2)];
+T = T_sim;
+x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 t1_star = 1; % optimal siwtch points
-T = 2;                            % time budget of transformed pseudo time
-T_sim = T;
+
 model.N_stages = N_stages;
 model.N_finite_elements = N_finite_elements;
-
 model.smooth_model = 0;
 %% for results storing
 errors_all_experiments = [];
@@ -105,34 +94,29 @@ for i = 1:length(n_s_vec)
     M_true_current_experiment  = [];
 
     for  j = 1:length(N_sim_vec)
-        h_outside = h_sim_vec(j); % integrator step of FESD (outside step length)
-        N_sim = T_sim/h_outside;
-        h_inside = h_outside/(N_finite_elements);    % nominal step lenght of a single finite elemnt;
-        h = h_inside;
+        
+        N_sim = N_sim_vec(j);
+        h_sim = T_sim/(N_sim*N_stages*N_finite_elements);
         M_true_current = N_sim*n_col;
-        M = M_true_current;
+        
         
         % update step size
-        model.T = h_outside;
-        model.T_sim = h_outside;
-        model.h = h_inside/N_stages;
+        model.T_sim = T_sim;
         model.N_sim = N_sim;
-        fprintf([settings.irk_scheme ' scheme with n_s = %d, total stage points: %d , run: %d of %d \n'],n_s,M_true_current,j,length(N_sim_vec))
         % generate new model with updated settings;
         model = oscilator(model);
-        [results,stats] = integrator_fesd(model,settings);
-
+        [results,stats,model] = integrator_fesd(model,settings);
         % numerical error
         x_fesd = results.x_res(:,end);
         error_x = norm(x_fesd-x_star,"inf");
         max_complementarity_exp = max(stats.complementarity_stats);
-
-        errors_current_experiment = [errors_current_experiment,error_x];
-        fprintf('Error with (h = %2.5f, M = %d, d = %d ) is %5.2e : \n',h,M,n_s,error_x);
+        fprintf([settings.irk_scheme ' scheme with n_s = %d, total stage points: %d , run: %d of %d \n'],n_s,M_true_current,j,length(N_sim_vec))
+        fprintf('Error with (h = %2.5f, M = %d, n_s = %d ) is %5.2e : \n',h_sim ,M_true_current,n_s,error_x);
         fprintf('Complementarity residual %5.2e : \n',max_complementarity_exp);
         % save date current experiemnt
+        errors_current_experiment = [errors_current_experiment,error_x];
         complementarity_current_experiment = [complementarity_current_experiment,max_complementarity_exp];
-        nominal_h_current_experiment = [nominal_h_current_experiment,h];
+        nominal_h_current_experiment = [nominal_h_current_experiment,h_sim];
         M_true_current_experiment = [M_true_current_experiment,M_true_current];
     end
     errors_all_experiments = [errors_all_experiments;errors_current_experiment];
@@ -153,7 +137,12 @@ grid on
 ylim([1e-14 100])
 legend(legend_str,'interpreter','latex');
 if save_results
+    try
     saveas(gcf,['results/' scenario_name '_error_M'])
+    catch
+        cd ..
+        saveas(gcf,['results/' scenario_name '_error_M'])
+    end
 end
 
 %% complementarity residual
@@ -177,6 +166,7 @@ xlabel('$h$','interpreter','latex');
 ylabel('comp residual','interpreter','latex');
 grid on
 legend(legend_str,'interpreter','latex');
+
 if save_results
         saveas(gcf,['results/' scenario_name '_comp_residual_h'])
 end
@@ -195,14 +185,12 @@ if save_results
     saveas(gcf,['results/' scenario_name '_error_h'])
 end
 
-
 %% Practial slopes
 practical_slopes_all_experiments = [];
 for ii = 1:length(n_s_vec)
     practical_slopes_all_experiments = [practical_slopes_all_experiments;diff(log(errors_all_experiments(ii,:)))./diff(log(nominal_h_all_experiments(ii,:)))];
 end
 %%
-
 figure
 bar([practical_slopes_all_experiments,mean(practical_slopes_all_experiments,2)])
 xticks(1:length(n_s_vec))
@@ -225,6 +213,6 @@ if save_results
     save(['results/' scenario_name '.mat'],'results')
 end
 
-close all
+% close all
 end
 

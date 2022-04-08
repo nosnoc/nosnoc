@@ -56,10 +56,9 @@ settings.opts_ipopt = opts_ipopt;
 model = temp_control_model_voronoi();
 %% - Simulation settings
 model.T_sim = 3;
-model.N_stages = 2;
-model.N_finite_elements = 1;
-model.h = 0.01;
-model.T = model.N_stages*model.h;
+model.N_stages = 1;
+model.N_finite_elements = 2;
+model.N_sim = 30;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator 
 [results,stats] = integrator_fesd(model,settings);

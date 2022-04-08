@@ -37,40 +37,41 @@ A `python` version is currently under development.
 The interface of **NOS-NOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
 User inputs should be given as `CasADi` expressions.
 
-Minimal code example
+Minimal code example for time-optimal problem for a car with two modes of opration.
 ```matlab
 import casadi.*
 % Call this function to have an overview of all options.
 [settings] = default_settings_fesd();  
-% Highlight that the problem is treated with time-freezing reformulation and change the number of IRK stages
-settings.time_freezing = 1; 
-settings.n_s = 3; 
-% Discretization data
-model.T = 5; 
-model.N_stages = 15; 
-model.N_finite_elements = 3;
-% Define states, controls and inital values
-q = MX.sym('q',2); v = MX.sym('v',2); t = MX.sym('t');
-model.x = [q;v;t];
-model.x0 = [0;0.5;0;0;0];
-u = MX.sym('u',2); 
-model.u = u;
-% Define regions of the PSS
-model.S = [1; -1];
-model.c = q(2); 
-% Define modes of PSS 
-f_1 = [v;u(1);u(2)-9.81;1];
- f_2 = [0;v(2);0;-10*(q(2))-0.211989*v(2);0];
+% Choosing the Runge - Kutta Method and number of stages
+settings.irk_scheme = 'Lobatto-IIIA';
+settings.n_s = 2;
+% Time-settings  - Solve an time optimal control problem
+settings.time_optimal_problem = 1;
+% Model - define all problem functions and
+% Discretization parameters
+model.N_stages = 10; % number of control intervals
+model.N_finite_elements = 6; % number of finite element on every control intevral (optionally a vector might be passed)
+model.T = 15;    % Time horizon
+% Symbolic variables and bounds
+q = SX.sym('q'); v = SX.sym('v'); 
+model.x = [q;v]; % add all important data to the struct model,
+model.x0 = [0;0]; % inital value
+% bounds on states
+model.lbx = [-inf;-20];
+model.ubx = [inf;20];
+% control
+u = SX.sym('u'); model.u = u;
+model.lbu = -5; model.ubu = 5;
+% Dyanmics and the regions
+f_1 = [v;u]; % mode 1 - nominal
+f_2 = [v;3*u]; % mode 2 - turbo
+model.S = [-1;1];
 model.F = [f_1 f_2];
-% Stage and terminal costs
-model.f_q = u'*u; model.f_q_T = 10*v'*v;
-% Path and terminal constraints
-model.g_ineq = u'*u-7^2;
-model.g_terminal = q-[4;0.25];
-% Solve OCP with MPCC homotopy and plot results
-[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
-[results,stats] = homotopy_solver(solver,model,settings,solver_initalization);
-plot_result_ball(model,settings,results,stats)
+model.c = v-10;
+% Add terminal constraint
+model.g_terminal = [q-200;v-0];
+% Solve OCP
+[results,stats,model,settings] = nosnoc_solver(model,settings);
 
 ````
 

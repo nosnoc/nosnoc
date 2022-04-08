@@ -33,24 +33,31 @@ import casadi.*
 % collocation settings
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
 settings.kappa = 0.05;
-settings.n_s = 2;                            % Degree of interpolating polynomial
-settings.irk_scheme = 'radau';     % Collocation scheme: radau or legendre
-settings.mpcc_mode = 3;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - l1 penalty
+settings.n_s = 2;                            
+% settings.irk_scheme = 'Gauss-Legendre';     
+settings.irk_scheme = 'Radau-IIA';     
+settings.print_level = 2;
+settings.mpcc_mode = 5; % very fast                    
+% settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
 settings.s_elastic_max = 1e1;                    
 settings.cross_comp_mode = 8;
 %% Generate Model
 model = blocks_with_friction();
 %% Simulation setings
-model.T_sim = 12;
-model.N_stages = 2;
-model.N_finite_elements = 1;
-model.h = 0.05;
-settings.gamma_h = 1;
-model.T = model.N_stages*model.h;
+
+N_finite_elements = 3;
+T_sim = 12;
+N_sim = 85;
+
+model.T_sim = T_sim;
+model.N_finite_elements = N_finite_elements;
+model.N_sim = N_sim;
+
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 [results,stats,model] = integrator_fesd(model,settings);
-%% Formulate NLP; 
+%%
+% results.x_res(:,end)
 %% Get variables into main workspace
 unfold_struct(model,'base');
 unfold_struct(settings,'base');
