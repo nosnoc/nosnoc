@@ -157,6 +157,11 @@ sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
 sigma_theta_F_k = 0; % forward sum of theta at finite element k
 nu_vector = [];
 
+% Initalization of sums of all theta and lambda over all control intevalrs
+Theta_sum_control_interval_all = 0;
+Lambda_sum_control_interval_all = 0;
+
+
 % Integral of the clock state if no time-freezing is present.
 sum_of_s_sot_k =0;
 n_cross_comp = zeros(max(N_finite_elements),N_stages);
@@ -214,6 +219,11 @@ for k=0:N_stages-1
         ubg = [ubg; g_ineq_ub];
     end
     sum_h_ki_stage_k = 0; % Integral of the clock state (if not time freezing) on the current stage.
+
+    %% Initalize sums for Lambda and Theta for the current control intevral
+    Theta_sum_control_interval_k = 0;
+    Lambda_sum_control_interval_k = 0;
+
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
         if use_fesd
@@ -267,8 +277,11 @@ for k=0:N_stages-1
             sum_lambda_ki = Z_kd_end(n_theta+1:2*n_theta);
             % initalize sum of theta's (the pint at t_n is not included)
             sum_theta_ki = 0;
-
         end
+        %%  Sum of lambda and theta for current finite elememnt
+        % TODO: merge with sum_lambda_ki...
+        Theta_sum_finite_element_i= 0;
+        Lambda_sum_finite_element_i = 0;
 
         %% Define Variables at stage points (IRK stages) for the current finite elements
         switch irk_representation
@@ -615,8 +628,11 @@ for k=0:N_stages-1
 %             ubg = [ubg; zeros(n_algebraic_constraints,1)];
             lbg = [lbg; zeros(n_algebraic_constraints-1,1)];
             ubg = [ubg; zeros(n_algebraic_constraints-1,1)];
-        end      
+        end 
+
     end
+    Theta_sum_control_interval_k = Theta_sum_control_interval_k + Theta_sum_finite_element_i;
+    Lambda_sum_control_interval_k = Lambda_sum_control_interval_k + Lambda_sum_finite_element_i;
 
     %% Equdistant grid in numerical time (Multiple-shooting type discretization)
     if equidistant_control_grid
@@ -656,6 +672,8 @@ for k=0:N_stages-1
         ubg = [ubg; 0];
         ind_g_clock_state = [ind_g_clock_state;length(lbg)];
     end
+        Theta_sum_control_interval_all = Theta_sum_control_interval_all + Theta_sum_control_interval_k;
+        Lambda_sum_control_interval_all = Lambda_sum_control_interval_all + Lambda_sum_control_interval_k;
 end
 
 %% Scalar-valued commplementarity residual
