@@ -52,6 +52,7 @@ N_sim = 85;
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
+% model.h_sim = 0.1412;
 
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator

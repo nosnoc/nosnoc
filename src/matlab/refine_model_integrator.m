@@ -67,8 +67,10 @@ if exist("N_sim")
         fprintf('Info: N_sim is given, so the h_sim provided by the user is overwritten.\n')
     end
 elseif exist("h_sim")
-    N_sim = floor(T_sim/h_sim);
-    if T_sim/h_sim - floor(T_sim/h_sim) > 1e-16
+    N_sim_fractional = T_sim/(h_sim*N_finite_elements*N_stages);
+    N_sim = floor(N_sim_fractional);
+    T = h_sim*N_finite_elements*N_stages;
+    if N_sim_fractional  - N_sim > 1e-16
         additional_residual_ingeration_step = 1;
         T_residual = T_sim-N_sim*h_sim;
         if settings.print_level >= 2

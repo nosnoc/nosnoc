@@ -65,7 +65,11 @@ complementarity_stats  = [];
 homotopy_iteration_stats = [];
 time_per_iter = [];
 %% Main simulation loop
-for ii = 1:N_sim
+for ii = 1:N_sim+additional_residual_ingeration_step
+    if ii == N_sim+additional_residual_ingeration_step && additional_residual_ingeration_step
+        model.T = T_residual;
+        [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
+    end
     [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
@@ -73,7 +77,7 @@ for ii = 1:N_sim
         error('NLP Solver did not converge for the current FESD problem. \n')
     end
     if print_level >=2
-        fprintf('Integration step %d / %2.0f (%2.3f s / %2.3f s) converged in %2.3f seconds. \n',ii,N_sim,ii*T,N_sim*T,time_per_iter(end));
+        fprintf('Integration step %d / %2.0f (%2.3f s / %2.3f s) converged in %2.3f seconds. \n',ii,N_sim,ii*T,T_sim,time_per_iter(end));
     end
     % Store differentail states
     w_opt = full(sol.x);
