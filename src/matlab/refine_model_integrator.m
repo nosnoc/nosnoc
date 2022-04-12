@@ -72,7 +72,7 @@ elseif exist("h_sim")
     T = h_sim*N_finite_elements*N_stages;
     if N_sim_fractional  - N_sim > 1e-16
         additional_residual_ingeration_step = 1;
-        T_residual = T_sim-N_sim*h_sim;
+        T_residual = T_sim-N_sim*h_sim*N_finite_elements*N_stages;
         if settings.print_level >= 2
             fprintf('Info: N_sim = T_sim/h_sim is not an integerd, adding a smaller integration step at the end to reach T_sim.\n')
         end
@@ -87,6 +87,8 @@ if N_stages > 3 || N_finite_elements > 3
     end
 end
 
+
+settings.equidistant_control_grid = 0;
 %% Save data for output into struct
 % settings = [];
 names = who;

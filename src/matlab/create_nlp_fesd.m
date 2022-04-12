@@ -67,7 +67,7 @@ if use_fesd
     h0_k = h_k.*ones(N_stages,1);
 end
 
-%% Time optimal control 
+%% Time optimal control
 if time_optimal_problem
     % the final time in time optimal control problems
     eval(['T_final = ' casadi_symbolic_mode '.sym(''T_final'');'])
@@ -161,7 +161,7 @@ Z_kd_end = zeros(n_z,1);
 mpcc_var_current_fe.p = p;
 comp_var_current_fe.cross_comp_control_interval_k = 0;
 comp_var_current_fe.cross_comp_control_interval_all = 0;
-     
+
 %% Formulate the NLP / Main Discretization loop
 for k=0:N_stages-1
     %% Variables for the controls
@@ -247,7 +247,7 @@ for k=0:N_stages-1
             end
 
             %             if (k > 0 && (i > 0 || couple_across_stages))
-            if i > 0 
+            if i > 0
                 delta_h_ki = h_ki - h_ki_previous;
             else
                 delta_h_ki  = 0;
@@ -310,7 +310,7 @@ for k=0:N_stages-1
                     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
                     lbw = [lbw; -inf*ones(n_x,1)];
                     ubw = [ubw; inf*ones(n_x,1)];
-                    
+
                     if lift_irk_differential
                         eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
                         w = {w{:}, X_ki_stages{j}};
@@ -338,7 +338,7 @@ for k=0:N_stages-1
             ubw = [ubw; ubz];
             w0 = [w0; z0];
 
-            
+
             % collection of all lambda and theta for current finite element, they are used for cross complementarites and step equilibration
             Theta_ki_current_fe = {Theta_ki_current_fe{:}, Z_ki_stages{j}(1:n_theta)};
             Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Z_ki_stages{j}(n_theta+1:2*n_lambda)};
@@ -394,14 +394,14 @@ for k=0:N_stages-1
         end
 
         %% Update struct with all complementarity related quantities
-            if use_fesd
-                comp_var_current_fe.Lambda_sum_finite_element_ki = Lambda_sum_finite_element_ki;
-                comp_var_current_fe.Theta_sum_finite_element_ki= Theta_sum_finite_element_ki;
-                comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
-            end
-            comp_var_current_fe.Lambda_ki_current_fe = Lambda_ki_current_fe;
-            comp_var_current_fe.Theta_ki_current_fe = Theta_ki_current_fe;
-        
+        if use_fesd
+            comp_var_current_fe.Lambda_sum_finite_element_ki = Lambda_sum_finite_element_ki;
+            comp_var_current_fe.Theta_sum_finite_element_ki= Theta_sum_finite_element_ki;
+            comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
+        end
+        comp_var_current_fe.Lambda_ki_current_fe = Lambda_ki_current_fe;
+        comp_var_current_fe.Theta_ki_current_fe = Theta_ki_current_fe;
+
         %% Continiuity of lambda, the boundary values of lambda and mu  %% TODO: resolve its use for proper cross comp -- move there the Z_kde end
         if use_fesd
             if right_boundary_point_explicit
@@ -414,7 +414,7 @@ for k=0:N_stages-1
                 Lambda_end_previous_fe = Z_kd_end(n_theta+1:2*n_theta);
             end
             if i == N_finite_elements(k+1)-1 && ~couple_across_stages
-                Lambda_end_previous_fe = zeros(n_theta,1);                        
+                Lambda_end_previous_fe = zeros(n_theta,1);
             end
         end
 
@@ -428,7 +428,7 @@ for k=0:N_stages-1
             case 'differential'
                 Xk_end = X_ki; % initalize with x_n;
         end
-        
+
         for j=1:n_s
             switch irk_representation
                 case 'integral'
@@ -506,31 +506,32 @@ for k=0:N_stages-1
                 lbg = [lbg; zeros(n_x,1)];
                 ubg = [ubg; zeros(n_x,1)];
             end
+
             % General nonlinear constraint at stage points
             if g_ineq_constraint && g_ineq_at_stg
+                % indepednet of the fact is it lifter od not in the
+                % differential case
                 g_ineq_k = g_ineq_fun(X_ki_stages{j},Uk);
                 g = {g{:}, g_ineq_k};
                 lbg = [lbg; g_ineq_lb];
                 ubg = [ubg; g_ineq_ub];
             end
 
-            %             % in case of differential, the box constraint on the stage are now linear constraints
-            %             if isequal(irk_scheme,'differential') && x_box_at_stg &&~lift_irk_differential && 0
-            %                 % TODO in integral this is default on, make this default off if differential
-            %                         g = {g{:};X_ki_stages{j}};
-            %                         lbg = [lbg; lbx];
-            %                         ubg = [ubg; ubx];
-            %             end
+            if isequal(irk_scheme,'differential') && x_box_at_stg && ~lift_irk_differential
+                g = {g{:};X_ki_stages{j}};
+                lbg = [lbg; lbx];
+                ubg = [ubg; ubx];
+            end
             %% complementarity constraints (standard and cross)
             % Prepare Input for Cross Comp Function
-            n_cross_comp_i = 0;             
+            n_cross_comp_i = 0;
             % Update current index
-            current_index.k = k;  current_index.i = i; current_index.j = j; 
+            current_index.k = k;  current_index.i = i; current_index.j = j;
             % Create cross comp constraints
             results_cross_comp = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions,current_index);
             g_cross_comp_j  = results_cross_comp.g_cross_comp_j;
             % Store updatet sums
-            
+
             if i == N_finite_elements(k+1)-1 && j == n_s
                 % Restart sum at end of the current control interval
                 comp_var_current_fe.cross_comp_control_interval_k = 0;
@@ -571,7 +572,7 @@ for k=0:N_stages-1
         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
 
         % box constraint always done at control interval boundary
-        if x_box_at_fe 
+        if x_box_at_fe
             lbw = [lbw; lbx];
             ubw = [ubw; ubx];
         else
@@ -584,7 +585,7 @@ for k=0:N_stages-1
         lbg = [lbg; zeros(n_x,1)];
         ubg = [ubg; zeros(n_x,1)];
         %% Evaluate inequality constraints at finite elements boundaries
-        if g_ineq_constraint && g_ineq_at_fe && i>0
+        if g_ineq_constraint && g_ineq_at_fe && i<N_finite_elements(k+1)-1
             % the third flag is because at i = 0 the evaulation is at the control interval boundary (done above)
             g_ineq_k = g_ineq_fun(X_ki,Uk);
             g = {g{:}, g_ineq_k};
@@ -637,10 +638,10 @@ for k=0:N_stages-1
         if time_optimal_problem
             % this seems to be a critical constraint, T_final has to be
             % set equal to the sum_sot at the end?
-%             g = {g{:}, X_ki(end)-(k+1)*(T_final/N_stages)+x0(end)};
+            %             g = {g{:}, X_ki(end)-(k+1)*(T_final/N_stages)+x0(end)};
             g = {g{:}, Xk_end(end)-(k+1)*(T_final/N_stages)+x0(end)};
         else
-%             g = {g{:}, X_ki(end)-(k+1)*h+x0(end)};
+            %             g = {g{:}, X_ki(end)-(k+1)*h+x0(end)};
             g = {g{:}, Xk_end(end)-(k+1)*h+x0(end)};
         end
         lbg = [lbg; 0];

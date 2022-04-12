@@ -38,7 +38,7 @@ settings.irk_scheme = 'Radau-IIA';
 % settings.irk_scheme = 'Lobatto-IIIC';
 settings.n_s = 2;
 settings.mpcc_mode = 5;
-settings.cross_comp_mode = 1;
+settings.cross_comp_mode = 3;
 % settings.s_elastic_0 = 1e1;
 % settings.s_elastic_max = 1e4;
 
@@ -92,11 +92,19 @@ end
 % model.g_ineq = u^2;
 % model.g_ineq_lb = [-inf];
 % model.g_ineq_ub = [u_max^2];
+
+%  model.g_ineq = v;
+% model.g_ineq_lb = [-inf];
+% model.g_ineq_ub = [20];
+% settings.g_ineq_at_fe = 1;
+% settings.g_ineq_at_stg = 1;
 %% terminal constraint
 q_goal = 200;
 v_goal = 0;
 % Add terminal constraint, if no upper and lower bound are provided, they are set to zero
 model.g_terminal = [q-q_goal;v-v_goal];
+
+
 %% Solve OCP
 % This functions formulates and discretized the OCP. We obtain an matheatmical programm with complementarity constraint which is solved  in a homotopy procedure.
 [results,stats,model,settings] = nosnoc_solver(model,settings);

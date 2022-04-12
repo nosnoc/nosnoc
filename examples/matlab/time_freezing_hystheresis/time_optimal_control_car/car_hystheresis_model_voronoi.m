@@ -19,7 +19,7 @@ T = 5;
 % inital value
 q0 = 0;
 v0 = 0;
-L0 =  0; % cost integral
+L0 = 0; % cost integral
 a0 = 0;
 t0 = 0;
 %% Hystheresis parameters
@@ -33,14 +33,9 @@ u0 = 0;
 Pn = 1;
 Pt = 2.5;
 
-
-% Pn = 1;
-% Pt = 1;
-
 %% Inital Value
 x0 = [q0;v0;L0;a0;t0];
-%% Time horizon
-h = T/N_stages;
+
 %% Variable defintion
 q = MX.sym('q');
 v = MX.sym('v');
@@ -70,18 +65,17 @@ g_ind = [g_11;g_12;g_13;g_14];
 g_ind_all = [g_ind];
 c = g_ind_all;
 
-%% control
+% control
 u = MX.sym('u');
 lbu = -u_max;
 ubu = u_max;
 
-%% modes of the ODEs layers
+% modes of the ODEs layers
 a_push_const = 0.5;
 f_A = [v;u;Pn;0;1];
 f_B = [v;3*u;Pt;0;1];
 f_push_down = [0;0;0;-a_push_const;0];
 f_push_up = [0;0;0;a_push_const;0];
-
 
 a_push = 1;
 f_push_down = [0;0;0;-a_push*(psi-1)^2/(1+(psi-1)^2);0];
@@ -95,13 +89,9 @@ f_1 = [f_11 f_12 f_13 f_14];
 
 % matrix with all vector fields
 F = f_1;
-%% objective
-
-% f_q = fuel_cost_on*L+(1-fuel_cost_on)*(1-time_optimal_problem)*u^2;
+%% objective and terminal constraint
 f_q = fuel_cost_on*L;
-% Terminal Cost
-% f_q_T = 0;
-%% terminal constraint
+% terminal constraint
 g_terminal = [q-q_goal;v-v_goal];
 %% Generic part
 % (make of local workspace a struct and pass to output

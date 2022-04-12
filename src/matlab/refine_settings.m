@@ -61,6 +61,15 @@ if nonlinear_sigma_rho_constraint
 end
 
 %% Handling constraint evaluation. 
+if ~exist('x_box_at_fe')
+    x_box_at_fe = 1;
+end
+if ~exist('x_box_at_stg')
+    x_box_at_stg = 1;
+    if isequal(irk_scheme,'differential') &&  ~lift_irk_differential
+        x_box_at_stg = 0;
+    end
+end
 
 %% Correct contradictring settings, complete missing data (if any)
 step_equilibration = step_equilibration*use_fesd;

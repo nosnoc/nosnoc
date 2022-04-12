@@ -59,7 +59,7 @@ settings.irk_representation = 'differential';
 settings.mpcc_mode = 5;
 % settings.mpcc_mode = 3;  % FOR ROBUSTNES 
 settings.s_elastic_max = 1e1;              % upper bound for elastic variables
-settings.cross_comp_mode = 12;
+settings.cross_comp_mode = 8;
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-16;
 settings.N_homotopy = 25;% number of steps
@@ -82,7 +82,8 @@ x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 model.N_stages = N_stages;
 model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
-model.N_sim = N_sim;
+% model.N_sim = N_sim;
+model.h_sim = 0.039;
 model.R_osc = R_osc;
 model = oscilator(model);
 %% Call integrator
