@@ -28,6 +28,8 @@ import casadi.*
 settings.time_freezing = 1; 
 settings.n_s = 3; 
 settings.print_level = 3;
+% settings.mpcc_mode = 3;
+% settings.stagewise_clock_constraint = 0;
 %% model equations
 model.T = 4; model.N_stages = 15; model.N_finite_elements = 3;
 model.x0 = [0;0.5;0;0;0];
@@ -44,7 +46,7 @@ model.f_q = u'*u; model.f_q_T = 10*v'*v;
 model.g_ineq = u'*u-7^2;
 model.g_terminal = q-[4;0.25];
 %% Solve and plot
-[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
-[results,stats] = homotopy_solver(solver,model,settings,solver_initalization);
+[results,stats,model,settings] = nosnoc_solver(model,settings);
+
 plot_result_ball(model,settings,results,stats)
-fprintf('Objective values is: %2.4f \n',full(results.f));
+fprintf('Objective values is: %2.4f \n',full(results.f_opt));

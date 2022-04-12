@@ -145,7 +145,7 @@ else
 end
 
 if n_u > 0
-    settings.couple_across_stages = 0;
+    settings.couple_across_stages = 1;
 end
 
 %% Stage and terminal costs
@@ -395,12 +395,11 @@ for i = 1:n_simplex
     eval(['f_comp_residual = f_comp_residual + lambda_' i_str '''*theta_'  i_str ';']);
     %     end
 end
-% f_z = [f_z;f_z_convex];
 g_lp = [f_z;f_z_convex];
 
 %% MPCC Specific Considerations
 % sum over all complementariteies
-J_cc = f_comp_residual;  % (used in l1 penalties and for evaluation of resiudal)
+f_comp_residual;  % (used in l1 penalties and for evaluation of resiudal)
 % Point-wise
 n_algebraic_constraints = n_theta+n_simplex;  % dim(g  - lambda - mu *e ) + dim( E theta) ;
 
@@ -418,14 +417,15 @@ if n_u >0
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     %     f_z_fun = Function('f_z_fun',{x,z,u},{f_z}); % old name
     g_lp_fun = Function('g_lp_fun',{x,z,u},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    f_J_cc = Function('f_J_cc',{x,z,u},{J_cc});
+%     J_cc_fun = Function('J_cc_fun',{x,z,u},{f_comp_residual});
 else
     f_x_fun = Function('f_x_fun',{x,z},{f_x,f_q});
     %     f_z_fun = Function('f_z_fun',{x,z},{f_z});
     g_lp_fun = Function('g_lp_fun',{x,z},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    f_J_cc = Function('f_J_cc',{x,z},{J_cc});
+%     J_cc_fun = Function('J_cc_fun',{x,z},{f_comp_residual});
 end
 
+J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
 f_q_T_fun = Function('f_q_T',{x},{f_q_T});
 
 
@@ -512,8 +512,7 @@ model.f_x_fun = f_x_fun;
 model.g_lp_fun = g_lp_fun;
 model.f_q_T_fun = f_q_T_fun;
 
-% model.f_z_cc = f_z_cc;
-model.f_J_cc = f_J_cc;
+model.J_cc_fun = J_cc_fun;
 model.g_ind_all_fun = g_ind_all_fun;
 model.c_fun = c_fun;
 
@@ -523,7 +522,8 @@ model.c_fun = c_fun;
 % catch
 %     
 % end
-% Some Dimensions;
+
+% Model Dimensions;
 model.n_x = n_x;
 model.n_z = n_z;
 model.n_u = n_u;

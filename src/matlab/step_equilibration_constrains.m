@@ -8,8 +8,10 @@ if step_equilibration && (k > 0 && (i > 0 || couple_across_stages))
                 sigma_theta_B_k = sigma_theta_F_k;
             end
             % forward sums initalized (these were computed during the defintion of the algebraic variables)
-            sigma_lambda_F_k = sum_lambda_ki;
-            sigma_theta_F_k = sum_theta_ki;
+%             sigma_lambda_F_k = sum_lambda_ki;
+%             sigma_theta_F_k = sum_theta_ki;
+               sigma_lambda_F_k = Lambda_sum_finite_element_ki;
+               sigma_theta_F_k = Theta_sum_finite_element_ki;
 
             if ~(i == 0 && k== 0)
                 %% ???????????????? the questio is, does step eq. go across multiples shooting intervals( same is for lambda continuity)

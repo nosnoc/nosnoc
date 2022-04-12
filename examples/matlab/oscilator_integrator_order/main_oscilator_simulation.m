@@ -31,7 +31,7 @@ plot_integrator_output = 1;
 plot_continious_time_sol = 1;
 %% discretization settings
 N_stages = 2;
-N_finite_elements = 1;
+N_finite_elements = 2;
 
 T_sim = pi/2;
 N_sim  = 10;
@@ -59,6 +59,7 @@ settings.irk_representation = 'differential';
 settings.mpcc_mode = 5;
 % settings.mpcc_mode = 3;  % FOR ROBUSTNES 
 settings.s_elastic_max = 1e1;              % upper bound for elastic variables
+settings.cross_comp_mode = 12;
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-16;
 settings.N_homotopy = 25;% number of steps
@@ -198,27 +199,6 @@ if plot_continious_time_sol
         xline(t_grid(ii),'k--')
     end
 end
-%
-% results.theta_res
-% results.theta_boundary_res
-%
-% results.lambda_res
-% results.lambda_boundary_res
-%
-% results.mu_res
-% results.mu_boundary_res
-% %
-% g_ind_eval = [];
-%
-% for ii = 1:length(results.x_res)
-%     g_ind_eval = [g_ind_eval,full(model.g_ind_all_fun(results.x_res(:,ii)))];
-% end
-% %%
-% g_lp_eval = [];
-% for ii = 1:length(results.x_res)-1
-%     g_ind_eval = [g_ind_eval,full(model.g_ind_all_fun(results.x_res(:,ii)))];
-%     x_ii = results.x_res(:,ii+1);
-%     z_ii = [results.theta_boundary_res(:,ii);results.lambda_boundary_res(:,ii);results.mu_boundary_res(:,ii) ];
-%     g_lp_eval = [g_lp_eval,full(model.g_lp_fun(x_ii,z_ii))];
-% end
+%%
+model.n_cross_comp
 
