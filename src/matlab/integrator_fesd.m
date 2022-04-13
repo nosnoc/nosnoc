@@ -119,8 +119,8 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     switch pss_mode
         case 'Stewart'
             alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
-            theta_opt_extended = [alg_states_extended(1:n_theta*n_simplex,:)];
-            lambda_opt_extended = [alg_states_extended(n_theta*n_simplex+1:2*n_theta*n_simplex,:)];
+            theta_opt_extended = [alg_states_extended(1:n_theta,:)];
+            lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
             mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
 
             theta_opt= theta_opt_extended(:,1:n_s+1:end);
@@ -128,9 +128,18 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             mu_opt= mu_opt_extended(:,1:n_s+1:end);
         case 'Step'
             alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
-            alpha_opt_extended = [alg_states_extended(1:n_alpha*n_simplex,:)];
-            lambda_0_opt_extended = [alg_states_extended(n_alpha*n_simplex+1:2*n_alpha*n_simplex,:)];
-            lambda_1_opt_extended = [alg_states_extended(2*n_alpha*n_simplex+1:3*n_alpha*n_simplex,:)];
+            alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
+            lambda_0_opt_extended = [alg_states_extended(n_alpha+1:2*n_alpha,:)];
+            lambda_1_opt_extended = [alg_states_extended(2*n_alpha+1:3*n_alpha,:)];
+
+            if pss_lift_step_functions
+                if n_beta >0
+                    beta_opt_extended = [alg_states_extended(3*n_alpha+1:3*n_alpha+n_beta,:)];
+                end
+                if n_gamma >0
+                    gamma_opt_extended = [alg_states_extended(3*n_alpha+n_beta+1:end,:)];
+                end
+            end
 
             alpha_opt= alpha_opt_extended(:,1:n_s+1:end);
             lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);

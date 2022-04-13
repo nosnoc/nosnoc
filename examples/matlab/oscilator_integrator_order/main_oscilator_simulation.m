@@ -43,7 +43,7 @@ settings = default_settings_fesd();
 settings.irk_scheme = 'Radau-IIA';
 % settings.lift_irk_differential = 1;
 % % settings.irk_scheme = 'Radau-I';
-settings.irk_scheme = 'Gauss-Legendre';
+% settings.irk_scheme = 'Gauss-Legendre';
 % settings.lift_irk_differential = 0;
 % settings.irk_scheme = 'Lobatto-III';
 % settings.irk_scheme = 'Lobatto-IIIA';
@@ -53,6 +53,7 @@ settings.irk_scheme = 'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 3;
 settings.pss_mode = 'Step';
+settings.pss_lift_step_functions = 1;
 
 % settings.irk_representation = 'differential';
 settings.mpcc_mode = 4;

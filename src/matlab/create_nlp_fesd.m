@@ -444,7 +444,7 @@ for k=0:N_stages-1
                     case 'Stewart'
                         Z_kd_end = [zeros(n_theta,1);Lambda_ki_end;Mu_ki_end];
                     case 'Step'
-                        Z_kd_end = [zeros(n_alpha,1);Lambda_ki_end;Mu_ki_end];
+                        Z_kd_end = [zeros(n_alpha,1);Lambda_ki_end;Mu_ki_end;zeros(n_beta,1);zeros(n_gamma,1)];
                 end
 
             end
@@ -638,16 +638,11 @@ for k=0:N_stages-1
             else
                 temp = g_lp_fun(X_ki,Z_kd_end);
             end
-            switch pss_mode
-                case 'Stewart'
-                    gj = temp(1:end-1);
-                    lbg = [lbg; zeros(n_algebraic_constraints-1,1)];
-                    ubg = [ubg; zeros(n_algebraic_constraints-1,1)];
-                case 'Step'
-                    gj = temp;
-                    lbg = [lbg; zeros(n_algebraic_constraints,1)];
-                    ubg = [ubg; zeros(n_algebraic_constraints,1)];
-            end
+            
+                    gj = temp(1:end-n_lift_eq);
+                    lbg = [lbg; zeros(n_algebraic_constraints-n_lift_eq,1)];
+                    ubg = [ubg; zeros(n_algebraic_constraints-n_lift_eq,1)];
+            
             g = {g{:}, gj};
         end
     end
@@ -704,7 +699,6 @@ else
     J_comp_fesd = J_comp_std;
     J_comp =  J_comp_std;
 end
-J_comp = J_comp_std;
 
 %% Constraint for the terminal numerical and physical time (if no equidistant grids are required)
 % If the control grid is not equidistant, the constraint on sum of h happen only at the end.

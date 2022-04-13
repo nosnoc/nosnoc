@@ -57,6 +57,12 @@ if ~isequal(settings.pss_mode,'Stewart') && ~isequal(settings.pss_mode,'Step')
     error('Please use for settings.pss_mode either ''Stewart''  or  ''Step''.' );
 end
 
+if settings.n_depth_step_lifting   < 2
+    settings.n_depth_step_lifting  = 2;
+        if print_level >=1
+            fprintf(['Info: n_depth_step_lifting should be at least 2, changing n_depth_step_lifting  = 2.\n']);
+        end
+end
 %% Some settings refinments
 % update prin_level
 if print_level <4
@@ -158,9 +164,9 @@ else
     ubu = [];
 end
 
-if n_u > 0
+% if n_u > 0
     settings.couple_across_stages = 1;
-end
+% end
 
 %% Stage and terminal costs
 if ~exist('f_q')
@@ -205,6 +211,9 @@ else
         fprintf('Info: No path constraints are provided. \n')
     end
 end
+
+
+
 %% Terminal constraints
 if exist('g_terminal')
     terminal_constraint = 1;
@@ -373,7 +382,8 @@ n_beta = 0;
 n_gamma = 0;
 n_lambda_0 = 0;
 n_lambda_1 = 0;
-
+g_lift_beta = [];
+g_lift_gamma  =[];
 switch pss_mode
     case 'Stewart'
         % dimensions
@@ -438,18 +448,60 @@ switch pss_mode
 
         % Upsilo collects the vector for dotx = F(x)Upsilon, it is either multiaffine
         % terms or gamma from lifting
-        pss_lift_step_functions = 0;
-        if pss_lift_step_functions
-            % do the lifting algortim for ever subystem
-            % introduce varibles beta and gamma
-            % introduce their dimensions
-        else
-            %             upsilon_i = {};
-            % define the (multi)afine term for all subsystems
-            for i = 1:n_simplex
+%         pss_lift_step_functions = 0;
+        for i = 1:n_simplex
                 i_str = num2str(i);
                 eval(['upsilon_' i_str ' = [];'])
                 S_temp = S{i};
+            if pss_lift_step_functions
+                [n_f_i,n_c_i] = size(S_temp);
+                n_R_i = sum(abs(S_temp),2);
+                % define gamma which etner the odes r.h.s. linearly
+                eval(['gamma_' i_str ' = ' casadi_symbolic_mode '.sym(''gamma_' i_str ''',n_f_i);']);
+                eval(['gamma = [gamma; gamma_' i_str '];']);
+               
+                eval(['g_lift_beta_' i_str ' = [];']);
+                eval(['g_lift_gamma_' i_str ' = [];']);
+
+                temp = ones(n_f_i,1);
+                S_temp_reduced  = S_temp;
+                ind_progress = 0;
+                for ii = 1:n_c_i
+                    n_R_i = sum(abs(S_temp_reduced),2);
+                    ind_done = find(n_R_i >= ii);
+                    eval(['temp = (temp).*((1-S_temp_reduced(ind_done,ii))/2+S_temp_reduced(ind_done,ii).*alpha_' i_str '(ii));'])
+                    ind_done= find(n_R_i == ii);
+                    ind_done_complement = find(n_R_i ~= ii);
+                    if ~isempty(ind_done)
+%                         g_lift_gamma = [g_lift_gamma ;theta(ind_progress+ind_done)-(temp(ind_done))];
+                        eval(['g_lift_gamma_' i_str '= [g_lift_gamma_' i_str ';gamma(ind_progress+ind_done)-(temp(ind_done))];'])
+                        ind_full = 1:length(temp);
+%                         temp(ind_done) = [];
+                        if isempty(ind_done_complement)
+                            temp = [];
+                        else
+                            temp = temp(ind_done_complement);
+                        end
+                        S_temp_reduced(ind_done,:) = [];
+                        ind_progress = ind_progress+ind_done(end);
+                    end
+                    % start defining betas;
+                    if ii >= n_depth_step_lifting && ii< n_c_i
+                        [temp_S_red,temp_S_IA,temp_S_IC] = unique(S_temp_reduced(:,ii) ,'rows');
+                        n_beta_ii = size(temp_S_red,1);
+                        % defin intermediate beta
+                        eval(['beta_' i_str '_' num2str(ii) '=' casadi_symbolic_mode '.sym(''beta_' i_str '_' num2str(ii) ''',n_beta_ii);'])
+                        eval(['beta = [beta; beta_' i_str '_' num2str(ii) '];'])
+                        beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
+                        eval(['g_lift_beta_' i_str '= [g_lift_beta_' i_str ';beta_temp - temp(temp_S_IA)];'])
+                        temp = beta_temp(temp_S_IC);
+                    end
+                end
+                eval(['g_lift_beta = [g_lift_beta;g_lift_beta_' i_str '];'])
+                eval(['g_lift_gamma = [g_lift_gamma;g_lift_gamma_' i_str '];'])
+                eval(['upsilon_' i_str '= gamma_' i_str ';'])
+            else
+
                 for j = 1:size(S_temp,1)
                     upsilon_ij = 1;
                     for k = 1:size(S_temp,2)
@@ -460,15 +512,15 @@ switch pss_mode
                     end
                     eval(['upsilon_' i_str ' = [upsilon_' i_str ';upsilon_ij ];'])
                 end
-                % go thorug rows of of every matrix and deffine the
-                % appropate term
-                % store them in the upsilon cell
+
             end
         end
-        n_beta = length(beta);
-        n_gamma = length(gamma);
-        n_z = n_z + n_beta+n_gamma;
+            n_beta = length(beta);
+            n_gamma = length(gamma);
+            n_z = n_z + n_beta+n_gamma;
 end
+
+g_lift = [g_lift_beta;g_lift_gamma];
 
 
 %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS
@@ -487,6 +539,7 @@ switch pss_mode
             mu_guess = initial_mu*ones(n_simplex,1);
         end
         z0 = [theta_guess;lambda_guess;mu_guess];
+        n_lift_eq = 1;
     case 'Step'
         z = [alpha;lambda_0;lambda_1;beta;gamma];
         lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
@@ -499,6 +552,7 @@ switch pss_mode
         gamma_guess = initial_gamma*ones(n_gamma,1);
         % eval functios for gamma and beta?
         z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
+        n_lift_eq =length(g_lift);
 end
 
 model.z0 = z0;
@@ -522,7 +576,6 @@ end
 
 g_z = []; % collects standard algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
 g_z_convex = []; % equation for the convex multiplers 1 = e' \theta
-g_lift = [];
 f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
 
 
@@ -551,7 +604,7 @@ for i = 1:n_simplex
             % alpha_i >= 0;     for all i = 1,..., n_simplex
             eval(['g_z = [g_z; c_' i_str '-lambda_1_'  i_str '+lambda_0_'  i_str '];']);
             % to do , greate g_lift
-            eval(['f_comp_residual = f_comp_residual + lambda_0_' i_str '''*alpha_'  i_str '+ lambda_1_' i_str '''*(e_alpha-alpha_'  i_str ');']);
+            eval(['f_comp_residual = f_comp_residual + lambda_0_' i_str '''*alpha_'  i_str '+ lambda_1_' i_str '''*(ones(n_c_vec(i),1)-alpha_'  i_str ');']);
     end
 end
 g_lp = [g_z;g_z_convex;g_lift];
@@ -652,6 +705,7 @@ model.m_ind_vec = m_ind_vec;
 model.n_theta = n_theta;
 model.n_lambda = n_lambda;
 model.n_algebraic_constraints = n_algebraic_constraints;
+model.n_lift_eq  = n_lift_eq;
 
 model.n_c_vec = n_c_vec;
 model.n_alpha = n_alpha;

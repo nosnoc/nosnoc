@@ -62,14 +62,15 @@ while complementarity_iter > comp_tol && ii < N_homotopy
     if print_level>=3
         fprintf('-----------------------------------------------------------------------------------------------\n');
         fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed, complementarity resiudal %2.2e.\n',ii,N_homotopy,sigma_k,complementarity_iter);
-        fprintf('CPU time of iteration: %2.2f s.\t',cpu_time_iter);
         if model.n_u >0
-            fprintf('Objective function value: %2.4e.\n', full(sol.f));
+            fprintf('CPU time of iteration: %2.2f s.\t Objective function value: %2.4e.\n',cpu_time_iter, full(sol.f));
+        else
+            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
         end
         fprintf('-----------------------------------------------------------------------------------------------\n');
     end
     
-    if complementarity_iter > 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
+    if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
         error('The homotopy loop is diverging. Try chaning parameters of the homotopy loop or check is the OCP well posed.')
         break;
     end

@@ -15,7 +15,7 @@ gamma_h = 1;
 
 
 pss_mode = 'Stewart'; % possible options: Stewart and Step
-pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
+
 
 % initalization - Stewart
 lp_initalization = 0;
@@ -28,6 +28,9 @@ initial_lambda_0 = 0.5*1;
 initial_lambda_1 = 0.5*1;
 initial_beta = 0.5*1;
 initial_gamma = 0.5*1;
+
+pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
+n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc)
 
 couple_across_stages = 1;
 list_of_all_rk_schemes = {'radau','legendre','Radau-IIA','Gauss-Legendre','Radau-I','Radau-IA',...
