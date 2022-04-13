@@ -38,6 +38,7 @@ function [solver,solver_initalization, model,settings] = create_nlp_fesd(model,s
 %% Import CasADi in the workspace of this function
 import casadi.*
 %% Reformulation of the PSS into a DCS
+[settings] = refine_user_settings(settings);
 [model,settings] = model_reformulation_fesd(model,settings);
 
 %% Fillin missing settings with default settings

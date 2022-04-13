@@ -22,72 +22,75 @@
 function [model,settings] = model_reformulation_fesd(model,settings)
 import casadi.*
 %% Load settings and model details
+
+% model = check_is_user_model_valid(model,settings);
+
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller')
-
-%% Sanity check of RK Schmes
-if ~any(strcmp(list_of_all_rk_schemes,irk_scheme))
-    if print_level >=1
-        fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is not supported, switching to Radau-IIA. \n'])
-        fprintf(['See settings.list_of_all_rk_schemes in the default settings for an overview. \n'])
-    end
-    irk_scheme = 'Radau-IIA';
-    settings.irk_scheme  = irk_scheme ;
-end
-
-if any(strcmp(list_of_all_rk_schemes(5:end),irk_scheme))
-    if print_level >=1
-        fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is only avilabile in the differential representation.\n']);
-    end
-    irk_representation = 'differential';
-    settings.irk_representation = irk_representation;
-end
-
-%% corrections for pss_mode
-if isequal(settings.pss_mode,'stewart')  || isequal(settings.pss_mode,'stwrt') || isequal(settings.pss_mode,'indicator')
-    settings.pss_mode = 'Stewart';
-end
-
-if isequal(settings.pss_mode,'step')  || isequal(settings.pss_mode,'stp') || isequal(settings.pss_mode,'Heaviside') ...
-        || isequal(settings.pss_mode,'heaviside') || isequal(settings.pss_mode,'AP')
-    settings.pss_mode = 'Step';
-end
-
-if ~isequal(settings.pss_mode,'Stewart') && ~isequal(settings.pss_mode,'Step')
-    error('Please use for settings.pss_mode either ''Stewart''  or  ''Step''.' );
-end
-
-if settings.n_depth_step_lifting   < 2
-    settings.n_depth_step_lifting  = 2;
-        if print_level >=1
-            fprintf(['Info: n_depth_step_lifting should be at least 2, changing n_depth_step_lifting  = 2.\n']);
-        end
-end
-%% Some settings refinments
-% update prin_level
-if print_level <4
-    settings.opts_ipopt.ipopt.print_level=0;
-    settings.opts_ipopt.print_time=0;
-    settings.opts_ipopt.ipopt.sb= 'yes';
-elseif print_level == 4
-    settings.opts_ipopt.ipopt.print_level=0;
-    settings.opts_ipopt.print_time=1;
-    settings.opts_ipopt.ipopt.sb= 'no';
-else
-    settings.opts_ipopt.ipopt.print_level = 5;
-end
-
-if settings.time_freezing
-    settings.local_speed_of_time_variable = 1;
-end
+% 
+% %% Sanity check of RK Schmes
+% if ~any(strcmp(list_of_all_rk_schemes,irk_scheme))
+%     if print_level >=1
+%         fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is not supported, switching to Radau-IIA. \n'])
+%         fprintf(['See settings.list_of_all_rk_schemes in the default settings for an overview. \n'])
+%     end
+%     irk_scheme = 'Radau-IIA';
+%     settings.irk_scheme  = irk_scheme ;
+% end
+% 
+% if any(strcmp(list_of_all_rk_schemes(5:end),irk_scheme))
+%     if print_level >=1
+%         fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is only avilabile in the differential representation.\n']);
+%     end
+%     irk_representation = 'differential';
+%     settings.irk_representation = irk_representation;
+% end
+% 
+% %% corrections for pss_mode
+% if isequal(settings.pss_mode,'stewart')  || isequal(settings.pss_mode,'stwrt') || isequal(settings.pss_mode,'indicator')
+%     settings.pss_mode = 'Stewart';
+% end
+% 
+% if isequal(settings.pss_mode,'step')  || isequal(settings.pss_mode,'stp') || isequal(settings.pss_mode,'Heaviside') ...
+%         || isequal(settings.pss_mode,'heaviside') || isequal(settings.pss_mode,'AP')
+%     settings.pss_mode = 'Step';
+% end
+% 
+% if ~isequal(settings.pss_mode,'Stewart') && ~isequal(settings.pss_mode,'Step')
+%     error('Please use for settings.pss_mode either ''Stewart''  or  ''Step''.' );
+% end
+% 
+% if settings.n_depth_step_lifting   < 2
+%     settings.n_depth_step_lifting  = 2;
+%         if print_level >=1
+%             fprintf(['Info: n_depth_step_lifting should be at least 2, changing n_depth_step_lifting  = 2.\n']);
+%         end
+% end
+% %% Some settings refinments
+% % update prin_level
+% if print_level <4
+%     settings.opts_ipopt.ipopt.print_level=0;
+%     settings.opts_ipopt.print_time=0;
+%     settings.opts_ipopt.ipopt.sb= 'yes';
+% elseif print_level == 4
+%     settings.opts_ipopt.ipopt.print_level=0;
+%     settings.opts_ipopt.print_time=1;
+%     settings.opts_ipopt.ipopt.sb= 'no';
+% else
+%     settings.opts_ipopt.ipopt.print_level = 5;
+% end
+% 
+% if settings.time_freezing
+%     settings.local_speed_of_time_variable = 1;
+% end
 
 %% Determine is the SX or MX mode in CasADi used.
 casadi_symbolic_mode = model.x(1).type_name();
 settings.casadi_symbolic_mode  = casadi_symbolic_mode;
+settings.couple_across_stages = 1;
 %% Step-size
 h = T/N_stages;
-% nominal lengths of the finite elements for different control intevrals,
-% every control interval might have a different number of finite elements.
+% nominal lengths of the finite elements for different control intevrals, every control interval might have a different number of finite elements.
 N_finite_elements = N_finite_elements(:); % make a column vector of the input
 if length(N_finite_elements) > N_stages
     N_finite_elements = N_finite_elements(1:N_stages);
@@ -106,7 +109,9 @@ h_k = h./N_finite_elements;
 model.h = h;
 model.h_k = h_k;
 model.N_finite_elements = N_finite_elements;
+
 %% Check is x
+
 if exist('x')
     n_x = length(x);
     % check  lbx
@@ -164,9 +169,7 @@ else
     ubu = [];
 end
 
-% if n_u > 0
-    settings.couple_across_stages = 1;
-% end
+
 
 %% Stage and terminal costs
 if ~exist('f_q')
@@ -213,7 +216,6 @@ else
 end
 
 
-
 %% Terminal constraints
 if exist('g_terminal')
     terminal_constraint = 1;
@@ -244,7 +246,6 @@ end
 
 %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
 pss_mode = settings.pss_mode;
-
 
 % Stewart's representation of the sets R_i and discirimant functions g_i
 g_ind_all = [ ];
@@ -352,6 +353,13 @@ end
 % index sets and dimensions for ubsystems
 m_ind_vec = [cumsum(m_vec)-m_1+1]; % index ranges of the corresponding thetas and lambdas
 m = sum(m_vec);
+
+if max(n_c_vec) < 2
+    pss_lift_step_functions = 0;
+        if print_level >=1
+            fprintf('Info: settings.pss_lift_step_functions  set to 0, as are step fucntion selections are already entering the ODE linearly. \n')
+        end
+end
 
 %% Parameters
 if isequal(casadi_symbolic_mode,'MX')
@@ -651,7 +659,7 @@ end
 %% Collect Outputs
 model.sigma = sigma;
 model.p = p;
-
+% 
 model.lbx = lbx;
 model.ubx = ubx;
 
@@ -677,6 +685,7 @@ end
 
 
 model.f_x = f_x;
+model.f_q = f_q;
 model.g_z = g_z;
 model.g_lp = g_lp;
 model.f_q_T = f_q_T;
@@ -688,8 +697,8 @@ model.f_q_T_fun = f_q_T_fun;
 model.J_cc_fun = J_cc_fun;
 model.g_ind_all_fun = g_ind_all_fun;
 model.c_fun = c_fun;
-
-% Model Dimensions;
+% 
+% % Model Dimensions;
 model.n_x = n_x;
 model.n_z = n_z;
 model.n_u = n_u;

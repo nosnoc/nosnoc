@@ -50,7 +50,6 @@ N_finite_elements = 3;
 T_sim = 12;
 N_sim = 85;
 
-
 % N_finite_elements = 2;
 % T_sim = 5;
 % N_sim = 25;
