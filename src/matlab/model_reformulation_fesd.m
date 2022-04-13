@@ -316,18 +316,22 @@ else
         end
     end
 
-    % Create Stewart's indicator functions g_ind_ii
     for ii = 1:n_simplex
         if size(S{ii},2) ~= length(c{ii})
             error('The matrix S and vector c do not have compatible dimension.');
         end
+
         % discrimnant functions
-        if isequal(pss_mode,'Stewart')
-            eval(['g_ind_' num2str(ii) '= -S{ii}*c{ii};']);
-            eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
-        else
-            eval(['c_' num2str(ii) '= c{ii};']);
+        switch pss_mode
+            case 'Stewart'
+                % Create Stewart's indicator functions g_ind_ii
+                eval(['g_ind_' num2str(ii) '= -S{ii}*c{ii};']);
+                eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
+            case 'Step'
+                eval(['c_' num2str(ii) '= c{ii};']);
         end
+
+
         eval(['c_all = [c_all; c{ii}];']);
         % dimensions of c
         eval(['n_c_' num2str(ii) '= length(c{ii});']);
@@ -341,7 +345,7 @@ m_ind_vec = [cumsum(m_vec)-m_1+1]; % index ranges of the corresponding thetas an
 m = sum(m_vec);
 
 %% Parameters
-if casadi_symbolic_mode == 'MX'
+if isequal(casadi_symbolic_mode,'MX')
     sigma = MX.sym('sigma'); % homotopy parameter
 else
     sigma = SX.sym('sigma');
@@ -353,6 +357,23 @@ p = [sigma];
 n_p = 1;
 
 %% Algebraic variables defintion
+% dummy values for Stewart
+theta = [];
+mu = [];
+lambda = [];
+E = []; % diagonal matrix with one vectors
+
+% dummy values for step
+alpha  = [];
+lambda_0 = [];
+lambda_1 = [];
+n_alpha = 0;
+e_alpha = [];
+n_beta = 0;
+n_gamma = 0;
+n_lambda_0 = 0;
+n_lambda_1 = 0;
+
 switch pss_mode
     case 'Stewart'
         % dimensions
@@ -360,10 +381,7 @@ switch pss_mode
         n_lambda = n_theta;
         n_f = n_theta;
         n_z = n_theta+n_lambda+n_simplex; % n_theta + n_lambda + n_mu
-        theta = [];
-        mu = [];
-        lambda = [];
-        E = []; % diagonal matrix with one vectors
+
 
         % Define symbolic variables for algebraci equtions!
         for i = 1:n_simplex
@@ -398,9 +416,7 @@ switch pss_mode
         n_lambda = n_lambda_0+n_lambda_1;
         % algebraic varaibles so far
         n_z = n_alpha+n_lambda_0+n_lambda_1;
-        alpha  = [];
-        lambda_0 = [];
-        lambda_1 = [];
+
         for i = 1:n_simplex
             i_str = num2str(i);
             % define alpha (selection of a set valued step function)
@@ -414,23 +430,36 @@ switch pss_mode
             eval(['lambda_1= [lambda_1; lambda_1_' i_str '];'])
         end
         % adefine ppropiate vector of ones % for the kkt conditions of the LP
-        e_all = ones(n_alpha,1);
+        e_alpha = ones(n_alpha,1);
 
         % Define already here lifting variables and functions
         beta = [];
         gamma = [];
-        
+
         % Upsilo collects the vector for dotx = F(x)Upsilon, it is either multiaffine
         % terms or gamma from lifting
+        pss_lift_step_functions = 0;
         if pss_lift_step_functions
             % do the lifting algortim for ever subystem
             % introduce varibles beta and gamma
             % introduce their dimensions
         else
-%             upsilon_i = {};
+            %             upsilon_i = {};
             % define the (multi)afine term for all subsystems
             for i = 1:n_simplex
-                upsilon_i = [];
+                i_str = num2str(i);
+                eval(['upsilon_' i_str ' = [];'])
+                S_temp = S{i};
+                for j = 1:size(S_temp,1)
+                    upsilon_ij = 1;
+                    for k = 1:size(S_temp,2)
+                        % create multiafine term
+                        if S_temp(j,k) ~=0
+                            eval(['upsilon_ij = upsilon_ij * ( 0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_' i_str ' (k) ) ;'])
+                        end
+                    end
+                    eval(['upsilon_' i_str ' = [upsilon_' i_str ';upsilon_ij ];'])
+                end
                 % go thorug rows of of every matrix and deffine the
                 % appropate term
                 % store them in the upsilon cell
@@ -438,6 +467,7 @@ switch pss_mode
         end
         n_beta = length(beta);
         n_gamma = length(gamma);
+        n_z = n_z + n_beta+n_gamma;
 end
 
 
@@ -448,8 +478,7 @@ switch pss_mode
         z = [theta;lambda;mu];
         lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_simplex,1)];
         ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_simplex,1)];
-        % inital guess for z
-        % solve LP for guess;
+        % inital guess for z; % solve LP for guess;
         if lp_initalization
             [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
         else
@@ -458,18 +487,16 @@ switch pss_mode
             mu_guess = initial_mu*ones(n_simplex,1);
         end
         z0 = [theta_guess;lambda_guess;mu_guess];
-        % Lower and upper bounds for \theta, \lambda and \mu.
-
     case 'Step'
-        z = [alpha;lambda_0,lambda_1,beta,gamma];
+        z = [alpha;lambda_0;lambda_1;beta;gamma];
         lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
         ubz = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
 
         alpha_guess = initial_alpha*ones(n_alpha,1);
         lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
         lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
-        beta_guess = initial_beta*ones(n_alpha,1);
-        gamma_guess = initial_gamma*ones(n_alpha,1);
+        beta_guess = initial_beta*ones(n_beta,1);
+        gamma_guess = initial_gamma*ones(n_gamma,1);
         % eval functios for gamma and beta?
         z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
 end
@@ -477,7 +504,6 @@ end
 model.z0 = z0;
 model.lbz = lbz;
 model.ubz = ubz;
-
 
 %% Reformulate the Filippov ODE into a DCS
 f_x = zeros(n_x,1);
@@ -489,13 +515,14 @@ for ii = 1:n_simplex
         case 'Stewart'
             eval(['f_x = f_x + F_' ii_str '*theta_'  ii_str  ';']);
         case 'Step'
-                    eval(['f_x = f_x + F_' ii_str '*upsilon_'  ii_str  ';']);
+            eval(['f_x = f_x + F_' ii_str '*upsilon_'  ii_str  ';']);
     end
 end
 
 
-f_z = []; % collects standard algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
-f_z_convex = []; % equation for the convex multiplers 1 = e' \theta
+g_z = []; % collects standard algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
+g_z_convex = []; % equation for the convex multiplers 1 = e' \theta
+g_lift = [];
 f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
 
 
@@ -512,8 +539,8 @@ for i = 1:n_simplex
             % lambda_i >= 0;    for all i = 1,..., n_simplex
             % theta_i >= 0;     for all i = 1,..., n_simplex
             % Gradient of Lagrange Function of indicator LP
-            eval(['f_z = [f_z; g_ind_' i_str '-lambda_'  i_str '+mu_'  i_str '*e_' i_str '];']);
-            eval(['f_z_convex = [f_z_convex; ; e_' i_str '''*theta_'  i_str '-1];']);
+            eval(['g_z = [g_z; g_ind_' i_str '-lambda_'  i_str '+mu_'  i_str '*e_' i_str '];']);
+            eval(['g_z_convex = [g_z_convex; ; e_' i_str '''*theta_'  i_str '-1];']);
             eval(['f_comp_residual = f_comp_residual + lambda_' i_str '''*theta_'  i_str ';']);
         case 'Step'
             % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_simplex
@@ -522,12 +549,12 @@ for i = 1:n_simplex
             % lambda_0_i >= 0;    for all i = 1,..., n_simplex
             % lambda_1_i >= 0;    for all i = 1,..., n_simplex
             % alpha_i >= 0;     for all i = 1,..., n_simplex
-            eval(['f_z = [f_z; c_' i_str '-lambda_1_'  i_str '+lambda_0_'  i_str '];']);
+            eval(['g_z = [g_z; c_' i_str '-lambda_1_'  i_str '+lambda_0_'  i_str '];']);
             % to do , greate g_lift
-            eval(['f_comp_residual = f_comp_residual + lambda_0_' i_str '''*alpha_'  i_str '+ lambda_1_' i_str '''*(e_all-alpha_'  i_str ');']);
+            eval(['f_comp_residual = f_comp_residual + lambda_0_' i_str '''*alpha_'  i_str '+ lambda_1_' i_str '''*(e_alpha-alpha_'  i_str ');']);
     end
 end
-g_lp = [f_z;f_z_convex];
+g_lp = [g_z;g_z_convex;g_lift];
 n_algebraic_constraints  = length(g_lp);
 % n_algebraic_constraints = n_theta+n_simplex;  % dim(g  - lambda - mu *e ) + dim( E theta) ;
 
@@ -597,7 +624,8 @@ end
 
 
 model.f_x = f_x;
-model.f_z = f_z;
+model.g_z = g_z;
+model.g_lp = g_lp;
 model.f_q_T = f_q_T;
 
 model.f_x_fun = f_x_fun;
@@ -617,12 +645,20 @@ model.n_simplex = n_simplex;
 
 model.z = z;
 model.E = E;
+model.e_alpha = e_alpha;
 
 model.m_vec = m_vec;
 model.m_ind_vec = m_ind_vec;
 model.n_theta = n_theta;
 model.n_lambda = n_lambda;
 model.n_algebraic_constraints = n_algebraic_constraints;
+
+model.n_c_vec = n_c_vec;
+model.n_alpha = n_alpha;
+model.n_beta = n_beta;
+model.n_gamma = n_gamma;
+model.n_lambda_0 = n_lambda_0;
+model.n_lambda_1 = n_lambda_1;
 
 
 %% collect all dimensions in one sperate struct as it is needed by several other functions later.
@@ -637,5 +673,12 @@ dimensions.n_theta = n_theta;
 dimensions.n_simplex = n_simplex;
 dimensions.m_vec = m_vec;
 dimensions.m_ind_vec = m_ind_vec;
+dimensions.n_c_vec = n_c_vec;
+dimensions.n_alpha = n_alpha;
+dimensions.n_beta = n_beta;
+dimensions.n_gamma = n_gamma;
+dimensions.n_lambda_0 = n_lambda_0;
+dimensions.n_lambda_1 = n_lambda_1;
+
 model.dimensions = dimensions;
 end

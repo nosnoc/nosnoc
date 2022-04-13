@@ -33,6 +33,6 @@ yline(u_max,'r--')
 ylim(1.2*[-u_max u_max]);
 grid on
 %%
-T_star=13+1/3;
-error = norm(results.T_opt-T_star);
-fprintf('Numerical error %2.2e.\n',error)
+% T_star=13+1/3;
+% error = norm(results.T_opt-T_star);
+% fprintf('Numerical error %2.2e.\n',error)

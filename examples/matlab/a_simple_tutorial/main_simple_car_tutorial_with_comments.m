@@ -41,6 +41,8 @@ settings.mpcc_mode = 5;
 settings.cross_comp_mode = 3;
 % settings.s_elastic_0 = 1e1;
 % settings.s_elastic_max = 1e4;
+settings.pss_mode = 'Stewart';
+settings.pss_mode = 'Step';
 
 
 %% Time settings

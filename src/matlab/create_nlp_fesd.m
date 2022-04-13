@@ -340,13 +340,24 @@ for k=0:N_stages-1
 
 
             % collection of all lambda and theta for current finite element, they are used for cross complementarites and step equilibration
-            Theta_ki_current_fe = {Theta_ki_current_fe{:}, Z_ki_stages{j}(1:n_theta)};
-            Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Z_ki_stages{j}(n_theta+1:2*n_lambda)};
-            Mu_ki_current_fe = {Mu_ki_current_fe{:}, Z_ki_stages{j}(end)};
+            switch pss_mode
+                case 'Stewart'
+                    Theta_kij = Z_ki_stages{j}(1:n_theta);
+                    Lambda_kij = Z_ki_stages{j}(n_theta+1:2*n_theta);
+                    Mu_kij = Z_ki_stages{j}(end);
+                case 'Step'
+                    Theta_kij = [Z_ki_stages{j}(1:n_alpha);e_alpha-Z_ki_stages{j}(1:n_alpha)];
+                    Lambda_kij = Z_ki_stages{j}(n_alpha+1:3*n_alpha);
+                    Mu_kij = [];
+
+            end
+            Theta_ki_current_fe = {Theta_ki_current_fe{:},Theta_kij  };
+            Lambda_ki_current_fe = {Lambda_ki_current_fe{:},Lambda_kij };
+            Mu_ki_current_fe = {Mu_ki_current_fe{:},Mu_kij };
             % Sum \theta and \lambda over the current finite element.
             if use_fesd
-                Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Z_ki_stages{j}(n_theta+1:2*n_lambda);
-                Theta_sum_finite_element_ki =  Theta_sum_finite_element_ki  +  Z_ki_stages{j}(1:n_theta);
+                Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_kij;
+                Theta_sum_finite_element_ki =  Theta_sum_finite_element_ki  +  Theta_kij;
             end
             % Update the standard complementarity
             J_comp_std = J_comp_std + J_cc_fun(Z_ki_stages{j});
@@ -376,20 +387,36 @@ for k=0:N_stages-1
 
         %% Additional variables in case of schemes not containting the boundary point as stage point, e.g., Gauss-Legendre schemes
         if use_fesd && ~right_boundary_point_explicit &&  (k<N_stages-1 || i< N_finite_elements(k+1)-1)
-            eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',n_theta);'])
-            eval(['Mu_ki_end  = ' casadi_symbolic_mode '.sym(''Mu_' num2str(k) '_' num2str(i) '_end' ''',n_simplex);'])
-            w = {w{:}, Lambda_ki_end};
-            w = {w{:}, Mu_ki_end};
-            % bounds and index sets
-            w0 = [w0; z0(n_theta+1:end)];
-            lbw = [lbw; lbz(n_theta+1:end)];
-            ubw = [ubw; ubz(n_theta+1:end)];
-            ind_boundary = [ind_boundary,ind_total(end)+1:(ind_total(end)+n_z-n_theta)];
-            ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+n_z-n_theta)];
+            switch pss_mode
+                case 'Stewart'
+                    eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',n_theta);'])
+                    eval(['Mu_ki_end  = ' casadi_symbolic_mode '.sym(''Mu_' num2str(k) '_' num2str(i) '_end' ''',n_simplex);'])
+                    w = {w{:}, Lambda_ki_end};
+                    w = {w{:}, Mu_ki_end};
+                    % bounds and index sets
+                    w0 = [w0; z0(n_theta+1:end)];
+                    lbw = [lbw; lbz(n_theta+1:end)];
+                    ubw = [ubw; ubz(n_theta+1:end)];
+                    ind_boundary = [ind_boundary,ind_total(end)+1:(ind_total(end)+n_z-n_theta)];
+                    ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+n_z-n_theta)];
+                    Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
+                    Mu_ki_current_fe = {Mu_ki_current_fe{:}, Mu_ki_end};
+                case 'Step'
+                    eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',2*n_alpha);'])
+                    Mu_ki_end = [];
+                    w = {w{:}, Lambda_ki_end};
+                    % bounds and index sets
+                    w0 = [w0; z0(n_alpha+1:3*n_alpha)];
+                    lbw = [lbw; lbz(n_alpha+1:3*n_alpha)];
+                    ubw = [ubw; ubz(n_alpha+1:3*n_alpha)];
+                    ind_boundary = [ind_boundary,ind_total(end)+1:(ind_total(end)+2*n_alpha)];
+                    ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+2*n_alpha)];
+                    Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
+                    Mu_ki_current_fe = {Mu_ki_current_fe{:}, []};
+            end
+
 
             % For cross comp
-            Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
-            Mu_ki_current_fe = {Mu_ki_current_fe{:}, Mu_ki_end};
             Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_ki_end;
         end
 
@@ -406,12 +433,24 @@ for k=0:N_stages-1
         if use_fesd
             if right_boundary_point_explicit
                 Z_kd_end = Z_ki_stages{n_s};
+                switch pss_mode
+                    case 'Stewart'
+                        Lambda_ki_end = Z_kd_end(n_theta+1:2*n_theta);
+                    case 'Step'
+                        Lambda_ki_end = Z_kd_end(n_alpha+1:3*n_alpha);
+                end
             else
-                Z_kd_end = [zeros(n_theta,1);Lambda_ki_end;Mu_ki_end];
+                switch pss_mode
+                    case 'Stewart'
+                        Z_kd_end = [zeros(n_theta,1);Lambda_ki_end;Mu_ki_end];
+                    case 'Step'
+                        Z_kd_end = [zeros(n_alpha,1);Lambda_ki_end;Mu_ki_end];
+                end
+
             end
             % Update lambda previous at finite element level
             if i > 0 || k > 0
-                Lambda_end_previous_fe = Z_kd_end(n_theta+1:2*n_theta);
+                Lambda_end_previous_fe = Lambda_ki_end;
             end
             if i == N_finite_elements(k+1)-1 && ~couple_across_stages
                 Lambda_end_previous_fe = zeros(n_theta,1);
@@ -491,8 +530,7 @@ for k=0:N_stages-1
                         Xk_end = Xk_end + h_k(k+1)*b_irk(j)*V_ki_stages{j};
                         J = J + h_k(k+1)*b_irk(j)*qj;
                     end
-                    % Append IRK equations (differential part) to NLP constraint
-                    % note that we dont distingiush if use_fesd is on/off
+                    % Append IRK equations (differential part) to NLP constraint, note that we dont distingiush if use_fesd is on/off
                     % since it was done in the defintion of X_ki_stages which enters f_j
                     g = {g{:}, fj - V_ki_stages{j}};
             end
@@ -597,14 +635,20 @@ for k=0:N_stages-1
         if ~right_boundary_point_explicit && use_fesd && (k< N_stages-1 || i< N_finite_elements(k+1)-1)
             if n_u > 0
                 temp = g_lp_fun(X_ki,Z_kd_end,Uk);
-                gj = temp(1:end-1);
             else
                 temp = g_lp_fun(X_ki,Z_kd_end);
-                gj = temp(1:end-1);
+            end
+            switch pss_mode
+                case 'Stewart'
+                    gj = temp(1:end-1);
+                    lbg = [lbg; zeros(n_algebraic_constraints-1,1)];
+                    ubg = [ubg; zeros(n_algebraic_constraints-1,1)];
+                case 'Step'
+                    gj = temp;
+                    lbg = [lbg; zeros(n_algebraic_constraints,1)];
+                    ubg = [ubg; zeros(n_algebraic_constraints,1)];
             end
             g = {g{:}, gj};
-            lbg = [lbg; zeros(n_algebraic_constraints-1,1)];
-            ubg = [ubg; zeros(n_algebraic_constraints-1,1)];
         end
     end
 

@@ -28,21 +28,19 @@ use_fesd = 1;
 model.smooth_model = 0;
 
 plot_integrator_output = 1;
-plot_continious_time_sol = 1;
+plot_continious_time_sol =0;
 %% discretization settings
-N_stages = 2;
+N_stages = 1;
 N_finite_elements = 2;
 
 T_sim = pi/2;
-N_sim  = 10;
-
-
+N_sim  = 29;
 R_osc  = 1;
 
 %% settings
 % collocation settings
 settings = default_settings_fesd();
-% settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = 'Radau-IIA';
 % settings.lift_irk_differential = 1;
 % % settings.irk_scheme = 'Radau-I';
 settings.irk_scheme = 'Gauss-Legendre';
@@ -53,13 +51,14 @@ settings.irk_scheme = 'Gauss-Legendre';
 % settings.irk_scheme = 'Lobatto-IIIC';
 % settings.irk_scheme = 'Explicit-RK';
 settings.print_level = 2;
-settings.n_s = 5;
+settings.n_s = 3;
+settings.pss_mode = 'Step';
 
-settings.irk_representation = 'differential';
-settings.mpcc_mode = 5;
-% settings.mpcc_mode = 3;  % FOR ROBUSTNES 
+% settings.irk_representation = 'differential';
+settings.mpcc_mode = 4;
+settings.mpcc_mode = 3;  % FOR ROBUSTNES 
 settings.s_elastic_max = 1e1;              % upper bound for elastic variables
-settings.cross_comp_mode = 8;
+settings.cross_comp_mode = 3;
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-16;
 settings.N_homotopy = 25;% number of steps
@@ -82,8 +81,8 @@ x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 model.N_stages = N_stages;
 model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
-% model.N_sim = N_sim;
-model.h_sim = 0.039;
+model.N_sim = N_sim;
+% model.h_sim = 0.039;
 model.R_osc = R_osc;
 model = oscilator(model);
 %% Call integrator
