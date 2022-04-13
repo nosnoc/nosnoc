@@ -28,8 +28,8 @@ unfold_struct(settings,'caller')
 %% Sanity check of RK Schmes
 if ~any(strcmp(list_of_all_rk_schemes,irk_scheme))
     if print_level >=1
-    fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is not supported, switching to Radau-IIA. \n'])
-    fprintf(['See settings.list_of_all_rk_schemes in the default settings for an overview. \n'])
+        fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is not supported, switching to Radau-IIA. \n'])
+        fprintf(['See settings.list_of_all_rk_schemes in the default settings for an overview. \n'])
     end
     irk_scheme = 'Radau-IIA';
     settings.irk_scheme  = irk_scheme ;
@@ -37,30 +37,44 @@ end
 
 if any(strcmp(list_of_all_rk_schemes(5:end),irk_scheme))
     if print_level >=1
-    fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is only avilabile in the differential representation.\n']);
+        fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is only avilabile in the differential representation.\n']);
     end
     irk_representation = 'differential';
     settings.irk_representation = irk_representation;
 end
 
+%% corrections for pss_mode
+if isequal(settings.pss_mode,'stewart')  || isequal(settings.pss_mode,'stwrt') || isequal(settings.pss_mode,'indicator')
+    settings.pss_mode = 'Stewart';
+end
+
+if isequal(settings.pss_mode,'step')  || isequal(settings.pss_mode,'stp') || isequal(settings.pss_mode,'Heaviside') ...
+        || isequal(settings.pss_mode,'heaviside') || isequal(settings.pss_mode,'AP')
+    settings.pss_mode = 'Step';
+end
+
+if ~isequal(settings.pss_mode,'Stewart') && ~isequal(settings.pss_mode,'Step')
+    error('Please use for settings.pss_mode either ''Stewart''  or  ''Step''.' );
+end
 
 %% Some settings refinments
 % update prin_level
 if print_level <4
-settings.opts_ipopt.ipopt.print_level=0;
-settings.opts_ipopt.print_time=0;
-settings.opts_ipopt.ipopt.sb= 'yes';
+    settings.opts_ipopt.ipopt.print_level=0;
+    settings.opts_ipopt.print_time=0;
+    settings.opts_ipopt.ipopt.sb= 'yes';
 elseif print_level == 4
     settings.opts_ipopt.ipopt.print_level=0;
     settings.opts_ipopt.print_time=1;
     settings.opts_ipopt.ipopt.sb= 'no';
 else
-     settings.opts_ipopt.ipopt.print_level = 5;
+    settings.opts_ipopt.ipopt.print_level = 5;
 end
 
 if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end
+
 %% Determine is the SX or MX mode in CasADi used.
 casadi_symbolic_mode = model.x(1).type_name();
 settings.casadi_symbolic_mode  = casadi_symbolic_mode;
@@ -72,7 +86,7 @@ N_finite_elements = N_finite_elements(:); % make a column vector of the input
 if length(N_finite_elements) > N_stages
     N_finite_elements = N_finite_elements(1:N_stages);
     if print_level >=1
-    fprintf('Info: Provided N_finite_elements had more antries then N_stages, the surplus of entries was removed. \n')
+        fprintf('Info: Provided N_finite_elements had more antries then N_stages, the surplus of entries was removed. \n')
     end
 end
 if length(N_finite_elements) == 1
@@ -138,7 +152,7 @@ if exist('u')
 else
     n_u = 0;
     if print_level >=1
-    fprintf('Info: No control vector u is provided. \n')
+        fprintf('Info: No control vector u is provided. \n')
     end
     lbu = [];
     ubu = [];
@@ -151,7 +165,7 @@ end
 %% Stage and terminal costs
 if ~exist('f_q')
     if print_level >=1
-    fprintf('Info: No stage cost is provided. \n')
+        fprintf('Info: No stage cost is provided. \n')
     end
     f_q = 0;
 end
@@ -188,7 +202,7 @@ else
     n_g_ineq = 0;
     g_ineq_constraint  = 0;
     if print_level >=1
-     fprintf('Info: No path constraints are provided. \n')
+        fprintf('Info: No path constraints are provided. \n')
     end
 end
 %% Terminal constraints
@@ -215,13 +229,19 @@ else
     terminal_constraint = 0;
     n_g_terminal = 0;
     if print_level >=1
-    fprintf('Info: No terminal constraints are provided. \n')
+        fprintf('Info: No terminal constraints are provided. \n')
     end
 end
-%% Stewart's representation of the sets R_i and discirimant functions g_i
+
+%% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
+pss_mode = settings.pss_mode;
+
+
+% Stewart's representation of the sets R_i and discirimant functions g_i
 g_ind_all = [ ];
 c_all = [];
 m_vec = [];
+n_c_vec = [];
 
 if ~exist('F')
     error('Matrix F (or matrices F_i) with PSS modes not provided.');
@@ -244,20 +264,24 @@ end
 if ~exist('S')
     % if not the matrix S is provided, maybe the g_ind are avilable
     % directly?
-    if exist('g_ind')
-        if ~iscell(g_ind)
-            g_ind = {g_ind};
-        end
+    if isequal(pss_mode,'Stewart')
+        if exist('g_ind')
+            if ~iscell(g_ind)
+                g_ind = {g_ind};
+            end
 
-        for ii = 1:n_simplex
-            % discrimnant functions
-            eval(['g_ind_' num2str(ii) '= g_ind{ii};']);
-            eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
-            eval(['c_all = [c_all; 0];']);
+            for ii = 1:n_simplex
+                % discrimnant functions
+                eval(['g_ind_' num2str(ii) '= g_ind{ii};']);
+                eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
+                eval(['c_all = [c_all; 0];']);
+            end
+        else
+            error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
+                'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
         end
     else
-        error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
-            'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
+        error(['The user usses settings.pss_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
     end
 else
     % Check if all data is avilable and if dimensions match.
@@ -265,7 +289,7 @@ else
         S = {S};
     end
     if length(S) ~= n_simplex
-        error('Number of matrices S does not match number of subsystems (taken to be number of matrices F_i which collect the modes of every subsystem).')
+        error('Number of matrices S does not match number of subsystems. Note that the number of subsystems is taken to be number of matrices F_i which collect the modes of every subsystem.')
     end
     % Check constraint function c
     if ~exist('c')
@@ -278,21 +302,44 @@ else
             error('Number of different expressions for c does not match number of subsystems (taken to be number of matrices F_i which collect the modes of every subsystem).')
         end
     end
+
+    % check are the matrices dense
+    if isequal(pss_mode,'Stewart')
+        for ii = 1:n_simplex
+            if any(sum(abs(S{ii}),2)<size(S{ii},2))
+                if n_simplex == 1
+                    error('The matrix S is not dense. Either provide a dense matrix or use settings.mode = ''Step''.');
+                else
+                    error(['The matrix S{' num2str(ii) '} of the provided matrices is not dense. Either provide all dense matrices or use settings.mode = ''Step''.']);
+                end
+            end
+        end
+    end
+
     % Create Stewart's indicator functions g_ind_ii
     for ii = 1:n_simplex
         if size(S{ii},2) ~= length(c{ii})
             error('The matrix S and vector c do not have compatible dimension.');
         end
         % discrimnant functions
-        eval(['g_ind_' num2str(ii) '= -S{ii}*c{ii};']);
-        eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
+        if isequal(pss_mode,'Stewart')
+            eval(['g_ind_' num2str(ii) '= -S{ii}*c{ii};']);
+            eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
+        else
+            eval(['c_' num2str(ii) '= c{ii};']);
+        end
         eval(['c_all = [c_all; c{ii}];']);
+        % dimensions of c
+        eval(['n_c_' num2str(ii) '= length(c{ii});']);
+        n_c_vec  = [n_c_vec;length(c{ii})];
     end
+
 end
 
 % index sets and dimensions for ubsystems
 m_ind_vec = [cumsum(m_vec)-m_1+1]; % index ranges of the corresponding thetas and lambdas
 m = sum(m_vec);
+
 %% Parameters
 if casadi_symbolic_mode == 'MX'
     sigma = MX.sym('sigma'); % homotopy parameter
@@ -305,60 +352,127 @@ n_param = 1;  % number of parameters,  we model it as control variables and merg
 p = [sigma];
 n_p = 1;
 
-%% Declare model variables and equations
-% Algebraic variables defintion
-n_theta = sum(m_vec); % number of modes
-n_lambda = n_theta;
-n_z = n_theta+n_lambda+n_simplex; % n_theta + n_lambda + n_mu
+%% Algebraic variables defintion
+switch pss_mode
+    case 'Stewart'
+        % dimensions
+        n_theta = sum(m_vec); % number of modes
+        n_lambda = n_theta;
+        n_f = n_theta;
+        n_z = n_theta+n_lambda+n_simplex; % n_theta + n_lambda + n_mu
+        theta = [];
+        mu = [];
+        lambda = [];
+        E = []; % diagonal matrix with one vectors
 
-theta = [];
-mu = [];
-lambda = [];
+        % Define symbolic variables for algebraci equtions!
+        for i = 1:n_simplex
+            i_str = num2str(i);
+            % define theta (convex multiplers of Filippov embedding)
+            eval(['theta_' i_str '=' casadi_symbolic_mode '.sym(''theta_' i_str ''',m_' i_str ');'])
+            eval(['theta = [theta; theta_' i_str '];'])
+            % define mu_i (Lagrange multipler of e'theta =1;)
+            eval(['mu_' i_str '= ' casadi_symbolic_mode '.sym(''mu_' i_str ''',1);'])
+            eval(['mu = [mu; mu_' i_str '];'])
+            % define lambda_i (Lagrange multipler of theta >= 0;)
+            eval(['lambda_' i_str '= ' casadi_symbolic_mode '.sym(''lambda_' i_str ''',m_' i_str ');'])
+            eval(['lambda = [lambda; lambda_' i_str '];'])
+            % adefine ppropiate vector of ones
+            eval(['e_' i_str '=ones(m_' i_str ' ,1);'])
+            if n_simplex > 1
+                eval(['E_row = zeros(m_' i_str ',n_simplex);'])
+                eval(['E_row(:,' i_str ') = e_' i_str ';']);
+                E = [E;E_row];
+            end
+        end
+        if n_simplex == 1
+            E = e_1;
+        end
+    case 'Step'
+        n_alpha = sum(n_c_vec);
+        n_f = sum(m_vec);
+        n_lambda_0 = sum(n_c_vec);
+        n_lambda_1 = sum(n_c_vec);
+        % for creae_nlp_fesd
+        n_theta = 2*n_alpha;
+        n_lambda = n_lambda_0+n_lambda_1;
+        % algebraic varaibles so far
+        n_z = n_alpha+n_lambda_0+n_lambda_1;
+        alpha  = [];
+        lambda_0 = [];
+        lambda_1 = [];
+        for i = 1:n_simplex
+            i_str = num2str(i);
+            % define alpha (selection of a set valued step function)
+            eval(['alpha_' i_str '=' casadi_symbolic_mode '.sym(''alpha_' i_str ''',n_c_' i_str ');'])
+            eval(['alpha = [alpha; alpha_' i_str '];'])
+            % define lambda_0_i (Lagrange multipler of alpha >= 0;)
+            eval(['lambda_0_' i_str '=' casadi_symbolic_mode '.sym(''lambda_0_' i_str ''',n_c_' i_str ');'])
+            eval(['lambda_0= [lambda_0; lambda_0_' i_str '];'])
+            % define lambda_1_i (Lagrange multipler of alpha <= 1;)
+            eval(['lambda_1_' i_str '=' casadi_symbolic_mode '.sym(''lambda_1_' i_str ''',n_c_' i_str ');'])
+            eval(['lambda_1= [lambda_1; lambda_1_' i_str '];'])
+        end
+        % adefine ppropiate vector of ones % for the kkt conditions of the LP
+        e_all = ones(n_alpha,1);
 
-E = []; % diagonal matrix with one vectors
-
-% Define symbolic variables for algebraci equtions!
-for i = 1:n_simplex
-    i_str = num2str(i);
-    % define theta (convex multiplers of Filippov embedding)
-    eval(['theta_' i_str '=' casadi_symbolic_mode '.sym(''theta_' i_str ''',m_' i_str ');'])
-    eval(['theta = [theta; theta_' i_str '];'])
-    % define mu_i (Lagrange multipler of e'theta =1;)
-    eval(['mu_' i_str '= ' casadi_symbolic_mode '.sym(''mu_' i_str ''',1);'])
-    eval(['mu = [mu; mu_' i_str '];'])
-    % define lambda_i (Lagrange multipler of theta >= 0;)
-    eval(['lambda_' i_str '= ' casadi_symbolic_mode '.sym(''lambda_' i_str ''',m_' i_str ');'])
-    eval(['lambda = [lambda; lambda_' i_str '];'])
-    % adefine ppropiate vector of ones
-    eval(['e_' i_str '=ones(m_' i_str ' ,1);'])
-
-    if n_simplex > 1
-        eval(['E_row = zeros(m_' i_str ',n_simplex);'])
-        eval(['E_row(:,' i_str ') = e_' i_str ';']);
-        E = [E;E_row];
-    end
-
+        % Define already here lifting variables and functions
+        beta = [];
+        gamma = [];
+        
+        % Upsilo collects the vector for dotx = F(x)Upsilon, it is either multiaffine
+        % terms or gamma from lifting
+        if pss_lift_step_functions
+            % do the lifting algortim for ever subystem
+            % introduce varibles beta and gamma
+            % introduce their dimensions
+        else
+%             upsilon_i = {};
+            % define the (multi)afine term for all subsystems
+            for i = 1:n_simplex
+                upsilon_i = [];
+                % go thorug rows of of every matrix and deffine the
+                % appropate term
+                % store them in the upsilon cell
+            end
+        end
+        n_beta = length(beta);
+        n_gamma = length(gamma);
 end
-if n_simplex == 1
-    E = e_1;
-end
+
 
 %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS
-% symbolic variables
-z = [theta;lambda;mu];
-% inital guess for z
-% solve LP for guess;
-if lp_initalization
-    [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
-else
-    theta_guess = initial_theta*ones(n_theta,1);
-    lambda_guess = initial_lambda*ones(n_theta,1);
-    mu_guess = initial_mu*ones(n_simplex,1);
+switch pss_mode
+    case 'Stewart'
+        % symbolic variables
+        z = [theta;lambda;mu];
+        lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_simplex,1)];
+        ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_simplex,1)];
+        % inital guess for z
+        % solve LP for guess;
+        if lp_initalization
+            [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
+        else
+            theta_guess = initial_theta*ones(n_theta,1);
+            lambda_guess = initial_lambda*ones(n_theta,1);
+            mu_guess = initial_mu*ones(n_simplex,1);
+        end
+        z0 = [theta_guess;lambda_guess;mu_guess];
+        % Lower and upper bounds for \theta, \lambda and \mu.
+
+    case 'Step'
+        z = [alpha;lambda_0,lambda_1,beta,gamma];
+        lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
+        ubz = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
+
+        alpha_guess = initial_alpha*ones(n_alpha,1);
+        lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
+        lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
+        beta_guess = initial_beta*ones(n_alpha,1);
+        gamma_guess = initial_gamma*ones(n_alpha,1);
+        % eval functios for gamma and beta?
+        z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
 end
-z0 = [theta_guess;lambda_guess;mu_guess];
-% Lower and upper bounds for \theta, \lambda and \mu.
-lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_simplex,1)];
-ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_simplex,1)];
 
 model.z0 = z0;
 model.lbz = lbz;
@@ -368,40 +482,54 @@ model.ubz = ubz;
 %% Reformulate the Filippov ODE into a DCS
 f_x = zeros(n_x,1);
 % rhs of ODE;
+
 for ii = 1:n_simplex
     ii_str = num2str(ii);
-    eval(['f_x = f_x + F_' ii_str '*theta_'  ii_str  ';']);
-
+    switch pss_mode
+        case 'Stewart'
+            eval(['f_x = f_x + F_' ii_str '*theta_'  ii_str  ';']);
+        case 'Step'
+                    eval(['f_x = f_x + F_' ii_str '*upsilon_'  ii_str  ';']);
+    end
 end
 
-% basic algebraic equations and complementarty condtions of the DCS
-% (Note that the cross complementarities are later defined when the discrete
-% time variables for every IRK stage in the create_nlp_fesd function are defined.)
-
-% g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_simplex
-% lambda_i'*theta_i = 0; for all i = 1,..., n_simplex
-% lambda_i >= 0;    for all i = 1,..., n_simplex
-% theta_i >= 0;     for all i = 1,..., n_simplex
 
 f_z = []; % collects standard algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
 f_z_convex = []; % equation for the convex multiplers 1 = e' \theta
 f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
+
+
+
 for i = 1:n_simplex
     i_str = num2str(i);
-    % Gradient of Lagrange Function of indicator LP
-    eval(['f_z = [f_z; g_ind_' i_str '-lambda_'  i_str '+mu_'  i_str '*e_' i_str '];']);
-    % Sum of all thethas equal to 1
-    eval(['f_z_convex = [f_z_convex; ; e_' i_str '''*theta_'  i_str '-1];']);
-    eval(['f_comp_residual = f_comp_residual + lambda_' i_str '''*theta_'  i_str ';']);
-    %     end
+    switch pss_mode
+        case 'Stewart'
+            % basic algebraic equations and complementarty condtions of the DCS
+            % (Note that the cross complementarities are later defined when the discrete
+            % time variables for every IRK stage in the create_nlp_fesd function are defined.)
+            % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_simplex
+            % lambda_i'*theta_i = 0; for all i = 1,..., n_simplex
+            % lambda_i >= 0;    for all i = 1,..., n_simplex
+            % theta_i >= 0;     for all i = 1,..., n_simplex
+            % Gradient of Lagrange Function of indicator LP
+            eval(['f_z = [f_z; g_ind_' i_str '-lambda_'  i_str '+mu_'  i_str '*e_' i_str '];']);
+            eval(['f_z_convex = [f_z_convex; ; e_' i_str '''*theta_'  i_str '-1];']);
+            eval(['f_comp_residual = f_comp_residual + lambda_' i_str '''*theta_'  i_str ';']);
+        case 'Step'
+            % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_simplex
+            % lambda_0_i'*alpha_i  = 0; for all i = 1,..., n_simplex
+            % lambda_1_i'*(e-alpha_i)  = 0; for all i = 1,..., n_simplex
+            % lambda_0_i >= 0;    for all i = 1,..., n_simplex
+            % lambda_1_i >= 0;    for all i = 1,..., n_simplex
+            % alpha_i >= 0;     for all i = 1,..., n_simplex
+            eval(['f_z = [f_z; c_' i_str '-lambda_1_'  i_str '+lambda_0_'  i_str '];']);
+            % to do , greate g_lift
+            eval(['f_comp_residual = f_comp_residual + lambda_0_' i_str '''*alpha_'  i_str '+ lambda_1_' i_str '''*(e_all-alpha_'  i_str ');']);
+    end
 end
 g_lp = [f_z;f_z_convex];
-
-%% MPCC Specific Considerations
-% sum over all complementariteies
-f_comp_residual;  % (used in l1 penalties and for evaluation of resiudal)
-% Point-wise
-n_algebraic_constraints = n_theta+n_simplex;  % dim(g  - lambda - mu *e ) + dim( E theta) ;
+n_algebraic_constraints  = length(g_lp);
+% n_algebraic_constraints = n_theta+n_simplex;  % dim(g  - lambda - mu *e ) + dim( E theta) ;
 
 %% CasADi functions for indictaor and region constraint functions
 % model equations
@@ -415,50 +543,15 @@ end
 
 if n_u >0
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
-    %     f_z_fun = Function('f_z_fun',{x,z,u},{f_z}); % old name
     g_lp_fun = Function('g_lp_fun',{x,z,u},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-%     J_cc_fun = Function('J_cc_fun',{x,z,u},{f_comp_residual});
 else
     f_x_fun = Function('f_x_fun',{x,z},{f_x,f_q});
-    %     f_z_fun = Function('f_z_fun',{x,z},{f_z});
     g_lp_fun = Function('g_lp_fun',{x,z},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-%     J_cc_fun = Function('J_cc_fun',{x,z},{f_comp_residual});
 end
 
 J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
 f_q_T_fun = Function('f_q_T',{x},{f_q_T});
 
-
-%% Function for continious time output of algebraic variables.
-% %% TODO: remove this after new treatmanet of boudnary is introduced;
-% try
-% [B,C,D,tau_root] = collocation_times_fesd(n_s,irk_scheme);
-% tau_col = tau_root(2:end);
-% eval(['tau = ' casadi_symbolic_mode '.sym(''tau'');'])
-% eval(['h_scale = ' casadi_symbolic_mode '.sym(''h_scale'');']) % Rescale the intevral from [0 1] to [0 h_scale]; h_scale will usually be the step size
-% eval(['y = ' casadi_symbolic_mode '.sym(''y'',n_s);'])
-% eval(['y_vec = ' casadi_symbolic_mode '.sym(''y_vec'',n_s,n_theta);'])
-% 
-% lagrange_poly = 0;
-% m_lagrange = [];
-% for ii = 1:n_s
-%     term_ii = y(ii);
-%     m_temp = 1;
-%     tau_scaled= h_scale*tau;
-%     tau_col_scaled = h_scale*tau_col;
-%     for jj = 1:n_s
-%         if jj~=ii
-%             term_ii = term_ii.*((tau_scaled-tau_col_scaled(jj))./(tau_col_scaled(ii)-tau_col_scaled(jj)));
-%             m_temp  = m_temp*((1-tau_col(jj))./(tau_col(ii)-tau_col(jj)));
-%         end
-%     end
-%     m_lagrange = [m_lagrange,m_temp];
-%     lagrange_poly = lagrange_poly + term_ii;
-% end
-% lagrange_poly_fun = Function('lagrange_poly',{y,tau,h_scale},{lagrange_poly}); % note that this is a scalar function
-% catch
-% 
-% end
 %% Intigal guess for state derivatives at stage points
 if isequal(irk_representation,'differential')
     if simple_v0_guess
@@ -508,20 +601,12 @@ model.f_z = f_z;
 model.f_q_T = f_q_T;
 
 model.f_x_fun = f_x_fun;
-% model.f_z_fun = f_z_fun;
 model.g_lp_fun = g_lp_fun;
 model.f_q_T_fun = f_q_T_fun;
 
 model.J_cc_fun = J_cc_fun;
 model.g_ind_all_fun = g_ind_all_fun;
 model.c_fun = c_fun;
-
-% try
-% model.lagrange_poly_fun = lagrange_poly_fun;
-% model.m_lagrange = m_lagrange;
-% catch
-%     
-% end
 
 % Model Dimensions;
 model.n_x = n_x;
@@ -544,6 +629,7 @@ model.n_algebraic_constraints = n_algebraic_constraints;
 dimensions.N_stages = N_stages;
 dimensions.N_finite_elements = N_finite_elements;
 dimensions.n_x = n_x;
+dimensions.n_f = n_f;
 dimensions.n_u = n_u;
 dimensions.n_z = n_z;
 dimensions.n_s = n_s;

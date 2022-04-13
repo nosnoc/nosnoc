@@ -19,7 +19,7 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [settings] = refine_settings(settings);
+function [settings] = refine_settings(settings)
 
 %% Unfold user structure
 unfold_struct(settings,'caller')

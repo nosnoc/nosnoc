@@ -32,10 +32,10 @@ import casadi.*
 %% Choosing the Runge - Kutta Method and number of stages
 
 settings.print_level = 3;
-% settings.irk_scheme = 'Gauss-Legendre';
+settings.irk_scheme = 'Gauss-Legendre';
 settings.irk_scheme = 'Radau-IIA';
 % settings.irk_scheme = 'Explicit-RK';
-% settings.irk_scheme = 'Lobatto-IIIC';
+% settings.irk_scheme = 'Lobatto-IIIA';
 settings.n_s = 2;
 settings.mpcc_mode = 5;
 settings.cross_comp_mode = 3;
@@ -84,11 +84,13 @@ model.S = [-1;1];
 
 % Objective
 if ~settings.time_optimal_problem
+    % note that if q_goal is increased, model.T should be increased as
+    % well, otherwise the problem might become infeasible
     %  for time optimal problems we do not have to provide an objective
     model.f_q = u^2;
 end
 
-%  general nonlinear constraints are possible as well
+%  general nonlin   ear constraints are possible as well
 % model.g_ineq = u^2;
 % model.g_ineq_lb = [-inf];
 % model.g_ineq_ub = [u_max^2];

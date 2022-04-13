@@ -62,7 +62,10 @@ while complementarity_iter > comp_tol && ii < N_homotopy
     if print_level>=3
         fprintf('-----------------------------------------------------------------------------------------------\n');
         fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed, complementarity resiudal %2.2e.\n',ii,N_homotopy,sigma_k,complementarity_iter);
-        fprintf('CPU time of iteration:  %2.2f s.\n',cpu_time_iter);
+        fprintf('CPU time of iteration: %2.2f s.\t',cpu_time_iter);
+        if model.n_u >0
+            fprintf('Objective function value: %2.4e.\n', full(sol.f));
+        end
         fprintf('-----------------------------------------------------------------------------------------------\n');
     end
     
