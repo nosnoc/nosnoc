@@ -354,7 +354,7 @@ end
 m_ind_vec = [cumsum(m_vec)-m_1+1]; % index ranges of the corresponding thetas and lambdas
 m = sum(m_vec);
 
-if max(n_c_vec) < 2
+if max(n_c_vec) < 2 && isequal(pss_mode,'Step')
     pss_lift_step_functions = 0;
         if print_level >=1
             fprintf('Info: settings.pss_lift_step_functions  set to 0, as are step fucntion selections are already entering the ODE linearly. \n')
