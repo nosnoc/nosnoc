@@ -12,20 +12,27 @@ irk_representation = 'integral'; % are the IRK equations in differential from (d
 lift_irk_differential = 1; % if differential mode is used, introduce new variables for intermediate stage values X_ki.
 cross_comp_mode = 3;
 gamma_h = 1;
-% initalization
+
+
+pss_mode = 'Stewart'; % possible options: Stewart and Step
+
+
+% initalization - Stewart
 lp_initalization = 0;
 initial_theta = 0;
 initial_lambda = 0;
 initial_mu = 0;
+% initalization - Step
+initial_alpha = 0.5*1;
+initial_lambda_0 = 0.5*1;
+initial_lambda_1 = 0.5*1;
+initial_beta = 0.5*1;
+initial_gamma = 0.5*1;
 
-% an experimental variable. should be always one if no equdistant control
-% grid is
+pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
+n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc)
+
 couple_across_stages = 1;
-% N_stages = 10;                     %   
-% N_finite_elements = 3;            % Number of finite elments on a stage/control interval 
-% T = 2;
-% h = T/N_stages;
-% h_k = h/N_finite_elements;
 list_of_all_rk_schemes = {'radau','legendre','Radau-IIA','Gauss-Legendre','Radau-I','Radau-IA',...
                            'Lobatto-III','Lobatto-IIIA','Lobatto-IIIB','Lobatto-IIIC',...
                            'Explicit-RK'};
@@ -34,8 +41,8 @@ g_ineq_constraint = 0; % is nonlinear path constraint present (by default evalua
 g_ineq_at_fe = 0; % evaluate nonlinear path constraint at every finte element boundary
 g_ineq_at_stg = 0; % evaluate nonlinear path constraint at every stage 
 
-x_box_at_fe = 1; % evaluate box constraint for diff states at every finite element boundary point
-x_box_at_stg = 1; % evulate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
+% x_box_at_fe = 1; % evaluate box constraint for diff states at every finite element boundary point
+% x_box_at_stg = 1; % evulate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
 
 terminal_constraint = 0;
 time_optimal_problem = 0;

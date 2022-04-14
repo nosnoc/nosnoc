@@ -19,7 +19,7 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [settings] = refine_settings(settings);
+function [settings] = refine_settings(settings)
 
 %% Unfold user structure
 unfold_struct(settings,'caller')
@@ -36,7 +36,7 @@ if mpcc_mode == 1
 end
 
 if mpcc_mode == 4 || mpcc_mode == 10
-   cross_complementarity_mode = 10;
+   cross_comp_mode = 12;
 end
 
 if mpcc_mode >= 8 && mpcc_mode <= 10;
@@ -44,12 +44,31 @@ if mpcc_mode >= 8 && mpcc_mode <= 10;
     N_homotopy = 1;   
 end
 
+if s_elastic_0 > s_elastic_max
+    s_elastic_max = s_elastic_0;
+    if print_level >= 2
+        fprintf('Info: s_elastic_0 > s_elastic_max , setting s_elastic_max = s_elastic_0. \n');
+    end
+end
+
+
 if equidistant_control_grid == 0
     couple_across_stages = 1;
 end
 
 if nonlinear_sigma_rho_constraint
     convex_sigma_rho_constraint = 1;
+end
+
+%% Handling constraint evaluation. 
+if ~exist('x_box_at_fe')
+    x_box_at_fe = 1;
+end
+if ~exist('x_box_at_stg')
+    x_box_at_stg = 1;
+    if isequal(irk_scheme,'differential') &&  ~lift_irk_differential
+        x_box_at_stg = 0;
+    end
 end
 
 %% Correct contradictring settings, complete missing data (if any)
@@ -85,13 +104,25 @@ if exist('cross_complementarity_mode')
     cross_comp_mode = cross_complementarity_mode;
 end
 
+
+
 %% Impose time
 % this gets active only if time freezing is activated and the user had provided impose_terminal_phyisical_time = 0.
+% 
+% if time_freezing || stagewise_clock_constraint
+%     % using them is the only way to rescale the time;
+%     use_speed_of_time_variables = 1;
+%     local_speed_of_time_variable = 1;
+% end
+% 
+% if stagewise_clock_constraint
+%     time_freezing = 1;
+% end
+
 if (time_freezing && ~impose_terminal_phyisical_time) 
     time_rescaling = 0;
-    % But what if I want to get time_optimal_problem and minimize the
-    % numericla time? The implementation of this should be avoided.
 end
+
 if impose_terminal_phyisical_time == 0
     warning ('impose_terminal_phyisical_time = 0 is not recommended. It means T \neq T_phy (or T_final \neq T_phy). It is only supported for nonequdistant control grids \n')
 end

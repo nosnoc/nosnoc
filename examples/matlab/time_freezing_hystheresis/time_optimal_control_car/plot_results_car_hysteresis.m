@@ -186,7 +186,6 @@ saveas(gcf,'states_and_control')
 %% phase plot
 
 figure
-if use_hystereis_model
     plot(x2_opt,x4_opt)
     grid on
     ylim([-0.1 1.1])
@@ -194,13 +193,6 @@ if use_hystereis_model
     xlabel('$v$','Interpreter','latex')
     xline(v1)
     xline(v2)
-else
-    plot(x2_opt,x1_opt)
-    grid on
-    ylabel('$q$ [hystheresis state]','Interpreter','latex')
-    xlabel('$v$','Interpreter','latex')
-    xline(v2)
-end
 
 %%  Homotopy complementarity stats
 if nargin >= 4

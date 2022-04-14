@@ -38,9 +38,10 @@ settings.n_s = 2;
 settings.irk_scheme = 'Radau-IIA';     
 settings.print_level = 2;
 settings.mpcc_mode = 5; % very fast                    
-% settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
+settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
 settings.s_elastic_max = 1e1;                    
-settings.cross_comp_mode = 8;
+settings.cross_comp_mode = 3;
+% settings.heuristic_step_equilibration = 0;
 %% Generate Model
 model = blocks_with_friction();
 %% Simulation setings
@@ -49,10 +50,16 @@ N_finite_elements = 3;
 T_sim = 12;
 N_sim = 85;
 
+% N_finite_elements = 2;
+% T_sim = 5;
+% N_sim = 25;
+
+% settings.pss_mode = 'Step';
+% settings.pss_lift_step_functions= 0;
+
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
-% model.h_sim = 0.1412;
 
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
@@ -64,3 +71,4 @@ unfold_struct(model,'base');
 unfold_struct(settings,'base');
 unfold_struct(results,'base');
 plot_results_friction_blocks
+

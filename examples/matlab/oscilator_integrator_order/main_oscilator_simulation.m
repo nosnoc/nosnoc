@@ -28,24 +28,22 @@ use_fesd = 1;
 model.smooth_model = 0;
 
 plot_integrator_output = 1;
-plot_continious_time_sol = 1;
+plot_continious_time_sol =0;
 %% discretization settings
-N_stages = 2;
-N_finite_elements = 1;
+N_stages = 1;
+N_finite_elements = 2;
 
 T_sim = pi/2;
-N_sim  = 10;
-
-
+N_sim  = 29;
 R_osc  = 1;
 
 %% settings
 % collocation settings
 settings = default_settings_fesd();
-% settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = 'Radau-IIA';
 % settings.lift_irk_differential = 1;
 % % settings.irk_scheme = 'Radau-I';
-settings.irk_scheme = 'Gauss-Legendre';
+% settings.irk_scheme = 'Gauss-Legendre';
 % settings.lift_irk_differential = 0;
 % settings.irk_scheme = 'Lobatto-III';
 % settings.irk_scheme = 'Lobatto-IIIA';
@@ -53,12 +51,15 @@ settings.irk_scheme = 'Gauss-Legendre';
 % settings.irk_scheme = 'Lobatto-IIIC';
 % settings.irk_scheme = 'Explicit-RK';
 settings.print_level = 2;
-settings.n_s = 5;
+settings.n_s = 3;
+settings.pss_mode = 'Step';
+settings.pss_lift_step_functions = 1;
 
-settings.irk_representation = 'differential';
-settings.mpcc_mode = 5;
-% settings.mpcc_mode = 3;  % FOR ROBUSTNES 
+% settings.irk_representation = 'differential';
+settings.mpcc_mode = 4;
+settings.mpcc_mode = 3;  % FOR ROBUSTNES 
 settings.s_elastic_max = 1e1;              % upper bound for elastic variables
+settings.cross_comp_mode = 3;
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-16;
 settings.N_homotopy = 25;% number of steps
@@ -82,6 +83,7 @@ model.N_stages = N_stages;
 model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
+% model.h_sim = 0.039;
 model.R_osc = R_osc;
 model = oscilator(model);
 %% Call integrator
@@ -198,27 +200,6 @@ if plot_continious_time_sol
         xline(t_grid(ii),'k--')
     end
 end
-%
-% results.theta_res
-% results.theta_boundary_res
-%
-% results.lambda_res
-% results.lambda_boundary_res
-%
-% results.mu_res
-% results.mu_boundary_res
-% %
-% g_ind_eval = [];
-%
-% for ii = 1:length(results.x_res)
-%     g_ind_eval = [g_ind_eval,full(model.g_ind_all_fun(results.x_res(:,ii)))];
-% end
-% %%
-% g_lp_eval = [];
-% for ii = 1:length(results.x_res)-1
-%     g_ind_eval = [g_ind_eval,full(model.g_ind_all_fun(results.x_res(:,ii)))];
-%     x_ii = results.x_res(:,ii+1);
-%     z_ii = [results.theta_boundary_res(:,ii);results.lambda_boundary_res(:,ii);results.mu_boundary_res(:,ii) ];
-%     g_lp_eval = [g_lp_eval,full(model.g_lp_fun(x_ii,z_ii))];
-% end
+%%
+model.n_cross_comp
 

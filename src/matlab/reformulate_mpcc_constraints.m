@@ -6,7 +6,7 @@ function [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(varargin)
 % Sanity check of the input
 import casadi.*
 %%
-g_cross_comp_j = [];
+% g_cross_comp_j = [];
 % Sanity Chack
 if ~(nargin == 4 || nargin == 5)
     error('Wrong input number, see function help for required inputs.')
@@ -59,9 +59,9 @@ n_all_comp_j = length(g_all_comp_j); % outputdimension of the bilinear constrain
                         if k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
 %                             if cross_comp_mode == 10 &&  k == N_stages-1 && j == d && i == N_finite_elements(end)-1
                             if objective_scaling_direct
-                                J = J + (1/p)*g_cross_comp_j;
+                                J = J + (1/p)*g_all_comp_j;
                             else
-                                J = p*J + g_cross_comp_j;
+                                J = p*J + g_all_comp_j;
                             end
                         end
                     case 5
@@ -76,13 +76,14 @@ n_all_comp_j = length(g_all_comp_j); % outputdimension of the bilinear constrain
                         g_comp_ub = zeros(n_all_comp_j,1);
                     case 7
                         % elastic mode - two sided inequality
-                        g_comp_lb = -inf*ones(n_all_comp_j,1);
-                        g_comp_ub = zeros(n_all_comp_j,1);
                         g_comp = g_all_comp_j-s_elastic*ones(n_all_comp_j,1);
+                        g_comp_ub = zeros(n_all_comp_j,1);
+                        g_comp_lb = -inf*ones(n_all_comp_j,1);
 
                         g_comp = [g_comp;g_all_comp_j+s_elastic*ones(n_all_comp_j,1)];
-                        g_comp_lb = [g_comp_lb; g_comp_ub];
-                        g_comp_ub = [g_comp_ub; -g_comp_lb];
+                        g_comp_ub = [g_comp_ub; inf*ones(n_all_comp_j,1)];
+                        g_comp_lb = [g_comp_lb;  zeros(n_all_comp_j,1)];
+                        
                     case 8
                         % elastic mode with barrier homotopy
                         % elastic mode - inequality
@@ -99,11 +100,11 @@ n_all_comp_j = length(g_all_comp_j); % outputdimension of the bilinear constrain
                         g_comp_ub = zeros(n_all_comp_j,1);
                         
                     case 10
-                        if cross_comp_mode == 10 &&  k == N_stages-1 && j == d && i == N_finite_elements(end)-1
+                        if  k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
                             if objective_scaling_direct
-                                J = J + (1/s_elastic)*g_cross_comp_j;
+                                J = J + (1/s_elastic)*g_all_comp_j;
                             else
-                                J = s_elastic*J + g_cross_comp_j;
+                                J = s_elastic*J + g_all_comp_j;
                             end
                         end
                     otherwise

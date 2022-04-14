@@ -46,7 +46,7 @@ alg_states = w_opt(ind_z);
 u_opt = w_opt(ind_u);
 u_opt = reshape(u_opt,n_u,N_stages);
 
-if use_fesd 
+if use_fesd
     h_opt = w_opt(ind_h);
 else
     h_opt  = h*ones(sum(N_finite_elements),1);
@@ -57,15 +57,29 @@ x_opt_extended = w_opt(ind_x);
 x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
 x_opt  = x_opt_extended(:,1:n_s+1:end);
 
-alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
-theta_opt_extended = [alg_states_extended(1:n_theta*n_simplex,:)];
-lambda_opt_extended = [alg_states_extended(n_theta*n_simplex+1:2*n_theta*n_simplex,:)];
-mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
+switch pss_mode
+    case 'Stewart'
+        alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
+        theta_opt_extended = [alg_states_extended(1:n_theta*n_simplex,:)];
+        lambda_opt_extended = [alg_states_extended(n_theta*n_simplex+1:2*n_theta*n_simplex,:)];
+        mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
+
+        theta_opt= theta_opt_extended(:,1:n_s+1:end);
+        lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
+        mu_opt= mu_opt_extended(:,1:n_s+1:end);
+    case 'Step'
+        alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
+        alpha_opt_extended = [alg_states_extended(1:n_alpha*n_simplex,:)];
+        lambda_0_opt_extended = [alg_states_extended(n_alpha*n_simplex+1:2*n_alpha*n_simplex,:)];
+        lambda_1_opt_extended = [alg_states_extended(2*n_alpha*n_simplex+1:3*n_alpha*n_simplex,:)];
+
+        alpha_opt= alpha_opt_extended(:,1:n_s+1:end);
+        lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);
+        lambda_1_opt= lambda_1_opt_extended(:,1:n_s+1:end);
+end
 
 
-theta_opt= theta_opt_extended(:,1:n_s+1:end);
-lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
-mu_opt= mu_opt_extended(:,1:n_s+1:end);
+
 
 t_grid = cumsum([0;h_opt]);
 
@@ -79,7 +93,7 @@ end
 if time_optimal_problem
     if use_speed_of_time_variables
         s_sot = w_opt(ind_sot);
-        if ~local_speed_of_time_variable    
+        if ~local_speed_of_time_variable
             s_sot = s_sot*ones(N_stages,1);
         end
         h_rescaled = [];
@@ -117,14 +131,27 @@ results.x_opt_extended = x_opt_extended;
 results.t_grid = t_grid;
 
 ind_t_grid_u = cumsum([1; N_finite_elements]);
-results.t_grid_u = t_grid(ind_t_grid_u); 
-results.theta_opt = theta_opt;
-results.lambda_opt = lambda_opt;
-results.mu_opt = mu_opt;
+results.t_grid_u = t_grid(ind_t_grid_u);
 
-results.theta_opt_extended = theta_opt_extended;
-results.lambda_opt_extended = lambda_opt_extended;
-results.mu_opt_extended = mu_opt_extended;
+switch pss_mode
+    case 'Stewart'
+        results.theta_opt = theta_opt;
+        results.lambda_opt = lambda_opt;
+        results.mu_opt = mu_opt;
+
+        results.theta_opt_extended = theta_opt_extended;
+        results.lambda_opt_extended = lambda_opt_extended;
+        results.mu_opt_extended = mu_opt_extended;
+    case 'Step'
+        results.alpha_opt = alpha_opt;
+        results.lambda_0_opt= lambda_0_opt;
+        results.lambda_1_opt = lambda_1_opt;
+
+        results.alpha_opt_extended = alpha_opt_extended;
+        results.lambda_0_opt_extended= lambda_0_opt_extended;
+        results.lambda_1_opt_extended = lambda_1_opt_extended;
+end
+
 
 results.u_opt = u_opt;
 results.f_opt = full(results.f);
