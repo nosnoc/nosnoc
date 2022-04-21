@@ -210,7 +210,7 @@ if additional_residual_ingeration_step
     fprintf('--> + additional residual step to reach T_sim with  T_residual =  %2.3f.\n',T_residual);
 end
 fprintf('-------------------------------------------------------------------------------------\n');
-fprintf('Total CPU time: %2.3f s, N_stg =%d, N_FE = %d.\n',sum(time_per_iter),N_stages,N_finite_elements(1));
+fprintf('Total CPU time: %2.3f s, N_stg = %d, N_FE = %d.\n',sum(time_per_iter),N_stages,N_finite_elements(1));
 fprintf('Max iteration time: %2.3f s, min iteration time: %2.3f s.\n',max(time_per_iter),min(time_per_iter));
 fprintf('Max complementarity residual: %2.3e, min complementarity residual: %2.3e.\n',max(complementarity_stats),min(complementarity_stats));
 fprintf('-----------------------------------------------------------------------------------------------\n\n');

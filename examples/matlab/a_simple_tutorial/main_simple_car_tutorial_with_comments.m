@@ -20,7 +20,7 @@
 %
 %
 %% About
-% This script provids a tutoral how to formulate a simple time-optimal control
+% This script provids a tutoral how to formulate a time-optimal control
 % problme of a simple car with two modes of operation.
 % When the car exceeds a certain velocity treshold, its acceleration
 % improves by the factor of 3 (turbo mode). For more information see the
@@ -30,7 +30,6 @@ clear all; clc; close all;
 import casadi.*
 [settings] = default_settings_fesd();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
 %% Choosing the Runge - Kutta Method and number of stages
-
 settings.print_level = 3;
 settings.irk_scheme = 'Gauss-Legendre';
 settings.irk_scheme = 'Radau-IIA';
@@ -42,8 +41,8 @@ settings.cross_comp_mode = 3;
 % settings.s_elastic_0 = 1e1;
 % settings.s_elastic_max = 1e4;
 settings.pss_mode = 'Stewart';
-settings.pss_mode = 'Step';
-
+% settings.pss_mode = 'Step';
+settings.use_fesd = 1;
 
 %% Time settings
 % Here we can indicate tha the Optimal Control Problem (OCP) is a time optimal control problem so the
@@ -54,7 +53,6 @@ settings.time_optimal_problem = 1;
 model.N_stages = 10; % number of control intervals
 model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 15;    % Time horizon
-
 
 % Symbolic variables and bounds
 q = SX.sym('q'); % position
@@ -74,7 +72,6 @@ u_max = 5;
 model.lbu = -u_max;
 model.ubu = u_max;
 
-
 % Dyanmics and the regions
 f_1 = [v;u]; % mode 1 - nominal
 f_2 = [v;3*u]; % mode 2 - turbo
@@ -92,7 +89,7 @@ if ~settings.time_optimal_problem
     model.f_q = u^2;
 end
 
-%  general nonlin   ear constraints are possible as well
+%%  general nonlinear constraints are possible as well
 % model.g_ineq = u^2;
 % model.g_ineq_lb = [-inf];
 % model.g_ineq_ub = [u_max^2];
@@ -108,11 +105,7 @@ v_goal = 0;
 % Add terminal constraint, if no upper and lower bound are provided, they are set to zero
 model.g_terminal = [q-q_goal;v-v_goal];
 
-
 %% Solve OCP
 % This functions formulates and discretized the OCP. We obtain an matheatmical programm with complementarity constraint which is solved  in a homotopy procedure.
 [results,stats,model,settings] = nosnoc_solver(model,settings);
 plot_results_nosnoc_tutorial
-
-J_fesd = model.comp_res_fesd(results.w_opt)
-J_std = model.comp_res_std(results.w_opt)

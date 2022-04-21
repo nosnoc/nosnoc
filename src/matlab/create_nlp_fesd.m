@@ -784,10 +784,11 @@ if time_optimal_problem
     % Add to the vector of unknowns
     w = {w{:}, T_final};
     w0 = [w0; T_final_guess];
-    lbw = [lbw;0];
-    ubw = [ubw;1e2];
+    lbw = [lbw;T_final_min];
+    ubw = [ubw;T_final_max];
     ind_t_final = [ind_total(end)+1];
     ind_total  = [ind_total,ind_total(end)+1];
+    J = J + T_final;
 end
 
 %% Terminal Constraints
