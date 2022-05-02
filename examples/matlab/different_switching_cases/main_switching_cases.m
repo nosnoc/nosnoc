@@ -22,8 +22,8 @@ clc
 close all
 import casadi.*
 %% Info
-% The goal of this example is to ilustrate the 4 different cases of switching that can occur in a PSS, on some simple examples.
-% by chossing example_num from 1 to 4 below one can see a case of
+% The goal of this example is to illustrate the 4 different cases of switching that can occur in a PSS, on some simple examples.
+% by chosing example_num from 1 to 4 below one can see a case of
 % 1) crossing a disconituity
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontenus switch can happen (nonuqnie solutions)
@@ -52,7 +52,7 @@ model.T_sim = T_sim;
 
 switch example_num
     case 1
-        %% Crossing a disconitnuity
+        %% Crossing a discontinuity
         
 
         model.x0 = [-1];
@@ -92,7 +92,7 @@ switch example_num
         ylabel('$x(t)$','Interpreter','latex')
         grid on
     case 3
-        %% spontenus switch
+        %% spontaneous switch
         
         model.x0 = [0.0];
         x = MX.sym('x',1);
