@@ -12,24 +12,24 @@ else
 end
 
 subplot(311)
-plot(t_grid,q_opt)
-xlabel('$t$','Interpreter','latex')
-xlabel('$q(t)$','Interpreter','latex')
+plot(t_grid,q_opt);
+xlabel('$t$','Interpreter','latex');
+xlabel('$q(t)$','Interpreter','latex');
 grid on
-subplot(312)
-plot(t_grid,v_opt)
-yline(v_max,'r--')
-yline(v_trash_hold,'k--')
+subplot(312);
+plot(t_grid,v_opt);
+yline(v_max,'r--');
+yline(v_trash_hold,'k--');
 ylim(1.2*[0 v_max]);
 xlabel('$t$','Interpreter','latex')
 xlabel('$v(t)$','Interpreter','latex')
 grid on
-subplot(313)
-stairs(t_grid_u,[u_opt,nan])
+subplot(313);
+stairs(t_grid_u,[u_opt,nan]);
 xlabel('$t$','Interpreter','latex')
 xlabel('$u(t)$','Interpreter','latex')
-yline(-u_max,'r--')
-yline(u_max,'r--')
+yline(-u_max,'r--');
+yline(u_max,'r--');
 ylim(1.2*[-u_max u_max]);
 grid on
 %%

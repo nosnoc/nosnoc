@@ -137,17 +137,17 @@ time_physical = x5_opt(ind_t);
 %% plots in phyisical time for paper
 figure
 subplot(221)
-plot(x5_opt,x2_opt,LineWidth=1.5)
+plot(x5_opt,x2_opt,'LineWidth',1.5)
 hold on
-plot(x5_opt,x2_opt*0+v1,'k--',LineWidth=1.0)
-plot(x5_opt,x2_opt*0+v2,'k--',LineWidth=1.0)
-plot(x5_opt,x2_opt*0+v_max,'r--',LineWidth=1.5)
+plot(x5_opt,x2_opt*0+v1,'k--','LineWidth',1.0)
+plot(x5_opt,x2_opt*0+v2,'k--','LineWidth',1.0)
+plot(x5_opt,x2_opt*0+v_max,'r--','LineWidth',1.5)
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$v(t)$ ','Interpreter','latex')
 grid on
 
 subplot(222)
-stairs(x5_opt(1:N_finite_elements:end),[u1_opt;nan],LineWidth=1.5)
+stairs(x5_opt(1:N_finite_elements:end),[u1_opt;nan],'LineWidth',1.5)
 ylim([-u_max*1.1 u_max*1.1])
 xlim([0 max(x5_opt(1:N_finite_elements:end))])
 xlabel('$t$ ','Interpreter','latex')
@@ -155,7 +155,7 @@ ylabel('$u(t)$ ','Interpreter','latex')
 grid on
 
 subplot(223)
-plot(x5_opt,x4_opt,LineWidth=1.5)
+plot(x5_opt,x4_opt,'LineWidth',1.5)
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$w(t)$ ','Interpreter','latex')
 ylim([-0.1 1.1]);
@@ -168,7 +168,7 @@ x4_opt_phy = x4_opt;
 x2_opt_phy(ind_t_complement) = nan;
 x4_opt_phy(ind_t_complement) = nan;
 subplot(224)
-plot(x2_opt,x4_opt,linewidth=1.5)
+plot(x2_opt,x4_opt,'LineWidth',1.5)
 hold on
 % plot(x2_opt_phy,x4_opt_phy,linewidth=2)
 % plot(x2_opt(ind_t),x4_opt(ind_t),linewidth=2)
@@ -198,7 +198,7 @@ figure
 if nargin >= 4
 figure
 complementarity_stats = stats.complementarity_stats;
-semilogy(complementarity_stats,'k',LineWidth=1.5)
+semilogy(complementarity_stats,'k','LineWidth',1.5)
 xlabel('iter','interpreter','latex');
 ylabel('Complementarity residual','interpreter','latex');
 grid on
