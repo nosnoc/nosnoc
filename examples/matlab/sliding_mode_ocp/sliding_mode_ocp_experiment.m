@@ -24,7 +24,9 @@ import casadi.*
 
 unfold_struct(scenario,'caller');
 %% model equations
-x_target = [-pi/6;-pi/3];
+% x_target = [-pi/6;-pi/3];
+x_target = [-pi/6;-pi/4];
+
 if linear_control
     v0  = [0;0];
 else
@@ -130,8 +132,7 @@ if estimate_terminal_error
     u_opt = results.u_opt;
     t_grid_optimizer = [results.t_grid];
     x_res_optimizer = [results.x_opt];
-%     x_target = [-pi/6;-1];
-    x_target = [-pi/6;-pi/3];
+    x_target = [-pi/6;-pi/4];
 
     if ~use_matlab_integrator
         model.T_sim = 4/6;
@@ -189,7 +190,7 @@ if estimate_terminal_error
 
         tspan = [0 4/6];
         y0 = [2*pi/3;pi/3;0;0];
-        sigma_int = 1e-11;
+        sigma_int = 1e-12;
         tol = sigma_int/10;
         options = odeset('RelTol', tol, 'AbsTol', tol/10);
         x_res_integrator = [];

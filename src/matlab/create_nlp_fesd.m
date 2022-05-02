@@ -163,6 +163,8 @@ mpcc_var_current_fe.p = p;
 comp_var_current_fe.cross_comp_control_interval_k = 0;
 comp_var_current_fe.cross_comp_control_interval_all = 0;
 
+g_step_eq  = [];
+
 %% Formulate the NLP / Main Discretization loop
 for k=0:N_stages-1
     %% Variables for the controls
@@ -882,6 +884,8 @@ comp_res_std = Function('comp_res_std',{vertcat(w{:})},{J_comp_std});
 %% NLP Solver
 prob = struct('f', J, 'x', vertcat(w{:}), 'g', vertcat(g{:}),'p',p);
 solver = nlpsol(solver_name, 'ipopt', prob,opts_ipopt);
+% solver = nlpsol(solver_name, 'bonmin', prob);
+
 
 %% Define CasADi function for the switch indicator function.
 if step_equilibration

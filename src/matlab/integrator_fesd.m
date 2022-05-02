@@ -19,6 +19,12 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
+% Examples of calling the function
+% [results] = integrator_fesd(model,settings);
+% [results,stats] = integrator_fesd(model,settings);
+% [results,stats,model] = integrator_fesd(model,settings);
+% [results,stats,model,settings] = integrator_fesd(model,settings);
+
 function [varargout] = integrator_fesd(model,settings)
 import casadi.*
 
@@ -123,9 +129,12 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
             mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
 
-            theta_opt= theta_opt_extended(:,1:n_s+1:end);
-            lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
-            mu_opt= mu_opt_extended(:,1:n_s+1:end);
+%             theta_opt= theta_opt_extended(:,1:n_s+1:end);
+%             lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
+%             mu_opt= mu_opt_extended(:,1:n_s+1:end);
+            theta_opt= theta_opt_extended(:,1:n_s:end);
+            lambda_opt= lambda_opt_extended(:,1:n_s:end);
+            mu_opt= mu_opt_extended(:,1:n_s:end);
         case 'Step'
             alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
             alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
@@ -141,9 +150,9 @@ for ii = 1:N_sim+additional_residual_ingeration_step
                 end
             end
 
-            alpha_opt= alpha_opt_extended(:,1:n_s+1:end);
-            lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);
-            lambda_1_opt= lambda_1_opt_extended(:,1:n_s+1:end);
+            alpha_opt= alpha_opt_extended(:,1:n_s:end);
+            lambda_0_opt= lambda_0_opt_extended(:,1:n_s:end);
+            lambda_1_opt= lambda_1_opt_extended(:,1:n_s:end);
     end
 
 

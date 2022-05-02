@@ -1,11 +1,11 @@
+% 
 
 %% controls
 unfold_struct(model,'caller');
 unfold_struct(results,'caller');
+
 u1_opt = u_opt(1,:);
 u2_opt = u_opt(2,:);
-
-
 
 x1_opt = x_opt(1,:);
 x2_opt = x_opt(2,:);

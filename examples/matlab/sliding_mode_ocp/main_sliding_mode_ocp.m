@@ -25,18 +25,21 @@ close all
 import casadi.*
 %% NOS-NOC settings
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
-settings.n_s = 3;
-N_finite_elements = 3;
+% settings.n_s = 2;
+% N_finite_elements = 6;
+
+settings.n_s = 2;
+N_finite_elements = 6;
+
 settings.irk_representation = 'differential';
-% settings.lift_irk_differential = 1;
 % settings.irk_scheme = 'Explicit-RK';
 % settings.irk_scheme = 'Lobatto-IIIA';
-% settings.irk_scheme = 'Radau-IIA';
 % settings.irk_scheme = 'Gauss-Legendre';
-settings.irk_scheme = 'Lobatto-IIIC';
+% settings.irk_scheme = 'Lobatto-IIIC';
+settings.irk_scheme = 'Radau-IIA';
+
 settings.print_level = 3;
 settings.use_fesd = 1;
-% settings.cross_comp_mode = 5;
 settings.mpcc_mode = 5;
 settings.comp_tol = 1e-12;
 settings.equidistant_control_grid  = 1;
@@ -44,8 +47,13 @@ settings.equidistant_control_grid  = 1;
 illustrate_regions  = 1;
 terminal_constraint = 1;
 linear_control = 1;
+
+settings.step_equilibration = 1;
+settings.rho_h = 1e1;
+settings.heuristic_step_equilibration = 0;
+settings.step_equilibration_mode = 3;
 %% model equations
-x_target = [-pi/6;-pi/3];
+x_target = [-pi/6;-pi/4];
 
 if linear_control
     v0  = [0;0];
@@ -53,10 +61,9 @@ else
     v0 = [];
 end
 model.x0 = [2*pi/3;pi/3;v0];
-
 model.T = 4;
 model.N_stages = 6;
-model.N_finite_elements = N_finite_elements ;
+model.N_finite_elements = N_finite_elements;
 % Variable defintion
 x1 = MX.sym('x1');
 x2 = MX.sym('x2');
@@ -125,8 +132,7 @@ else
 end
 %% Solve and plot
 [results,stats,model,settings] = nosnoc_solver(model,settings);
-% [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
-% [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
+
 u_opt = results.u_opt;
 f_opt = full(results.f);
 
@@ -136,34 +142,34 @@ x_res_optimizer = [results.x_opt];
 fprintf('Objective value %2.4f \n',f_opt);
 f_star = 6.616653254750982;
 fprintf('Error %2.4e \n',norm(f_opt - f_star));
-x_target = [-pi/6;-pi/3];
 
-model.T_sim = 4/6;
-model.N_sim = 12;
-model.N_stages = 1;
-model.N_finite_elements = 2;
-model.g_terminal = [];
-model.g_terminal_lb = [];
-model.g_terminal_ub = [];
-settings.mpcc_mode = 5;
-settings.irk_scheme = 'Radau-IIA';
-settings.n_s = 3;
-settings.use_fesd = 1;
-settings.print_level = 2;
 
 x_res_integrator = [];
 t_grid_integrator = [];
 t_end = 0;
 
 if 0
+    model.T_sim = 4/6;
+    model.N_sim = 12;
+    model.N_stages = 1;
+    model.N_finite_elements = 2;
+    model.g_terminal = [];
+    model.g_terminal_lb = [];
+    model.g_terminal_ub = [];
+    settings.mpcc_mode = 5;
+    settings.irk_scheme = 'Radau-IIA';
+    settings.n_s = 3;
+    settings.use_fesd = 1;
+    settings.print_level = 2;
+
     for ii =  1:6
         model.lbu = u_opt(:,ii);
         model.ubu = u_opt(:,ii);
         model.u0 = u_opt(:,ii);
-        [results,stats,model] = integrator_fesd(model,settings);
-        model.x0 = results.x_res(:,end);
-        x_res_integrator = [x_res_integrator,results.x_res];
-        t_grid_integrator = [t_grid_integrator, results.t_grid+t_end];
+        [results_integrator,stats,model] = integrator_fesd(model,settings);
+        model.x0 = results_integrator.x_res(:,end);
+        x_res_integrator = [x_res_integrator,results_integrator.x_res];
+        t_grid_integrator = [t_grid_integrator, results_integrator.t_grid+t_end];
         t_end = t_grid_integrator(end);
     end
 
@@ -195,6 +201,7 @@ else
 end
 
 %%
+if 0
 figure
 subplot(211)
 plot(t_grid_optimizer,x_res_optimizer(1:2,:))
@@ -206,7 +213,7 @@ plot(t_grid_integrator,x_res_integrator(1:2,:))
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$x(t)$ - integrator','interpreter','latex');
-%%
+%
 figure
 subplot(211)
 plot(t_grid_optimizer,x_res_optimizer(3:4,:))
@@ -219,7 +226,7 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$ - integrator','interpreter','latex');
 
-%%
+%
 figure
 subplot(121)
 plot(x_res_optimizer(1,:),x_res_optimizer(2,:),'LineWidth',2)
@@ -228,8 +235,6 @@ hold on
 plot(x_target(1),x_target(2),'rx')
 if illustrate_regions
     hold on
-%     p = 2; a = -0.1; a1 = 0;
-%     b = -0.05; q = 3;
     t2 = -5:0.01:5;
     plot(-a*(t2-a1).^p,t2,'k')
     hold on
@@ -260,5 +265,6 @@ if illustrate_regions
     xlim([-1.5 1.5])
     ylim([-1.5 1.5])
 end
-
-% plot_sliding_mode_ocp_res
+end
+%% 
+sliding_mode_plot_for_paper
