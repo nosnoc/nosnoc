@@ -176,7 +176,7 @@ if ~exist('f_q')
     if print_level >=1
         fprintf('Info: No stage cost is provided. \n')
     end
-    f_q = 0;
+    eval(['f_q = ', casadi_symbolic_mode, '.zeros(1)'])
 end
 if exist('f_q_T')
     terminal_cost = 1;
@@ -184,7 +184,7 @@ else
     if print_level >=1
         fprintf('Info: No terminal cost is provided. \n')
     end
-    f_q_T = 0;
+    eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1)'])
 end
 
 %% Inequality constraints
