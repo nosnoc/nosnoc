@@ -31,13 +31,8 @@ ii = 0;
 while complementarity_iter > comp_tol && ii < N_homotopy 
     % homotopy parameter update
     if ii == 0
-        sigma_k = inf;
-    end
-    if ii == 0
         sigma_k = sigma_0;
-    end
-
-    if ii>0
+    else
         sigma_k = kappa*sigma_k;
     end
     tic
@@ -80,7 +75,7 @@ while complementarity_iter > comp_tol && ii < N_homotopy
 
 end
 % Final value of elastic variable
- if mpcc_mode >= 5 && print_level>=3
+    if mpcc_mode >= 5 && print_level>=3
         fprintf('Value of elastic mode slack: %2.2e  .\n',w_opt(end));
         if mpcc_mode >= 8
             fprintf('rho Slack value: %2.2e  .\n',w_opt(end-1));

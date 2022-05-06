@@ -9,13 +9,13 @@ end
     
 [default_settings] = default_settings_fesd();
 fields_settings = fieldnames(settings);
-fields_defualt_settings = fieldnames(default_settings);
+fields_default_settings = fieldnames(default_settings);
 fields_model = fieldnames(model);
 
 jj = 0;
-for ii = 1:length(fields_defualt_settings)
-    if ~ismember(fields_defualt_settings{ii},fields_settings)
-        eval(['settings.' fields_defualt_settings{ii} '= default_settings.' fields_defualt_settings{ii} ';' ])
+for ii = 1:length(fields_default_settings)
+    if ~ismember(fields_default_settings{ii},fields_settings)
+        eval(['settings.' fields_default_settings{ii} '= default_settings.' fields_default_settings{ii} ';' ])
         jj = jj+1;
     end
 end

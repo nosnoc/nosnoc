@@ -248,7 +248,7 @@ end
 pss_mode = settings.pss_mode;
 
 % Stewart's representation of the sets R_i and discirimant functions g_i
-g_ind_all = [ ];
+g_ind_all = [];
 c_all = [];
 m_vec = [];
 n_c_vec = [];
@@ -284,7 +284,7 @@ if ~exist('S')
                 % discrimnant functions
                 eval(['g_ind_' num2str(ii) '= g_ind{ii};']);
                 eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
-                eval(['c_all = [c_all; 0];']);
+                c_all = [c_all; 0];
             end
         else
             error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
@@ -359,9 +359,9 @@ if isempty(n_c_vec)
 end
 if max(n_c_vec) < 2 && isequal(pss_mode,'Step')
     pss_lift_step_functions = 0;
-        if print_level >=1
-            fprintf('Info: settings.pss_lift_step_functions  set to 0, as are step fucntion selections are already entering the ODE linearly. \n')
-        end
+    if print_level >=1
+        fprintf('Info: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
+    end
 end
 
 %% Parameters
@@ -528,9 +528,9 @@ switch pss_mode
 
             end
         end
-            n_beta = length(beta);
-            n_gamma = length(gamma);
-            n_z = n_z + n_beta+n_gamma;
+        n_beta = length(beta);
+        n_gamma = length(gamma);
+        n_z = n_z + n_beta+n_gamma;
 end
 
 g_lift = [g_lift_beta; g_lift_gamma];
