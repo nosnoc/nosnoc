@@ -36,13 +36,15 @@ settings.irk_scheme = 'Radau-IIA';
 % settings.irk_scheme = 'Explicit-RK';
 % settings.irk_scheme = 'Lobatto-IIIA';
 settings.n_s = 2;
-settings.mpcc_mode = 5;
+settings.mpcc_mode = 3;
 settings.cross_comp_mode = 3;
 % settings.s_elastic_0 = 1e1;
 % settings.s_elastic_max = 1e4;
-settings.pss_mode = 'Stewart';
+% settings.pss_mode = 'Stewart';
 % settings.pss_mode = 'Step';
 settings.use_fesd = 1;
+settings.use_speed_of_time_variables = 1;
+% settings.local_speed_of_time_variable = 1;
 
 %% Time settings
 % Here we can indicate tha the Optimal Control Problem (OCP) is a time optimal control problem so the
@@ -50,9 +52,9 @@ settings.use_fesd = 1;
 settings.time_optimal_problem = 1;
 %% Model - define all problem functions and
 % Discretization parameters
-model.N_stages = 10; % number of control intervals
-model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
-model.T = 15;    % Time horizon
+model.N_stages = 20; % number of control intervals
+model.N_finite_elements = 6; % number of finite element on every control intevral (optionally a vector might be passed)
+model.T = 1;    % Time horizon
 
 % Symbolic variables and bounds
 q = SX.sym('q'); % position
@@ -60,7 +62,7 @@ v = SX.sym('v'); % velocity
 model.x = [q;v]; % add all important data to the struct model,
 model.x0 = [0;0]; % inital value
 
-v_max = 20; % maximal velocity
+v_max = 25; % maximal velocity
 model.lbx = [-inf;-v_max];
 model.ubx = [inf;v_max];
 
@@ -109,3 +111,7 @@ model.g_terminal = [q-q_goal;v-v_goal];
 % This functions formulates and discretized the OCP. We obtain an matheatmical programm with complementarity constraint which is solved  in a homotopy procedure.
 [results,stats,model,settings] = nosnoc_solver(model,settings);
 plot_results_nosnoc_tutorial
+if results.T_opt<1
+   results.T_opt = results.t_grid(end) ;
+end
+ [tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);

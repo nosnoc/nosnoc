@@ -11,10 +11,7 @@ q_goal = 150;
 v_goal = 0;
 v_max = 25;
 u_max = 5;
-%% Discretization parameters
-N_stages = 10;
-N_finite_elements = 3;
-T = 5;
+%
 %% Model Parameters
 % inital value
 q0 = 0;
