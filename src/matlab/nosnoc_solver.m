@@ -49,7 +49,11 @@ u_opt = reshape(u_opt,n_u,N_stages);
 if use_fesd
     h_opt = w_opt(ind_h);
 else
-    h_opt  = h*ones(sum(N_finite_elements),1);
+    h_opt   = [];
+    for ii = 1:N_stages
+        h_opt = [h_opt;h_k(ii)*ones(N_finite_elements(ii),1)];
+    end
+%     h_opt  = (h/N_finite_elements(1))*ones(sum(N_finite_elements),1);
 end
 
 
@@ -60,8 +64,8 @@ x_opt  = x_opt_extended(:,1:n_s+1:end);
 switch pss_mode
     case 'Stewart'
         alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
-        theta_opt_extended = [alg_states_extended(1:n_theta*n_simplex,:)];
-        lambda_opt_extended = [alg_states_extended(n_theta*n_simplex+1:2*n_theta*n_simplex,:)];
+        theta_opt_extended = [alg_states_extended(1:n_theta,:)];
+        lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
         mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
 
         theta_opt= theta_opt_extended(:,1:n_s+1:end);
@@ -112,9 +116,9 @@ end
 fprintf('\n');
 fprintf('-----------------------------------------------------------------------------------------------\n');
 if use_fesd
-    fprintf( ['OCP with the FESD ' irk_scheme ' in ' irk_representation ' mode with %d stages completed in %2.3f s.\n'],n_s,total_time);
+    fprintf( ['OCP with the FESD ' irk_scheme ' in ' irk_representation ' mode with %d stages and %d finite elements completed in %2.3f s.\n'],n_s,N_finite_elements(1),total_time);
 else
-    fprintf( ['OCP with the ' irk_scheme ' scheme with %d stages completed in %2.3f s.\n'],n_s,total_time);
+    fprintf( ['OCP with the ' irk_scheme ' scheme with %d stages and %d finite elements completed in %2.3f s.\n'],n_s,N_finite_elements(1),total_time);
 end
 fprintf('Total homotopy solver time: %2.3f seconds with %d homotopy iterations.\n',sum(stats.cpu_time),length(stats.cpu_time));
 fprintf('Max iteration time: %2.3f seconds, min iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
@@ -158,6 +162,7 @@ results.f_opt = full(results.f);
 results.f = [];
 results.T_opt = T_opt;
 results.w_opt = w_opt;
+results.h_opt = h_opt;
 %% Output
 varargout{1} = results;
 varargout{2} = stats;

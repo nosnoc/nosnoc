@@ -51,10 +51,10 @@ T_sim = 12;
 N_sim = 85;
 
 % N_finite_elements = 2;
-% T_sim = 5;
-% N_sim = 25;
+T_sim = 1;
+N_sim = 14;
 
-% settings.pss_mode = 'Step';
+settings.pss_mode = 'Step';
 % settings.pss_lift_step_functions= 0;
 
 model.T_sim = T_sim;

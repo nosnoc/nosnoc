@@ -26,18 +26,14 @@ import casadi.*
 
 %% Settings
 [settings] = default_settings_fesd();
-settings.n_s = 2;                            % IRK stages
-settings.mpcc_mode = 6;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - elastic mode
-settings.s_elastic_max = 1e0;              % upper bound for elastic variables
-settings.opts_ipopt.ipopt.max_iter = 1.5e3;
-settings.opts_ipopt.ipopt.print_level = 0;
-settings.initial_theta = 1/2; 
-settings.initial_lambda = 1/2;
-settings.initial_mu = 1/2;
-
+settings.n_s = 2;                       
+settings.mpcc_mode = 6; 
+settings.s_elastic_max = 1e0;             
+settings.opts_ipopt.ipopt.max_iter = 1e3;
+% settings.N_homotopy = 11;
 % Step Equlibration
 settings.step_equilibration_penalty = 1;
-
+settings.step_equilibration_mode = 3; %1 - penality relaxation, 3 - step equilibration as hard constraints
 %% Time settings
 settings.time_freezing = 1;
 settings.time_optimal_problem = 1;
@@ -50,10 +46,18 @@ settings.equidistant_control_grid = 1;
 settings.stagewise_clock_constraint = 1;
 %% Model Settings
 model.fuel_cost_on = 0;
-
+% Discretization parameters
+model.N_finite_elements = 3;
+model.N_stages = 10;
+model.T = 5;
 %% solve OCP
 model = car_hystheresis_model_voronoi(model);
 [results,stats,model,settings] = nosnoc_solver(model,settings);
 %% Read and plot Result
 plot_results_car_hysteresis(results,settings,model,stats)   
-fprintf('Final times is %2.4f. \n',results.w_opt(model.ind_t_final))
+
+%%
+T_opt = results.T_opt;
+N_stages = model.N_stages;
+u_opt = results.u_opt;
+[tout,yout,error] = car_hysteresis_sim(u_opt,T_opt,N_stages);
