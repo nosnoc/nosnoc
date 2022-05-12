@@ -83,7 +83,7 @@ More details can be found in the [user manual](https://github.com/nurkanovic/nos
 ## Literature - theory and algortihms
 
 ### FESD
-[Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://github.com/nurkanovic/nosnoc) \
+[Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://arxiv.org/abs/2205.05337) \
 A.Nurkanović, M. Sperl, S. Albrecht, M. Diehl \
 arXiv preprint 2022
 
