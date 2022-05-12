@@ -1,5 +1,5 @@
-# NOS-NOC
-**NOS-NOC** is open source software package for NOnSmooth Numerical Optimal Control.
+# NOSNOC
+**NOSNOC** is open source software package for NOnSmooth Numerical Optimal Control.
 
 
 ## General
@@ -8,7 +8,7 @@ It enables the treatment of a broad class of nonsmooth systems in a unified way.
 
 ## Installation
 
-**NOS-NOC** requires `CasADi` version 3.5.5.
+**NOSNOC** requires `CasADi` version 3.5.5.
 
 Currently, a `MATLAB` version is avilable. Versions to come will support a `python` interface as well.
 ### Installation for MATLAB
@@ -32,9 +32,9 @@ Note that `IPOPT` is shipped with `CasADi`, but more information including a det
 
 A `python` version is currently under development.
 	 
-## Using NOS-NOC
+## Using NOSNOC
 
-The interface of **NOS-NOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
+The interface of **NOSNOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
 User inputs should be given as `CasADi` expressions.
 
 Minimal code example for time-optimal problem for a car with two modes of opration.
@@ -103,9 +103,9 @@ arXiv preprint 2022
 
 ## Literature - software
 
-### NOS-NOC
+### NOSNOC
 
-[NOS-NOC: An Software Package for Numerical Optimal Control of Nonsmooth Systems](https://arxiv.org/abs/2203.11516) \
+[NOSNOC: An Software Package for Numerical Optimal Control of Nonsmooth Systems](https://arxiv.org/abs/2203.11516) \
 A.Nurkanović , M. Diehl \
 arXiv preprint 2022
 

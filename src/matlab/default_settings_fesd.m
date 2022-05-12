@@ -73,7 +73,7 @@ rho_min = 0.1;
 rho_max = (log(rho_scale)-log(1e-16))/rho_lambda;
   
 rho_0 = max(rho_min,0.5);
-sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0);
+% sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0);
    
 nonlinear_sigma_rho_constraint = 1;
 convex_sigma_rho_constraint = 0;
@@ -110,7 +110,8 @@ s_sot0 = 1;
 s_sot_max =	25;
 s_sot_min =	1/s_sot_max;
 impose_terminal_phyisical_time = 1;
-
+T_final_max = 1e2;
+T_final_min = 0;
 %% Verbose
 print_level = 3;
 opts_ipopt.ipopt.print_level = 0;

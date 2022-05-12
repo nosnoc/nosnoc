@@ -30,7 +30,7 @@ qt_temp*
 *.slo
 *.sls
 *.auxlock
-*.auxlock
 *.avi
 *.bak
 *.mp4
+*.mat

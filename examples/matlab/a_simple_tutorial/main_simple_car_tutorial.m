@@ -1,7 +1,8 @@
+clear all
 import casadi.*
 [settings] = default_settings_fesd();  
 % Choosing the Runge - Kutta Method and number of stages
-settings.irk_scheme = 'Lobatto-IIIA';
+settings.irk_scheme = 'Radau-IIA';
 % settings.cross_comp_mode = 1;
 settings.n_s = 2;
 % Time-settings  - Solve an time optimal control problem

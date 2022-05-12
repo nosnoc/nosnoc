@@ -88,8 +88,9 @@ end
 time_physical = x5_opt(ind_t);
 % Geomtric plot
 
+x_target = 10;
 figure;
-x = [0 4 4 0];
+x = [0 x_target x_target 0];
 y = [0 0 -1 -1];
 patch(x,y,'k','FaceAlpha',0.2)
 hold on
@@ -101,7 +102,7 @@ xlabel('$q_1$','interpreter','latex');
 ylabel('$q_2$','interpreter','latex');
 axis equal
 ylim([-0.4 max(x2_opt)*1.15])
-xlim([0.0 4])
+xlim([0.0 x_target])
 saveas(gcf,'geometric_traj')
 %%
 matlab_blue = [0 0.4470 0.7410];

@@ -176,7 +176,7 @@ if ~exist('f_q')
     if print_level >=1
         fprintf('Info: No stage cost is provided. \n')
     end
-    eval(['f_q = ', casadi_symbolic_mode, '.zeros(1)'])
+    eval(['f_q = ', casadi_symbolic_mode, '.zeros(1);'])
 end
 if exist('f_q_T')
     terminal_cost = 1;
@@ -184,7 +184,7 @@ else
     if print_level >=1
         fprintf('Info: No terminal cost is provided. \n')
     end
-    eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1)'])
+    eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1);'])
 end
 
 %% Inequality constraints
@@ -503,9 +503,11 @@ switch pss_mode
                         % defin intermediate beta
                         eval(['beta_' i_str '_' num2str(ii) '=' casadi_symbolic_mode '.sym(''beta_' i_str '_' num2str(ii) ''',n_beta_ii);'])
                         eval(['beta = [beta; beta_' i_str '_' num2str(ii) '];'])
-                        beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
+%                         eval(['beta_' num2str(ii+1-n_depth_step_lifting) '=' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ',n_beta_ii);'])
+                        eval(['beta_temp =' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ''',n_beta_ii);'])
+%                         beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
                         eval(['g_lift_beta_' i_str '= [g_lift_beta_' i_str ';beta_temp - temp(temp_S_IA)];'])
-                        temp = beta_temp(temp_S_IC);
+                        temp = beta_temp(temp_S_IC)';
                     end
                 end
                 eval(['g_lift_beta = [g_lift_beta;g_lift_beta_' i_str '];'])
@@ -531,7 +533,7 @@ switch pss_mode
             n_z = n_z + n_beta+n_gamma;
 end
 
-g_lift = [g_lift_beta;g_lift_gamma];
+g_lift = [g_lift_beta; g_lift_gamma];
 
 
 %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS

@@ -163,6 +163,8 @@ mpcc_var_current_fe.p = p;
 comp_var_current_fe.cross_comp_control_interval_k = 0;
 comp_var_current_fe.cross_comp_control_interval_all = 0;
 
+g_step_eq  = [];
+
 %% Formulate the NLP / Main Discretization loop
 for k=0:N_stages-1
     %% Variables for the controls
@@ -784,10 +786,11 @@ if time_optimal_problem
     % Add to the vector of unknowns
     w = {w{:}, T_final};
     w0 = [w0; T_final_guess];
-    lbw = [lbw;0];
-    ubw = [ubw;1e2];
+    lbw = [lbw;T_final_min];
+    ubw = [ubw;T_final_max];
     ind_t_final = [ind_total(end)+1];
     ind_total  = [ind_total,ind_total(end)+1];
+    J = J + T_final;
 end
 
 %% Terminal Constraints
@@ -881,6 +884,8 @@ comp_res_std = Function('comp_res_std',{vertcat(w{:})},{J_comp_std});
 %% NLP Solver
 prob = struct('f', J, 'x', vertcat(w{:}), 'g', vertcat(g{:}),'p',p);
 solver = nlpsol(solver_name, 'ipopt', prob,opts_ipopt);
+% solver = nlpsol(solver_name, 'bonmin', prob);
+
 
 %% Define CasADi function for the switch indicator function.
 if step_equilibration
