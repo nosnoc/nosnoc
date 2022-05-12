@@ -26,10 +26,14 @@ import casadi.*
 %% NOS-NOC settings
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
 settings.time_freezing = 1; 
-settings.n_s = 3; 
+settings.n_s = 4; 
 settings.print_level = 3;
 % settings.irk_scheme = 'Gauss-Legendre';
+<<<<<<< HEAD
 % settings.irk_representation = 'differential';
+=======
+% settings.irk_representation
+>>>>>>> b27ff46eb4bc88ed71f91cbc872a6f0f11c4eb10
 settings.mpcc_mode = 3;
 settings.use_fesd  = 1;
 % settings.N_homotopy = 10;
@@ -39,8 +43,13 @@ x_target = 4;
 model.x_target = x_target;
 %% model equations
 model.T = 2; 
+<<<<<<< HEAD
 model.N_stages = 4; 
 model.N_finite_elements = 5;
+=======
+model.N_stages = 5; 
+model.N_finite_elements = 3;
+>>>>>>> b27ff46eb4bc88ed71f91cbc872a6f0f11c4eb10
 model.x0 = [0;0.5;0;0;0];
 % model.x0 = [nan;nan;0;0;0]
 q = MX.sym('q',2); v = MX.sym('v',2); t = MX.sym('t');
