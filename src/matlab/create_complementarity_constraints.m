@@ -120,7 +120,7 @@ if use_fesd
                     temp = diag(Theta_sum_finite_element_ki(ind_temp_theta))*Lambda_sum_finite_element_ki(ind_temp_theta);
                     g_cross_comp_j = [g_cross_comp_j ;sum(temp)];
                 end
-                %% Casees 9 and 10, per control intevral one constraint 
+                %% Cases 9 and 10, per control intevral one constraint
             case 9
                 % vectorvalued
                 if i == N_finite_elements(k+1)-1 && j == n_s

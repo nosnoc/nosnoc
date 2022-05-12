@@ -468,7 +468,7 @@ for k=0:N_stages-1
                     end
 
                 case 'differential'
-                    % Evaulate Differetinal and Algebraic Equations at stage points
+                    % Evaulate Differential and Algebraic Equations at stage points
                     if n_u > 0
                         [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                         gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
