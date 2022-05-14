@@ -1,4 +1,3 @@
-%
 %    This file is part of NOS-NOC.
 %
 %    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
@@ -23,64 +22,32 @@ clear all
 clc
 close all
 import casadi.*
-%% NOS-NOC settings
+%% model parameters
+e = 0.9; u_max = 9; beta = 0.0; 
+%% NOSNOC settings
 [settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
 settings.time_freezing = 1; 
-settings.n_s = 4; 
-settings.print_level = 3;
-% settings.irk_scheme = 'Gauss-Legendre';
-<<<<<<< HEAD
-% settings.irk_representation = 'differential';
-=======
-% settings.irk_representation
->>>>>>> b27ff46eb4bc88ed71f91cbc872a6f0f11c4eb10
-settings.mpcc_mode = 3;
-settings.use_fesd  = 1;
-% settings.N_homotopy = 10;
-settings.time_optimal_problem = 1;
-u_max = 9;
-x_target = 4;
-model.x_target = x_target;
-%% model equations
-model.T = 2; 
-<<<<<<< HEAD
-model.N_stages = 4; 
-model.N_finite_elements = 5;
-=======
-model.N_stages = 5; 
+settings.n_s = 3; 
+q_target = [4;0.5];
+model.T = 4; 
+model.N_stages = 20; 
 model.N_finite_elements = 3;
->>>>>>> b27ff46eb4bc88ed71f91cbc872a6f0f11c4eb10
-model.x0 = [0;0.5;0;0;0];
-% model.x0 = [nan;nan;0;0;0]
-q = MX.sym('q',2); v = MX.sym('v',2); t = MX.sym('t');
-model.x = [q;v;t];
-model.c = q(2); model.S = [1; -1];
-u = MX.sym('u',2); model.u = u;
-
-drag = sqrt(v(1)^2^2+v(2)^2+1e-3);
-beta = 0.1;
-f_1 = [v;u-[0;9.81]-beta*v*drag;1]; 
-f_2 = [0;v(2);0;-10*(q(2))-0.211989*v(2);0];
-model.F = [f_1 f_2];
-%% Objective and constraints
-model.f_q = u'*u*0; model.f_q_T = 10*v'*v;
-if 1
-    model.g_ineq = u'*u-u_max^2;
-else
-    model.lbu= -u_max*ones(2,1);
-    model.ubu= u_max*ones(2,1);
-end
-model.g_terminal = q-[x_target;1];
-%% Solve and plot
+% model equations
+q = MX.sym('q',2); v = MX.sym('v',2); u = MX.sym('u',2);
+model.x0 = [0;0.5;0;0];
+model.x = [q;v]; model.u = u; model.e = e ;
+model.c = q(2);
+model.f = [v;u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)]; 
+% Objective and constraints
+model.f_q = u'*u; model.f_q_T = 100*v'*v;
+model.g_ineq = u'*u-u_max^2;
+model.g_terminal = q-[q_target];
 [results,stats,model,settings] = nosnoc_solver(model,settings);
-% plot_result_ball(model,settings,results,stats)
 %%
+plot_result_ball(model,settings,results,stats)
 fprintf('Objective values is: %2.4f \n',full(results.f_opt));
 fprintf('Final time is: %2.4f \n',full(results.T_opt));
 if isempty(results.T_opt)
     results.T_opt = results.t_grid(end);
 end
-[tout,yout,error] = bouncing_ball_sim(results.u_opt,results.T_opt,model.N_stages,model.x0(1:4),beta);
-
-%%
-
+[tout,yout,error] = bouncing_ball_sim(results.u_opt,results.T_opt,model.N_stages,model.x0(1:4),beta,0.9,q_target);

@@ -66,20 +66,23 @@ model.g_terminal = [q-q_goal;v-v_goal];
 %% Solve OCP
 % This functions formulates and discretized the OCP. We obtain an matheatmical programm with complementarity constraint which is solved  in a homotopy procedure.
 cpu_time_all = [];
+error_all = [];
 for ii = 1:N_trails
 [results,stats,model,settings] = nosnoc_solver(model,settings);
 cpu_time_all = [cpu_time_all, stats.cpu_time_total];
-end
-
-% if ~settings.use_speed_of_time_variables
-   results.T_opt = results.t_grid(end);
-% end
+results.T_opt = results.t_grid(end);
 [tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);
+error_all = [error_all ;error];
+end
+results.T_opt = results.t_grid(end);
+[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);
+
 
 output.T_opt = results.T_opt;
 output.error = error;
+output.error_all= error_all;
 output.tout = tout;
-output.error = error;
+output.yout = yout;
 output.results = results;
 output.cpu_time_all = cpu_time_all;
 output.cpu_time =  mean(cpu_time_all);

@@ -25,7 +25,7 @@ close all
 import casadi.*
 
 %% Settings
-[settings] = default_settings_fesd();
+[settings] = default_settings_nosnoc();
 settings.n_s = 2;                       
 settings.mpcc_mode = 6; 
 settings.s_elastic_max = 1e0;             
@@ -55,7 +55,6 @@ model = car_hystheresis_model_voronoi(model);
 [results,stats,model,settings] = nosnoc_solver(model,settings);
 %% Read and plot Result
 plot_results_car_hysteresis(results,settings,model,stats)   
-
 %%
 T_opt = results.T_opt;
 N_stages = model.N_stages;

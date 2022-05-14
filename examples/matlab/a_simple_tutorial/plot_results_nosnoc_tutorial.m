@@ -10,28 +10,37 @@ if settings.time_optimal_problem
 else
     fprintf('Objective value time: %2.4f s.\n',results.f_opt)
 end
-
-subplot(311)
-plot(t_grid,q_opt);
+%%
+set(groot,'defaulttextinterpreter','latex')
+set(groot,'defaultlegendinterpreter','latex')
+set(groot,'DefaultTextarrowshapeInterpreter','latex')
+set(groot,'defaultAxesTickLabelInterpreter','latex');
+figure
+subplot(131)
+plot(t_grid,q_opt,'LineWidth',1.5);
 xlabel('$t$','Interpreter','latex');
-xlabel('$q(t)$','Interpreter','latex');
+ylabel('$q(t)$','Interpreter','latex');
+xlim([0 results.T_opt])
 grid on
-subplot(312);
-plot(t_grid,v_opt);
+subplot(132);
+plot(t_grid,v_opt,'LineWidth',1.5);
 yline(v_max,'r--');
 yline(v_trash_hold,'k--');
-ylim(1.2*[0 v_max]);
+ylim(1.05*[0 v_max]);
+xlim([0 results.T_opt])
 xlabel('$t$','Interpreter','latex')
-xlabel('$v(t)$','Interpreter','latex')
+ylabel('$v(t)$','Interpreter','latex')
 grid on
-subplot(313);
-stairs(t_grid_u,[u_opt,nan]);
+subplot(133);
+stairs(t_grid_u,[u_opt,nan],'LineWidth',1.5);
 xlabel('$t$','Interpreter','latex')
-xlabel('$u(t)$','Interpreter','latex')
+ylabel('$u(t)$','Interpreter','latex')
 yline(-u_max,'r--');
 yline(u_max,'r--');
 ylim(1.2*[-u_max u_max]);
 grid on
+xlim([0 results.T_opt])
+
 %%
 % T_star=13+1/3;
 % error = norm(results.T_opt-T_star);

@@ -1,4 +1,4 @@
-function [default_settings] = default_settings_fesd()
+function [default_settings] = default_settings_nosnoc()
 
 % TODO: add descprition of function the list of default settings and their explanation.
 %% General
@@ -142,6 +142,7 @@ there_exist_free_x0 = 0;
 clear_ipopt_verbose = 0;
 output_stage_values = 0;
 time_freezing_model_exists = 0;
+
 
 %% Save data into struct
 names = who;

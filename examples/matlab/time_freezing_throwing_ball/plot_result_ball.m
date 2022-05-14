@@ -85,9 +85,9 @@ else
     ind_t = find(diff([nan;x5_opt;nan])>1e-5);
 end
 
+if 0
 time_physical = x5_opt(ind_t);
 % Geomtric plot
-
 x_target = 10;
 figure;
 x = [0 x_target x_target 0];
@@ -104,7 +104,8 @@ axis equal
 ylim([-0.4 max(x2_opt)*1.15])
 xlim([0.0 x_target])
 saveas(gcf,'geometric_traj')
-%%
+%
+
 matlab_blue = [0 0.4470 0.7410];
 matlab_red = [0.8500 0.3250 0.0980];
 figure
@@ -130,6 +131,52 @@ legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
 xlim([0 T]);
 %
 saveas(gcf,'velocity_and_control')
+end
+%%
+% Geomtric plot
+set(groot,'defaulttextinterpreter','latex')
+set(groot,'defaultlegendinterpreter','latex')
+set(groot,'DefaultTextarrowshapeInterpreter','latex')
+set(groot,'defaultAxesTickLabelInterpreter','latex');
+matlab_blue = [0 0.4470 0.7410];
+matlab_red = [0.8500 0.3250 0.0980];
+x_target = 4;
+figure;
+subplot(131)
+x = [0 x_target x_target 0];
+y = [0 0 -1 -1];
+patch(x,y,'k','FaceAlpha',0.2)
+hold on
+plot(x1_opt(ind_t),x2_opt(ind_t),'linewidth',1.2,'color',0*ones(3,1));
+grid on
+hold on
+xlabel('$q_1$','interpreter','latex');
+ylabel('$q_2$','interpreter','latex');
+% axis equal
+ylim([-0.4 max(x2_opt)*1.15])
+xlim([0.0 x_target])
+subplot(132)
+plot(x5_opt,x3_opt,'linewidth',1.2,'color',matlab_blue);
+hold on
+plot(x5_opt,x4_opt,'linewidth',1.2,'color',matlab_red);
+xlabel('$t$','interpreter','latex');
+ylabel('$v(t)$','interpreter','latex');
+grid on
+legend({'$v_1(t)$','$v_2(t)$'},'interpreter','latex','NumColumns',2);
+xlim([0 T]);
+ylim([-6 6])
+subplot(133)
+stairs(x5_opt(1:N_finite_elements:end),[u1_opt;nan],'color',matlab_blue,'linewidth',1.2);
+hold on
+stairs(x5_opt(1:N_finite_elements:end),[u2_opt;nan],'color',matlab_red,'linewidth',1.2);
+grid on
+xlabel('$t$','interpreter','latex');
+ylabel('$u(t)$','interpreter','latex');
+grid on
+legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex','NumColumns',2);
+xlim([0 T]);
+ylim([-10 10])
+%%
 
 %% spee of time plots
 if 0

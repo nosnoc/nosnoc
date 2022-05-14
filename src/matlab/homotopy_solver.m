@@ -67,11 +67,11 @@ while complementarity_iter > comp_tol && ii < N_homotopy
         end
         fprintf('-----------------------------------------------------------------------------------------------\n');
     end
-    
-    if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
-        error('The homotopy loop is diverging. Try chaning parameters of the homotopy loop or check is the OCP well posed.')
-        break;
-    end
+%     
+%     if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
+%         error('The homotopy loop is diverging. Try chaning parameters of the homotopy loop or check is the OCP well posed.')
+%         break;
+%     end
 
 end
 % Final value of elastic variable

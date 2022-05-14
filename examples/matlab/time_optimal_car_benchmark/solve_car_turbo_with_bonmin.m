@@ -7,6 +7,7 @@ relax_terminal_constraint = 0;
 time_optimal_problem = 1;
 g_u_constraint = 0;
 N_trails = settings.N_trails;
+minlp_time_limit = 600;
 %% collocation schme
 % Degree of interpolating polynomial
 n_s = settings.n_s;
@@ -43,7 +44,7 @@ u = MX.sym('u',n_u);
 x = [q;v];
 
 % Bounds on x
-M = 1e6;
+M = 1e3;
 lbx = [-inf;-v_max];
 ubx = [inf;v_max];
 % Bounds on u
@@ -56,30 +57,34 @@ f_B = [v;3*u];
 % switching functions
 psi = [v-v_trash_hold];
 % Objective term
-if time_optimal_problem
-    L = 0;
-else
-    L = u'*u;
-end
+% if time_optimal_problem
+L = 0;
+% else
+%     L = u'*u;
+% end
 % terminal costs
 f_q_T = 0;
 %% Formulate MINLP problem
 bigM_minlp_formulation
+
 %% solve with bonmin
 cpu_time_all = [];
 results = [];
-opts_bonmin.time_limit = 600;
+options.time_limit = minlp_time_limit;
+options.print_level = 1;
+error_all = [];
 sucess = 1;
 discrete = struct('discrete', discrete);
-% keyboard
-% opti.solver('bonmin',discrete,opts_bonmin);
-opti.solver('bonmin',discrete);
+opti.solver('bonmin',discrete,options);
+% opti.solver('bonmin',discrete);
 for kk = 1:N_trails
-    CPU_time_bonmin  = nan;
+    tic
     try
         sol = opti.solve();
-        CPU_time_bonmin = opti.stats.t_wall_total;
-        cpu_time_all = [cpu_time_all,CPU_time_bonmin];
+    catch
+    end
+    CPU_time_bonmin = opti.stats.t_wall_total;
+    try
         x_opt = sol.value(Xs);
         u_opt = sol.value(Us);
         y_opt = sol.value(Ys);
@@ -87,8 +92,25 @@ for kk = 1:N_trails
     catch
         sucess = 0;
         T_opt = nan;
-
+        %         x_opt = sol.value(Xs);
+        %         u_opt = sol.value(Us);
+        %         y_opt = sol.value(Ys);
+        %         T_opt = sol.value(T_final);
     end
+    CPU_time_bonmin1  = toc;
+    if ~sucess
+        CPU_time_bonmin = CPU_time_bonmin1;
+    end
+    fprintf('Tic toc bonmin time %2.2f s.\n',CPU_time_bonmin)
+    cpu_time_all = [cpu_time_all,CPU_time_bonmin];
+    if sucess
+        [tout,yout,error] = car_turbo_sim(u_opt,T_opt,N_stages,hybrid_dynamics);
+    else
+        tout = nan;
+        yout = nan;
+        error = nan;
+    end
+    error_all = [error_all ;error];
 end
 
 if sucess
@@ -97,6 +119,8 @@ if sucess
     results.T_opt = T_opt;
     results.y_opt = y_opt;
 end
+
+
 %%
 fprintf('Total bonmin CPU time: %2.3f s.\n',CPU_time_bonmin);
 if sucess
@@ -109,14 +133,14 @@ end
 %%
 output.T_opt = T_opt;
 output.error = error;
+output.error_all = error_all;
 output.tout = tout;
-output.error = error;
+output.yout = yout;
 output.results = results;
 output.cpu_time_all = cpu_time_all;
 output.cpu_time =  mean(cpu_time_all);
 output.N_stages =  model.N_stages;
-output.N_finite_elements =  model.N_finite_elements ;
-
+output.N_finite_elements =  model.N_finite_elements;
 
 end
 

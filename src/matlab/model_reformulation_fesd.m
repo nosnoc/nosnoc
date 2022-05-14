@@ -24,9 +24,16 @@ import casadi.*
 %% Load settings and model details
 
 % model = check_is_user_model_valid(model,settings);
+if ~settings.time_freezing_model_exists && settings.time_freezing 
+    % check is the model generated if time freezing is used
+     [model,settings] = time_freezing_reformulation(model,settings);
+end
 
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller')
+
+
+
 % 
 % %% Sanity check of RK Schmes
 % if ~any(strcmp(list_of_all_rk_schemes,irk_scheme))

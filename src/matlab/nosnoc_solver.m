@@ -32,7 +32,6 @@ import casadi.*
 %% Create NLP element and solve OCP with homotopy
 [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
 [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
-
 total_time = sum(stats.cpu_time);
 
 %% Process and store results
@@ -53,7 +52,6 @@ else
     for ii = 1:N_stages
         h_opt = [h_opt;h_k(ii)*ones(N_finite_elements(ii),1)];
     end
-%     h_opt  = (h/N_finite_elements(1))*ones(sum(N_finite_elements),1);
 end
 
 
@@ -81,9 +79,6 @@ switch pss_mode
         lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);
         lambda_1_opt= lambda_1_opt_extended(:,1:n_s+1:end);
 end
-
-
-
 
 t_grid = cumsum([0;h_opt]);
 
@@ -116,13 +111,22 @@ end
 fprintf('\n');
 fprintf('-----------------------------------------------------------------------------------------------\n');
 if use_fesd
-    fprintf( ['OCP with the FESD ' irk_scheme ' in ' irk_representation ' mode with %d stages and %d finite elements completed in %2.3f s.\n'],n_s,N_finite_elements(1),total_time);
+    fprintf( ['OCP with the FESD ' irk_scheme ' in ' irk_representation ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 else
-    fprintf( ['OCP with the ' irk_scheme ' scheme with %d stages and %d finite elements completed in %2.3f s.\n'],n_s,N_finite_elements(1),total_time);
+    fprintf( ['OCP with the Std ' irk_scheme ' in ' irk_representation ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 end
-fprintf('Total homotopy solver time: %2.3f seconds with %d homotopy iterations.\n',sum(stats.cpu_time),length(stats.cpu_time));
-fprintf('Max iteration time: %2.3f seconds, min iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
+fprintf('Max homotopy iteration time: %2.3f seconds, min homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
+fprintf('Total homotopy iterations: %d .\n',stats.homotopy_iterations);
+fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
+
 fprintf('Complementarity residual: %2.3e.\n',max(stats.complementarity_stats(end)));
+if time_optimal_problem
+    T_opt = w_opt(model.ind_t_final);
+    if T_opt  < 1e-3
+       T_opt = t_grid(end);
+    end
+               fprintf('Final time T_opt: %2.4f.\n',T_opt);
+end
 fprintf('-----------------------------------------------------------------------------------------------\n\n');
 
 %%

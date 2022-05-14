@@ -28,7 +28,7 @@
 %% settings
 clear all; clc; close all; 
 import casadi.*
-[settings] = default_settings_fesd();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
+[settings] = default_settings_nosnoc();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
 %% Choosing the Runge - Kutta Method and number of stages
 settings.print_level = 3;
 settings.n_s = 2;
@@ -106,4 +106,3 @@ plot_results_nosnoc_tutorial
 if results.T_opt<1
    results.T_opt = results.t_grid(end) ;
 end
-%  [tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);

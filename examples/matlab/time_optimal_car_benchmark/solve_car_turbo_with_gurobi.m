@@ -9,7 +9,8 @@ solve_gurobi = 1;
 use_Q_matrix = 0;
 g_u_constraint = 0;
 N_trails = settings.N_trails;
-verbose_gurobi  = 0;
+verbose_gurobi  = 1;
+plot_gurobi = 0;
 %% collocation schme
 % Degree of interpolating polynomial
 n_s = settings.n_s;
@@ -67,13 +68,13 @@ end
 f_q_T = 0;
 %% Formulate MINLP problem
 bigM_minlp_formulation
-
+error_all = [];
 cpu_time_all = [];
 %% model functions
 for kk = 1:N_trails
     CPU_time_gurobi = nan;
     T_ub_k = 20;
-    T_lb_k = 5;
+    T_lb_k = 1;
     N_iter = 20;
     iter = nan;
     tol_biseciton = 1e-6;
@@ -96,6 +97,9 @@ for kk = 1:N_trails
     q_opt = x_opt(1,:);
     v_opt = x_opt(2,:);
     T_opt = T_val_k(end);
+    [tout,yout,error] = car_turbo_sim(u_opt,T_final_opt,N_stages,hybrid_dynamics);
+    error_all = [error_all;error];
+
 end
 results.x_opt = x_opt;
 results.u_opt = u_opt;
@@ -111,6 +115,7 @@ output.error = error;
 output.tout = tout;
 output.yout = yout;
 output.error = error;
+output.error_all = error_all;
 output.results = results;
 output.cpu_time_all = cpu_time_all;
 output.cpu_time =  mean(cpu_time_all);

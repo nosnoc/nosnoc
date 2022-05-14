@@ -32,6 +32,7 @@ while diff_ub_lb  > tol_biseciton
         fprintf(['---------------------------------------------------------------\n']);
         fprintf(['iter %d, CPU iter: %2.3f, gurobi status: ' result.status ' \n'],iter,result.runtime);
         fprintf(['T_opt= %2.4f lb_k = %2.4f, ub_k = %2.4f.\n'],T_opt,lb_k(end),ub_k(end));
+        fprintf(['acc= %2.2e .\n'],abs(lb_k(end)-ub_k(end)));
         fprintf(['---------------------------------------------------------------\n']);
     end
 end
@@ -45,7 +46,7 @@ y_opt = w_opt_gurobi(ind_y);
 y_opt = reshape(y_opt,n_y,length(y_opt)/n_y);
 
 %% stats of solver
-if verbose_gurobi
+if plot_gurobi 
     figure
     subplot(131)
     stairs(lb_k)
