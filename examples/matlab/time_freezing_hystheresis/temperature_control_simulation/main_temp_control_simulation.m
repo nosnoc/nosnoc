@@ -28,7 +28,7 @@ import casadi.*
 
 %% settings
 % collocation settings
-settings = default_settings_fesd();
+settings = default_settings_nosnoc();
 
 settings.n_s = 2;                            % Degree of interpolating polynomial
 % MPCC settings

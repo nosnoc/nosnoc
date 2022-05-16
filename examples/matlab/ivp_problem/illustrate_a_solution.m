@@ -3,7 +3,7 @@ clc
 close all
 import casadi.*
 % settings
-settings = default_settings_fesd();
+settings = default_settings_nosnoc();
 settings.n_s = 1;     
 settings.mpcc_mode = 3;
 % Generate Model

@@ -39,7 +39,7 @@ R_osc  = 1;
 
 %% settings
 % collocation settings
-settings = default_settings_fesd();
+settings = default_settings_nosnoc();
 settings.irk_scheme = 'Radau-IIA';
 % settings.lift_irk_differential = 1;
 % % settings.irk_scheme = 'Radau-I';

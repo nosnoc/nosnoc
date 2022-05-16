@@ -41,7 +41,7 @@ Minimal code example for time-optimal problem for a car with two modes of oprati
 ```matlab
 import casadi.*
 % Call this function to have an overview of all options.
-[settings] = default_settings_fesd();  
+[settings] = default_settings_nosnoc();  
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = 'Lobatto-IIIA';
 settings.n_s = 2;

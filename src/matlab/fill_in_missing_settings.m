@@ -7,7 +7,7 @@ else
     model = varargin{2};
 end
     
-[default_settings] = default_settings_fesd();
+[default_settings] = default_settings_nosnoc();
 fields_settings = fieldnames(settings);
 fields_default_settings = fieldnames(default_settings);
 fields_model = fieldnames(model);

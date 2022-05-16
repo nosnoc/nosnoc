@@ -25,7 +25,7 @@ close all
 import casadi.*
 %%
 model = [];
-[settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
+[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
 settings.print_level = 3;
 settings.mpcc_mode = 3;
 settings.N_homotopy = 15;

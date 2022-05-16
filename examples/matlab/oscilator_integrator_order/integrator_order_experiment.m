@@ -51,7 +51,7 @@ h_sim_vec = T_sim./N_sim_vec;
 legend_str = [legend_str(n_s_vec)];
 
 %% settings
-settings = default_settings_fesd();
+settings = default_settings_nosnoc();
 settings.irk_representation = irk_representation;
 settings.irk_scheme = irk_scheme;
 settings.use_fesd = use_fesd;

@@ -31,7 +31,7 @@ import casadi.*
 % generalization of the FESD scheme presented in the NOS NOC software parep
 %% settings
 % collocation settings
-[settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
+[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
 settings.kappa = 0.05;
 settings.n_s = 2;                            
 % settings.irk_scheme = 'Gauss-Legendre';     

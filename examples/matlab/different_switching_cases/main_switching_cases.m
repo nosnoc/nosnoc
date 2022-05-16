@@ -30,7 +30,7 @@ import casadi.*
 % 4) unique leaving of a sliding mode
 example_num = 4;
 %% NOS-NOC settings
-[settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
+[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 3;
 settings.mpcc_mode = 3;
 settings.kappa = 0.1;

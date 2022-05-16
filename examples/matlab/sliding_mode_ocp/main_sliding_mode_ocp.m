@@ -24,7 +24,7 @@ clc
 close all
 import casadi.*
 %% NOS-NOC settings
-[settings] = default_settings_fesd();  %% Optionally call this function to have an overview of all options.
+[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
 % settings.n_s = 2;
 % N_finite_elements = 6;
 

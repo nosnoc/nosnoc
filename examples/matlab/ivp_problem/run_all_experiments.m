@@ -33,7 +33,7 @@ scenario.N_samples = N_samples;
 scenario.x0_vec = linspace(-2,-0.8,N_samples);
 scenario.save_results = 1;
 %% settings
-settings = default_settings_fesd();
+settings = default_settings_nosnoc();
 settings.n_s = 2;
 settings.irk_scheme = 'Gauss-Legendre';
 settings.equidistant_control_grid = 0;
