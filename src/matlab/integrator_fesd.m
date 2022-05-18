@@ -44,7 +44,7 @@ stats = [];
 
 %% Create solver functions for integrator step
 
-[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
+[solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 unfold_struct(solver_initalization,'caller')
@@ -86,7 +86,7 @@ simulation_time_pased = 0;
 for ii = 1:N_sim+additional_residual_ingeration_step
     if ii == N_sim+additional_residual_ingeration_step && additional_residual_ingeration_step
         model.T = T_residual;
-        [solver,~, model,settings] = create_nlp_fesd(model,settings);
+        [solver,~, model,settings] = create_nlp_nosnoc(model,settings);
     end
     [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
     time_per_iter = [time_per_iter; stats.cpu_time_total];

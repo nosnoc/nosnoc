@@ -1,6 +1,5 @@
+function sym = define_casadi_symbolic(type, name, size)
 import casadi.*
-
-function sym = get_casadi_symbolic(type, name, size)
     if nargin < 3
         size = 1;
     end
@@ -8,6 +7,8 @@ function sym = get_casadi_symbolic(type, name, size)
         sym = SX.sym(name, size);
     elseif strcmp(type, 'MX')
         sym = MX.sym(name, size);
+    else
+        error('Type must be MX or SX.')
     end
 end
 

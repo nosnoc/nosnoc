@@ -30,7 +30,7 @@ import casadi.*
 %% load data
 
 %% Create NLP element and solve OCP with homotopy
-[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
+[solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
 [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
 total_time = sum(stats.cpu_time);
 

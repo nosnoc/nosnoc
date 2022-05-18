@@ -18,7 +18,7 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [solver,solver_initalization, model,settings] = create_nlp_fesd_stable(model,settings)
+function [solver,solver_initalization, model,settings] = create_nlp_nosnoc_stable(model,settings)
 % This functions creates the solver instance for the OCP discretized with FESD (or time stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
 % reformulations, see below.
@@ -38,7 +38,7 @@ function [solver,solver_initalization, model,settings] = create_nlp_fesd_stable(
 %% Import CasADi in the workspace of this function
 import casadi.*
 %% Reformulation of the PSS into a DCS
-[model,settings] = model_reformulation_fesd(model,settings);
+[model,settings] = model_reformulation_nosnoc(model,settings);
 
 %% Fillin missing settings with default settings
 [settings] = fill_in_missing_settings(settings,model);

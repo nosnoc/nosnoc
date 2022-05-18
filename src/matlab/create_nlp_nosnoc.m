@@ -18,8 +18,8 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings)
-% This functions creates the solver instance for the OCP discretized with FESD (or time stepping IRK scheme).
+function [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings)
+% This functions creates the solver instance for the OCP discretized with FESD (or time-stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
 % reformulations, see below.
 % -------------------
@@ -39,7 +39,7 @@ function [solver,solver_initalization, model,settings] = create_nlp_fesd(model,s
 import casadi.*
 %% Reformulation of the PSS into a DCS
 [settings] = refine_user_settings(settings);
-[model,settings] = model_reformulation_fesd(model,settings);
+[model,settings] = model_reformulation_nosnoc(model,settings);
 
 %% Fillin missing settings with default settings
 [settings] = fill_in_missing_settings(settings,model);
@@ -51,7 +51,7 @@ unfold_struct(model,'caller');
 %% Elastic Mode Variables
 s_elastic_exists  = 0;
 if mpcc_mode >= 5 && mpcc_mode <= 10
-    eval(['s_elastic = ' casadi_symbolic_mode '.sym(''s_elastic'');'])
+    s_elastic = define_casadi_symbolic(casadi_symbolic_mode,'s_elastic',1);
     s_elastic_exists = 1;
 end
 
@@ -71,7 +71,7 @@ end
 %% Time optimal control
 if time_optimal_problem
     % the final time in time optimal control problems
-    eval(['T_final = ' casadi_symbolic_mode '.sym(''T_final'');'])
+    T_final = define_casadi_symbolic(casadi_symbolic_mode,'T_final',1);
     T_final_guess = T;
 end
 
@@ -112,7 +112,7 @@ g = {};
 lbg = [];
 ubg = [];
 
-eval(['X_ki  = ' casadi_symbolic_mode '.sym(''X0'',n_x);'])
+X_ki = define_casadi_symbolic(casadi_symbolic_mode,'X0',n_x);
 w = {w{:}, X_ki};
 
 if there_exist_free_x0
@@ -169,7 +169,8 @@ g_step_eq  = [];
 for k=0:N_stages-1
     %% Variables for the controls
     if n_u > 0
-        eval(['Uk  = ' casadi_symbolic_mode '.sym(''U_' num2str(k) ''',n_u);'])
+%         eval(['Uk  = ' casadi_symbolic_mode '.sym(''U_' num2str(k) ''',n_u);'])
+        Uk = define_casadi_symbolic(casadi_symbolic_mode,['U_' num2str(k)],n_u);
         w = {w{:}, Uk};
         % intialize contros, lower and upper bounds
         w0 = [w0; u0];
@@ -186,7 +187,9 @@ for k=0:N_stages-1
     if time_rescaling && use_speed_of_time_variables
         if local_speed_of_time_variable
             % at every stage
-            eval(['s_sot_k  = ' casadi_symbolic_mode '.sym(''s_sot_' num2str(k) ''',1);'])
+%             eval(['s_sot_k  = ' casadi_symbolic_mode '.sym(''s_sot_' num2str(k) ''',1);'])
+            s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k)],1);
+
             w = {w{:}, s_sot_k};
             % intialize speed of time (sot), lower and upper bounds
             w0 = [w0; s_sot0];
@@ -198,7 +201,9 @@ for k=0:N_stages-1
         else
             if k == 0
                 % only once
-                eval(['s_sot_k  = ' casadi_symbolic_mode '.sym(''s_sot_' num2str(k+1) ''',1);'])
+%                 eval(['s_sot_k  = ' casadi_symbolic_mode '.sym(''s_sot_' num2str(k+1) ''',1);'])
+                s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k+1)],1);
+
                 w = {w{:}, s_sot_k};
                 % intialize speed of time (sot), lower and upper bounds
                 w0 = [w0; s_sot0];
@@ -232,7 +237,8 @@ for k=0:N_stages-1
                 h_ki_previous = h_ki;
             end
             % define step-size
-            eval(['h_ki  = ' casadi_symbolic_mode '.sym(''h_'  num2str(k) '_' num2str(i) ''',1);'])
+%             eval(['h_ki  = ' casadi_symbolic_mode '.sym(''h_'  num2str(k) '_' num2str(i) ''',1);'])
+            h_ki = define_casadi_symbolic(casadi_symbolic_mode,['h_'  num2str(k) '_' num2str(i)],1);
             w = {w{:}, h_ki};
             w0 = [w0; h0_k(k+1)];
             ubw = [ubw;ubh(k+1)];
@@ -293,7 +299,9 @@ for k=0:N_stages-1
             switch irk_representation
                 case 'integral'
                     % define symbolic variables for values of diff. state a stage points
-                    eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+%                     eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+                    X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
+
                     w = {w{:}, X_ki_stages{j}};
                     w0 = [w0; x0];
                     ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
@@ -306,7 +314,8 @@ for k=0:N_stages-1
                         ubw = [ubw; inf*ones(n_x,1)];
                     end
                 case 'differential'
-                    eval(['V_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''V_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+%                     eval(['V_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''V_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+                    V_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['V_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
                     w = {w{:}, V_ki_stages{j}};
                     w0 = [w0; v0];
                     ind_v = [ind_v,ind_total(end)+1:ind_total(end)+n_x];
@@ -315,7 +324,9 @@ for k=0:N_stages-1
                     ubw = [ubw; inf*ones(n_x,1)];
 
                     if lift_irk_differential
-                        eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+%                         eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
+                        X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_x);
+
                         w = {w{:}, X_ki_stages{j}};
                         w0 = [w0; x0];
                         ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
@@ -331,7 +342,9 @@ for k=0:N_stages-1
                     end
             end
             % Note that for algebraic variablies, in both irk formulation modes the alg. variables are treated the same way.
-            eval(['Z_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''Z_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_z);'])
+%             eval(['Z_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''Z_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_z);'])
+            Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
+
             w = {w{:}, Z_ki_stages{j}};
             % index sets
             ind_z = [ind_z,ind_total(end)+1:ind_total(end)+n_z];
@@ -392,8 +405,10 @@ for k=0:N_stages-1
         if use_fesd && ~right_boundary_point_explicit &&  (k<N_stages-1 || i< N_finite_elements(k+1)-1)
             switch pss_mode
                 case 'Stewart'
-                    eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',n_theta);'])
-                    eval(['Mu_ki_end  = ' casadi_symbolic_mode '.sym(''Mu_' num2str(k) '_' num2str(i) '_end' ''',n_simplex);'])
+%                     eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',n_theta);'])
+%                     eval(['Mu_ki_end  = ' casadi_symbolic_mode '.sym(''Mu_' num2str(k) '_' num2str(i) '_end' ''',n_simplex);'])
+                    Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],n_theta);
+                    Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_simplex);
                     w = {w{:}, Lambda_ki_end};
                     w = {w{:}, Mu_ki_end};
                     % bounds and index sets
@@ -405,7 +420,9 @@ for k=0:N_stages-1
                     Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
                     Mu_ki_current_fe = {Mu_ki_current_fe{:}, Mu_ki_end};
                 case 'Step'
-                    eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',2*n_alpha);'])
+%                     eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',2*n_alpha);'])
+                    Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],2*n_alpha);
+
                     Mu_ki_end = [];
                     w = {w{:}, Lambda_ki_end};
                     % bounds and index sets
@@ -605,7 +622,9 @@ for k=0:N_stages-1
         %% Continuity condition -  new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
         %         X_ki = MX.sym(['X_' num2str(k+1) '_' num2str(i+1)], n_x);
-        eval(['X_ki  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k+1) '_' num2str(i+1) ''',n_x);']);
+%         eval(['X_ki  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k+1) '_' num2str(i+1) ''',n_x);']);
+        X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
+
         w = {w{:}, X_ki};
         w0 = [w0; x0];
 
@@ -829,7 +848,9 @@ end
 %% barrier controled penalty formulation
 if mpcc_mode >= 8 && mpcc_mode <= 10
     %     rho_elastic = MX.sym('rho_elastic', 1);
-    eval(['rho_elastic   = ' casadi_symbolic_mode '.sym(''rho_elastic'',1);']);
+%     eval(['rho_elastic   = ' casadi_symbolic_mode '.sym(''rho_elastic'',1);']);
+    rho_elastic = define_casadi_symbolic(casadi_symbolic_mode,'rho_elastic',1);
+
     w = {w{:}, rho_elastic};
     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
 

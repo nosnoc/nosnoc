@@ -19,7 +19,7 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [model,settings] = model_reformulation_fesd(model,settings)
+function [model,settings] = model_reformulation_nosnoc(model,settings)
 import casadi.*
 %% Load settings and model details
 if ~settings.time_freezing_model_exists && settings.time_freezing 
@@ -30,62 +30,6 @@ end
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller')
 
-% 
-% %% Sanity check of RK Schmes
-% if ~any(strcmp(list_of_all_rk_schemes,irk_scheme))
-%     if print_level >=1
-%         fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is not supported, switching to Radau-IIA. \n'])
-%         fprintf(['See settings.list_of_all_rk_schemes in the default settings for an overview. \n'])
-%     end
-%     irk_scheme = 'Radau-IIA';
-%     settings.irk_scheme  = irk_scheme ;
-% end
-% 
-% if any(strcmp(list_of_all_rk_schemes(5:end),irk_scheme))
-%     if print_level >=1
-%         fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is only avilabile in the differential representation.\n']);
-%     end
-%     irk_representation = 'differential';
-%     settings.irk_representation = irk_representation;
-% end
-% 
-% %% corrections for pss_mode
-% if isequal(settings.pss_mode,'stewart')  || isequal(settings.pss_mode,'stwrt') || isequal(settings.pss_mode,'indicator')
-%     settings.pss_mode = 'Stewart';
-% end
-% 
-% if isequal(settings.pss_mode,'step')  || isequal(settings.pss_mode,'stp') || isequal(settings.pss_mode,'Heaviside') ...
-%         || isequal(settings.pss_mode,'heaviside') || isequal(settings.pss_mode,'AP')
-%     settings.pss_mode = 'Step';
-% end
-% 
-% if ~isequal(settings.pss_mode,'Stewart') && ~isequal(settings.pss_mode,'Step')
-%     error('Please use for settings.pss_mode either ''Stewart''  or  ''Step''.' );
-% end
-% 
-% if settings.n_depth_step_lifting   < 2
-%     settings.n_depth_step_lifting  = 2;
-%         if print_level >=1
-%             fprintf(['Info: n_depth_step_lifting should be at least 2, changing n_depth_step_lifting  = 2.\n']);
-%         end
-% end
-% %% Some settings refinments
-% % update prin_level
-% if print_level <4
-%     settings.opts_ipopt.ipopt.print_level=0;
-%     settings.opts_ipopt.print_time=0;
-%     settings.opts_ipopt.ipopt.sb= 'yes';
-% elseif print_level == 4
-%     settings.opts_ipopt.ipopt.print_level=0;
-%     settings.opts_ipopt.print_time=1;
-%     settings.opts_ipopt.ipopt.sb= 'no';
-% else
-%     settings.opts_ipopt.ipopt.print_level = 5;
-% end
-% 
-% if settings.time_freezing
-%     settings.local_speed_of_time_variable = 1;
-% end
 
 %% Determine is the SX or MX mode in CasADi used.
 casadi_symbolic_mode = model.x(1).type_name();
@@ -177,7 +121,8 @@ if ~exist('f_q')
     if print_level >=1
         fprintf('Info: No stage cost is provided. \n')
     end
-    eval(['f_q = ', casadi_symbolic_mode, '.zeros(1);'])
+%     eval(['f_q = ', casadi_symbolic_mode, '.zeros(1);'])
+      f_q = 0;
 end
 if exist('f_q_T')
     terminal_cost = 1;
@@ -185,7 +130,8 @@ else
     if print_level >=1
         fprintf('Info: No terminal cost is provided. \n')
     end
-    eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1);'])
+%     eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1);'])
+    f_q_T = 0;
 end
 
 %% Inequality constraints
@@ -247,9 +193,9 @@ end
 
 %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
 pss_mode = settings.pss_mode;
-
 % Stewart's representation of the sets R_i and discirimant functions g_i
-g_ind_all = [];
+g_ind_all = {};
+g_ind_vec = [];
 c_all = [];
 m_vec = [];
 n_c_vec = [];
@@ -266,9 +212,8 @@ else
     end
     % extract dimensions of subystems
     for ii = 1:n_simplex
-        eval(['m_' num2str(ii) '= size(F{ii},2);']);
-        eval(['m_vec = [m_vec m_' num2str(ii) '];'])
-        eval(['F_' num2str(ii) '=F{ii};']);
+        m_temp = size(F{ii},2);
+        m_vec  = [m_vec m_temp];
     end
 end
 
@@ -283,8 +228,8 @@ if ~exist('S')
 
             for ii = 1:n_simplex
                 % discrimnant functions
-                eval(['g_ind_' num2str(ii) '= g_ind{ii};']);
-                eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
+                g_ind_vec =  [g_ind_vec;g_ind{ii};];
+                g_ind_all{ii} = g_ind{ii};
                 c_all = [c_all; 0];
             end
         else
@@ -336,28 +281,27 @@ else
         switch pss_mode
             case 'Stewart'
                 % Create Stewart's indicator functions g_ind_ii
-                eval(['g_ind_' num2str(ii) '= -S{ii}*c{ii};']);
-                eval(['g_ind_all = [g_ind_all;' 'g_ind_' num2str(ii) '];']);
+                g_ind_all{ii} = -S{ii}*c{ii};
+                g_ind_vec = [g_ind_vec ;-S{ii}*c{ii}];
             case 'Step'
-                eval(['c_' num2str(ii) '= c{ii};']);
+                %eval(['c_' num2str(ii) '= c{ii};']);
         end
-
-
-        eval(['c_all = [c_all; c{ii}];']);
         % dimensions of c
-        eval(['n_c_' num2str(ii) '= length(c{ii});']);
+        c_all = [c_all; c{ii}];
+        n_c{ii} = length(c{ii});
         n_c_vec  = [n_c_vec;length(c{ii})];
     end
 
 end
 
 % index sets and dimensions for ubsystems
-m_ind_vec = [cumsum(m_vec)-m_1+1]; % index ranges of the corresponding thetas and lambdas
+m_ind_vec = [cumsum(m_vec)-m_vec(1)+1]; % index ranges of the corresponding thetas and lambdas
 m = sum(m_vec);
 
 if isempty(n_c_vec)
     n_c_vec = 0;
 end
+
 if max(n_c_vec) < 2 && isequal(pss_mode,'Step')
     pss_lift_step_functions = 0;
     if print_level >=1
@@ -366,28 +310,34 @@ if max(n_c_vec) < 2 && isequal(pss_mode,'Step')
 end
 
 %% Parameters
-if isequal(casadi_symbolic_mode,'MX')
-    sigma = MX.sym('sigma'); % homotopy parameter
-else
-    sigma = SX.sym('sigma');
-end
-
-% eval(['sigma = ' casadi_symbolic_mode '.sym(''sigma'');'])
+sigma = define_casadi_symbolic(casadi_symbolic_mode,'sigma');
 n_param = 1;  % number of parameters,  we model it as control variables and merge them with simple equality constraints
 p = [sigma];
 n_p = 1;
 
 %% Algebraic variables defintion
-% dummy values for Stewart
+% Dummy variavles for Stewart representation'
 theta = [];
 mu = [];
 lambda = [];
-E = []; % diagonal matrix with one vectors
+% structs storing all vectors of every subsystem (they might have different dimensions)
+theta_all = {};
+lambda_all = {};
+mu_all = {};
+e_ones_all = {};
 
-% dummy values for step
+
+% dummy values for Step representation
 alpha  = [];
 lambda_0 = [];
 lambda_1 = [];
+upsilon  = [];
+
+alpha_all  = {};
+lambda_0_all = {};
+lambda_1_all = {};
+upsilon_all = {};
+
 n_alpha = 0;
 e_alpha = [];
 n_beta = 0;
@@ -403,30 +353,23 @@ switch pss_mode
         n_lambda = n_theta;
         n_f = n_theta;
         n_z = n_theta+n_lambda+n_simplex; % n_theta + n_lambda + n_mu
-
-
-        % Define symbolic variables for algebraci equtions!
-        for i = 1:n_simplex
-            i_str = num2str(i);
-            % define theta (convex multiplers of Filippov embedding)
-            eval(['theta_' i_str '=' casadi_symbolic_mode '.sym(''theta_' i_str ''',m_' i_str ');'])
-            eval(['theta = [theta; theta_' i_str '];'])
+        % Define symbolic variables for algebraci equtions.
+        for ii = 1:n_simplex
+            ii_str = num2str(ii);
+            % define theta (Filippov multiplers)
+            theta_temp = define_casadi_symbolic(casadi_symbolic_mode,['theta_' ii_str],m_vec(ii));
+            theta = [theta;theta_temp];
+            theta_all{ii} = theta_temp;
             % define mu_i (Lagrange multipler of e'theta =1;)
-            eval(['mu_' i_str '= ' casadi_symbolic_mode '.sym(''mu_' i_str ''',1);'])
-            eval(['mu = [mu; mu_' i_str '];'])
+            mu_temp = define_casadi_symbolic(casadi_symbolic_mode,['mu_' ii_str],1);
+            mu = [mu;mu_temp];
+            mu_all{ii} = mu_temp;
             % define lambda_i (Lagrange multipler of theta >= 0;)
-            eval(['lambda_' i_str '= ' casadi_symbolic_mode '.sym(''lambda_' i_str ''',m_' i_str ');'])
-            eval(['lambda = [lambda; lambda_' i_str '];'])
-            % adefine ppropiate vector of ones
-            eval(['e_' i_str '=ones(m_' i_str ' ,1);'])
-            if n_simplex > 1
-                eval(['E_row = zeros(m_' i_str ',n_simplex);'])
-                eval(['E_row(:,' i_str ') = e_' i_str ';']);
-                E = [E;E_row];
-            end
-        end
-        if n_simplex == 1
-            E = e_1;
+            lambda_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_' ii_str],m_vec(ii));
+            lambda = [lambda;lambda_temp];
+            lambda_all{ii} = lambda_temp;
+            % adefine ppropiate vector of ones (the struct below stores them for every mode)
+            e_ones_all{ii} = ones(m_vec(ii),1);
         end
     case 'Step'
         n_alpha = sum(n_c_vec);
@@ -438,18 +381,20 @@ switch pss_mode
         n_lambda = n_lambda_0+n_lambda_1;
         % algebraic varaibles so far
         n_z = n_alpha+n_lambda_0+n_lambda_1;
-
-        for i = 1:n_simplex
-            i_str = num2str(i);
+        for ii = 1:n_simplex
+            ii_str = num2str(ii);
             % define alpha (selection of a set valued step function)
-            eval(['alpha_' i_str '=' casadi_symbolic_mode '.sym(''alpha_' i_str ''',n_c_' i_str ');'])
-            eval(['alpha = [alpha; alpha_' i_str '];'])
+            alpha_temp = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],n_c_vec(ii));
+            alpha = [alpha;alpha_temp];
+            alpha_all{ii} = alpha_temp;
             % define lambda_0_i (Lagrange multipler of alpha >= 0;)
-            eval(['lambda_0_' i_str '=' casadi_symbolic_mode '.sym(''lambda_0_' i_str ''',n_c_' i_str ');'])
-            eval(['lambda_0= [lambda_0; lambda_0_' i_str '];'])
+            lambda_0_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_0_' ii_str],n_c_vec(ii));
+            lambda_0 = [lambda_0;lambda_0_temp];
+            lambda_0_all{ii} = lambda_0_temp;
             % define lambda_1_i (Lagrange multipler of alpha <= 1;)
-            eval(['lambda_1_' i_str '=' casadi_symbolic_mode '.sym(''lambda_1_' i_str ''',n_c_' i_str ');'])
-            eval(['lambda_1= [lambda_1; lambda_1_' i_str '];'])
+            lambda_1_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_1_' ii_str],n_c_vec(ii));
+            lambda_1 = [lambda_1;lambda_1_temp];
+            lambda_1_all{ii} = lambda_1_temp;
         end
         % adefine ppropiate vector of ones % for the kkt conditions of the LP
         e_alpha = ones(n_alpha,1);
@@ -461,79 +406,77 @@ switch pss_mode
         % Upsilo collects the vector for dotx = F(x)Upsilon, it is either multiaffine
         % terms or gamma from lifting
 %         pss_lift_step_functions = 0;
-        for i = 1:n_simplex
-                i_str = num2str(i);
-                eval(['upsilon_' i_str ' = [];'])
-                S_temp = S{i};
+        for ii = 1:n_simplex
+                upsilon_temp = [];
+                ii_str = num2str(ii);
+                S_temp = S{ii};
             if pss_lift_step_functions
-                [n_f_i,n_c_i] = size(S_temp);
-                n_R_i = sum(abs(S_temp),2);
-                % define gamma which etner the odes r.h.s. linearly
-                eval(['gamma_' i_str ' = ' casadi_symbolic_mode '.sym(''gamma_' i_str ''',n_f_i);']);
-                eval(['gamma = [gamma; gamma_' i_str '];']);
-               
-                eval(['g_lift_beta_' i_str ' = [];']);
-                eval(['g_lift_gamma_' i_str ' = [];']);
-
-                temp = ones(n_f_i,1);
-                S_temp_reduced  = S_temp;
-                ind_progress = 0;
-                for ii = 1:n_c_i
-                    n_R_i = sum(abs(S_temp_reduced),2);
-                    ind_done = find(n_R_i >= ii);
-                    eval(['temp = (temp).*((1-S_temp_reduced(ind_done,ii))/2+S_temp_reduced(ind_done,ii).*alpha_' i_str '(ii));'])
-                    ind_done= find(n_R_i == ii);
-                    ind_done_complement = find(n_R_i ~= ii);
-                    if ~isempty(ind_done)
-%                         g_lift_gamma = [g_lift_gamma ;theta(ind_progress+ind_done)-(temp(ind_done))];
-                        eval(['g_lift_gamma_' i_str '= [g_lift_gamma_' i_str ';gamma(ind_progress+ind_done)-(temp(ind_done))];'])
-                        ind_full = 1:length(temp);
-%                         temp(ind_done) = [];
-                        if isempty(ind_done_complement)
-                            temp = [];
-                        else
-                            temp = temp(ind_done_complement);
-                        end
-                        S_temp_reduced(ind_done,:) = [];
-                        ind_progress = ind_progress+ind_done(end);
-                    end
-                    % start defining betas;
-                    if ii >= n_depth_step_lifting && ii< n_c_i
-                        [temp_S_red,temp_S_IA,temp_S_IC] = unique(S_temp_reduced(:,ii) ,'rows');
-                        n_beta_ii = size(temp_S_red,1);
-                        % defin intermediate beta
-                        eval(['beta_' i_str '_' num2str(ii) '=' casadi_symbolic_mode '.sym(''beta_' i_str '_' num2str(ii) ''',n_beta_ii);'])
-                        eval(['beta = [beta; beta_' i_str '_' num2str(ii) '];'])
-%                         eval(['beta_' num2str(ii+1-n_depth_step_lifting) '=' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ',n_beta_ii);'])
-                        eval(['beta_temp =' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ''',n_beta_ii);'])
-%                         beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
-                        eval(['g_lift_beta_' i_str '= [g_lift_beta_' i_str ';beta_temp - temp(temp_S_IA)];'])
-                        temp = beta_temp(temp_S_IC)';
-                    end
-                end
-                eval(['g_lift_beta = [g_lift_beta;g_lift_beta_' i_str '];'])
-                eval(['g_lift_gamma = [g_lift_gamma;g_lift_gamma_' i_str '];'])
-                eval(['upsilon_' i_str '= gamma_' i_str ';'])
+%                 [n_f_i,n_c_i] = size(S_temp);
+%                 n_R_i = sum(abs(S_temp),2);
+%                 % define gamma which etner the odes r.h.s. linearly
+%                 eval(['gamma_' i_str ' = ' casadi_symbolic_mode '.sym(''gamma_' i_str ''',n_f_i);']);
+%                 eval(['gamma = [gamma; gamma_' i_str '];']);
+%                
+%                 eval(['g_lift_beta_' i_str ' = [];']);
+%                 eval(['g_lift_gamma_' i_str ' = [];']);
+% 
+%                 temp = ones(n_f_i,1);
+%                 S_temp_reduced  = S_temp;
+%                 ind_progress = 0;
+%                 for ii = 1:n_c_i
+%                     n_R_i = sum(abs(S_temp_reduced),2);
+%                     ind_done = find(n_R_i >= ii);
+%                     eval(['temp = (temp).*((1-S_temp_reduced(ind_done,ii))/2+S_temp_reduced(ind_done,ii).*alpha_' i_str '(ii));'])
+%                     ind_done= find(n_R_i == ii);
+%                     ind_done_complement = find(n_R_i ~= ii);
+%                     if ~isempty(ind_done)
+% %                         g_lift_gamma = [g_lift_gamma ;theta(ind_progress+ind_done)-(temp(ind_done))];
+%                         eval(['g_lift_gamma_' i_str '= [g_lift_gamma_' i_str ';gamma(ind_progress+ind_done)-(temp(ind_done))];'])
+%                         ind_full = 1:length(temp);
+% %                         temp(ind_done) = [];
+%                         if isempty(ind_done_complement)
+%                             temp = [];
+%                         else
+%                             temp = temp(ind_done_complement);
+%                         end
+%                         S_temp_reduced(ind_done,:) = [];
+%                         ind_progress = ind_progress+ind_done(end);
+%                     end
+%                     % start defining betas;
+%                     if ii >= n_depth_step_lifting && ii< n_c_i
+%                         [temp_S_red,temp_S_IA,temp_S_IC] = unique(S_temp_reduced(:,ii) ,'rows');
+%                         n_beta_ii = size(temp_S_red,1);
+%                         % defin intermediate beta
+%                         eval(['beta_' i_str '_' num2str(ii) '=' casadi_symbolic_mode '.sym(''beta_' i_str '_' num2str(ii) ''',n_beta_ii);'])
+%                         eval(['beta = [beta; beta_' i_str '_' num2str(ii) '];'])
+% %                         eval(['beta_' num2str(ii+1-n_depth_step_lifting) '=' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ',n_beta_ii);'])
+%                         eval(['beta_temp =' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ''',n_beta_ii);'])
+% %                         beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
+%                         eval(['g_lift_beta_' i_str '= [g_lift_beta_' i_str ';beta_temp - temp(temp_S_IA)];'])
+%                         temp = beta_temp(temp_S_IC)';
+%                     end
+%                 end
+%                 eval(['g_lift_beta = [g_lift_beta;g_lift_beta_' i_str '];'])
+%                 eval(['g_lift_gamma = [g_lift_gamma;g_lift_gamma_' i_str '];'])
+%                 eval(['upsilon_' i_str '= gamma_' i_str ';'])
             else
-
                 for j = 1:size(S_temp,1)
                     upsilon_ij = 1;
                     for k = 1:size(S_temp,2)
                         % create multiafine term
                         if S_temp(j,k) ~=0
-                            eval(['upsilon_ij = upsilon_ij * ( 0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_' i_str ' (k) ) ;'])
+                            upsilon_ij = upsilon_ij * ( 0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_all{ii}(k) ) ;
                         end
                     end
-                    eval(['upsilon_' i_str ' = [upsilon_' i_str ';upsilon_ij ];'])
+                    upsilon_temp = [upsilon_temp;upsilon_ij];                  
                 end
-
             end
+            upsilon_all{ii} = upsilon_temp;
         end
         n_beta = length(beta);
         n_gamma = length(gamma);
         n_z = n_z + n_beta+n_gamma;
 end
-
 g_lift = [g_lift_beta; g_lift_gamma];
 
 
@@ -541,7 +484,8 @@ g_lift = [g_lift_beta; g_lift_gamma];
 switch pss_mode
     case 'Stewart'
         % symbolic variables
-        z = [theta;lambda;mu];
+%         z = [theta;lambda;mu];
+        z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
         lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_simplex,1)];
         ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_simplex,1)];
         % inital guess for z; % solve LP for guess;
@@ -568,7 +512,6 @@ switch pss_mode
         z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
         n_lift_eq =length(g_lift);
 end
-
 model.z0 = z0;
 model.lbz = lbz;
 model.ubz = ubz;
@@ -581,34 +524,30 @@ for ii = 1:n_simplex
     ii_str = num2str(ii);
     switch pss_mode
         case 'Stewart'
-            eval(['f_x = f_x + F_' ii_str '*theta_'  ii_str  ';']);
+            f_x = f_x + F{ii}*theta_all{ii};
         case 'Step'
-            eval(['f_x = f_x + F_' ii_str '*upsilon_'  ii_str  ';']);
+            f_x = f_x + F{ii}*upsilon_all{ii};
     end
 end
-
 
 g_z = []; % collects standard algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
 g_z_convex = []; % equation for the convex multiplers 1 = e' \theta
 f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
-
-
-
-for i = 1:n_simplex
-    i_str = num2str(i);
+for ii = 1:n_simplex
+    ii_str = num2str(ii);
     switch pss_mode
         case 'Stewart'
             % basic algebraic equations and complementarty condtions of the DCS
             % (Note that the cross complementarities are later defined when the discrete
-            % time variables for every IRK stage in the create_nlp_fesd function are defined.)
+            % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
             % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_simplex
             % lambda_i'*theta_i = 0; for all i = 1,..., n_simplex
             % lambda_i >= 0;    for all i = 1,..., n_simplex
             % theta_i >= 0;     for all i = 1,..., n_simplex
             % Gradient of Lagrange Function of indicator LP
-            eval(['g_z = [g_z; g_ind_' i_str '-lambda_'  i_str '+mu_'  i_str '*e_' i_str '];']);
-            eval(['g_z_convex = [g_z_convex; ; e_' i_str '''*theta_'  i_str '-1];']);
-            eval(['f_comp_residual = f_comp_residual + lambda_' i_str '''*theta_'  i_str ';']);
+            g_z = [g_z; g_ind_all{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
+            g_z_convex = [g_z_convex;e_ones_all{ii}'*theta_all{ii}-1];
+            f_comp_residual = f_comp_residual + lambda_all{ii}'*theta_all{ii};
         case 'Step'
             % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_simplex
             % lambda_0_i'*alpha_i  = 0; for all i = 1,..., n_simplex
@@ -616,22 +555,19 @@ for i = 1:n_simplex
             % lambda_0_i >= 0;    for all i = 1,..., n_simplex
             % lambda_1_i >= 0;    for all i = 1,..., n_simplex
             % alpha_i >= 0;     for all i = 1,..., n_simplex
-            eval(['g_z = [g_z; c_' i_str '-lambda_1_'  i_str '+lambda_0_'  i_str '];']);
-            % to do , greate g_lift
-            eval(['f_comp_residual = f_comp_residual + lambda_0_' i_str '''*alpha_'  i_str '+ lambda_1_' i_str '''*(ones(n_c_vec(i),1)-alpha_'  i_str ');']);
+            g_z = [g_z;c{ii}-lambda_1_all{ii}+lambda_0_all{ii}];
+            f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_vec(ii),1)-alpha_all{ii});
     end
 end
 g_lp = [g_z;g_z_convex;g_lift];
 n_algebraic_constraints  = length(g_lp);
-% n_algebraic_constraints = n_theta+n_simplex;  % dim(g  - lambda - mu *e ) + dim( E theta) ;
-
 %% CasADi functions for indictaor and region constraint functions
 % model equations
 if n_u >0
-    g_ind_all_fun = Function('g_ind_all_fun',{x,u},{g_ind_all});
+    g_ind_all_fun = Function('g_ind_all_fun',{x,u},{g_ind_vec});
     c_fun = Function('c_fun',{x,u},{c_all});
 else
-    g_ind_all_fun = Function('g_ind_all_fun',{x},{g_ind_all});
+    g_ind_all_fun = Function('g_ind_all_fun',{x},{g_ind_vec});
     c_fun = Function('c_fun',{x},{c_all});
 end
 
@@ -712,7 +648,6 @@ model.n_p = n_p;
 model.n_simplex = n_simplex;
 
 model.z = z;
-model.E = E;
 model.e_alpha = e_alpha;
 
 model.m_vec = m_vec;
