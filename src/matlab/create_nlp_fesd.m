@@ -1,4 +1,4 @@
-%    This file is part of NOS-NOC.
+%    This file is part of NOSNOC.
 %
 %    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).

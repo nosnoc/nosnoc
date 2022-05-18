@@ -1,8 +1,6 @@
 function [model,settings] = time_freezing_reformulation(model,settings)
 import casadi.*
 %% Load settings and model details
-
-% model = check_is_user_model_valid(model,settings);
 unfold_struct(model,'caller');
 time_freezing = settings.time_freezing;
 time_freezing_model_exists = 0;

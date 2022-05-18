@@ -1,5 +1,5 @@
 %
-%    This file is part of NOS-NOC.
+%    This file is part of NOSNOC.
 %
 %    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
@@ -92,7 +92,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
     if stats.complementarity_stats(end) > 1e-3
-        error('NLP Solver did not converge for the current FESD problem. \n')
+%         error('NLP Solver did not converge for the current FESD problem. \n')
     end
     simulation_time_pased  =  simulation_time_pased + model.T;
     if print_level >=2

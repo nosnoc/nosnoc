@@ -1,5 +1,5 @@
 %
-%    This file is part of NOS-NOC.
+%    This file is part of NOSNOC.
 %
 %    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
@@ -22,8 +22,6 @@
 function [model,settings] = model_reformulation_fesd(model,settings)
 import casadi.*
 %% Load settings and model details
-
-% model = check_is_user_model_valid(model,settings);
 if ~settings.time_freezing_model_exists && settings.time_freezing 
     % check is the model generated if time freezing is used
      [model,settings] = time_freezing_reformulation(model,settings);
@@ -31,8 +29,6 @@ end
 
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller')
-
-
 
 % 
 % %% Sanity check of RK Schmes
@@ -175,8 +171,6 @@ else
     lbu = [];
     ubu = [];
 end
-
-
 
 %% Stage and terminal costs
 if ~exist('f_q')
