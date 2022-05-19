@@ -58,7 +58,8 @@ while complementarity_iter > comp_tol && ii < N_homotopy
         fprintf('-----------------------------------------------------------------------------------------------\n');
         fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed, complementarity resiudal %2.2e.\n',ii,N_homotopy,sigma_k,complementarity_iter);
         if model.n_u >0
-            fprintf('CPU time of iteration: %2.2f s.\t Objective function value: %2.4e.\n',cpu_time_iter, full(sol.f));
+            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
+            fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
             if time_optimal_problem
                 fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
             end

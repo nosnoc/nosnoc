@@ -37,8 +37,8 @@ settings.n_s = 2;
 % settings.irk_scheme = 'Gauss-Legendre';     
 settings.irk_scheme = 'Radau-IIA';     
 settings.print_level = 2;
-settings.mpcc_mode = 5; % very fast                    
-settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
+settings.mpcc_mode = 5; % very fast    
+% settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
 settings.s_elastic_max = 1e1;                    
 settings.cross_comp_mode = 3;
 % settings.heuristic_step_equilibration = 0;
@@ -51,8 +51,8 @@ T_sim = 12;
 N_sim = 85;
 
 % N_finite_elements = 2;
-T_sim = 1;
-N_sim = 14;
+% T_sim = 2;
+% N_sim = 28;
 
 settings.pss_mode = 'Step';
 % settings.pss_lift_step_functions= 0;

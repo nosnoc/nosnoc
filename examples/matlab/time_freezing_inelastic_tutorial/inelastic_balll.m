@@ -5,28 +5,34 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
-% settings.pss_mode = 'Step';
+settings.pss_mode = 'Step';
 settings.pss_lift_step_functions= 0;
-% settings.mpcc_mode = 2;
-settings.N_homotopy = 3;
-%%
+settings.mpcc_mode = 5;
+settings.opts_ipopt.ipopt.max_iter = 3e2;
+settings.print_level = 3;
+settings.N_homotopy = 10;
+settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
+settings.use_fesd = 1;
+settings.cross_comp_mode = 10;
 
+%%
 model.N_stages = 10; % number of control intervals
 model.N_finite_elements = 6; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 15;    % Time horizon
 % Symbolic variables and bounds
-a_n = 20;
+a_n = 30;
 q = SX.sym('q',2); 
 v = SX.sym('v',2); 
 t = SX.sym('t',1); 
+
 model.x = [q;v;t]; % add all important data to the struct model,
-model.x0 = [0;2;2;-1;0]; 
+model.x0 = [0;0.5;2;1;0]; 
 % control
 % Dyanmics and the regions
 f = [v;[0;-9.81];1];
 f_aux_n = [0;0;0;a_n;0];
 model.c = [q(2);v(2)];
-if 1
+if 0
     model.S = [1 1;...
               1 -1;...
            -1 1;...
@@ -39,9 +45,9 @@ model.S = [1 0;...
 model.F = [f, f, f_aux_n];
 end
 %% Simulation setings
-N_finite_elements = 3;
-T_sim = 2;
-N_sim = 20;
+N_finite_elements = 2;
+T_sim = 1;
+N_sim = 10;
 
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;
@@ -52,3 +58,14 @@ settings.use_previous_solution_as_initial_guess = 1;
 
 %%
 plot(results.x_res(1,:),results.x_res(2,:))
+%%
+lambda0 = results.lambda_0_res;
+lambda1 = results.lambda_1_res;
+alpha = results.alpha_res;
+comp1 = alpha.*lambda0;
+comp2 = lambda1.*(ones(2,1)-alpha);
+figure
+subplot(121)
+plot(comp1')
+subplot(122)
+plot(comp2')

@@ -71,9 +71,9 @@ switch pss_mode
         mu_opt= mu_opt_extended(:,1:n_s+1:end);
     case 'Step'
         alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
-        alpha_opt_extended = [alg_states_extended(1:n_alpha*n_simplex,:)];
-        lambda_0_opt_extended = [alg_states_extended(n_alpha*n_simplex+1:2*n_alpha*n_simplex,:)];
-        lambda_1_opt_extended = [alg_states_extended(2*n_alpha*n_simplex+1:3*n_alpha*n_simplex,:)];
+        alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
+        lambda_0_opt_extended = [alg_states_extended(n_alpha+1:2*n_alpha,:)];
+        lambda_1_opt_extended = [alg_states_extended(2*n_alpha+1:3*n_alpha,:)];
 
         alpha_opt= alpha_opt_extended(:,1:n_s+1:end);
         lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);

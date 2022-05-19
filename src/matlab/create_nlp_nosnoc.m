@@ -365,7 +365,6 @@ for k=0:N_stages-1
                     Theta_kij = [Z_ki_stages{j}(1:n_alpha);e_alpha-Z_ki_stages{j}(1:n_alpha)];
                     Lambda_kij = Z_ki_stages{j}(n_alpha+1:3*n_alpha);
                     Mu_kij = [];
-
             end
             Theta_ki_current_fe = {Theta_ki_current_fe{:},Theta_kij  };
             Lambda_ki_current_fe = {Lambda_ki_current_fe{:},Lambda_kij };

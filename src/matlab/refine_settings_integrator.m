@@ -24,7 +24,7 @@ function [settings] = refine_settings_integrator(settings);
 % make sense for the integrator.
 %% Unfold user structure
 unfold_struct(settings,'caller')
-
+clear settings;
 %% Number of stages and times.
 if equidistant_control_grid == 0
     couple_across_stages = 1;
@@ -63,6 +63,14 @@ if (time_freezing && ~impose_terminal_phyisical_time)
 end
 if impose_terminal_phyisical_time == 0
     warning ('impose_terminal_phyisical_time = 0 is not recommended. It means T \neq T_phy (or T_final \neq T_phy). It is only supported for nonequdistant control grids \n')
+end
+
+if time_freezing
+    use_speed_of_time_variables = 0;
+    local_speed_of_time_variable= 0;
+    stagewise_clock_constraint = 0;
+    time_freezing = 0;
+    time_rescaling = 0;
 end
 
 % lifting does not make sense in integral mode

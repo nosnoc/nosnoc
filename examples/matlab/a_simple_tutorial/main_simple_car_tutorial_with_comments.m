@@ -30,6 +30,7 @@ clear all; clc; close all;
 import casadi.*
 [settings] = default_settings_nosnoc();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
 %% Choosing the Runge - Kutta Method and number of stages
+settings.irk_scheme = 'Lobatto-III'; % Radau-IIA
 settings.print_level = 3;
 settings.n_s = 2;
 settings.mpcc_mode = 3;
@@ -37,6 +38,7 @@ settings.cross_comp_mode = 3;
 settings.use_fesd = 1;
 settings.use_speed_of_time_variables = 1;
 % settings.local_speed_of_time_variable = 1;
+settings.pss_mode = 'Step';
 
 %% Time settings
 % Here we can indicate tha the Optimal Control Problem (OCP) is a time optimal control problem so the
@@ -54,7 +56,7 @@ v = SX.sym('v'); % velocity
 model.x = [q;v]; % add all important data to the struct model,
 model.x0 = [0;0]; % inital value
 
-v_max = 20; % maximal velocity
+v_max = 25; % maximal velocity
 model.lbx = [-inf;-v_max];
 model.ubx = [inf;v_max];
 
@@ -106,3 +108,11 @@ plot_results_nosnoc_tutorial
 if results.T_opt<1
    results.T_opt = results.t_grid(end) ;
 end
+
+%%
+lambda1 = results.lambda_1_opt;
+lambda0 = results.lambda_0_opt;
+alpha = results.alpha_opt;
+
+comp1 = alpha.*lambda0 
+comp2 = (1-alpha).*lambda1

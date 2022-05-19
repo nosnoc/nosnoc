@@ -4,7 +4,7 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.time_optimal_problem = 1;
 settings.n_s = 2; 
-model.N_stages = 10; model.N_finite_elements = 3; model.T = 1;    
+model.N_stg = 10; model.N_FE = 3; model.T = 1;    
 q = SX.sym('q'); v = SX.sym('v'); 
 model.x = [q;v]; model.x0 = [0;0]; 
 model.lbx = [-inf;-25]; model.ubx = [inf;25];

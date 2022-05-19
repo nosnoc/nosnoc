@@ -21,20 +21,50 @@
 %
 function [model,settings] = model_reformulation_nosnoc(model,settings)
 import casadi.*
+
+
 %% Load settings and model details
-if ~settings.time_freezing_model_exists && settings.time_freezing 
+if ~settings.time_freezing_model_exists && settings.time_freezing
     % check is the model generated if time freezing is used
-     [model,settings] = time_freezing_reformulation(model,settings);
+    [model,settings] = time_freezing_reformulation(model,settings);
 end
 
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller')
 
+%% Some settings refinments
+% update prin_level
+if print_level <4
+    settings.opts_ipopt.ipopt.print_level=0;
+    settings.opts_ipopt.print_time=0;
+    settings.opts_ipopt.ipopt.sb= 'yes';
+elseif print_level == 4
+    settings.opts_ipopt.ipopt.print_level=0;
+    settings.opts_ipopt.print_time=1;
+    settings.opts_ipopt.ipopt.sb= 'no';
+else
+    settings.opts_ipopt.ipopt.print_level = 5;
+end
 
-%% Determine is the SX or MX mode in CasADi used.
-casadi_symbolic_mode = model.x(1).type_name();
-settings.casadi_symbolic_mode  = casadi_symbolic_mode;
-settings.couple_across_stages = 1;
+if settings.time_freezing
+    settings.local_speed_of_time_variable = 1;
+end
+%% If different names are used...
+if exist('N_stg','var')
+    N_stages = N_stg;
+    model.N_stages = N_stages;
+end
+
+if exist('N_FE','var') 
+    N_finite_elements = N_FE;
+    model.N_finite_elements  = N_finite_elements ;
+end
+
+if exist('N_fe','var') 
+    N_finite_elements = N_fe;
+    model.N_finite_elements = N_fe;
+end
+
 %% Step-size
 h = T/N_stages;
 % nominal lengths of the finite elements for different control intevrals, every control interval might have a different number of finite elements.
@@ -56,6 +86,10 @@ h_k = h./N_finite_elements;
 model.h = h;
 model.h_k = h_k;
 model.N_finite_elements = N_finite_elements;
+%% Determine is the SX or MX mode in CasADi used.
+casadi_symbolic_mode = model.x(1).type_name();
+settings.casadi_symbolic_mode  = casadi_symbolic_mode;
+settings.couple_across_stages = 1;
 
 %% Check is x
 
@@ -121,8 +155,8 @@ if ~exist('f_q')
     if print_level >=1
         fprintf('Info: No stage cost is provided. \n')
     end
-%     eval(['f_q = ', casadi_symbolic_mode, '.zeros(1);'])
-      f_q = 0;
+    %     eval(['f_q = ', casadi_symbolic_mode, '.zeros(1);'])
+    f_q = 0;
 end
 if exist('f_q_T')
     terminal_cost = 1;
@@ -130,7 +164,7 @@ else
     if print_level >=1
         fprintf('Info: No terminal cost is provided. \n')
     end
-%     eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1);'])
+    %     eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1);'])
     f_q_T = 0;
 end
 
@@ -295,7 +329,11 @@ else
 end
 
 % index sets and dimensions for ubsystems
-m_ind_vec = [cumsum(m_vec)-m_vec(1)+1]; % index ranges of the corresponding thetas and lambdas
+m_ind_vec = 1;
+for ii = 1:length(m_vec)-1
+    m_ind_vec  = [m_ind_vec,m_ind_vec(end)+m_vec(ii)];
+end
+% m_ind_vec = [cumsum(m_vec)-m_vec(1)+1]; % index ranges of the corresponding thetas and lambdas
 m = sum(m_vec);
 
 if isempty(n_c_vec)
@@ -405,73 +443,116 @@ switch pss_mode
 
         % Upsilo collects the vector for dotx = F(x)Upsilon, it is either multiaffine
         % terms or gamma from lifting
-%         pss_lift_step_functions = 0;
+        %         pss_lift_step_functions = 0;
         for ii = 1:n_simplex
-                upsilon_temp = [];
-                ii_str = num2str(ii);
-                S_temp = S{ii};
+            upsilon_temp = [];
+            ii_str = num2str(ii);
+            S_temp = S{ii};
             if pss_lift_step_functions
-%                 [n_f_i,n_c_i] = size(S_temp);
-%                 n_R_i = sum(abs(S_temp),2);
-%                 % define gamma which etner the odes r.h.s. linearly
-%                 eval(['gamma_' i_str ' = ' casadi_symbolic_mode '.sym(''gamma_' i_str ''',n_f_i);']);
-%                 eval(['gamma = [gamma; gamma_' i_str '];']);
-%                
-%                 eval(['g_lift_beta_' i_str ' = [];']);
-%                 eval(['g_lift_gamma_' i_str ' = [];']);
-% 
-%                 temp = ones(n_f_i,1);
-%                 S_temp_reduced  = S_temp;
-%                 ind_progress = 0;
-%                 for ii = 1:n_c_i
-%                     n_R_i = sum(abs(S_temp_reduced),2);
-%                     ind_done = find(n_R_i >= ii);
-%                     eval(['temp = (temp).*((1-S_temp_reduced(ind_done,ii))/2+S_temp_reduced(ind_done,ii).*alpha_' i_str '(ii));'])
-%                     ind_done= find(n_R_i == ii);
-%                     ind_done_complement = find(n_R_i ~= ii);
-%                     if ~isempty(ind_done)
-% %                         g_lift_gamma = [g_lift_gamma ;theta(ind_progress+ind_done)-(temp(ind_done))];
-%                         eval(['g_lift_gamma_' i_str '= [g_lift_gamma_' i_str ';gamma(ind_progress+ind_done)-(temp(ind_done))];'])
-%                         ind_full = 1:length(temp);
-% %                         temp(ind_done) = [];
-%                         if isempty(ind_done_complement)
-%                             temp = [];
-%                         else
-%                             temp = temp(ind_done_complement);
-%                         end
-%                         S_temp_reduced(ind_done,:) = [];
-%                         ind_progress = ind_progress+ind_done(end);
-%                     end
-%                     % start defining betas;
-%                     if ii >= n_depth_step_lifting && ii< n_c_i
-%                         [temp_S_red,temp_S_IA,temp_S_IC] = unique(S_temp_reduced(:,ii) ,'rows');
-%                         n_beta_ii = size(temp_S_red,1);
-%                         % defin intermediate beta
-%                         eval(['beta_' i_str '_' num2str(ii) '=' casadi_symbolic_mode '.sym(''beta_' i_str '_' num2str(ii) ''',n_beta_ii);'])
-%                         eval(['beta = [beta; beta_' i_str '_' num2str(ii) '];'])
-% %                         eval(['beta_' num2str(ii+1-n_depth_step_lifting) '=' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ',n_beta_ii);'])
-%                         eval(['beta_temp =' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ''',n_beta_ii);'])
-% %                         beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
-%                         eval(['g_lift_beta_' i_str '= [g_lift_beta_' i_str ';beta_temp - temp(temp_S_IA)];'])
-%                         temp = beta_temp(temp_S_IC)';
-%                     end
-%                 end
-%                 eval(['g_lift_beta = [g_lift_beta;g_lift_beta_' i_str '];'])
-%                 eval(['g_lift_gamma = [g_lift_gamma;g_lift_gamma_' i_str '];'])
-%                 eval(['upsilon_' i_str '= gamma_' i_str ';'])
+                %                 [n_f_i,n_c_i] = size(S_temp);
+                %                 n_R_i = sum(abs(S_temp),2);
+                %                 % define gamma which etner the odes r.h.s. linearly
+                %                 eval(['gamma_' i_str ' = ' casadi_symbolic_mode '.sym(''gamma_' i_str ''',n_f_i);']);
+                %                 eval(['gamma = [gamma; gamma_' i_str '];']);
+                %
+                %                 eval(['g_lift_beta_' i_str ' = [];']);
+                %                 eval(['g_lift_gamma_' i_str ' = [];']);
+                %
+                %                 temp = ones(n_f_i,1);
+                %                 S_temp_reduced  = S_temp;
+                %                 ind_progress = 0;
+                %                 for ii = 1:n_c_i
+                %                     n_R_i = sum(abs(S_temp_reduced),2);
+                %                     ind_done = find(n_R_i >= ii);
+                %                     eval(['temp = (temp).*((1-S_temp_reduced(ind_done,ii))/2+S_temp_reduced(ind_done,ii).*alpha_' i_str '(ii));'])
+                %                     ind_done= find(n_R_i == ii);
+                %                     ind_done_complement = find(n_R_i ~= ii);
+                %                     if ~isempty(ind_done)
+                % %                         g_lift_gamma = [g_lift_gamma ;theta(ind_progress+ind_done)-(temp(ind_done))];
+                %                         eval(['g_lift_gamma_' i_str '= [g_lift_gamma_' i_str ';gamma(ind_progress+ind_done)-(temp(ind_done))];'])
+                %                         ind_full = 1:length(temp);
+                % %                         temp(ind_done) = [];
+                %                         if isempty(ind_done_complement)
+                %                             temp = [];
+                %                         else
+                %                             temp = temp(ind_done_complement);
+                %                         end
+                %                         S_temp_reduced(ind_done,:) = [];
+                %                         ind_progress = ind_progress+ind_done(end);
+                %                     end
+                %                     % start defining betas;
+                %                     if ii >= n_depth_step_lifting && ii< n_c_i
+                %                         [temp_S_red,temp_S_IA,temp_S_IC] = unique(S_temp_reduced(:,ii) ,'rows');
+                %                         n_beta_ii = size(temp_S_red,1);
+                %                         % defin intermediate beta
+                %                         eval(['beta_' i_str '_' num2str(ii) '=' casadi_symbolic_mode '.sym(''beta_' i_str '_' num2str(ii) ''',n_beta_ii);'])
+                %                         eval(['beta = [beta; beta_' i_str '_' num2str(ii) '];'])
+                % %                         eval(['beta_' num2str(ii+1-n_depth_step_lifting) '=' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ',n_beta_ii);'])
+                %                         eval(['beta_temp =' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ''',n_beta_ii);'])
+                % %                         beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
+                %                         eval(['g_lift_beta_' i_str '= [g_lift_beta_' i_str ';beta_temp - temp(temp_S_IA)];'])
+                %                         temp = beta_temp(temp_S_IC)';
+                %                     end
+                %                 end
+                %                 eval(['g_lift_beta = [g_lift_beta;g_lift_beta_' i_str '];'])
+                %                 eval(['g_lift_gamma = [g_lift_gamma;g_lift_gamma_' i_str '];'])
+                %                 eval(['upsilon_' i_str '= gamma_' i_str ';'])
             else
-                for j = 1:size(S_temp,1)
-                    upsilon_ij = 1;
-                    for k = 1:size(S_temp,2)
-                        % create multiafine term
-                        if S_temp(j,k) ~=0
-                            upsilon_ij = upsilon_ij * ( 0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_all{ii}(k) ) ;
+                if ~settings.time_freezing_inelastic 
+                    for j = 1:size(S_temp,1)
+                        upsilon_ij = 1;
+                        for k = 1:size(S_temp,2)
+                            % create multiafine term
+                            if S_temp(j,k) ~=0
+                                upsilon_ij = upsilon_ij * (0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_all{ii}(k) ) ;
+                            end
                         end
-                    end
-                    upsilon_temp = [upsilon_temp;upsilon_ij];                  
+                        upsilon_temp = [upsilon_temp;upsilon_ij];
+                    end               
                 end
             end
             upsilon_all{ii} = upsilon_temp;
+        end
+
+        %% prepare for time freezing lifting and co,
+        
+        if settings.time_freezing_inelastic
+            % todo pack this into a function
+            if pss_lift_step_functions
+                gamma1 = define_casadi_symbolic(casadi_symbolic_mode,'gamma1',2);
+                gamma = [gamma;gamma1];
+                g_lift_gamma = [gamma1-[alpha_all{1}(1)+(1-alpha_all{1}(1))*alpha_all{1}(2);...
+                                 (1-alpha_all{1}(1))*(1-alpha_all{1}(2))]];
+                upsilon_all{1} = gamma1;
+
+                if n_simplex > 1
+                    beta1 = define_casadi_symbolic(casadi_symbolic_mode,'beta1',1);
+                    beta = [beta;beta1];
+                    g_lift_beta = [beta1-(1-alpha_all{1}(1))*(1-alpha_all{1}(2))];
+                    gamma2 = define_casadi_symbolic(casadi_symbolic_mode,'gamma2',1);
+                    gamma = [gamma;gamma2];
+                    g_lift_gamma(2) = gamma1(2)-beta1;
+                    g_lift_gamma = [g_lift_gamma;gamma2-beta1*(1-2*alpha_all{2}(1))];
+                    upsilon_all{2} = gamma2;
+                end
+                if n_simplex >2
+                    gamma3 = define_casadi_symbolic(casadi_symbolic_mode,'gamma3',1);
+                    gamma = [gamma;gamma3];
+                    g_lift_gamma = [g_lift_gamma;gamma3-beta1*(1-2*alpha_all{3}(1))];
+                    upsilon_all{3} = gamma3;
+                end
+            else
+                upsilon_all{1} = [alpha_all{1}(1)+(1-alpha_all{1}(1))*alpha_all{1}(2);...
+                                 (1-alpha_all{1}(1))*(1-alpha_all{1}(2))];
+                % friction 1st dimension
+                if n_simplex > 1
+                    upsilon_all{2} = [(1-alpha_all{1}(1))*(1-alpha_all{1}(2))*(1-2*alpha_all{2}(1))];
+                end
+                % friction 2nd dimension
+                if n_simplex >2
+                     upsilon_all{3} = [(1-alpha_all{1}(1))*(1-alpha_all{1}(2))*(1-2*alpha_all{3}(1))];
+                end
+            end
         end
         n_beta = length(beta);
         n_gamma = length(gamma);
@@ -484,7 +565,7 @@ g_lift = [g_lift_beta; g_lift_gamma];
 switch pss_mode
     case 'Stewart'
         % symbolic variables
-%         z = [theta;lambda;mu];
+        %         z = [theta;lambda;mu];
         z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
         lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_simplex,1)];
         ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_simplex,1)];
@@ -601,7 +682,7 @@ end
 %% Collect Outputs
 model.sigma = sigma;
 model.p = p;
-% 
+%
 model.lbx = lbx;
 model.ubx = ubx;
 
@@ -639,7 +720,7 @@ model.f_q_T_fun = f_q_T_fun;
 model.J_cc_fun = J_cc_fun;
 model.g_ind_all_fun = g_ind_all_fun;
 model.c_fun = c_fun;
-% 
+%
 % % Model Dimensions;
 model.n_x = n_x;
 model.n_z = n_z;

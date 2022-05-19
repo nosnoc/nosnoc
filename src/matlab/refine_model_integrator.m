@@ -23,6 +23,25 @@ function [model] = refine_model_integrator(model,settings)
 % This function changes possible inconsistent discretization settings.
 %% Unfold user structure
 unfold_struct(model,'caller')
+%% If different names are used...
+if exist('N_stg','var')
+    N_stages = N_stg;
+    model.N_stage = N_stages;
+end
+
+if exist('N_FE','var') 
+    N_finite_elements = N_FE;
+    model.N_finite_elements  = N_finite_elements ;
+end
+
+if exist('N_fe','var') 
+    N_finite_elements = N_fe;
+    model.N_finite_elements = N_fe;
+end
+
+
+
+%%
 if ~exist("T_sim")
     error('Please provide the total simulation time in model.T_sim')
 end

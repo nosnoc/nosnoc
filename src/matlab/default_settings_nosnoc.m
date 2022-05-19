@@ -2,7 +2,7 @@ function [default_settings] = default_settings_nosnoc()
 
 % TODO: add descprition of function the list of default settings and their explanation.
 %% General
-solver_name = 'solver_fesd';
+solver_name = 'nosnoc_solver';
 use_fesd = 1;
 casadi_symbolic_mode = 'MX';
 %% IRK anf FESD Settings
@@ -101,6 +101,7 @@ equidistant_control_grid = 1;
 	
 %% Time-Settting	
 time_freezing  = 0;
+time_freezing_inelastic = 0;
 time_optimal_problem = 0;
 time_rescaling = 0;
 use_speed_of_time_variables = 1;

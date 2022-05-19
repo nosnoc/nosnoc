@@ -29,7 +29,7 @@ complementarity_stats = [];
 error_state = [];
 error_objective = [];
 
-[solver,solver_initalization, model,settings] = create_nlp_fesd(model,settings);
+[solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller');
 unfold_struct(solver_initalization,'caller');
