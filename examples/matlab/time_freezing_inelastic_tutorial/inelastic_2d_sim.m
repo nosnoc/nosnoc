@@ -11,12 +11,10 @@ settings.pss_lift_step_functions= 1;
 settings.mpcc_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
 settings.print_level = 3;
-settings.N_homotopy = 10;
-settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
+settings.s_elastic0 = 1e1;
 settings.use_fesd = 1;
 settings.cross_comp_mode = 10;
 settings.time_freezing = 1;
-
 
 %%
 % Symbolic variables and bounds

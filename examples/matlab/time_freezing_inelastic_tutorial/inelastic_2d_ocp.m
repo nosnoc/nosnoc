@@ -9,16 +9,14 @@ settings.n_s = 2;
 settings.pss_mode = 'Step';
 settings.pss_lift_step_functions= 1;
 settings.mpcc_mode = 3;
-settings.opts_ipopt.ipopt.max_iter = 3e2;
-settings.print_level = 3;
 settings.N_homotopy = 10;
-settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
+settings.opts_ipopt.ipopt.max_iter = 5e2;
+settings.print_level = 3;
+% settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
 settings.use_fesd = 1;
-settings.cross_comp_mode = 10;
 settings.time_freezing = 1;
 settings.stagewise_clock_constraint = 1;
-
-
+settings.s_sot_max = 2;
 %%
 N_stages = 20; N_finite_elements  = 3; 
 u_max = 10;
@@ -52,21 +50,22 @@ t_opt = results.x_opt(5,:);
 u_opt = results.u_opt;
 figure
 subplot(131)
-plot(qx,qy);
-xlabel('$q_x$','Interpreter','latex');
-ylabel('$q_y$','Interpreter','latex');
+plot(qx,qy,'LineWidth',2);
+xlabel('$q_1$','Interpreter','latex');
+ylabel('$q_2$','Interpreter','latex');
 grid on
 subplot(132)
-plot(t_opt,vy);
+plot(t_opt,vy,'LineWidth',2);
 hold on
-plot(t_opt,vx);
+plot(t_opt,vx,'LineWidth',2);
 grid on
 xlabel('$t$','Interpreter','latex');
 ylabel('$v$','Interpreter','latex');
-legend({'$v_x$','$v_y$'},'Interpreter','latex');
+legend({'$v_1$','$v_2$'},'Interpreter','latex');
 subplot(133)
-stairs(t_opt(1:N_finite_elements:end),[u_opt,nan]);
+stairs(t_opt(1:N_finite_elements:end),[u_opt,nan],'LineWidth',2);
 grid on
 xlabel('$t$','Interpreter','latex');
-ylabel('$v$','Interpreter','latex');
+ylabel('$u$','Interpreter','latex');
 %%
+saveas(gcf,'ocp_example','epsc')

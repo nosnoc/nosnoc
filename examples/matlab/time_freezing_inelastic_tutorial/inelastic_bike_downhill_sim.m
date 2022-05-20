@@ -24,7 +24,7 @@ model.e = 0;
 model.mu = 0.25;
 % model.mu = 0.1;
 model.a_n = 30;
-model.x0 = [-15;16;4;-2]; 
+model.x0 = [-25;27;5;-2]; 
 model.f = [0;-9.81];
 %%
 a1 = 1;
@@ -34,7 +34,7 @@ sigma_c = 1e-1;
 model.c = q(2)-(a1*sin(a2*q(1))+a3*q(1))*(1-tanh((q(1))/sigma_c))/2;
 %% Simulation setings
 N_finite_elements = 2;
-T_sim = 5;
+T_sim = 6;
 N_sim = 80;
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;
@@ -50,7 +50,7 @@ vy = results.x_res(4,:);
 t_opt = results.x_res(5,:);
 %%
 figure
-tt = -20:0.05:25;
+tt = -26:0.05:25;
 plot(tt,(a1*sin(a2*tt)+a3*tt).*(1-tanh((tt)/sigma_c))/2,'Color',0.2*ones(3,1),'LineWidth',1)
 hold on
 axis equal
