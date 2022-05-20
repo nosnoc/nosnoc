@@ -1,5 +1,5 @@
 # NOSNOC
-**NOSNOC** is open source software package for NOnSmooth Numerical Optimal Control.
+**NOSNOC** is an open source software package for NOnSmooth Numerical Optimal Control.
 
 
 ## General
