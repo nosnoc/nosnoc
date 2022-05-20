@@ -815,9 +815,56 @@ end
 % Add Terminal Constrint
 if terminal_constraint
     g_terminal = g_terminal_fun(Xk_end);
-    g = {g{:}, g_terminal };
-    lbg = [lbg; g_terminal_lb];
-    ubg = [ubg; g_terminal_ub];
+    n_terminal = length(g_terminal_lb);
+    if ~isequal(g_terminal_lb,g_terminal_lb)
+        terminal_constraint_relxataion = 0; 
+        % inequality constraint are not relaxed
+        if print_level >2
+            fprintf('Info: Only terminal-equality constraint relaxation is supported, you have an inequality constraint.\n')
+        end
+    end
+    switch terminal_constraint_relxataion
+        case 0
+            % hard constraint
+            g = {g{:}, g_terminal };
+            lbg = [lbg; g_terminal_lb];
+            ubg = [ubg; g_terminal_ub];
+        case 1
+            % l_1 
+            % define slack variables
+            s_terminal_ell_1= define_casadi_symbolic(casadi_symbolic_mode,'s_terminal_ell_1',n_terminal);
+             w = {w{:}, s_terminal_ell_1};
+             lbw = [lbw;-inf*ones(n_terminal,1)];
+             ubw = [ubw;inf*ones(n_terminal,1)];
+             w0 = [w0;1e3*ones(n_terminal,1)];
+              ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_terminal];
+             % relaxed constraints
+             g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_1};
+             g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_1};
+             lbg = [lbg; -inf*ones(2*n_terminal,1)];
+             ubg = [ubg; zeros(2*n_terminal,1)];
+             % penalize slack
+             J = J + rho_terminal*sum(s_terminal_ell_1);
+        case 2
+            % l_2
+            J = J + rho_terminal*(g_terminal-g_terminal_lb)'*(g_terminal-g_terminal_lb);
+        case 3
+            % l_inf 
+            % define slack variable
+            s_terminal_ell_inf= define_casadi_symbolic(casadi_symbolic_mode,'s_terminal_ell_inf',1);
+             w = {w{:}, s_terminal_ell_inf};
+             lbw = [lbw;-inf];
+             ubw = [ubw;inf];
+             w0 = [w0;1e3];
+             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+             % relaxed contraint
+             g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1)};
+             g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1)};
+             lbg = [lbg; -inf*ones(2*n_terminal,1)];
+             ubg = [ubg; zeros(2*n_terminal,1)];
+             % penalize slack
+             J = J + rho_terminal*(s_terminal_ell_inf);
+    end   
 end
 
 %% Add Terminal Cost to objective

@@ -330,6 +330,11 @@ end
 
 % index sets and dimensions for ubsystems
 m_ind_vec = 1;
+if isequal(pss_mode,'Step')
+    % dobule the size of the vectors, since alpha,1-alpha treated at same
+    % time;
+    m_vec = m_vec*2;
+end
 for ii = 1:length(m_vec)-1
     m_ind_vec  = [m_ind_vec,m_ind_vec(end)+m_vec(ii)];
 end

@@ -38,8 +38,8 @@ results.t_grid = [];
 results.x_res = [];
 stats = [];
 %% generate time-freezing model before turning off time-related settings
-  [model,settings] = time_freezing_reformulation(model,settings);
-  settings.time_freezing = 0;
+[model,settings] = time_freezing_reformulation(model,settings);
+settings.time_freezing = 0;
 %% Settings of integration
 [model] = refine_model_integrator(model,settings);
 [settings] = refine_settings_integrator(settings);
