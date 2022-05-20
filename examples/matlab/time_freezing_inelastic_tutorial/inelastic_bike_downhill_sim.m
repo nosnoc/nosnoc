@@ -16,8 +16,6 @@ settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_a
 settings.use_fesd = 1;
 settings.cross_comp_mode = 10;
 settings.time_freezing = 1;
-
-
 %%
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 

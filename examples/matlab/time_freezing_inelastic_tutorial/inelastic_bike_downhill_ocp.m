@@ -5,19 +5,19 @@ import casadi.*
 %% settings
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
-settings.n_s = 2;
-
+settings.n_s = 1;
 settings.pss_mode = 'Step';
 settings.pss_lift_step_functions= 1;
 
-settings.print_level = 4;
+settings.print_level = 3;
 settings.mpcc_mode = 3;
-settings.opts_ipopt.ipopt.max_iter = 5e2;
+settings.initial_alpha = 0.5;
+% settings.objective_scaling_direct = 0;
+settings.opts_ipopt.ipopt.max_iter = 1e3;
+% settings.s_elastic_0 = 1;
 settings.N_homotopy = 12;
-settings.sigma_0 = 10;
-settings.cross_comp_mode = 10;
+settings.cross_comp_mode = 3;
 
-settings.initial_lambda_0 = 0.5; settings.initial_lambda_1 = 0.5; settings.initial_alpha = 0.5;
 
 settings.use_fesd = 1;
 settings.time_freezing = 1;
@@ -46,14 +46,17 @@ model.c = q(2)-(a1*sin(a2*q(1))+a3*q(1))*(1-tanh((q(1))/sigma_c))/2;
 
 qx0 = -15;
 qy0 = (a1*sin(a2*qx0)+a3*qx0 )*(1-tanh((qx0 )/sigma_c))/2;
-qx_target = 4;
+qx_target = 2;
 qy_target = (a1*sin(a2*qx_target )+a3*qx_target )*(1-tanh((qx_target)/sigma_c))/2;
 model.x0 = [qx0;qy0;0;0]; 
 model.f_q = u^2;
-model.g_terminal = q-[qx_target;qy_target];
+model.g_terminal= q-[qx_target;qy_target];
+
+settings.terminal_constraint_relxataion = 3;
+settings.rho_terminal = 1e2;
 %% Discretization
-model.T= 5;
-model.N_stages = 50;
+model.T= 4;
+model.N_stg = 10;
 model.N_FE = 3;
 %% NOSNOC OCP solver
 [results,stats,model] = nosnoc_solver(model,settings);

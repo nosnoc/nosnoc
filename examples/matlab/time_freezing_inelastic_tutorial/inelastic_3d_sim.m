@@ -13,7 +13,7 @@ settings.print_level = 3;
 settings.N_homotopy = 10;
 settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
 settings.use_fesd = 1;
-settings.cross_comp_mode = 10;
+settings.cross_comp_mode = 2;
 settings.time_freezing = 1;
 
 settings.pss_mode = 'Step';
