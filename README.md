@@ -85,7 +85,7 @@ More details can be found in the [user manual](https://github.com/nurkanovic/nos
 ### FESD
 [Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://arxiv.org/abs/2205.05337) \
 A.Nurkanović, M. Sperl, S. Albrecht, M. Diehl \
-arXiv preprint 2022
+IEEE Control Systems Letters 2022
 
 ### Time - Freezing
 [A Time-Freezing Approach for Numerical Optimal Control of Nonsmooth Differential Equations with State Jumps](https://cdn.syscop.de/publications/Nurkanovic2021.pdf) \
@@ -98,7 +98,7 @@ arXiv preprint 2021
 
 [Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing](https://arxiv.org/abs/2203.11510) \
 A.Nurkanović , M. Diehl \
-arXiv preprint 2022
+IEEE Control Systems Letters 2022
 
 
 ## Literature - software
