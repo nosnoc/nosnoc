@@ -9,7 +9,7 @@ settings.n_s = 2;
 
 settings.mpcc_mode = 5;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
-settings.print_level = 3;
+settings.print_level = 2;
 settings.N_homotopy = 10;
 settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
 settings.use_fesd = 1;
@@ -17,7 +17,7 @@ settings.cross_comp_mode = 2;
 settings.time_freezing = 1;
 
 settings.pss_mode = 'Step';
-settings.pss_lift_step_functions= 1;
+settings.pss_lift_step_functions= 0;
 
 %%
 % Symbolic variables and bounds
@@ -64,7 +64,7 @@ plot(t_opt,vy);
 plot(t_opt,vz);
 xlabel('$t$','Interpreter','latex');
 ylabel('$v$','Interpreter','latex');
-legend({'v_x','v_y','v_z'},'Interpreter','latex');
+% legend({'v_x','v_y','v_z'},'Interpreter','latex');
 %%
 
 %%

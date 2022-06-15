@@ -55,12 +55,12 @@ if exist('N_stg','var')
     model.N_stages = N_stages;
 end
 
-if exist('N_FE','var')
+if exist('N_FE','var') 
     N_finite_elements = N_FE;
     model.N_finite_elements  = N_finite_elements ;
 end
 
-if exist('N_fe','var')
+if exist('N_fe','var') 
     N_finite_elements = N_fe;
     model.N_finite_elements = N_fe;
 end
@@ -92,6 +92,7 @@ settings.casadi_symbolic_mode  = casadi_symbolic_mode;
 settings.couple_across_stages = 1;
 
 %% Check is x
+
 if exist('x')
     n_x = length(x);
     % check  lbx
@@ -194,6 +195,7 @@ else
         fprintf('Info: No path constraints are provided. \n')
     end
 end
+
 
 %% Terminal constraints
 if exist('g_terminal')
@@ -331,7 +333,7 @@ m_ind_vec = 1;
 if isequal(pss_mode,'Step')
     % dobule the size of the vectors, since alpha,1-alpha treated at same
     % time;
-    m_vec = sum(n_c_vec)*2;
+    m_vec = m_vec*2;
 end
 for ii = 1:length(m_vec)-1
     m_ind_vec  = [m_ind_vec,m_ind_vec(end)+m_vec(ii)];
@@ -501,7 +503,7 @@ switch pss_mode
                 %                 eval(['g_lift_gamma = [g_lift_gamma;g_lift_gamma_' i_str '];'])
                 %                 eval(['upsilon_' i_str '= gamma_' i_str ';'])
             else
-                if ~settings.time_freezing_inelastic
+                if ~settings.time_freezing_inelastic 
                     for j = 1:size(S_temp,1)
                         upsilon_ij = 1;
                         for k = 1:size(S_temp,2)
@@ -511,7 +513,7 @@ switch pss_mode
                             end
                         end
                         upsilon_temp = [upsilon_temp;upsilon_ij];
-                    end
+                    end               
                 end
             end
             upsilon_all{ii} = upsilon_temp;
@@ -520,73 +522,39 @@ switch pss_mode
         %% prepare for time freezing lifting and co,
         if settings.time_freezing_inelastic
             % todo pack this into a function
-            % gamma are the lifter variables that enter the ODE r.h.s.
-            % linaerly, they have the role as theta in Stewart's representation
             if pss_lift_step_functions
-                if ~friction_is_present
-                        gamma1 = define_casadi_symbolic(casadi_symbolic_mode,'gamma1',2);
-                        gamma = [gamma;gamma1];
-                        g_lift_gamma = [gamma1-[alpha(1)+(1-alpha(1))*alpha(2);...
-                                        (1-alpha(1))*(1-alpha(2))]];
-                        upsilon_all{1} = gamma1;
-                else
-                    switch n_dim_contact
-                        case 2
-                            beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
-                            gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',3);
+                gamma1 = define_casadi_symbolic(casadi_symbolic_mode,'gamma1',2);
+                gamma = [gamma;gamma1];
+                g_lift_gamma = [gamma1-[alpha_all{1}(1)+(1-alpha_all{1}(1))*alpha_all{1}(2);...
+                                 (1-alpha_all{1}(1))*(1-alpha_all{1}(2))]];
+                upsilon_all{1} = gamma1;
 
-                            g_lift_beta = [g_lift_beta;...
-                                           beta-(1-alpha(1))*(1-alpha(2))];
-                            g_lift_gamma = [g_lift_gamma;...
-                                            gamma(1)-alpha(1)+(1-alpha(1))*alpha(2);...
-                                            gamma(2)-beta*(1-alpha(2))*(1-alpha(3));...
-                                            gamma(3)-beta*(1-alpha(2))*alpha(3);...
-                                ];
-                            upsilon_all{1} = gamma;
-                        case 3
-                            gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',5);
-                            beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
-                            
-                            upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                              (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(1-alpha(4));...
-                                              (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*alpha(4);...
-                                              (1-alpha(1))*(1-alpha(2))*alpha(3)*(1-alpha(4));...
-                                              (1-alpha(1))*(1-alpha(2))*alpha(3)*alpha(4);...
-                                              ];
-                            g_lift_gamma = [g_lift_gamma;gamma(1)-alpha(1)+(1-alpha(1))*alpha(2);...
-                                            gamma(2) - beta(1)*beta(2);...
-                                            gamma(3) - beta(1)*beta(3);...
-                                            gamma(4) - beta(1)*beta(4);...
-                                            gamma(5) - beta(1)*beta(5);...
-                                ];
-                            g_lift_beta = [g_lift_beta;beta(1)-(1-alpha(1))*(1-alpha(2));...
-                                           beta(2)-(1-alpha(3))*(1-alpha(4));...
-                                           beta(3)-(1-alpha(3))*(alpha(4));...
-                                           beta(4)-(alpha(3))*(1-alpha(4));...
-                                           beta(5)-(alpha(3))*(alpha(4));...
-                                ];
-                            upsilon_all{1} = gamma;
-                    end
+                if n_simplex > 1
+                    beta1 = define_casadi_symbolic(casadi_symbolic_mode,'beta1',1);
+                    beta = [beta;beta1];
+                    g_lift_beta = [beta1-(1-alpha_all{1}(1))*(1-alpha_all{1}(2))];
+                    gamma2 = define_casadi_symbolic(casadi_symbolic_mode,'gamma2',1);
+                    gamma = [gamma;gamma2];
+                    g_lift_gamma(2) = gamma1(2)-beta1;
+                    g_lift_gamma = [g_lift_gamma;gamma2-beta1*(1-2*alpha_all{2}(1))];
+                    upsilon_all{2} = gamma2;
+                end
+                if n_simplex >2
+                    gamma3 = define_casadi_symbolic(casadi_symbolic_mode,'gamma3',1);
+                    gamma = [gamma;gamma3];
+                    g_lift_gamma = [g_lift_gamma;gamma3-beta1*(1-2*alpha_all{3}(1))];
+                    upsilon_all{3} = gamma3;
                 end
             else
-                if ~friction_is_present
-                upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                  (1-alpha(1))*(1-alpha(2))];
-                else
-                    switch n_dim_contact
-                        case 2
-                            upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                              (1-alpha(1))*(1-alpha(2))*(1-alpha(3));...
-                                              (1-alpha(1))*(1-alpha(2))*(alpha(3));...
-                                              ];
-                        case 3
-                            upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                              (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(1-alpha(4));...
-                                              (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(alpha(4));...
-                                              (1-alpha(1))*(1-alpha(2))*(alpha(3))*(1-alpha(4));...
-                                              (1-alpha(1))*(1-alpha(2))*(alpha(3))*(alpha(4));...
-                                              ];
-                    end
+                upsilon_all{1} = [alpha_all{1}(1)+(1-alpha_all{1}(1))*alpha_all{1}(2);...
+                                 (1-alpha_all{1}(1))*(1-alpha_all{1}(2))];
+                % friction 1st dimension
+                if n_simplex > 1
+                    upsilon_all{2} = [(1-alpha_all{1}(1))*(1-alpha_all{1}(2))*(1-2*alpha_all{2}(1))];
+                end
+                % friction 2nd dimension
+                if n_simplex >2
+                     upsilon_all{3} = [(1-alpha_all{1}(1))*(1-alpha_all{1}(2))*(1-2*alpha_all{3}(1))];
                 end
             end
         end
@@ -803,4 +771,3 @@ dimensions.n_lambda_1 = n_lambda_1;
 
 model.dimensions = dimensions;
 end
-

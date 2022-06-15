@@ -65,14 +65,8 @@ if time_freezing
         if ~exist('mu')
             mu = 0;
         end
-        if  mu<0
-            error('The coefficient of friction mu should be non-negative.')
-        end
-
-        if mu > 0
-            friction_is_present = 1;
-        else
-            friction_is_present = 0;
+        if abs(mu-1)>1 || mu<0
+            error('The coefficient of friction mu should be in [0,1].')
         end
         %% Dimensions, states and clock state
         casadi_symbolic_mode = model.x(1).type_name();
@@ -151,10 +145,9 @@ if time_freezing
             % compute tangents
             if n_dim_contact< 2
                 mu = 0;
-                friction_is_present  = 0;
                 % no friction for a point as there is no tangentional direction
             end
-            if friction_is_present  && n_dim_contact > 1
+            if mu>0 && n_dim_contact > 1
                 switch n_dim_contact
                     case 2
                         if exist('tangent1','var') || exist('tangent','var')
@@ -206,7 +199,7 @@ if time_freezing
                 a_n  = 100;
             end
             f_aux_n = [nabla_q_f_c zeros(n_q,1); zeros(n_q,1) G*nabla_q_f_c]*[0;a_n];
-            if friction_is_present 
+            if mu >0
                 a_t = mu*a_n;
                 f_aux_t1 = [tangent1 zeros(n_q,1); zeros(n_q,1) G*tangent1]*[0;a_t];
                 if n_dim_contact> 2
@@ -216,7 +209,7 @@ if time_freezing
 
             c1 = f_c;
             c2 = nabla_q_f_c'*v;
-            if friction_is_present 
+            if mu >0
                 c3 = tangent1'*v;
                 if n_dim_contact> 2
                     c4 = tangent2'*v;
@@ -231,29 +224,18 @@ if time_freezing
             F{1} = [f_ode f_aux_n];
             c{1} = [c1;c2];
             S{1} = [1 0;-1 1;-1 -1];
-
-            % frictional impact
-            if friction_is_present 
-                switch n_dim_contact
-                    case 2
-                    f_aux_t1 = [f_aux_t1;0];
-                        F{1} = [f_ode f_aux_n+f_aux_t1 f_aux_n-f_aux_t1];
-                        c{1} = [c1;c2;c3];
-                        S{1} = [1 0 0;-1 -1 -1;-1 -1 1];
-                    case 3
-                        f_aux_t1 = [f_aux_t1;0];
-                        f_aux_t2 = [f_aux_t2;0];
-                        F{1} = [f_ode ...
-                               f_aux_n+f_aux_t1+f_aux_t2...
-                               f_aux_n+f_aux_t1-f_aux_t2...
-                               f_aux_n-f_aux_t1+f_aux_t2...
-                               f_aux_n-f_aux_t1-f_aux_t2 ];
-                        c{1} = [c1;c2;c3;c4];
-                        S{1} = [1 0 0 0;...
-                               -1 -1 -1 -1;...
-                               -1 -1 -1 1;...
-                               -1 -1 1 -1;...
-                               -1 -1 1 1];
+            if mu >0
+                f_aux_t1 = [f_aux_t1;0];
+                F{2} = [-f_aux_t1 f_aux_t1];
+                F{2} = [f_aux_t1];
+                c{2} = c3;
+                S{2} = 1;
+                if n_dim_contact> 2
+                    f_aux_t2 = [f_aux_t2;0];
+                    F{3} = [-f_aux_t2 f_aux_t2];
+                    F{3} = [f_aux_t2];
+                    c{3} = c4;
+                    S{3} = 1;
                 end
             end
             model.F = F;
@@ -266,7 +248,5 @@ else
     fprintf('Info on Time-Freezing: No action was done. Consider setting settings.time_freezing = 1, if calling this function.\n')
 end
 settings.time_freezing_model_exists = time_freezing_model_exists;
-settings.friction_is_present  = friction_is_present;
-model.n_dim_contact = n_dim_contact;
 end
 

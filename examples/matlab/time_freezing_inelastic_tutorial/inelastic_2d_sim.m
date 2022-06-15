@@ -6,24 +6,28 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
-settings.pss_mode = 'Step';
-settings.pss_lift_step_functions= 1;
-settings.mpcc_mode = 3;
+
+settings.mpcc_mode = 5;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
-settings.print_level = 3;
-settings.s_elastic0 = 1e1;
+settings.print_level = 2;
+settings.N_homotopy = 10;
+settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
 settings.use_fesd = 1;
-settings.cross_comp_mode = 10;
+settings.cross_comp_mode = 2;
 settings.time_freezing = 1;
 
+settings.pss_mode = 'Step';
+settings.pss_lift_step_functions= 0;
+
+model.mu = 0.2*1;
 %%
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
 model.x = [q;v]; 
 model.e = 0;
-model.mu = 0.9;
-model.a_n = 30;
-model.x0 = [0;0.5;1;1]; 
+
+model.a_n = 10;
+model.x0 = [5;0.5;1;1]; 
 model.f = [0;-9.81];
 model.c = q(2);
 %% Simulation setings
