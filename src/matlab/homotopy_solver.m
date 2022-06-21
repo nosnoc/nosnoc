@@ -75,13 +75,6 @@ while complementarity_iter > comp_tol && ii < N_homotopy
 %     end
 
 end
-% Final value of elastic variable
-    if mpcc_mode >= 5 && print_level>=3
-        fprintf('Value of elastic mode slack: %2.2e  .\n',w_opt(end));
-        if mpcc_mode >= 8
-            fprintf('rho Slack value: %2.2e  .\n',w_opt(end-1));
-        end
-    end
 %% output
 stats.complementarity_stats = complementarity_stats;
 stats.cpu_time = cpu_time;

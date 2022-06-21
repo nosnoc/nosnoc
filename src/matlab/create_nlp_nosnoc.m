@@ -828,7 +828,11 @@ if terminal_constraint
             % hard constraint
             g = {g{:}, g_terminal };
             lbg = [lbg; g_terminal_lb];
-            ubg = [ubg; g_terminal_ub];
+            if relax_terminal_constraint_from_above
+                ubg = [ubg; g_terminal_ub*0+inf];
+            else
+                ubg = [ubg; g_terminal_ub];
+            end
         case 1
             % l_1 
             % define slack variables

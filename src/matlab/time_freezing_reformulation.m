@@ -77,12 +77,24 @@ if time_freezing
         %% Dimensions, states and clock state
         casadi_symbolic_mode = model.x(1).type_name();
         t = define_casadi_symbolic(casadi_symbolic_mode,'t',1);
+
+        % update lower and upper bounds of lbx and ubx
+        if exist('lbx')
+            model.lbx = [model.lbx;-inf];
+        end
+        if exist('ubx')
+            model.ubx = [model.ubx;inf];
+        end
+
         n_x = size(x,1);
         n_q = n_x/2;
         if ~exist('q','var') && ~exist('v','var')
             q = x(1:n_q);
             v = x(n_q +1:end);
         end
+
+        
+
         x = [x;t];
         model.x = x;
         model.x0 = [model.x0;0];

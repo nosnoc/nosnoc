@@ -17,7 +17,7 @@ settings.cross_comp_mode = 2;
 settings.time_freezing = 1;
 
 settings.pss_mode = 'Step';
-settings.pss_lift_step_functions= 0;
+settings.pss_lift_step_functions= 1;
 
 %%
 % Symbolic variables and bounds

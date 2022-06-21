@@ -8,35 +8,36 @@ close all
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
 
-settings.mpcc_mode = 5;
-settings.opts_ipopt.ipopt.max_iter = 3e2;
+settings.mpcc_mode = 3;
+settings.opts_ipopt.ipopt.max_iter = 5e2;
 settings.print_level = 2;
 settings.N_homotopy = 10;
-settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
-settings.use_fesd = 0;
+settings.initial_lambda_0 = 0.5; settings.initial_lambda_1 = 0; settings.initial_alpha = 0.5;
+settings.use_fesd = 1;
 settings.cross_comp_mode = 2;
 settings.time_freezing = 1;
 
 settings.pss_mode = 'Step';
-settings.pss_lift_step_functions = 0;
+settings.pss_lift_step_functions = 1;
 
-model.mu = 0.5*1;
+model.mu = 0.2*1;
 %%
 g = 9.81;
+vertical_force = 0;
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
 model.x = [q;v]; 
 model.e = 0;
 model.a_n = g;
 model.x0 = [0;0.5;2;0]; 
-model.f = [0;-g+g*q(1)];
+model.f = [0;-g+vertical_force*g*q(1)];
 model.c = q(2);
 %% Simulation setings
-N_finite_elements = 1;
+N_FE = 3;
 T_sim = 1.5;
 N_sim = 20;
 model.T_sim = T_sim;
-model.N_finite_elements = N_finite_elements;
+model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
