@@ -32,6 +32,7 @@ if nargin == 4
     j = d;
 else
     current_index = varargin{5};
+%     k = current_index.k;  i = current_index.i; j = current_index.j;
     unfold_struct(current_index,'caller')
 end
 %% Initalize

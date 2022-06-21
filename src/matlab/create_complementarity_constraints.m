@@ -33,7 +33,8 @@ if nargin == 4
     j = n_s;
 else
     current_index = varargin{5};
-    unfold_struct(current_index,'caller')
+%     k = current_index.k;  i = current_index.i; j = current_index.j;
+    unfold_struct(current_index,'caller');
 end
 
 

@@ -116,7 +116,7 @@ else
     fprintf( ['OCP with the Std ' irk_scheme ' in ' irk_representation ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 end
 fprintf('Max homotopy iteration time: %2.3f seconds, min homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
-fprintf('Total homotopy iterations: %d .\n',stats.homotopy_iterations);
+fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
 fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
 
 fprintf('Complementarity residual: %2.3e.\n',max(stats.complementarity_stats(end)));

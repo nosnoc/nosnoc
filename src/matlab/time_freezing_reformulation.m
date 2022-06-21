@@ -202,7 +202,7 @@ if time_freezing
             end
 
             %% create auxiliary dynamics
-            if ~exist('model.a_n')
+            if ~exist('model.a_n') && ~exist('a_n')
                 a_n  = 100;
             end
             f_aux_n = [nabla_q_f_c zeros(n_q,1); zeros(n_q,1) G*nabla_q_f_c]*[0;a_n];
