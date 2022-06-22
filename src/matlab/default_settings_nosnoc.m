@@ -23,11 +23,11 @@ initial_theta = 0;
 initial_lambda = 0;
 initial_mu = 0;
 % initalization - Step
-initial_alpha = 0.5*1;
-initial_lambda_0 = 0.5*1;
-initial_lambda_1 = 0.5*1;
-initial_beta = 0.5*1;
-initial_gamma = 0.5*1;
+initial_alpha = 1;
+initial_lambda_0 = 1;
+initial_lambda_1 = 1;
+initial_beta = 1;
+initial_gamma = 1;
 
 pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
 n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc)
@@ -99,7 +99,7 @@ heuristic_step_equilibration_mode = 1; % 1 standard (h_k - h), 2  - penalize del
 %% Multiple shooting type discretization	
 equidistant_control_grid = 1;
 	
-%% Time-Settting	
+%% Time-Settting & Time-Freezing
 time_freezing  = 0;
 time_freezing_inelastic = 0;
 time_optimal_problem = 0;
@@ -113,6 +113,7 @@ s_sot_min =	1/s_sot_max;
 impose_terminal_phyisical_time = 1;
 T_final_max = 1e2;
 T_final_min = 0;
+time_freezing_reduced_model = 0; % analytic reduction of lifter formulation, less algebraic variables (experimental)
 %% Verbose
 print_level = 3;
 opts_ipopt.ipopt.print_level = 0;

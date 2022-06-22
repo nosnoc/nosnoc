@@ -880,7 +880,6 @@ if terminal_constraint
             else
                 error('This mode of terminal contraint relxation is only avilable if a MPCC elastic mode is used.')
             end
-
     end   
 end
 
