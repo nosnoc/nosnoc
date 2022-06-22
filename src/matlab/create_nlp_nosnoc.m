@@ -868,6 +868,19 @@ if terminal_constraint
              ubg = [ubg; zeros(2*n_terminal,1)];
              % penalize slack
              J = J + rho_terminal*(s_terminal_ell_inf);
+        case 4
+            if exist('s_elastic','var')
+                % l_inf 
+            % define slack variable
+             % relaxed contraint
+             g = {g{:}, g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1)};
+             g = {g{:}, -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1)};
+             lbg = [lbg; -inf*ones(2*n_terminal,1)];
+             ubg = [ubg; zeros(2*n_terminal,1)];
+            else
+                error('This mode of terminal contraint relxation is only avilable if a MPCC elastic mode is used.')
+            end
+
     end   
 end
 
