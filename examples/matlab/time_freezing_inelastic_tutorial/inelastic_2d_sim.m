@@ -20,7 +20,7 @@ settings.time_freezing = 1;
 settings.pss_mode = 'Step';
 settings.pss_lift_step_functions = 1;
 
-model.mu = 0.2*1;
+model.mu = 0.3*1;
 %%
 g = 9.81;
 vertical_force = 0;
@@ -29,7 +29,7 @@ q = SX.sym('q',2); v = SX.sym('v',2);
 model.x = [q;v]; 
 model.e = 0;
 model.a_n = g;
-model.x0 = [0;0.5;2;0]; 
+model.x0 = [0;0.2;1;0]; 
 model.f = [0;-g+vertical_force*g*q(1)];
 model.c = q(2);
 %% Simulation setings

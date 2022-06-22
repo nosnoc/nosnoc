@@ -527,7 +527,12 @@ switch pss_mode
                     gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',2);
                     g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
                         gamma(2)-(1-alpha(1))*(1-alpha(2))];
-                    upsilon_all{1} = gamma1;
+                    upsilon_all{1} = gamma;
+
+                    g_lift_gamma_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
+                        (1-alpha(1))*(1-alpha(2))];
+                    g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha},{g_lift_gamma_fun});
+
                 else
                     switch n_dim_contact
                         case 2
@@ -643,8 +648,13 @@ switch pss_mode
         %         beta_guess = initial_beta*ones(n_beta,1);
         %         gamma_guess = initial_gamma*ones(n_gamma,1);
         if pss_lift_step_functions
-            beta_guess = full(g_lift_beta_fun(alpha_guess));
-            gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
+            if friction_is_present
+                beta_guess = full(g_lift_beta_fun(alpha_guess));
+                gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
+            else
+                beta_guess = [];
+                gamma_guess = full(g_lift_gamma_fun(alpha_guess));
+            end
         else
             beta_guess = [];
             gamma_guess = [];

@@ -93,29 +93,25 @@ if time_freezing
             v = x(n_q +1:end);
         end
 
-        
+
 
         x = [x;t];
         model.x = x;
         model.x0 = [model.x0;0];
 
         % check model function
-                if ~exist('f','var')
-                    error('The function model.f, in dv/dt =  f(q,v) + ... is not provided to the model.');
-                end
+        if ~exist('f','var')
+            error('The function model.f, in dv/dt =  f(q,v) + ... is not provided to the model.');
+        end
 
         % Check intertia matrix
-        if ~exist('G','var')
-            if ~exist('M','var')
-                fprintf('Info on Time-Freezing: Neither M or G are provided, set to default value: M = eye(n_q). \n')
-                M = eye(n_q);
-                G = inv(M);
-                model.M = M;
-                model.G = G;
-            else
-                G = inv(M);
-                model.G = G;
-            end
+
+        if ~exist('M','var')
+            fprintf('Info on Time-Freezing: Neither M or G are provided, set to default value: M = eye(n_q). \n')
+            M = eye(n_q);
+            model.M = M;
+        else
+            invM = inv(M);
         end
         % compute normal vector
         if ~exist('nabla_q_f_c','var')
@@ -144,7 +140,8 @@ if time_freezing
             %                 c_aux = 0.211989;
             %             f_aux_n = [0;v(2);0;-k_aux*q(2)-c_aux*v(2);0];
             K = [0 1;-k_aux -c_aux];
-            N  = [nabla_q_f_c zeros(n_q,1); zeros(n_q,1) G*nabla_q_f_c];
+            N  = [nabla_q_f_c zeros(n_q,1);...
+                zeros(n_q,1) invM*nabla_q_f_c];
             f_aux_n = N*K*N'*[q;v];
 
             f = [f;1];
@@ -217,55 +214,62 @@ if time_freezing
             if ~exist('model.a_n') && ~exist('a_n')
                 a_n  = 100;
             end
-            f_aux_n = [nabla_q_f_c zeros(n_q,1); zeros(n_q,1) G*nabla_q_f_c]*[0;a_n];
-            if friction_is_present 
+            f_aux_n = [nabla_q_f_c zeros(n_q,1);...
+                zeros(n_q,1) invM*nabla_q_f_c]*[0;a_n];
+            if friction_is_present
                 a_t = mu*a_n;
-                f_aux_t1 = [tangent1 zeros(n_q,1); zeros(n_q,1) G*tangent1]*[0;a_t];
+                f_aux_t1 = [tangent1 zeros(n_q,1);...
+                    zeros(n_q,1) invM*tangent1]*[0;a_t];
                 if n_dim_contact> 2
-                    f_aux_t2 = [tangent2 zeros(n_q,1); zeros(n_q,1) G*tangent2]*[0;a_t];
+                    f_aux_t2 = [tangent2 zeros(n_q,1);...
+                        zeros(n_q,1) invM*tangent2]*[0;a_t];
                 end
             end
 
             c1 = f_c;
             c2 = nabla_q_f_c'*v;
-            if friction_is_present 
-                c3 = tangent1'*v;
-                if n_dim_contact> 2
-                    c4 = tangent2'*v;
+
+            if friction_is_present
+                switch n_dim_contact
+                    case 2
+                        c3 = tangent1'*v;
+                    case 3
+                        c3 = tangent1'*v;
+                        c4 = tangent2'*v;
                 end
             end
 
             % PSS ode formulation
             f_ode = [v;f;1];
             f_aux_n = [f_aux_n;0];
-            % frictionless case
-            %             F{1} = [f_ode f_ode f_aux_n];
+
             F{1} = [f_ode f_aux_n];
             c{1} = [c1;c2];
             S{1} = [1 0;-1 1;-1 -1];
-
             % frictional impact
-            if friction_is_present 
+            if friction_is_present
                 switch n_dim_contact
                     case 2
-                    f_aux_t1 = [f_aux_t1;0];
-                        F{1} = [f_ode f_aux_n+f_aux_t1 f_aux_n-f_aux_t1];
+                        f_aux_t1 = [f_aux_t1;0];
+                        F{1} = [f_ode ...
+                                f_aux_n+f_aux_t1 ...
+                                f_aux_n-f_aux_t1];
                         c{1} = [c1;c2;c3];
                         S{1} = [1 0 0;-1 -1 -1;-1 -1 1];
                     case 3
                         f_aux_t1 = [f_aux_t1;0];
                         f_aux_t2 = [f_aux_t2;0];
                         F{1} = [f_ode ...
-                               f_aux_n+f_aux_t1+f_aux_t2...
-                               f_aux_n+f_aux_t1-f_aux_t2...
-                               f_aux_n-f_aux_t1+f_aux_t2...
-                               f_aux_n-f_aux_t1-f_aux_t2 ];
+                                f_aux_n+f_aux_t1+f_aux_t2...
+                                f_aux_n+f_aux_t1-f_aux_t2...
+                                f_aux_n-f_aux_t1+f_aux_t2...
+                                f_aux_n-f_aux_t1-f_aux_t2 ];
                         c{1} = [c1;c2;c3;c4];
                         S{1} = [1 0 0 0;...
-                               -1 -1 -1 -1;...
-                               -1 -1 -1 1;...
-                               -1 -1 1 -1;...
-                               -1 -1 1 1];
+                            -1 -1 -1 -1;...
+                            -1 -1 -1 1;...
+                            -1 -1 1 -1;...
+                            -1 -1 1 1];
                 end
             end
             model.F = F;
@@ -281,4 +285,3 @@ settings.time_freezing_model_exists = time_freezing_model_exists;
 settings.friction_is_present  = friction_is_present;
 model.n_dim_contact = n_dim_contact;
 end
-
