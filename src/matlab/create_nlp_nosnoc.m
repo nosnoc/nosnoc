@@ -270,8 +270,6 @@ for k=0:N_stages-1
             end
 
             % Terms for heuristic step equilibration
-            %             if heuristic_step_equilibration && (k > 0 && (i > 0 || couple_across_stages))
-            %             if heuristic_step_equilibration && (i > 0 || couple_across_stages)
             if heuristic_step_equilibration
                 switch heuristic_step_equilibration_mode
                     case 1

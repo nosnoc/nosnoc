@@ -56,14 +56,16 @@ n_all_comp_j = length(g_all_comp_j); % outputdimension of the bilinear constrain
                         g_comp_lb = -inf*ones(n_all_comp_j,1);
                         g_comp_ub = zeros(n_all_comp_j,1);
                     case 4
-                        if k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
+%                         if k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
 %                             if cross_comp_mode == 10 &&  k == N_stages-1 && j == d && i == N_finite_elements(end)-1
                             if objective_scaling_direct
-                                J = J + (1/p)*g_all_comp_j;
+%                                 J = J + (1/p)*(g_all_comp_j;
+                                J = J + (1/p)*sum(g_all_comp_j);
                             else
                                 J = p*J + g_all_comp_j;
+                                J = p*J + sum(g_all_comp_j);
                             end
-                        end
+%                         end
                     case 5
                         % elastic mode - inequality
                         g_comp = g_all_comp_j-s_elastic*ones(n_all_comp_j,1);
