@@ -41,8 +41,7 @@ n_all_comp_j = length(g_all_comp_j); % outputdimension of the bilinear constrain
  g_comp_lb = [];
  g_comp_ub = [];
  %% Adding all Complementarity Constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
- 
-            if ~isempty(g_all_comp_j)
+             if ~isempty(g_all_comp_j)
                 switch mpcc_mode
                     case 1
                         disp('Info: this is implemented as a special case of 3, with sigma = 0');
@@ -99,7 +98,7 @@ n_all_comp_j = length(g_all_comp_j); % outputdimension of the bilinear constrain
                         g_comp = g_all_comp_j-s_elastic*ones(n_all_comp_j,1);
                         g_comp_lb = zeros(n_all_comp_j,1);
                         g_comp_ub = zeros(n_all_comp_j,1);
-                        
+
                     case 10
                         if  k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
                             if objective_scaling_direct
@@ -108,8 +107,29 @@ n_all_comp_j = length(g_all_comp_j); % outputdimension of the bilinear constrain
                                 J = s_elastic*J + g_all_comp_j;
                             end
                         end
+                    case 11
+                          % ell_1 elastic mode - inequality
+                        g_comp = g_all_comp_j-s_elastic;
+                        g_comp_lb = -inf*ones(n_all_comp_j,1);
+                        g_comp_ub = zeros(n_all_comp_j,1);
+                        case 12
+                       % elastic mode - equality
+                        g_comp = g_all_comp_j-s_elastic;
+                        g_comp_lb = zeros(n_all_comp_j,1);
+                        g_comp_ub = zeros(n_all_comp_j,1);
+                    case 13
+                        % elastic mode - two sided inequality
+                        g_comp = g_all_comp_j-s_elastic;
+                        g_comp_ub = zeros(n_all_comp_j,1);
+                        g_comp_lb = -inf*ones(n_all_comp_j,1);
+
+                        g_comp = [g_comp;g_all_comp_j+s_elastic];
+                        g_comp_ub = [g_comp_ub; inf*ones(n_all_comp_j,1)];
+                        g_comp_lb = [g_comp_lb;  zeros(n_all_comp_j,1)];
+                        
+
                     otherwise
-                        error('Pick mpcc_mode between 1 and 10.');
+                        error('Pick mpcc_mode between 1 and 13.');
                 end
             end
 

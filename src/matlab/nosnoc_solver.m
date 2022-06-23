@@ -27,13 +27,10 @@
 % [results,stats,model,settings,solver_initalization] = nosnoc_solver(model,settings);
 function [varargout] = nosnoc_solver(model,settings)
 import casadi.*
-%% load data
-
 %% Create NLP element and solve OCP with homotopy
 [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
 [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
 total_time = sum(stats.cpu_time);
-
 %% Process and store results
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
@@ -44,28 +41,25 @@ alg_states = w_opt(ind_z);
 
 u_opt = w_opt(ind_u);
 u_opt = reshape(u_opt,n_u,N_stages);
-
 if use_fesd
     h_opt = w_opt(ind_h);
 else
-    h_opt   = [];
+    h_opt = [];
     for ii = 1:N_stages
         h_opt = [h_opt;h_k(ii)*ones(N_finite_elements(ii),1)];
     end
 end
 
-
 x_opt_extended = w_opt(ind_x);
 x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
 x_opt  = x_opt_extended(:,1:n_s+1:end);
-
 switch pss_mode
     case 'Stewart'
         alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
         theta_opt_extended = [alg_states_extended(1:n_theta,:)];
         lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
         mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
-
+        %
         theta_opt= theta_opt_extended(:,1:n_s+1:end);
         lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
         mu_opt= mu_opt_extended(:,1:n_s+1:end);
@@ -74,7 +68,7 @@ switch pss_mode
         alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
         lambda_0_opt_extended = [alg_states_extended(n_alpha+1:2*n_alpha,:)];
         lambda_1_opt_extended = [alg_states_extended(2*n_alpha+1:3*n_alpha,:)];
-
+        %
         alpha_opt= alpha_opt_extended(:,1:n_s+1:end);
         lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);
         lambda_1_opt= lambda_1_opt_extended(:,1:n_s+1:end);
@@ -118,27 +112,24 @@ end
 fprintf('Max homotopy iteration time: %2.3f seconds, min homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
 fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
 fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
-
 fprintf('Complementarity residual: %2.3e.\n',max(stats.complementarity_stats(end)));
+
 if time_optimal_problem
     T_opt = w_opt(model.ind_t_final);
     if T_opt  < 1e-3
-       T_opt = t_grid(end);
+        T_opt = t_grid(end);
     end
-               fprintf('Final time T_opt: %2.4f.\n',T_opt);
+    fprintf('Final time T_opt: %2.4f.\n',T_opt);
 end
 fprintf('-----------------------------------------------------------------------------------------------\n\n');
-
 %%
 
-stats.total_time  = total_time;
+ind_t_grid_u = cumsum([1; N_finite_elements]);
 
+stats.total_time  = total_time;
 results.x_opt = x_opt;
 results.x_opt_extended = x_opt_extended;
-
 results.t_grid = t_grid;
-
-ind_t_grid_u = cumsum([1; N_finite_elements]);
 results.t_grid_u = t_grid(ind_t_grid_u);
 
 switch pss_mode
@@ -159,8 +150,6 @@ switch pss_mode
         results.lambda_0_opt_extended= lambda_0_opt_extended;
         results.lambda_1_opt_extended = lambda_1_opt_extended;
 end
-
-
 results.u_opt = u_opt;
 results.f_opt = full(results.f);
 results.f = [];
@@ -174,6 +163,3 @@ varargout{3} = model;
 varargout{4} = settings;
 varargout{5} = solver_initalization;
 end
-
-
-

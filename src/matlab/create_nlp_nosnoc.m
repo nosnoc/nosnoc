@@ -49,10 +49,16 @@ unfold_struct(settings,'caller')
 unfold_struct(model,'caller');
 
 %% Elastic Mode Variables
-s_elastic_exists  = 0;
+s_ell_inf_elastic_exists  = 0;
 if mpcc_mode >= 5 && mpcc_mode <= 10
     s_elastic = define_casadi_symbolic(casadi_symbolic_mode,'s_elastic',1);
-    s_elastic_exists = 1;
+    s_ell_inf_elastic_exists = 1;
+end
+s_ell_1_elastic_exists  = 0;
+
+sum_s_elastic = 0;
+if mpcc_mode >= 11 && mpcc_mode <= 13
+    s_ell_1_elastic_exists  = 1;
 end
 
 %% Initalization and bounds for step-size
@@ -135,6 +141,7 @@ ind_u = [];
 ind_v = [];
 ind_z = [];
 ind_h = [];
+ind_elastic = [];
 ind_g_clock_state = [];
 ind_sot = []; % index for speed of time variable
 ind_boundary = []; % index of bundary value lambda and mu
@@ -606,8 +613,25 @@ for k=0:N_stages-1
             %% Treatment and reformulation of all Complementarity Constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
             mpcc_var_current_fe.J = J;
             mpcc_var_current_fe.g_all_comp_j = g_all_comp_j;
-            if s_elastic_exists
+            if s_ell_inf_elastic_exists
+                % 5 to 10
                 mpcc_var_current_fe.s_elastic = s_elastic;
+            end
+                % 11 to 13
+                % define symbolic, add index, add lower and upper bounds initalization and pass
+            if s_ell_1_elastic_exists
+                % define elastic mode vraibles for current set of comp constraints
+                s_elastic_ell_1  = define_casadi_symbolic(casadi_symbolic_mode,['s_elastic_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_all_comp_j);
+                w = {w{:}, s_elastic_ell_1};
+                ind_elastic = [ind_elastic,ind_total(end)+1:ind_total(end)+n_all_comp_j];
+                ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_all_comp_j];
+                lbw = [lbw; s_elastic_min*ones(n_all_comp_j,1)];
+                ubw = [ubw; s_elastic_max*ones(n_all_comp_j,1)];
+                w0 = [w0;s_elastic_0*ones(n_all_comp_j,1)];
+                % sum of all elastic variables, to be passed penalized
+                sum_s_elastic = sum_s_elastic+ sum(s_elastic_ell_1);
+                % pass to constraint creation
+                mpcc_var_current_fe.s_elastic = s_elastic_ell_1;
             end
             [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_current_fe,dimensions,current_index);
             g = {g{:}, g_comp};
@@ -617,7 +641,6 @@ for k=0:N_stages-1
 
         %% Step equlibration
         step_equilibration_constrains;
-
         %% Continuity condition -  new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
         %         X_ki = MX.sym(['X_' num2str(k+1) '_' num2str(i+1)], n_x);
@@ -895,6 +918,7 @@ J_objective = J;
 if mpcc_mode >= 5 && mpcc_mode < 8
     % add elastic variable to the vector of unknowns and add objeective contribution
     w = {w{:}, s_elastic};
+    ind_elastic = [ind_elastic,ind_total(end)+1:ind_total(end)+1];
     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
     lbw = [lbw; s_elastic_min];
     ubw = [ubw; s_elastic_max];
@@ -949,10 +973,16 @@ if mpcc_mode >= 8 && mpcc_mode <= 10
     lbw = [lbw; s_elastic_min];
     ubw = [ubw; s_elastic_max];
     w0 = [w0;s_elastic_0];
-
     J = J-rho_penalty*(rho_elastic^2)+sigma_penalty*s_elastic;
 end
-
+%% Elastic mode variable for \ell_1 reformulations
+if mpcc_mode >= 11 && mpcc_mode <= 13
+    if objective_scaling_direct
+        J = J + (1/p)*sum_s_elastic;
+    else
+        J = p*J + sum_s_elastic;
+    end
+end
 %% Objective Terms for Grid Regularization
 % Huristic Regularization.
 if heuristic_step_equilibration || step_equilibration
@@ -1000,6 +1030,7 @@ end
 
 %% Model update: all index sets and dimensions
 model.ind_x = ind_x;
+model.ind_elastic = ind_elastic;
 model.ind_v = ind_v;
 model.ind_z = ind_z;
 model.ind_u = ind_u;
