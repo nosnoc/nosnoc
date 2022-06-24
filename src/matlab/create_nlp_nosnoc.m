@@ -829,13 +829,13 @@ if terminal_constraint
     g_terminal = g_terminal_fun(Xk_end);
     n_terminal = length(g_terminal_lb);
     if ~isequal(g_terminal_lb,g_terminal_lb)
-        terminal_constraint_relxataion = 0; 
+        relax_terminal_constraint = 0; 
         % inequality constraint are not relaxed
         if print_level >2
             fprintf('Info: Only terminal-equality constraint relaxation is supported, you have an inequality constraint.\n')
         end
     end
-    switch terminal_constraint_relxataion
+    switch relax_terminal_constraint
         case 0
             % hard constraint
             g = {g{:}, g_terminal };
