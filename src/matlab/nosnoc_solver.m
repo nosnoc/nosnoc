@@ -39,6 +39,8 @@ results = extract_results_from_solver(model,settings,results);
 if polishing_step
     [results] = polishing_homotopy_solution(model,settings,solver,stats,solver_initalization,results);
 end
+complementarity_iter = full(comp_res(results.w_opt));
+
 %% Verbose
 stats.total_time  = total_time;
 fprintf('\n');
@@ -51,7 +53,7 @@ end
 fprintf('Max homotopy iteration time: %2.3f seconds, min homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
 fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
 fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
-fprintf('Complementarity residual: %2.3e.\n',max(stats.complementarity_stats(end)));
+fprintf('Complementarity residual: %2.3e.\n',complementarity_iter);
 
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);

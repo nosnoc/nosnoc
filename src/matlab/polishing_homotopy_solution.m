@@ -18,8 +18,8 @@ c_eval = [];
 for ii = 1:length(x_modified)
     c_eval = [c_eval,full(c_fun(x_modified(:,ii)))];
 end
-eps_sigma = stats.sigma_k*10;
-ind_negative = c_eval < eps_sigma;
+eps_sigma = 1e-1;
+ind_negative = c_eval < -eps_sigma;
 ind_positive = c_eval > eps_sigma ;
 ind_sliding = abs(c_eval) <= eps_sigma ;
 % c > 0 , lambda0 = 0, alpha = 1;
@@ -43,8 +43,26 @@ lbw(ind_alpha1_fixed(:)) = 1;  ubw(ind_alpha1_fixed(:)) = 1;
 lbw(ind_lambda1_sliding(:)) = 0;  ubw(ind_lambda1_sliding(:)) = 0;
 lbw(ind_lambda0_sliding(:)) = 0;  ubw(ind_lambda0_sliding(:)) = 0;
 % solve nlp
+tic
 results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',0);
+cpu_time_iter = toc;
+complementarity_iter = full(comp_res(results.x));
+
 % extract all results from w_opt (create a function for this, that maps them to the results
 results = extract_results_from_solver(model,settings,results);
+ if print_level>=2
+        fprintf('-----------------------------------------------------------------------------------------------\n');
+        fprintf('Polishing step completed, complementarity resiudal %2.2e.\n',complementarity_iter);
+        if model.n_u >0
+            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
+            fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
+            if time_optimal_problem
+                fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
+            end
+        else
+            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
+        end
+        fprintf('-----------------------------------------------------------------------------------------------\n');
+    end
 end
 
