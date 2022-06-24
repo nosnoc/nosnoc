@@ -109,6 +109,7 @@ if time_freezing
         if ~exist('M','var')
             fprintf('Info on Time-Freezing: Neither M or G are provided, set to default value: M = eye(n_q). \n')
             M = eye(n_q);
+            invM = inv(M);
             model.M = M;
         else
             invM = inv(M);

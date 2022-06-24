@@ -54,7 +54,8 @@ N_sim = 85;
 % T_sim = 2;
 % N_sim = 28;
 
-settings.pss_mode = 'Step';
+% settings.pss_mode = 'Step';
+settings.pss_mode = 'Stewart';
 % settings.pss_lift_step_functions= 0;
 
 model.T_sim = T_sim;

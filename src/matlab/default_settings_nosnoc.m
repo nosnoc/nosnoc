@@ -108,12 +108,13 @@ use_speed_of_time_variables = 1;
 local_speed_of_time_variable = 0;
 stagewise_clock_constraint = 1;
 s_sot0 = 1;
-s_sot_max =	5;
-s_sot_min =	0.5;
+s_sot_max =	25;
+s_sot_min =	1/s_sot_max;
 impose_terminal_phyisical_time = 1;
 T_final_max = 1e2;
 T_final_min = 0;
 time_freezing_reduced_model = 0; % analytic reduction of lifter formulation, less algebraic variables (experimental)
+time_freezing_hysteresis = 0; % do not do automatic time freezing generation for hysteresis, it is not supported yet.
 %% Verbose
 print_level = 3;
 opts_ipopt.ipopt.print_level = 0;

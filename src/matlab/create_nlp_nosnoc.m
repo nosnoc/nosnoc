@@ -612,14 +612,10 @@ for k=0:N_stages-1
             mpcc_var_current_fe.J = J;
             mpcc_var_current_fe.g_all_comp_j = g_all_comp_j;
             if s_ell_inf_elastic_exists
-                % 5 to 10
                 mpcc_var_current_fe.s_elastic = s_elastic;
             end
-                % 11 to 13
-                % define symbolic, add index, add lower and upper bounds initalization and pass
             if s_ell_1_elastic_exists
-                % define elastic mode vraibles for current set of comp constraints
-                s_elastic_ell_1  = define_casadi_symbolic(casadi_symbolic_mode,['s_elastic_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_all_comp_j);
+                s_elastic_ell_1  = define_casadi_symbolic(casadi_symbolic_mode,['s_elastic_'  num2str(k) '_' num2str(i) '_' num2str(j)], n_all_comp_j);
                 w = {w{:}, s_elastic_ell_1};
                 ind_elastic = [ind_elastic,ind_total(end)+1:ind_total(end)+n_all_comp_j];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_all_comp_j];
@@ -641,10 +637,7 @@ for k=0:N_stages-1
         step_equilibration_constrains;
         %% Continuity condition -  new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
-        %         X_ki = MX.sym(['X_' num2str(k+1) '_' num2str(i+1)], n_x);
-%         eval(['X_ki  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k+1) '_' num2str(i+1) ''',n_x);']);
         X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
-
         w = {w{:}, X_ki};
         w0 = [w0; x0];
 
@@ -679,13 +672,11 @@ for k=0:N_stages-1
                 temp = g_lp_fun(X_ki,Z_kd_end,Uk);
             else
                 temp = g_lp_fun(X_ki,Z_kd_end);
-            end
-            
+            end           
                     gj = temp(1:end-n_lift_eq);
                     lbg = [lbg; zeros(n_algebraic_constraints-n_lift_eq,1)];
                     ubg = [ubg; zeros(n_algebraic_constraints-n_lift_eq,1)];
-            
-            g = {g{:}, gj};
+                    g = {g{:}, gj};
         end
     end
 

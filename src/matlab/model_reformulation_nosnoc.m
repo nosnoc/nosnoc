@@ -24,7 +24,7 @@ import casadi.*
 
 
 %% Load settings and model details
-if ~settings.time_freezing_model_exists && settings.time_freezing
+if ~settings.time_freezing_model_exists && settings.time_freezing && ~settings.time_freezing_hysteresis
     % check is the model generated if time freezing is used
     [model,settings] = time_freezing_reformulation(model,settings);
 end

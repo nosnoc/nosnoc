@@ -28,7 +28,7 @@ use_fesd = 1;
 model.smooth_model = 0;
 
 plot_integrator_output = 1;
-plot_continious_time_sol =0;
+plot_continious_time_sol = 1;
 %% discretization settings
 N_stages = 1;
 N_finite_elements = 2;
