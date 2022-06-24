@@ -733,13 +733,13 @@ g_lp = [g_z;g_z_convex;g_lift];
 n_algebraic_constraints  = length(g_lp);
 %% CasADi functions for indictaor and region constraint functions
 % model equations
-if n_u >0
-    g_ind_all_fun = Function('g_ind_all_fun',{x,u},{g_ind_vec});
-    c_fun = Function('c_fun',{x,u},{c_all});
-else
+% if n_u >0
+%     g_ind_all_fun = Function('g_ind_all_fun',{x,u},{g_ind_vec});
+%     c_fun = Function('c_fun',{x,u},{c_all});
+% else
     g_ind_all_fun = Function('g_ind_all_fun',{x},{g_ind_vec});
     c_fun = Function('c_fun',{x},{c_all});
-end
+% end
 
 if n_u >0
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});

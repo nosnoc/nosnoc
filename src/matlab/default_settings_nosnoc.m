@@ -80,6 +80,8 @@ convex_sigma_rho_constraint = 0;
 
 ratio_for_homotopy_stop = 0.75;
 
+polishing_step = 0; % huristic for fixing active set, yet exerimental, not recommended to use.
+
 %% Step equilibration	
 regularize_h =1;
 rho_h = 1;

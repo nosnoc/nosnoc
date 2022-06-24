@@ -73,7 +73,6 @@ while complementarity_iter > comp_tol && ii < N_homotopy
 %         error('The homotopy loop is diverging. Try chaning parameters of the homotopy loop or check is the OCP well posed.')
 %         break;
 %     end
-
 end
 %% output
 stats.complementarity_stats = complementarity_stats;
