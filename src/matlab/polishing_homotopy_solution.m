@@ -18,7 +18,7 @@ c_eval = [];
 for ii = 1:length(x_modified)
     c_eval = [c_eval,full(c_fun(x_modified(:,ii)))];
 end
-eps_sigma = 1e-1;
+eps_sigma = stats.sigma_k*10;
 ind_negative = c_eval < -eps_sigma;
 ind_positive = c_eval > eps_sigma ;
 ind_sliding = abs(c_eval) <= eps_sigma ;

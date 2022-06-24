@@ -519,8 +519,7 @@ switch pss_mode
 
         %% prepare for time freezing lifting and co,
         if settings.time_freezing_inelastic
-            % todo: pack this into a function
-            % gamma are the lifter variables that enter the ODE r.h.s.
+            % gamma are the lifting variables that enter the ODE r.h.s.
             % linaerly, they have the role as theta in Stewart's representation
             if pss_lift_step_functions
                 if ~friction_is_present
@@ -557,11 +556,10 @@ switch pss_mode
                                     beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
                                     gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',3);
                                     % lifting functions and indicators
-                                    g_lift_beta = [g_lift_beta;...
-                                        beta-(1-alpha(1))*(1-alpha(2))];
+                                    g_lift_beta = [beta-(1-alpha(1))*(1-alpha(2))];
                                     g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                                        gamma(2)-beta*(1-alpha(2))*(1-alpha(3));...
-                                        gamma(3)-beta*(1-alpha(2))*alpha(3);...
+                                                    gamma(2)-beta*(1-alpha(3));...
+                                                    gamma(3)-beta*alpha(3);...
                                         ];
                                     upsilon_all{1} = gamma;
                                     % create casadi expressions for proper initalization

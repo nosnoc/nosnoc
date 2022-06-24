@@ -9,7 +9,7 @@ settings.n_s = 2;
 settings.sigma_0 = 1;
 settings.mpcc_mode = 3;
 settings.kappa = 0.1;
-settings.N_homotopy = 10;
+settings.N_homotopy = 15;
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
@@ -18,10 +18,11 @@ settings.time_freezing = 1;
 settings.s_sot_max = 10;
 settings.s_sot_min = 0.1;
 settings.equidistant_control_grid = 1;
+settings.heuristic_step_equilibration= 1;
 settings.pss_lift_step_functions = 1;
 
 
-settings.polishing_step = 1;
+settings.polishing_step = 0;
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 %%
 g = 9.81;
@@ -39,28 +40,31 @@ model.u = u;
 model.e = 0;
 model.mu = 0.7;
 model.a_n = g;
-model.x0 = [0;1.0;0;0]; 
+model.x0 = [0;0.0;0;0]; 
 model.f = [0+u;-g];
 
 model.c = q(2);
-model.g_terminal = [x-[3;0;0;0]];
+model.g_terminal = [x-[2;0;0;0]];
 model.lbu = -u_max;
 model.ubu = u_max;
 model.f_q = u'*u;
 %% Call nosnoc solver
 [results,stats,model] = nosnoc_solver(model,settings);
 %%
-qx = results.x_opt(1,:);
-qy = results.x_opt(2,:);
-vx = results.x_opt(3,:);
-vy = results.x_opt(4,:);
-t_opt = results.x_opt(5,:);
-u_opt = results.u_opt;
-s_opt = results.w_opt(model.ind_sot);
+unfold_struct(results,'base')
+qx = x_opt(1,:);
+qy = x_opt(2,:);
+vx = x_opt(3,:);
+vy = x_opt(4,:);
+t_opt = x_opt(5,:);
+u_opt = u_opt;
+s_opt = w_opt(model.ind_sot);
 
 figure
 subplot(131)
 plot(qx,qy,'LineWidth',2);
+xlim([0 2]);
+ylim([-0.1 1]);
 xlabel('$q_1$','Interpreter','latex');
 ylabel('$q_2$','Interpreter','latex');
 grid on
@@ -71,7 +75,7 @@ plot(t_opt,vx,'LineWidth',2);
 grid on
 xlabel('$t$','Interpreter','latex');
 ylabel('$v$','Interpreter','latex');
-legend({'$v_1$','$v_2$'},'Interpreter','latex');
+legend({'$v_1$','$v_2$'},'Interpreter','latex','Location','best');
 subplot(133)
 stairs(t_opt(1:N_FE:end),[u_opt,[nan]]','LineWidth',2);
 hold on
@@ -80,5 +84,69 @@ legend({'$u_1(t)$','$s(t)$'},'Interpreter','latex','location','best');
 grid on
 xlabel('$t$','Interpreter','latex');
 ylabel('$u$','Interpreter','latex');
+
+
 %%
-% saveas(gcf,'ocp_example','epsc')
+figure
+subplot(131)
+plot(alpha_opt(1,:))
+grid on
+ylabel('$\alpha_1$','Interpreter','latex');
+subplot(132)
+plot(alpha_opt(2,:))
+ylabel('$\alpha_2$','Interpreter','latex');
+grid on
+subplot(133)
+plot(alpha_opt(3,:))
+ylabel('$\alpha_3$','Interpreter','latex');
+grid on
+
+
+figure
+subplot(131)
+plot(t_grid,qy)
+subplot(132)
+grid on
+ylabel('$f_c(q)$','Interpreter','latex');
+plot(t_grid,vy)
+ylabel('$n^top v$','Interpreter','latex');
+grid on
+subplot(133)
+plot(t_grid,vx)
+ylabel('$t^top v$','Interpreter','latex');
+grid on
+
+
+
+
+
+%
+figure
+subplot(131)
+plot(lambda_1_opt(1,:))
+grid on
+ylabel('$\lambda^+_1$','Interpreter','latex');
+subplot(132)
+plot(lambda_1_opt(2,:))
+ylabel('$\lambda^+2$','Interpreter','latex');
+grid on
+subplot(133)
+plot(lambda_1_opt(3,:))
+ylabel('$\lambda^+_3$','Interpreter','latex');
+grid on
+
+
+figure
+subplot(131)
+plot(lambda_0_opt(1,:))
+grid on
+ylabel('$\lambda^+1$','Interpreter','latex');
+subplot(132)
+plot(lambda_0_opt(2,:))
+ylabel('$\lambda^+_2$','Interpreter','latex');
+grid on
+subplot(133)
+plot(lambda_0_opt(3,:))
+ylabel('$\lambda^+3$','Interpreter','latex');
+grid on
+
