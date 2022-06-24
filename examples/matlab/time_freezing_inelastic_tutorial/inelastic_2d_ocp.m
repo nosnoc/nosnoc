@@ -23,23 +23,25 @@ settings.pss_lift_step_functions = 1;
 
 settings.polishing_step = 1;
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+settings.step_equilibration = 1;
+settings.step_equilibration_mode = 3;
 %%
 g = 9.81;
 u_max = 10;
-N_stg = 15;  N_FE  = 2; 
+N_stg = 20;  N_FE = 2; 
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
 x = [q;v];
 u = SX.sym('u');
-model.T = 3;
+model.T = 2;
 model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu = 0.7;
+model.mu = 0.6;
 model.a_n = g;
-model.x0 = [0;1.0;0;0]; 
+model.x0 = [0;1.5;0;0]; 
 model.f = [0+u;-g];
 
 model.c = q(2);

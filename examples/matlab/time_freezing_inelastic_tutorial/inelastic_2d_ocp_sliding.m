@@ -6,10 +6,9 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
-settings.sigma_0 = 1;
 settings.mpcc_mode = 3;
 settings.kappa = 0.1;
-settings.N_homotopy = 15;
+settings.N_homotopy = 10;
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
@@ -20,8 +19,6 @@ settings.s_sot_min = 0.1;
 settings.equidistant_control_grid = 1;
 settings.heuristic_step_equilibration= 1;
 settings.pss_lift_step_functions = 1;
-
-
 settings.polishing_step = 0;
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 %%
@@ -101,6 +98,26 @@ plot(alpha_opt(3,:))
 ylabel('$\alpha_3$','Interpreter','latex');
 grid on
 
+theta1 = alpha_opt(1,:) + (1-alpha_opt(1,:)).*(alpha_opt(2,:));
+theta2 = (1-alpha_opt(1,:)).*(1-alpha_opt(2,:)).*(1-alpha_opt(3,:));
+theta3 = (1-alpha_opt(1,:)).*(1-alpha_opt(2,:)).*(alpha_opt(3,:));
+figure
+subplot(131)
+plot(theta1)
+grid on
+ylabel('$\theta_1$','Interpreter','latex');
+subplot(132)
+plot(theta2)
+ylabel('$\theta_2$','Interpreter','latex');
+grid on
+subplot(133)
+plot(theta3)
+ylabel('$\theta_3$','Interpreter','latex');
+grid on
+
+
+
+
 
 figure
 subplot(131)
@@ -149,4 +166,5 @@ subplot(133)
 plot(lambda_0_opt(3,:))
 ylabel('$\lambda^+3$','Interpreter','latex');
 grid on
+
 
