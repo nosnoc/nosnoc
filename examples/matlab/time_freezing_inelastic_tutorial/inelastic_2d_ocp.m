@@ -9,10 +9,12 @@ settings.n_s = 2;
 settings.sigma_0 = 1;
 settings.mpcc_mode = 3;
 settings.kappa = 0.1;
-settings.N_homotopy = 10;
+settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
+
+% settings.opts_ipopt.ipopt.tol = 1e-14;
 
 settings.time_freezing = 1;
 settings.s_sot_max = 10;
@@ -21,10 +23,11 @@ settings.equidistant_control_grid = 1;
 settings.pss_lift_step_functions = 1;
 
 
-settings.polishing_step = 1;
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 settings.step_equilibration = 1;
 settings.step_equilibration_mode = 3;
+
+settings.polishing_step = 1;
 %%
 g = 9.81;
 u_max = 10;

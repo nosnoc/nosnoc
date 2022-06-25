@@ -737,14 +737,17 @@ n_algebraic_constraints  = length(g_lp);
 % else
     g_ind_all_fun = Function('g_ind_all_fun',{x},{g_ind_vec});
     c_fun = Function('c_fun',{x},{c_all});
-% end
 
+% end
+dot_c = c_all.jacobian(x)*f_x;
 if n_u >0
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     g_lp_fun = Function('g_lp_fun',{x,z,u},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+    dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 else
     f_x_fun = Function('f_x_fun',{x,z},{f_x,f_q});
     g_lp_fun = Function('g_lp_fun',{x,z},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+    dot_c_fun = Function('c_fun',{x,z},{dot_c}); % total time derivative of switching functions
 end
 
 J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
@@ -807,6 +810,7 @@ model.f_q_T_fun = f_q_T_fun;
 model.J_cc_fun = J_cc_fun;
 model.g_ind_all_fun = g_ind_all_fun;
 model.c_fun = c_fun;
+model.dot_c_fun = dot_c_fun;
 %
 % % Model Dimensions;
 model.n_x = n_x;
