@@ -3,12 +3,13 @@ close all;
 clc;
 import casadi.*
 %%
+linewidth = 2.5;
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
 settings.use_fesd = 1;
 settings.mpcc_mode = 3;
-settings.N_homotopy = 10;
+settings.N_homotopy = 2;
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
@@ -19,14 +20,17 @@ settings.equidistant_control_grid = 1;
 settings.pss_lift_step_functions = 1;
 
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
-settings.step_equilibration = 1;
-settings.step_equilibration_mode = 3;
-settings.polishing_step = 1;
-linewidth = 2.5;
+% preprocess and polishings teps
+settings.polishing_step = 0;
+settings.h_fixed_iterations = 1;
+settings.h_fixed_max_iter = 1; 
+settings.h_fixed_change_sigma = 0; 
+
 %%
 g = 9.81;
 u_max = 10;
-N_stg = 25;  N_FE = 2; 
+% N_stg = 25;  N_FE = 2; 
+N_stg = 15;  N_FE = 2; 
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
 u = SX.sym('u');
@@ -47,7 +51,8 @@ model.lbu = -u_max;
 model.ubu = u_max;
 model.f_q = u'*u;
 %% Call nosnoc solver
-[results,stats,model] = nosnoc_solver(model,settings);
+[results,stats,model,settings] = nosnoc_solver(model,settings);
+[results] = polishing_homotopy_solution(model,settings,results,stats.sigma_k);
 %%
 qx = results.x_opt(1,:);
 qy = results.x_opt(2,:);

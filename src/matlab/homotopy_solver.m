@@ -25,43 +25,44 @@ if store_all_homotopy_iterates
     W = [w0];
 end
 
-%% solve one problem with fixed h
-if h_fixed_in_first_step && use_fesd
-    lbw_h = lbw; ubw_h = ubw;
-    lbw_h(model.ind_h) = model.h_k(1);
-    ubw_h(model.ind_h) = model.h_k(1);
-    tic 
-    sol = solver('x0', w0, 'lbx', lbw_h, 'ubx', ubw_h,'lbg', lbg, 'ubg', ubg,'p',sigma_k);
-    cpu_time_iter = toc ;
-    cpu_time = [cpu_time,cpu_time_iter];
-    w0= full(sol.x);
-    sigma_k = kappa*sigma_k;
-end
+lbw_h = lbw; ubw_h = ubw;
+lbw_h(model.ind_h) = model.h_k(1);
+ubw_h(model.ind_h) = model.h_k(1);
 
 %% homtopy loop
 complementarity_iter = 1;
 ii = 0;
 while complementarity_iter > comp_tol && ii < N_homotopy 
     % homotopy parameter update
-    if ii == 0
+    if ii == 0 
         sigma_k = sigma_0;
     else
         sigma_k = kappa*sigma_k;
     end
-    tic
-    sol = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',sigma_k);
-    cpu_time_iter = toc ;
+
+
+    if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
+        tic 
+        results = solver('x0', w0, 'lbx', lbw_h, 'ubx', ubw_h,'lbg', lbg, 'ubg', ubg,'p',sigma_k);
+        cpu_time_iter = toc ;
+        w_opt = full(results.x);       
+        if ~h_fixed_change_sigma
+            ii = -1; h_fixed_iterations  = 0;
+        end
+    else
+        tic
+        results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',sigma_k);
+        cpu_time_iter = toc ;
+    end
     cpu_time = [cpu_time,cpu_time_iter];
 
-    w_opt = full(sol.x);
+    w_opt = full(results.x);
     w0 = w_opt;
     if store_all_homotopy_iterates
         W = [W,w_opt];
     end
-
     % complementarity
     complementarity_iter = full(comp_res(w_opt));
-
     complementarity_stats = [complementarity_stats;complementarity_iter];
     % update counter
     ii = ii+1;
@@ -87,19 +88,29 @@ while complementarity_iter > comp_tol && ii < N_homotopy
 %         break;
 %     end
 end
-%% output
+%% polish homotopy solution with fixed active set.
+if polishing_step
+    [results] = polishing_homotopy_solution(model,settings,results,sigma_k);
+%     [results] = polishing_homotopy_solution(model,settings,results,sigma_k,solver,solver_initalization);
+    complementarity_iter = results.complementarity_iter;
+    complementarity_stats = [complementarity_stats;complementarity_iter];
+     if store_all_homotopy_iterates
+        W = [W,results.w_opt];
+    end
+end
+
+%% save states
 stats.complementarity_stats = complementarity_stats;
 stats.cpu_time = cpu_time;
 stats.cpu_time_total = sum(cpu_time);
-stats.w_opt = w_opt;
+% stats.w_opt = w_opt;
 stats.sigma_k = sigma_k;
 stats.homotopy_iterations = ii;
-
 if store_all_homotopy_iterates
-    sol.W = W;
+    results.W = W;
 end
-
-varargout{1} = sol;
+%% loop output
+varargout{1} = results;
 varargout{2} = stats;
 varargout{3} = solver_initalization;
 end

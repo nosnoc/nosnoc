@@ -57,5 +57,9 @@ if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end
 
+%% preprocess settings refined
+if settings.h_fixed_change_sigma == 0
+   settings.h_fixed_max_iter = 1; 
+end
 end
 

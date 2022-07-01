@@ -4,7 +4,7 @@ function [default_settings] = default_settings_nosnoc()
 %% General
 solver_name = 'nosnoc_solver';
 use_fesd = 1;
-casadi_symbolic_mode = 'MX';
+casadi_symbolic_mode = 'SX';
 %% IRK anf FESD Settings
 n_s = 2;                            % Number of IRK stages
 irk_scheme = 'radau';     % RK scheme
@@ -80,8 +80,10 @@ convex_sigma_rho_constraint = 0;
 
 ratio_for_homotopy_stop = 0.75;
 
-
-h_fixed_in_first_step = 0;
+%% Homotopy preprocess and polishing steps
+h_fixed_iterations = 1;
+h_fixed_max_iter = 3; % number of iterations that are done with fixed h in the homotopy loop
+h_fixed_change_sigma = 0; % if this is on, do not update sigma and just solve on nlp with fixed h.
 polishing_step = 0; % huristic for fixing active set, yet exerimental, not recommended to use.
 polishing_derivative_test = 0; % check in sliding mode also the derivative of switching functions
 
