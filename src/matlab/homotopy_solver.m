@@ -25,6 +25,19 @@ if store_all_homotopy_iterates
     W = [w0];
 end
 
+%% solve one problem with fixed h
+if h_fixed_in_first_step && use_fesd
+    lbw_h = lbw; ubw_h = ubw;
+    lbw_h(model.ind_h) = model.h_k(1);
+    ubw_h(model.ind_h) = model.h_k(1);
+    tic 
+    sol = solver('x0', w0, 'lbx', lbw_h, 'ubx', ubw_h,'lbg', lbg, 'ubg', ubg,'p',sigma_k);
+    cpu_time_iter = toc ;
+    cpu_time = [cpu_time,cpu_time_iter];
+    w0= full(sol.x);
+    sigma_k = kappa*sigma_k;
+end
+
 %% homtopy loop
 complementarity_iter = 1;
 ii = 0;

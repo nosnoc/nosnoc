@@ -81,11 +81,12 @@ end
 %% create nlp
 settings.mpcc_mode = 1;
 settings.opts_ipopt.ipopt.tol = 1e-14;
+settings.opts_ipopt.ipopt.max_iter = 1.5e3;
 [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
 unfold_struct(solver_initalization,'caller')
 %% set appropiate bounds to zero
-lbw(ind_lambda1_fixed(:)) = 0;  ubw(ind_lambda1_fixed(:)) = 0;
-lbw(ind_alpha0_fixed(:)) = 0;  ubw(ind_alpha0_fixed(:)) = 0;
+lbw(ind_lambda1_fixed(:)) = 0; ubw(ind_lambda1_fixed(:)) = 0;
+lbw(ind_alpha0_fixed(:)) = 0; ubw(ind_alpha0_fixed(:)) = 0;
 
 lbw(ind_lambda0_fixed(:)) = 0;  ubw(ind_lambda0_fixed(:)) = 0;
 lbw(ind_alpha1_fixed(:)) = 1;  ubw(ind_alpha1_fixed(:)) = 1;

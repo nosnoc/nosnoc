@@ -80,8 +80,12 @@ convex_sigma_rho_constraint = 0;
 
 ratio_for_homotopy_stop = 0.75;
 
+
+h_fixed_in_first_step = 0;
 polishing_step = 0; % huristic for fixing active set, yet exerimental, not recommended to use.
 polishing_derivative_test = 0; % check in sliding mode also the derivative of switching functions
+
+
 
 %% Step equilibration	
 regularize_h =1;

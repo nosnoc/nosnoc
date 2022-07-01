@@ -5,7 +5,7 @@ unfold_struct(model,'caller')
 % Store differentail states
 w_opt = full(results.x);
 diff_states = w_opt(ind_x);
-alg_states = w_opt(ind_z);
+algebraic_states = w_opt(ind_z);
 
 u_opt = w_opt(ind_u);
 u_opt = reshape(u_opt,n_u,N_stages);
@@ -21,21 +21,25 @@ end
 x_opt_extended = w_opt(ind_x);
 x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
 x_opt  = x_opt_extended(:,1:n_s+1:end);
+
+
 switch pss_mode
     case 'Stewart'
-        alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
-        theta_opt_extended = [alg_states_extended(1:n_theta,:)];
-        lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
-        mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
+        z_opt_extended = reshape(algebraic_states,n_z,length(algebraic_states)/n_z);
+        z_opt  = z_opt_extended(:,1:n_s:end);
+        theta_opt_extended = [z_opt_extended(1:n_theta,:)];
+        lambda_opt_extended = [z_opt_extended(n_theta+1:2*n_theta,:)];
+        mu_opt_extended = [z_opt_extended(end-n_simplex+1:end,:)];
         %
         theta_opt= theta_opt_extended(:,1:n_s+1:end);
         lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
         mu_opt= mu_opt_extended(:,1:n_s+1:end);
     case 'Step'
-        alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
-        alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
-        lambda_0_opt_extended = [alg_states_extended(n_alpha+1:2*n_alpha,:)];
-        lambda_1_opt_extended = [alg_states_extended(2*n_alpha+1:3*n_alpha,:)];
+        z_opt_extended = reshape(algebraic_states,n_z,length(algebraic_states)/n_z);
+        z_opt  = z_opt_extended(:,1:n_s:end);
+        alpha_opt_extended = [z_opt_extended(1:n_alpha,:)];
+        lambda_0_opt_extended = [z_opt_extended(n_alpha+1:2*n_alpha,:)];
+        lambda_1_opt_extended = [z_opt_extended(2*n_alpha+1:3*n_alpha,:)];
         %
         alpha_opt= alpha_opt_extended(:,1:n_s+1:end);
         lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);
@@ -74,6 +78,10 @@ ind_t_grid_u = cumsum([1; N_finite_elements]);
 
 results.x_opt = x_opt;
 results.x_opt_extended = x_opt_extended;
+
+results.z_opt = z_opt;
+results.z_opt_extended = z_opt_extended;
+
 results.t_grid = t_grid;
 results.t_grid_u = t_grid(ind_t_grid_u);
 

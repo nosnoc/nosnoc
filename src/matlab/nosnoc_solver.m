@@ -39,6 +39,7 @@ results = extract_results_from_solver(model,settings,results);
 if polishing_step
     [results] = polishing_homotopy_solution(model,settings,stats,results);
     complementarity_iter = results.complementarity_iter;
+    stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
 else
     complementarity_iter = full(comp_res(results.w_opt));
 end

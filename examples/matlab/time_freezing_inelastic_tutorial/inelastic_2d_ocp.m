@@ -6,36 +6,31 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
-settings.sigma_0 = 1;
+settings.use_fesd = 1;
 settings.mpcc_mode = 3;
-settings.kappa = 0.1;
-settings.N_homotopy = 6;
+settings.N_homotopy = 10;
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
-
-% settings.opts_ipopt.ipopt.tol = 1e-14;
-
 settings.time_freezing = 1;
 settings.s_sot_max = 10;
 settings.s_sot_min = 0.1;
 settings.equidistant_control_grid = 1;
 settings.pss_lift_step_functions = 1;
 
-
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 settings.step_equilibration = 1;
 settings.step_equilibration_mode = 3;
-
 settings.polishing_step = 1;
+linewidth = 2.5;
 %%
 g = 9.81;
 u_max = 10;
-N_stg = 20;  N_FE = 2; 
+N_stg = 25;  N_FE = 2; 
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
-x = [q;v];
 u = SX.sym('u');
+x = [q;v];
 model.T = 2;
 model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
@@ -46,7 +41,6 @@ model.mu = 0.6;
 model.a_n = g;
 model.x0 = [0;1.5;0;0]; 
 model.f = [0+u;-g];
-
 model.c = q(2);
 model.g_terminal = [x-[3;0;0;0]];
 model.lbu = -u_max;
@@ -65,25 +59,81 @@ s_opt = results.w_opt(model.ind_sot);
 
 figure
 subplot(131)
-plot(qx,qy,'LineWidth',2);
+plot(qx,qy,'LineWidth',linewidth);
 xlabel('$q_1$','Interpreter','latex');
 ylabel('$q_2$','Interpreter','latex');
 grid on
 subplot(132)
-plot(t_opt,vy,'LineWidth',2);
+plot(t_opt,vy,'LineWidth',linewidth);
 hold on
-plot(t_opt,vx,'LineWidth',2);
+plot(t_opt,vx,'LineWidth',linewidth);
 grid on
 xlabel('$t$','Interpreter','latex');
 ylabel('$v$','Interpreter','latex');
 legend({'$v_1$','$v_2$'},'Interpreter','latex');
 subplot(133)
-stairs(t_opt(1:N_FE:end),[u_opt,[nan]]','LineWidth',2);
+stairs(t_opt(1:N_FE:end),[u_opt,[nan]]','LineWidth',linewidth);
 hold on
-stairs(t_opt(1:N_FE:end),[s_opt',nan],'LineWidth',2);
+stairs(t_opt(1:N_FE:end),[s_opt',nan],'LineWidth',linewidth);
 legend({'$u_1(t)$','$s(t)$'},'Interpreter','latex','location','best');
 grid on
 xlabel('$t$','Interpreter','latex');
 ylabel('$u$','Interpreter','latex');
+%% 
+
+t_grid = results.t_grid;
+f_x_fun = model.f_x_fun;
+x_opt = results.x_opt;
+z_opt = results.z_opt;
+u_opt_extended = [];
+s_opt_extended = [];
+for ii = 1:N_stg
+   for  jj = 1:N_FE
+       u_opt_extended = [u_opt_extended,u_opt(:,ii)];
+       s_opt_extended  = [s_opt_extended,s_opt(ii)];
+    end
+end
 %%
-% saveas(gcf,'ocp_example','epsc')
+figure
+subplot(221)
+plot(qx,qy,'LineWidth',linewidth);
+xlabel('$q_1$','Interpreter','latex');
+ylabel('$q_2$','Interpreter','latex');
+grid on
+subplot(223)
+plot(t_opt,vy,'LineWidth',linewidth);
+hold on
+plot(t_opt,vx,'LineWidth',linewidth);
+grid on
+xlabel('$t$','Interpreter','latex');
+ylabel('$v$','Interpreter','latex');
+legend({'$v_1$','$v_2$'},'Interpreter','latex');
+subplot(222)
+stairs(t_opt(1:N_FE:end),[u_opt,[nan]]','LineWidth',linewidth);
+hold on
+stairs(t_opt(1:N_FE:end),[s_opt',nan],'LineWidth',linewidth);
+legend({'$u_1(t)$','$s(t)$'},'Interpreter','latex','location','best');
+grid on
+xlabel('$t$','Interpreter','latex');
+ylabel('$u$','Interpreter','latex');
+subplot(224)
+if 0
+    stairs(t_grid,[dtdtau],'LineWidth',linewidth);
+    grid on
+    hold on
+    xlabel('$t$','Interpreter','latex');
+    ylabel('$\frac{\mathrm{d}t}{\mathrm{d}\tau}$','Interpreter','latex');
+else
+    plot(t_grid,t_opt,'LineWidth',linewidth);
+    grid on
+    hold on
+    xlabel('$t$','Interpreter','latex');
+    ylabel('$t(\tau)$','Interpreter','latex');
+end
+
+%     set(gcf,'Units','inches');
+%     screenposition = get(gcf,'Position');
+%     set(gcf,'PaperPosition',[0 0 screenposition(3:4)*2],'PaperSize',[screenposition(3:4)*2]);
+%     eval(['print -dpdf -painters ' ['ocp_example'] ])
+
+
