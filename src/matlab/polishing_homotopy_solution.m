@@ -22,10 +22,17 @@ if nargin > 4
    create_nlp_solver =  0;
 end
 
+
+%% alert
+if isequal(settings.pss_mode,'Stewart');
+    error('Polishing mode is currently avilable for settings.pss_mode = ''Step''.');
+end
 %% unfold
 import casadi.*
 unfold_struct(settings,'caller');
 unfold_struct(model,'caller');
+
+
 %% proces raw results to prepare for active sets
 % if exist('results.x_opt','var')
     % check has it been processed already
@@ -39,7 +46,7 @@ x_modified(:,1:n_s+1:end) = [];
 % getting the index sets of the algebraic variables
 ind_z_extended = reshape(ind_z,n_z,length(ind_z)/n_z);
 ind_alpha= [ind_z_extended(1:n_alpha,:)];
-ind_lambda0= [ind_z_extended(n_alpha+1:2*n_alpha,:)];
+ind_lambda0 = [ind_z_extended(n_alpha+1:2*n_alpha,:)];
 ind_lambda1  = [ind_z_extended(2*n_alpha+1:3*n_alpha,:)];
 %% evaluating switching futction
 c_eval = [];
