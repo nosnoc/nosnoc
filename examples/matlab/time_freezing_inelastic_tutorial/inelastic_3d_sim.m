@@ -19,19 +19,20 @@ settings.pss_lift_step_functions= 1;
 %%
 g = 10;
 model.e = 0;
-model.mu = 0.4;
+model.mu = 0.3;
 % Symbolic variables and bounds
 q = SX.sym('q',3); v = SX.sym('v',3); 
 model.x = [q;v]; 
 model.a_n = g;
-model.x0 = [0;0;1;-3;-3;0]; 
+model.x0 = [0;0;1;5;3;0]; 
+% model.x0 = [0;0;0;0;0;0]; 
 model.f = [0;0;-g];
 model.f_c = q(3);
 model.tangent1 = [1;0;0];
 model.tangent2 = [0;1;0];
 %% Simulation setings
 N_finite_elements = 2;
-T_sim = 2;
+T_sim = 5;
 N_sim = 50;
 model.T_sim = T_sim;
 model.N_FE = N_finite_elements;
@@ -50,6 +51,9 @@ t_opt = results.x_res(7,:);
 figure
 plot3(qx,qy,qz);
 axis equal
+xlim([-1 10])
+ylim([-1 10])
+zlim([-1 10])
 grid on
 xlabel('$q_x$','Interpreter','latex');
 ylabel('$q_y$','Interpreter','latex');
@@ -72,20 +76,40 @@ lambda0 = results.lambda_0_res;
 lambda1 = results.lambda_1_res;
 alpha = results.alpha_res;
 
+if settings.time_freezing_nonlinear_friction_cone
+theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
+theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:));
+theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:));
+theta = [theta1;theta2;theta3];
+else
 theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
 theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:)).*(1-alpha(4,:));
 theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:)).*(alpha(4,:));
 theta4  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(1-alpha(4,:));
 theta5  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(alpha(4,:));
 theta = [theta1;theta2;theta3;theta4;theta5];
-t_grid(1) = [];
+end
 
+n_f = model.n_gamma;
+t_grid(1) = [];
 figure
-for ii = 1:5
-    subplot(1,5,ii)
+for ii = 1:n_f 
+    subplot(1,n_f,ii)
     plot(t_grid,theta(ii,:));
     grid on
     xlabel('$\tau$','Interpreter','latex')
     ylabel(['$\theta_' num2str(ii) '$'],'Interpreter','latex')
     ylim([-0.1 1.1])
 end
+%% switching functions
+% c_fun = model.c_fun;
+% x_res = results.x_res;
+% t_grid = results.t_grid;
+% c_eval = [];
+% for ii = 1:length(x_res)
+%     c_eval = [c_eval,full(c_fun(x_res(:,ii)))];
+% end
+% figure
+% plot(t_grid,c_eval))
+% grid on
+

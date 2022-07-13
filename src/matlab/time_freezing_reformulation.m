@@ -212,18 +212,31 @@ if time_freezing
             end
 
             %% create auxiliary dynamics
+            eps1 = 1e-8; % relaxing zero velocity
+            eps2 = 1e-1; % relaxing the norm;
             if ~exist('model.a_n') && ~exist('a_n')
                 a_n  = 100;
             end
-            f_aux_n = [nabla_q_f_c zeros(n_q,1);...
-                zeros(n_q,1) invM*nabla_q_f_c]*[0;a_n];
+%             f_aux_n = [nabla_q_f_c zeros(n_q,1);...
+%                 zeros(n_q,1) invM*nabla_q_f_c]*[0;a_n];
+            f_aux_n = [zeros(n_q,1);invM*nabla_q_f_c*a_n];
             if friction_is_present
                 a_t = mu*a_n;
-                f_aux_t1 = [tangent1 zeros(n_q,1);...
-                    zeros(n_q,1) invM*tangent1]*[0;a_t];
+                f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t];
                 if n_dim_contact> 2
-                    f_aux_t2 = [tangent2 zeros(n_q,1);...
-                        zeros(n_q,1) invM*tangent2]*[0;a_t];
+                    if settings.time_freezing_nonlinear_friction_cone
+                        % auxiliary dynamics pushing towards origin
+                        T_q = [tangent1 tangent2]; % spans tangent space
+                        v_tan = T_q'*v;
+                        v_tan_norm = norm(v_tan);
+                        f_aux_t1 = [zeros(n_q,1);-invM*T_q*a_t*v_tan/v_tan_norm];
+                        f_aux_t2 = [zeros(n_q,1);invM*T_q*a_t*v_tan/(v_tan_norm+eps2)];
+                        % relaxed pushing toward relaxed circle around origin
+                    else
+%                         f_aux_t2 = [tangent2 zeros(n_q,1);...
+%                         zeros(n_q,1) invM*tangent2]*[0;a_t];
+                        f_aux_t2 = [zeros(n_q,1);invM*tangent2*a_t];
+                    end
                 end
             end
 
@@ -235,8 +248,12 @@ if time_freezing
                     case 2
                         c3 = tangent1'*v;
                     case 3
-                        c3 = tangent1'*v;
-                        c4 = tangent2'*v;
+                        if settings.time_freezing_nonlinear_friction_cone
+                            c3 = eps1-v_tan_norm;
+                        else
+                            c3 = tangent1'*v;
+                            c4 = tangent2'*v;
+                        end
                 end
             end
 
@@ -264,6 +281,15 @@ if time_freezing
                                 f_aux_n-f_aux_t1];
                         end
                     case 3
+                        if settings.time_freezing_nonlinear_friction_cone
+                            f_aux_t1 = [f_aux_t1;0];
+                            f_aux_t2 = [f_aux_t2;0];
+                            F{1} = [f_ode ...
+                                    f_aux_n+f_aux_t1...
+                                    f_aux_n+f_aux_t2];
+                                c{1} = [c1;c2;c3];
+                                S{1} = [1 0 0;-1 -1 -1;-1 -1 1];
+                        else
                         f_aux_t1 = [f_aux_t1;0];
                         f_aux_t2 = [f_aux_t2;0];
                         F{1} = [f_ode ...
@@ -277,6 +303,7 @@ if time_freezing
                             -1 -1 -1 1;...
                             -1 -1 1 -1;...
                             -1 -1 1 1];
+                        end
                 end
             end
             model.F = F;

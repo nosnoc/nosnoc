@@ -6,9 +6,9 @@ close all
 %%
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
-settings.n_s = 2;
+settings.n_s = 1;
 
-settings.mpcc_mode = 3;
+settings.mpcc_mode = 4;
 
 settings.opts_ipopt.ipopt.max_iter = 5e2;
 settings.print_level = 2;
@@ -19,19 +19,20 @@ settings.time_freezing = 1;
 settings.pss_lift_step_functions = 1;
 settings.time_freezing_reduced_model = 0;
 
-model.mu = 0.3*1;
+model.mu = 0.7;
 %%
-g = 9.81;
+g = 10;
 vertical_force = 0;
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
 model.x = [q;v]; 
 model.e = 0;
 model.a_n = g;
-model.x0 = [0;0.2;1;0]; 
-model.x0 = [0;0.0;1;0]; 
-model.f = [0;-g+vertical_force*g*q(1)];
+model.x0 = [0;1;3;0]; 
+model.x0 = [0;0;0;0]; 
+model.f = [0.04;-g+vertical_force*g*q(1)];
 model.c = q(2);
+model.tangent1 = [1; 0];
 %% Simulation setings
 N_FE = 2;
 T_sim = 1.5;
@@ -55,6 +56,7 @@ plot(qx,qy);
 grid on
 xlabel('$q_x$','interpreter','latex');
 ylabel('$q_y$','interpreter','latex');
+axis equal
 subplot(122)
 plot(t_opt,vy);
 hold on

@@ -81,9 +81,9 @@ convex_sigma_rho_constraint = 0;
 ratio_for_homotopy_stop = 0.75;
 
 %% Homotopy preprocess and polishing steps
-h_fixed_iterations = 1;
+h_fixed_iterations = 0;
 h_fixed_max_iter = 3; % number of iterations that are done with fixed h in the homotopy loop
-h_fixed_change_sigma = 0; % if this is on, do not update sigma and just solve on nlp with fixed h.
+h_fixed_change_sigma = 1; % if this is on, do not update sigma and just solve on nlp with fixed h.
 polishing_step = 0; % huristic for fixing active set, yet exerimental, not recommended to use.
 polishing_derivative_test = 0; % check in sliding mode also the derivative of switching functions
 
@@ -124,6 +124,7 @@ T_final_max = 1e2;
 T_final_min = 0;
 time_freezing_reduced_model = 0; % analytic reduction of lifter formulation, less algebraic variables (experimental)
 time_freezing_hysteresis = 0; % do not do automatic time freezing generation for hysteresis, it is not supported yet.
+time_freezing_nonlinear_friction_cone = 1; % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
 %% Verbose
 print_level = 3;
 opts_ipopt.ipopt.print_level = 0;

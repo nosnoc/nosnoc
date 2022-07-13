@@ -233,9 +233,6 @@ fprintf('Max complementarity residual: %2.3e.\nMin complementarity residual: %2.
 fprintf('-----------------------------------------------------------------------------------------------\n\n');
 %% Output
 
-results.h_vec  = h_vec;
-results.t_grid = cumsum([0;h_vec])';
-
 results.x_res  = x_res;
 % Output all stage values as well.
 results.x_res_extended  = x_res_extended;
@@ -265,6 +262,9 @@ end
 stats.complementarity_stats   = complementarity_stats;
 stats.time_per_iter = time_per_iter;
 stats.homotopy_iteration_stats = homotopy_iteration_stats;
+
+results.h_vec  = h_vec;
+results.t_grid = cumsum([0;h_vec])';
 
 varargout{1} = results;
 varargout{2} = stats;
