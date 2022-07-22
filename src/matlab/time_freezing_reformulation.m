@@ -213,6 +213,7 @@ if time_freezing
                             end
                         end
                 end
+
                 % create auxiliary dynamics
                 a_t = mu*a_n;
                 switch n_dim_contact
@@ -229,7 +230,7 @@ if time_freezing
                         % relaxed pushing toward relaxed circle around origin
                         f_aux_t2 = [zeros(n_q,1);invM*T_q*v_tan;0];
                 end
-
+            end
                 % switching functions
                 c1 = f_c;
                 c2 = nabla_q_f_c'*v;
@@ -251,16 +252,12 @@ if time_freezing
                             S{1} = [1 0;-1 1;-1 -1];
                         case 2
                             F{1} = [f_ode f_aux_n1 f_aux_n2 f_aux_n1+f_aux_n2];
-                            S{1} = [1 0;-1 1;-1 -1];
+                            S{1} = eye(4);
                         otherwise
                             error('not implemented.')
                     end
                 else
-                    if settings.time_freezing_reduced_model
-                        F{1} = [f_ode, f_aux_n1+f_aux_t1,-2*f_aux_t1];
-                    else
-                        F{1} = [f_ode,f_aux_n1+f_aux_t1,f_aux_n1+f_aux_t2];
-                    end
+                    F{1} = [f_ode,f_aux_n1+f_aux_t1,f_aux_n1+f_aux_t2];
                     S{1} = [1 0 0;-1 -1 -1;-1 -1 1];
                 end
 
@@ -270,7 +267,7 @@ if time_freezing
                 time_freezing_model_exists = 1;
             else
                 % elastic
-                if ~exist('k_aux');
+                if ~exist('k_aux')
                     k_aux = 10;
                     if  settings.print_level > 1;
                         fprintf('Info on Time-Freezing: Setting default value for k_aux = 10.\n')
