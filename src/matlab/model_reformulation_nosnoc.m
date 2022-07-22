@@ -21,8 +21,6 @@
 %
 function [model,settings] = model_reformulation_nosnoc(model,settings)
 import casadi.*
-
-
 %% Load settings and model details
 if ~settings.time_freezing_model_exists && settings.time_freezing && ~settings.time_freezing_hysteresis
     % check is the model generated if time freezing is used
@@ -35,11 +33,11 @@ unfold_struct(settings,'caller')
 %% Some settings refinments
 % update prin_level
 if print_level <4
-    settings.opts_ipopt.ipopt.print_level=0;
+    settings.opts_ipopt.ipopt.print_level = 0;
     settings.opts_ipopt.print_time=0;
     settings.opts_ipopt.ipopt.sb= 'yes';
 elseif print_level == 4
-    settings.opts_ipopt.ipopt.print_level=0;
+    settings.opts_ipopt.ipopt.print_level = 0;
     settings.opts_ipopt.print_time=1;
     settings.opts_ipopt.ipopt.sb= 'no';
 else
@@ -91,7 +89,7 @@ casadi_symbolic_mode = model.x(1).type_name();
 settings.casadi_symbolic_mode  = casadi_symbolic_mode;
 settings.couple_across_stages = 1;
 
-%% Check is x
+%% Check is x provided
 if exist('x')
     n_x = length(x);
     % check  lbx
@@ -149,7 +147,7 @@ else
     ubu = [];
 end
 
-%% Stage and terminal costs
+%% Stage and terminal costs check
 if ~exist('f_q')
     if print_level >=1
         fprintf('Info: No stage cost is provided. \n')
@@ -167,7 +165,7 @@ else
     f_q_T = 0;
 end
 
-%% Inequality constraints
+%% Inequality constraints check
 if exist('g_ineq')
     g_ineq_constraint  = 1;
     n_g_ineq = length(g_ineq);
@@ -527,14 +525,12 @@ switch pss_mode
                     g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
                         gamma(2)-(1-alpha(1))*(1-alpha(2))];
                     upsilon_all{1} = gamma;
-
                     g_lift_gamma_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
                         (1-alpha(1))*(1-alpha(2))];
                     g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha},{g_lift_gamma_fun});
-
                 else
-                    switch n_dim_contact
-                        case 2
+%                     switch n_dim_contact
+%                         case 2
                             if time_freezing_reduced_model
                                 % by some algebraic manipulations, we can get rid of some variables
                                 beta = [];
@@ -571,63 +567,28 @@ switch pss_mode
                                 g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
                                 g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
                             end
-                        case 3
-                            if time_freezing_nonlinear_friction_cone
-                                gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',3);
-                                beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
+%                         case 3
+%                                 beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
+%                                 gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',3);
+%                                 
+%                                 g_lift_beta = [beta-(1-alpha(1))*(1-alpha(2))];
+%                                 g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
+%                                     gamma(2)-beta*(1-alpha(3));...
+%                                     gamma(3)-beta*alpha(3);...
+%                                     ];
+%                                 upsilon_all{1} = gamma;
+% 
+%                                 % create casadi expressions for proper initalization
+%                                 g_lift_beta_fun = (1-alpha(1))*(1-alpha(2));
+%                                 g_lift_gamma_fun = [alpha(1)+(1-alpha(1))*alpha(2);...
+%                                     beta*(1-alpha(2))*(1-alpha(3));...
+%                                     beta*(1-alpha(2))*alpha(3)];
+%                
+%                             % casadi functions
+%                             g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
+%                             g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
 
-                                g_lift_beta = [beta-(1-alpha(1))*(1-alpha(2))];
-                                g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                                    gamma(2)-beta*(1-alpha(3));...
-                                    gamma(3)-beta*alpha(3);...
-                                    ];
-                                upsilon_all{1} = gamma;
-
-                                % create casadi expressions for proper initalization
-                                g_lift_beta_fun = (1-alpha(1))*(1-alpha(2));
-                                g_lift_gamma_fun = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                    beta*(1-alpha(2))*(1-alpha(3));...
-                                    beta*(1-alpha(2))*alpha(3)];
-                            else
-
-                                gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',5);
-                                beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
-                                %                             upsilon =  [alpha(1)+(1-alpha(1))*alpha(2);...
-                                %                                               (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(1-alpha(4));...
-                                %                                               (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*alpha(4);...
-                                %                                               (1-alpha(1))*(1-alpha(2))*alpha(3)*(1-alpha(4));...
-                                %                                               (1-alpha(1))*(1-alpha(2))*alpha(3)*alpha(4);...
-                                %                                               ];
-                                g_lift_beta = [beta(1)-(1-alpha(1))*(1-alpha(2));...
-                                    beta(2)-(1-alpha(3))*(1-alpha(4));...
-                                    beta(3)-(1-alpha(3))*(alpha(4));...
-                                    beta(4)-(alpha(3))*(1-alpha(4));...
-                                    beta(5)-(alpha(3))*(alpha(4))];
-
-                                g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                                    gamma(2) - beta(1)*beta(2);...
-                                    gamma(3) - beta(1)*beta(3);...
-                                    gamma(4) - beta(1)*beta(4);...
-                                    gamma(5) - beta(1)*beta(5)];
-                                upsilon_all{1} = gamma;
-
-                                % create casadi expressions for proper initalization
-                                g_lift_beta_fun = [(1-alpha(1))*(1-alpha(2));...
-                                    (1-alpha(3))*(1-alpha(4));...
-                                    (1-alpha(3))*(alpha(4));...
-                                    (alpha(3))*(1-alpha(4));...
-                                    (alpha(3))*(alpha(4))];
-                                g_lift_gamma_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
-                                    beta(1)*beta(2);...
-                                    beta(1)*beta(3);...
-                                    beta(1)*beta(4);...
-                                    beta(1)*beta(5)];
-                            end
-                            % casadi functions
-                            g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
-                            g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
-
-                    end
+%                     end
                 end
             else
                 if ~friction_is_present

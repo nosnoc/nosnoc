@@ -6,7 +6,7 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
-settings.mpcc_mode = 5;
+settings.mpcc_mode = 4;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
 settings.print_level = 2;
 settings.N_homotopy = 10;
@@ -19,20 +19,22 @@ settings.pss_lift_step_functions= 1;
 %%
 g = 10;
 model.e = 0;
-model.mu = 0.3;
+model.mu = 0.2;
 % Symbolic variables and bounds
 q = SX.sym('q',3); v = SX.sym('v',3); 
 model.x = [q;v]; 
 model.a_n = g;
-model.x0 = [0;0;1;5;3;0]; 
-% model.x0 = [0;0;0;0;0;0]; 
-model.f = [0;0;-g];
+model.x0 = [0;0;1;2;1;0]; 
+F_ext = [1;1]*0;
+% norm(F_ext)
+model.f = [F_ext;-g];
+
 model.f_c = q(3);
 model.tangent1 = [1;0;0];
 model.tangent2 = [0;1;0];
 %% Simulation setings
 N_finite_elements = 2;
-T_sim = 5;
+T_sim = 3;
 N_sim = 50;
 model.T_sim = T_sim;
 model.N_FE = N_finite_elements;

@@ -82,7 +82,7 @@ ratio_for_homotopy_stop = 0.75;
 
 %% Homotopy preprocess and polishing steps
 h_fixed_iterations = 0;
-h_fixed_max_iter = 3; % number of iterations that are done with fixed h in the homotopy loop
+h_fixed_max_iter = 1; % number of iterations that are done with fixed h in the homotopy loop
 h_fixed_change_sigma = 1; % if this is on, do not update sigma and just solve on nlp with fixed h.
 polishing_step = 0; % huristic for fixing active set, yet exerimental, not recommended to use.
 polishing_derivative_test = 0; % check in sliding mode also the derivative of switching functions
