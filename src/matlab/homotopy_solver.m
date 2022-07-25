@@ -35,9 +35,6 @@ complementarity_iter = 1;
 ii = 0;
 vf_resiudal = 0;
 
-
-
-
 while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     % homotopy parameter update
     if ii == 0
@@ -46,7 +43,6 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
         sigma_k = kappa*sigma_k;
     end
     p_val(1) = sigma_k;
-
 
     % do an nlp solve with only kinematics
     if virtual_forces_kinematic_iteration && ii ==0
@@ -77,6 +73,24 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     end
 % end
 
+
+% if integrator_forward_sweep
+%     u_sim = w0(model.ind_u);
+%     u_sim = reshape(u_sim,model.n_u,model.N_stages);
+%     model_int = model; settings_int = settings;
+%     model_int.N_sim = model.N_stages;
+%     model_int.N_stages =1;
+%     model_int = rmfield(model_int,'F'); model_int = rmfield(model_int,'S');
+%     settings_int.integrator_forward_sweep = 0;
+%     settings_int.time_freezing_model_exists = 0;
+%     [results] = integrator_fesd(model_int,settings_int,u_sim);
+%     w0(model.ind_x)
+%     w0(model.ind_z)
+%     w0(model.ind_h)
+%     w0(model.ind_sot)    
+%     w0(model.ind_h)
+% end
+
 % solve problem with fixed step size
 if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
     tic
@@ -91,6 +105,8 @@ else
     results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',p_val);
     cpu_time_iter = toc ;
 end
+
+
 cpu_time = [cpu_time,cpu_time_iter];
 
 w_opt = full(results.x);

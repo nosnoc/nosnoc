@@ -28,7 +28,13 @@
 function [varargout] = nosnoc_solver(model,settings)
 import casadi.*
 %% Create NLP element and solve OCP with homotopy
+
+tic
 [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
+solver_generating_time = toc;
+if settings.print_level >=2
+    fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
+end
 [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
 total_time = sum(stats.cpu_time);
 %% Process and store results
@@ -52,7 +58,7 @@ fprintf('Max homotopy iteration time: %2.3f seconds, min homotopy iteration time
 fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
 
 if sum(stats.cpu_time) <60
-fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
+    fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
 else
     fprintf('Total homotopy solver time: %2.3f seconds /  %2.3f minutes. \n',sum(stats.cpu_time),sum(stats.cpu_time)/60);
 end

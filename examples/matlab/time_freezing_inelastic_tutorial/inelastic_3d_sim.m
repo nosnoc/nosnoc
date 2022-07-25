@@ -6,7 +6,7 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
-settings.mpcc_mode = 4;
+settings.mpcc_mode = 5;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
 settings.print_level = 2;
 settings.N_homotopy = 10;
@@ -15,7 +15,8 @@ settings.use_fesd = 1;
 settings.cross_comp_mode = 3;
 settings.time_freezing = 1;
 settings.pss_lift_step_functions= 1;
-
+settings.impose_terminal_phyisical_time  = 0;
+settings.stagewise_clock_constraint = 0;
 %%
 g = 10;
 model.e = 0;

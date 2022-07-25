@@ -1,15 +1,15 @@
 %
 %    This file is part of NOSNOC.
 %
-%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    NOSNOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
 %
-%    NOS-NOC is free software; you can redistribute it and/or
+%    NOSNOC is free software; you can redistribute it and/or
 %    modify it under the terms of the GNU Lesser General Public
 %    License as published by the Free Software Foundation; either
 %    version 3 of the License, or (at your option) any later version.
 %
-%    NOS-NOC is distributed in the hope that it will be useful,
+%    NO-NOC is distributed in the hope that it will be useful,
 %    but WITHOUT ANY WARRANTY; without even the implied warranty of
 %    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %    Lesser General Public License for more details.
@@ -25,9 +25,24 @@
 % [results,stats,model] = integrator_fesd(model,settings);
 % [results,stats,model,settings] = integrator_fesd(model,settings);
 
-function [varargout] = integrator_fesd(model,settings)
+function [varargout] = integrator_fesd(varargin)
 import casadi.*
 
+model = varargin{1};
+settings = varargin{2};
+solver_exists  = 0;
+control_exists = 0;
+if nargin>2
+    u_sim = varargin{3};
+    control_exists = 1;
+    
+end
+if nargin>3
+    solver = varargin{4};
+    solver_initalization = varargin{5};
+    solver_exists = 1;
+    model.p_val(end) = model.T;
+end
 %%  unfold data
 % use_previous_solution_as_initial_guess = 1;
 
@@ -37,9 +52,11 @@ unfold_struct(model,'caller')
 results.t_grid = [];
 results.x_res = [];
 stats = [];
+
 %% generate time-freezing model before turning off time-related settings
-if settings.time_freezing
-    virtual_forces = 0;
+if settings.time_freezing && ~solver_exists
+    settings.virtual_forces = 0;
+    settings.integrator_forward_sweep = 0; % this is not done inside a simulator
     [model,settings] = time_freezing_reformulation(model,settings);
 end
 
@@ -48,14 +65,30 @@ end
 [settings] = refine_settings_integrator(settings);
 
 %% Create solver functions for integrator step
-
-[solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
+if ~solver_exists 
+    tic
+    [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
+    solver_generating_time = toc;
+      if print_level >=2
+        fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
+    end
+end
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 unfold_struct(solver_initalization,'caller')
+
+%% chekc does the provided u_sim has correct dimensions
+if exist('u_sim','var')
+    [n_rows,n_cols] = size(u_sim);
+    if n_rows~=n_u || n_cols~=N_sim
+        error('Matrix with control inputs has the wrong size. Requires is n_u x N_sim.')
+    end
+end
 %% Initalization
 x_res = [x0];
 x_res_extended = [x0];
+diff_res = [];
+alg_res = [];
 % Stewart
 theta_res = [];
 lambda_res = [];
@@ -95,6 +128,12 @@ for ii = 1:N_sim+additional_residual_ingeration_step
         model.T = T_residual;
         [solver,~, model,settings] = create_nlp_nosnoc(model,settings);
     end
+
+    if control_exists
+        solver_initalization.lbw(ind_u) = repmat(u_sim(:,ii),N_stages,1);
+        solver_initalization.ubw(ind_u)  = repmat(u_sim(:,ii),N_stages,1);
+    end
+
     [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
@@ -110,6 +149,10 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     diff_states = w_opt(ind_x);
     alg_states = w_opt(ind_z);
     alg_states_boundary = w_opt(ind_boundary);
+
+    diff_res = [diff_res;diff_states ];
+    alg_res = [alg_res;alg_states];
+
 
     if ~right_boundary_point_explicit && use_fesd
         try
@@ -164,6 +207,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 %     update clock state 
     if impose_terminal_phyisical_time
         model.p_val(end) = model.p_val(end)+model.T;
+
     end
     solver_initalization.lbw(1:n_x) = x0;
     solver_initalization.ubw(1:n_x) = x0;
@@ -273,9 +317,15 @@ results.h_vec  = h_vec;
 results.s_sot_res = s_sot_res;
 results.t_grid = cumsum([0;h_vec])';
 
+% full diff and alg variables (e.g. for initalizing a solver)
+results.diff_res = diff_res;
+results.alg_res = alg_res;
+
 varargout{1} = results;
 varargout{2} = stats;
 varargout{3} = model;
 varargout{4} = settings;
+varargout{5} = solver;
+varargout{6} = solver_initalization;
 end
 

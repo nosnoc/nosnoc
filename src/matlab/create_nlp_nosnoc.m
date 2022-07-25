@@ -192,7 +192,7 @@ for k=0:N_stages-1
 
         % add pseudo froces in time freezing problesm to aid convergence
         if virtual_forces
-            if penalize_virtual_forces && ~virtual_forces_convex_combination
+            if penalize_virtual_forces 
                       J_virtual_froces = J_virtual_froces+f_q_virtual_fun(Uk);
             end
 

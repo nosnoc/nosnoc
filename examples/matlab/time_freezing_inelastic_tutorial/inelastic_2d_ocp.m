@@ -7,6 +7,7 @@ linewidth = 2.5;
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
+
 settings.use_fesd = 1;
 settings.mpcc_mode = 3;
 settings.N_homotopy = 7;
@@ -22,6 +23,7 @@ settings.pss_lift_step_functions = 1;
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 % preprocess and polishings teps
 settings.polishing_step = 0;
+settings.virtual_forces = 0;
 settings.h_fixed_iterations = 1;
 settings.h_fixed_max_iter = 1; 
 settings.h_fixed_change_sigma = 0; 
@@ -59,7 +61,7 @@ qy = results.x_opt(2,:);
 vx = results.x_opt(3,:);
 vy = results.x_opt(4,:);
 t_opt = results.x_opt(5,:);
-u_opt = results.u_opt;
+u_opt = results.u_opt(1,:);
 s_opt = results.w_opt(model.ind_sot);
 
 figure
