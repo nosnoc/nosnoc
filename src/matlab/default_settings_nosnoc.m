@@ -13,9 +13,7 @@ lift_irk_differential = 1; % if differential mode is used, introduce new variabl
 cross_comp_mode = 3;
 gamma_h = 1;
 
-
 pss_mode = 'Stewart'; % possible options: Stewart and Step
-
 
 % initalization - Stewart
 lp_initalization = 0;
@@ -30,7 +28,7 @@ initial_beta = 1;
 initial_gamma = 1;
 
 pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
-n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc)
+n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc), depth is number of multilinar terms to wich a lifting variables is equated to.
 
 couple_across_stages = 1;
 list_of_all_rk_schemes = {'radau','legendre','Radau-IIA','Gauss-Legendre','Radau-I','Radau-IA',...
@@ -73,8 +71,7 @@ rho_min = 0.1;
 rho_max = (log(rho_scale)-log(1e-16))/rho_lambda;
   
 rho_0 = max(rho_min,0.5);
-% sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0);
-   
+% sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0); 
 nonlinear_sigma_rho_constraint = 1;
 convex_sigma_rho_constraint = 0;
 
@@ -87,10 +84,8 @@ h_fixed_change_sigma = 1; % if this is on, do not update sigma and just solve on
 polishing_step = 0; % huristic for fixing active set, yet exerimental, not recommended to use.
 polishing_derivative_test = 0; % check in sliding mode also the derivative of switching functions
 
-
-
 %% Step equilibration	
-regularize_h =1;
+regularize_h = 1;
 rho_h = 1;
 delta_h_regularization = 0;
 piecewise_equidistant_grid	= 0;
@@ -99,7 +94,7 @@ piecewise_equidistant_grid_slack_mode = 0;
 
 step_equilibration = 0;
 step_equilibration_mode = 1;
-step_equilibration_penalty = 0.1;  %(rho_h in step_equilibration modde 1, as qudratic penalty)
+% step_equilibration_penalty = 0.1;  %(rho_h in step_equilibration modde 1, as qudratic penalty)
 treat_step_equilibration_via_mpcc = 0;
 step_equilibration_sigma = 0.1;
 heuristic_step_equilibration = 1;
@@ -113,13 +108,16 @@ time_freezing  = 0;
 time_freezing_inelastic = 0;
 time_optimal_problem = 0;
 time_rescaling = 0;
+% for time optimal problems and equdistant control grids in physical time
 use_speed_of_time_variables = 1;
 local_speed_of_time_variable = 0;
 stagewise_clock_constraint = 1;
+impose_terminal_phyisical_time = 1;
 s_sot0 = 1;
 s_sot_max =	25;
-s_sot_min =	1/s_sot_max;
-impose_terminal_phyisical_time = 1;
+s_sot_min =	1;
+rho_sot = 1e1;
+
 T_final_max = 1e2;
 T_final_min = 0;
 time_freezing_reduced_model = 0; % analytic reduction of lifter formulation, less algebraic variables (experimental)
@@ -160,6 +158,10 @@ clear_ipopt_verbose = 0;
 output_stage_values = 0;
 time_freezing_model_exists = 0;
 
+
+%% All NLP parameters
+T_val = 1;
+p_val = [sigma_0,rho_sot,rho_h,rho_terminal,T_val];
 
 %% Save data into struct
 names = who;

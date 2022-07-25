@@ -350,9 +350,20 @@ end
 
 %% Parameters
 sigma = define_casadi_symbolic(casadi_symbolic_mode,'sigma');
-n_param = 1;  % number of parameters,  we model it as control variables and merge them with simple equality constraints
+% all penalty factors;
 p = [sigma];
-n_p = 1;
+n_p = length(p);
+%% Parameters extended
+% update values of parameters vector (as defualt settings might be overwritten)
+p_val = [sigma_0,rho_sot,rho_h,rho_terminal,T];
+% define parameters;
+sigma_p = define_casadi_symbolic(casadi_symbolic_mode,'sigma_p'); % homotopy parameter
+rho_sot_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_sot_p'); % homotopy parameter
+rho_h_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_h_p'); % homotopy parameter
+rho_terminal_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_terminal_p'); % homotopy parameter
+T_ctrl_p  = define_casadi_symbolic(casadi_symbolic_mode,'T_ctrl_p'); % homotopy parameter
+p = [sigma_p,rho_sot_p,rho_h_p,rho_terminal_p,T_ctrl_p];
+n_p = length(p);
 
 %% Algebraic variables defintion
 % Dummy variavles for Stewart representation'
@@ -742,8 +753,14 @@ if isequal(irk_representation,'differential')
 end
 
 %% Collect Outputs
-model.sigma = sigma;
+% parameters
+model.sigma_p = sigma_p;
+model.rho_sot_p = rho_sot_p;
+model.rho_h_p = rho_h_p;
+model.rho_terminal_p = rho_terminal_p;
+model.T_ctrl_p  = T_ctrl_p;
 model.p = p;
+model.p_val = p_val;
 %
 model.lbx = lbx;
 model.ubx = ubx;

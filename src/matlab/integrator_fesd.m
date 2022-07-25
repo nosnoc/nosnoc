@@ -41,7 +41,8 @@ stats = [];
 if settings.time_freezing
     [model,settings] = time_freezing_reformulation(model,settings);
 end
-settings.time_freezing = 0;
+% settings.time_freezing = 0;
+% % settings.time_freezing = 1;
 %% Settings of integration
 [model] = refine_model_integrator(model,settings);
 [settings] = refine_settings_integrator(settings);
@@ -81,6 +82,8 @@ lambda_1_boundary_res = [];
 
 % step size
 h_vec = [];
+% sot (in time-freezing)
+s_sot_res = [];
 % statse
 complementarity_stats  = [];
 homotopy_iteration_stats = [];
@@ -133,9 +136,6 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
             mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
 
-%             theta_opt= theta_opt_extended(:,1:n_s+1:end);
-%             lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
-%             mu_opt= mu_opt_extended(:,1:n_s+1:end);
             theta_opt= theta_opt_extended(:,1:n_s:end);
             lambda_opt= lambda_opt_extended(:,1:n_s:end);
             mu_opt= mu_opt_extended(:,1:n_s:end);
@@ -159,22 +159,27 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             lambda_1_opt= lambda_1_opt_extended(:,1:n_s:end);
     end
 
-
     % update initial guess and inital value
     x0 = x_opt(:,end);
+%     update clock state 
+    if impose_terminal_phyisical_time
+        model.p_val(end) = model.p_val(end)+model.T;
+    end
     solver_initalization.lbw(1:n_x) = x0;
     solver_initalization.ubw(1:n_x) = x0;
+
     if use_previous_solution_as_initial_guess
         solver_initalization.w0 = w_opt;
     end
 
     % Store data
-    % step-size
     if use_fesd
         h_vec = [h_vec;h_opt];
     else
         h_vec = [h_vec;h*ones(N_stages*N_finite_elements,1)];
     end
+    %sot
+    s_sot_res  = [s_sot_res,w_opt(ind_sot)];
     %differntial
     x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
@@ -188,6 +193,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             theta_res_extended = [theta_res_extended,theta_opt_extended ];
             lambda_res_extended = [lambda_res_extended,lambda_opt_extended];
             mu_res_extended = [mu_res_extended,mu_opt_extended];
+
             if ~right_boundary_point_explicit && use_fesd
                 lambda_boundary_res = [lambda_boundary_res,alg_states_boundary(1:n_theta,:)];
                 mu_boundary_res = [mu_boundary_res,alg_states_boundary(end-n_simplex+1:end,:) ];
@@ -264,6 +270,7 @@ stats.time_per_iter = time_per_iter;
 stats.homotopy_iteration_stats = homotopy_iteration_stats;
 
 results.h_vec  = h_vec;
+results.s_sot_res = s_sot_res;
 results.t_grid = cumsum([0;h_vec])';
 
 varargout{1} = results;

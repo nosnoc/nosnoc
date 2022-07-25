@@ -19,7 +19,10 @@ settings.time_freezing = 1;
 settings.pss_lift_step_functions = 1;
 settings.time_freezing_reduced_model = 0;
 
-model.mu = 0.3;
+settings.impose_terminal_phyisical_time = 1;
+settings.local_speed_of_time_variable = 1;
+settings.stagewise_clock_constraint = 0;
+
 %%
 g = 10;
 vertical_force = 0;
@@ -27,12 +30,15 @@ vertical_force = 0;
 q = SX.sym('q',2); v = SX.sym('v',2); 
 model.x = [q;v]; 
 model.e = 0;
+model.mu = 0.3;
 model.a_n = g;
+model.a_n = 200;
 model.x0 = [0;1;3;0]; 
-% model.x0 = [0;0;0;0]; 
 model.f = [0;-g+vertical_force*g*q(1)];
 model.c = q(2);
 model.tangent1 = [1; 0];
+
+settings.rho_sot = 0;
 %% Simulation setings
 N_FE = 2;
 T_sim = 1.5;
@@ -96,7 +102,21 @@ xlabel('$\tau$','interpreter','latex');
 ylabel(['$\theta_3$'],'interpreter','latex');
 grid on
 ylim([-0.1 1.1]);
-%% Friction and normal contact force
+%% speed of time
+figure
+subplot(121)
+plot(t_grid,t_opt)
+hold on
+plot(t_grid,t_grid,'k--')
+grid on
+xlabel('$\tau$','interpreter','latex');
+ylabel('$t$','interpreter','latex');
+subplot(122)
+stairs(s_sot_res)
+grid on
+xlabel('simulation step','interpreter','latex');
+ylabel('$s$','interpreter','latex');
+
 
 
 %% complementarity residuals

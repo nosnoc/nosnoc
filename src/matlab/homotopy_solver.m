@@ -4,6 +4,7 @@ import casadi.*
 %%  unfold data
 unfold_struct(settings,'caller')
 unfold_struct(solver_initalization,'caller')
+p_val = model.p_val;
 
 comp_res = model.comp_res;
 nabla_J_fun = model.nabla_J_fun;
@@ -39,11 +40,12 @@ while complementarity_iter > comp_tol && ii < N_homotopy
     else
         sigma_k = kappa*sigma_k;
     end
+    p_val(1) = sigma_k; 
 
 
     if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
         tic 
-        results = solver('x0', w0, 'lbx', lbw_h, 'ubx', ubw_h,'lbg', lbg, 'ubg', ubg,'p',sigma_k);
+        results = solver('x0', w0, 'lbx', lbw_h, 'ubx', ubw_h,'lbg', lbg, 'ubg', ubg,'p',p_val);
         cpu_time_iter = toc ;
         w_opt = full(results.x);       
         if ~h_fixed_change_sigma
@@ -51,7 +53,7 @@ while complementarity_iter > comp_tol && ii < N_homotopy
         end
     else
         tic
-        results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',sigma_k);
+        results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',p_val);
         cpu_time_iter = toc ;
     end
     cpu_time = [cpu_time,cpu_time_iter];

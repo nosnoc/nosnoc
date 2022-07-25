@@ -113,6 +113,7 @@ J_comp = 0;
 J_comp_std = 0;
 J_comp_fesd = 0;
 J_regularize_h = 0;
+J_regularize_sot = 0;
 % constraints
 g = {};
 lbg = [];
@@ -220,7 +221,10 @@ for k=0:N_stages-1
                 ind_sot = [ind_sot,ind_total(end)+1:ind_total(end)+1];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
             end
+            
         end
+        % enfroce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
+        J_regularize_sot = J_regularize_sot+s_sot_k^2;
     end
     %% General Nonlinear constriant (on control interval boundary)
     % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
@@ -608,7 +612,7 @@ for k=0:N_stages-1
             g_all_comp_j = [g_cross_comp_j];
             n_all_comp_j = length(g_all_comp_j);
 
-            %% Treatment and reformulation of all Complementarity Constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
+            %% Treatment and reformulation of all complementarity constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
             mpcc_var_current_fe.J = J;
             mpcc_var_current_fe.g_all_comp_j = g_all_comp_j;
             if s_ell_inf_elastic_exists
@@ -777,7 +781,9 @@ if time_freezing
         ubg = [ubg; 0];
     else
         if impose_terminal_phyisical_time && ~stagewise_clock_constraint
-            g = {g{:}, Xk_end(end)-T};
+%             X0 = w{1};
+%             g = {g{:}, Xk_end(end)-(T+X0(end))};
+            g = {g{:}, Xk_end(end)-(T_ctrl_p)};
             lbg = [lbg; 0];
             ubg = [ubg; 0];
         else
@@ -860,10 +866,10 @@ if terminal_constraint
              lbg = [lbg; -inf*ones(2*n_terminal,1)];
              ubg = [ubg; zeros(2*n_terminal,1)];
              % penalize slack
-             J = J + rho_terminal*sum(s_terminal_ell_1);
+             J = J + rho_terminal_p*sum(s_terminal_ell_1);
         case 2
             % l_2
-            J = J + rho_terminal*(g_terminal-g_terminal_lb)'*(g_terminal-g_terminal_lb);
+            J = J + rho_terminal_p*(g_terminal-g_terminal_lb)'*(g_terminal-g_terminal_lb);
         case 3
             % l_inf 
             % define slack variable
@@ -879,7 +885,7 @@ if terminal_constraint
              lbg = [lbg; -inf*ones(2*n_terminal,1)];
              ubg = [ubg; zeros(2*n_terminal,1)];
              % penalize slack
-             J = J + rho_terminal*(s_terminal_ell_inf);
+             J = J + rho_terminal_p*(s_terminal_ell_inf);
         case 4
             if exist('s_elastic','var')
                 % l_inf 
@@ -893,6 +899,12 @@ if terminal_constraint
                 error('This mode of terminal contraint relxation is only avilable if a MPCC elastic mode is used.')
             end
     end   
+end
+
+%% quadratic regularization for speed of time variables;
+% should be off in time optimal problems and on in time-freezing.
+if time_freezing
+    J = J+rho_sot_p*J_regularize_sot;
 end
 
 %% Add Terminal Cost to objective
@@ -922,8 +934,6 @@ end
 
 %% barrier controled penalty formulation
 if mpcc_mode >= 8 && mpcc_mode <= 10
-    %     rho_elastic = MX.sym('rho_elastic', 1);
-%     eval(['rho_elastic   = ' casadi_symbolic_mode '.sym(''rho_elastic'',1);']);
     rho_elastic = define_casadi_symbolic(casadi_symbolic_mode,'rho_elastic',1);
 
     w = {w{:}, rho_elastic};
@@ -975,7 +985,8 @@ end
 %% Objective Terms for Grid Regularization
 % Huristic Regularization.
 if heuristic_step_equilibration || step_equilibration
-    J = J + step_equilibration_penalty*J_regularize_h;
+%     J = J + step_equilibration_penalty*J_regularize_h;
+    J = J + rho_h_p*J_regularize_h;
 end
 %% CasADi Functions for objective complementarity residual
 J_fun = Function('J_fun', {vertcat(w{:})},{J_objective});

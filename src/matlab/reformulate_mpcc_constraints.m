@@ -1,8 +1,6 @@
 function [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(varargin)
 % treatment of the bilinear constraint that arise from complementarity or orthogonality conditions
 %   [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_this_fe,dimensions,current_index);
-
-
 % Sanity check of the input
 import casadi.*
 %%
@@ -48,18 +46,18 @@ end
                         % works better with X1x2 <=0 than X1x2 = 0;
                     case 2
                         % smoothed  - algebraic constraints
-                        g_comp = g_all_comp_j-p*ones(n_all_comp_j,1);
+                        g_comp = g_all_comp_j-p(1)*ones(n_all_comp_j,1);
                         g_comp_lb = zeros(n_all_comp_j,1);
                         g_comp_ub = zeros(n_all_comp_j,1);
                     case 3
-                        g_comp = g_all_comp_j-p*ones(n_all_comp_j,1);
+                        g_comp = g_all_comp_j-p(1)*ones(n_all_comp_j,1);
                         g_comp_lb = -inf*ones(n_all_comp_j,1);
                         g_comp_ub = zeros(n_all_comp_j,1);
                     case 4
                             if objective_scaling_direct
-                                J = J + (1/p)*sum(g_all_comp_j);
+                                J = J + (1/p(1))*sum(g_all_comp_j);
                             else
-                                J = p*J + sum(g_all_comp_j);
+                                J = p(1)*J + sum(g_all_comp_j);
                             end
                     case 5
                         % elastic mode - inequality
