@@ -23,6 +23,9 @@ settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 
+% settings.rho_h = 0;
+settings.delta_h_regularization = 1;
+settings.step_equilibration = 0;
 %%
 g = 10;
 vertical_force = 0;

@@ -101,6 +101,9 @@ if time_freezing
             q = x(1:n_q);
             v = x(n_q+1:end);
         end
+        % update model with this data
+        model.n_q = n_q; model.q = q; model.v = v;
+
 
         % check model function
         if ~exist('f','var')
@@ -124,6 +127,36 @@ if time_freezing
             % remark: friction is currently only if a single constraint is present.
             % remark : multiple contact are only for planar contacts avilable
         end
+        %% Virtual forces
+        % add control variables that should help the convergence but
+        % penalized to be zero in the solution, or by tihght bounds
+        if settings.virtual_forces
+            n_u_virtual = n_x;
+            u_virtual = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_virtual',n_q); % homotopy parameter;
+
+            if settings.virtual_forces_convex_combination
+                psi_vf = define_casadi_symbolic(settings.casadi_symbolic_mode,'psi_vf');
+                model.psi_vf = psi_vf ;
+            end
+            
+            u = [u;u_virtual];
+            f_u_virtual = [zeros(n_q,1);u_virtual;0];
+            f_q_virtual = u_virtual'*u_virtual;
+            f_q_virtual_fun = Function('f_q_virtual_fun',{u},{f_q_virtual});          
+            f_u_virtual_fun = Function('f_u_virtual_fun',{u},{f_u_virtual});          
+            
+            if ~settings.virtual_forces_in_every_mode 
+                if settings.virtual_forces_convex_combination
+                    f = (1-psi_vf)*f+psi_vf*u_virtual;
+                else
+                    f = f+u_virtual;
+                end
+            end
+            model.u = u;
+            model.f_u_virtual_fun  = f_u_virtual_fun; 
+            model.f_q_virtual_fun  = f_q_virtual_fun; 
+        end
+    
         %% Clock state and dimensions
         casadi_symbolic_mode = model.x(1).type_name();
         t = define_casadi_symbolic(casadi_symbolic_mode,'t',1);
@@ -262,6 +295,15 @@ if time_freezing
                 end
 
                 c{1} = [c1;c2;c3];
+                if settings.virtual_forces && settings.virtual_forces_in_every_mode
+                    if settings.virtual_forces_convex_combination
+                        F_temp = F{1};
+                        F_temp(n_q+1:2*n_q,:) = (1-psi_vf)*F_temp(n_q+1:2*n_q,:)+psi_vf*u_virtual;
+                        F{1} = F_temp;
+                    else
+                        F{1} = F{1}+f_u_virtual;
+                    end
+                end
                 % store results and flag that model is created
                 model.F = F; model.c = c;  model.S = S;
                 time_freezing_model_exists = 1;

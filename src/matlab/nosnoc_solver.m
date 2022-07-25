@@ -50,7 +50,12 @@ else
 end
 fprintf('Max homotopy iteration time: %2.3f seconds, min homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
 fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
+
+if sum(stats.cpu_time) <60
 fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
+else
+    fprintf('Total homotopy solver time: %2.3f seconds /  %2.3f minutes. \n',sum(stats.cpu_time),sum(stats.cpu_time)/60);
+end
 fprintf('Complementarity residual: %2.3e.\n',complementarity_iter);
 
 if time_optimal_problem

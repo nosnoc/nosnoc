@@ -116,7 +116,7 @@ if exist('u')
     n_u = length(u);
     % check  lbu
     if exist('lbu')
-        if length(lbu) ~= n_u
+        if length(lbu) ~= n_u && ~virtual_forces
             error('The vector lbu, for the lower bounds of u has the wrong size.')
         end
     else
@@ -124,7 +124,7 @@ if exist('u')
     end
     % check ubu
     if exist('ubu')
-        if length(ubu) ~= n_u
+        if length(ubu) ~= n_u && ~virtual_forces
             error('The vector ubu, for the upper bounds of u has the wrong size.')
         end
     else
@@ -132,7 +132,7 @@ if exist('u')
     end
     % check u0
     if exist('u0')
-        if length(u0) ~= n_u
+        if length(u0) ~= n_u && ~virtual_forces
             error('The vector u0, for the initial guess of u has the wrong size.')
         end
     else
@@ -145,6 +145,18 @@ else
     end
     lbu = [];
     ubu = [];
+end
+
+%% Virtual forces
+if virtual_forces
+    if tighthen_virtual_froces_bounds 
+        M_virtual_forces_box = inf;
+    else
+        M_virtual_forces_box = M_virtual_forces;
+    end
+    u0 = [u0;0*ones(n_q,1)];
+    lbu = [lbu;-M_virtual_forces_box*ones(n_q,1)];
+    ubu = [ubu;M_virtual_forces_box*ones(n_q,1)];
 end
 
 %% Stage and terminal costs check
@@ -724,7 +736,12 @@ c_fun = Function('c_fun',{x},{c_all});
 % end
 dot_c = c_all.jacobian(x)*f_x;
 if n_u >0
+    if virtual_forces && virtual_forces_convex_combination
+        % for time freezing systmes
+        f_x_fun = Function('f_x_fun',{x,z,u,psi_vf},{f_x,f_q});
+    else
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
+    end
     g_lp_fun = Function('g_lp_fun',{x,z,u},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
     dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 else
