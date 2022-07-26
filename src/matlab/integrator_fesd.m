@@ -45,7 +45,6 @@ if nargin>3
 end
 %%  unfold data
 % use_previous_solution_as_initial_guess = 1;
-
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 

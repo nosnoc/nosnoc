@@ -153,9 +153,7 @@ ind_total = ind_x;
 % Integral of the clock state if no time rescaling is present.
 sum_h_ki_control_interval_k = 0;
 sum_h_ki_all = 0;
-
 % Initalization of forward and backward sums for the step-equilibration
-
 sigma_theta_B_k = 0; % backward sum of theta at finite element k
 sigma_lambda_B_k = 0; % backward sum of lambda at finite element k
 sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
@@ -173,13 +171,10 @@ mpcc_var_current_fe.p = p;
 comp_var_current_fe.cross_comp_control_interval_k = 0;
 comp_var_current_fe.cross_comp_control_interval_all = 0;
 
-g_step_eq  = [];
-
 %% Formulate the NLP / Main Discretization loop
 for k=0:N_stages-1
     %% Variables for the controls
     if n_u > 0
-%         eval(['Uk  = ' casadi_symbolic_mode '.sym(''U_' num2str(k) ''',n_u);'])
         Uk = define_casadi_symbolic(casadi_symbolic_mode,['U_' num2str(k)],n_u);
         w = {w{:}, Uk};
         % intialize contros, lower and upper bounds
@@ -197,9 +192,9 @@ for k=0:N_stages-1
             end
 
             if virtual_forces_convex_combination
-                J_virtual_froces = J_virtual_froces+psi_vf;
+%                 J_virtual_froces = J_virtual_froces+psi_vf;
+                J_virtual_froces = J_virtual_froces+psi_vf^2;
             end
-
 
             if tighthen_virtual_froces_bounds
                 
@@ -224,9 +219,7 @@ for k=0:N_stages-1
     if time_rescaling && use_speed_of_time_variables
         if local_speed_of_time_variable
             % at every stage
-%             eval(['s_sot_k  = ' casadi_symbolic_mode '.sym(''s_sot_' num2str(k) ''',1);'])
             s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k)],1);
-
             w = {w{:}, s_sot_k};
             % intialize speed of time (sot), lower and upper bounds
             w0 = [w0; s_sot0];
@@ -238,7 +231,6 @@ for k=0:N_stages-1
         else
             if k == 0
                 % only once
-%                 eval(['s_sot_k  = ' casadi_symbolic_mode '.sym(''s_sot_' num2str(k+1) ''',1);'])
                 s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k+1)],1);
 
                 w = {w{:}, s_sot_k};
@@ -337,7 +329,6 @@ for k=0:N_stages-1
             switch irk_representation
                 case 'integral'
                     % define symbolic variables for values of diff. state a stage points
-%                     eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
                     X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
 
                     w = {w{:}, X_ki_stages{j}};
@@ -352,7 +343,6 @@ for k=0:N_stages-1
                         ubw = [ubw; inf*ones(n_x,1)];
                     end
                 case 'differential'
-%                     eval(['V_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''V_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
                     V_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['V_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
                     w = {w{:}, V_ki_stages{j}};
                     w0 = [w0; v0];
@@ -362,7 +352,6 @@ for k=0:N_stages-1
                     ubw = [ubw; inf*ones(n_x,1)];
 
                     if lift_irk_differential
-%                         eval(['X_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''X_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_x);'])
                         X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_x);
 
                         w = {w{:}, X_ki_stages{j}};
@@ -380,9 +369,7 @@ for k=0:N_stages-1
                     end
             end
             % Note that for algebraic variablies, in both irk formulation modes the alg. variables are treated the same way.
-%             eval(['Z_ki_stages{j}  = ' casadi_symbolic_mode '.sym(''Z_'  num2str(k) '_' num2str(i) '_' num2str(j) ''',n_z);'])
             Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
-
             w = {w{:}, Z_ki_stages{j}};
             % index sets
             ind_z = [ind_z,ind_total(end)+1:ind_total(end)+n_z];
@@ -391,7 +378,6 @@ for k=0:N_stages-1
             lbw = [lbw; lbz];
             ubw = [ubw; ubz];
             w0 = [w0; z0];
-
 
             % collection of all lambda and theta for current finite element, they are used for cross complementarites and step equilibration
             switch pss_mode
@@ -970,8 +956,6 @@ if virtual_forces
    end
 end
 
-
-
 %% Add Terminal Cost to objective
 try
     J = J + f_q_T_fun(Xk_end);
@@ -1054,12 +1038,9 @@ if heuristic_step_equilibration || step_equilibration
     J = J + rho_h_p*J_regularize_h;
 end
 
-
-
 %% CasADi Functions for objective complementarity residual
 J_fun = Function('J_fun', {vertcat(w{:})},{J_objective});
 J_virtual_froces_fun = Function('J_virtual_froces_fun', {vertcat(w{:})},{J_virtual_froces});
-
 comp_res = Function('comp_res',{vertcat(w{:})},{J_comp});
 comp_res_fesd = Function('comp_res_fesd',{vertcat(w{:})},{J_comp_fesd});
 comp_res_std = Function('comp_res_std',{vertcat(w{:})},{J_comp_std});
@@ -1067,8 +1048,6 @@ comp_res_std = Function('comp_res_std',{vertcat(w{:})},{J_comp_std});
 %% NLP Solver
 prob = struct('f', J, 'x', vertcat(w{:}), 'g', vertcat(g{:}),'p',p);
 solver = nlpsol(solver_name, 'ipopt', prob,opts_ipopt);
-% solver = nlpsol(solver_name, 'bonmin', prob);
-
 
 %% Define CasADi function for the switch indicator function.
 if step_equilibration
@@ -1115,11 +1094,12 @@ model.n_cross_comp = n_cross_comp;
 model.ind_total = ind_total;
 model.h = h;
 model.h_k = h_k;
+model.n_cross_comp_total = sum(n_cross_comp(:));
 %% Store solver initalization data
 solver_initalization.w0 = w0;
 solver_initalization.lbw = lbw;
 solver_initalization.ubw = ubw;
 solver_initalization.lbg = lbg;
 solver_initalization.ubg = ubg;
-n_cross_comp_total = sum(n_cross_comp(:));
+
 end

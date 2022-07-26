@@ -116,7 +116,8 @@ impose_terminal_phyisical_time = 1;
 s_sot0 = 1;
 s_sot_max =	25;
 s_sot_min =	1;
-rho_sot = 1e1;
+rho_sot = 1e-2;
+
 
 T_final_max = 1e2;
 T_final_min = 0;
@@ -124,10 +125,12 @@ time_freezing_reduced_model = 0; % analytic reduction of lifter formulation, les
 time_freezing_hysteresis = 0; % do not do automatic time freezing generation for hysteresis, it is not supported yet.
 time_freezing_nonlinear_friction_cone = 1; % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
 
-
 integrator_forward_sweep = 0; % make a simulation for current control guess to get guess for all variables
+
+time_freezing_quadrature_state = 0; % make a nonsmooth quadrature state to integrate only if physical time is running
+time_freezing_lift_forces = 1; % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0; 
 %% Virtual forces in time-freezing systems
-virtual_forces = 1;
+virtual_forces = 0;
 tighthen_virtual_froces_bounds = 0; % squeez bounds for virual forces to zero
 penalize_virtual_forces = 1;  % increasing qudratic penalty for virtual forces
 virtual_forces_convex_combination = 0;  % 1- convex combination between kinematics and true dynamics, 0 - 

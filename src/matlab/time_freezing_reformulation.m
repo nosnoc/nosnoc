@@ -94,20 +94,34 @@ if time_freezing
             % no friction for a point as there is no tangentional direction
         end
 
-        % dimensions and state space splitö
+        % dimensions and state space split
+        casadi_symbolic_mode = model.x(1).type_name();
         n_x = size(x,1);
         n_q = n_x/2;
         if ~exist('q','var') && ~exist('v','var')
             q = x(1:n_q);
-            v = x(n_q+1:end);
+            v = x(n_q+1:2*n_q);
         end
         % update model with this data
         model.n_q = n_q; model.q = q; model.v = v;
 
 
+           
+
+
         % check model function
         if ~exist('f','var')
             error('The function model.f, in dv/dt =  f(q,v) + ... is not provided to the model.');
+        end
+
+
+        if ~exist('f_gravity','var')
+            if ~exist('gravity','var') 
+                f_gravity = gravity;
+            else
+                f_gravity = zeros(n_q,1);
+            end
+           
         end
 
         % Check intertia matrix
@@ -119,6 +133,42 @@ if time_freezing
         else
             invM = inv(M);
         end
+
+%         % is the inertia matrix inverted and treated directly or lifted
+        if settings.time_freezing_lift_forces
+              invM = eye(n_q); % inverse not used when lifting.
+        else
+             f = invM*f; % update model by mutpliting it with the inverse
+             model.f = model.f;
+        end
+
+        n_quad  = 0;
+        if settings.time_freezing_quadrature_state
+            % define quadrature state
+            L = define_casadi_symbolic(casadi_symbolic_mode,'L',1);         
+            % update lower and upper bounds of lbx and ubx
+            if exist('lbx')
+                model.lbx = [model.lbx;-inf];
+            end
+            if exist('ubx')
+                model.ubx = [model.ubx;inf];
+            end
+            x = [x;L];
+            model.x = x;
+            model.x0 = [model.x0;0];
+            f = [f;f_q];
+            model.f = f;
+            model.f_q = 0;
+            if exist('f_q_T','var')
+                model.f_q_T  = model.f_q_T + L;
+            else
+                model.f_q_T  = L;
+            end
+            n_quad = 1;
+        end
+        model.n_quad = n_quad;
+
+
 
         % multiple impacts
         if n_unilateral > 1
@@ -140,16 +190,16 @@ if time_freezing
             end
             
             u = [u;u_virtual];
-            f_u_virtual = [zeros(n_q,1);u_virtual;0];
+            f_u_virtual = [zeros(n_q,1);u_virtual;zeros(n_quad+1,1)];
             f_q_virtual = u_virtual'*u_virtual;
             f_q_virtual_fun = Function('f_q_virtual_fun',{u},{f_q_virtual});          
             f_u_virtual_fun = Function('f_u_virtual_fun',{u},{f_u_virtual});          
             
             if ~settings.virtual_forces_in_every_mode 
                 if settings.virtual_forces_convex_combination
-                    f = (1-psi_vf)*f+psi_vf*u_virtual;
+                    f = (1-psi_vf)*f+psi_vf*(u_virtual+f_gravity);
                 else
-                    f = f+u_virtual;
+                    f = f+[u_virtual;zeros(n_quad,1)];
                 end
             end
             model.u = u;
@@ -158,7 +208,6 @@ if time_freezing
         end
     
         %% Clock state and dimensions
-        casadi_symbolic_mode = model.x(1).type_name();
         t = define_casadi_symbolic(casadi_symbolic_mode,'t',1);
         % update lower and upper bounds of lbx and ubx
         if exist('lbx')
@@ -192,13 +241,13 @@ if time_freezing
             % create auxiliary dynamics
             switch n_unilateral
                 case 1
-                    f_aux_n1 = [zeros(n_q,1);invM*nabla_q_f_c*a_n;0];
+                    f_aux_n1 = [zeros(n_q,1);invM*nabla_q_f_c*a_n;zeros(n_quad+1,1)];
                 case 2
                     if n_dim_contact >2
                         error('Multiple contacts currently only for planar models avilable.')
                     end
-                    f_aux_n1 = [zeros(n_q,1);invM*nabla_q_f_c(:,1)*a_n;0];
-                    f_aux_n2 = [zeros(n_q,1);invM*nabla_q_f_c(:,2)*a_n;0];
+                    f_aux_n1 = [zeros(n_q,1);invM*nabla_q_f_c(:,1)*a_n;zeros(n_quad+1,1)];
+                    f_aux_n2 = [zeros(n_q,1);invM*nabla_q_f_c(:,2)*a_n;zeros(n_quad+1,1)];
                 otherwise
                     error('Currently only up to two unilateral constraint in the planar case suported.')
             end
@@ -251,17 +300,17 @@ if time_freezing
                 a_t = mu*a_n;
                 switch n_dim_contact
                     case 2
-                        f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;0];
-                        f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;0];
+                        f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
+                        f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
                     case 3
                         eps_tangential = 1e-8;
                         T_q = [tangent1 tangent2]; % spans tangent space
                         v_tan = T_q'*v;
                         v_tan_norm = norm(v_tan+1e-16); % avoid dividing by zero at initalisation.
                         % auxiliary dynamics pushing towards origin
-                        f_aux_t1 = [zeros(n_q,1);-invM*T_q*(a_t*v_tan/(v_tan_norm));0];
+                        f_aux_t1 = [zeros(n_q,1);-invM*T_q*(a_t*v_tan/(v_tan_norm));zeros(n_quad+1,1)];
                         % relaxed pushing toward relaxed circle around origin
-                        f_aux_t2 = [zeros(n_q,1);invM*T_q*v_tan;0];
+                        f_aux_t2 = [zeros(n_q,1);invM*T_q*v_tan;zeros(n_quad+1,1)];
                 end
             end
                 % switching functions
@@ -298,7 +347,7 @@ if time_freezing
                 if settings.virtual_forces && settings.virtual_forces_in_every_mode
                     if settings.virtual_forces_convex_combination
                         F_temp = F{1};
-                        F_temp(n_q+1:2*n_q,:) = (1-psi_vf)*F_temp(n_q+1:2*n_q,:)+psi_vf*u_virtual;
+                        F_temp(n_q+1:2*n_q,:) = (1-psi_vf)*F_temp(n_q+1:2*n_q,:)+psi_vf*(u_virtual+f_gravity);
                         F{1} = F_temp;
                     else
                         F{1} = F{1}+f_u_virtual;
@@ -311,7 +360,7 @@ if time_freezing
                 % elastic
                 if ~exist('k_aux')
                     k_aux = 10;
-                    if  settings.print_level > 1;
+                    if settings.print_level > 1
                         fprintf('Info on Time-Freezing: Setting default value for k_aux = 10.\n')
                     end
                 end
@@ -324,7 +373,7 @@ if time_freezing
                 N  = [nabla_q_f_c zeros(n_q,1);...
                       zeros(n_q,1) invM*nabla_q_f_c];
                 f_aux_n1 = N*K*N'*[q;v];
-                f_aux_n1 = [f_aux_n1;0];
+                f_aux_n1 = [f_aux_n1;zeros(n_quad+1,1)];
                 f = [f;1];
                 % updated with clock state
                 model.f = f;

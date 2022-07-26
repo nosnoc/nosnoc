@@ -25,16 +25,36 @@
 % [results,stats,model] = nosnoc_solver(model,settings);
 % [results,stats,model,settings] = nosnoc_solver(model,settings);
 % [results,stats,model,settings,solver_initalization] = nosnoc_solver(model,settings);
-function [varargout] = nosnoc_solver(model,settings)
+function [varargout] = nosnoc_solver(varargin)
+model_unedited = varargin{1};
+settings_unedited = varargin{2};
+if nargin > 2
+    w0 = varargin{3};
+end
 import casadi.*
 %% Create NLP element and solve OCP with homotopy
-
 tic
-[solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
+[solver,solver_initalization,model,settings] = create_nlp_nosnoc(model_unedited,settings_unedited);
 solver_generating_time = toc;
 if settings.print_level >=2
     fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
 end
+%% Check provided initial guess
+if exist("w0",'var')
+    if length(w0) == length(solver_initalization.w0)
+        solver_initalization.w0 = w0;
+    else
+        fprintf('Provided user guess does not have the appropiate dimension, it should be a vector of length %d, the provided vectors has a length of %d. \n',length(solver_initalization.w0),length(w0));
+        fprintf('Taking the generated default initial guess... \n');
+    end
+end
+
+%% Solve OCP with kinematics model in time-freezing
+    if settings.time_freezing && settings.virtual_forces_kinematic_iteration
+        w0 = time_freezing_kinematics_iteration(model_unedited,settings_unedited);
+        solver_initalization.w0 = [w0{:}];
+    end
+%% Solve the discrete-time OCP
 [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
 total_time = sum(stats.cpu_time);
 %% Process and store results
@@ -42,8 +62,6 @@ unfold_struct(settings,'caller');
 unfold_struct(model,'caller');
 results = extract_results_from_solver(model,settings,results);
 complementarity_iter = full(comp_res(results.w_opt));
-
-
 
 %% Verbose
 stats.total_time  = total_time;
@@ -56,7 +74,6 @@ else
 end
 fprintf('Max homotopy iteration time: %2.3f seconds, min homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
 fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
-
 if sum(stats.cpu_time) <60
     fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
 else
@@ -66,9 +83,9 @@ fprintf('Complementarity residual: %2.3e.\n',complementarity_iter);
 
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
-    if T_opt  < 1e-3
-        T_opt = t_grid(end);
-    end
+%     if T_opt  < 1e-3
+%         T_opt = t_grid(end);
+%     end
     fprintf('Final time T_opt: %2.4f.\n',T_opt);
 end
 fprintf('-----------------------------------------------------------------------------------------------\n\n');

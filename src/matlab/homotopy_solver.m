@@ -12,6 +12,7 @@ s_elastic_iter = 1;
 
 sigma_k = sigma_0;
 x0 = model.x0;
+
 try
     complementarity_stats = [full(comp_res(w0))];
 catch
@@ -43,35 +44,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
         sigma_k = kappa*sigma_k;
     end
     p_val(1) = sigma_k;
-
-    % do an nlp solve with only kinematics
-    if virtual_forces_kinematic_iteration && ii ==0
-        if virtual_forces_convex_combination
-            ubw_kin = ubw; ubw_kin(model.ind_vf) = 1;
-            lbw_kin = lbw; lbw_kin(model.ind_vf) = 1;
-            tic
-            results = solver('x0', w0, 'lbx', lbw_kin, 'ubx', ubw_kin,'lbg', lbg, 'ubg', ubg,'p',p_val);
-            cpu_time_iter = toc;
-            w0 = full(results.x);
-            complementarity_iter = full(comp_res(w0));
-            vf_resiudal = full(model.J_virtual_froces_fun(w0));
-            if print_level >= 3
-                fprintf('-----------------------------------------------------------------------------------------------\n');
-                fprintf('Solved problem with kinematic model.\n');
-                fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed.\n',ii,N_homotopy,sigma_k);
-                fprintf('Complementarity resiudal: %2.2e.\n',complementarity_iter);
-                fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
-                fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
-                if virtual_forces
-                    fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
-                end
-            else
-                fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
-            end
-            fprintf('-----------------------------------------------------------------------------------------------\n');
-        end
-    end
-% end
+  % end
 
 
 % if integrator_forward_sweep

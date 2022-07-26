@@ -1,21 +1,21 @@
 %
 %    This file is part of NOSNOC.
 %
-%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    NOSNOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
 %
-%    NOS-NOC is free software; you can redistribute it and/or
+%    NOSNOC is free software; you can redistribute it and/or
 %    modify it under the terms of the GNU Lesser General Public
 %    License as published by the Free Software Foundation; either
 %    version 3 of the License, or (at your option) any later version.
 %
-%    NOS-NOC is distributed in the hope that it will be useful,
+%    NOSNOC is distributed in the hope that it will be useful,
 %    but WITHOUT ANY WARRANTY; without even the implied warranty of
 %    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %    Lesser General Public License for more details.
 %
 %    You should have received a copy of the GNU Lesser General Public
-%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    License along with NOSNOC; if not, write to the Free Software Foundation,
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
@@ -629,8 +629,7 @@ g_lift = [g_lift_beta; g_lift_gamma];
 %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS
 switch pss_mode
     case 'Stewart'
-        % symbolic variables
-        %         z = [theta;lambda;mu];
+        % symbolic variables z = [theta;lambda;mu];
         z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
         lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_simplex,1)];
         ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_simplex,1)];
@@ -675,9 +674,6 @@ switch pss_mode
         z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
         n_lift_eq =length(g_lift);
 end
-model.z0 = z0;
-model.lbz = lbz;
-model.ubz = ubz;
 
 %% Reformulate the Filippov ODE into a DCS
 f_x = zeros(n_x,1);
@@ -722,8 +718,41 @@ for ii = 1:n_simplex
             f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_vec(ii),1)-alpha_all{ii});
     end
 end
-g_lp = [g_z;g_z_convex;g_lift];
+
+
+%% Lifting of forces in time-freezing
+% the r.h.s of M(q)ddot{q} = f(q,dor{q},u) into  M{q}z-f(q,dor{q},u)= 0; \ddot{q} = z
+g_z_lift_forces = [];
+if time_freezing && time_freezing_lift_forces
+    
+    f_v = f_x(n_q+1:2*n_q);
+    if n_u > 0 
+        if virtual_forces_convex_combination
+            f_v_fun = Function('f_v_fun',{x,z,u,psi_vf},{f_v});
+            z0_forces = full(f_v_fun(x0,z0,u0,0));
+        else
+            f_v_fun = Function('f_v_fun',{x,z,u},{f_v});
+            z0_forces = full(f_v_fun(x0,z0,u0));
+        end       
+    else
+        f_v_fun = Function('f_v_fun',{x,z},{f_v});
+        z0_forces = full(f_v_fun(x0,z0));
+    end
+    z_forces = define_casadi_symbolic(casadi_symbolic_mode,'z_forces',n_q);
+    z = [z;z_forces];
+    n_z = n_z+n_q;
+    z0 = [z0;z0_forces];
+    lbz = [lbz;-inf*ones(n_q,1)];
+    ubz = [ubz;inf*ones(n_q,1)];
+    g_z_lift_forces = [M*z_forces - f_v]; % lifting function
+    % new simple dynamics after lifting
+    f_x = [f_x(1:n_q); z_forces; f_x(end-n_quad:end)];
+end
+
+%%  collect all algebraic equations
+g_lp = [g_z;g_z_convex;g_lift;g_z_lift_forces];
 n_algebraic_constraints  = length(g_lp);
+
 %% CasADi functions for indictaor and region constraint functions
 % model equations
 % if n_u >0
@@ -787,6 +816,11 @@ model.ubu = ubu;
 if n_u > 0
     model.u0 = u0;
 end
+
+model.z0 = z0;
+model.lbz = lbz;
+model.ubz = ubz;
+
 
 if g_ineq_constraint
     model.g_ineq_lb = g_ineq_lb;
