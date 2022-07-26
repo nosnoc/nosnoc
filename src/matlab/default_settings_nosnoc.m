@@ -125,7 +125,7 @@ time_freezing_reduced_model = 0; % analytic reduction of lifter formulation, les
 time_freezing_hysteresis = 0; % do not do automatic time freezing generation for hysteresis, it is not supported yet.
 time_freezing_nonlinear_friction_cone = 1; % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
 
-integrator_forward_sweep = 0; % make a simulation for current control guess to get guess for all variables
+integrator_forward_sweep_procedure = 0; % make a simulation for current control guess to get guess for all variables
 
 time_freezing_quadrature_state = 0; % make a nonsmooth quadrature state to integrate only if physical time is running
 time_freezing_lift_forces = 1; % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0; 

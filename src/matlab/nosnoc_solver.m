@@ -48,6 +48,21 @@ if exist("w0",'var')
         fprintf('Taking the generated default initial guess... \n');
     end
 end
+%% Create integrator for forward sweeps between homotopy iterations
+if integrator_forward_sweep_procedure
+    model_int = model_unedited;
+    settings_int = settings_unedited;
+    settings_int.integrator_forward_sweep_procedure = 0; % avoid infite recursions
+    model_int.N_sim = model_int.N_stages;
+    model_int.N_stages = 1;
+    tic
+    [solver_int,solver_initalization_int,model_int,settings_int] = create_nlp_nosnoc(model_int,settings_int);
+    solver_generating_time = toc;
+    if settings.print_level >=2
+        fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
+    end
+end
+end
 
 %% Solve OCP with kinematics model in time-freezing
 cpu_time_presolve = 0;

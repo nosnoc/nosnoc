@@ -1,4 +1,10 @@
-function [varargout] = homotopy_solver(solver,model,settings,solver_initalization)
+function [varargout] = homotopy_solver(varargin)
+% homotopy_solver(solver,model,settings,solver_initalization)
+solver = varargin{1};
+model = varargin{2};
+settings = varargin{3};
+solve_initalization = varargin{4};
+
 import casadi.*
 
 %%  unfold data
@@ -46,23 +52,12 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     p_val(1) = sigma_k;
   % end
 
-
-% if integrator_forward_sweep
-%     u_sim = w0(model.ind_u);
-%     u_sim = reshape(u_sim,model.n_u,model.N_stages);
-%     model_int = model; settings_int = settings;
-%     model_int.N_sim = model.N_stages;
-%     model_int.N_stages =1;
-%     model_int = rmfield(model_int,'F'); model_int = rmfield(model_int,'S');
-%     settings_int.integrator_forward_sweep = 0;
-%     settings_int.time_freezing_model_exists = 0;
-%     [results] = integrator_fesd(model_int,settings_int,u_sim);
-%     w0(model.ind_x)
-%     w0(model.ind_z)
-%     w0(model.ind_h)
-%     w0(model.ind_sot)    
-%     w0(model.ind_h)
-% end
+    
+    if integrator_forward_sweep_procedure
+        % do not do it in first iteration if kinematic presolve was done
+          u_sim = w_opt(ind_u);
+          w0 = integrator_forward_sweep(model_int,solver_int,solve_initalization_int);
+    end
 
 % solve problem with fixed step size
 if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
