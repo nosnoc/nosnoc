@@ -1,4 +1,4 @@
-function [vargout] = time_freezing_kinematics_iteration(varargin)
+function [varargout] = time_freezing_kinematics_iteration(varargin)
 %% preproces settings
 model = varargin{1};
 settings = varargin{2};
@@ -25,7 +25,9 @@ settings.virtual_forces = 1;
 settings.tighthen_virtual_froces_bounds = 0; % squeez bounds for virual forces to zero
 settings.penalize_virtual_forces = 1;  % increasing qudratic penalty for virtual forces
 settings.virtual_forces_convex_combination = 1;  % 1- convex combination between kinematics and true dynamics, 0 -
-settings.virtual_forces_in_every_mode = 1; % 0 -is it just in uncondraind dynamics (nonsmoothnes presevred in convex mode), 1-it is in every pss mode (smooth kinematics ode in convex mode)
+% take from the input/default
+% settings.virtual_forces_in_every_mode = 1; % 0 -is it just in uncondraind dynamics (nonsmoothnes presevred in convex mode), 1-it is in every pss mode (smooth kinematics ode in convex mode)
+% settings.virtual_forces_in_every_mode = 0; (% usually more difficult problem)
 settings.virtual_forces_parametric_multipler = 0; % 1- multiplier is external parameter, 0 - optimization variable
 settings.M_virtual_forces = 1e2; % bound for virtual forces
 
@@ -43,6 +45,17 @@ solver_generating_time = toc;
 if settings.print_level >=2
     fprintf('Kinematics solver generated in in %2.2f s. \n',solver_generating_time);
 end
+
+%% Check provided initial guess
+if exist("w0",'var')
+    if length(w0) == length(solver_initalization.w0)
+        solver_initalization.w0 = w0;
+    else
+        fprintf('Provided user guess does not have the appropiate dimension, it should be a vector of length %d, the provided vectors has a length of %d. \n',length(solver_initalization.w0),length(w0));
+        fprintf('Taking the generated default initial guess... \n');
+    end
+end
+
 %% Update bounds
 solver_initalization.lbw(model.ind_vf) = 1;
 solver_initalization.ubw(model.ind_vf) = 1;
@@ -66,7 +79,9 @@ if print_level >= 3
     fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
     fprintf('-----------------------------------------------------------------------------------------------\n');
 end
-%% output data
+%% post process
+w0_unchanged = w0;
+
 if remove_psi_vf 
     w0(ind_vf) = [];
 end
@@ -77,6 +92,9 @@ if remove_u_virtual
     ind_u = ind_u(:);
     w0(ind_u) = [];
 end
+%% output
+varargout{1} = w0;
+varargout{2} = cpu_time_iter;
+varargout{3} = w0_unchanged;
 
-vargout{1} = w0;
 end
