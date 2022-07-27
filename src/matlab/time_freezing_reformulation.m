@@ -117,9 +117,9 @@ if time_freezing
 
         if ~exist('f_gravity','var')
             if ~exist('gravity','var') 
-                f_gravity = gravity;
-            else
                 f_gravity = zeros(n_q,1);
+            else
+                f_gravity = gravity;
             end
            
         end

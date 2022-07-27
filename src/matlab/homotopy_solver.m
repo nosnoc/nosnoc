@@ -3,7 +3,7 @@ function [varargout] = homotopy_solver(varargin)
 solver = varargin{1};
 model = varargin{2};
 settings = varargin{3};
-solve_initalization = varargin{4};
+solver_initalization = varargin{4};
 
 import casadi.*
 

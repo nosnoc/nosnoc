@@ -49,7 +49,7 @@ if exist("w0",'var')
     end
 end
 %% Create integrator for forward sweeps between homotopy iterations
-if integrator_forward_sweep_procedure
+if settings.integrator_forward_sweep_procedure
     model_int = model_unedited;
     settings_int = settings_unedited;
     settings_int.integrator_forward_sweep_procedure = 0; % avoid infite recursions
@@ -62,17 +62,17 @@ if integrator_forward_sweep_procedure
         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
     end
 end
-end
+% end
 
 %% Solve OCP with kinematics model in time-freezing
 cpu_time_presolve = 0;
-    if settings.time_freezing && settings.virtual_forces_kinematic_iteration
-        settings_unedited.virtual_forces_in_every_mode = 1;
-        [w0,cpu_time_presolve,w0_unchanged] = time_freezing_kinematics_iteration(model_unedited,settings_unedited);
-%          settings_unedited.virtual_forces_in_every_mode = 0;
-%         [w0,cpu_time_presolve] = time_freezing_kinematics_iteration(model_unedited,settings_unedited,w0_unchanged);
-%         solver_initalization.w0 = w0;
-    end
+if settings.time_freezing && settings.virtual_forces_kinematic_iteration
+    settings_unedited.virtual_forces_in_every_mode = 1;
+    [w0,cpu_time_presolve,w0_unchanged] = time_freezing_kinematics_iteration(model_unedited,settings_unedited);
+    %          settings_unedited.virtual_forces_in_every_mode = 0;
+    %         [w0,cpu_time_presolve] = time_freezing_kinematics_iteration(model_unedited,settings_unedited,w0_unchanged);
+    %         solver_initalization.w0 = w0;
+end
 %% Solve the discrete-time OCP
 [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
 total_time = sum(stats.cpu_time)+cpu_time_presolve;
@@ -102,9 +102,9 @@ fprintf('Complementarity residual: %2.3e.\n',complementarity_iter);
 
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
-%     if T_opt  < 1e-3
-%         T_opt = t_grid(end);
-%     end
+    %     if T_opt  < 1e-3
+    %         T_opt = t_grid(end);
+    %     end
     fprintf('Final time T_opt: %2.4f.\n',T_opt);
 end
 fprintf('-----------------------------------------------------------------------------------------------\n\n');

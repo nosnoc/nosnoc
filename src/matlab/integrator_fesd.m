@@ -41,7 +41,7 @@ if nargin>3
     solver = varargin{4};
     solver_initalization = varargin{5};
     solver_exists = 1;
-    model.p_val(end) = model.T;
+%     model.p_val(end) = model.T;
 end
 %%  unfold data
 % use_previous_solution_as_initial_guess = 1;
