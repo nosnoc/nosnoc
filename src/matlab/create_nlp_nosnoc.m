@@ -228,6 +228,7 @@ for k=0:N_stages-1
             % index colector for sot variables
             ind_sot = [ind_sot,ind_total(end)+1:ind_total(end)+1];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+            J_regularize_sot = J_regularize_sot+(s_sot_k-1)^2;
         else
             if k == 0
                 % only once
@@ -241,11 +242,12 @@ for k=0:N_stages-1
                 % index colector for sot variables
                 ind_sot = [ind_sot,ind_total(end)+1:ind_total(end)+1];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+                J_regularize_sot = J_regularize_sot+(s_sot_k)^2;
             end
             
         end
         % enfroce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
-        J_regularize_sot = J_regularize_sot+s_sot_k^2;
+        
     end
     %% General Nonlinear constriant (on control interval boundary)
     % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
@@ -855,6 +857,10 @@ end
 %% Terminal Constraints
 % Add Terminal Constrint
 if terminal_constraint
+if relax_terminal_constraint_homotopy
+    rho_terminal_p = 1/sigma_p;
+end
+
     g_terminal = g_terminal_fun(Xk_end);
     n_terminal = length(g_terminal_lb);
     if ~isequal(g_terminal_lb,g_terminal_lb)

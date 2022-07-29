@@ -5,8 +5,13 @@ model = varargin{2};
 settings = varargin{3};
 solver_initalization = varargin{4};
 
-import casadi.*
+if nargin>4
+    model_int = varargin{5};
+    settings_int = varargin{6};
+end
 
+
+import casadi.*
 %%  unfold data
 unfold_struct(settings,'caller')
 unfold_struct(solver_initalization,'caller')
@@ -28,10 +33,7 @@ end
 cpu_time = [];
 homotopy_iterations = [];
 w0_base = w0;
-
-if store_all_homotopy_iterates
-    W = [w0];
-end
+W = [w0];
 
 lbw_h = lbw; ubw_h = ubw;
 lbw_h(model.ind_h) = model.h_k(1);
@@ -50,71 +52,75 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
         sigma_k = kappa*sigma_k;
     end
     p_val(1) = sigma_k;
-  % end
-
-    
-    if integrator_forward_sweep_procedure
-        % do not do it in first iteration if kinematic presolve was done
-          u_sim = w_opt(ind_u);
-          w0 = integrator_forward_sweep(model_int,solver_int,solve_initalization_int);
+    if h_fixed_to_free_homotopy
+        p_val(3) = 1+(sigma_k*1e4);
     end
+    %     if integrator_forward_sweep_procedure
+    %         % do not do it in first iteration if kinematic presolve was done
+    %         if (virtual_forces_kinematic_iteration && ii >0) && ii >=0
+    %           u_sim = w0(model.ind_u);
+    %           model_int.T_sim = model.h;
+    %           settings_int.mpcc_mode = 4;
+    %           settings_int.print_level = 2;
+    %           u_sim = reshape(u_sim,model.n_u,model.N_stages);
+    %           [results,stats] = integrator_fesd(model_int,settings_int,u_sim);
+    % %           w0 = integrator_forward_sweep(model_int,solver_int,solve_initalization_int);
+    %         end
+    %     end
 
-% solve problem with fixed step size
-if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
-    tic
-    results = solver('x0', w0, 'lbx', lbw_h, 'ubx', ubw_h,'lbg', lbg, 'ubg', ubg,'p',p_val);
-    cpu_time_iter = toc ;
-    w_opt = full(results.x);
-    if ~h_fixed_change_sigma
-        ii = -1; h_fixed_iterations  = 0;
-    end
-else
-    tic
-    results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',p_val);
-    cpu_time_iter = toc ;
-end
-
-
-cpu_time = [cpu_time,cpu_time_iter];
-
-w_opt = full(results.x);
-w0 = w_opt;
-if store_all_homotopy_iterates
-    W = [W,w_opt];
-end
-% complementarity
-complementarity_iter = full(comp_res(w_opt));
-complementarity_stats = [complementarity_stats;complementarity_iter];
-if virtual_forces
-    vf_resiudal = full(model.J_virtual_froces_fun(w_opt));
-end
-% update counter
-ii = ii+1;
-
-% Verbose
-if print_level>=3
-    fprintf('-----------------------------------------------------------------------------------------------\n');
-    fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed.\n',ii,N_homotopy,sigma_k);
-    fprintf('Complementarity resiudal: %2.2e.\n',complementarity_iter);
-    if model.n_u >0
-        fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
-        fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
-        if time_optimal_problem
-            fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
-        end
-        if virtual_forces
-            fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
+    % solve problem with fixed step size
+    if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
+        tic
+        results = solver('x0', w0, 'lbx', lbw_h, 'ubx', ubw_h,'lbg', lbg, 'ubg', ubg,'p',p_val);
+        cpu_time_iter = toc ;
+        w_opt = full(results.x);
+        if ~h_fixed_change_sigma
+            ii = -1; h_fixed_iterations  = 0;
         end
     else
-        fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
+        tic
+        results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',p_val);
+        cpu_time_iter = toc ;
     end
-    fprintf('-----------------------------------------------------------------------------------------------\n');
-end
-%
-%     if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
-%         error('The homotopy loop is diverging. Try chaning parameters of the homotopy loop or check is the OCP well posed.')
-%         break;
-%     end
+
+    cpu_time = [cpu_time,cpu_time_iter];
+    w_opt = full(results.x);
+    w0 = w_opt;
+    W = [W,w_opt]; % all homotopy iterations
+
+    % complementarity
+    complementarity_iter = full(comp_res(w_opt));
+    complementarity_stats = [complementarity_stats;complementarity_iter];
+    if virtual_forces
+        vf_resiudal = full(model.J_virtual_froces_fun(w_opt));
+    end
+    % update counter
+    ii = ii+1;
+
+    % Verbose
+    if print_level>=3
+        fprintf('-----------------------------------------------------------------------------------------------\n');
+        fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed.\n',ii,N_homotopy,sigma_k);
+        fprintf('Complementarity resiudal: %2.2e.\n',complementarity_iter);
+        if model.n_u >0
+            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
+            fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
+            if time_optimal_problem
+                fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
+            end
+            if virtual_forces
+                fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
+            end
+        else
+            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
+        end
+        fprintf('-----------------------------------------------------------------------------------------------\n');
+    end
+    %
+    %     if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
+    %         error('The homotopy loop is diverging. Try chaning parameters of the homotopy loop or check is the OCP well posed.')
+    %         break;
+    %     end
 end
 %% polish homotopy solution with fixed active set.
 if polishing_step
@@ -122,21 +128,17 @@ if polishing_step
     %     [results] = polishing_homotopy_solution(model,settings,results,sigma_k,solver,solver_initalization);
     complementarity_iter = results.complementarity_iter;
     complementarity_stats = [complementarity_stats;complementarity_iter];
-    if store_all_homotopy_iterates
-        W = [W,results.w_opt];
-    end
+    W = [W,results.w_opt];
 end
 
-%% save states
+%% collcet stats
+results.W = W;
 stats.complementarity_stats = complementarity_stats;
 stats.cpu_time = cpu_time;
 stats.cpu_time_total = sum(cpu_time);
-% stats.w_opt = w_opt;
 stats.sigma_k = sigma_k;
 stats.homotopy_iterations = ii;
-if store_all_homotopy_iterates
-    results.W = W;
-end
+
 %% loop output
 varargout{1} = results;
 varargout{2} = stats;

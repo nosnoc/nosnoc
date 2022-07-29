@@ -56,7 +56,6 @@ N_homotopy = ceil(abs(log(sigma_N/sigma_0)/log(kappa)));
 s_elastic_0	= 1;
 s_elastic_max =	1e1;
 s_elastic_min = 0;
-store_all_homotopy_iterates = 1;
 
 % Default settings for the barrier tuned penalty/slack variables for mpcc modes 8 do 10.
 rho_penalty = 1e1;
@@ -83,6 +82,8 @@ h_fixed_max_iter = 1; % number of iterations that are done with fixed h in the h
 h_fixed_change_sigma = 1; % if this is on, do not update sigma and just solve on nlp with fixed h.
 polishing_step = 0; % huristic for fixing active set, yet exerimental, not recommended to use.
 polishing_derivative_test = 0; % check in sliding mode also the derivative of switching functions
+h_fixed_to_free_homotopy = 0; % start with large penaly for equidistant grid, end with variable equilibrated grid. 
+
 
 %% Step equilibration	
 regularize_h = 1;
@@ -116,8 +117,7 @@ impose_terminal_phyisical_time = 1;
 s_sot0 = 1;
 s_sot_max =	25;
 s_sot_min =	1;
-rho_sot = 1e-2;
-
+rho_sot = 0;
 
 T_final_max = 1e2;
 T_final_min = 0;
@@ -126,9 +126,8 @@ time_freezing_hysteresis = 0; % do not do automatic time freezing generation for
 time_freezing_nonlinear_friction_cone = 1; % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
 
 integrator_forward_sweep_procedure = 0; % make a simulation for current control guess to get guess for all variables
-
 time_freezing_quadrature_state = 0; % make a nonsmooth quadrature state to integrate only if physical time is running
-time_freezing_lift_forces = 1; % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0; 
+time_freezing_lift_forces = 0; % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0; 
 %% Virtual forces in time-freezing systems
 virtual_forces = 0;
 tighthen_virtual_froces_bounds = 0; % squeez bounds for virual forces to zero
@@ -163,6 +162,7 @@ opts_ipopt = opts_ipopt;
 relax_terminal_constraint = 0; %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf;
 relax_terminal_constraint_from_above = 0; 
 rho_terminal = 1e2;
+relax_terminal_constraint_homotopy = 0; % terminal penalty is governed by homotopy parameter
 
 %% Ingerator Specific 
 use_previous_solution_as_initial_guess = 0;

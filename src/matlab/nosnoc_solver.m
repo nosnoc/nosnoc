@@ -49,19 +49,19 @@ if exist("w0",'var')
     end
 end
 %% Create integrator for forward sweeps between homotopy iterations
-if settings.integrator_forward_sweep_procedure
-    model_int = model_unedited;
-    settings_int = settings_unedited;
-    settings_int.integrator_forward_sweep_procedure = 0; % avoid infite recursions
-    model_int.N_sim = model_int.N_stages;
-    model_int.N_stages = 1;
-    tic
-    [solver_int,solver_initalization_int,model_int,settings_int] = create_nlp_nosnoc(model_int,settings_int);
-    solver_generating_time = toc;
-    if settings.print_level >=2
-        fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
-    end
-end
+% if settings.integrator_forward_sweep_procedure
+%     model_int = model_unedited;
+%     settings_int = settings_unedited;
+%     settings_int.integrator_forward_sweep_procedure = 0; % avoid infite recursions
+%     model_int.N_sim = model_int.N_stages;
+%     model_int.N_stages = 1;
+%     tic
+%     [solver_int,solver_initalization_int,model_int,settings_int] = create_nlp_nosnoc(model_int,settings_int);
+%     solver_generating_time = toc;
+%     if settings.print_level >=2
+%         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
+%     end
+% end
 % end
 
 %% Solve OCP with kinematics model in time-freezing
@@ -69,11 +69,13 @@ cpu_time_presolve = 0;
 if settings.time_freezing && settings.virtual_forces_kinematic_iteration
     settings_unedited.virtual_forces_in_every_mode = 1;
     [w0,cpu_time_presolve,w0_unchanged] = time_freezing_kinematics_iteration(model_unedited,settings_unedited);
-    %          settings_unedited.virtual_forces_in_every_mode = 0;
-    %         [w0,cpu_time_presolve] = time_freezing_kinematics_iteration(model_unedited,settings_unedited,w0_unchanged);
-    %         solver_initalization.w0 = w0;
 end
 %% Solve the discrete-time OCP
+% if settings.integrator_forward_sweep_procedure
+%     [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization,model_int,settings_int);
+% else
+%     
+% end
 [results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
 total_time = sum(stats.cpu_time)+cpu_time_presolve;
 %% Process and store results

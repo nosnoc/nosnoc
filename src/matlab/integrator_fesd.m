@@ -41,7 +41,7 @@ if nargin>3
     solver = varargin{4};
     solver_initalization = varargin{5};
     solver_exists = 1;
-%     model.p_val(end) = model.T;
+    model.p_val(end) = model.T;
 end
 %%  unfold data
 % use_previous_solution_as_initial_guess = 1;
@@ -70,8 +70,9 @@ if ~solver_exists
     solver_generating_time = toc;
       if print_level >=2
         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
-    end
+      end
 end
+
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 unfold_struct(solver_initalization,'caller')
@@ -80,7 +81,7 @@ unfold_struct(solver_initalization,'caller')
 if exist('u_sim','var')
     [n_rows,n_cols] = size(u_sim);
     if n_rows~=n_u || n_cols~=N_sim
-        error('Matrix with control inputs has the wrong size. Requires is n_u x N_sim.')
+        error('Matrix with control inputs has the wrong size. Required dimension is n_u x N_sim.')
     end
 end
 %% Initalization

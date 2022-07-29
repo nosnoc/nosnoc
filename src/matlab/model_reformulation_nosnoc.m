@@ -149,7 +149,7 @@ end
 
 %% Virtual forces
 if virtual_forces
-    if tighthen_virtual_froces_bounds 
+    if tighthen_virtual_froces_bounds
         M_virtual_forces_box = inf;
     else
         M_virtual_forces_box = M_virtual_forces;
@@ -546,40 +546,40 @@ switch pss_mode
                 if ~friction_is_present
                     switch n_unilateral
                         case 1
-                    gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',2);
-                    g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                        gamma(2)-(1-alpha(1))*(1-alpha(2))];
-                    upsilon_all{1} = gamma;
-                    g_lift_gamma_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
-                        (1-alpha(1))*(1-alpha(2))];
-                    g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha},{g_lift_gamma_fun});
-                    case 2
-                        gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',4);
-                        beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
-                        % alpha1 ~ f_c1, alpha2  ~ f_c2, alpha3 ~ n1^top v,alpha4 ~ n1^top v
-                        g_lift_beta = [beta(1)-(1-alpha(1))*(1-alpha(2));...
-                                       beta(2)-(alpha(1))*(1-alpha(2));...
-                                       beta(3)-(1-alpha(1))*(alpha(2));...
-                                       beta(4)-(1-alpha(3))*(1-alpha(4));...
-                                       beta(5)-(alpha(3))*(alpha(4))];
-                        g_lift_gamma = [gamma(1)-(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
-                                        gamma(2)-(1-alpha(1))*(1-alpha(3));...
-                                        gamma(3)-(1-alpha(2))*(1-alpha(4));...
-                                        gamma(4)-(beta(1)*beta(3))];
+                            gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',2);
+                            g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
+                                gamma(2)-(1-alpha(1))*(1-alpha(2))];
+                            upsilon_all{1} = gamma;
+                            g_lift_gamma_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
+                                (1-alpha(1))*(1-alpha(2))];
+                            g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha},{g_lift_gamma_fun});
+                        case 2
+                            gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',4);
+                            beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
+                            % alpha1 ~ f_c1, alpha2  ~ f_c2, alpha3 ~ n1^top v,alpha4 ~ n1^top v
+                            g_lift_beta = [beta(1)-(1-alpha(1))*(1-alpha(2));...
+                                beta(2)-(alpha(1))*(1-alpha(2));...
+                                beta(3)-(1-alpha(1))*(alpha(2));...
+                                beta(4)-(1-alpha(3))*(1-alpha(4));...
+                                beta(5)-(alpha(3))*(alpha(4))];
+                            g_lift_gamma = [gamma(1)-(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
+                                gamma(2)-(1-alpha(1))*(1-alpha(3));...
+                                gamma(3)-(1-alpha(2))*(1-alpha(4));...
+                                gamma(4)-(beta(1)*beta(3))];
 
-                    upsilon_all{1} = gamma;
-                    g_lift_beta_fun = [(1-alpha(1))*(1-alpha(2));...
-                                       (alpha(1))*(1-alpha(2));...
-                                       (1-alpha(1))*(alpha(2));...
-                                       (1-alpha(3))*(1-alpha(4));...
-                                       (alpha(3))*(alpha(4))];
-                    g_lift_gamma_fun = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
-                                        (1-alpha(1))*(1-alpha(3));...
-                                        (1-alpha(2))*(1-alpha(4));...
-                                        (beta(1)*beta(3))];
-                    
-                    g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
-                    g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
+                            upsilon_all{1} = gamma;
+                            g_lift_beta_fun = [(1-alpha(1))*(1-alpha(2));...
+                                (alpha(1))*(1-alpha(2));...
+                                (1-alpha(1))*(alpha(2));...
+                                (1-alpha(3))*(1-alpha(4));...
+                                (alpha(3))*(alpha(4))];
+                            g_lift_gamma_fun = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
+                                (1-alpha(1))*(1-alpha(3));...
+                                (1-alpha(2))*(1-alpha(4));...
+                                (beta(1)*beta(3))];
+
+                            g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
+                            g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
                     end
                 else
                     beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
@@ -724,16 +724,15 @@ end
 % the r.h.s of M(q)ddot{q} = f(q,dor{q},u) into  M{q}z-f(q,dor{q},u)= 0; \ddot{q} = z
 g_z_lift_forces = [];
 if time_freezing && time_freezing_lift_forces
-    
     f_v = f_x(n_q+1:2*n_q);
-    if n_u > 0 
+    if n_u > 0
         if virtual_forces_convex_combination
             f_v_fun = Function('f_v_fun',{x,z,u,psi_vf},{f_v});
             z0_forces = full(f_v_fun(x0,z0,u0,0));
         else
             f_v_fun = Function('f_v_fun',{x,z,u},{f_v});
             z0_forces = full(f_v_fun(x0,z0,u0));
-        end       
+        end
     else
         f_v_fun = Function('f_v_fun',{x,z},{f_v});
         z0_forces = full(f_v_fun(x0,z0));
@@ -753,7 +752,7 @@ end
 g_lp = [g_z;g_z_convex;g_lift;g_z_lift_forces];
 n_algebraic_constraints  = length(g_lp);
 
-%% CasADi functions for indictaor and region constraint functions
+%% CasADi functions for indicator and region constraint functions
 % model equations
 % if n_u >0
 %     g_ind_all_fun = Function('g_ind_all_fun',{x,u},{g_ind_vec});
@@ -769,7 +768,7 @@ if n_u >0
         % for time freezing systmes
         f_x_fun = Function('f_x_fun',{x,z,u,psi_vf},{f_x,f_q});
     else
-    f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
+        f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     end
     g_lp_fun = Function('g_lp_fun',{x,z,u},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
     dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
@@ -788,8 +787,14 @@ if isequal(irk_representation,'differential')
         v0 = zeros(n_x,1);
     else
         if n_u>0
-            [v0,~] = (f_x_fun(x0,z0,u0));
-            v0 = full(v0);
+%             if virtual_forces && virtual_forces_convex_combination
+%                 % for time freezing systmes
+%                 [v0,~] = (f_x_fun(x0,z0,u0,1));
+%                 v0 = full(v0);
+%             else
+                [v0,~] = (f_x_fun(x0,z0,u0));
+                v0 = full(v0);
+%             end
         else
             [v0,~] = (f_x_fun(x0,z0));
             v0 = full(v0);
