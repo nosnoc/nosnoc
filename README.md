@@ -92,7 +92,7 @@ arXiv preprint 2022
 A. Nurkanović, T. Sartor, S. Albrecht, M. Diehl \
 IEEE Control Systems Letters 2021
 
-[The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps](https://cdn.syscop.de/publications/Nurkanovic2021a.pdf) \
+[The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps](https://arxiv.org/abs/2111.06759) \
 A. Nurkanović, S. Albrecht, B. Brogliato, M. Diehl \
 arXiv preprint 2021
 
