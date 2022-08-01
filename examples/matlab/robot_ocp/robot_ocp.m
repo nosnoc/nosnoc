@@ -4,9 +4,9 @@ scenario.constant_inertia_matrix = 0;
 scenario.relax_control_bounds = 0;
 scenario.general_inequality_constraints = 1;
 scenario.save_figure = 1;
-scenario.filename = 'robot1';
+scenario.filename = 'robot_ocp';
 scenario.u0 = [0;0];
-scenario.polishing_penalty_iteration = 0;
+scenario.polishing_penalty_iteration = 1;
 %% auxiliary dynamics and friction
 scenario.a_n = 200;
 scenario.mu = 0.8;
@@ -22,7 +22,7 @@ scenario.width_vec = [0.5 0.5 0.5];
 %% Default settings NOSNOC
 [settings] = default_settings_nosnoc();
 settings.use_fesd = 1;
-settings.print_level = 5;
+settings.print_level = 4;
 settings.irk_scheme = 'Radau-IIA';
 %% homotopy settings
 settings.cross_comp_mode = 3;

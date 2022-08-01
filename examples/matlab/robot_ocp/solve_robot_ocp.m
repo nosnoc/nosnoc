@@ -178,7 +178,7 @@ if polishing_penalty_iteration
     settings.sigma_0 = 1e-6;
     [results,stats,model,settings] = nosnoc_solver(model,settings,w0);
 else
-    [results,stats,~,~] = nosnoc_solver(model,settings);
+    [results,stats,model,settings] = nosnoc_solver(model,settings);
 end
 
 
