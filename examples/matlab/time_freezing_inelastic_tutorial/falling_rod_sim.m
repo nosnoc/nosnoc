@@ -75,24 +75,7 @@ vx = x_res(4,:);
 vy = x_res(5,:);
 omega = x_res(6,:);
 t_clock = x_res(7,:);
-%%
-figure
-subplot(311)
-plot(t_clock,vx,'k');
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v_x$','interpreter','latex');
-subplot(312)
-plot(t_clock,vy,'k');
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v_y$','interpreter','latex');
 
-subplot(313)
-plot(t_clock,omega,'k');
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$\omega$','interpreter','latex');
 
 %% geometric trajetcorty
 x_p = [-1 1 1 -1];
@@ -118,4 +101,23 @@ if plot_results
         end
     end
 end
+
+%%
+figure
+subplot(311)
+plot(t_clock,vx,'k');
+grid on
+xlabel('$t$','interpreter','latex');
+ylabel('$v_x$','interpreter','latex');
+subplot(312)
+plot(t_clock,vy,'k');
+grid on
+xlabel('$t$','interpreter','latex');
+ylabel('$v_y$','interpreter','latex');
+
+subplot(313)
+plot(t_clock,omega,'k');
+grid on
+xlabel('$t$','interpreter','latex');
+ylabel('$\omega$','interpreter','latex');
 

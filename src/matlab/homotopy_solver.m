@@ -44,6 +44,9 @@ complementarity_iter = 1;
 ii = 0;
 vf_resiudal = 0;
 
+
+
+
 while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     % homotopy parameter update
     if ii == 0
@@ -67,7 +70,6 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     % %           w0 = integrator_forward_sweep(model_int,solver_int,solve_initalization_int);
     %         end
     %     end
-
     % solve problem with fixed step size
     if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
         tic
