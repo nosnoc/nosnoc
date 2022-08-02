@@ -18,7 +18,8 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings)
+% function [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings)
+function [varargout] = create_nlp_nosnoc(varargin)
 % This functions creates the solver instance for the OCP discretized with FESD (or time-stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
 % reformulations, see below.
@@ -37,6 +38,9 @@ function [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model
 % 10 - \ell__1, same as 4 but the penalty/slack is controlled via the barier formulation
 %% Import CasADi in the workspace of this function
 import casadi.*
+%% Read data
+model = varargin{1};
+settings = varargin{2};
 %% Reformulation of the PSS into a DCS
 [settings] = refine_user_settings(settings);
 [model,settings] = model_reformulation_nosnoc(model,settings);
@@ -1107,5 +1111,10 @@ solver_initalization.lbw = lbw;
 solver_initalization.ubw = ubw;
 solver_initalization.lbg = lbg;
 solver_initalization.ubg = ubg;
+%% Output
+varargout{1} = solver;
+varargout{2} = solver_initalization;
+varargout{3} = model;
+varargout{4} = settings;
 
 end
