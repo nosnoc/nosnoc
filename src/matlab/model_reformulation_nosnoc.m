@@ -85,7 +85,7 @@ model.h = h;
 model.h_k = h_k;
 model.N_finite_elements = N_finite_elements;
 %% Determine is the SX or MX mode in CasADi used.
-casadi_symbolic_mode = model.x(1).type_name();
+casadi_symbolic_mode = class(model.x(1));
 settings.casadi_symbolic_mode  = casadi_symbolic_mode;
 settings.couple_across_stages = 1;
 
@@ -272,7 +272,7 @@ if ~exist('S')
                 % discrimnant functions
                 g_ind_vec =  [g_ind_vec;g_ind{ii};];
                 g_ind_all{ii} = g_ind{ii};
-                c_all = [c_all; 0];
+                c_all = [c_all; zeros(1,casadi_symbolic_mode)];
             end
         else
             error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
