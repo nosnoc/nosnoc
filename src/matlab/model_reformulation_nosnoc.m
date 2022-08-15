@@ -48,10 +48,20 @@ if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end
 %% If different names are used...
+if exist('N_ctrl','var') 
+    N_stg = N_ctrl;
+end
+if exist('N_control','var') 
+    N_stg = N_control;
+end
+
 if exist('N_stg','var')
     N_stages = N_stg;
+    N_ctrl = N_stages;
     model.N_stages = N_stages;
+    model.N_ctrl = N_ctrl;
 end
+
 
 if exist('N_FE','var')
     N_finite_elements = N_FE;

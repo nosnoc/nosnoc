@@ -33,7 +33,7 @@ import casadi.*
 settings.irk_scheme = 'Radau-IIA'; % Lobatto-III
 settings.print_level = 3;
 settings.n_s = 2;
-settings.mpcc_mode = 5;
+settings.mpcc_mode = 3;
 settings.sigma_0 = 10;
 settings.cross_comp_mode = 3;
 

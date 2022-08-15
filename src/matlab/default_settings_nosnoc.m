@@ -117,6 +117,7 @@ impose_terminal_phyisical_time = 1;
 s_sot0 = 1;
 s_sot_max =	25;
 s_sot_min =	1;
+S_sot_nominal = 1;
 rho_sot = 0;
 
 T_final_max = 1e2;

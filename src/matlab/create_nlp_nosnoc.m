@@ -52,19 +52,6 @@ settings = varargin{2};
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller');
 
-%% Elastic Mode Variables
-s_ell_inf_elastic_exists  = 0;
-if mpcc_mode >= 5 && mpcc_mode <= 10
-    s_elastic = define_casadi_symbolic(casadi_symbolic_mode,'s_elastic',1);
-    s_ell_inf_elastic_exists = 1;
-end
-s_ell_1_elastic_exists  = 0;
-
-sum_s_elastic = 0;
-if mpcc_mode >= 11 && mpcc_mode <= 13
-    s_ell_1_elastic_exists  = 1;
-end
-
 %% Initalization and bounds for step-size
 if use_fesd
     ubh = (1+gamma_h)*h_k;
@@ -76,13 +63,6 @@ if use_fesd
     end
     % initigal guess for the step-size
     h0_k = h_k.*ones(N_stages,1);
-end
-
-%% Time optimal control
-if time_optimal_problem
-    % the final time in time optimal control problems
-    T_final = define_casadi_symbolic(casadi_symbolic_mode,'T_final',1);
-    T_final_guess = T;
 end
 
 %%  Butcher Tableu
@@ -103,6 +83,26 @@ switch irk_representation
         end
     otherwise
         error('Choose irk_representation either: ''integral'' or ''differential''')
+end
+
+%% Time optimal control
+if time_optimal_problem
+    % the final time in time optimal control problems
+    T_final = define_casadi_symbolic(casadi_symbolic_mode,'T_final',1);
+    T_final_guess = T;
+end
+
+%% Elastic Mode Variables
+s_ell_inf_elastic_exists  = 0;
+if mpcc_mode >= 5 && mpcc_mode <= 10
+    s_elastic = define_casadi_symbolic(casadi_symbolic_mode,'s_elastic',1);
+    s_ell_inf_elastic_exists = 1;
+end
+s_ell_1_elastic_exists  = 0;
+
+sum_s_elastic = 0;
+if mpcc_mode >= 11 && mpcc_mode <= 13
+    s_ell_1_elastic_exists  = 1;
 end
 
 %% Formulate NLP - Start with an empty NLP
@@ -164,7 +164,7 @@ sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
 sigma_theta_F_k = 0; % forward sum of theta at finite element k
 nu_vector = [];
 % Integral of the clock state if no time-freezing is present.
-sum_of_s_sot_k =0;
+sum_s_sot =0;
 n_cross_comp = zeros(max(N_finite_elements),N_stages);
 
 % Continuity of lambda initalization
@@ -189,19 +189,16 @@ for k=0:N_stages-1
         ind_u = [ind_u,ind_total(end)+1:ind_total(end)+n_u];
         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_u];
 
-        % add pseudo froces in time freezing problesm to aid convergence
+        % add pseudo froces in time-freezing problesm to aid convergence
         if virtual_forces
             if penalize_virtual_forces 
                       J_virtual_froces = J_virtual_froces+f_q_virtual_fun(Uk);
             end
 
             if virtual_forces_convex_combination
-%                 J_virtual_froces = J_virtual_froces+psi_vf;
                 J_virtual_froces = J_virtual_froces+psi_vf^2;
             end
-
             if tighthen_virtual_froces_bounds
-                
                 J_virtual_froces= J_virtual_froces+f_q_virtual_fun(Uk);
                 U_virtual_k = Uk(end-n_q+1:end);
                 if mpcc_mode < 4
@@ -266,7 +263,7 @@ for k=0:N_stages-1
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
         %%  Sum of lambda and theta for current finite elememnt
-        Theta_sum_finite_element_ki= 0;  % initalize sum of theta's (the pint at t_n is not included)
+        Theta_sum_finite_element_ki = 0;  % initalize sum of theta's (the pint at t_n is not included)
         Lambda_sum_finite_element_ki = Lambda_end_previous_fe;
         %% Step size in FESD, Speed of Time variables, Step equilibration constraints
         if use_fesd
@@ -290,7 +287,7 @@ for k=0:N_stages-1
 
             if time_optimal_problem && use_speed_of_time_variables
                 % integral of clock state (if no time-freezing is used, in time-freezing we use directly the (nonsmooth) differential clock state.
-                sum_of_s_sot_k = sum_of_s_sot_k + h_ki*s_sot_k;
+                sum_s_sot = sum_s_sot + h_ki*s_sot_k;
             end
 
             %             if (k > 0 && (i > 0 || couple_across_stages))
@@ -390,15 +387,15 @@ for k=0:N_stages-1
                 case 'Stewart'
                     Theta_kij = Z_ki_stages{j}(1:n_theta);
                     Lambda_kij = Z_ki_stages{j}(n_theta+1:2*n_theta);
-                    Mu_kij = Z_ki_stages{j}(end);
+                    Mu_kij = Z_ki_stages{j}(2*n_theta+1);
                 case 'Step'
                     Theta_kij = [Z_ki_stages{j}(1:n_alpha);e_alpha-Z_ki_stages{j}(1:n_alpha)];
                     Lambda_kij = Z_ki_stages{j}(n_alpha+1:3*n_alpha);
                     Mu_kij = [];
             end
-            Theta_ki_current_fe = {Theta_ki_current_fe{:},Theta_kij  };
-            Lambda_ki_current_fe = {Lambda_ki_current_fe{:},Lambda_kij };
-            Mu_ki_current_fe = {Mu_ki_current_fe{:},Mu_kij };
+            Theta_ki_current_fe = {Theta_ki_current_fe{:}, Theta_kij};
+            Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_kij};
+            Mu_ki_current_fe = {Mu_ki_current_fe{:}, Mu_kij};
             % Sum \theta and \lambda over the current finite element.
             if use_fesd
                 Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_kij;
@@ -451,7 +448,6 @@ for k=0:N_stages-1
                 case 'Step'
 %                     eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',2*n_alpha);'])
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],2*n_alpha);
-
                     Mu_ki_end = [];
                     w = {w{:}, Lambda_ki_end};
                     % bounds and index sets
@@ -463,8 +459,6 @@ for k=0:N_stages-1
                     Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
                     Mu_ki_current_fe = {Mu_ki_current_fe{:}, []};
             end
-
-
             % For cross comp
             Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_ki_end;
         end
@@ -660,6 +654,7 @@ for k=0:N_stages-1
                 % pass to constraint creation
                 mpcc_var_current_fe.s_elastic = s_elastic_ell_1;
             end
+
             [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_current_fe,dimensions,current_index);
             g = {g{:}, g_comp};
             lbg = [lbg; g_comp_lb];
@@ -668,6 +663,7 @@ for k=0:N_stages-1
 
         %% Step equlibration
         step_equilibration_constrains;
+        
         %% Continuity condition -  new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
         X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
@@ -835,13 +831,13 @@ if time_optimal_problem && use_speed_of_time_variables
         J = J+T_final;
     else
         % This is both variants local and global sot vars. Hence, it is written here together and not in the loops or queries above.
-        % ( In this case,the trivial constraint T_final = sum_of_s_sot_k) is ommited and provided implicitly)
-        g = {g{:}, sum_of_s_sot_k-T_final};
+        % ( In this case,the trivial constraint T_final = sum_s_sot) is ommited and provided implicitly)
+        g = {g{:}, sum_s_sot-T_final};
         lbg = [lbg; 0];
         ubg = [ubg; 0];
         J = J+T_final;
-        %         J = J+sum_of_s_sot_k;
-        % sum_of_s_sot_k is the integral of the clock state if no time freezing is present.
+        %         J = J+sum_s_sot;
+        % sum_s_sot is the integral of the clock state if no time freezing is present.
     end
 end
 % Time-optimal problems: define auxilairy variable for the final time.
