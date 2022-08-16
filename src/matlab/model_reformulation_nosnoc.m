@@ -32,7 +32,7 @@ unfold_struct(settings,'caller')
 
 %% Some settings refinments
 % update prin_level
-if print_level <4
+if print_level < 4
     settings.opts_ipopt.ipopt.print_level = 0;
     settings.opts_ipopt.print_time=0;
     settings.opts_ipopt.ipopt.sb= 'yes';

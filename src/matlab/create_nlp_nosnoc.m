@@ -243,13 +243,12 @@ for k=0:N_stages-1
                 % index colector for sot variables
                 ind_sot = [ind_sot,ind_total(end)+1:ind_total(end)+1];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+                % enfroce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
                 J_regularize_sot = J_regularize_sot+(s_sot_k)^2;
             end
-            
         end
-        % enfroce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
-        
     end
+
     %% General Nonlinear constriant (on control interval boundary)
     % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
     if g_ineq_constraint
@@ -317,7 +316,6 @@ for k=0:N_stages-1
             case 'differential'
                 V_ki_stages = {}; % for variables for derivative stage values
                 X_ki_stages = {}; % for symbolic expressions of state stage values
-                X_ki_stages_lift = {}; % for symbolic expressions if X_ki_stages are lifted.
         end
         %algebraic states
         Z_ki_stages = {}; % collects the vector of x and z at every irk stage
@@ -333,7 +331,6 @@ for k=0:N_stages-1
                 case 'integral'
                     % define symbolic variables for values of diff. state a stage points
                     X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
-
                     w = {w{:}, X_ki_stages{j}};
                     w0 = [w0; x0];
                     ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
@@ -371,7 +368,7 @@ for k=0:N_stages-1
                         end
                     end
             end
-            % Note that for algebraic variablies, in both irk formulation modes the alg. variables are treated the same way.
+            % Note that the algebraic variablies are treated the same way in both irk representation modes.
             Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
             w = {w{:}, Z_ki_stages{j}};
             % index sets
@@ -634,8 +631,9 @@ for k=0:N_stages-1
             n_cross_comp(i+1,k+1) = n_cross_comp_i;
             g_all_comp_j = [g_cross_comp_j];
             n_all_comp_j = length(g_all_comp_j);
-
-            %% Treatment and reformulation of all complementarity constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
+            
+            %% Reformulation/relaxation of complementarity constraints
+            % Treatment and reformulation of all complementarity constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
             mpcc_var_current_fe.J = J;
             mpcc_var_current_fe.g_all_comp_j = g_all_comp_j;
             if s_ell_inf_elastic_exists
@@ -664,7 +662,7 @@ for k=0:N_stages-1
         %% Step equlibration
         step_equilibration_constrains;
         
-        %% Continuity condition -  new NLP variable for state at end of a finite element
+        %% Continuity condition - new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
         X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
         w = {w{:}, X_ki};
