@@ -104,6 +104,15 @@ sum_s_elastic = 0;
 if mpcc_mode >= 11 && mpcc_mode <= 13
     s_ell_1_elastic_exists  = 1;
 end
+%% Some code refactoring tasks:
+% 1) Lambda_ki_current_fe rename 
+% 2) sum_h_ki_control_interval_k, sum_h_ki_all = 0; rename as in opti version, make vectors
+% 3) inestead of cells use matrices for differntail variables
+% 4) all names with capital letters s_sot -> S_sot
+% 5) simplify the s_sot code as in opti version
+% 6) matrix valued evaulation of f_x_fun & co to avoid loop over j=1:d
+% 7) write the cross_comp and step equilibration functions from sktratch to imrpove readibility (avoid saving of current_finite lement)
+% 8) simpler names for sum_lambda sum_theta, store them in a matrix; 
 
 %% Formulate NLP - Start with an empty NLP
 % degrese of freedom
@@ -428,8 +437,6 @@ for k=0:N_stages-1
         if use_fesd && ~right_boundary_point_explicit &&  (k<N_stages-1 || i< N_finite_elements(k+1)-1)
             switch pss_mode
                 case 'Stewart'
-%                     eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',n_theta);'])
-%                     eval(['Mu_ki_end  = ' casadi_symbolic_mode '.sym(''Mu_' num2str(k) '_' num2str(i) '_end' ''',n_simplex);'])
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],n_theta);
                     Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_simplex);
                     w = {w{:}, Lambda_ki_end};
@@ -443,7 +450,6 @@ for k=0:N_stages-1
                     Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
                     Mu_ki_current_fe = {Mu_ki_current_fe{:}, Mu_ki_end};
                 case 'Step'
-%                     eval(['Lambda_ki_end  = ' casadi_symbolic_mode '.sym(''Lambda_' num2str(k) '_' num2str(i) '_end' ''',2*n_alpha);'])
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],2*n_alpha);
                     Mu_ki_end = [];
                     w = {w{:}, Lambda_ki_end};
@@ -458,20 +464,14 @@ for k=0:N_stages-1
             end
             % For cross comp
             Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_ki_end;
-        end
-
-        %% Update struct with all complementarity related quantities
-        if use_fesd
-            comp_var_current_fe.Lambda_sum_finite_element_ki = Lambda_sum_finite_element_ki;
-            comp_var_current_fe.Theta_sum_finite_element_ki= Theta_sum_finite_element_ki;
-            comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
-        end
-        comp_var_current_fe.Lambda_ki_current_fe = Lambda_ki_current_fe;
-        comp_var_current_fe.Theta_ki_current_fe = Theta_ki_current_fe;
+        end      
 
         %% Continiuity of lambda, the boundary values of lambda and mu  %% TODO: resolve its use for proper cross comp -- move there the Z_kde end
         if use_fesd
             if right_boundary_point_explicit
+                % TODO: Check can this case be done as analternatve to the
+                % previous code section and Z_kd_end definedo only if neeed
+                % for G_LP eval if  right_boundary_point_explicit = 0;
                 Z_kd_end = Z_ki_stages{n_s};
                 switch pss_mode
                     case 'Stewart'
@@ -490,12 +490,23 @@ for k=0:N_stages-1
             end
             % Update lambda previous at finite element level
             if i > 0 || k > 0
+                % TODO: This if condition might not be needed at all?
                 Lambda_end_previous_fe = Lambda_ki_end;
             end
             if i == N_finite_elements(k+1)-1 && ~couple_across_stages
+                % TODO: check: couple_across_stages is always one, hence this part is never used?
                 Lambda_end_previous_fe = zeros(n_theta,1);
             end
         end
+        
+        %% Update struct with all complementarity related quantities
+        if use_fesd
+            comp_var_current_fe.Lambda_sum_finite_element_ki = Lambda_sum_finite_element_ki;
+            comp_var_current_fe.Theta_sum_finite_element_ki= Theta_sum_finite_element_ki;
+            comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
+        end
+        comp_var_current_fe.Lambda_ki_current_fe = Lambda_ki_current_fe;
+        comp_var_current_fe.Theta_ki_current_fe = Theta_ki_current_fe;
 
         %% The IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every stage point)
         switch irk_representation
@@ -685,6 +696,8 @@ for k=0:N_stages-1
         lbg = [lbg; zeros(n_x,1)];
         ubg = [ubg; zeros(n_x,1)];
         %% Evaluate inequality constraints at finite elements boundaries
+        % TODO?: This should be removed? the left boundary point is treated
+        % after control defintion, the very last right point should be treated in the terminal constraint
         if g_ineq_constraint && g_ineq_at_fe && i<N_finite_elements(k+1)-1
             % the third flag is because at i = 0 the evaulation is at the control interval boundary (done above)
             g_ineq_k = g_ineq_fun(X_ki,Uk);

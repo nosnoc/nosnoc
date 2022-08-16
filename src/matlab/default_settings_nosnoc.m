@@ -12,6 +12,7 @@ irk_representation = 'integral'; % are the IRK equations in differential from (d
 lift_irk_differential = 1; % if differential mode is used, introduce new variables for intermediate stage values X_ki.
 cross_comp_mode = 3;
 gamma_h = 1;
+use_opti = 0; % use opti version for create_nlp (keep it to 0, 1 is for develop only atm)
 
 pss_mode = 'Stewart'; % possible options: Stewart and Step
 

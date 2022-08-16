@@ -65,7 +65,7 @@ end
 
 if exist('N_FE','var')
     N_finite_elements = N_FE;
-    model.N_finite_elements  = N_finite_elements ;
+    model.N_finite_elements  = N_finite_elements;
 end
 
 if exist('N_fe','var')

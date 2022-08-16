@@ -1,21 +1,21 @@
 %
 %    This file is part of NOSNOC.
 %
-%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    NOSNOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
 %
-%    NOS-NOC is free software; you can redistribute it and/or
+%    NOSNOC is free software; you can redistribute it and/or
 %    modify it under the terms of the GNU Lesser General Public
 %    License as published by the Free Software Foundation; either
 %    version 3 of the License, or (at your option) any later version.
 %
-%    NOS-NOC is distributed in the hope that it will be useful,
+%    NOSNOC is distributed in the hope that it will be useful,
 %    but WITHOUT ANY WARRANTY; without even the implied warranty of
 %    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %    Lesser General Public License for more details.
 %
 %    You should have received a copy of the GNU Lesser General Public
-%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    License along with NOSNOC; if not, write to the Free Software Foundation,
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
@@ -103,6 +103,7 @@ v_goal = 0;
 % Add terminal constraint, if no upper and lower bound are provided, they are set to zero
 model.g_terminal = [q-q_goal;v-v_goal];
 
+settings.use_opti = 0;
 %% Solve OCP
 % This functions formulates and discretized the OCP. We obtain an matheatmical programm with complementarity constraint which is solved  in a homotopy procedure.
 [results,stats,model,settings] = nosnoc_solver(model,settings);
