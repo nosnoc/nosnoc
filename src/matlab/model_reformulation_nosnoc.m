@@ -690,7 +690,6 @@ f_x = zeros(n_x,1);
 % rhs of ODE;
 
 for ii = 1:n_simplex
-    ii_str = num2str(ii);
     switch pss_mode
         case 'Stewart'
             f_x = f_x + F{ii}*theta_all{ii};
@@ -699,11 +698,10 @@ for ii = 1:n_simplex
     end
 end
 
-g_z = []; % collects standard algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
-g_z_convex = []; % equation for the convex multiplers 1 = e' \theta
+g_switching = []; % collects switching function algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
+g_convex = []; % equation for the convex multiplers 1 = e' \theta
 f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
 for ii = 1:n_simplex
-    ii_str = num2str(ii);
     switch pss_mode
         case 'Stewart'
             % basic algebraic equations and complementarty condtions of the DCS
@@ -714,8 +712,8 @@ for ii = 1:n_simplex
             % lambda_i >= 0;    for all i = 1,..., n_simplex
             % theta_i >= 0;     for all i = 1,..., n_simplex
             % Gradient of Lagrange Function of indicator LP
-            g_z = [g_z; g_ind_all{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
-            g_z_convex = [g_z_convex;e_ones_all{ii}'*theta_all{ii}-1];
+            g_switching = [g_switching; g_ind_all{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
+            g_convex = [g_convex;e_ones_all{ii}'*theta_all{ii}-1];
             f_comp_residual = f_comp_residual + lambda_all{ii}'*theta_all{ii};
         case 'Step'
             % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_simplex
@@ -724,7 +722,7 @@ for ii = 1:n_simplex
             % lambda_0_i >= 0;    for all i = 1,..., n_simplex
             % lambda_1_i >= 0;    for all i = 1,..., n_simplex
             % alpha_i >= 0;     for all i = 1,..., n_simplex
-            g_z = [g_z;c{ii}-lambda_1_all{ii}+lambda_0_all{ii}];
+            g_switching = [g_switching;c{ii}-lambda_1_all{ii}+lambda_0_all{ii}];
             f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_vec(ii),1)-alpha_all{ii});
     end
 end
@@ -732,7 +730,7 @@ end
 
 %% Lifting of forces in time-freezing
 % the r.h.s of M(q)ddot{q} = f(q,dor{q},u) into  M{q}z-f(q,dor{q},u)= 0; \ddot{q} = z
-g_z_lift_forces = [];
+g_lift_forces = [];
 if time_freezing && time_freezing_lift_forces
     f_v = f_x(n_q+1:2*n_q);
     if n_u > 0
@@ -753,14 +751,15 @@ if time_freezing && time_freezing_lift_forces
     z0 = [z0;z0_forces];
     lbz = [lbz;-inf*ones(n_q,1)];
     ubz = [ubz;inf*ones(n_q,1)];
-    g_z_lift_forces = [M*z_forces - f_v]; % lifting function
+    g_lift_forces = [M*z_forces - f_v]; % lifting function
     % new simple dynamics after lifting
     f_x = [f_x(1:n_q); z_forces; f_x(end-n_quad:end)];
 end
 
 %%  collect all algebraic equations
-g_lp = [g_z;g_z_convex;g_lift;g_z_lift_forces];
-n_algebraic_constraints  = length(g_lp);
+g_lp = [g_switching;g_convex;g_lift];
+g_z_all = [g_lp;g_lift_forces];
+n_algebraic_constraints = length(g_z_all);
 
 %% CasADi functions for indicator and region constraint functions
 % model equations
@@ -780,11 +779,11 @@ if n_u >0
     else
         f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     end
-    g_lp_fun = Function('g_lp_fun',{x,z,u},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+    g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
     dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 else
     f_x_fun = Function('f_x_fun',{x,z},{f_x,f_q});
-    g_lp_fun = Function('g_lp_fun',{x,z},{g_lp}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+    g_z_all_fun = Function('g_z_all_fun',{x,z},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
     dot_c_fun = Function('c_fun',{x,z},{dot_c}); % total time derivative of switching functions
 end
 
@@ -852,14 +851,15 @@ if terminal_constraint
 end
 
 
+% CasADi Expressions
 model.f_x = f_x;
 model.f_q = f_q;
-model.g_z = g_z;
-model.g_lp = g_lp;
+model.g_switching = g_switching;
+model.g_z_all = g_z_all;
 model.f_q_T = f_q_T;
-
+% CasADi Functions
 model.f_x_fun = f_x_fun;
-model.g_lp_fun = g_lp_fun;
+model.g_z_all_fun = g_z_all_fun;
 model.f_q_T_fun = f_q_T_fun;
 
 model.J_cc_fun = J_cc_fun;
@@ -910,8 +910,8 @@ dimensions.n_beta = n_beta;
 dimensions.n_gamma = n_gamma;
 dimensions.n_lambda_0 = n_lambda_0;
 dimensions.n_lambda_1 = n_lambda_1;
-
 model.dimensions = dimensions;
+
 end
 
 

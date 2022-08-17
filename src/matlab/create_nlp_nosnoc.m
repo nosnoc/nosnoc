@@ -105,14 +105,14 @@ if mpcc_mode >= 11 && mpcc_mode <= 13
     s_ell_1_elastic_exists  = 1;
 end
 %% Some code refactoring tasks:
-% 1) Lambda_ki_current_fe rename 
+% 1) Lambda_ki_current_fe rename
 % 2) sum_h_ki_control_interval_k, sum_h_ki_all = 0; rename as in opti version, make vectors
 % 3) inestead of cells use matrices for differntail variables
 % 4) all names with capital letters s_sot -> S_sot
 % 5) simplify the s_sot code as in opti version
 % 6) matrix valued evaulation of f_x_fun & co to avoid loop over j=1:d
 % 7) write the cross_comp and step equilibration functions from sktratch to imrpove readibility (avoid saving of current_finite lement)
-% 8) simpler names for sum_lambda sum_theta, store them in a matrix; 
+% 8) simpler names for sum_lambda sum_theta, store them in a matrix;
 
 %% Formulate NLP - Start with an empty NLP
 % degrese of freedom
@@ -200,8 +200,8 @@ for k=0:N_stages-1
 
         % add pseudo froces in time-freezing problesm to aid convergence
         if virtual_forces
-            if penalize_virtual_forces 
-                      J_virtual_froces = J_virtual_froces+f_q_virtual_fun(Uk);
+            if penalize_virtual_forces
+                J_virtual_froces = J_virtual_froces+f_q_virtual_fun(Uk);
             end
 
             if virtual_forces_convex_combination
@@ -280,7 +280,7 @@ for k=0:N_stages-1
                 h_ki_previous = h_ki;
             end
             % define step-size
-%             eval(['h_ki  = ' casadi_symbolic_mode '.sym(''h_'  num2str(k) '_' num2str(i) ''',1);'])
+            %             eval(['h_ki  = ' casadi_symbolic_mode '.sym(''h_'  num2str(k) '_' num2str(i) ''',1);'])
             h_ki = define_casadi_symbolic(casadi_symbolic_mode,['h_'  num2str(k) '_' num2str(i)],1);
             w = {w{:}, h_ki};
             w0 = [w0; h0_k(k+1)];
@@ -464,14 +464,23 @@ for k=0:N_stages-1
             end
             % For cross comp
             Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_ki_end;
-        end      
+        end
+
+        %% Update struct with all complementarity related quantities
+        if use_fesd
+            comp_var_current_fe.Lambda_sum_finite_element_ki = Lambda_sum_finite_element_ki;
+            comp_var_current_fe.Theta_sum_finite_element_ki= Theta_sum_finite_element_ki;
+            comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
+        end
+        comp_var_current_fe.Lambda_ki_current_fe = Lambda_ki_current_fe;
+        comp_var_current_fe.Theta_ki_current_fe = Theta_ki_current_fe;
 
         %% Continiuity of lambda, the boundary values of lambda and mu  %% TODO: resolve its use for proper cross comp -- move there the Z_kde end
         if use_fesd
             if right_boundary_point_explicit
                 % TODO: Check can this case be done as analternatve to the
                 % previous code section and Z_kd_end definedo only if neeed
-                % for G_LP eval if  right_boundary_point_explicit = 0;
+                % for g_z_all eval if  right_boundary_point_explicit = 0;
                 Z_kd_end = Z_ki_stages{n_s};
                 switch pss_mode
                     case 'Stewart'
@@ -493,17 +502,9 @@ for k=0:N_stages-1
                 Lambda_end_previous_fe = Lambda_ki_end;
             end
         end
-        
-        %% Update struct with all complementarity related quantities
-        if use_fesd
-            comp_var_current_fe.Lambda_sum_finite_element_ki = Lambda_sum_finite_element_ki;
-            comp_var_current_fe.Theta_sum_finite_element_ki= Theta_sum_finite_element_ki;
-            comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
-        end
-        comp_var_current_fe.Lambda_ki_current_fe = Lambda_ki_current_fe;
-        comp_var_current_fe.Theta_ki_current_fe = Theta_ki_current_fe;
 
         %% The IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every stage point)
+        % initalization with value of at at left boundary point
         switch irk_representation
             case 'integral'
                 Xk_end = D(1)*X_ki;
@@ -527,17 +528,17 @@ for k=0:N_stages-1
                     if n_u > 0
                         if virtual_forces && virtual_forces_convex_combination
                             if virtual_forces_parametric_multipler
-                                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,sigma_p);                           
+                                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,sigma_p);
                             else
-                                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,psi_vf);                           
+                                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,psi_vf);
                             end
                         else
                             [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                         end
-                        gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                     else
                         [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
-                        gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j});
+                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
                     end
                     if time_rescaling && use_speed_of_time_variables
                         % rescale equations
@@ -564,10 +565,10 @@ for k=0:N_stages-1
                     % Evaulate Differetinal and Algebraic Equations at stage points
                     if n_u > 0
                         [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                        gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                     else
                         [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
-                        gj = g_lp_fun(X_ki_stages{j},Z_ki_stages{j});
+                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
                     end
 
                     if time_rescaling && use_speed_of_time_variables
@@ -587,19 +588,25 @@ for k=0:N_stages-1
                     % Append IRK equations (differential part) to NLP constraint, note that we dont distingiush if use_fesd is on/off
                     % since it was done in the defintion of X_ki_stages which enters f_j
                     g = {g{:}, fj - V_ki_stages{j}};
+
+                    % lifting considerations
+                    if lift_irk_differential
+                        g = {g{:}, X_ki_lift{j}};
+                        lbg = [lbg; zeros(n_x,1)];
+                        ubg = [ubg; zeros(n_x,1)];
+                    end
+                    if  x_box_at_stg && ~lift_irk_differential
+                        g = {g{:};X_ki_stages{j}};
+                        lbg = [lbg; lbx];
+                        ubg = [ubg; ubx];
+                    end
             end
             % Append IRK equations (algebraic part) to NLP constraint (same for both representations)
             g = {g{:}, gj};
             lbg = [lbg; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
             ubg = [ubg; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
 
-            if lift_irk_differential
-                g = {g{:}, X_ki_lift{j}};
-                lbg = [lbg; zeros(n_x,1)];
-                ubg = [ubg; zeros(n_x,1)];
-            end
-
-            % General nonlinear constraint at stage points
+            %% General nonlinear constraint at stage points
             if g_ineq_constraint && g_ineq_at_stg
                 % indepednet of the fact is it lifter od not in the
                 % differential case
@@ -609,12 +616,7 @@ for k=0:N_stages-1
                 ubg = [ubg; g_ineq_ub];
             end
 
-            if isequal(irk_scheme,'differential') && x_box_at_stg && ~lift_irk_differential
-                g = {g{:};X_ki_stages{j}};
-                lbg = [lbg; lbx];
-                ubg = [ubg; ubx];
-            end
-            %% complementarity constraints (standard and cross)
+            %% Complementarity constraints (standard and cross)
             % Prepare Input for Cross Comp Function
             n_cross_comp_i = 0;
             % Update current index
@@ -637,7 +639,7 @@ for k=0:N_stages-1
             n_cross_comp(i+1,k+1) = n_cross_comp_i;
             g_all_comp_j = [g_cross_comp_j];
             n_all_comp_j = length(g_all_comp_j);
-            
+
             %% Reformulation/relaxation of complementarity constraints
             % Treatment and reformulation of all complementarity constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
             mpcc_var_current_fe.J = J;
@@ -667,7 +669,7 @@ for k=0:N_stages-1
 
         %% Step equlibration
         step_equilibration_constrains;
-        
+
         %% Continuity condition - new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
         X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
@@ -690,6 +692,7 @@ for k=0:N_stages-1
         g = {g{:}, Xk_end-X_ki};
         lbg = [lbg; zeros(n_x,1)];
         ubg = [ubg; zeros(n_x,1)];
+
         %% Evaluate inequality constraints at finite elements boundaries
         % TODO?: This should be removed? the left boundary point is treated
         % after control defintion, the very last right point should be treated in the terminal constraint
@@ -701,17 +704,17 @@ for k=0:N_stages-1
             ubg = [ubg; g_ineq_ub];
         end
 
-        %% G_LP constraint for boundary point and continuity of algebraic variables.
+        %% g_z_all constraint for boundary point and continuity of algebraic variables.
         if ~right_boundary_point_explicit && use_fesd && (k< N_stages-1 || i< N_finite_elements(k+1)-1)
             if n_u > 0
-                temp = g_lp_fun(X_ki,Z_kd_end,Uk);
+                temp = g_z_all_fun(X_ki,Z_kd_end,Uk);
             else
-                temp = g_lp_fun(X_ki,Z_kd_end);
-            end           
-                    gj = temp(1:end-n_lift_eq);
-                    lbg = [lbg; zeros(n_algebraic_constraints-n_lift_eq,1)];
-                    ubg = [ubg; zeros(n_algebraic_constraints-n_lift_eq,1)];
-                    g = {g{:}, gj};
+                temp = g_z_all_fun(X_ki,Z_kd_end);
+            end
+            gj = temp(1:end-n_lift_eq);
+            lbg = [lbg; zeros(n_algebraic_constraints-n_lift_eq,1)];
+            ubg = [ubg; zeros(n_algebraic_constraints-n_lift_eq,1)];
+            g = {g{:}, gj};
         end
     end
 
@@ -768,7 +771,7 @@ else
     J_comp =  J_comp_std;
 end
 
-%% Constraint for the terminal numerical and physical time (if no equidistant grids are required)
+%%  -- Constraint for the terminal numerical and physical time (if no equidistant grids are required) --
 % If the control grid is not equidistant, the constraint on sum of h happen only at the end.
 % The constraints are splited to those which are related to numerical and physical time, to make it easier to read.
 
@@ -812,8 +815,8 @@ if time_freezing
         ubg = [ubg; 0];
     else
         if impose_terminal_phyisical_time && ~stagewise_clock_constraint
-%             X0 = w{1};
-%             g = {g{:}, Xk_end(end)-(T+X0(end))};
+            %             X0 = w{1};
+            %             g = {g{:}, Xk_end(end)-(T+X0(end))};
             g = {g{:}, Xk_end(end)-(T_ctrl_p)};
             lbg = [lbg; 0];
             ubg = [ubg; 0];
@@ -863,14 +866,14 @@ end
 %% Terminal Constraints
 % Add Terminal Constrint
 if terminal_constraint
-if relax_terminal_constraint_homotopy
-    rho_terminal_p = 1/sigma_p;
-end
+    if relax_terminal_constraint_homotopy
+        rho_terminal_p = 1/sigma_p;
+    end
 
     g_terminal = g_terminal_fun(Xk_end);
     n_terminal = length(g_terminal_lb);
     if ~isequal(g_terminal_lb,g_terminal_lb)
-        relax_terminal_constraint = 0; 
+        relax_terminal_constraint = 0;
         % inequality constraint are not relaxed
         if print_level >2
             fprintf('Info: Only terminal-equality constraint relaxation is supported, you have an inequality constraint.\n')
@@ -887,53 +890,53 @@ end
                 ubg = [ubg; g_terminal_ub];
             end
         case 1
-            % l_1 
+            % l_1
             % define slack variables
             s_terminal_ell_1= define_casadi_symbolic(casadi_symbolic_mode,'s_terminal_ell_1',n_terminal);
-             w = {w{:}, s_terminal_ell_1};
-             lbw = [lbw;-inf*ones(n_terminal,1)];
-             ubw = [ubw;inf*ones(n_terminal,1)];
-             w0 = [w0;1e3*ones(n_terminal,1)];
-              ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_terminal];
-             % relaxed constraints
-             g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_1};
-             g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_1};
-             lbg = [lbg; -inf*ones(2*n_terminal,1)];
-             ubg = [ubg; zeros(2*n_terminal,1)];
-             % penalize slack
-             J = J + rho_terminal_p*sum(s_terminal_ell_1);
+            w = {w{:}, s_terminal_ell_1};
+            lbw = [lbw;-inf*ones(n_terminal,1)];
+            ubw = [ubw;inf*ones(n_terminal,1)];
+            w0 = [w0;1e3*ones(n_terminal,1)];
+            ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_terminal];
+            % relaxed constraints
+            g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_1};
+            g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_1};
+            lbg = [lbg; -inf*ones(2*n_terminal,1)];
+            ubg = [ubg; zeros(2*n_terminal,1)];
+            % penalize slack
+            J = J + rho_terminal_p*sum(s_terminal_ell_1);
         case 2
             % l_2
             J = J + rho_terminal_p*(g_terminal-g_terminal_lb)'*(g_terminal-g_terminal_lb);
         case 3
-            % l_inf 
+            % l_inf
             % define slack variable
             s_terminal_ell_inf= define_casadi_symbolic(casadi_symbolic_mode,'s_terminal_ell_inf',1);
-             w = {w{:}, s_terminal_ell_inf};
-             lbw = [lbw;-inf];
-             ubw = [ubw;inf];
-             w0 = [w0;1e3];
-             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-             % relaxed contraint
-             g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1)};
-             g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1)};
-             lbg = [lbg; -inf*ones(2*n_terminal,1)];
-             ubg = [ubg; zeros(2*n_terminal,1)];
-             % penalize slack
-             J = J + rho_terminal_p*(s_terminal_ell_inf);
+            w = {w{:}, s_terminal_ell_inf};
+            lbw = [lbw;-inf];
+            ubw = [ubw;inf];
+            w0 = [w0;1e3];
+            ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+            % relaxed contraint
+            g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1)};
+            g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1)};
+            lbg = [lbg; -inf*ones(2*n_terminal,1)];
+            ubg = [ubg; zeros(2*n_terminal,1)];
+            % penalize slack
+            J = J + rho_terminal_p*(s_terminal_ell_inf);
         case 4
             if exist('s_elastic','var')
-                % l_inf 
-            % define slack variable
-             % relaxed contraint
-             g = {g{:}, g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1)};
-             g = {g{:}, -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1)};
-             lbg = [lbg; -inf*ones(2*n_terminal,1)];
-             ubg = [ubg; zeros(2*n_terminal,1)];
+                % l_inf
+                % define slack variable
+                % relaxed contraint
+                g = {g{:}, g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1)};
+                g = {g{:}, -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1)};
+                lbg = [lbg; -inf*ones(2*n_terminal,1)];
+                ubg = [ubg; zeros(2*n_terminal,1)];
             else
                 error('This mode of terminal contraint relxation is only avilable if a MPCC elastic mode is used.')
             end
-    end   
+    end
 end
 
 %% quadratic regularization for speed of time variables;
@@ -944,28 +947,28 @@ end
 
 %% Virtual forces
 if virtual_forces
-   if objective_scaling_direct
+    if objective_scaling_direct
         J = J + (1/sigma_p)*J_virtual_froces;
-   else
+    else
         J = J+J_virtual_froces;
-   end
-   if virtual_forces_convex_combination
-       % treat the convex multipler of 
-            w = {w{:}, psi_vf};
-            ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-            ind_vf  = ind_total(end);
-            w0 = [w0;1];
-       if virtual_forces_parametric_multipler
+    end
+    if virtual_forces_convex_combination
+        % treat the convex multipler of
+        w = {w{:}, psi_vf};
+        ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+        ind_vf  = ind_total(end);
+        w0 = [w0;1];
+        if virtual_forces_parametric_multipler
             g = {g{:}, psi_vf-sigma_p};
             lbg =[lbg;0];
             ubg =[ubg;0];
             lbw = [lbw; -inf];
             ubw = [ubw; inf];
-       else
+        else
             lbw = [lbw; 0];
             ubw = [ubw; 1];
-       end
-   end
+        end
+    end
 end
 
 %% Add Terminal Cost to objective
@@ -1046,7 +1049,7 @@ end
 %% Objective Terms for Grid Regularization
 % Huristic Regularization.
 if heuristic_step_equilibration || step_equilibration
-%     J = J + step_equilibration_penalty*J_regularize_h;
+    %     J = J + step_equilibration_penalty*J_regularize_h;
     J = J + rho_h_p*J_regularize_h;
 end
 
