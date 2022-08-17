@@ -49,8 +49,8 @@ if step_equilibration
         
                 lbg = [lbg; [-inf;-inf]];
                 ubg = [ubg; [0;0]];
-                g_step_eq   = [g_step_eq;[tanh(nu_k/sigma_scale)*delta_h_ki-sigma*M_elastic;...
-                        -tanh(nu_k/sigma_scale)*delta_h_ki-sigma*M_elastic]];
+%                 g_step_eq   = [g_step_eq;[tanh(nu_k/sigma_scale)*delta_h_ki-sigma*M_elastic;...
+%                         -tanh(nu_k/sigma_scale)*delta_h_ki-sigma*M_elastic]];
             case 4
                 %                             g = {g{:}, (nu_k)*delta_h_ki^2};
                 M_elastic = 1e0;

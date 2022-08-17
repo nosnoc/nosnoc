@@ -37,7 +37,7 @@ q = MX.sym('q',2); v = MX.sym('v',2); u = MX.sym('u',2);
 model.x0 = [0;0.5;0;0];
 model.x = [q;v]; model.u = u; model.e = e ;
 model.c = q(2);
-model.f = [v;u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)]; 
+model.f = [u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)]; 
 % Objective and constraints
 model.f_q = u'*u; model.f_q_T = 100*v'*v;
 model.g_ineq = u'*u-u_max^2;

@@ -3,9 +3,9 @@ import casadi.*
     if nargin < 3
         size = 1;
     end
-    if strcmp(type, 'casadi.SX')
+    if strcmp(type, 'casadi.SX') || strcmp(type, 'SX')
         sym = SX.sym(name, size);
-    elseif strcmp(type, 'casadi.MX')
+    elseif strcmp(type, 'casadi.MX')  || strcmp(type, 'MX')
         sym = MX.sym(name, size);
     else
         error('Type must be MX or SX.')

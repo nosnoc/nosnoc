@@ -490,12 +490,7 @@ for k=0:N_stages-1
             end
             % Update lambda previous at finite element level
             if i > 0 || k > 0
-                % TODO: This if condition might not be needed at all?
                 Lambda_end_previous_fe = Lambda_ki_end;
-            end
-            if i == N_finite_elements(k+1)-1 && ~couple_across_stages
-                % TODO: check: couple_across_stages is always one, hence this part is never used?
-                Lambda_end_previous_fe = zeros(n_theta,1);
             end
         end
         

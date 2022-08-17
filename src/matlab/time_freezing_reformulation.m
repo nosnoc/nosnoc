@@ -400,7 +400,7 @@ if time_freezing
                 zeros(n_q,1) invM*nabla_q_f_c];
             f_aux_n1 = N*K*N'*[q;v];
             f_aux_n1 = [f_aux_n1;zeros(n_quad+1,1)];
-            f = [f;1];
+            f = [v;f;1];
             % updated with clock state
             model.f = f;
             model.F = [f, f_aux_n1];
