@@ -105,9 +105,15 @@ if mpcc_mode >= 11 && mpcc_mode <= 13
     s_ell_1_elastic_exists  = 1;
 end
 %% Some code refactoring tasks:
+% 1) fully vectorize with matrix expreesions the IRK expressions;
+% 2) if use_fesd = 0, then set h_ki = h_k(k+1) in order to avoid asiked if
+% use_fesd all the time when h appears
 % 3) inestead of cells use matrices for differntail variables
 % 6) matrix valued evaulation of f_x_fun & co to avoid loop over j=1:d
 % 7) write the cross_comp and step equilibration functions from sktratch to imrpove readibility (avoid saving of current_finite lement)
+% 9) do the expressions for x_temp in matrix mode next to the defintion of
+% x_ki_stages in differential, do the constraints at this points instead of
+% afterwards (Cf opti vesrion)
 
 %% Formulate NLP - Start with an empty NLP
 % degrese of freedom
@@ -279,7 +285,6 @@ for k=0:N_stages-1
 
             sum_h_ki = sum_h_ki + h_ki;
 
-
             if time_optimal_problem && use_speed_of_time_variables
                 % integral of clock state (if no time-freezing is used, in time-freezing we use directly the (nonsmooth) differential clock state.
                 sum_S_sot = sum_S_sot + h_ki*S_sot_k;
@@ -302,6 +307,8 @@ for k=0:N_stages-1
                         error('Pick heuristic_step_equlibration_mode between 1 and 2.');
                 end
             end
+        else
+            h_ki = h_k(k+1);
         end
 
         %% Define Variables at stage points (IRK stages) for the current finite elements
@@ -405,11 +412,7 @@ for k=0:N_stages-1
                 x_temp = X_ki;
                 % irk equations for stages
                 for r = 1:n_s
-                    if use_fesd
                         x_temp = x_temp + h_ki*A_irk(j,r)*V_ki_stages{r};
-                    else
-                        x_temp = x_temp + h_k(k+1)*A_irk(j,r)*V_ki_stages{r};
-                    end
                 end
                 if lift_irk_differential
                     X_ki_lift{j} =  X_ki_stages{j} - x_temp;
@@ -538,26 +541,14 @@ for k=0:N_stages-1
                     % Add contribution to the end state, Attention qj changes with time scaling!
                     Xk_end = Xk_end + D(j+1)*X_ki_stages{j};
                     % Add contribution to quadrature function
-                    if use_fesd
-                        J = J + B(j+1)*qj*h_ki;
-                    else
-                        J = J + B(j+1)*qj*h_k(k+1);
-                    end
+                    J = J + B(j+1)*qj*h_ki;                   
                     % Append IRK equations to NLP constraint
-                    if use_fesd
-                        g = {g{:}, h_ki*fj - xp};
-                    else
-                        g = {g{:}, h_k(k+1)*fj - xp};
-                    end
+                    g = {g{:}, h_ki*fj - xp};
+
                 case 'differential'
                     % Add contribution to the end state and quadrature term
-                    if use_fesd
                         Xk_end = Xk_end + h_ki*b_irk(j)*V_ki_stages{j};
                         J = J + h_ki*b_irk(j)*qj;
-                    else
-                        Xk_end = Xk_end + h_k(k+1)*b_irk(j)*V_ki_stages{j};
-                        J = J + h_k(k+1)*b_irk(j)*qj;
-                    end
                     % Append IRK equations (differential part) to NLP constraint, note that we dont distingiush if use_fesd is on/off
                     % since it was done in the defintion of X_ki_stages which enters f_j
                     g = {g{:}, fj - V_ki_stages{j}};

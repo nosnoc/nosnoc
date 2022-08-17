@@ -248,6 +248,8 @@ for k=0:N_stages-1
                 % TODO: consider writhing this forumla vectorized after all loops
                 clock_state_integral_smooth = clock_state_integral_smooth + h_ki*S_sot_k; % integral of clock state (if no time-freezing is used, in time-freezing we use directly the (nonsmooth) differential clock state.
             end
+        else
+            h_ki = h_k(k+1)
         end
 
         %% Differntial variables at stage points
@@ -273,8 +275,6 @@ for k=0:N_stages-1
                 ind_v = [ind_v,ind_total(end)+1:ind_total(end)+n_x];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
 
-                X_ki_lift_expressions = []; % for symbolic expressions if X_ki_stages are lifted.
-
                 if lift_irk_differential
                     X_ki_stages = opti.variable(n_x, n_s); % matrix with all stage values for current FE i in control interval k
                     X{end+1} = X_ki_stages;
@@ -285,36 +285,13 @@ for k=0:N_stages-1
                     % Index sets
                     ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x*n_s];
                     ind_total = [ind_total,ind_total(end)+1:ind_total(end)+n_x*n_s];
+                    % Expressions for X_stages
+                    X_ki_lift_expressions = X_ki_stages - (X_ki + h_ki*V_ki_stages*A_irk');
                 else
                     % store in this matrix all expressions for state at stage points
-                    X_ki_stages = [];
-                end
-
-                % differentail state values at stage points - either via  symbolic variables or new degress of freedom (lifting is on)
-                % expressions for the state variable values at stage points follow:
-                % X_{k,i,j} = x_ki0 + h_n \sum_{i=1}^{n_s} a_{j,i}v_{i,j}
-                %% TODO! instead of loops, perform this conde in matrix notation
-                for j = 1:n_s
-                    % inital value (left boundary point of current FE)
-                    %                     x_temp = X_ki;
-                    %                     for r = 1:n_s
-                    %                         if use_fesd
-                    %                             x_temp = x_temp + h_ki*A_irk(j,r)*V_ki_stages(:,r);
-                    %                         else
-                    %                             x_temp = x_temp + h_k(k+1)*A_irk(j,r)*V_ki_stages(:,r);
-                    %                         end
-                    %                     end
-                    if use_fesd
-                        x_temp = X_ki + h_ki*A_irk(j,:)*V_ki_stages;
-                    else
-                        x_temp = X_ki + h_k(k+1)*A_irk(j,:)*V_ki_stages;
-                    end
-                    % TODO: run few examples to see does this work properly
-                    if lift_irk_differential
-                        X_ki_lift_expressions = [X_ki_lift_expressions;X_ki_stages(:,j) - x_temp];
-                        % TODO: This is a matrix function, be careful when adding as constraibnt
-                    else
-                        X_ki_stages = [X_ki_stages,x_temp];
+                    X_ki_stages = h_ki*V_ki_stages*A_irk';
+                    if x_box_at_stg
+                        opti.subject_to(repmat(lbx,1,n_s) <= X_ki_stages <= repmat(ubx,1,n_s));
                     end
                 end
         end
@@ -388,8 +365,7 @@ for k=0:N_stages-1
                 end
                 Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
                 Mu_ki_current_fe = {Mu_ki_current_fe{:}, []};
-                % For cross comp
-                sum_Lambda_ki = sum_Lambda_ki + Lambda_ki_end;
+                sum_Lambda_ki = sum_Lambda_ki + Lambda_ki_end; % add boundary point for cross comp (Attention: Is it added twice?)
             end
         end
         % Defintion of all stage variables for current finite element is done.
@@ -402,7 +378,6 @@ for k=0:N_stages-1
         end
 
         %% The IRK Equations - evaluation of dynamics (ODE r.h.s. and algebraic equations at stage points)
-
         % Evaluate equations:
         if n_u > 0
             [f_x, f_q] = f_x_fun(X_ki_stages, Z_ki_stages, U_k);
@@ -422,49 +397,31 @@ for k=0:N_stages-1
         switch irk_representation
             case 'integral'
                 % Xk_end = D(1)*Xk; % X_{k+1} = X_k0 + sum_{j=1}^{n_s} D(j)*X_kj; Xk0 = D(1)*Xk
-
                 % All stage values in one matrix, i.e. interpolating points of collocation polynomial
                 X_all = [X_ki X_ki_stages];
                 % Get slope of interpolating polynomial (normalized)
                 Pi_dot = X_all*C;
-                if use_fesd
-                    J = J + f_q*B*h_ki;
-                    % Match with ODE right-hand-side
-                    opti.subject_to(Pi_dot == h_ki*f_x);
-                    opti.subject_to(0 == g_z_all);
-                else
-                    J = J + f_q*B*h_k(k+1);
-                    % Match with ODE right-hand-side
-                    opti.subject_to(Pi_dot == h*f_x);
-                end
+                % Match with ODE right-hand-side
+                opti.subject_to(Pi_dot == h_ki*f_x);
+                opti.subject_to(0 == g_z_all);
+                J = J + f_q*B*h_ki;
                 % State at end of finite elemnt
                 Xk_end = X_all*D;
             case 'differential'
-                % Add contribution to the end state and quadrature term
-                if use_fesd
-                    Xk_end = X_ki + h_ki*b_irk'*V_ki_stages;
-                    J = J + h_ki*b_irk'*f_q;
-                else
-                    Xk_end = X_ki + h_k(k+1)*b_irk'*V_ki_stages;
-                    J = J + h_k(k+1)*b_irk'*f_q;
-                end
-                opti.subject_to(f_x == h*V_ki_stages);
+                opti.subject_to(f_x == h_ki*V_ki_stages);
                 if lift_irk_differential
                     opti.subject_to(0 == X_ki_lift_expressions);
                 end
-                    
-                if x_box_at_stg && ~lift_irk_differential
-                    % TODO: Consider should this constraint be where the
-                    % expresions for X_ki_stages are defined!
-                    opti.subject_to(repmat(lbx,1,n_s) <= X_ki_stages <= repmat(ubx,1,n_s));
-                end
+                J = J + h_k(k+1)*b_irk'*f_q;
+                % State at end of finite elemnt
+                Xk_end = X_ki + h_ki*b_irk'*V_ki_stages;
         end
         % Obeserve that in the differential representation X_ki_stages is a linear function of V_ki_stages and X_ki, where as in the integral representation X_ki_stages are degrees of freedom
         opti.subject_to(0 == g_z_all);   % this constraint is same for both representations
 
         %% General nonlinear constraint at stage points
         if g_ineq_constraint && g_ineq_at_stg
-             % Todo: cf is here a check for thevery last point neede?
+            % Todo: cf is here a check for thevery last point neede?
             g_ineq_ki = g_ineq_fun(X_ki_stages,Uk);
             opti.subject_to(repmat(g_ineq_lb,1,n_s) <= g_z_all <= repmat(g_ineq_ub,1,n_s));
             % opti.subject_to(g_ineq_lb <= g_z_all <= g_ineq_ub);
