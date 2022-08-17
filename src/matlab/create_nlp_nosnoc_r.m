@@ -93,10 +93,10 @@ if time_optimal_problem
 end
 
 %% Elastic Mode Variables
-s_ell_inf_elastic_exists  = 0;
+S_ell_inf_elastic_exists  = 0;
 if mpcc_mode >= 5 && mpcc_mode <= 10
-    s_elastic = define_casadi_symbolic(casadi_symbolic_mode,'s_elastic',1);
-    s_ell_inf_elastic_exists = 1;
+    S_elastic = define_casadi_symbolic(casadi_symbolic_mode,'s_elastic',1);
+    S_ell_inf_elastic_exists = 1;
 end
 s_ell_1_elastic_exists  = 0;
 
@@ -104,6 +104,10 @@ sum_s_elastic = 0;
 if mpcc_mode >= 11 && mpcc_mode <= 13
     s_ell_1_elastic_exists  = 1;
 end
+%% Some code refactoring tasks:
+% 3) inestead of cells use matrices for differntail variables
+% 6) matrix valued evaulation of f_x_fun & co to avoid loop over j=1:d
+% 7) write the cross_comp and step equilibration functions from sktratch to imrpove readibility (avoid saving of current_finite lement)
 
 %% Formulate NLP - Start with an empty NLP
 % degrese of freedom
@@ -155,8 +159,14 @@ ind_boundary = []; % index of bundary value lambda and mu
 ind_total = ind_x;
 
 % Integral of the clock state if no time rescaling is present.
-sum_h_ki_control_interval_k = 0;
+sum_h_ki = 0;
+sum_h_ki_vec = [];
 sum_h_ki_all = 0;
+
+% vectors conting sum_lambda_ki sum_theta_ki
+sum_Theta_ki_vec = [];
+sum_Lambda_ki_vec = [];
+
 % Initalization of forward and backward sums for the step-equilibration
 sigma_theta_B_k = 0; % backward sum of theta at finite element k
 sigma_lambda_B_k = 0; % backward sum of lambda at finite element k
@@ -164,12 +174,13 @@ sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
 sigma_theta_F_k = 0; % forward sum of theta at finite element k
 nu_vector = [];
 % Integral of the clock state if no time-freezing is present.
-sum_s_sot =0;
+sum_S_sot =0;
 n_cross_comp = zeros(max(N_finite_elements),N_stages);
 
 % Continuity of lambda initalization
-Lambda_end_previous_fe = zeros(n_theta,1);
 Z_kd_end = zeros(n_z,1);
+Lambda_end_previous_fe = zeros(n_theta,1);
+
 % initialize cross comp and mpcc related structs
 mpcc_var_current_fe.p = p;
 comp_var_current_fe.cross_comp_control_interval_k = 0;
@@ -205,8 +216,8 @@ for k=0:N_stages-1
                     g = {g{:}, U_virtual_k - M_virtual_forces*sigma_p};
                     g = {g{:}, -M_virtual_forces*sigma_p-U_virtual_k };
                 else
-                    g = {g{:}, U_virtual_k - M_virtual_forces*s_elastic};
-                    g = {g{:}, -M_virtual_forces*s_elastic-U_virtual_k};
+                    g = {g{:}, U_virtual_k - M_virtual_forces*S_elastic};
+                    g = {g{:}, -M_virtual_forces*S_elastic-U_virtual_k};
                 end
                 lbg = [lbg; -inf*ones(2*n_q,1)];
                 ubg = [ubg; 0*ones(2*n_q,1)];
@@ -218,10 +229,10 @@ for k=0:N_stages-1
     %     If only time_rescaling is true, then the h_k also make sure to addapt the length of the subintervals, if both
     %     time_rescaling && use_speed_of_time_variables are true, new control variables are introduecd, they can be per stage or one for the whole interval.
     if time_rescaling && use_speed_of_time_variables
-        if local_speed_of_time_variable
+        if k == 0 || local_speed_of_time_variable
             % at every stage
-            s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k)],1);
-            w = {w{:}, s_sot_k};
+            S_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['S_sot_' num2str(k)],1);
+            w = {w{:}, S_sot_k};
             % intialize speed of time (sot), lower and upper bounds
             w0 = [w0; s_sot0];
             ubw = [ubw;s_sot_max];
@@ -229,23 +240,7 @@ for k=0:N_stages-1
             % index colector for sot variables
             ind_sot = [ind_sot,ind_total(end)+1:ind_total(end)+1];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-            J_regularize_sot = J_regularize_sot+(s_sot_k-1)^2;
-        else
-            if k == 0
-                % only once
-                s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k+1)],1);
-
-                w = {w{:}, s_sot_k};
-                % intialize speed of time (sot), lower and upper bounds
-                w0 = [w0; s_sot0];
-                lbw = [lbw;s_sot_min];
-                ubw = [ubw;s_sot_max];
-                % index colector for sot variables
-                ind_sot = [ind_sot,ind_total(end)+1:ind_total(end)+1];
-                ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-                % enfroce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
-                J_regularize_sot = J_regularize_sot+(s_sot_k)^2;
-            end
+            J_regularize_sot = J_regularize_sot+(S_sot_k-1)^2;
         end
     end
 
@@ -257,13 +252,14 @@ for k=0:N_stages-1
         lbg = [lbg; g_ineq_lb];
         ubg = [ubg; g_ineq_ub];
     end
-    sum_h_ki_control_interval_k = 0; % Integral of the clock state (if not time freezing) on the current stage.
 
     %% Loop over all finite elements in the current k-th control stage.
+    sum_h_ki = 0; % Integral of the clock state (if not time freezing) on the current stage.
+
     for i = 0:N_finite_elements(k+1)-1
         %%  Sum of lambda and theta for current finite elememnt
-        Theta_sum_finite_element_ki = 0;  % initalize sum of theta's (the pint at t_n is not included)
-        Lambda_sum_finite_element_ki = Lambda_end_previous_fe;
+        sum_Theta_ki = 0;  % initalize sum of theta's (the pint at t_n is not included)
+        sum_Lambda_ki = Lambda_end_previous_fe;
         %% Step size in FESD, Speed of Time variables, Step equilibration constraints
         if use_fesd
             % Define step-size variables, if FESD is used.
@@ -271,6 +267,7 @@ for k=0:N_stages-1
                 h_ki_previous = h_ki;
             end
             % define step-size
+            %             eval(['h_ki  = ' casadi_symbolic_mode '.sym(''h_'  num2str(k) '_' num2str(i) ''',1);'])
             h_ki = define_casadi_symbolic(casadi_symbolic_mode,['h_'  num2str(k) '_' num2str(i)],1);
             w = {w{:}, h_ki};
             w0 = [w0; h0_k(k+1)];
@@ -280,15 +277,14 @@ for k=0:N_stages-1
             ind_h = [ind_h,ind_total(end)+1:ind_total(end)+1];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
 
-            sum_h_ki_control_interval_k = sum_h_ki_control_interval_k + h_ki;
-            sum_h_ki_all = sum_h_ki_all + h_ki;
+            sum_h_ki = sum_h_ki + h_ki;
+
 
             if time_optimal_problem && use_speed_of_time_variables
                 % integral of clock state (if no time-freezing is used, in time-freezing we use directly the (nonsmooth) differential clock state.
-                sum_s_sot = sum_s_sot + h_ki*s_sot_k;
+                sum_S_sot = sum_S_sot + h_ki*S_sot_k;
             end
 
-            %             if (k > 0 && (i > 0 || couple_across_stages))
             if i > 0
                 delta_h_ki = h_ki - h_ki_previous;
             else
@@ -394,8 +390,8 @@ for k=0:N_stages-1
             Mu_ki = {Mu_ki{:}, Mu_kij};
             % Sum \theta and \lambda over the current finite element.
             if use_fesd
-                Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_kij;
-                Theta_sum_finite_element_ki =  Theta_sum_finite_element_ki  +  Theta_kij;
+                sum_Lambda_ki =  sum_Lambda_ki + Lambda_kij;
+                sum_Theta_ki =  sum_Theta_ki  +  Theta_kij;
             end
             % Update the standard complementarity
             J_comp_std = J_comp_std + J_cc_fun(Z_ki_stages{j});
@@ -453,13 +449,13 @@ for k=0:N_stages-1
                     Mu_ki = {Mu_ki{:}, []};
             end
             % For cross comp
-            Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_ki_end;
+            sum_Lambda_ki =  sum_Lambda_ki + Lambda_ki_end;
         end
 
         %% Update struct with all complementarity related quantities
         if use_fesd
-            comp_var_current_fe.Lambda_sum_finite_element_ki = Lambda_sum_finite_element_ki;
-            comp_var_current_fe.Theta_sum_finite_element_ki= Theta_sum_finite_element_ki;
+            comp_var_current_fe.sum_Lambda_ki = sum_Lambda_ki;
+            comp_var_current_fe.sum_Theta_ki= sum_Theta_ki;
             comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
         end
         comp_var_current_fe.Lambda_ki = Lambda_ki;
@@ -500,12 +496,36 @@ for k=0:N_stages-1
                 Xk_end = D(1)*X_ki;
                 % Note that the polynomial is initalized with the previous value % (continuity connection)
                 % Xk_end = D(1)*Xk;   % X_k+1 = X_k0 + sum_{j=1}^{d} D(j)*X_kj; Xk0 = D(1)*Xk
-                % X_k+1 = X_k0 + sum_{j=1}^{n_s} D(j)*X_kj; Xk0 = D(1)*Xk
             case 'differential'
                 Xk_end = X_ki; % initalize with x_n;
         end
 
+        % TODO: vectorize this code to avoid loop over 1:ns
         for j=1:n_s
+            % Evaulate Differetinal and Algebraic Equations at stage points
+            if n_u > 0
+                if virtual_forces && virtual_forces_convex_combination
+                    if virtual_forces_parametric_multipler
+                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,sigma_p);
+                    else
+                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,psi_vf);
+                    end
+                else
+                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                end
+                gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+            else
+                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
+                gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
+            end
+
+            if time_rescaling && use_speed_of_time_variables
+                        % rescale equations
+                        fj = S_sot_k*fj;
+                        qj = S_sot_k*qj;
+                        gj = S_sot_k*gj;
+            end
+                % irk equations
             switch irk_representation
                 case 'integral'
                     % Expression for the state derivative at the stage point
@@ -514,28 +534,7 @@ for k=0:N_stages-1
                     for r=1:n_s
                         xp = xp + C(r+1,j+1)*X_ki_stages{r};
                     end
-                    % Evaulate Differetinal and Algebraic Equations at stage points
-                    if n_u > 0
-                        if virtual_forces && virtual_forces_convex_combination
-                            if virtual_forces_parametric_multipler
-                                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,sigma_p);
-                            else
-                                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,psi_vf);
-                            end
-                        else
-                            [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                        end
-                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                    else
-                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
-                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
-                    end
-                    if time_rescaling && use_speed_of_time_variables
-                        % rescale equations
-                        fj = s_sot_k*fj;
-                        qj = s_sot_k*qj;
-                        gj = s_sot_k*gj;
-                    end
+                    
                     % Add contribution to the end state, Attention qj changes with time scaling!
                     Xk_end = Xk_end + D(j+1)*X_ki_stages{j};
                     % Add contribution to quadrature function
@@ -550,23 +549,7 @@ for k=0:N_stages-1
                     else
                         g = {g{:}, h_k(k+1)*fj - xp};
                     end
-
                 case 'differential'
-                    % Evaulate Differetinal and Algebraic Equations at stage points
-                    if n_u > 0
-                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                    else
-                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
-                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
-                    end
-
-                    if time_rescaling && use_speed_of_time_variables
-                        % rescale equations
-                        fj = s_sot_k*fj;
-                        qj = s_sot_k*qj;
-                        gj = s_sot_k*gj;
-                    end
                     % Add contribution to the end state and quadrature term
                     if use_fesd
                         Xk_end = Xk_end + h_ki*b_irk(j)*V_ki_stages{j};
@@ -578,7 +561,6 @@ for k=0:N_stages-1
                     % Append IRK equations (differential part) to NLP constraint, note that we dont distingiush if use_fesd is on/off
                     % since it was done in the defintion of X_ki_stages which enters f_j
                     g = {g{:}, fj - V_ki_stages{j}};
-
                     % lifting considerations
                     if lift_irk_differential
                         g = {g{:}, X_ki_lift{j}};
@@ -634,8 +616,8 @@ for k=0:N_stages-1
             % Treatment and reformulation of all complementarity constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
             mpcc_var_current_fe.J = J;
             mpcc_var_current_fe.g_all_comp_j = g_all_comp_j;
-            if s_ell_inf_elastic_exists
-                mpcc_var_current_fe.s_elastic = s_elastic;
+            if S_ell_inf_elastic_exists
+                mpcc_var_current_fe.s_elastic = S_elastic;
             end
             if s_ell_1_elastic_exists
                 s_elastic_ell_1  = define_casadi_symbolic(casadi_symbolic_mode,['s_elastic_'  num2str(k) '_' num2str(i) '_' num2str(j)], n_all_comp_j);
@@ -650,7 +632,6 @@ for k=0:N_stages-1
                 % pass to constraint creation
                 mpcc_var_current_fe.s_elastic = s_elastic_ell_1;
             end
-
             [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_current_fe,dimensions,current_index);
             g = {g{:}, g_comp};
             lbg = [lbg; g_comp_lb];
@@ -665,7 +646,6 @@ for k=0:N_stages-1
         X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
         w = {w{:}, X_ki};
         w0 = [w0; x0];
-
         ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
 
@@ -707,7 +687,9 @@ for k=0:N_stages-1
             g = {g{:}, gj};
         end
     end
-
+    sum_h_ki_vec = [sum_h_ki_vec,sum_h_ki];
+    sum_Theta_ki_vec = [sum_Theta_ki_vec,sum_Theta_ki];
+    sum_Lambda_ki_vec = [sum_Lambda_ki_vec,sum_Lambda_ki];
     %% Equdistant grid in numerical time (Multiple-shooting type discretization)
     if equidistant_control_grid
         if time_rescaling && time_optimal_problem
@@ -715,18 +697,18 @@ for k=0:N_stages-1
             % If time freezing is present, but not ime optimal problem, then the final numerical time should not be changed, hence the query.
             if use_speed_of_time_variables
                 % numerical time and speed of time are decoupled
-                g = {g{:}, sum_h_ki_control_interval_k-h};
+                g = {g{:}, sum_h_ki-h};
                 lbg = [lbg; 0];
                 ubg = [ubg; 0];
             else
                 % numerical time and speed of time are lumped together
-                g = {g{:}, sum_h_ki_control_interval_k-T_final/N_stages};
+                g = {g{:}, sum_h_ki-T_final/N_stages};
                 lbg = [lbg; 0];
                 ubg = [ubg; 0];
             end
         else
             % numerical time is fixed.
-            g = {g{:}, sum_h_ki_control_interval_k-h};
+            g = {g{:}, sum_h_ki-h};
             lbg = [lbg; 0];
             ubg = [ubg; 0];
         end
@@ -749,6 +731,7 @@ for k=0:N_stages-1
         ind_g_clock_state = [ind_g_clock_state;length(lbg)];
     end
 end
+sum_h_ki_all = sum(sum_h_ki_vec);
 
 %% Scalar-valued commplementarity residual
 if use_fesd
@@ -831,7 +814,7 @@ if time_optimal_problem && use_speed_of_time_variables
     else
         % This is both variants local and global sot vars. Hence, it is written here together and not in the loops or queries above.
         % ( In this case,the trivial constraint T_final = sum_s_sot) is ommited and provided implicitly)
-        g = {g{:}, sum_s_sot-T_final};
+        g = {g{:}, sum_S_sot-T_final};
         lbg = [lbg; 0];
         ubg = [ubg; 0];
         J = J+T_final;
@@ -919,8 +902,8 @@ if terminal_constraint
                 % l_inf
                 % define slack variable
                 % relaxed contraint
-                g = {g{:}, g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1)};
-                g = {g{:}, -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1)};
+                g = {g{:}, g_terminal-g_terminal_lb-S_elastic*ones(n_terminal,1)};
+                g = {g{:}, -(g_terminal-g_terminal_lb)-S_elastic*ones(n_terminal,1)};
                 lbg = [lbg; -inf*ones(2*n_terminal,1)];
                 ubg = [ubg; zeros(2*n_terminal,1)];
             else
@@ -972,7 +955,7 @@ J_objective = J;
 %% Elastic mode variable for \ell_infty reformulations
 if mpcc_mode >= 5 && mpcc_mode < 8
     % add elastic variable to the vector of unknowns and add objeective contribution
-    w = {w{:}, s_elastic};
+    w = {w{:}, S_elastic};
     ind_elastic = [ind_elastic,ind_total(end)+1:ind_total(end)+1];
     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
     lbw = [lbw; s_elastic_min];
@@ -980,9 +963,9 @@ if mpcc_mode >= 5 && mpcc_mode < 8
     w0 = [w0;s_elastic_0];
 
     if objective_scaling_direct
-        J = J + (1/sigma_p)*s_elastic;
+        J = J + (1/sigma_p)*S_elastic;
     else
-        J = sigma_p*J + s_elastic;
+        J = sigma_p*J + S_elastic;
     end
 end
 
@@ -1009,24 +992,24 @@ if mpcc_mode >= 8 && mpcc_mode <= 10
     w0 = [w0;rho_0];
     if nonlinear_sigma_rho_constraint
         if convex_sigma_rho_constraint
-            g = {g{:}, -rho_scale*exp(-rho_lambda*rho_elastic)+s_elastic};
+            g = {g{:}, -rho_scale*exp(-rho_lambda*rho_elastic)+S_elastic};
         else
-            g = {g{:}, rho_scale*exp(-rho_lambda*rho_elastic)-s_elastic};
+            g = {g{:}, rho_scale*exp(-rho_lambda*rho_elastic)-S_elastic};
         end
     else
-        g = {g{:}, -(rho_elastic-rho_max)-s_elastic};
+        g = {g{:}, -(rho_elastic-rho_max)-S_elastic};
     end
 
     lbg = [lbg; 0];
     ubg = [ubg; inf];
 
     % add elastic variable to the vector of unknowns and add objeective contribution
-    w = {w{:}, s_elastic};
+    w = {w{:}, S_elastic};
     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
     lbw = [lbw; s_elastic_min];
     ubw = [ubw; s_elastic_max];
     w0 = [w0;s_elastic_0];
-    J = J-rho_penalty*(rho_elastic^2)+sigma_penalty*s_elastic;
+    J = J-rho_penalty*(rho_elastic^2)+sigma_penalty*S_elastic;
 end
 %% Elastic mode variable for \ell_1 reformulations
 if mpcc_mode >= 11 && mpcc_mode <= 13

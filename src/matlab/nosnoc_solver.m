@@ -37,6 +37,7 @@ tic
 if settings_unedited.use_opti
     [solver,solver_initalization,model,settings] = create_nlp_nosnoc_opti(model_unedited,settings_unedited);
 else
+%     [solver,solver_initalization,model,settings] = create_nlp_nosnoc_r(model_unedited,settings_unedited);
     [solver,solver_initalization,model,settings] = create_nlp_nosnoc(model_unedited,settings_unedited);
 end
 solver_generating_time = toc;

@@ -46,17 +46,17 @@ if use_fesd
     % update vector valued sumes over control interval
     if j == n_s 
         % update only once per finite element
-        cross_comp_control_interval_k = cross_comp_control_interval_k + diag(Theta_sum_finite_element_ki)*Lambda_sum_finite_element_ki;
-        cross_comp_control_interval_all = cross_comp_control_interval_all + diag(Theta_sum_finite_element_ki)*Lambda_sum_finite_element_ki;
+        cross_comp_control_interval_k = cross_comp_control_interval_k + diag(sum_Theta_ki)*sum_Lambda_ki;
+        cross_comp_control_interval_all = cross_comp_control_interval_all + diag(sum_Theta_ki)*sum_Lambda_ki;
     end
     for r = 1:n_simplex
         % for different subsystems the lambdas and thetas are decoupled and should be treated as such.
         ind_temp_theta = m_ind_vec(r):m_ind_vec(r)+m_vec(r)-1;
         ind_temp_lambda = ind_temp_theta;
 
-        Theta_k_i_j = Theta_ki_current_fe{j}(ind_temp_theta);
+        Theta_k_i_j = Theta_ki{j}(ind_temp_theta);
         % sum of all cross-complementarities (vector-valued) --> later put into scalar value for the complementarity residual
-%         J_comp  = J_comp + diag(Theta_k_i_j)*Lambda_sum_finite_element_ki(ind_temp_theta);
+%         J_comp  = J_comp + diag(Theta_k_i_j)*sum_Lambda_ki(ind_temp_theta);
 
         switch cross_comp_mode
             %% Cases 1 and 2: Full sparsity, ~ n_s*(n_s+1) constraints
@@ -68,7 +68,7 @@ if use_fesd
                     g_cross_comp_j = [g_cross_comp_j ;diag(Theta_k_i_j)*(Lambda_k_i_jj)];
                 end
                 for jj = 1:n_s
-                    Lambda_k_i_jj = Lambda_ki_current_fe{jj}(ind_temp_lambda);
+                    Lambda_k_i_jj = Lambda_ki{jj}(ind_temp_lambda);
                     g_cross_comp_j = [g_cross_comp_j ;diag(Theta_k_i_j)*(Lambda_k_i_jj)];
                 end
             case 2
@@ -79,46 +79,46 @@ if use_fesd
                     g_cross_comp_j = [g_cross_comp_j ;(Theta_k_i_j)'*(Lambda_k_i_jj)];
                 end
                 for jj = 1:n_s
-                    Lambda_k_i_jj = Lambda_ki_current_fe{jj}(ind_temp_lambda);
+                    Lambda_k_i_jj = Lambda_ki{jj}(ind_temp_lambda);
                     g_cross_comp_j = [g_cross_comp_j ;(Theta_k_i_j)'*(Lambda_k_i_jj)];
                 end
 
                 %% Cases 3 to 6: For every stage j one constraint, 3 and 4 vector valued, 5 and 6 scalar valued
             case 3
                 %  For every stage point one vector-valued  constraint via sum of all \lambda
-                g_cross_comp_j = [g_cross_comp_j ;diag(Theta_k_i_j)*Lambda_sum_finite_element_ki(ind_temp_theta)];
+                g_cross_comp_j = [g_cross_comp_j ;diag(Theta_k_i_j)*sum_Lambda_ki(ind_temp_theta)];
             case 4
                 %  Case 4: For every stage point one vector-valued constraint via sum of all \theta.
                 if j == 1 && i > 0
                     % take care of lambda_{n,0} at same time as \lambda_{n,1}
                     Lambda_k_i_jj = Lambda_end_previous_fe(ind_temp_lambda);
-                    g_cross_comp_j = [g_cross_comp_j;diag(Lambda_k_i_jj)*Theta_sum_finite_element_ki];
+                    g_cross_comp_j = [g_cross_comp_j;diag(Lambda_k_i_jj)*sum_Theta_ki];
                 end
-                Lambda_k_i_jj = Lambda_ki_current_fe{j}(ind_temp_lambda);
-                g_cross_comp_j = [g_cross_comp_j;diag(Lambda_k_i_jj)*Theta_sum_finite_element_ki(ind_temp_theta)];
+                Lambda_k_i_jj = Lambda_ki{j}(ind_temp_lambda);
+                g_cross_comp_j = [g_cross_comp_j;diag(Lambda_k_i_jj)*sum_Theta_ki(ind_temp_theta)];
                 % Cases 5 and 6: For every stage point a scalarv alued constraint
             case 5
                 % Case 5: Per stage point one scalar constraint via sum of \lambda.
-                g_cross_comp_j = [g_cross_comp_j ;(Theta_k_i_j)'*Lambda_sum_finite_element_ki(ind_temp_theta)];
+                g_cross_comp_j = [g_cross_comp_j ;(Theta_k_i_j)'*sum_Lambda_ki(ind_temp_theta)];
             case 6
                 %  Case 6: For every stage point one scalar-valued constraint via sum of all \theta.
                 if j == 1 && i > 0
                     % take care of lambda_{n,0} at same time as \lambda_{n,1}
                     Lambda_k_i_jj = Lambda_end_previous_fe(ind_temp_lambda);
-                    g_cross_comp_j = [g_cross_comp_j;Theta_sum_finite_element_ki(ind_temp_theta)'*Lambda_k_i_jj(ind_temp_theta)];
+                    g_cross_comp_j = [g_cross_comp_j;sum_Theta_ki(ind_temp_theta)'*Lambda_k_i_jj(ind_temp_theta)];
                 end
-                Lambda_k_i_jj = Lambda_ki_current_fe{j}(ind_temp_lambda);
-                g_cross_comp_j = [g_cross_comp_j;Theta_sum_finite_element_ki(ind_temp_theta)'*Lambda_k_i_jj(ind_temp_theta)];
+                Lambda_k_i_jj = Lambda_ki{j}(ind_temp_lambda);
+                g_cross_comp_j = [g_cross_comp_j;sum_Theta_ki(ind_temp_theta)'*Lambda_k_i_jj(ind_temp_theta)];
 
                 %% Cases 7 and 8: a vector or scalar valued constraint per every finite element
             case 7
                 if j == n_s
-                    g_cross_comp_j = [g_cross_comp_j ;diag(Theta_sum_finite_element_ki(ind_temp_theta))*Lambda_sum_finite_element_ki(ind_temp_theta)];
+                    g_cross_comp_j = [g_cross_comp_j ;diag(sum_Theta_ki(ind_temp_theta))*sum_Lambda_ki(ind_temp_theta)];
                 end
             case 8
                 %  Case 8: same as 7, but vector valued
                 if j == n_s
-                    temp = diag(Theta_sum_finite_element_ki(ind_temp_theta))*Lambda_sum_finite_element_ki(ind_temp_theta);
+                    temp = diag(sum_Theta_ki(ind_temp_theta))*sum_Lambda_ki(ind_temp_theta);
                     g_cross_comp_j = [g_cross_comp_j ;sum(temp)];
                 end
                 %% Cases 9 and 10, per control intevral one constraint
@@ -150,7 +150,7 @@ if use_fesd
         end
     end
 else
-    g_cross_comp_j = diag(Lambda_ki_current_fe{j})*Theta_ki_current_fe{j};
+    g_cross_comp_j = diag(Lambda_ki{j})*Theta_ki{j};
 end
 %% Output
 results_cross_comp.g_cross_comp_j = g_cross_comp_j;
