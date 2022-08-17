@@ -203,7 +203,6 @@ for k=0:N_stages-1
 
     %% Loop over finite elements for the current control interval
     sum_h_ki_temp = 0; % initalize sum for current control interval
-    %% TODO: answer the questions: does vectorizing this loop make sense as vectorizing the loop over the stages below?
     for i = 0:N_FE(k+1)-1
         %%  Sum of all theta and lambda for current finite elememnt
         % Note that these are vector valued functions, sum_lambda_ki

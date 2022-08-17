@@ -262,8 +262,8 @@ for k=0:N_stages-1
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
         %%  Sum of lambda and theta for current finite elememnt
-        Theta_sum_finite_element_ki = 0;  % initalize sum of theta's (the pint at t_n is not included)
-        Lambda_sum_finite_element_ki = Lambda_end_previous_fe;
+        sum_Theta_ki = 0;  % initalize sum of theta's (the pint at t_n is not included)
+        sum_Lambda_ki = Lambda_end_previous_fe;
         %% Step size in FESD, Speed of Time variables, Step equilibration constraints
         if use_fesd
             % Define step-size variables, if FESD is used.
@@ -394,8 +394,8 @@ for k=0:N_stages-1
             Mu_ki = {Mu_ki{:}, Mu_kij};
             % Sum \theta and \lambda over the current finite element.
             if use_fesd
-                Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_kij;
-                Theta_sum_finite_element_ki =  Theta_sum_finite_element_ki  +  Theta_kij;
+                sum_Lambda_ki =  sum_Lambda_ki + Lambda_kij;
+                sum_Theta_ki =  sum_Theta_ki  +  Theta_kij;
             end
             % Update the standard complementarity
             J_comp_std = J_comp_std + J_cc_fun(Z_ki_stages{j});
@@ -453,13 +453,13 @@ for k=0:N_stages-1
                     Mu_ki = {Mu_ki{:}, []};
             end
             % For cross comp
-            Lambda_sum_finite_element_ki =  Lambda_sum_finite_element_ki + Lambda_ki_end;
+            sum_Lambda_ki =  sum_Lambda_ki + Lambda_ki_end;
         end
 
         %% Update struct with all complementarity related quantities
         if use_fesd
-            comp_var_current_fe.Lambda_sum_finite_element_ki = Lambda_sum_finite_element_ki;
-            comp_var_current_fe.Theta_sum_finite_element_ki= Theta_sum_finite_element_ki;
+            comp_var_current_fe.sum_Lambda_ki = sum_Lambda_ki;
+            comp_var_current_fe.sum_Theta_ki= sum_Theta_ki;
             comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
         end
         comp_var_current_fe.Lambda_ki = Lambda_ki;
