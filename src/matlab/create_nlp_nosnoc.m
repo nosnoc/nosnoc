@@ -465,12 +465,9 @@ for k=0:N_stages-1
         comp_var_current_fe.Lambda_ki = Lambda_ki;
         comp_var_current_fe.Theta_ki = Theta_ki;
 
-        %% Continiuity of lambda, the boundary values of lambda and mu  %% TODO: resolve its use for proper cross comp -- move there the Z_kde end
+        %% Continiuity of lambda, the boundary values of lambda and mu  
         if use_fesd
             if right_boundary_point_explicit
-                % TODO: Check can this case be done as analternatve to the
-                % previous code section and Z_kd_end definedo only if neeed
-                % for g_z_all eval if  right_boundary_point_explicit = 0;
                 Z_kd_end = Z_ki_stages{n_s};
                 switch pss_mode
                     case 'Stewart'

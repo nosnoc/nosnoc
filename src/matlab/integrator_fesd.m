@@ -170,6 +170,9 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     % only bounadry value
     if isequal(irk_representation,'integral') || lift_irk_differential
         x_opt  = x_opt_extended(:,1:n_s+1:end);
+    else
+        % ??
+        x_opt  = x_opt_extended(:,1:n_s:end);
     end
 
 

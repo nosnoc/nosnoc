@@ -321,7 +321,6 @@ for k=0:N_stages-1
 
         % Sum \theta and \lambda over the current finite element.
         if use_fesd
-            % TODO: Check is it properly summed in casadi symbolics with sum(\cdot,2)
             sum_Theta_ki = sum(Theta_ki_stages,2);
             sum_Lambda_ki = Lambda_end_previous_fe + sum(Lambda_ki_stages,2);
             % these sums are needed for step eq. (forward and backward) and for cross-complementarties)

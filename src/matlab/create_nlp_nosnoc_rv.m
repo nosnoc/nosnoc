@@ -89,7 +89,7 @@ end
 if time_optimal_problem
     % the final time in time optimal control problems
     T_final = define_casadi_symbolic(casadi_symbolic_mode,'T_final',1);
-    T_final_guess = T;
+    T_final0 = T;
 end
 
 %% Elastic Mode Variables
@@ -129,8 +129,8 @@ g = [];
 lbg = [];
 ubg = [];
 
-X_ki = define_casadi_symbolic(casadi_symbolic_mode,'X0',n_x);
-w = [w; X_ki];
+X_k0 = define_casadi_symbolic(casadi_symbolic_mode,'X_0',n_x);
+w = [w; X_k0];
 
 if there_exist_free_x0
     x0_ub = x0;
@@ -248,7 +248,7 @@ for k=0:N_stages-1
     %% General Nonlinear constriant (on control interval boundary)
     % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
     if g_ineq_constraint
-        g_ineq_k = g_ineq_fun(X_ki,U_k);
+        g_ineq_k = g_ineq_fun(X_k0,U_k);
         g = [g;  g_ineq_k];
         lbg = [lbg; g_ineq_lb];
         ubg = [ubg; g_ineq_ub];
@@ -308,8 +308,8 @@ for k=0:N_stages-1
         %% Define Variables at stage points (IRK stages) for the current finite elements
         switch irk_representation
             case 'integral'
-                X_ki_stages = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i)],[n_x,n_s]);
-                w = [w; X_ki_stages(:)];
+                X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i)],[n_x,n_s]);
+                w = [w; X_ki(:)];
                 w0 = [w0; repmat(x0,n_s,1)];
                 ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x*n_s];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x*n_s];
@@ -322,20 +322,20 @@ for k=0:N_stages-1
                 end
             case 'differential'
                 % derivatives at stage points
-                V_ki_stages = define_casadi_symbolic(casadi_symbolic_mode,['V_'  num2str(k) '_' num2str(i)],[n_x,n_s]);
-                w = [w; V_ki_stages(:)];
+                V_ki = define_casadi_symbolic(casadi_symbolic_mode,['V_'  num2str(k) '_' num2str(i)],[n_x,n_s]);
+                w = [w; V_ki(:)];
                 w0 = [w0; repmat(v0,n_s,1)];
                 lbw = [lbw; -inf*ones(n_s*n_x,1)];
                 ubw = [ubw; inf*ones(n_s*n_x,1)];
                 ind_v = [ind_v,ind_total(end)+1:ind_total(end)+n_x*n_s];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x*n_s];
-
                 if lift_irk_differential
-                    X_ki_stages = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i)],[n_x,n_s]);
-                    w = [w; X_ki_stages(:)];
+                    X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i)],[n_x,n_s]);
+                    w = [w; X_ki(:)];
                     w0 = [w0; repmat(x0,n_s,1)];
                     ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x*n_s];
                     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x*n_s];
+
                     if x_box_at_stg
                         lbw = [lbw; repmat(lbx,n_s,1)];
                         ubw = [ubw; repmat(ubx,n_s,1)];
@@ -343,22 +343,22 @@ for k=0:N_stages-1
                         lbw = [lbw; -inf*ones(n_s*n_x,1)];
                         ubw = [ubw; inf*ones(n_s*n_x,1)];
                     end
-                    % Expressions for X_stages
-                    X_ki_lift_expressions = X_ki_stages - (X_ki + h_ki*V_ki_stages*A_irk');
+                    % Expressions for X_ki
+                    X_ki_lift_expressions = X_ki - (X_k0 + h_ki*V_ki*A_irk');
+                    
                 else
                     % store in this matrix all expressions for state at stage points
-                    X_ki_stages = h_ki*V_ki_stages*A_irk';
+                    X_ki = X_k0+h_ki*V_ki*A_irk';
                     if x_box_at_stg
-                        g = [g; X_ki_stages(:)];
+                        g = [g; X_ki(:)];
                         lbg = [lbg; repmat(lbx,n_s,1) ];
                         ubg = [ubg; repmat(ubx,n_s,1) ];
                     end
                 end
-
         end
         % algebraic variables
-        Z_ki_stages = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i)],[n_z,n_s]);
-        w = [w; Z_ki_stages(:)];
+        Z_ki = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i)],[n_z,n_s]);
+        w = [w; Z_ki(:)];
         % index sets
         ind_z = [ind_z,ind_total(end)+1:ind_total(end)+n_z*n_s];
         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_z*n_s];
@@ -370,28 +370,28 @@ for k=0:N_stages-1
         % collection of all lambda and theta for current finite element, they are used for cross complementarites and step equilibration
         switch pss_mode
             case 'Stewart'
-                Theta_ki_stages = Z_ki_stages(1:n_theta,:);
-                Lambda_ki_stages = Z_ki_stages(n_theta+1:2*n_theta,:);
-                Mu_ki_stages = Z_ki_stages(2*n_theta+1,:);
+                Theta_ki = Z_ki(1:n_theta,:);
+                Lambda_ki = Z_ki(n_theta+1:2*n_theta,:);
+                Mu_ki = Z_ki(2*n_theta+1,:);
             case 'Step'
-                Theta_ki_stages= [Z_ki_stages(1:n_alpha,:);repmat(e_alpha,1,n_s)-Z_ki_stages(1:n_alpha,:)];
-                Lambda_ki_stages = Z_ki_stages(n_alpha+1:3*n_alpha,:);
-                Mu_ki_stages = [];
+                Theta_ki= [Z_ki(1:n_alpha,:);repmat(e_alpha,1,n_s)-Z_ki(1:n_alpha,:)];
+                Lambda_ki = Z_ki(n_alpha+1:3*n_alpha,:);
+                Mu_ki = [];
         end
         % Sum \theta and \lambda over the current finite element.
-        sum_Lambda_ki =  sum_Lambda_ki + sum(Lambda_ki_stages,2);
-        sum_Theta_ki =  sum_Theta_ki + sum(Theta_ki_stages,2);
+        sum_Lambda_ki =  sum_Lambda_ki + sum(Lambda_ki,2);
+        sum_Theta_ki =  sum_Theta_ki + sum(Theta_ki,2);
         % Update the standard complementarity
-        J_comp_std = J_comp_std + sum(J_cc_fun(Z_ki_stages));
+        J_comp_std = J_comp_std + sum(J_cc_fun(Z_ki));
 
         %% Additional boundary points if c_{n_s} \neq 1. (cf. FESD paper)
         if use_fesd && (k<N_stages-1 || i< N_finite_elements(k+1)-1)
             if right_boundary_point_explicit
                 switch pss_mode
                     case 'Stewart'
-                        Lambda_ki_end = Z_ki_stages(n_theta+1:2*n_theta,n_s);
+                        Lambda_ki_end = Z_ki(n_theta+1:2*n_theta,n_s);
                     case 'Step'
-                        Lambda_ki_end = Z_ki_stages(n_alpha+1:3*n_alpha,n_s);
+                        Lambda_ki_end = Z_ki(n_alpha+1:3*n_alpha,n_s);
                 end
             else
                 switch pss_mode
@@ -419,8 +419,8 @@ for k=0:N_stages-1
                         ind_boundary = [ind_boundary,ind_total(end)+1:(ind_total(end)+2*n_alpha)];
                         ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+2*n_alpha)];
                 end
-                Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
-                Mu_ki_current_fe = {Mu_ki_current_fe{:}, []};
+                Lambda_ki = [Lambda_ki, Lambda_ki_end];
+                Mu_ki= [Mu_ki, Mu_ki_end];
                 sum_Lambda_ki = sum_Lambda_ki + Lambda_ki_end; % add boundary point for cross comp (Attention: Is it added twice?)
             end
         end
@@ -432,8 +432,8 @@ for k=0:N_stages-1
             comp_var_current_fe.sum_Theta_ki= sum_Theta_ki;
             comp_var_current_fe.Lambda_end_previous_fe = Lambda_end_previous_fe;
         end
-        comp_var_current_fe.Lambda_ki = Lambda_ki_stages;
-        comp_var_current_fe.Theta_ki = Theta_ki_stages;
+        comp_var_current_fe.Lambda_ki = Lambda_ki;
+        comp_var_current_fe.Theta_ki = Theta_ki;
 
         %% Continiuity of lambda, the boundary values of lambda and mu  %% TODO: resolve its use for proper cross comp -- move there the Z_kde end
         if use_fesd
@@ -448,17 +448,17 @@ for k=0:N_stages-1
         if n_u > 0
             if virtual_forces && virtual_forces_convex_combination
                 if virtual_forces_parametric_multipler
-                    [f_x, f_q] = f_x_fun(X_ki_stages,Z_ki_stages,U_k,sigma_p);
+                    [f_x, f_q] = f_x_fun(X_ki,Z_ki,U_k,sigma_p);
                 else
-                    [f_x, f_q] = f_x_fun(X_ki_stages,Z_ki_stages,U_k,psi_vf);
+                    [f_x, f_q] = f_x_fun(X_ki,Z_ki,U_k,psi_vf);
                 end
             else
-                [f_x, f_q] = f_x_fun(X_ki_stages,Z_ki_stages,U_k);
+                [f_x, f_q] = f_x_fun(X_ki,Z_ki,U_k);
             end
-            g_z_all = g_z_all_fun(X_ki_stages,Z_ki_stages,U_k);
+            g_z_all = g_z_all_fun(X_ki,Z_ki,U_k);
         else
-            [f_x, f_q] = f_x_fun(X_ki_stages,Z_ki_stages);
-            g_z_all = g_z_all_fun(X_ki_stages,Z_ki_stages);
+            [f_x, f_q] = f_x_fun(X_ki,Z_ki);
+            g_z_all = g_z_all_fun(X_ki,Z_ki);
         end
 
         if time_rescaling && use_speed_of_time_variables
@@ -470,39 +470,35 @@ for k=0:N_stages-1
 
         switch irk_representation
             case 'integral'
-                % Xk_end = D(1)*Xk; % X_{k+1} = X_k0 + sum_{j=1}^{n_s} D(j)*X_kj; Xk0 = D(1)*Xk
                 % All stage values in one matrix, i.e. interpolating points of collocation polynomial
-                X_all = [X_ki X_ki_stages];
+                X_all = [X_k0 X_ki];
                 % Get slope of interpolating polynomial (normalized)
                 Pi_dot = X_all*C(:,2:end);
                 % Match with ODE right-hand-side
                 g_irk = Pi_dot - h_ki*f_x;
-                J = J + f_q*B(2:end)*h_ki;
+                J = J + h_ki*f_q*B(2:end);
                 % State at end of finite elemnt
                 Xk_end = X_all*D;
-            case 'differential'
-                g_irk = f_x - h_ki*V_ki_stages;
+            case 'differential'               
+                g_irk = f_x - V_ki;
+                J = J + h_ki*f_q*b_irk';
+                % State at end of finite elemnt
+                Xk_end = X_k0 + h_ki*V_ki*b_irk';
                 if lift_irk_differential
                     g = [g;  X_ki_lift_expressions(:)];
                     lbg = [lbg; zeros(n_x*n_s,1)];
                     ubg = [ubg; zeros(n_x*n_s,1)];
                 end
-                J = J + h_k(k+1)*f_q*b_irk';
-                % State at end of finite elemnt
-                Xk_end = X_ki + h_ki*V_ki_stages*b_irk';
         end
-        g = [g;  g_irk(:)];
-        lbg = [lbg; zeros(n_x*n_s,1)];
-        ubg = [ubg; zeros(n_x*n_s,1)];
-        g = [g;  g_z_all(:)];
-        lbg = [lbg;  zeros(n_algebraic_constraints*n_s,1)];
-        ubg = [ubg;  zeros(n_algebraic_constraints*n_s,1)];
+        g = [g;  g_irk(:); g_z_all(:)];
+        lbg = [lbg; zeros(n_x*n_s,1);zeros(n_algebraic_constraints*n_s,1)];
+        ubg = [ubg; zeros(n_x*n_s,1);zeros(n_algebraic_constraints*n_s,1)];
 
         %% General nonlinear constraint at stage points
             if g_ineq_constraint && g_ineq_at_stg
                 % indepednet of the fact is it lifter od not in the
                 % differential case
-                g_ineq_k = g_ineq_fun(X_ki_stages,U_k);
+                g_ineq_k = g_ineq_fun(X_ki,U_k);
                 g = [g;  g_ineq_k(:)];
                 lbg = [lbg; repmat(g_ineq_lb,n_s,1)];
                 ubg = [ubg; repmat(g_ineq_ub,n_s,1)];
@@ -560,8 +556,8 @@ for k=0:N_stages-1
         step_equilibration_constrains;
         %% Continuity condition - new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
-        X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
-        w = [w; X_ki];
+        X_k0 = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
+        w = [w; X_k0];
         w0 = [w0; x0];
         ind_x = [ind_x,ind_total(end)+1:ind_total(end)+n_x];
         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_x];
@@ -576,7 +572,7 @@ for k=0:N_stages-1
         end
 
         % Add equality constraint
-        g = [g;  Xk_end-X_ki];
+        g = [g;  Xk_end-X_k0];
         lbg = [lbg; zeros(n_x,1)];
         ubg = [ubg; zeros(n_x,1)];
 
@@ -585,7 +581,7 @@ for k=0:N_stages-1
         % after control defintion, the very last right point should be treated in the terminal constraint
         if g_ineq_constraint && g_ineq_at_fe && i<N_finite_elements(k+1)-1
             % the third flag is because at i = 0 the evaulation is at the control interval boundary (done above)
-            g_ineq_k = g_ineq_fun(X_ki,U_k);
+            g_ineq_k = g_ineq_fun(X_k0,U_k);
             g = [g;  g_ineq_k];
             lbg = [lbg; g_ineq_lb];
             ubg = [ubg; g_ineq_ub];
@@ -593,10 +589,16 @@ for k=0:N_stages-1
 
         %% g_z_all constraint for boundary point and continuity of algebraic variables.
         if ~right_boundary_point_explicit && use_fesd && (k< N_stages-1 || i< N_finite_elements(k+1)-1)
+            switch pss_mode
+                    case 'Stewart'
+                        Z_kd_end = [zeros(n_theta,1);Lambda_ki_end;Mu_ki_end];
+                    case 'Step'
+                        Z_kd_end = [zeros(n_alpha,1);Lambda_ki_end;Mu_ki_end;zeros(n_beta,1);zeros(n_gamma,1)];
+                end
             if n_u > 0
-                temp = g_z_all_fun(X_ki,Z_kd_end,U_k);
+                temp = g_z_all_fun(X_k0,Z_kd_end,U_k);
             else
-                temp = g_z_all_fun(X_ki,Z_kd_end);
+                temp = g_z_all_fun(X_k0,Z_kd_end);
             end
             g_z_all = temp(1:end-n_lift_eq);
             lbg = [lbg; zeros(n_algebraic_constraints-n_lift_eq,1)];
@@ -740,7 +742,7 @@ ind_t_final = [];
 if time_optimal_problem
     % Add to the vector of unknowns
     w = [w; T_final];
-    w0 = [w0; T_final_guess];
+    w0 = [w0; T_final0];
     lbw = [lbw;T_final_min];
     ubw = [ubw;T_final_max];
     ind_t_final = [ind_total(end)+1];

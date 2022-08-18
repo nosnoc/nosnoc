@@ -41,8 +41,9 @@ R_osc  = 1;
 % collocation settings
 settings = default_settings_nosnoc();
 settings.irk_scheme = 'Radau-IIA';
+% settings.irk_representation = 'differential';
 % % settings.irk_scheme = 'Radau-I';
-% settings.irk_scheme = 'Gauss-Legendre';
+settings.irk_scheme = 'Gauss-Legendre';
 % settings.lift_irk_differential = 0;
 % settings.irk_scheme = 'Lobatto-III';
 % settings.irk_scheme = 'Lobatto-IIIA';
@@ -51,7 +52,8 @@ settings.irk_scheme = 'Radau-IIA';
 % settings.irk_scheme = 'Explicit-RK';
 settings.print_level = 2;
 settings.n_s = 3;
-settings.pss_mode = 'Step';
+% settings.pss_mode = 'Step';
+settings.pss_mode = 'Stewart';
 settings.pss_lift_step_functions = 1;
 
 % settings.irk_representation = 'differential';

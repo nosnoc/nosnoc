@@ -48,8 +48,10 @@ if ~exist('R_osc')
 end
 
 %% Variable defintion
-x1 = MX.sym('x1');
-x2 = MX.sym('x2');
+% x1 = MX.sym('x1');
+% x2 = MX.sym('x2');
+x1 = SX.sym('x1');
+x2 = SX.sym('x2');
 x = [x1;x2];
 % every constraint funcion corresponds to a simplex (note that the c_i might be vector valued)
 c = x1^2+x2^2-R_osc^2;
