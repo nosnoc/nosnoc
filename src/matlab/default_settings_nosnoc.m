@@ -127,7 +127,6 @@ time_freezing_reduced_model = 0; % analytic reduction of lifter formulation, les
 time_freezing_hysteresis = 0; % do not do automatic time freezing generation for hysteresis, it is not supported yet.
 time_freezing_nonlinear_friction_cone = 1; % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
 
-
 time_freezing_quadrature_state = 0; % make a nonsmooth quadrature state to integrate only if physical time is running
 time_freezing_lift_forces = 0; % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0; 
 %% Virtual forces in time-freezing systems
@@ -160,6 +159,7 @@ opts_ipopt.ipopt.compl_inf_tol = tol_ipopt;
 opts_ipopt.ipopt.mu_strategy = 'adaptive';
 opts_ipopt.ipopt.mu_oracle = 'quality-function';
 opts_ipopt = opts_ipopt;
+
 %% Relxation of terminal constraint
 relax_terminal_constraint = 0; %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf;
 relax_terminal_constraint_from_above = 0; 

@@ -11,7 +11,6 @@ q_goal = 150;
 v_goal = 0;
 v_max = 25;
 u_max = 5;
-%
 %% Model Parameters
 % inital value
 q0 = 0;
@@ -34,12 +33,16 @@ Pt = 2.5;
 x0 = [q0;v0;L0;a0;t0];
 
 %% Variable defintion
+% states
 q = MX.sym('q');
 v = MX.sym('v');
 L = MX.sym('L');
 w = MX.sym('w');
 t = MX.sym('t');
 x = [q;v;L;w;t];
+% controls
+u = MX.sym('u');
+
 
 lbx = -[inf;0;inf;inf;inf];
 ubx = [inf;v_max;inf;inf;inf];
@@ -63,7 +66,7 @@ g_ind_all = [g_ind];
 c = g_ind_all;
 
 % control
-u = MX.sym('u');
+
 lbu = -u_max;
 ubu = u_max;
 

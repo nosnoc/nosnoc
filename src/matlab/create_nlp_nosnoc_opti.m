@@ -309,23 +309,23 @@ for k=0:N_stages-1
         % They are matrices, e.g. n_theta * n_s, that collect all stage values
         switch pss_mode
             case 'Stewart'
-                Theta_ki = Z_ki_stages(1:n_theta,:);
-                Lambda_ki = Z_ki_stages(n_theta+1:2*n_theta,:);
-                Mu_ki = Z_ki_stages(2*n_theta+1,:);
+                Theta_ki_stages = Z_ki_stages(1:n_theta,:);
+                Lambda_ki_stages = Z_ki_stages(n_theta+1:2*n_theta,:);
+                Mu_ki_stages = Z_ki_stages(2*n_theta+1,:);
             case 'Step'
-                Theta_ki = [Z_ki_stages(1:n_alpha,:);e_alpha-Z_ki_stages(1:n_alpha,:)];
-                Lambda_ki = Z_ki_stages(n_alpha+1:3*n_alpha,:);
-                Mu_kij = [];
+                Theta_ki_stages = [Z_ki_stages(1:n_alpha,:);repmat(e_alpha,1,n_s)-Z_ki_stages(1:n_alpha,:)];
+                Lambda_ki_stages = Z_ki_stages(n_alpha+1:3*n_alpha,:);
+                Mu_ki_stages = [];
         end
         % Remark for myslef: Theta_ki_current_fe replaced with Theta_ki now
 
         % Sum \theta and \lambda over the current finite element.
         if use_fesd
             % TODO: Check is it properly summed in casadi symbolics with sum(\cdot,2)
-            sum_Theta_ki = sum(Theta_ki,2);
-            sum_Lambda_ki = Lambda_end_previous_fe + sum(Lambda_ki,2);
+            sum_Theta_ki = sum(Theta_ki_stages,2);
+            sum_Lambda_ki = Lambda_end_previous_fe + sum(Lambda_ki_stages,2);
             % these sums are needed for step eq. (forward and backward) and for cross-complementarties)
-            Lambda_ki_all = [Lambda_end_previous_fe, Lambda_ki];
+            Lambda_ki_all = [Lambda_end_previous_fe, Lambda_ki_stages];
         end
         % Update the standard complementarity
         J_comp_std = J_comp_std + sum(J_cc_fun(Z_ki_stages));
@@ -363,8 +363,8 @@ for k=0:N_stages-1
                         ind_boundary = [ind_boundary,ind_total(end)+1:(ind_total(end)+2*n_alpha)];
                         ind_total  = [ind_total,ind_total(end)+1:(ind_total(end)+2*n_alpha)];
                 end
-                Lambda_ki_current_fe = {Lambda_ki_current_fe{:}, Lambda_ki_end};
-                Mu_ki_current_fe = {Mu_ki_current_fe{:}, []};
+                Lambda_ki= [Lambda_ki, Lambda_ki_end];
+                Mu_ki= [Mu_ki, Mu_ki_end];
                 sum_Lambda_ki = sum_Lambda_ki + Lambda_ki_end; % add boundary point for cross comp (Attention: Is it added twice?)
             end
         end
@@ -403,7 +403,6 @@ for k=0:N_stages-1
                 Pi_dot = X_all*C;
                 % Match with ODE right-hand-side
                 opti.subject_to(Pi_dot == h_ki*f_x);
-                opti.subject_to(0 == g_z_all);
                 J = J + f_q*B*h_ki;
                 % State at end of finite elemnt
                 Xk_end = X_all*D;

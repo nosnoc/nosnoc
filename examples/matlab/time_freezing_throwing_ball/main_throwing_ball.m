@@ -33,7 +33,8 @@ model.T = 4;
 model.N_stages = 20; 
 model.N_finite_elements = 3;
 % model equations
-q = MX.sym('q',2); v = MX.sym('v',2); u = MX.sym('u',2);
+% q = MX.sym('q',2); v = MX.sym('v',2); u = MX.sym('u',2);
+q = SX.sym('q',2); v = SX.sym('v',2); u = SX.sym('u',2);
 model.x0 = [0;0.5;0;0];
 model.x = [q;v]; model.u = u; model.e = e ;
 model.c = q(2);

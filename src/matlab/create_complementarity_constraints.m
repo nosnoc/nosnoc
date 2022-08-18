@@ -54,7 +54,11 @@ if use_fesd
         ind_temp_theta = m_ind_vec(r):m_ind_vec(r)+m_vec(r)-1;
         ind_temp_lambda = ind_temp_theta;
 
-        Theta_k_i_j = Theta_ki{j}(ind_temp_theta);
+        try
+            Theta_k_i_j = Theta_ki{j}(ind_temp_theta);
+        catch
+            Theta_k_i_j = Theta_ki(ind_temp_theta,j);
+        end
         % sum of all cross-complementarities (vector-valued) --> later put into scalar value for the complementarity residual
 %         J_comp  = J_comp + diag(Theta_k_i_j)*sum_Lambda_ki(ind_temp_theta);
 
@@ -79,7 +83,11 @@ if use_fesd
                     g_cross_comp_j = [g_cross_comp_j ;(Theta_k_i_j)'*(Lambda_k_i_jj)];
                 end
                 for jj = 1:n_s
+                    try
                     Lambda_k_i_jj = Lambda_ki{jj}(ind_temp_lambda);
+                    catch
+                        Lambda_k_i_jj = Lambda_ki(ind_temp_lambda,jj);
+                    end
                     g_cross_comp_j = [g_cross_comp_j ;(Theta_k_i_j)'*(Lambda_k_i_jj)];
                 end
 

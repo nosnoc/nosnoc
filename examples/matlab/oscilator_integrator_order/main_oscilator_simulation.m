@@ -41,7 +41,6 @@ R_osc  = 1;
 % collocation settings
 settings = default_settings_nosnoc();
 settings.irk_scheme = 'Radau-IIA';
-% settings.lift_irk_differential = 1;
 % % settings.irk_scheme = 'Radau-I';
 % settings.irk_scheme = 'Gauss-Legendre';
 % settings.lift_irk_differential = 0;
