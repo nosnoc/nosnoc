@@ -172,8 +172,8 @@ Lambda_end_previous_fe = zeros(n_theta,1);
 Z_kd_end = zeros(n_z,1);
 % initialize cross comp and mpcc related structs
 mpcc_var_current_fe.p = p;
-comp_var_current_fe.cross_comp_control_interval_k = 0;
-comp_var_current_fe.cross_comp_control_interval_all = 0;
+comp_var_current_fe.cross_comp_k = 0;
+comp_var_current_fe.cross_comp_all = 0;
 
 %% Formulate the NLP / Main Discretization loop
 for k=0:N_stages-1
@@ -615,11 +615,11 @@ for k=0:N_stages-1
 
             if i == N_finite_elements(k+1)-1 && j == n_s
                 % Restart sum at end of the current control interval
-                comp_var_current_fe.cross_comp_control_interval_k = 0;
+                comp_var_current_fe.cross_comp_k = 0;
             else
-                comp_var_current_fe.cross_comp_control_interval_k = results_cross_comp.cross_comp_control_interval_k;
+                comp_var_current_fe.cross_comp_k = results_cross_comp.cross_comp_k;
             end
-            comp_var_current_fe.cross_comp_control_interval_all = results_cross_comp.cross_comp_control_interval_all;
+            comp_var_current_fe.cross_comp_all = results_cross_comp.cross_comp_all;
             % Dimensions of cross/std complementarities
             n_cross_comp_j = length(g_cross_comp_j);
             n_cross_comp_i = n_cross_comp_i+n_cross_comp_j;
@@ -750,7 +750,7 @@ end
 %% Scalar-valued commplementarity residual
 if use_fesd
     % sum of all possible cross complementarities;
-    J_comp_fesd = sum(results_cross_comp.cross_comp_control_interval_all);
+    J_comp_fesd = sum(results_cross_comp.cross_comp_all);
     J_comp =  J_comp_fesd;
 else
     % no additional complementarites than the standard ones
