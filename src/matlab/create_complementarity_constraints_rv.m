@@ -19,9 +19,9 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [results_cross_comp] = create_complementarity_constraints(varargin)
+function [results_cross_comp] = create_complementarity_constraints_rv(varargin)
 
-% A function for formulating the complementarity and cross complementarity (orthogonaliy constaints)
+% A function for formulating the complementarity and cross % complementarity(orthogonaliy constaints)
 % Examples of calling this function
 % [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions,current_index);
 % [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions);

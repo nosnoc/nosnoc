@@ -29,7 +29,6 @@ import casadi.*
 model = varargin{1};
 settings = varargin{2};
 
-new_mpcc_treatment = 0;
 %% Reformulation of the PSS into a DCS
 [settings] = refine_user_settings(settings);
 [model,settings] = model_reformulation_nosnoc(model,settings);
@@ -40,7 +39,11 @@ new_mpcc_treatment = 0;
 %% Load user settings and model details
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller');
+new_mpcc_treatment = 0;
 
+%% Create mpcc functions for the bilinear term
+mpcc_function = 'bilinear';
+[Psi_mpcc_fun] = create_mpcc_function(mpcc_function,casadi_symbolic_mode,sigma_p);
 %% Initalization and bounds for step-size
 if use_fesd
     ubh = (1+gamma_h)*h_k;
@@ -82,10 +85,10 @@ if time_optimal_problem
 end
 
 %% Elastic Mode Variables
-S_ell_inf_elastic_exists  = 0;
 if mpcc_mode >= 5 && mpcc_mode <= 10
     S_elastic = define_casadi_symbolic(casadi_symbolic_mode,'s_elastic',1);
-    S_ell_inf_elastic_exists = 1;
+else
+    S_elastic  = 0;
 end
 
 %% Formulate NLP - Start with an empty NLP
@@ -481,6 +484,7 @@ for k=0:N_stages-1
         lbg = [lbg; zeros(n_x*n_s,1);zeros(n_algebraic_constraints*n_s,1)];
         ubg = [ubg; zeros(n_x*n_s,1);zeros(n_algebraic_constraints*n_s,1)];
 
+        % Update index sets for RK equations
         ind_g_irk_x = [ind_g_irk_x,ind_g_total(end)+1:ind_g_total(end)+n_x*n_s];
         ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_x*n_s];
 
@@ -497,6 +501,7 @@ for k=0:N_stages-1
             ubg = [ubg; repmat(g_ineq_ub,n_s,1)];
             ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+length(g_ineq_lb)*n_s];
         end
+
         %% Complementarity constraints (standard and cross)
         for j=1:n_s
             % Prepare Input for Cross Comp Function
@@ -526,9 +531,7 @@ for k=0:N_stages-1
             if ~new_mpcc_treatment 
                 mpcc_var_k.J = J;
                 mpcc_var_k.g_all_comp_j = g_all_comp_j;
-                if S_ell_inf_elastic_exists
-                    mpcc_var_k.s_elastic = S_elastic;
-                end
+                mpcc_var_k.s_elastic = S_elastic;
                 [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_k,dimensions,current_index);
                 g = [g;  g_comp];
                 lbg = [lbg; g_comp_lb];
@@ -540,6 +543,16 @@ for k=0:N_stages-1
             end
             ind_g_mpcc = [ind_g_mpcc,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
             ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
+        end
+        % New function for conmplementarity constraints (no loops and sums)
+        if new_mpcc_treatment 
+%                 [g_cross_comp_ki,n_cross_comp_ki] = create_complementarity_constraints_rv(use_fesd,cross_comp_mode,comp_var_k,dimensions,current_index,Psi_mpcc_fun);
+%                 g = [g;  g_cross_comp_ki];
+%                 lbg = [lbg; -inf*ones(n_cross_comp_ki,1)];
+%                 ubg = [ubg; zeros(n_cross_comp_ki,1)];
+%                 % update index sets
+%                 ind_g_mpcc = [ind_g_mpcc,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
+%                 ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
         end
         %% Step equlibration
         step_equilibration_constrains;

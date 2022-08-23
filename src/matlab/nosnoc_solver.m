@@ -34,8 +34,8 @@ end
 import casadi.*
 %% Create NLP element and solve OCP with homotopy
 tic
-[solver,solver_initalization,model,settings] = create_nlp_nosnoc_rv(model_unedited,settings_unedited);
-%     [solver,solver_initalization,model,settings] = create_nlp_nosnoc(model_unedited,settings_unedited);
+% [solver,solver_initalization,model,settings] = create_nlp_nosnoc_rv(model_unedited,settings_unedited);
+    [solver,solver_initalization,model,settings] = create_nlp_nosnoc(model_unedited,settings_unedited);
 solver_generating_time = toc;
 if settings.print_level >=2
     fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
