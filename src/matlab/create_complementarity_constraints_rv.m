@@ -26,16 +26,8 @@ function [results_cross_comp] = create_complementarity_constraints_rv(varargin)
 % [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions,current_index);
 % [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions);
 import casadi.*
-%%
-g_cross_comp_j = [];
-g_cross_comp1_j = [];
-g_cross_comp2_j = [];
-% Sanity Chack
-if ~(nargin == 4 || nargin == 5)
-    error('Wrong input number, see function help for required inputs.')
-end
-% Assign variable names to all inputs
-% FESD settings
+%% Process input
+% basic
 use_fesd = varargin{1};
 cross_comp_mode = varargin{2};
 comp_var_current_fe = varargin{3};
@@ -43,146 +35,192 @@ unfold_struct(comp_var_current_fe,'caller')
 % Dimensions
 dimensions = varargin{4};
 unfold_struct(dimensions,'caller')
+% MPCC Function & parameters
+Psi_mpcc_fun = varargin{5};
+sigma_p = varargin{6};
 % Indices
-if nargin == 4
+if nargin == 6
     cross_comp_mode = 10;
     k = N_stages-1;
     i = N_finite_elements(end)-1;
     j = n_s;
 else
-    current_index = varargin{5};
+    current_index = varargin{7};
     unfold_struct(current_index,'caller');
+
 end
+% Empty vectors for complementarity constraints
+g_cross_comp_ki = [];
 
 %% Formlation of standard and cross complementarity consraints.
-if use_fesd
-    % Formulae for the cross complementarities
-    g_cross_comp_j = [];
-    % update vector valued sumes over control interval
-    if j == n_s 
-        % update only once per finite element
-        cross_comp_k = cross_comp_k + diag(sum_Theta_ki)*sum_Lambda_ki;
-        cross_comp_all = cross_comp_all + diag(sum_Theta_ki)*sum_Lambda_ki;
-    end
-    for r = 1:n_simplex
-        % for different subsystems the lambdas and thetas are decoupled and should be treated as such.
-        ind_temp_theta = m_ind_vec(r):m_ind_vec(r)+m_vec(r)-1;
-        ind_temp_lambda = ind_temp_theta;
-        try
-            Theta_kij = Theta_ki{j}(ind_temp_theta);
-        catch
-            Theta_kij = Theta_ki(ind_temp_theta,j);
-        end
-        % sum of all cross-complementarities (vector-valued) --> later put into scalar value for the complementarity residual
-%         J_comp  = J_comp + diag(Theta_kij)*sum_Lambda_ki(ind_temp_theta);
+n_lambda = size(Lambda_ki,2);% ; number of lambda_ki in finite element
+% main loop;
+for r = 1:n_simplex
+    % for different subsystems the lambdas and thetas are decoupled and should be treated as such.
+    ind_temp_theta = m_ind_vec(r):m_ind_vec(r)+m_vec(r)-1;
+    Theta_ki_temp = Theta_ki(ind_temp_theta,:);
+    Lambda_ki_temp = Lambda_ki(ind_temp_theta,:);
+    if use_fesd
 
-        switch cross_comp_mode
-            %% Cases 1 and 2: Full sparsity, ~ n_s*(n_s+1) constraints
-            case 1
-                % Full Sparsity. Every point with every gives a vector valued constraint
-                if i > 0
-                    % if it is not the very first element, include lambda_{n,q,0} (\lambda_{n,0})
-                    Lambda_kijj = Lambda_end_previous_fe(ind_temp_lambda);
-                    g_cross_comp_j = [g_cross_comp_j;diag(Theta_kij)*(Lambda_kijj)];
+        %% update vector valued sumes over control interval, update only once per finite element
+        g_comp = zeros(n_theta,1);
+        g_comp_residual = 0;
+        % sum for current finite element
+        for ii = 1:n_s
+            for jj = 1:n_lambda
+                if ~is_zero(Lambda_ki_temp(:,jj))
+                    g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),Lambda_ki_temp(:,jj),sigma_p);
+                    g_comp_residual = g_comp_residual+Theta_ki_temp(:,ii)'*Lambda_ki_temp(:,jj);
                 end
+            end
+        end
+        % MPCC function updates (for constraints)
+        g_cross_comp_k = g_cross_comp_k + g_comp;
+        g_cross_comp_all = g_cross_comp_all + g_comp;
+        % Pure bilinear updates (for complementarity evaluation)
+        cross_comp_residual_k = cross_comp_residual_k + g_comp_residual;
+        cross_comp_residual_all = cross_comp_residual_all  + g_comp_residual;
 
-                for jj = 1:n_s
-                    Lambda_kijj = Lambda_ki{jj}(ind_temp_lambda);
-                    g_cross_comp_j = [g_cross_comp_j ;diag(Theta_kij)*(Lambda_kijj)];
+
+
+        %% Complementarity constraint formulation
+        switch cross_comp_mode
+            % Cases 1 and 2: Full sparsity,
+            case 1
+                %                  n_theta*n_s*(n_s+1)  constraints pre finite element
+                for jj = 1:n_lambda
+                    g_comp  = Psi_mpcc_fun(Theta_ki_temp(:),repmat((Lambda_ki_temp(:,jj)),n_s,1),sigma_p);
+                    g_cross_comp_ki = [g_cross_comp_ki;g_comp];
                 end
             case 2
-                % Full Sparsity. Every point with every gives a scalar valued constraint
-                if i > 0
-                    % if it is not the very first element, include lambda_{n,q,0} (\lambda_{n,0})
-                    Lambda_kijj = Lambda_end_previous_fe(ind_temp_lambda);
-                    g_cross_comp_j = [g_cross_comp_j ;(Theta_kij)'*(Lambda_kijj)];
-                end
-                for jj = 1:n_s
-                    try
-                    Lambda_kijj = Lambda_ki{jj}(ind_temp_lambda);
-                    catch
-                        Lambda_kijj = Lambda_ki(ind_temp_lambda,jj);
+                % Full Sparsity. Every point with every gives a scalar-valued constraint, n_s*(n_s+1)  constraints pre finite element
+                for ii = 1:n_s
+                    for jj = 1:n_lambda
+                        if is_zero(Lambda_ki_temp(:,jj))
+                            g_comp   = [];
+                        else
+                            g_comp  = Psi_mpcc_fun(Theta_ki_temp(:,ii),Lambda_ki_temp(:,jj),sigma_p/(n_s+1));
+                        end
+                        g_cross_comp_ki = [g_cross_comp_ki; sum(g_comp)];
                     end
-                    g_cross_comp_j = [g_cross_comp_j ;(Theta_kij)'*(Lambda_kijj)];
                 end
-
-                %% Cases 3 to 6: For every stage j one constraint, 3 and 4 vector valued, 5 and 6 scalar valued
+                % Cases 3 to 6: For every stage j one constraint, 3 and 4 vector valued, 5 and 6 scalar valued
             case 3
-                %  For every stage point one vector-valued  constraint via sum of all \lambda
-                g_cross_comp_j = [g_cross_comp_j ;diag(Theta_kij)*sum_Lambda_ki(ind_temp_theta)];
-                g_cross_comp1_j = [g_cross_comp1_j;diag(Theta_kij)];
-                g_cross_comp2_j = [g_cross_comp2_j;sum_Lambda_ki(ind_temp_theta)];
+                for ii = 1:n_s
+                    g_comp = zeros(n_theta,1);
+                    for jj = 1:n_lambda
+                        g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),(Lambda_ki_temp(:,jj)),sigma_p/(n_s+1));
+                    end
+                    g_cross_comp_ki = [g_cross_comp_ki;g_comp];
+                end
             case 4
                 %  Case 4: For every stage point one vector-valued constraint via sum of all \theta.
-                if j == 1 && i > 0
-                    % take care of lambda_{n,0} at same time as \lambda_{n,1}
-                    Lambda_kijj = Lambda_end_previous_fe(ind_temp_lambda);
-                    g_cross_comp_j = [g_cross_comp_j;diag(Lambda_kijj)*sum_Theta_ki];
+                for jj = 1:n_lambda
+                    g_comp = zeros(n_theta,1);
+                    for ii = 1:n_s
+                        if is_zero(Lambda_ki_temp(:,jj))
+                            g_comp   = [];
+                        else
+                            g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),Lambda_ki_temp(:,jj),sigma_p/(n_s));
+                        end
+                    end
+                    g_cross_comp_ki = [g_cross_comp_ki;g_comp];
                 end
-                Lambda_kijj = Lambda_ki{j}(ind_temp_lambda);
-                g_cross_comp_j = [g_cross_comp_j;diag(Lambda_kijj)*sum_Theta_ki(ind_temp_theta)];
-                % Cases 5 and 6: For every stage point a scalarv alued constraint
             case 5
-                % Case 5: Per stage point one scalar constraint via sum of \lambda.
-                g_cross_comp_j = [g_cross_comp_j ;(Theta_kij)'*sum_Lambda_ki(ind_temp_theta)];
+                % Case 5: Per stage point one scalar constraint via sum of  \lambda.
+                % n_s constraints, same as 3 but with summing all terms
+                for ii = 1:n_s
+                    g_comp = zeros(n_theta,1);
+                    for jj = 1:n_lambda
+                        g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),(Lambda_ki_temp(:,jj)),sigma_p/(n_s));
+                    end
+                    g_cross_comp_ki = [g_cross_comp_ki;sum(g_comp)];
+                end
             case 6
                 %  Case 6: For every stage point one scalar-valued constraint via sum of all \theta.
-                if j == 1 && i > 0
-                    % take care of lambda_{n,0} at same time as \lambda_{n,1}
-                    Lambda_kijj = Lambda_end_previous_fe(ind_temp_lambda);
-                    g_cross_comp_j = [g_cross_comp_j;sum_Theta_ki(ind_temp_theta)'*Lambda_kijj(ind_temp_theta)];
+                for jj = 1:n_lambda
+                    g_comp = zeros(n_theta,1);
+                    for ii = 1:n_s
+                        if is_zero(Lambda_ki_temp(:,jj))
+                            g_comp   = [];
+                        else
+                            g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),Lambda_ki_temp(:,jj),sigma_p/(n_s));
+                        end
+                    end
+                    g_cross_comp_ki = [g_cross_comp_ki;sum(g_comp)];
                 end
-                Lambda_kijj = Lambda_ki{j}(ind_temp_lambda);
-                g_cross_comp_j = [g_cross_comp_j;sum_Theta_ki(ind_temp_theta)'*Lambda_kijj(ind_temp_theta)];
-
-                %% Cases 7 and 8: a vector or scalar valued constraint per every finite element
+                % Cases 7 and 8: a vector or scalar valued constraint per every finite element
             case 7
-                if j == n_s
-                    g_cross_comp_j = [g_cross_comp_j ;diag(sum_Theta_ki(ind_temp_theta))*sum_Lambda_ki(ind_temp_theta)];
+                % n_theta constraint per finite elements
+                g_comp = zeros(n_theta,1);
+                for ii = 1:n_s
+                    for jj = 1:n_lambda
+                        %                         g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),(Lambda_ki_temp(:,jj)),sigma_p/(n_s*(n_s+1)));
+                        g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),(Lambda_ki_temp(:,jj)),sigma_p);
+                    end
                 end
+                g_cross_comp_ki = [g_cross_comp_ki;g_comp];
             case 8
-                %  Case 8: same as 7, but vector valued
-                if j == n_s
-                    temp = diag(sum_Theta_ki(ind_temp_theta))*sum_Lambda_ki(ind_temp_theta);
-                    g_cross_comp_j = [g_cross_comp_j ;sum(temp)];
+                % same as 7, but scalar valued, one scalar valed per finite elemetn
+                g_comp = zeros(n_theta,1);
+                for ii = 1:n_s
+                    for jj = 1:n_lambda
+                        %                         g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),(Lambda_ki_temp(:,jj)),sigma_p/(n_s*(n_s+1)));
+                        g_comp  = g_comp + Psi_mpcc_fun(Theta_ki_temp(:,ii),(Lambda_ki_temp(:,jj)),sigma_p);
+                    end
                 end
+                g_cross_comp_ki = [g_cross_comp_ki;sum(g_comp)];
                 %% Cases 9 and 10, per control intevral one constraint
             case 9
-                % vectorvalued
-                if i == N_finite_elements(k+1)-1 && j == n_s
-                    % the if is because the sum over control interval makes only sense at this point
-                    g_cross_comp_j = [g_cross_comp_j ;cross_comp_k];
+                % one vector-valued per control interval (n_theta constraints)
+                if i == N_finite_elements(k+1)-1
+                    g_cross_comp_ki = [g_cross_comp_ki ;g_cross_comp_k];
                 end
             case 10
-                % vectorvalued
-                if i == N_finite_elements(k+1)-1 && j == n_s
+                % one scalar valued per control interval
+                if i == N_finite_elements(k+1)-1
                     % the if is because the sum over control interval makes only sense at this point
-                    g_cross_comp_j = [g_cross_comp_j ;sum(cross_comp_k)];
+                    g_cross_comp_ki = [g_cross_comp_ki ;sum(g_cross_comp_k)];
                 end
-                %%  case 11 and 12: ssingle constraint over whole horizon
-             case 11
-                 % vector valued
-                if k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
-                    g_cross_comp_j = [g_cross_comp_j ;cross_comp_all];
+                %  case 11 and 12: single constraint over whole horizon
+            case 11
+                % one vector-valued for all control intervals
+                if k == N_stages-1 && i == N_finite_elements(end)-1
+                    g_cross_comp_ki = [g_cross_comp_ki ;g_cross_comp_all];
                 end
             case 12
-                % scalar valued
-                if k == N_stages-1 && j == n_s && i == N_finite_elements(end)-1
-                    g_cross_comp_j = [g_cross_comp_j ;sum(cross_comp_all)];
+                % one scalar vector-valued for all control intervals
+                if k == N_stages-1 && i == N_finite_elements(end)-1
+                    g_cross_comp_ki = [g_cross_comp_ki ;sum(g_cross_comp_all)];
                 end
             otherwise
                 error('Please pick cross_comp_mode between 1 and 12.')
         end
+    else
+        % TODO: add some sparsity control
+        switch cross_comp_mode
+            case 1
+                g_comp  = Psi_mpcc_fun(Theta_ki_temp(:),Lambda_ki_temp(:),sigma_p);
+                g_cross_comp_ki = [g_cross_comp_ki;g_comp];
+            case 2
+                g_comp  = Psi_mpcc_fun(Theta_ki_temp(:),Lambda_ki_temp(:),sigma_p);
+                g_cross_comp_ki = [g_cross_comp_ki;g_comp];
+            case 3
+
+            otherwise
+        end
+
+        %     g_cross_comp_ki = sum(Psi_mpcc_fun(Lambda_ki(:,2:end)*Theta_ki(:),sigma_p));
     end
-else
-    g_cross_comp_j = diag(Lambda_ki{j})*Theta_ki{j};
 end
 %% Output
-results_cross_comp.g_cross_comp_j = g_cross_comp_j;
-results_cross_comp.g_cross_comp1_j = g_cross_comp1_j;
-results_cross_comp.g_cross_comp2_j = g_cross_comp2_j;
-results_cross_comp.cross_comp_k = cross_comp_k;
-results_cross_comp.cross_comp_all = cross_comp_all;
-
+% g_cross_comp_ki,n_cross_comp_ki
+results_cross_comp.g_cross_comp_ki = g_cross_comp_ki;
+results_cross_comp.n_cross_comp_ki = length(g_cross_comp_ki);
+% Constraints
+results_cross_comp.g_cross_comp_k = g_cross_comp_k;
+results_cross_comp.g_cross_comp_all = g_cross_comp_all;
+% Cross-complementarity residual
+results_cross_comp.cross_comp_residual_k = cross_comp_residual_k;
+results_cross_comp.cross_comp_residual_all = cross_comp_residual_all;
 end
-

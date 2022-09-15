@@ -24,13 +24,24 @@ function [nlp_data] = mpcc_solution_method(nlp_data,ind_data,mpcc_mode)
 unfold_struct(nlp_data,'caller');
 unfold_struct(ind_data,'caller');
 
+
+% ind_theta = ind_z;
+% ind_lambda = inz_zl
 %%
 n_mpcc = length(ind_g_mpcc);
 switch mpcc_mode
     case 1
     case 2
     case 3
-          g(ind_g_mpcc) = g(ind_g_mpcc)-ones(n_mpcc,1)*sigma_p;
+
+%         lbw(ind_theta) = -inf;
+%         lbw(ind_lambda) = -inf;
+% %         g = [g;z(ind_theta)-sigma_p*ones()];
+%         g = [g;z(ind_lambda)-sigma_p];
+%         lbg = [lbg; ]
+%           g(ind_g_mpcc) = g(ind_g_mpcc)-ones(n_mpcc,1)*sigma_p;
+%           lbg(ind_g_mpcc) = 0;
+%           ubg(ind_g_mpcc) = 0;
     case 4
     case 5
 end

@@ -6,7 +6,7 @@ scenario.general_inequality_constraints = 1;
 scenario.save_figure = 1;
 scenario.filename = 'robot_ocp';
 scenario.u0 = [0;0];
-scenario.polishing_penalty_iteration = 1;
+scenario.polishing_penalty_iteration = 0;
 %% auxiliary dynamics and friction
 scenario.a_n = 200;
 scenario.mu = 0.8;

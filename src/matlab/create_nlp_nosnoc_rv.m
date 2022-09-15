@@ -23,6 +23,9 @@ function [varargout] = create_nlp_nosnoc(varargin)
 % This functions creates the solver instance for the OCP discretized with FESD (or time-stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
 % reformulations, see below.
+%% Experimental stuff
+new_mpcc_treatment = 1;
+
 %% Import CasADi in the workspace of this function
 import casadi.*
 %% Read data
@@ -39,11 +42,19 @@ settings = varargin{2};
 %% Load user settings and model details
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller');
-new_mpcc_treatment = 0;
 
 %% Create mpcc functions for the bilinear term
-mpcc_function = 'bilinear';
-[Psi_mpcc_fun] = create_mpcc_function(mpcc_function,casadi_symbolic_mode,sigma_p);
+% mpcc_function = 'bilinear';
+mpcc_function = 'Fischer-Burmeister';
+% mpcc_function = 'Chen-Chen-Kanzow';
+mpcc_function = 'Natural-Residual';
+% mpcc_function = 'Steffenson-Ulbrich';
+% mpcc_function = 'Steffenson-Ulbrich-Pol';
+mpcc_function ='Kanzow-Schwartz';
+% mpcc_function = 'Lin-Fukushima';
+% mpcc_function = 'Kadrani';
+
+[Psi_mpcc_fun] = create_mpcc_function(mpcc_function,casadi_symbolic_mode);
 %% Initalization and bounds for step-size
 if use_fesd
     ubh = (1+gamma_h)*h_k;
@@ -173,6 +184,20 @@ mpcc_var_k.p = p;
 comp_var_k.cross_comp_k = 0;
 comp_var_k.cross_comp_all = 0;
 
+
+% TODO: Polish this part
+comp_var_k.g_cross_comp_k = zeros(n_theta,1);
+comp_var_k.g_cross_comp_all = zeros(n_theta,1);
+comp_var_k.cross_comp_residual_k = 0;
+comp_var_k.cross_comp_residual_all = 0;
+
+g_cross_comp_k = zeros(n_theta,1);
+g_cross_comp_all = zeros(n_theta,1);
+cross_comp_residual_k = 0;
+cross_comp_residual_all = 0;
+
+
+
 %% Formulate the NLP / Main Discretization loop
 for k=0:N_stages-1
     %% Variables for the controls
@@ -261,23 +286,21 @@ for k=0:N_stages-1
             w0 = [w0; h0_k(k+1)];
             ubw = [ubw;ubh(k+1)];
             lbw = [lbw;lbh(k+1)];
+            sum_h_ki = sum_h_ki + h_ki;
             % index sets for step-size variables
             ind_h = [ind_h,ind_total(end)+1:ind_total(end)+1];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
 
-            sum_h_ki = sum_h_ki + h_ki;
-
+            % integral of clock state (if no time-freezing is used, in time-freezing we use directly the (nonsmooth) differential clock state.
             if time_optimal_problem && use_speed_of_time_variables
-                % integral of clock state (if no time-freezing is used, in time-freezing we use directly the (nonsmooth) differential clock state.
                 sum_S_sot = sum_S_sot + h_ki*S_sot_k;
             end
-
+            % \Delta h_ki
             if i > 0
                 delta_h_ki = h_ki - h_ki_previous;
             else
                 delta_h_ki  = 0;
             end
-
             % Terms for heuristic step equilibration
             if heuristic_step_equilibration
                 switch heuristic_step_equilibration_mode
@@ -331,9 +354,7 @@ for k=0:N_stages-1
                         lbw = [lbw; -inf*ones(n_s*n_x,1)];
                         ubw = [ubw; inf*ones(n_s*n_x,1)];
                     end
-                    % Expressions for X_ki
                     X_ki_lift_expressions = X_ki - (X_k0 + h_ki*V_ki*A_irk');
-
                 else
                     % store in this matrix all expressions for state at stage points
                     X_ki = X_k0+h_ki*V_ki*A_irk';
@@ -421,15 +442,23 @@ for k=0:N_stages-1
             comp_var_k.sum_Theta_ki= sum_Theta_ki;
             comp_var_k.Lambda_end_previous_fe = Lambda_end_previous_fe;
         end
-        comp_var_k.Lambda_ki = Lambda_ki;
+        if new_mpcc_treatment
+            if use_fesd 
+                comp_var_k.Lambda_ki = [Lambda_end_previous_fe Lambda_ki];
+            else 
+                comp_var_k.Lambda_ki = [Lambda_ki];
+            end
+        else
+            comp_var_k.Lambda_ki = Lambda_ki;
+        end
         comp_var_k.Theta_ki = Theta_ki;
 
         %% Continiuity of lambda, the boundary values of lambda and mu  %% TODO: resolve its use for proper cross comp -- move there the Z_kde end
         if use_fesd
             % Update lambda previous at finite element level
-            if i > 0 || k > 0
-                Lambda_end_previous_fe = Lambda_ki_end;
-            end
+            %             if i > 0 || k > 0
+            Lambda_end_previous_fe = Lambda_ki_end;
+            %             end
         end
 
         %% The IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every stage point)
@@ -509,26 +538,28 @@ for k=0:N_stages-1
             % Update current index
             current_index.k = k;  current_index.i = i; current_index.j = j;
             % Create cross comp constraints
-            results_cross_comp = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_k,dimensions,current_index);
-            g_cross_comp_j  = results_cross_comp.g_cross_comp_j;
-            % Store updatet sums
-            if i == N_finite_elements(k+1)-1 && j == n_s
-                % Restart sum at end of the current control interval
-                comp_var_k.cross_comp_k = 0;
-            else
-                comp_var_k.cross_comp_k = results_cross_comp.cross_comp_k;
+            if ~new_mpcc_treatment
+                results_cross_comp = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_k,dimensions,current_index);
+                g_cross_comp_j  = results_cross_comp.g_cross_comp_j;
+                % Store updatet sums
+                if i == N_finite_elements(k+1)-1 && j == n_s
+                    % Restart sum at end of the current control interval
+                    comp_var_k.cross_comp_k = 0;
+                else
+                    comp_var_k.cross_comp_k = results_cross_comp.cross_comp_k;
+                end
+                comp_var_k.cross_comp_all = results_cross_comp.cross_comp_all;
+                % Dimensions of cross/std complementarities
+                n_cross_comp_j = length(g_cross_comp_j);
+                n_cross_comp_i = n_cross_comp_i+n_cross_comp_j;
+                n_cross_comp(i+1,k+1) = n_cross_comp_i;
+                g_all_comp_j = [g_cross_comp_j];
+                n_all_comp_j = length(g_all_comp_j);
             end
-            comp_var_k.cross_comp_all = results_cross_comp.cross_comp_all;
-            % Dimensions of cross/std complementarities
-            n_cross_comp_j = length(g_cross_comp_j);
-            n_cross_comp_i = n_cross_comp_i+n_cross_comp_j;
-            n_cross_comp(i+1,k+1) = n_cross_comp_i;
-            g_all_comp_j = [g_cross_comp_j];
-            n_all_comp_j = length(g_all_comp_j);
 
             %% Reformulation/relaxation of complementarity constraints
             % Treatment and reformulation of all complementarity constraints (standard and cross complementarity), their treatment depends on the chosen MPCC Method.
-            if ~new_mpcc_treatment 
+            if ~new_mpcc_treatment
                 mpcc_var_k.J = J;
                 mpcc_var_k.g_all_comp_j = g_all_comp_j;
                 mpcc_var_k.s_elastic = S_elastic;
@@ -536,23 +567,40 @@ for k=0:N_stages-1
                 g = [g;  g_comp];
                 lbg = [lbg; g_comp_lb];
                 ubg = [ubg; g_comp_ub];
+                ind_g_mpcc = [ind_g_mpcc,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
+                ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
             else
-                g = [g;  g_cross_comp_j];
-                lbg = [lbg; -inf*ones(n_cross_comp_j,1)];
-                ubg = [ubg; zeros(n_cross_comp_j,1)];
+                %                 g = [g;  g_cross_comp_j];
+                %                 lbg = [lbg; -inf*ones(n_cross_comp_j,1)];
+                %                 ubg = [ubg; zeros(n_cross_comp_j,1)];
+                %                 ind_g_mpcc = [ind_g_mpcc,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
+                %             ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
             end
-            ind_g_mpcc = [ind_g_mpcc,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
-            ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
+
         end
         % New function for conmplementarity constraints (no loops and sums)
-        if new_mpcc_treatment 
-%                 [g_cross_comp_ki,n_cross_comp_ki] = create_complementarity_constraints_rv(use_fesd,cross_comp_mode,comp_var_k,dimensions,current_index,Psi_mpcc_fun);
-%                 g = [g;  g_cross_comp_ki];
-%                 lbg = [lbg; -inf*ones(n_cross_comp_ki,1)];
-%                 ubg = [ubg; zeros(n_cross_comp_ki,1)];
-%                 % update index sets
-%                 ind_g_mpcc = [ind_g_mpcc,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
-%                 ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_j];
+        if new_mpcc_treatment
+            [results_cross_comp] = create_complementarity_constraints_rv(use_fesd,cross_comp_mode,comp_var_k,dimensions,Psi_mpcc_fun,sigma_p,current_index);
+            unfold_struct(results_cross_comp,'caller');
+                 if i == N_finite_elements(k+1)-1 
+                    comp_var_k.g_cross_comp_k = zeros(n_theta,1);
+                    comp_var_k.cross_comp_residual_k = 0;
+                else
+                    comp_var_k.cross_comp_residual_k = cross_comp_residual_k ;
+                    comp_var_k.g_cross_comp_k = g_cross_comp_k;
+                end
+                comp_var_k.g_cross_comp_all = g_cross_comp_all; 
+                comp_var_k.cross_comp_residual_all = cross_comp_residual_all;
+
+            g_cross_comp_ki = results_cross_comp.g_cross_comp_ki;
+            n_cross_comp_ki = results_cross_comp.n_cross_comp_ki;
+
+            g = [g;  g_cross_comp_ki];
+            lbg = [lbg; -inf*ones(n_cross_comp_ki,1)];
+            ubg = [ubg; zeros(n_cross_comp_ki,1)];
+            %                 % update index sets
+            ind_g_mpcc = [ind_g_mpcc,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_ki];
+            ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_cross_comp_ki];
         end
         %% Step equlibration
         step_equilibration_constrains;
@@ -663,7 +711,8 @@ ind_g_total(1)  = []; % drop the zero that was needed for initalization
 %% Scalar-valued commplementarity residual
 if use_fesd
     % sum of all possible cross complementarities;
-    J_comp_fesd = sum(results_cross_comp.cross_comp_all);
+%     J_comp_fesd = sum(results_cross_comp.cross_comp_all);
+    J_comp_fesd = cross_comp_residual_all;
     J_comp =  J_comp_fesd;
 else
     % no additional complementarites than the standard ones
@@ -893,79 +942,35 @@ J_objective = J;
 %% Elastic mode variable for \ell_infty reformulations
 if new_mpcc_treatment
     % MPCC Reformulation experimental
-    nlp_data.J = J; nlp_data.g = g; nlp_data.lbg = lbg; nlp_data.ubg = ubg; 
+    nlp_data.J = J; nlp_data.g = g; nlp_data.lbg = lbg; nlp_data.ubg = ubg;
     nlp_data.w = w; nlp_data.w0= w0; nlp_data.lbw = lbw; nlp_data.ubw = ubw;
     nlp_data.sigma_p = sigma_p;
 
     ind_data.ind_g_total = ind_g_total; ind_data.ind_g_mpcc = ind_g_mpcc;
 
     [nlp_data] = mpcc_solution_method(nlp_data,ind_data,mpcc_mode);
-    unfold_struct(nlp_data,'caller');
+    unfold_struct(nlp_data,'caller');    
+%     lbw(ind_z) = -inf;
 else
-if mpcc_mode >= 5 && mpcc_mode < 8
-    % add elastic variable to the vector of unknowns and add objeective contribution
-    w = [w; S_elastic];
-    ind_elastic = [ind_elastic,ind_total(end)+1:ind_total(end)+1];
-    ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-    lbw = [lbw; s_elastic_min];
-    ubw = [ubw; s_elastic_max];
-    w0 = [w0;s_elastic_0];
+    if mpcc_mode >= 5 && mpcc_mode < 8
+        % add elastic variable to the vector of unknowns and add objeective contribution
+        w = [w; S_elastic];
+        ind_elastic = [ind_elastic,ind_total(end)+1:ind_total(end)+1];
+        ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+        lbw = [lbw; s_elastic_min];
+        ubw = [ubw; s_elastic_max];
+        w0 = [w0;s_elastic_0];
 
-    if objective_scaling_direct
-        J = J + (1/sigma_p)*S_elastic;
-    else
-        J = sigma_p*J + S_elastic;
-    end
-end
-
-%% barrier controled penalty formulation
-if mpcc_mode >= 8 && mpcc_mode <= 10
-    rho_elastic = define_casadi_symbolic(casadi_symbolic_mode,'rho_elastic',1);
-
-    w = [w; rho_elastic];
-    ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-
-    s_elastic_min = 1e-16;
-    s_elastic_max = inf;
-    rho_0 = max(rho_min,0.5);
-
-    if convex_sigma_rho_constraint
-        sigma_0 = (1+sigma_scale)*rho_scale*exp(-rho_lambda*rho_0);
-    else
-        sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0);
-    end
-    rho_max = (log(rho_scale)-log(s_elastic_min))/rho_lambda;
-
-    lbw = [lbw; rho_min];
-    ubw = [ubw; rho_max];
-    w0 = [w0;rho_0];
-    if nonlinear_sigma_rho_constraint
-        if convex_sigma_rho_constraint
-            g = [g; -rho_scale*exp(-rho_lambda*rho_elastic)+S_elastic];
+        if objective_scaling_direct
+            J = J + (1/sigma_p)*S_elastic;
         else
-            g = [g; rho_scale*exp(-rho_lambda*rho_elastic)-S_elastic];
+            J = sigma_p*J + S_elastic;
         end
-    else
-        g = [g; -(rho_elastic-rho_max)-S_elastic];
     end
-
-    lbg = [lbg; 0];
-    ubg = [ubg; inf];
-    ind_g_total = [ind_g_total,ind_g_total(end)+1];
-
-    % add elastic variable to the vector of unknowns and add objeective contribution
-    w = [w; S_elastic];
-    ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-    lbw = [lbw; s_elastic_min];
-    ubw = [ubw; s_elastic_max];
-    w0 = [w0;s_elastic_0];
-    J = J-rho_penalty*(rho_elastic^2)+sigma_penalty*S_elastic;
-end
 end
 %% Objective Terms for Grid Regularization
 % Huristic Regularization.
 if heuristic_step_equilibration || step_equilibration
-    %     J = J + step_equilibration_penalty*J_regularize_h;
     J = J + rho_h_p*J_regularize_h;
 end
 

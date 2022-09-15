@@ -308,16 +308,16 @@ if time_freezing
                 a_t = mu*a_n;
                 switch n_dim_contact
                     case 2
-                        switch n_u_virtual
-                            case 1
+%                         switch n_u_virtual
+%                             case 1
                                 f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
                                 f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-                            case 2
-                                f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-                                f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-                                f_aux_t3 = [zeros(n_q,1);invM*tangent2*a_t;zeros(n_quad+1,1)];
-                                f_aux_t4 = -[zeros(n_q,1);invM*tangent2*a_t;zeros(n_quad+1,1)];
-                        end
+%                             case 2
+%                                 f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
+%                                 f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
+%                                 f_aux_t3 = [zeros(n_q,1);invM*tangent2*a_t;zeros(n_quad+1,1)];
+%                                 f_aux_t4 = -[zeros(n_q,1);invM*tangent2*a_t;zeros(n_quad+1,1)];
+%                         end
                         
                     case 3
                         eps_tangential = 1e-8;
