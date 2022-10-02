@@ -68,6 +68,7 @@ ylabel('${u}(t)$','interpreter','latex');
 legend({'${u}_1(t)$','${u}_2(t)$'},'Interpreter','latex',Location='best');
 
 %% indicator functio
+if 0
 if step_equilibration
     nu_opt = full(model.nu_fun(results.w_opt));
 else
@@ -84,8 +85,9 @@ subplot(122)
 plot(nu_opt_scaled)
 ylim([-0.05 1.05])
 grid on
-
+end
 %%
+if 0
 figure
 subplot(131)
 try
@@ -144,3 +146,4 @@ ylim([-0.01 h_nominal*2.1])
 xlabel('Finite element','interpreter','latex');
 % ylabel('$h_{k,n}$','interpreter','latex');
 
+end

@@ -1,15 +1,15 @@
 %
 %    This file is part of NOSNOC.
 %
-%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    NOSNOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
 %
-%    NOS-NOC is free software; you can redistribute it and/or
+%    NOSNOC is free software; you can redistribute it and/or
 %    modify it under the terms of the GNU Lesser General Public
 %    License as published by the Free Software Foundation; either
 %    version 3 of the License, or (at your option) any later version.
 %
-%    NOS-NOC is distributed in the hope that it will be useful,
+%    NOSNOC is distributed in the hope that it will be useful,
 %    but WITHOUT ANY WARRANTY; without even the implied warranty of
 %    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %    Lesser General Public License for more details.
@@ -48,9 +48,9 @@ illustrate_regions  = 1;
 terminal_constraint = 1;
 linear_control = 1;
 
-settings.step_equilibration = 1;
+settings.step_equilibration = 0;
 settings.rho_h = 1e1;
-settings.heuristic_step_equilibration = 0;
+settings.heuristic_step_equilibration = 1;
 settings.step_equilibration_mode = 3;
 %% model equations
 x_target = [-pi/6;-pi/4];
