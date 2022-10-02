@@ -305,4 +305,3 @@ if save_figure
     eval(['print -dpdf -painters ' [filename '_drifts'] ])
 end
 
-
