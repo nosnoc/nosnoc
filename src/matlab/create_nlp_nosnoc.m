@@ -106,7 +106,7 @@ if mpcc_mode >= 11 && mpcc_mode <= 13
 end
 
 %% Formulate NLP - Start with an empty NLP
-% degrese of freedom
+% degrees of freedom
 w = {};
 w0 = [];
 lbw = [];
@@ -243,13 +243,13 @@ for k=0:N_stages-1
                 % index colector for sot variables
                 ind_sot = [ind_sot,ind_total(end)+1:ind_total(end)+1];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-                % enfroce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
+                % enforce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
                 J_regularize_sot = J_regularize_sot+(s_sot_k)^2;
             end
         end
     end
 
-    %% General Nonlinear constriant (on control interval boundary)
+    %% General Nonlinear constraint (on control interval boundary)
     % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
     if g_ineq_constraint
         g_ineq_k = g_ineq_fun(X_ki,Uk);
@@ -734,7 +734,7 @@ for k=0:N_stages-1
         end
     end
 
-    %% Equdistant grid in numerical time (Multiple-shooting type discretization)
+    %% equidistant grid in numerical time (Multiple-shooting type discretization)
     if equidistant_control_grid
         if time_rescaling && time_optimal_problem
             % the querry here is because: No Time freezing: time_opt => time_rescaling (so this is always true if time_rescaling is on)
@@ -758,7 +758,7 @@ for k=0:N_stages-1
         end
     end
 
-    %% Equdistant grid in phyisical time (Stage-wise constraints on the colock state)
+    %% equidistant grid in phyisical time (Stage-wise constraints on the colock state)
     if time_freezing && stagewise_clock_constraint
         % This makes mostly sense if time freezin is on. Imposes the constraints t((k+1)*h) = (k+1)*h+t_0 , x0(end) = t_0.
         if time_optimal_problem

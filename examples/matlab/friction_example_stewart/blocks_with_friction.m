@@ -58,7 +58,7 @@ x = [q;v;t];
 % ubu  = 20*0;
 
 %% Switching Functions
-% every constraint funcion corresponds to a simplex (note that the c_i might be vector valued)
+% every constraint function corresponds to a simplex (note that the c_i might be vector valued)
 c1 = v1;
 c2 = v2;
 c3 = v3;

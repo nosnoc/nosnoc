@@ -104,12 +104,12 @@ heuristic_step_equilibration_mode = 1; % 1 standard (h_k - h), 2  - penalize del
 %% Multiple shooting type discretization	
 equidistant_control_grid = 1;
 	
-%% Time-Settting & Time-Freezing
+%% Time-Setting & Time-Freezing
 time_freezing  = 0;
 time_freezing_inelastic = 0;
 time_optimal_problem = 0;
 time_rescaling = 0;
-% for time optimal problems and equdistant control grids in physical time
+% for time optimal problems and equidistant control grids in physical time
 use_speed_of_time_variables = 1;
 local_speed_of_time_variable = 0;
 stagewise_clock_constraint = 1;
@@ -165,7 +165,7 @@ relax_terminal_constraint_from_above = 0;
 rho_terminal = 1e2;
 relax_terminal_constraint_homotopy = 0; % terminal penalty is governed by homotopy parameter
 
-%% Ingerator Specific 
+%% Integrator Specific 
 use_previous_solution_as_initial_guess = 0;
 simulation_problem  = 0;
 

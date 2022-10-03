@@ -195,7 +195,7 @@ for k=0:N_stages-1
         end
     end
 
-    %% General nonlinear constriant evaluated at left boundary of the control interval
+    %% General nonlinear constraint evaluated at left boundary of the control interval
     if g_ineq_constraint
         g_ineq_k = g_ineq_fun(X_ki,U_k);
         opti.subject_to(g_ineq_lb <= g_ineq_k <=g_ineq_ub);
@@ -468,9 +468,9 @@ for k=0:N_stages-1
         end
     end
     sum_h_ki = [sum_h_ki;sum_h_ki_temp];
-    %% Equdistant grid in numerical time (Multiple-shooting type discretization)
+    %% equidistant grid in numerical time (Multiple-shooting type discretization)
 
-    %% Equdistant grid in phyisical time (Stage-wise constraints on the colock state)
+    %% equidistant grid in phyisical time (Stage-wise constraints on the colock state)
 
 end
 sum_h_ki_all = sum(sum_h_ki); % this is the sum of all over all FE and control intervals (= integral of clock state if no time-freezing is used)
