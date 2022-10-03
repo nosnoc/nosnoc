@@ -259,6 +259,9 @@ for k=0:N_stages-1
     end
     sum_h_ki_control_interval_k = 0; % Integral of the clock state (if not time freezing) on the current stage.
 
+    %% Least square terms
+    J = J+T/N_stages*f_lsq_x_fun(X_ki,x_ref_val(:,k+1));
+    J = J+T/N_stages*f_lsq_u_fun(Uk,u_ref_val(:,k+1));
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
         %%  Sum of lambda and theta for current finite elememnt
@@ -793,6 +796,8 @@ if  ~equidistant_control_grid
         ubg = [ubg; 0];
     end
 end
+%% Terminal least square term
+J = J + f_lsq_T_fun(X_ki,x_ref_end_val);
 
 %% Terminal Phyisical Time (Posssble terminal constraint on the clock state if time freezing is active).
 if time_freezing

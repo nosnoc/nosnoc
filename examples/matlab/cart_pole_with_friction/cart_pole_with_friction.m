@@ -41,6 +41,7 @@ settings.mpcc_mode = 3;
 settings.comp_tol = 1e-9;
 settings.N_homotopy = 10;
 settings.print_level = 5;
+
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
@@ -96,6 +97,7 @@ R = 1;
 ubx = [5; 240/180*pi; 20; 20];
 lbx = [-0.0; -240/180*pi; -20; -20];
 u_max = 30;
+u_ref = 0;
 
 %% fill in model
 model.F = F;
@@ -113,11 +115,18 @@ model.ubu = u_max;
 model.S = [1;-1];
 
 % Stage cost
-% Stage cost
-model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
-% terminal cost
-model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
-% model.g_terminal = x-x_target;
+if 1
+    % directly via generic stage and terminal costs
+    model.f_q = (x-x_ref)'*Q*(x-x_ref)+ (u-u_ref)'*R*(u-u_ref);
+    % terminal cost
+    model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
+    % model.g_terminal = x-x_target;
+else
+    % via least squares cost interace (makes time variable reference possible)
+    model.lsq_x = {x,x_ref,Q};
+    model.lsq_u = {u,u_ref,R};
+    model.lsq_T = {x,x_ref,Q_terminal};
+end
 %% Solve OCP
 [results,stats,model,settings] = nosnoc_solver(model,settings);
 %% plots
@@ -140,7 +149,7 @@ pole_Y = [cart_center+0*q1_opt',cart_center+link_length*sin(q2_opt'-pi/2)];
 x_min =-3;
 x_max = 3;
 for ii = 1:length(q1_opt)
-    % pole   
+    % pole
     plot(pole_X(ii,:),pole_Y(ii,:),'k','LineWidth',3);
     hold on
     % tail
@@ -168,19 +177,19 @@ for ii = 1:length(q1_opt)
     xlim([x_min x_max])
     ylim([-1 2])
     text(-1.5,1.5,['Time: ' num2str(t_grid(ii),'%.2f') ' s'],'interpreter','latex','fontsize',15)
-%     try
-%         exportgraphics(gcf,'cart_pole_with_friction.gif','Append',true);
-%     catch
-%         disp('the simple gif function is avilable for MATLAB2022a and newer.')
-%     end
+    %     try
+    %         exportgraphics(gcf,'cart_pole_with_friction.gif','Append',true);
+    %     catch
+    %         disp('the simple gif function is avilable for MATLAB2022a and newer.')
+    %     end
 
     frame = getframe(1);
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-         imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
     else
-         imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
     end
 
     if ii~=length(q1_opt)

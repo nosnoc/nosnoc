@@ -1,15 +1,15 @@
 %
 %    This file is part of NOSNOC.
 %
-%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    NOSNOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
 %
-%    NOS-NOC is free software; you can redistribute it and/or
+%    NOSNOC is free software; you can redistribute it and/or
 %    modify it under the terms of the GNU Lesser General Public
 %    License as published by the Free Software Foundation; either
 %    version 3 of the License, or (at your option) any later version.
 %
-%    NOS-NOC is distributed in the hope that it will be useful,
+%    NOSNOC is distributed in the hope that it will be useful,
 %    but WITHOUT ANY WARRANTY; without even the implied warranty of
 %    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %    Lesser General Public License for more details.
@@ -46,7 +46,7 @@ if exist("w0",'var')
         solver_initalization.w0 = w0;
     else
         fprintf('Provided user guess does not have the appropiate dimension, it should be a vector of length %d, the provided vectors has a length of %d. \n',length(solver_initalization.w0),length(w0));
-        fprintf('Taking the generated default initial guess... \n');
+        fprintf('Taking the default initial guess... \n');
     end
 end
 
@@ -85,9 +85,6 @@ fprintf('Complementarity residual: %2.3e.\n',complementarity_iter);
 
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
-    %     if T_opt  < 1e-3
-    %         T_opt = t_grid(end);
-    %     end
     fprintf('Final time T_opt: %2.4f.\n',T_opt);
 end
 fprintf('-----------------------------------------------------------------------------------------------\n\n');

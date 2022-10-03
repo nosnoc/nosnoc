@@ -48,10 +48,10 @@ if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end
 %% If different names are used...
-if exist('N_ctrl','var') 
+if exist('N_ctrl','var')
     N_stg = N_ctrl;
 end
-if exist('N_control','var') 
+if exist('N_control','var')
     N_stg = N_control;
 end
 
@@ -177,6 +177,7 @@ if ~exist('f_q')
     %     eval(['f_q = ', casadi_symbolic_mode, '.zeros(1);'])
     f_q = 0;
 end
+
 if exist('f_q_T')
     terminal_cost = 1;
 else
@@ -185,6 +186,102 @@ else
     end
     %     eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1);'])
     f_q_T = 0;
+end
+%% Least squares objective terms with variables references
+if exist('lsq_x')
+    if length(lsq_x)<3
+        error('In lsq_x either the least squares function, the reference of the weight matrix are missing.')
+    end
+    if size(lsq_x{2},1)~=size(lsq_x{1})
+        error('The dimensions of the least squares error term and weighting matrix for the differential states do not match.')
+    end  
+    if size(lsq_x{1},1)~=size(lsq_x{3})
+        error('The dimensions of the least squares error term and reference for the differential states do not match.')
+    end
+
+    n_x_ref_rows = size(lsq_x{2},1);
+    n_x_ref_cols = size(lsq_x{2},2);
+    if n_x_ref_cols == N_stages
+        fprintf('Info: the provided reference for the differential states is time variable. \n');
+    elseif n_x_ref_cols == 1
+        % replaciate
+        fprintf('Info: the provided reference for the differential states is constant over time. \n');
+        lsq_x{2} = repmat(lsq_x{2},1,N_stages);
+    else
+        fprintf('The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,N_stages)
+        error('Please provide x_ref in lsq_x{1} with an appropaite size.')
+    end
+    x_ref_val = lsq_x{2};
+    x_ref = define_casadi_symbolic(casadi_symbolic_mode,'x_ref',n_x_ref_rows);
+    f_lsq_x = (lsq_x{1}-x_ref)'*lsq_x{3}*(lsq_x{1}-x_ref);
+else
+    x_ref = define_casadi_symbolic(casadi_symbolic_mode,'x_ref',1);
+    f_lsq_x = 0;
+    x_ref_val = zeros(1,N_stages);
+end
+
+% least square terms for control inputs
+if exist('lsq_u')
+    if length(lsq_u)<3
+        error('In lsq_u either the least squares function, the reference of the weight matrix are missing.')
+    end
+    if size(lsq_u{2},1)~=size(lsq_u{1})
+        error('The dimensions of the least squares error term and weighting matrix for the control input do not match.')
+    end  
+    if size(lsq_u{1},1)~=size(lsq_u{3})
+        error('The dimensions of the least squares error term and reference for the control input do not match.')
+    end
+    n_u_ref_rows = size(lsq_u{2},1);
+    n_u_ref_cols = size(lsq_u{2},2);
+    if n_u_ref_cols == N_stages
+        fprintf('Info: the provided reference for the control inputs is time variable. \n');
+    elseif n_u_ref_cols == 1
+        % replaciate
+        fprintf('Info: the provided reference for the control inputs is constant over time. \n');
+        lsq_u{2} = repmat(lsq_u{2},1,N_stages);
+    else
+        fprintf('The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,N_stages)
+        error('Please provide u_ref in lsq_u{2} with an appropaite size.')
+    end
+    u_ref_val = lsq_u{2};
+    u_ref = define_casadi_symbolic(casadi_symbolic_mode,'u_ref',n_u_ref_rows);
+    f_lsq_u = (lsq_u{1}-u_ref)'*lsq_u{3}*(lsq_u{1}-u_ref);
+else
+    u_ref = define_casadi_symbolic(casadi_symbolic_mode,'u_ref',1);
+    f_lsq_u = 0;
+    u_ref_val = zeros(1,N_stages);
+end
+
+
+% least square terms for control inputs
+if exist('lsq_T')
+
+    % sanity chkecs on the input
+    if length(lsq_T)<3
+        error('In lsq_u either the least squares function, the reference of the weight matrix are missing.')
+    end
+    if size(lsq_T{2},1)~=size(lsq_T{1})
+        error('The dimensions of the least squares error term and weighting matrix for the terminal cost do not match.')
+    end  
+    if size(lsq_T{1},1)~=size(lsq_T{3})
+        error('The dimensions of the least squares error term and reference for the terminal cost do not match.')
+    end
+
+    n_x_T_rows = size(lsq_T{2},1);
+    n_x_T_cols = size(lsq_T{2},2);
+    if n_x_T_cols == 1
+        fprintf('Info: the provided reference for the terminal cost is ok. \n');
+    else
+        fprintf('The reference in lsq_T has to be a vector of length %d. \n',length(lsq_T{1}));
+        error('Please provide a reference vector in lsq_T{2} with an appropaite size.')
+    end
+    x_ref_end_val = lsq_T{2};
+    x_ref_end = define_casadi_symbolic(casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
+    f_lsq_T = (lsq_T{1}-x_ref_end)'*lsq_T{3}*(lsq_T{1}-x_ref_end);
+else
+    x_ref_end  = define_casadi_symbolic(casadi_symbolic_mode,'x_ref_end',1);
+    f_lsq_T = 0;
+    x_ref_end_val = 0;
 end
 
 %% Inequality constraints check
@@ -790,20 +887,25 @@ end
 J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
 f_q_T_fun = Function('f_q_T',{x},{f_q_T});
 
+%%  CasADi functions for lest-square objective function terms
+f_lsq_x_fun = Function('f_lsq_x_fun',{x,x_ref},{f_lsq_x});
+f_lsq_u_fun = Function('f_lsq_x_fun',{u,u_ref},{f_lsq_u});
+f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end},{f_lsq_T});
+
 %% Intigal guess for state derivatives at stage points
 if isequal(irk_representation,'differential')
     if simple_v0_guess
         v0 = zeros(n_x,1);
     else
         if n_u>0
-%             if virtual_forces && virtual_forces_convex_combination
-%                 % for time freezing systmes
-%                 [v0,~] = (f_x_fun(x0,z0,u0,1));
-%                 v0 = full(v0);
-%             else
-                [v0,~] = (f_x_fun(x0,z0,u0));
-                v0 = full(v0);
-%             end
+            %             if virtual_forces && virtual_forces_convex_combination
+            %                 % for time freezing systmes
+            %                 [v0,~] = (f_x_fun(x0,z0,u0,1));
+            %                 v0 = full(v0);
+            %             else
+            [v0,~] = (f_x_fun(x0,z0,u0));
+            v0 = full(v0);
+            %             end
         else
             [v0,~] = (f_x_fun(x0,z0));
             v0 = full(v0);
@@ -890,6 +992,14 @@ model.n_beta = n_beta;
 model.n_gamma = n_gamma;
 model.n_lambda_0 = n_lambda_0;
 model.n_lambda_1 = n_lambda_1;
+
+% least square functions and references
+model.f_lsq_x_fun = f_lsq_x_fun;
+model.x_ref_val = x_ref_val;
+model.f_lsq_u_fun = f_lsq_u_fun;
+model.u_ref_val = u_ref_val;
+model.f_lsq_T_fun = f_lsq_T_fun;
+model.x_ref_end_val = x_ref_end_val;
 
 
 %% collect all dimensions in one sperate struct as it is needed by several other functions later.
