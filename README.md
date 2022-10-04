@@ -3,7 +3,19 @@
 
 
 ## General
-It is a modular tool for numerically solving optimal control problems with piecewise smooth systems (PSS). It relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS. The time-freezing reformulation, which transforms several classes of systems with state jumps into PSS is supported as well. 
+It is a modular tool for numerically solving nonsmooth optimal control problems with Piecewise Smooth/Filippov Systems (PSS). It supports:
+1. Automatic discretization via the FESD method -  high accuracy and correct sensitivities
+
+(Note that standard time-stepping methods have only first order accuracy and wrong sensitivities even when they appear to be differentiable!)
+
+2. Automatic reformulations of systems with state jumps (e.g. contact problems) via time-freezing into Filippov systems/PSS.
+(enables high accuracy even for system with state jump, check out the example library)
+
+3. Solving the nonsmooth nonlinear programs via homotopy methods. Enables the use of off-the-shelf solvers like IPOPT.
+
+
+
+**NOSNOC**  relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS.
 It enables the treatment of a broad class of nonsmooth systems in a unified way. The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
 
 ## Installation
