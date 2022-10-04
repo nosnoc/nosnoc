@@ -917,7 +917,9 @@ f_q_T_fun = Function('f_q_T',{x},{f_q_T});
 
 %%  CasADi functions for lest-square objective function terms
 f_lsq_x_fun = Function('f_lsq_x_fun',{x,x_ref},{f_lsq_x});
-f_lsq_u_fun = Function('f_lsq_x_fun',{u,u_ref},{f_lsq_u});
+if n_u > 0
+    f_lsq_u_fun = Function('f_lsq_u_fun',{u,u_ref},{f_lsq_u});
+end
 f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end},{f_lsq_T});
 
 %% Intigal guess for state derivatives at stage points
@@ -1031,7 +1033,9 @@ model.n_lambda_1 = n_lambda_1;
 % least square functions and references
 model.f_lsq_x_fun = f_lsq_x_fun;
 model.x_ref_val = x_ref_val;
-model.f_lsq_u_fun = f_lsq_u_fun;
+if n_u>0
+    model.f_lsq_u_fun = f_lsq_u_fun;
+end
 model.u_ref_val = u_ref_val;
 model.f_lsq_T_fun = f_lsq_T_fun;
 model.x_ref_end_val = x_ref_end_val;

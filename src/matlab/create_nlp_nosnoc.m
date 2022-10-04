@@ -269,7 +269,9 @@ for k=0:N_stages-1
 
     %% Least square terms
     J = J+T/N_stages*f_lsq_x_fun(X_ki,x_ref_val(:,k+1));
-    J = J+T/N_stages*f_lsq_u_fun(Uk,u_ref_val(:,k+1));
+    if n_u > 0
+        J = J+T/N_stages*f_lsq_u_fun(Uk,u_ref_val(:,k+1));
+    end
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
         %%  Sum of lambda and theta for current finite elememnt
