@@ -257,6 +257,14 @@ for k=0:N_stages-1
         lbg = [lbg; g_ineq_lb];
         ubg = [ubg; g_ineq_ub];
     end
+    % path complementarity constraints
+    if g_comp_path_constraint
+        g_comp_path_k = g_comp_path_fun(X_ki,Uk)-p(1);
+        g = {g{:}, g_comp_path_k};
+        lbg = [lbg; g_comp_path_lb];
+        ubg = [ubg; g_comp_path_ub];
+    end
+
     sum_h_ki_control_interval_k = 0; % Integral of the clock state (if not time freezing) on the current stage.
 
     %% Least square terms
@@ -468,7 +476,7 @@ for k=0:N_stages-1
         comp_var_current_fe.Lambda_ki = Lambda_ki;
         comp_var_current_fe.Theta_ki = Theta_ki;
 
-        %% Continiuity of lambda, the boundary values of lambda and mu  
+        %% Continiuity of lambda, the boundary values of lambda and mu
         if use_fesd
             if right_boundary_point_explicit
                 Z_kd_end = Z_ki_stages{n_s};
@@ -606,6 +614,14 @@ for k=0:N_stages-1
                 ubg = [ubg; g_ineq_ub];
             end
 
+            % path complementarity constraints
+            if g_comp_path_constraint   && g_ineq_at_stg
+                g_comp_path_k = g_comp_path_fun(X_ki_stages{j},Uk)-p(1);
+                g = {g{:}, g_comp_path_k};
+                lbg = [lbg; g_comp_path_lb];
+                ubg = [ubg; g_comp_path_ub];
+            end
+
             %% Complementarity constraints (standard and cross)
             % Prepare Input for Cross Comp Function
             n_cross_comp_i = 0;
@@ -692,6 +708,14 @@ for k=0:N_stages-1
             g = {g{:}, g_ineq_k};
             lbg = [lbg; g_ineq_lb];
             ubg = [ubg; g_ineq_ub];
+        end
+
+        % path complementarity constraints
+        if g_comp_path_constraint   && g_ineq_at_fe && i<N_finite_elements(k+1)-1
+            g_comp_path_k = g_comp_path_fun(X_ki,Uk)-p(1);
+            g = {g{:}, g_comp_path_k};
+            lbg = [lbg; g_comp_path_lb];
+            ubg = [ubg; g_comp_path_ub];
         end
 
         %% g_z_all constraint for boundary point and continuity of algebraic variables.

@@ -312,6 +312,34 @@ else
     end
 end
 
+%% Check path complementarity constraints
+g_comp_path_constraint  = 0;
+if exist('g_comp_path')
+    g_comp_path_constraint  = 1;
+    n_g_comp_path = length(g_comp_path);
+    if exist('g_comp_path_lb')
+        if length(g_comp_path_lb)~=n_g_comp_path
+            error('The user provided vector g_comp_path_lb has the wrong size.')
+        end
+    else
+        g_comp_path_lb = -inf*ones(n_g_comp_path,1);
+    end
+
+    if exist('g_comp_path_ub')
+        if length(g_comp_path_ub)~=n_g_comp_path
+            error('The user provided vector g_comp_path_ub has the wrong size.')
+        end
+    else
+        g_comp_path_ub =  0*ones(n_g_comp_path,1);
+    end
+    g_comp_path_fun  = Function('g_comp_path_fun',{x,u},{g_comp_path});
+else
+    n_g_comp_path = 0;
+    g_comp_path_constraint  = 0;
+    if print_level >=1
+        fprintf('Info: No path constraints are provided. \n')
+    end
+end
 %% Terminal constraints
 if exist('g_terminal')
     terminal_constraint = 1;
@@ -938,11 +966,18 @@ model.lbz = lbz;
 model.ubz = ubz;
 
 
+model.g_ineq_constraint = g_ineq_constraint;
 if g_ineq_constraint
     model.g_ineq_lb = g_ineq_lb;
     model.g_ineq_ub = g_ineq_ub;
     model.g_ineq_fun = g_ineq_fun;
-    model.g_ineq_constraint = g_ineq_constraint;
+end
+
+model.g_comp_path_constraint = g_comp_path_constraint;
+if g_comp_path_constraint
+    model.g_comp_path_lb = g_comp_path_lb;
+    model.g_comp_path_ub = g_comp_path_ub;
+    model.g_comp_path_fun = g_comp_path_fun;
 end
 
 if terminal_constraint

@@ -81,7 +81,7 @@ if sum(stats.cpu_time) <60
 else
     fprintf('Total homotopy solver time: %2.3f seconds /  %2.3f minutes. \n',sum(stats.cpu_time),sum(stats.cpu_time)/60);
 end
-fprintf('Complementarity residual: %2.3e.\n',complementarity_iter);
+fprintf('Complementarity residual (\ell_1 norm): %2.3e.\n',complementarity_iter);
 
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
