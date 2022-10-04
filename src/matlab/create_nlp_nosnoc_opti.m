@@ -50,21 +50,21 @@ if use_fesd
         ubh = (1+gamma_h)*h_k*s_sot_max;
         lbh = (1-gamma_h)*h_k/s_sot_min;
     end
-    % initigal guess for the step-size
+    % initial guess for the step-size
     h0_k = h_k.*ones(N_stages,1);
 end
 
 %% Butcher Tableu (differential and integral representation)
 switch irk_representation
     case 'integral'
-        [B,C,D,tau_root] = generatre_butcher_tableu_integral(n_s,irk_scheme);
+        [B,C,D,tau_root] = generate_butcher_tableu_integral(n_s,irk_scheme);
         if tau_root(end) == 1
             right_boundary_point_explicit  = 1;
         else
             right_boundary_point_explicit  = 0;
         end
     case 'differential'
-        [A_irk,b_irk,c_irk,order_irk] = generatre_butcher_tableu(n_s,irk_scheme);
+        [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(n_s,irk_scheme);
         if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
             right_boundary_point_explicit  = 1;
         else

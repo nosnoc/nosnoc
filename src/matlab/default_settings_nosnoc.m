@@ -5,7 +5,7 @@ function [default_settings] = default_settings_nosnoc()
 solver_name = 'nosnoc_solver';
 use_fesd = 1;
 casadi_symbolic_mode = 'SX';
-%% IRK anf FESD Settings
+%% IRK and FESD Settings
 n_s = 2;                            % Number of IRK stages
 irk_scheme = 'radau';     % RK scheme
 irk_representation = 'integral'; % are the IRK equations in differential from (derivative at stages are uknowns in the equations) or in integral form (state values are unkwnowns at stage points)
@@ -40,7 +40,7 @@ g_ineq_at_fe = 0; % evaluate nonlinear path constraint at every finte element bo
 g_ineq_at_stg = 0; % evaluate nonlinear path constraint at every stage 
 
 % x_box_at_fe = 1; % evaluate box constraint for diff states at every finite element boundary point
-% x_box_at_stg = 1; % evulate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
+% x_box_at_stg = 1; % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
 
 terminal_constraint = 0;
 time_optimal_problem = 0;

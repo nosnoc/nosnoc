@@ -19,7 +19,7 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-function [A,b,c,order] = generatre_butcher_tableu(n_s,irk_scheme)
+function [A,b,c,order] = generate_butcher_tableu(n_s,irk_scheme)
 
 % currently supported schmes are: Radau-IA, Radau-IIA, Gauss-Legendre, Lobatto-IIIA, Lobatto-IIIB, Lobatto-IIIC
 %  if radau is passed then Radau-IIA is used
