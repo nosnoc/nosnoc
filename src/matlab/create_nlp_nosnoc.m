@@ -955,6 +955,14 @@ if terminal_constraint
     end
 end
 
+ % path complementarity constraints
+    if g_comp_path_constraint
+        g_comp_path_k = g_comp_path_fun(Xk_end,Uk)-p(1);
+        g = {g{:}, g_comp_path_k};
+        lbg = [lbg; g_comp_path_lb];
+        ubg = [ubg; g_comp_path_ub];
+    end
+
 %% quadratic regularization for speed of time variables;
 % should be off in time optimal problems and on in time-freezing.
 if time_freezing

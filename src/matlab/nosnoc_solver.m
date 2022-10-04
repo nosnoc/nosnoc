@@ -63,7 +63,16 @@ total_time = sum(stats.cpu_time)+cpu_time_presolve;
 unfold_struct(settings,'caller');
 unfold_struct(model,'caller');
 results = extract_results_from_solver(model,settings,results);
-complementarity_iter = full(comp_res(results.w_opt));
+complementarity_iter_ell_1 = full(comp_res(results.w_opt));
+switch pss_mode
+    case 'Step'
+    temp = [results.alpha_opt_extended.*results.lambda_0_opt_extended,(1-results.alpha_opt_extended).*results.lambda_1_opt_extended];
+    complementarity_iter_ell_inf = max(temp(:));
+    case 'Stewart'
+        % TODO: considert cross comps as well in the inf norm
+     temp = [results.theta_opt_extended.*results.lambda_opt_extended];
+    complementarity_iter_ell_inf = max(temp(:));
+end
 
 %% Verbose
 stats.total_time  = total_time;
@@ -81,7 +90,8 @@ if sum(stats.cpu_time) <60
 else
     fprintf('Total homotopy solver time: %2.3f seconds /  %2.3f minutes. \n',sum(stats.cpu_time),sum(stats.cpu_time)/60);
 end
-fprintf('Complementarity residual (\ell_1 norm): %2.3e.\n',complementarity_iter);
+fprintf('Complementarity residual (1-norm): %2.2e.\n',complementarity_iter_ell_1);
+fprintf('Complementarity residual (inf-norm): %2.2e.\n',complementarity_iter_ell_inf);
 
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
