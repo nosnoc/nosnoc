@@ -145,8 +145,9 @@ u3_opt = u_opt(3,:);
 
 
 %% animation
-figure('Renderer', 'painters', 'Position', [100 100 1400 600])
-
+% figure('Renderer', 'painters', 'Position', [100 100 1000 400])
+figure(1)
+filename = 'three_carts.gif';
 carts_appart = 2;
 x_min =min([p1,p2,p3])-2.5;
 x_max = max([p1,p2,p3])+2.5;
@@ -200,11 +201,17 @@ for ii = 1:length(p1)
     xlim([x_min x_max])
     ylim([-0.75 3.5])
     pause(model.h_k);
-    try
-        exportgraphics(gcf,'three_carts.gif','Append',true);
-    catch
-        disp('the simple gif function is avilable for MATLAB2022a and newer.')
+   
+    frame = getframe(1);
+    im = frame2im(frame);
+
+    [imind,cm] = rgb2ind(im,256);
+    if ii == 1;
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+    else
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
     end
+
     if ii~=length(p1)
         clf;
     end
