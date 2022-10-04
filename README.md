@@ -4,9 +4,7 @@
 
 ## General
 It is a modular tool for numerically solving nonsmooth optimal control problems with Piecewise Smooth/Filippov Systems (PSS). It supports:
-1. Automatic discretization via the FESD method -  high accuracy and correct sensitivities
-
-(Note that standard time-stepping methods have only first order accuracy and wrong sensitivities even when they appear to be differentiable!)
+1. Automatic discretization via the FESD method -  high accuracy and correct sensitivities. (Note that standard time-stepping methods have only first order accuracy and wrong sensitivities even when they appear to be differentiable!)
 
 2. Automatic reformulations of systems with state jumps (e.g. contact problems) via time-freezing into Filippov systems/PSS.
 (enables high accuracy even for system with state jump, check out the example library)
