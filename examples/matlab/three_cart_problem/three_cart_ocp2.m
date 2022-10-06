@@ -45,8 +45,7 @@ settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
-% settings.s_sot_max = 2;
-% settings.s_sot_min = 0.5;
+
 settings.equidistant_control_grid = 1; % equdistiant control grid in numerical time
 settings.pss_lift_step_functions = 1;
 settings.stagewise_clock_constraint = 1; % equdistiant control grid in physical time

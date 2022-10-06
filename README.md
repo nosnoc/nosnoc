@@ -106,7 +106,7 @@ IEEE Control Systems Letters 2021
 A. Nurkanović, S. Albrecht, B. Brogliato, M. Diehl \
 arXiv preprint 2021
 
-[Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing](https://arxiv.org/abs/2203.11510) \
+[Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing](https://cdn.syscop.de/publications/Nurkanovic2022a.pdf) \
 A.Nurkanović , M. Diehl \
 IEEE Control Systems Letters 2022
 
@@ -115,7 +115,7 @@ IEEE Control Systems Letters 2022
 
 ### NOSNOC
 
-[NOSNOC: An Software Package for Numerical Optimal Control of Nonsmooth Systems](https://arxiv.org/abs/2203.11516) \
+[NOSNOC: A Software Package for Numerical Optimal Control of Nonsmooth Systems](https://cdn.syscop.de/publications/Nurkanovic2022b.pdf) \
 A.Nurkanović , M. Diehl \
 IEEE Control Systems Letters 2022
 
