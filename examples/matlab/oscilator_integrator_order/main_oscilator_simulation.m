@@ -151,7 +151,7 @@ if plot_continious_time_sol
     unfold_struct(settings,'caller')
     x_res_extended = results.x_res_extended;
     h_opt = results.h_vec;
-    [A_irk,b_irk,c_irk,order_irk] = generatre_butcher_tableu(n_s,irk_scheme);
+    [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(n_s,irk_scheme);
     t_grid = results.t_grid;
     tgrid_long = 0;
     h_grid_long = [];

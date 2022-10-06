@@ -5,7 +5,7 @@ function [default_settings] = default_settings_nosnoc()
 solver_name = 'nosnoc_solver';
 use_fesd = 1;
 casadi_symbolic_mode = 'SX';
-%% IRK anf FESD Settings
+%% IRK and FESD Settings
 n_s = 2;                            % Number of IRK stages
 irk_scheme = 'radau';     % RK scheme
 irk_representation = 'integral'; % are the IRK equations in differential from (derivative at stages are uknowns in the equations) or in integral form (state values are unkwnowns at stage points)
@@ -40,7 +40,7 @@ g_ineq_at_fe = 0; % evaluate nonlinear path constraint at every finte element bo
 g_ineq_at_stg = 0; % evaluate nonlinear path constraint at every stage 
 
 % x_box_at_fe = 1; % evaluate box constraint for diff states at every finite element boundary point
-% x_box_at_stg = 1; % evulate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
+% x_box_at_stg = 1; % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
 
 terminal_constraint = 0;
 time_optimal_problem = 0;
@@ -104,12 +104,12 @@ heuristic_step_equilibration_mode = 1; % 1 standard (h_k - h), 2  - penalize del
 %% Multiple shooting type discretization	
 equidistant_control_grid = 1;
 	
-%% Time-Settting & Time-Freezing
+%% Time-Setting & Time-Freezing
 time_freezing  = 0;
 time_freezing_inelastic = 0;
 time_optimal_problem = 0;
 time_rescaling = 0;
-% for time optimal problems and equdistant control grids in physical time
+% for time optimal problems and equidistant control grids in physical time
 use_speed_of_time_variables = 1;
 local_speed_of_time_variable = 0;
 stagewise_clock_constraint = 1;
@@ -165,7 +165,7 @@ relax_terminal_constraint_from_above = 0;
 rho_terminal = 1e2;
 relax_terminal_constraint_homotopy = 0; % terminal penalty is governed by homotopy parameter
 
-%% Ingerator Specific 
+%% Integrator Specific 
 use_previous_solution_as_initial_guess = 0;
 simulation_problem  = 0;
 

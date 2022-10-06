@@ -50,21 +50,21 @@ if use_fesd
         ubh = (1+gamma_h)*h_k*s_sot_max;
         lbh = (1-gamma_h)*h_k/s_sot_min;
     end
-    % initigal guess for the step-size
+    % initial guess for the step-size
     h0_k = h_k.*ones(N_stages,1);
 end
 
 %% Butcher Tableu (differential and integral representation)
 switch irk_representation
     case 'integral'
-        [B,C,D,tau_root] = generatre_butcher_tableu_integral(n_s,irk_scheme);
+        [B,C,D,tau_root] = generate_butcher_tableu_integral(n_s,irk_scheme);
         if tau_root(end) == 1
             right_boundary_point_explicit  = 1;
         else
             right_boundary_point_explicit  = 0;
         end
     case 'differential'
-        [A_irk,b_irk,c_irk,order_irk] = generatre_butcher_tableu(n_s,irk_scheme);
+        [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(n_s,irk_scheme);
         if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
             right_boundary_point_explicit  = 1;
         else
@@ -195,7 +195,7 @@ for k=0:N_stages-1
         end
     end
 
-    %% General nonlinear constriant evaluated at left boundary of the control interval
+    %% General nonlinear constraint evaluated at left boundary of the control interval
     if g_ineq_constraint
         g_ineq_k = g_ineq_fun(X_ki,U_k);
         opti.subject_to(g_ineq_lb <= g_ineq_k <=g_ineq_ub);
@@ -468,9 +468,9 @@ for k=0:N_stages-1
         end
     end
     sum_h_ki = [sum_h_ki;sum_h_ki_temp];
-    %% Equdistant grid in numerical time (Multiple-shooting type discretization)
+    %% equidistant grid in numerical time (Multiple-shooting type discretization)
 
-    %% Equdistant grid in phyisical time (Stage-wise constraints on the colock state)
+    %% equidistant grid in phyisical time (Stage-wise constraints on the colock state)
 
 end
 sum_h_ki_all = sum(sum_h_ki); % this is the sum of all over all FE and control intervals (= integral of clock state if no time-freezing is used)

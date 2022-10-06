@@ -1,4 +1,4 @@
-function [B,C,D,tau_root] = generatre_butcher_tableu_integral(n_s,irk_scheme)
+function [B,C,D,tau_root] = generate_butcher_tableu_integral(n_s,irk_scheme)
 
 import casadi.*
 

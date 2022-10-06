@@ -124,7 +124,7 @@ if (time_freezing && ~impose_terminal_phyisical_time)
 end
 
 if impose_terminal_phyisical_time == 0
-    warning ('impose_terminal_phyisical_time = 0 is not recommended. It means T \neq T_phy (or T_final \neq T_phy). It is only supported for nonequdistant control grids.')
+    warning ('impose_terminal_phyisical_time = 0 is not recommended. It means T \neq T_phy (or T_final \neq T_phy). It is only supported for nonequidistant control grids.')
 end
 
 % lifting does not make sense in integral mode
