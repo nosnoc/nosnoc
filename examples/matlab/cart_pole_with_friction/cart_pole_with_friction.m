@@ -38,7 +38,7 @@ settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
 % MPCC Method
 settings.mpcc_mode = 3;
-settings.comp_tol = 1e-9;
+% settings.comp_tol = 1e-9;
 settings.N_homotopy = 10;
 settings.print_level = 5;
 
@@ -75,10 +75,10 @@ f_all = [0;-m2*g*link_length*sin(x(2))]+[u;0]-C*v;
 F_friction = 2;
 % Dynamics with $ v > 0$
 f_1 = [v;...
-    inv(M)*(f_all-[F_friction;0])];
+        inv(M)*(f_all-[F_friction;0])];
 % Dynamics with $ v < 0$
 f_2 = [v;...
-    inv(M)*(f_all+[F_friction;0])];
+        inv(M)*(f_all+[F_friction;0])];
 F = [f_1,f_2];
 % switching function (cart velocity)
 c = v(1);
@@ -104,8 +104,6 @@ model.F = F;
 model.c = c;
 model.lbx = lbx;
 model.ubx = ubx;
-model.lbu = -u_max;
-model.ubu = -u_max;
 model.x = x;
 model.x0 =  x0;
 model.u = u;

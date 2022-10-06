@@ -43,7 +43,7 @@ settings.mpcc_mode = 3;
 
 settings.N_homotopy = 6;
 
-settings.cross_comp_mode = 2;
+settings.cross_comp_mode = 1;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.opts_ipopt.ipopt.tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
@@ -60,7 +60,7 @@ settings.stagewise_clock_constraint = 1;
 settings.g_ineq_at_fe = 1; % evaluate path constraint on every integration step
 settings.g_ineq_at_stg = 1; % evaluate path constraint on every stage point
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 % The methods and time-freezing refomulation are detailed in https://arxiv.org/abs/2111.06759
 %% discretizatioon

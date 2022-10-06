@@ -30,7 +30,7 @@ clc;
 import casadi.*
 
 % delete old gif
-delete three_carts.gif
+delete three_carts2.gif
 
 %%
 [settings] = default_settings_nosnoc();  
@@ -56,6 +56,7 @@ settings.stagewise_clock_constraint = 1; % equdistiant control grid in physical 
 %% discretizatioon
 N_stg = 30; % control intervals
 N_FE = 2;  % integration steps per control intevral
+T = 6;
 
 %% model parameters
 m1 = 1;
@@ -64,34 +65,33 @@ m3 = 1;
 cart_width1 = 2;
 cart_width2 = 2;
 cart_width3 = 2;
-k1 = 1*0;
-k2 = 1*0;
-k3 = 1*0;
+
 c_damping = 2;
 
 ubx = [10; 15; 15; 5; 5; 5]; 
 lbx = [-15; -15; -10; -5; -5; -5];            
         
 x0 = [-3; 0; 3; 0; 0; 0];
-x_ref = [-5; 0; 5; 0; 0; 0];
-u_ref = [0; 0; 0];
+x_ref = [-7; 0; 5; 0; 0; 0];
+u_ref = 0;
 
 Q = diag([10; 1; 10; 0.1; 0.1; 0.1]);
 Q_terminal = 100*Q;
-R = diag([0.1; 0.1; 0.1]);
+R = 0.1;
 
-u_max = 20;
-u_min = -20;
+u_max = 30;
+u_min = -30;
 
-lbu = [0*u_min; u_min; 0*u_min];
-ubu = [0*u_max; u_max; 0*u_max];
+lbu = u_min;
+ubu = u_max;
 
 
 %% Symbolic variables and bounds
-q = SX.sym('q',3); v = SX.sym('v',3); 
-u = SX.sym('u',3);
+q = SX.sym('q',3);
+v = SX.sym('v',3); 
+u = SX.sym('u',1);
 x = [q;v];
-model.T = 4;
+model.T = T;
 model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
 model.x = x;
@@ -101,15 +101,11 @@ model.mu = 0.0;
 model.a_n = 10;
 model.x0 = x0; 
 
-% model.f = [1/m1*(u(1)-c_damping*v(1)-k1*q(1));...
-%            1/m2*(u(2)-c_damping*v(2)+k2*(q(1)-q(2)));...
-%            1/m3*(u(3)-c_damping*v(3)+k3*q(2))];
-% dot{v} r.h.s.
 
 model.M = diag([m1;m2;m3]); % inertia/mass matrix;
-model.f = [(u(1)-c_damping*v(1)-k1*q(1));...
-           (u(2)-c_damping*v(2)+k2*(q(1)-q(2)));...
-           (u(3)-c_damping*v(3)+k3*q(2))];
+model.f = [-c_damping*v(1);...
+           u-c_damping*v(2);...
+           -c_damping*v(3)];
 
 % gap functions
 model.c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
@@ -139,9 +135,6 @@ v2 = x_opt(5,:);
 v3 = x_opt(6,:);
 t_opt = x_opt(7,:);
 
-u1_opt = u_opt(1,:);
-u2_opt = u_opt(2,:);
-u3_opt = u_opt(3,:);
 
 
 %% animation
@@ -170,26 +163,26 @@ for ii = 1:length(p1)
     yp = [0 0 cart_height  cart_height];
     patch(xp,yp,'m','FaceAlpha',0.8)
 
-    if k2 >0
-    spring1 = linspace(min(p1(ii),p2(ii)),max(p1(ii),p2(ii)),5);
-    plot(spring1,spring1*0+cart_height/2,'ko-','LineWidth',1);
-    end
+%     if k2 >0
+%     spring1 = linspace(min(p1(ii),p2(ii)),max(p1(ii),p2(ii)),5);
+%     plot(spring1,spring1*0+cart_height/2,'ko-','LineWidth',1);
+%     end
 
     % the refereneces
     % cart 1
     xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'b','FaceAlpha',0.05,'EdgeColor','none')
+    patch(xp,yp,'b','FaceAlpha',0.15)
     hold on
     % cart 2
     xp = [x_ref(2)-cart_width2/2 x_ref(2)+cart_height/2 x_ref(2)+cart_height/2 x_ref(2)-cart_width2/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'r','FaceAlpha',0.05,'EdgeColor','none')
+    patch(xp,yp,'r','FaceAlpha',0.15)
 
     % cart 3
     xp = [x_ref(3)-cart_width3/2 x_ref(3)+cart_height/2 x_ref(3)+cart_height/2 x_ref(3)-cart_width3/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'m','FaceAlpha',0.05,'EdgeColor','none')
+    patch(xp,yp,'m','FaceAlpha',0.15)
 
 
     % ground     
@@ -241,11 +234,9 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 
 subplot(133)
-stairs(t_opt(1:N_FE:end),[u1_opt,nan],'LineWidth',1.5);
-hold on
-stairs(t_opt(1:N_FE:end),[u2_opt,nan],'LineWidth',1.5);
-stairs(t_opt(1:N_FE:end),[u3_opt,nan],'LineWidth',1.5);
-legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
+stairs(t_opt(1:N_FE:end),[u_opt,nan],'LineWidth',1.5);
+
+% legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$u$','interpreter','latex');
