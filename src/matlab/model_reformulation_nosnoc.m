@@ -474,7 +474,7 @@ end
 % index sets and dimensions for ubsystems
 m_ind_vec = 1;
 if isequal(pss_mode,'Step')
-    % dobule the size of the vectors, since alpha,1-alpha treated at same
+    % double the size of the vectors, since alpha,1-alpha treated at same
     % time;
     m_vec = sum(n_c_vec)*2;
 end
@@ -550,7 +550,7 @@ switch pss_mode
         n_lambda = n_theta;
         n_f = n_theta;
         n_z = n_theta+n_lambda+n_simplex; % n_theta + n_lambda + n_mu
-        % Define symbolic variables for algebraci equtions.
+        % Define symbolic variables for algebraic equtions.
         for ii = 1:n_simplex
             ii_str = num2str(ii);
             % define theta (Filippov multiplers)
@@ -676,7 +676,7 @@ switch pss_mode
         %% prepare for time freezing lifting and co,
         if settings.time_freezing_inelastic
             % gamma are the lifting variables that enter the ODE r.h.s.
-            % linaerly, they have the role as theta in Stewart's representation
+            % linearly, they have the role as theta in Stewart's representation
             if pss_lift_step_functions
                 if ~friction_is_present
                     switch n_unilateral
@@ -829,7 +829,7 @@ f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
 for ii = 1:n_simplex
     switch pss_mode
         case 'Stewart'
-            % basic algebraic equations and complementarty condtions of the DCS
+            % basic algebraic equations and complementarity condtions of the DCS
             % (Note that the cross complementarities are later defined when the discrete
             % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
             % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_simplex
@@ -922,7 +922,7 @@ if n_u > 0
 end
 f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end},{f_lsq_T});
 
-%% Intigal guess for state derivatives at stage points
+%% Initial guess for state derivatives at stage points
 if isequal(irk_representation,'differential')
     if simple_v0_guess
         v0 = zeros(n_x,1);

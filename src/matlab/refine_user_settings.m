@@ -39,8 +39,8 @@ if settings.n_depth_step_lifting   < 2
             fprintf(['Info: n_depth_step_lifting should be at least 2, changing n_depth_step_lifting  = 2.\n']);
         end
 end
-%% Some settings refinments
-% update prin_level
+%% Some settings refinements
+% update print_level
 if print_level <4
     settings.opts_ipopt.ipopt.print_level=0;
     settings.opts_ipopt.print_time=0;

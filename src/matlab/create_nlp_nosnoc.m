@@ -61,21 +61,21 @@ if use_fesd
         ubh = (1+gamma_h)*h_k*s_sot_max;
         lbh = (1-gamma_h)*h_k/s_sot_min;
     end
-    % initigal guess for the step-size
+    % initial guess for the step-size
     h0_k = h_k.*ones(N_stages,1);
 end
 
 %%  Butcher Tableu
 switch irk_representation
     case 'integral'
-        [B,C,D,tau_root] = generatre_butcher_tableu_integral(n_s,irk_scheme);
+        [B,C,D,tau_root] = generate_butcher_tableu_integral(n_s,irk_scheme);
         if tau_root(end) == 1
             right_boundary_point_explicit  = 1;
         else
             right_boundary_point_explicit  = 0;
         end
     case 'differential'
-        [A_irk,b_irk,c_irk,order_irk] = generatre_butcher_tableu(n_s,irk_scheme);
+        [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(n_s,irk_scheme);
         if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
             right_boundary_point_explicit  = 1;
         else
@@ -106,7 +106,7 @@ if mpcc_mode >= 11 && mpcc_mode <= 13
 end
 
 %% Formulate NLP - Start with an empty NLP
-% degrese of freedom
+% degrees of freedom
 w = {};
 w0 = [];
 lbw = [];
@@ -243,13 +243,13 @@ for k=0:N_stages-1
                 % index colector for sot variables
                 ind_sot = [ind_sot,ind_total(end)+1:ind_total(end)+1];
                 ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-                % enfroce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
+                % enforce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
                 J_regularize_sot = J_regularize_sot+(s_sot_k)^2;
             end
         end
     end
 
-    %% General Nonlinear constriant (on control interval boundary)
+    %% General Nonlinear constraint (on control interval boundary)
     % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
     if g_ineq_constraint
         g_ineq_k = g_ineq_fun(X_ki,Uk);
@@ -316,7 +316,7 @@ for k=0:N_stages-1
                     case 2
                         J_regularize_h  = J_regularize_h + delta_h_ki^2;
                     otherwise
-                        error('Pick heuristic_step_equlibration_mode between 1 and 2.');
+                        error('Pick heuristic_step_equilibration_mode between 1 and 2.');
                 end
             end
         end
@@ -675,7 +675,7 @@ for k=0:N_stages-1
             ubg = [ubg; g_comp_ub];
         end
 
-        %% Step equlibration
+        %% Step equilibration
         step_equilibration_constrains;
 
         %% Continuity condition - new NLP variable for state at end of a finite element
@@ -734,7 +734,7 @@ for k=0:N_stages-1
         end
     end
 
-    %% Equdistant grid in numerical time (Multiple-shooting type discretization)
+    %% equidistant grid in numerical time (Multiple-shooting type discretization)
     if equidistant_control_grid
         if time_rescaling && time_optimal_problem
             % the querry here is because: No Time freezing: time_opt => time_rescaling (so this is always true if time_rescaling is on)
@@ -758,7 +758,7 @@ for k=0:N_stages-1
         end
     end
 
-    %% Equdistant grid in phyisical time (Stage-wise constraints on the colock state)
+    %% equidistant grid in phyisical time (Stage-wise constraints on the colock state)
     if time_freezing && stagewise_clock_constraint
         % This makes mostly sense if time freezin is on. Imposes the constraints t((k+1)*h) = (k+1)*h+t_0 , x0(end) = t_0.
         if time_optimal_problem
@@ -776,7 +776,7 @@ for k=0:N_stages-1
     end
 end
 
-%% Scalar-valued commplementarity residual
+%% Scalar-valued complementarity residual
 if use_fesd
     % sum of all possible cross complementarities;
     J_comp_fesd = sum(results_cross_comp.cross_comp_all);
@@ -840,7 +840,7 @@ if time_freezing
             ubg = [ubg; 0];
         else
             % no terminal constraint on the numerical time, as it
-            % is implicityl determined by
+            % is implicitly determined by
         end
     end
 end

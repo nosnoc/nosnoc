@@ -19,7 +19,7 @@
 %
 function [Psi_mpcc_fun] = create_mpcc_function(mpcc_function,casadi_symbolic_mode)
 % Create a CasADi function for the treatment of the bilinear terms in the
-% complementarity conditions. It can be the plain bilinaer form, some of
+% complementarity conditions. It can be the plain bilinear form, some of
 % the well known NCP functions, e.g., Fischer-Burmeister and some
 % specalized versions, e.g., the Steffenson-Ulbrich local regularization.
 %% CasADi
