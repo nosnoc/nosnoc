@@ -96,17 +96,19 @@ if time_freezing
 
         % dimensions and state space split
         casadi_symbolic_mode = model.x(1).type_name();
-        n_x = size(x,1);
-        n_q = n_x/2;
+        if mod(size(x,1),2)
+            n_x = size(x,1);
+            n_q = (n_x-1)/2;
+        else
+            n_x = size(x,1);
+            n_q = n_x/2;
+        end
         if ~exist('q','var') && ~exist('v','var')
             q = x(1:n_q);
             v = x(n_q+1:2*n_q);
         end
         % update model with this data
         model.n_q = n_q; model.q = q; model.v = v;
-
-
-
 
 
         % check model function
@@ -208,18 +210,23 @@ if time_freezing
         end
 
         %% Clock state and dimensions
-        t = define_casadi_symbolic(casadi_symbolic_mode,'t',1);
-        % update lower and upper bounds of lbx and ubx
-        if exist('lbx')
-            model.lbx = [model.lbx;-inf];
+        if mod(n_x,2)
+            
+            % uneven number of states = it is assumed that the clock state
+            % is defined.
+        else
+            t = define_casadi_symbolic(casadi_symbolic_mode,'t',1);
+            % update lower and upper bounds of lbx and ubx
+            if exist('lbx')
+                model.lbx = [model.lbx;-inf];
+            end
+            if exist('ubx')
+                model.ubx = [model.ubx;inf];
+            end
+            x = [x;t];
+            model.x = x;
+            model.x0 = [model.x0;0];
         end
-        if exist('ubx')
-            model.ubx = [model.ubx;inf];
-        end
-        x = [x;t];
-        model.x = x;
-        model.x0 = [model.x0;0];
-
         % compute normal vector
         if ~exist('nabla_q_f_c','var')
             nabla_q_f_c = f_c.jacobian(q)';

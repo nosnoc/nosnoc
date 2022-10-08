@@ -132,6 +132,9 @@ if there_exist_free_x0
     x0_lb = x0;
     x0_ub(ind_free_x0) = inf;
     x0_lb(ind_free_x0) = -inf;
+
+    x0_ub(ind_free_x0) = ubx(ind_free_x0);
+    x0_lb(ind_free_x0) = lbx(ind_free_x0);
     lbw = [lbw; x0_lb];
     ubw = [ubw; x0_ub];
 else
