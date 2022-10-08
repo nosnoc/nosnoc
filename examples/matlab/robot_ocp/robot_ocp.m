@@ -1,4 +1,10 @@
-clear all; close all; clc;
+clear all; 
+close all; 
+clc;
+delete robot_ocp.mat
+delete robot_ocp.gif
+delete log_robot.txt
+
 %% robot scene description
 scenario.constant_inertia_matrix = 0;
 scenario.relax_control_bounds = 0;
@@ -7,6 +13,7 @@ scenario.save_figure = 1;
 scenario.filename = 'robot_ocp';
 scenario.u0 = [0;0];
 scenario.polishing_penalty_iteration = 0;
+
 %% auxiliary dynamics and friction
 scenario.a_n = 200;
 scenario.mu = 0.8;
@@ -22,13 +29,15 @@ scenario.width_vec = [0.5 0.5 0.5];
 %% Default settings NOSNOC
 [settings] = default_settings_nosnoc();
 settings.use_fesd = 1;
-settings.print_level = 4;
+settings.print_level = 5;
 settings.irk_scheme = 'Radau-IIA';
 %% homotopy settings
 settings.cross_comp_mode = 3;
-settings.opts_ipopt.ipopt.max_iter = 1500;
-settings.N_homotopy = 10;
-settings.opts_ipopt.ipopt.tol = 1e-12;
+settings.opts_ipopt.ipopt.max_iter = 2500;
+settings.N_homotopy = 4;
+settings.opts_ipopt.ipopt.tol = 1e-6;
+settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
+settings.opts_ipopt.ipopt.acceptable_iter = 3;
 settings.comp_tol = 1e-10;
 settings.sigma_0 = 1;
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
@@ -43,7 +52,7 @@ settings.stagewise_clock_constraint = 0;
 
 %% Discretization
 model.T = 2.5;
-model.N_stages = 20;
+model.N_stages = 25;
 settings.n_s = 2;
 model.N_FE = 3;
 %% call function to discretize, solve and plot results
