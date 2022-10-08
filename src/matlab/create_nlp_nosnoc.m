@@ -30,12 +30,12 @@ function [varargout] = create_nlp_nosnoc(varargin)
 % 2 - Smooth the complementarity conditions.
 % 3 - Relax the complementarity conditions.
 % 4 - \ell_1 penalty, penalize the sum of all bilinear terms in the objective
-% 5 - \ell__infty elastic mode, upper bound all bilinear term with a positive slack, and penalize the slack in the objective.
-% 6 - \ell__infty elastic mode, equate all bilinear term to a positive slack, and penalize the slack in the objective.
-% 7 - \ell__infty, same as 5 but two sided.
-% 8 - \ell__infty, same as 5 but the penalty/slack is controlled via the barier formulation
-% 9 - \ell__infty, same as 6 but the penalty/slack is controlled via the barier formulation
-% 10 - \ell__1, same as 4 but the penalty/slack is controlled via the barier formulation
+% 5 - \ell_infty elastic mode, upper bound all bilinear term with a positive slack, and penalize the slack in the objective.
+% 6 - \ell_infty elastic mode, equate all bilinear term to a positive slack, and penalize the slack in the objective.
+% 7 - \ell_infty, same as 5 but two sided.
+% 8 - \ell_infty, same as 5 but the penalty/slack is controlled via the barier formulation
+% 9 - \ell_infty, same as 6 but the penalty/slack is controlled via the barier formulation
+% 10 - \ell_1, same as 4 but the penalty/slack is controlled via the barier formulation
 %% Import CasADi in the workspace of this function
 import casadi.*
 %% Read data
@@ -889,7 +889,7 @@ if time_optimal_problem
 end
 
 %% Terminal Constraints
-% Add Terminal Constrint
+% Add Terminal Constraint
 if terminal_constraint
     if relax_terminal_constraint_homotopy
         rho_terminal_p = 1/sigma_p;
@@ -959,7 +959,7 @@ if terminal_constraint
                 lbg = [lbg; -inf*ones(2*n_terminal,1)];
                 ubg = [ubg; zeros(2*n_terminal,1)];
             else
-                error('This mode of terminal constraint relaxation is only avilable if a MPCC elastic mode is used.')
+                error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.')
             end
     end
 end
@@ -1063,7 +1063,7 @@ if mpcc_mode >= 8 && mpcc_mode <= 10
     lbg = [lbg; 0];
     ubg = [ubg; inf];
 
-    % add elastic variable to the vector of unknowns and add objeective contribution
+    % add elastic variable to the vector of unknowns and add objective contribution
     w = {w{:}, s_elastic};
     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
     lbw = [lbw; s_elastic_min];
