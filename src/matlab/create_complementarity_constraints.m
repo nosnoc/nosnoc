@@ -28,8 +28,6 @@ function [results_cross_comp] = create_complementarity_constraints(varargin)
 import casadi.*
 %%
 g_cross_comp_j = [];
-g_cross_comp1_j = [];
-g_cross_comp2_j = [];
 % Sanity Chack
 if ~(nargin == 4 || nargin == 5)
     error('Wrong input number, see function help for required inputs.')
@@ -110,8 +108,6 @@ if use_fesd
             case 3
                 %  For every stage point one vector-valued  constraint via sum of all \lambda
                 g_cross_comp_j = [g_cross_comp_j ;diag(Theta_kij)*sum_Lambda_ki(ind_temp_theta)];
-                g_cross_comp1_j = [g_cross_comp1_j;diag(Theta_kij)];
-                g_cross_comp2_j = [g_cross_comp2_j;sum_Lambda_ki(ind_temp_theta)];
             case 4
                 %  Case 4: For every stage point one vector-valued constraint via sum of all \theta.
                 if j == 1 && i > 0
@@ -179,8 +175,6 @@ else
 end
 %% Output
 results_cross_comp.g_cross_comp_j = g_cross_comp_j;
-results_cross_comp.g_cross_comp1_j = g_cross_comp1_j;
-results_cross_comp.g_cross_comp2_j = g_cross_comp2_j;
 results_cross_comp.cross_comp_k = cross_comp_k;
 results_cross_comp.cross_comp_all = cross_comp_all;
 

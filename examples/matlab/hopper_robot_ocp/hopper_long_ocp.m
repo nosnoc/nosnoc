@@ -169,100 +169,23 @@ model.lsq_T = {x,x_end,Q_terminal};
 
 %% read and plot results
 unfold_struct(results,'base');
-q1 = x_opt(1,:);
-q2 = x_opt(2,:);
-q3 = x_opt(3,:);
-q4 = x_opt(4,:);
-v1 = x_opt(5,:);
-v2 = x_opt(6,:);
-v3 = x_opt(7,:);
-v4 = x_opt(8,:);
-v = x_opt(5:8,:);
+q_opt = x_opt(1:4,:);
+v_opt = x_opt(5:8,:);
 t_opt = x_opt(9,:);
-
-u1_opt = u_opt(1,:);
-u2_opt = u_opt(2,:);
-
-
 % gap function, normal and tangential velocity
 c_eval = [];
-for ii = 1:length(q1)
+for ii = 1:length(q_opt)
     c_eval = [c_eval,full(model.c_fun(x_opt(:,ii)))];
 end
 
 %%  plots
-figure
-subplot(231)
-plot(t_opt,q1)
-hold on
-plot(t_opt,q2)
-yline(x_end(1),'b--')
-yline(x_end(2),'r--')
-xlabel('$t$','interpreter','latex');
-ylabel('$q$','interpreter','latex');
-legend({'$x_{\mathrm{b}}$','$y_{\mathrm{b}}$'},'interpreter','latex','location','best');
-grid on
-subplot(232)
-plot(t_opt,q3)
-yline(x_end(3),'b--')
-
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$\theta_{\mathrm{b}}$','interpreter','latex');
-grid on
-subplot(233)
-plot(t_opt,q4)
-yline(x_end(4),'b--')
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$L_{\mathrm{link}}$','interpreter','latex');
-grid on
-subplot(234)
-plot(t_opt,v1)
-hold on
-plot(t_opt,v2)
-yline(x_end(5),'b--')
-yline(x_end(6),'r--')
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v$','interpreter','latex');
-legend({'$v_{x,\mathrm{b}}$','$v_{y,\mathrm{b}}$'},'interpreter','latex','location','best');
-subplot(235)
-plot(t_opt,v3)
-yline(x_end(7),'b--')
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$\omega_{\mathrm{b}}$','interpreter','latex');
-yline(x_end(8))
-subplot(236)
-plot(t_opt,v4)
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$vL_{\mathrm{link}}$','interpreter','latex');
-grid on
-%% tagnetinal and normal velocity
-
-figure
-subplot(311)
-plot(t_opt,c_eval(1,:));
-xlabel('$t$','interpreter','latex');
-ylabel('$f_c(q)$ - gap function ','interpreter','latex');
-grid on
-
-subplot(312)
-plot(t_opt,c_eval(2,:));
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v_{\mathrm{n}}$ - normal velocity','interpreter','latex');
-
-subplot(313)
-plot(t_opt,c_eval(3,:));
-hold on
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v_{\mathrm{t}}$ -tangential velocitiy','interpreter','latex');
-
+fig_num = 2;
+plotHopperStatesControls(x_opt,u_opt,fig_num);
+fig_num = 4;
+% tagnetinal and normal velocity
+plotHopperSwitchingFun(t_opt,c_eval,fig_num);
 %%
+if 0
 figure
 % slip complement
 u_normalized = [u_opt(3,:),nan];
@@ -282,72 +205,37 @@ plot(slip_cc2)
 xlabel('$t$','interpreter','latex');
 ylabel('Slip comelementarity','interpreter','latex');
 legend({'Comp - slack vs gap','Comp - slack vs. v tan'},'Interpreter','latex','Location','best')
-%%  controls
-figure
-stairs(t_opt(1:N_FE:end),[u_opt(1,:),nan])
-hold on
-stairs(t_opt(1:N_FE:end),[u_opt(2,:),nan])
-grid on
-legend({'Orientation','Horizontal'},'interpreter','latex');
-xlabel('$t$','interpreter','latex');
-ylabel('$\tau$','interpreter','latex');
-grid on
-
+end
 %% animation
 
-x_head = q1;
-y_head = q2;
 x_min = x0(1)-0.4;
 x_max = x_ref(1,end)+0.4;
 y_min = -0.15;
 y_max = 1;
-y_foot = q2 - q4.*cos(q3);
-x_foot = q1 - q4.*sin(q3);
+q_ref = x_end(1:4);
 
-x_head_ref = x_end(1);
-y_head_ref = x_end(2);
-x_foot_ref = x_end(1)- x_end(4).*sin(x_end(3));
-y_foot_ref = x_end(2) - x_end(4).*cos(x_end(3));
+x_head = q_opt(1,:);
+y_head = q_opt(2,:);
+x_foot = q_opt(1,:) - q_opt(4,:).*sin(q_opt(3,:));
+y_foot = q_opt(2,:) - q_opt(4,:).*cos(q_opt(3,:));
 
 
 figure(77)
-for ii = 1:length(x_head);
+for ii = 1:length(q_opt)
     % The reference
-    plot(x_head_ref,y_head_ref,'Color',[0 0 0 0.1],'Marker','o','MarkerSize',10,'MarkerFaceColor',0.9*ones(3,1));
+    plotHopperConfiguration(q_ref,0.1);
     hold on
-    plot(x_foot_ref,y_foot_ref,'Color',[0 0 0 0.1],'Marker','o','MarkerSize',4,'MarkerFaceColor',0.9*ones(3,1));
-    % link
-    plot([x_head_ref,x_foot_ref],[y_head_ref,y_foot_ref],'Color',[0 0 0 0.1],'LineWidth',3);
-    % full ref
-    plot(x_ref(1,:),x_ref(2,:),'Color',[0 0 0 0.2])
-
+    plot(x_ref(1,:),x_ref(2,:),'Color',[0 0 0 0.2]);
     % The Robot
-    % head
-    plot(x_head(ii),y_head(ii),'ko','MarkerSize',10,'MarkerFaceColor','k');
-    hold on
-    plot(x_foot(ii),y_foot(ii),'ko','MarkerSize',4,'MarkerFaceColor','k');
-    % link
-    plot([x_head(ii),x_foot(ii)],[y_head(ii),y_foot(ii)],'k','LineWidth',3);
-
+    plotHopperConfiguration(q_opt(:,ii));
     % faded trajectory
     plot(x_head(1:ii),y_head(1:ii),'Color',[0 0 1 0.5]);
     hold on
     plot(x_foot(1:ii),y_foot(1:ii),'Color',[1 0 0 0.5]);
-
-    % ground
-    xp = [x_min x_max x_max x_min ];
-    yp = [-1 -1 0 0];
-    patch(xp,yp,0*ones(1,3),'FaceAlpha',0.1,'EdgeColor','none');
-
-    axis equal
-    xlim([x_min x_max])
-    ylim([y_min y_max])
-    xlabel('$x$ [m]','Interpreter','latex')
-    ylabel('$y$ [m]','Interpreter','latex')
+    plotHopperScene1(x_min,x_max,y_min,y_max);
 
     frame = getframe(77);
     im = frame2im(frame);
-
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
         imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
@@ -355,11 +243,7 @@ for ii = 1:length(x_head);
         imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
     end
 
-    if ii~=length(q1)
+    if ii~=length(q_opt)
         clf;
     end
 end
-
-
-
-
