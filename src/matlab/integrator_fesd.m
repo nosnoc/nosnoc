@@ -35,7 +35,7 @@ control_exists = 0;
 if nargin>2
     u_sim = varargin{3};
     control_exists = 1;
-    
+
 end
 if nargin>3
     solver = varargin{4};
@@ -64,14 +64,14 @@ end
 [settings] = refine_settings_integrator(settings);
 
 %% Create solver functions for integrator step
-if ~solver_exists 
+if ~solver_exists
     tic
     [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
-%     [solver,solver_initalization, model,settings] = create_nlp_nosnoc_rv(model,settings);
+    %     [solver,solver_initalization, model,settings] = create_nlp_nosnoc_rv(model,settings);
     solver_generating_time = toc;
-      if print_level >=2
+    if print_level >=2
         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
-      end
+    end
 end
 
 unfold_struct(settings,'caller')
@@ -139,7 +139,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
     if stats.complementarity_stats(end) > 1e-3
-%         error('NLP Solver did not converge for the current FESD problem. \n')
+        %         error('NLP Solver did not converge for the current FESD problem. \n')
     end
     simulation_time_pased  =  simulation_time_pased + model.T;
     if print_level >=2
@@ -208,7 +208,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
     % update initial guess and inital value
     x0 = x_opt(:,end);
-%     update clock state 
+    %     update clock state
     if impose_terminal_phyisical_time
         model.p_val(end) = model.p_val(end)+model.T;
 
@@ -264,6 +264,32 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     %stats
     complementarity_stats  = [complementarity_stats; stats.complementarity_stats(end)];
     homotopy_iteration_stats = [homotopy_iteration_stats;stats.homotopy_iterations];
+    %% plot during execution
+    if real_time_plot
+        if time_freezing
+            figure(100)
+            clf
+            %         t_temp = [0,cumsum(h_vec)'];
+            plot(x_res(end,:),x_res(1:end-1,:));
+            xlabel('$t$ [phyisical time]','Interpreter','latex');
+            ylabel('$x(t)$','Interpreter','latex');
+            grid on
+            xlim([0 T_sim]);
+            ylim([min(min(x_res(1:end-1,:)))-0.3 max(max(x_res(1:end-1,:)))+0.3])
+            hold on
+        else
+            figure(100)
+            clf
+            t_temp = [0,cumsum(h_vec)'];
+            plot(t_temp,x_res(:,1:end));
+            xlabel('$t$','Interpreter','latex');
+            ylabel('$x(t)$','Interpreter','latex');
+            grid on
+            xlim([0 T_sim]);
+            ylim([min(x_res(:))-0.3 max(x_res(:))+0.3])
+            hold on
+        end
+    end
 
 end
 total_time = sum(time_per_iter);
@@ -271,7 +297,7 @@ total_time = sum(time_per_iter);
 fprintf('\n');
 fprintf('-----------------------------------------------------------------------------------------------\n');
 if use_fesd
-fprintf( ['Simulation with the FESD ' irk_scheme ' with %d-RK stages completed in %2.3f seconds.\n'],n_s,total_time);
+    fprintf( ['Simulation with the FESD ' irk_scheme ' with %d-RK stages completed in %2.3f seconds.\n'],n_s,total_time);
 else
     fprintf( ['Simulation with the standard ' irk_scheme ' with %d-RK stages completed in %2.3f seconds.\n'],n_s,total_time);
 end

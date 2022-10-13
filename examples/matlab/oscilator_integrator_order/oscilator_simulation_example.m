@@ -1,21 +1,21 @@
 %
 %    This file is part of NOSNOC.
 %
-%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    NOSNOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
 %
-%    NOS-NOC is free software; you can redistribute it and/or
+%    NOSNOC is free software; you can redistribute it and/or
 %    modify it under the terms of the GNU Lesser General Public
 %    License as published by the Free Software Foundation; either
 %    version 3 of the License, or (at your option) any later version.
 %
-%    NOS-NOC is distributed in the hope that it will be useful,
+%    NOSNOC is distributed in the hope that it will be useful,
 %    but WITHOUT ANY WARRANTY; without even the implied warranty of
 %    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %    Lesser General Public License for more details.
 %
 %    You should have received a copy of the GNU Lesser General Public
-%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    License along with NOSNOC; if not, write to the Free Software Foundation,
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %%
@@ -24,13 +24,9 @@ clc
 close all
 import casadi.*
 %%
-use_fesd = 1;
-model.smooth_model = 0;
-
 plot_integrator_output = 1;
-plot_continious_time_sol = 1;
+plot_continious_time_sol = 0;
 %% discretization settings
-N_stages = 1;
 N_finite_elements = 2;
 
 T_sim = pi/2;
@@ -40,39 +36,18 @@ R_osc  = 1;
 %% settings
 % collocation settings
 settings = default_settings_nosnoc();
+settings.use_fesd = 1;       % switch detection method on/off
 settings.irk_scheme = 'Radau-IIA';
-% settings.irk_representation = 'differential';
-% % settings.irk_scheme = 'Radau-I';
 settings.irk_scheme = 'Gauss-Legendre';
-% settings.lift_irk_differential = 0;
-% settings.irk_scheme = 'Lobatto-III';
-% settings.irk_scheme = 'Lobatto-IIIA';
-% settings.irk_scheme = 'Lobatto-IIIB';
-% settings.irk_scheme = 'Lobatto-IIIC';
-% settings.irk_scheme = 'Explicit-RK';
 settings.print_level = 2;
 settings.n_s = 3;
-% settings.pss_mode = 'Step';
-settings.pss_mode = 'Stewart';
-settings.pss_lift_step_functions = 1;
+settings.pss_mode = 'Stewart'; % 'Step;
 
-% settings.irk_representation = 'differential';
-settings.mpcc_mode = 4;
-settings.mpcc_mode = 3;  % FOR ROBUSTNES 
-settings.s_elastic_max = 1e1;              % upper bound for elastic variables
-settings.cross_comp_mode = 3;
+settings.mpcc_mode = 3;  % Scholtes regularization
 % Penalty/Relaxation paraemetr
-settings.comp_tol = 1e-16;
-settings.N_homotopy = 25;% number of steps
-settings.kappa = 0.05;                      % decrease rate
-% finite elements with switch detection
-settings.use_fesd = use_fesd;       % turn on moving finite elements algortihm
-settings.fesd_complementartiy_mode = 1;       % turn on moving finite elements algortihm
-settings.gamma_h = 1;
-settings.equidistant_control_grid = 0;
-% settings.step_equilibration = 1;
+settings.comp_tol = 1e-9;
+
 settings.heuristic_step_equilibration = 1;
-% settings.heuristic_step_equilibration_mode =2;
 %% Time settings
 omega = 2*pi;
 % analytic solution
@@ -80,28 +55,21 @@ x_star = [exp(1);0];
 T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 
-model.N_stages = N_stages;
 model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-% model.h_sim = 0.039;
 model.R_osc = R_osc;
+model.smooth_model = 0; % if 1, use model without switch for a sanity check
 model = oscilator(model);
 %% Call integrator
 [results,stats,model] = integrator_fesd(model,settings);
-% numerical error
+%% numerical error
 x_fesd = results.x_res(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-% complementarity
-max_complementarity_exp = max(stats.complementarity_stats);
 fprintf(['Numerical error with h = %2.3f and ' settings.irk_scheme ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
-fprintf('Complementarity residual %5.2e : \n',max_complementarity_exp);
-
 %% plot_solution_trajectory
-
 t_star = R_osc; % eact switching time
 x_res = results.x_res;
-
 if isempty(results.h_vec)
     h_opt_full = h*ones(N_sim*N_stages,1);
 else
@@ -201,6 +169,3 @@ if plot_continious_time_sol
         xline(t_grid(ii),'k--')
     end
 end
-%%
-model.n_cross_comp
-

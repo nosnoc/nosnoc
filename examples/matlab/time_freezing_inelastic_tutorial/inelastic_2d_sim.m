@@ -120,8 +120,6 @@ grid on
 xlabel('simulation step','interpreter','latex');
 ylabel('$s$','interpreter','latex');
 
-
-
 %% complementarity residuals
 if 0 
 lambda0 = lambda_0_res;
