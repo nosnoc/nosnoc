@@ -143,11 +143,11 @@ M_virtual_forces = 1e2; % bound for virtual forces
 
 %% Verbose
 print_level = 3;
-opts_ipopt.ipopt.print_level = 0;
-opts_ipopt.print_time = 0;
-opts_ipopt.ipopt.sb= 'yes';
 
 %% IPOPT Settings
+opts_ipopt.ipopt.print_level = 0;
+opts_ipopt.print_time = 0;
+opts_ipopt.ipopt.sb = 'yes';
 opts_ipopt.verbose = false;
 opts_ipopt.ipopt.max_iter = 500;
 % opts_ipopt.ipopt.print_level = 5;
@@ -159,7 +159,6 @@ opts_ipopt.ipopt.dual_inf_tol = tol_ipopt;
 opts_ipopt.ipopt.compl_inf_tol = tol_ipopt;
 opts_ipopt.ipopt.mu_strategy = 'adaptive';
 opts_ipopt.ipopt.mu_oracle = 'quality-function';
-opts_ipopt = opts_ipopt;
 
 %% Relxation of terminal constraint
 relax_terminal_constraint = 0; %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf;
@@ -172,10 +171,10 @@ use_previous_solution_as_initial_guess = 0;
 simulation_problem  = 0;
 
 %% Misc
-missing_settings_already_filled_in = 1;
 there_exist_free_x0 = 0;
-clear_ipopt_verbose = 0;
-output_stage_values = 0;
+% missing_settings_already_filled_in = 1;
+% clear_ipopt_verbose = 0;
+% output_stage_values = 0;
 time_freezing_model_exists = 0;
 
 

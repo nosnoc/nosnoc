@@ -60,7 +60,7 @@ lbw_h = lbw; ubw_h = ubw;
 lbw_h(model.ind_h) = model.h_k(1);
 ubw_h(model.ind_h) = model.h_k(1);
 
-%% homtopy loop
+%% homotopy loop
 complementarity_iter = 1;
 ii = 0;
 vf_resiudal = 0;
@@ -125,17 +125,15 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
         fprintf('-----------------------------------------------------------------------------------------------\n');
         fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed.\n',ii,N_homotopy,sigma_k);
         fprintf('Complementarity resiudal: %2.2e.\n',complementarity_iter);
+        fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
         if model.n_u >0
-            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
-            fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
+            % fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
             if time_optimal_problem
                 fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
             end
             if virtual_forces
                 fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
             end
-        else
-            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
         end
         fprintf('-----------------------------------------------------------------------------------------------\n');
     end
@@ -154,7 +152,7 @@ if polishing_step
     W = [W,results.w_opt];
 end
 
-%% collcet stats
+%% collect stats
 results.W = W;
 stats.complementarity_stats = complementarity_stats;
 stats.cpu_time = cpu_time;
