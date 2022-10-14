@@ -28,30 +28,29 @@ import casadi.*
 % This is an example from 
 % Stewart, D.E., 1996. A numerical method for friction problems with multiple contacts. The ANZIAM Journal, 37(3), pp.288-308.
 % It considers 3 independent switching functions and it demonstrates the
-% generalization of the FESD scheme presented in the NOS NOC software parep
+% generalization of the FESD scheme presented in the NOSNOC software parep
 %% settings
 % collocation settings
 [settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
-% settings.kappa = 0.05;
 settings.n_s = 2;                            
-% settings.irk_scheme = 'Gauss-Legendre';     
 settings.irk_scheme = 'Radau-IIA';     
+% settings.irk_scheme = 'Lobatto-IIIA';  
+% settings.irk_representation = 'differential';
 settings.print_level = 2;
 settings.mpcc_mode = 5; % very fast    
 % settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
 settings.s_elastic_max = 1e1;                    
 settings.cross_comp_mode = 3;
-% settings.heuristic_step_equilibration = 1;
+settings.comp_tol = 1e-5;
 %% Generate Model
 model = blocks_with_friction();
 %% Simulation setings
-
 N_finite_elements = 4;
 T_sim = 12;
 N_sim = 85;
-
 % 
 settings.pss_mode = 'Stewart';
+% settings.pss_mode = 'Step';
 
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;
@@ -60,8 +59,6 @@ model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 [results,stats,model] = integrator_fesd(model,settings);
-%%
-% results.x_res(:,end)
 %% Get variables into main workspace
 unfold_struct(model,'base');
 unfold_struct(settings,'base');

@@ -1,21 +1,21 @@
 %
 %    This file is part of NOSNOC.
 %
-%    NOS-NOC -- A software for NOnSmooth Numerical Optimal Control.
+%    NOSNOC -- A software for NOnSmooth Numerical Optimal Control.
 %    Copyright (C) 2022 Armin Nurkanovic, Moritz Diehl (ALU Freiburg).
 %
-%    NOS-NOC is free software; you can redistribute it and/or
+%    NOSNOC is free software; you can redistribute it and/or
 %    modify it under the terms of the GNU Lesser General Public
 %    License as published by the Free Software Foundation; either
 %    version 3 of the License, or (at your option) any later version.
 %
-%    NOS-NOC is distributed in the hope that it will be useful,
+%    NO-NOC is distributed in the hope that it will be useful,
 %    but WITHOUT ANY WARRANTY; without even the implied warranty of
 %    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %    Lesser General Public License for more details.
 %
 %    You should have received a copy of the GNU Lesser General Public
-%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    License along with NOSNOC; if not, write to the Free Software Foundation,
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 clear all
 clc
@@ -28,7 +28,7 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontenus switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-example_num = 4;
+example_num = 3;
 %% NOS-NOC settings
 [settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 3;
@@ -53,10 +53,8 @@ model.T_sim = T_sim;
 switch example_num
     case 1
         %% Crossing a discontinuity
-        
-
-        model.x0 = [-1];
-        x = MX.sym('x',1);
+        model.x0 = -1;
+        x = SX.sym('x',1);
         model.x = x;
         model.c = x;
         model.S = [-1; 1];
@@ -73,15 +71,13 @@ switch example_num
         grid on
     case 2
         %% Sliding mode
-        
-        model.x0 = [-0.5];
-        x = MX.sym('x',1);
+        model.x0 = -0.5;
+        x = SX.sym('x',1);
         model.x = x;
         model.c = x;
         model.S = [-1; 1];
         f_1 = [1]; f_2 = [-1];
         model.F = [f_1 f_2];
-
 %         settings.use_previous_solution_as_initial_guess = 1;
         [results,stats] = integrator_fesd(model,settings);
         %
@@ -93,15 +89,19 @@ switch example_num
         grid on
     case 3
         %% spontaneous switch
-        
-        model.x0 = [0.0];
-        x = MX.sym('x',1);
+        model.x0 = 0;
+        x = SX.sym('x',1);
         model.x = x;
         model.c = x;
         model.S = [-1; 1];
         f_1 = [-1]; f_2 = [1];
         model.F = [f_1 f_2];
-        settings.use_previous_solution_as_initial_guess = 0;
+        % implcit methods more accurate, explicit Euler enables "random"
+        % leaving
+        settings.irk_scheme = 'Explicit-RK';
+        settings.n_s = 1;
+        model.N_finite_elements = 3; % set 4, 5 for different outcomes
+        settings.use_previous_solution_as_initial_guess = 1;
         [results,stats] = integrator_fesd(model,settings);
         %
         figure
@@ -115,8 +115,8 @@ switch example_num
     case 4
         %% leaving sliding mode in a unique way
         model.x0 = [0;0];
-        x = MX.sym('x',1);
-        t = MX.sym('t',1);
+        x = SX.sym('x',1);
+        t = SX.sym('t',1);
         model.x = [x;t];
         model.c = x;
         model.S = [-1; 1];

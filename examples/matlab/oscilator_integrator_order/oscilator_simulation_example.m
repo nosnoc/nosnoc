@@ -36,7 +36,7 @@ R_osc  = 1;
 %% settings
 % collocation settings
 settings = default_settings_nosnoc();
-settings.use_fesd = 1;       % switch detection method on/off
+settings.use_fesd = 0;       % switch detection method on/off
 settings.irk_scheme = 'Radau-IIA';
 settings.irk_scheme = 'Gauss-Legendre';
 settings.print_level = 2;

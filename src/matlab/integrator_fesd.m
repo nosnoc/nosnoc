@@ -15,7 +15,7 @@
 %    Lesser General Public License for more details.
 %
 %    You should have received a copy of the GNU Lesser General Public
-%    License along with NOS-NOC; if not, write to the Free Software Foundation,
+%    License along with NOSNOC; if not, write to the Free Software Foundation,
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
@@ -224,7 +224,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     if use_fesd
         h_vec = [h_vec;h_opt];
     else
-        h_vec = [h_vec;h*ones(N_stages*N_finite_elements,1)];
+        h_vec = [h_vec;h_k(1)*ones(N_stages*N_finite_elements(1),1)];
     end
     %sot
     s_sot_res  = [s_sot_res,w_opt(ind_sot)];
