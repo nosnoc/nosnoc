@@ -513,7 +513,7 @@ p = [sigma_p,rho_sot_p,rho_h_p,rho_terminal_p,T_ctrl_p];
 n_p = length(p);
 
 %% Algebraic variables defintion
-% Dummy variavles for Stewart representation'
+% Dummy variables for Stewart representation'
 theta = [];
 mu = [];
 lambda = [];
@@ -565,7 +565,7 @@ switch pss_mode
             lambda_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_' ii_str],m_vec(ii));
             lambda = [lambda;lambda_temp];
             lambda_all{ii} = lambda_temp;
-            % adefine ppropiate vector of ones (the struct below stores them for every mode)
+            % define appropiate vector of ones (the struct below stores them for every mode)
             e_ones_all{ii} = ones(m_vec(ii),1);
         end
     case 'Step'
@@ -593,7 +593,7 @@ switch pss_mode
             lambda_1 = [lambda_1;lambda_1_temp];
             lambda_1_all{ii} = lambda_1_temp;
         end
-        % adefine ppropiate vector of ones % for the kkt conditions of the LP
+        % define appropiate vector of ones % for the kkt conditions of the LP
         e_alpha = ones(n_alpha,1);
 
         % Define already here lifting variables and functions

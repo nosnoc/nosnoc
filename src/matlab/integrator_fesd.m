@@ -118,7 +118,7 @@ lambda_1_boundary_res = [];
 h_vec = [];
 % sot (in time-freezing)
 s_sot_res = [];
-% statse
+% states
 complementarity_stats  = [];
 homotopy_iteration_stats = [];
 time_per_iter = [];
@@ -145,7 +145,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     if print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',ii,N_sim+additional_residual_ingeration_step,simulation_time_pased,T_sim,time_per_iter(end));
     end
-    % Store differentail states
+    % Store differential states
     w_opt = full(sol.x);
     diff_states = w_opt(ind_x);
     alg_states = w_opt(ind_z);

@@ -126,7 +126,7 @@ ind_boundary = []; % index of bundary value lambda and mu
 ind_total = ind_x;
 % Collect all states/controls
 %% TODO: Consider dropping the s in Xs, Us etc.
-X_boundary = {X_ki}; % differentail on FE boundary
+X_boundary = {X_ki}; % differential on FE boundary
 X = {X_ki}; % differential on all points
 V = {}; % stage derivative values in differential mode
 Z = {};  % algebraic - PSS
