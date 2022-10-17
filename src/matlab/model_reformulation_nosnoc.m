@@ -726,7 +726,7 @@ switch pss_mode
                         gamma(3)-beta*alpha(3);...
                         ];
                     upsilon_all{1} = gamma;
-                    % create casadi expressions for proper initalization
+                    % create casadi expressions for proper initialization
                     g_lift_beta_fun = (1-alpha(1))*(1-alpha(2));
                     g_lift_gamma_fun = [alpha(1)+(1-alpha(1))*alpha(2);...
                         beta*(1-alpha(2))*(1-alpha(3));...
@@ -768,8 +768,8 @@ switch pss_mode
         z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
         lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_simplex,1)];
         ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_simplex,1)];
-        % inital guess for z; % solve LP for guess;
-        if lp_initalization
+        % initial guess for z; % solve LP for guess;
+        if lp_initialization
             [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
         else
             theta_guess = initial_theta*ones(n_theta,1);

@@ -20,11 +20,11 @@
 %
 %
 function [varargout] = homotopy_solver(varargin)
-% homotopy_solver(solver,model,settings,solver_initalization)
+% homotopy_solver(solver,model,settings,solver_initialization)
 solver = varargin{1};
 model = varargin{2};
 settings = varargin{3};
-solver_initalization = varargin{4};
+solver_initialization = varargin{4};
 
 if nargin>4
     model_int = varargin{5};
@@ -35,7 +35,7 @@ end
 import casadi.*
 %%  unfold data
 unfold_struct(settings,'caller')
-unfold_struct(solver_initalization,'caller')
+unfold_struct(solver_initialization,'caller')
 p_val = model.p_val;
 
 comp_res = model.comp_res;
@@ -88,7 +88,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     %           settings_int.print_level = 2;
     %           u_sim = reshape(u_sim,model.n_u,model.N_stages);
     %           [results,stats] = integrator_fesd(model_int,settings_int,u_sim);
-    % %           w0 = integrator_forward_sweep(model_int,solver_int,solve_initalization_int);
+    % %           w0 = integrator_forward_sweep(model_int,solver_int,solve_initialization_int);
     %         end
     %     end
     % solve problem with fixed step size
@@ -146,7 +146,7 @@ end
 %% polish homotopy solution with fixed active set.
 if polishing_step
     [results] = polishing_homotopy_solution(model,settings,results,sigma_k);
-    %     [results] = polishing_homotopy_solution(model,settings,results,sigma_k,solver,solver_initalization);
+    %     [results] = polishing_homotopy_solution(model,settings,results,sigma_k,solver,solver_initialization);
     complementarity_iter = results.complementarity_iter;
     complementarity_stats = [complementarity_stats;complementarity_iter];
     W = [W,results.w_opt];
@@ -163,6 +163,6 @@ stats.homotopy_iterations = ii;
 %% loop output
 varargout{1} = results;
 varargout{2} = stats;
-varargout{3} = solver_initalization;
+varargout{3} = solver_initialization;
 end
 

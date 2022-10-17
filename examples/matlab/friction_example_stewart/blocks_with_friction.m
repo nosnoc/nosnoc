@@ -23,7 +23,7 @@ function [model] = blocks_with_friction()
 import casadi.*
 
 
-%% Inital value
+%% Initial value
 x0 = [-1;1;-1;-1;1;1;0];
 u0 = 0; % guess for control variables
 %% Numer of ODE layrs
