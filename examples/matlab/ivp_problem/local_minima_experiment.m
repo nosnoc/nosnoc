@@ -30,28 +30,28 @@ unfold_struct(scenario,'caller');
 L_numeric = [];
 complementarity_stats = [];
 
-[solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
+[solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller');
-unfold_struct(solver_initalization,'caller');
+unfold_struct(solver_initialization,'caller');
 
 x0_star = [];
-solver_initalization.lbw(1) =  -inf;
-solver_initalization.ubw(1) =  inf;
+solver_initialization.lbw(1) =  -inf;
+solver_initialization.ubw(1) =  inf;
 
 for jj = 1:N_samples
     x0 = x0_vec(jj);
-    solver_initalization.w0(ind_x) = x0;
-    solver_initalization.lbw(1) =  x0;
-    solver_initalization.ubw(1) =  x0;
-    % forward simulation for initalization
-    [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
+    solver_initialization.w0(ind_x) = x0;
+    solver_initialization.lbw(1) =  x0;
+    solver_initialization.ubw(1) =  x0;
+    % forward simulation for initialization
+    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
 
     % solve NLP
-    solver_initalization.w0 = full(sol.x);
-    solver_initalization.lbw(1) =  -inf;
-    solver_initalization.ubw(1) =  inf;
-    [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
+    solver_initialization.w0 = full(sol.x);
+    solver_initialization.lbw(1) =  -inf;
+    solver_initialization.ubw(1) =  inf;
+    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
     w_opt = full(sol.x);
     x1_opt = w_opt(ind_x);
 

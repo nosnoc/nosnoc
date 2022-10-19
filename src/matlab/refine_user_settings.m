@@ -13,7 +13,7 @@ end
 
 if any(strcmp(list_of_all_rk_schemes(5:end),irk_scheme))
     if print_level >=1
-        fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is only avilabile in the differential representation.\n']);
+        fprintf(['Info: The user provided RK scheme: ' irk_scheme ' is only available in the differential representation.\n']);
     end
     irk_representation = 'differential';
     settings.irk_representation = irk_representation;

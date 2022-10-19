@@ -24,7 +24,7 @@
 % [results,stats] = nosnoc_solver(model,settings);
 % [results,stats,model] = nosnoc_solver(model,settings);
 % [results,stats,model,settings] = nosnoc_solver(model,settings);
-% [results,stats,model,settings,solver_initalization] = nosnoc_solver(model,settings);
+% [results,stats,model,settings,solver_initialization] = nosnoc_solver(model,settings);
 function [varargout] = nosnoc_solver(varargin)
 model_unedited = varargin{1};
 settings_unedited = varargin{2};
@@ -34,18 +34,18 @@ end
 import casadi.*
 %% Create NLP element and solve OCP with homotopy
 tic
-% [solver,solver_initalization,model,settings] = create_nlp_nosnoc_rv(model_unedited,settings_unedited);
-    [solver,solver_initalization,model,settings] = create_nlp_nosnoc(model_unedited,settings_unedited);
+% [solver,solver_initialization,model,settings] = create_nlp_nosnoc_rv(model_unedited,settings_unedited);
+    [solver,solver_initialization,model,settings] = create_nlp_nosnoc(model_unedited,settings_unedited);
 solver_generating_time = toc;
 if settings.print_level >=2
     fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
 end
 %% Check provided initial guess
 if exist("w0",'var')
-    if length(w0) == length(solver_initalization.w0)
-        solver_initalization.w0 = w0;
+    if length(w0) == length(solver_initialization.w0)
+        solver_initialization.w0 = w0;
     else
-        fprintf('Provided user guess does not have the appropiate dimension, it should be a vector of length %d, the provided vectors has a length of %d. \n',length(solver_initalization.w0),length(w0));
+        fprintf('Provided user guess does not have the appropiate dimension, it should be a vector of length %d, the provided vectors has a length of %d. \n',length(solver_initialization.w0),length(w0));
         fprintf('Taking the default initial guess... \n');
     end
 end
@@ -57,7 +57,7 @@ if settings.time_freezing && settings.virtual_forces_kinematic_iteration
     [w0,cpu_time_presolve,w0_unchanged] = time_freezing_kinematics_iteration(model_unedited,settings_unedited);
 end
 %% Solve the discrete-time OCP
-[results,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
+[results,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
 total_time = sum(stats.cpu_time)+cpu_time_presolve;
 %% Process and store results
 unfold_struct(settings,'caller');
@@ -104,5 +104,5 @@ varargout{1} = results;
 varargout{2} = stats;
 varargout{3} = model;
 varargout{4} = settings;
-varargout{5} = solver_initalization;
+varargout{5} = solver_initialization;
 end

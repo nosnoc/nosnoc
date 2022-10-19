@@ -52,9 +52,9 @@ else
     unfold_struct(current_index,'caller');
 end
 
-%% Formlation of standard and cross complementarity consraints.
+%% Formulation of standard and cross complementarity consraints.
 if use_fesd
-    % Formulae for the cross complementarities
+    % Formulate for the cross complementarities
     g_cross_comp_j = [];
     % update vector valued sumes over control interval
     if j == n_s 

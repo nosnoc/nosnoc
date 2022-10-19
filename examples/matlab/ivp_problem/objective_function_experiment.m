@@ -29,20 +29,20 @@ complementarity_stats = [];
 error_state = [];
 error_objective = [];
 
-[solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
+[solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller');
-unfold_struct(solver_initalization,'caller');
+unfold_struct(solver_initialization,'caller');
 
 for jj = 1:N_samples
     x0 = x0_vec(jj);
-    solver_initalization.lbw(1) =  x0;
-    solver_initalization.ubw(1) =  x0;
+    solver_initialization.lbw(1) =  x0;
+    solver_initialization.ubw(1) =  x0;
     % solve NLP
-    [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
+    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
     w_opt = full(sol.x);
     x1_opt = w_opt(ind_x);
-    solver_initalization.w0 = w_opt;
+    solver_initialization.w0 = w_opt;
     f_opt = full(J_fun(w_opt));
     L_numeric = [L_numeric;f_opt];
     complementarity_iter = full(comp_res(w_opt));

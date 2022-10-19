@@ -18,7 +18,7 @@ else
 end
 if nargin > 4
    solver = varargin{5};
-   solver_initalization = varargin{6};
+   solver_initialization = varargin{6};
    create_nlp_solver =  0;
 end
 
@@ -116,9 +116,9 @@ settings.mpcc_mode = 1;
 settings.opts_ipopt.ipopt.tol = 1e-14;
 settings.opts_ipopt.ipopt.max_iter = 1.5e3;
 if create_nlp_solver 
-    [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
+    [solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
 end
-unfold_struct(solver_initalization,'caller')
+unfold_struct(solver_initialization,'caller')
 %% set appropiate bounds to zero
 lbw(ind_lambda1_fixed(:)) = 0; ubw(ind_lambda1_fixed(:)) = 0;
 lbw(ind_alpha0_fixed(:)) = 0; ubw(ind_alpha0_fixed(:)) = 0;

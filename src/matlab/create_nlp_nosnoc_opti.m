@@ -126,7 +126,7 @@ ind_boundary = []; % index of bundary value lambda and mu
 ind_total = ind_x;
 % Collect all states/controls
 %% TODO: Consider dropping the s in Xs, Us etc.
-X_boundary = {X_ki}; % differentail on FE boundary
+X_boundary = {X_ki}; % differential on FE boundary
 X = {X_ki}; % differential on all points
 V = {}; % stage derivative values in differential mode
 Z = {};  % algebraic - PSS
@@ -136,11 +136,11 @@ H = {}; % Step-sizes
 S_sot = {}; % Speed-of time
 S_elastic = {}; % Elastic
 
-%% Other initalizations of sums
+%% Other initializations of sums
 sum_h_ki = []; % a vector of N_ctrl x 1, collecting all sums
 sum_h_ki_all = 0; %  %TODO: make this at the end as sum of the entries of sum_h_ki; Note that this is the integral of the clock state if no time-freezing is used.
 clock_state_integral_smooth = 0; % clock_state_integral_smooth
-% Initalization of forward and backward sums for the step-equilibration
+% Initialization of forward and backward sums for the step-equilibration
 sigma_theta_B_k = 0; % backward sum of theta at finite element k
 sigma_theta_F_k = 0; % forward sum of theta at finite element k
 sigma_lambda_B_k = 0; % backward sum of lambda at finite element k
@@ -150,7 +150,7 @@ nu_vector = [];
 sum_lambda_all = [];
 sum_theta_all = [];
 
-% Continuity of lambda initalization
+% Continuity of lambda initialization
 Lambda_end_previous_fe = zeros(n_theta,1);
 % TODO: check does n_theta dimension make sense for 'Step'??
 % What is this Z_kd_end??
@@ -520,11 +520,11 @@ opti.solver('ipopt'); % TODO: IPOPT Settings;
 
 %% Model: CasADi functions, dimenesions, auxilairy functions.
 
-%% Solve initalization (bounds, inital guess, parameters)
+%% Solve initialization (bounds, inital guess, parameters)
 
 %% Output of the function
 varargout{1} = solver;
-varargout{2} = solver_initalization;
+varargout{2} = solver_initialization;
 varargout{3} = model;
 varargout{4} = settings;
 end

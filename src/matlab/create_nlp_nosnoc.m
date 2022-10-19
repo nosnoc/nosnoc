@@ -18,7 +18,7 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-% function [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings)
+% function [solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings)
 function [varargout] = create_nlp_nosnoc(varargin)
 % This functions creates the solver instance for the OCP discretized with FESD (or time-stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
@@ -52,7 +52,7 @@ settings = varargin{2};
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller');
 
-%% Initalization and bounds for step-size
+%% Initialization and bounds for step-size
 if use_fesd
     ubh = (1+gamma_h)*h_k;
     lbh = (1-gamma_h)*h_k;
@@ -160,7 +160,7 @@ ind_total = ind_x;
 % Integral of the clock state if no time rescaling is present.
 sum_h_ki_control_interval_k = 0;
 sum_h_ki_all = 0;
-% Initalization of forward and backward sums for the step-equilibration
+% Initialization of forward and backward sums for the step-equilibration
 sigma_theta_B_k = 0; % backward sum of theta at finite element k
 sigma_lambda_B_k = 0; % backward sum of lambda at finite element k
 sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
@@ -170,7 +170,7 @@ nu_vector = [];
 sum_s_sot =0;
 n_cross_comp = zeros(max(N_finite_elements),N_stages);
 
-% Continuity of lambda initalization
+% Continuity of lambda initialization
 Lambda_end_previous_fe = zeros(n_theta,1);
 Z_kd_end = zeros(n_z,1);
 % initialize cross comp and mpcc related structs
@@ -278,7 +278,7 @@ for k=0:N_stages-1
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
         %%  Sum of lambda and theta for current finite elememnt
-        sum_Theta_ki = 0;  % initalize sum of theta's (the pint at t_n is not included)
+        sum_Theta_ki = 0;  % initialize sum of theta's (the pint at t_n is not included)
         sum_Lambda_ki = Lambda_end_previous_fe;
         %% Step size in FESD, Speed of Time variables, Step equilibration constraints
         if use_fesd
@@ -340,7 +340,7 @@ for k=0:N_stages-1
         Theta_ki = {};
         Mu_ki = {};
 
-        % loop over all stage points to carry out defintions, initalizations and bounds
+        % loop over all stage points to carry out defintions, initializations and bounds
         for j=1:n_s
             switch irk_representation
                 case 'integral'
@@ -384,12 +384,18 @@ for k=0:N_stages-1
                     end
             end
             % Note that the algebraic variablies are treated the same way in both irk representation modes.
-            Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
+            % Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
+            zkij = [];
+            for iz =1:n_z
+                zkij = vertcat(zkij, define_casadi_symbolic(casadi_symbolic_mode,[name(model.z(iz)) '_' num2str(j)], 1));
+            end
+            Z_ki_stages{j} = zkij;
+
             w = {w{:}, Z_ki_stages{j}};
             % index sets
             ind_z = [ind_z,ind_total(end)+1:ind_total(end)+n_z];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_z];
-            % bounds and initalization
+            % bounds and initialization
             lbw = [lbw; lbz];
             ubw = [ubw; ubz];
             w0 = [w0; z0];
@@ -507,15 +513,15 @@ for k=0:N_stages-1
         end
 
         %% The IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every stage point)
-        % initalization with value of at at left boundary point
+        % initialization with value of at at left boundary point
         switch irk_representation
             case 'integral'
                 Xk_end = D(1)*X_ki;
-                % Note that the polynomial is initalized with the previous value % (continuity connection)
+                % Note that the polynomial is initialized with the previous value % (continuity connection)
                 % Xk_end = D(1)*Xk;   % X_k+1 = X_k0 + sum_{j=1}^{d} D(j)*X_kj; Xk0 = D(1)*Xk
                 % X_k+1 = X_k0 + sum_{j=1}^{n_s} D(j)*X_kj; Xk0 = D(1)*Xk
             case 'differential'
-                Xk_end = X_ki; % initalize with x_n;
+                Xk_end = X_ki; % initialize with x_n;
         end
 
         for j=1:n_s
@@ -1010,7 +1016,7 @@ J_objective = J;
 
 %% Elastic mode variable for \ell_infty reformulations
 if mpcc_mode >= 5 && mpcc_mode < 8
-    % add elastic variable to the vector of unknowns and add objeective contribution
+    % add elastic variable to the vector of unknowns and add objective contribution
     w = {w{:}, s_elastic};
     ind_elastic = [ind_elastic,ind_total(end)+1:ind_total(end)+1];
     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
@@ -1139,15 +1145,15 @@ model.ind_total = ind_total;
 model.h = h;
 model.h_k = h_k;
 model.n_cross_comp_total = sum(n_cross_comp(:));
-%% Store solver initalization data
-solver_initalization.w0 = w0;
-solver_initalization.lbw = lbw;
-solver_initalization.ubw = ubw;
-solver_initalization.lbg = lbg;
-solver_initalization.ubg = ubg;
+%% Store solver initialization data
+solver_initialization.w0 = w0;
+solver_initialization.lbw = lbw;
+solver_initialization.ubw = ubw;
+solver_initialization.lbg = lbg;
+solver_initialization.ubg = ubg;
 %% Output
 varargout{1} = solver;
-varargout{2} = solver_initalization;
+varargout{2} = solver_initialization;
 varargout{3} = model;
 varargout{4} = settings;
 

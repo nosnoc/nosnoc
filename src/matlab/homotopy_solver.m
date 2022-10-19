@@ -20,11 +20,11 @@
 %
 %
 function [varargout] = homotopy_solver(varargin)
-% homotopy_solver(solver,model,settings,solver_initalization)
+% homotopy_solver(solver,model,settings,solver_initialization)
 solver = varargin{1};
 model = varargin{2};
 settings = varargin{3};
-solver_initalization = varargin{4};
+solver_initialization = varargin{4};
 
 if nargin>4
     model_int = varargin{5};
@@ -35,7 +35,7 @@ end
 import casadi.*
 %%  unfold data
 unfold_struct(settings,'caller')
-unfold_struct(solver_initalization,'caller')
+unfold_struct(solver_initialization,'caller')
 p_val = model.p_val;
 
 comp_res = model.comp_res;
@@ -60,7 +60,7 @@ lbw_h = lbw; ubw_h = ubw;
 lbw_h(model.ind_h) = model.h_k(1);
 ubw_h(model.ind_h) = model.h_k(1);
 
-%% homtopy loop
+%% homotopy loop
 complementarity_iter = 1;
 ii = 0;
 vf_resiudal = 0;
@@ -88,7 +88,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     %           settings_int.print_level = 2;
     %           u_sim = reshape(u_sim,model.n_u,model.N_stages);
     %           [results,stats] = integrator_fesd(model_int,settings_int,u_sim);
-    % %           w0 = integrator_forward_sweep(model_int,solver_int,solve_initalization_int);
+    % %           w0 = integrator_forward_sweep(model_int,solver_int,solve_initialization_int);
     %         end
     %     end
     % solve problem with fixed step size
@@ -125,17 +125,15 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
         fprintf('-----------------------------------------------------------------------------------------------\n');
         fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed.\n',ii,N_homotopy,sigma_k);
         fprintf('Complementarity resiudal: %2.2e.\n',complementarity_iter);
+        fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
         if model.n_u >0
-            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
-            fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
+            % fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
             if time_optimal_problem
                 fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
             end
             if virtual_forces
                 fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
             end
-        else
-            fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
         end
         fprintf('-----------------------------------------------------------------------------------------------\n');
     end
@@ -148,13 +146,13 @@ end
 %% polish homotopy solution with fixed active set.
 if polishing_step
     [results] = polishing_homotopy_solution(model,settings,results,sigma_k);
-    %     [results] = polishing_homotopy_solution(model,settings,results,sigma_k,solver,solver_initalization);
+    %     [results] = polishing_homotopy_solution(model,settings,results,sigma_k,solver,solver_initialization);
     complementarity_iter = results.complementarity_iter;
     complementarity_stats = [complementarity_stats;complementarity_iter];
     W = [W,results.w_opt];
 end
 
-%% collcet stats
+%% collect stats
 results.W = W;
 stats.complementarity_stats = complementarity_stats;
 stats.cpu_time = cpu_time;
@@ -165,6 +163,6 @@ stats.homotopy_iterations = ii;
 %% loop output
 varargout{1} = results;
 varargout{2} = stats;
-varargout{3} = solver_initalization;
+varargout{3} = solver_initialization;
 end
 
