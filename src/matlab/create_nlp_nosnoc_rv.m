@@ -969,7 +969,7 @@ else
     end
 end
 %% Objective Terms for Grid Regularization
-% Huristic Regularization.
+% Heuristic Regularization.
 if heuristic_step_equilibration || step_equilibration
     J = J + rho_h_p*J_regularize_h;
 end
