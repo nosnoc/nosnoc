@@ -507,9 +507,7 @@ for k=0:N_stages-1
 
             end
             % Update lambda previous at finite element level
-            if i > 0 || k > 0
-                Lambda_end_previous_fe = Lambda_ki_end;
-            end
+            Lambda_end_previous_fe = Lambda_ki_end;
         end
 
         %% The IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every stage point)
