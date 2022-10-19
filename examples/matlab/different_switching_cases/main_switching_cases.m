@@ -9,7 +9,7 @@
 %    License as published by the Free Software Foundation; either
 %    version 3 of the License, or (at your option) any later version.
 %
-%    NO-NOC is distributed in the hope that it will be useful,
+%    NOSNOC is distributed in the hope that it will be useful,
 %    but WITHOUT ANY WARRANTY; without even the implied warranty of
 %    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %    Lesser General Public License for more details.
@@ -26,38 +26,30 @@ import casadi.*
 % by chosing example_num from 1 to 4 below one can see a case of
 % 1) crossing a disconituity
 % 2) sliding mode
-% 3) sliding on a surfce of disconinuity where a spontenus switch can happen (nonuqnie solutions)
+% 3) sliding on a surfce of disconinuity where a spontaneous switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-example_num = 2;
-%% NOS-NOC settings
+switching_case = 'sliding_mode'; 
+%  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
+%% NOSNOC settings
 [settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;
 settings.mpcc_mode = 3;
 settings.kappa = 0.1;
-% settings.use_fesd = 0;
-% settings.irk_scheme = 'Lobatto-IIIC';
 settings.irk_scheme = 'Gauss-Legendre';
 % settings.irk_scheme = 'Radau-IIA';
 settings.irk_representation= 'differential';
 settings.print_level = 2;
+settings.step_equilibration = 1;
 % discretization parameters
 N_sim = 16;
-N_stages = 3;
 T_sim = 1.5;
 
-% N_sim = 16;
-% N_stages = 3;
-% T_sim = 1.5;
-
-
-% model.T_sim = T_sim ;
 model.N_sim = N_sim;
-model.N_stages = N_stages;
-model.N_finite_elements = 1;
+model.N_finite_elements = 2;
 model.T_sim = T_sim;
 
-switch example_num
-    case 1
+switch switching_case
+    case 'crossing'
         %% Crossing a discontinuity
         model.x0 = -1;
         x = SX.sym('x',1);
@@ -75,18 +67,15 @@ switch example_num
         xlabel('$t$','Interpreter','latex')
         ylabel('$x(t)$','Interpreter','latex')
         grid on
-    case 2
+    case 'sliding_mode'
         %% Sliding mode
         model.x0 = -0.5;
-%         model.x0 = -1;
         x = SX.sym('x',1);
         model.x = x;
         model.c = x;
         model.S = [-1; 1];
         f_1 = [1]; f_2 = [-1];
-%         f_1 = [3]; f_2 = [-1];
         model.F = [f_1 f_2];
-%         settings.use_previous_solution_as_initial_guess = 1;
         [results,stats] = integrator_fesd(model,settings);
         %
         figure
@@ -95,7 +84,7 @@ switch example_num
         xlabel('$t$','Interpreter','latex')
         ylabel('$x(t)$','Interpreter','latex')
         grid on
-    case 3
+    case 'spontaneous_switch'
         %% spontaneous switch
         model.x0 = 0;
         x = SX.sym('x',1);
@@ -120,7 +109,7 @@ switch example_num
         ylim([-1 1])
         grid on
 
-    case 4
+    case 'leave_sliding_mode'
         %% leaving sliding mode in a unique way
         model.x0 = [0;0];
         x = SX.sym('x',1);
