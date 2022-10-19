@@ -1080,7 +1080,7 @@ if mpcc_mode >= 11 && mpcc_mode <= 13
     end
 end
 %% Objective Terms for Grid Regularization
-% Huristic Regularization.
+% Heuristic Regularization.
 if heuristic_step_equilibration || step_equilibration
     %     J = J + step_equilibration_penalty*J_regularize_h;
     J = J + rho_h_p*J_regularize_h;
