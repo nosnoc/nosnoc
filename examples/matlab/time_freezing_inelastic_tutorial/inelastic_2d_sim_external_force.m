@@ -54,7 +54,7 @@ model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,~,~,solver,solver_initalization] = integrator_fesd(model,settings,u_sim);
+[results,stats,~,~,solver,solver_initialization] = integrator_fesd(model,settings,u_sim);
 if 1
     % re-run simulation without creating new solver object
     [results_rerun,stats,model] = integrator_fesd(model,settings,u_sim);

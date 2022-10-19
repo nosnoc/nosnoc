@@ -40,7 +40,7 @@ model.M = eye(n_q);
 % model.f_q_T = 0;
 %% Create NLP element
 tic
-[solver,solver_initalization,model,settings] = create_nlp_nosnoc(model,settings);
+[solver,solver_initialization,model,settings] = create_nlp_nosnoc(model,settings);
 solver_generating_time = toc;
 if settings.print_level >=2
     fprintf('Kinematics solver generated in in %2.2f s. \n',solver_generating_time);
@@ -48,19 +48,19 @@ end
 
 %% Check provided initial guess
 if exist("w0",'var')
-    if length(w0) == length(solver_initalization.w0)
-        solver_initalization.w0 = w0;
+    if length(w0) == length(solver_initialization.w0)
+        solver_initialization.w0 = w0;
     else
-        fprintf('Provided user guess does not have the appropiate dimension, it should be a vector of length %d, the provided vectors has a length of %d. \n',length(solver_initalization.w0),length(w0));
+        fprintf('Provided user guess does not have the appropiate dimension, it should be a vector of length %d, the provided vectors has a length of %d. \n',length(solver_initialization.w0),length(w0));
         fprintf('Taking the generated default initial guess... \n');
     end
 end
 
 %% Update bounds
-solver_initalization.lbw(model.ind_vf) = 1;
-solver_initalization.ubw(model.ind_vf) = 1;
+solver_initialization.lbw(model.ind_vf) = 1;
+solver_initialization.ubw(model.ind_vf) = 1;
 %% read data
-unfold_struct(solver_initalization,'caller');
+unfold_struct(solver_initialization,'caller');
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller');
 

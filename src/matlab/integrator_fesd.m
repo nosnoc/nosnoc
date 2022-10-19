@@ -39,7 +39,7 @@ if nargin>2
 end
 if nargin>3
     solver = varargin{4};
-    solver_initalization = varargin{5};
+    solver_initialization = varargin{5};
     solver_exists = 1;
     model.p_val(end) = model.T;
 end
@@ -66,8 +66,8 @@ end
 %% Create solver functions for integrator step
 if ~solver_exists
     tic
-    [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings);
-    %     [solver,solver_initalization, model,settings] = create_nlp_nosnoc_rv(model,settings);
+    [solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
+    %     [solver,solver_initialization, model,settings] = create_nlp_nosnoc_rv(model,settings);
     solver_generating_time = toc;
     if print_level >=2
         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
@@ -76,7 +76,7 @@ end
 
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
-unfold_struct(solver_initalization,'caller')
+unfold_struct(solver_initialization,'caller')
 
 %% chekc does the provided u_sim has correct dimensions
 if exist('u_sim','var')
@@ -85,7 +85,7 @@ if exist('u_sim','var')
         error('Matrix with control inputs has the wrong size. Required dimension is n_u x N_sim.')
     end
 end
-%% Initalization
+%% Initialization
 x_res = [x0];
 x_res_extended = [x0];
 diff_res = [];
@@ -131,11 +131,11 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
     if control_exists
-        solver_initalization.lbw(ind_u) = repmat(u_sim(:,ii),N_stages,1);
-        solver_initalization.ubw(ind_u)  = repmat(u_sim(:,ii),N_stages,1);
+        solver_initialization.lbw(ind_u) = repmat(u_sim(:,ii),N_stages,1);
+        solver_initialization.ubw(ind_u)  = repmat(u_sim(:,ii),N_stages,1);
     end
 
-    [sol,stats,solver_initalization] = homotopy_solver(solver,model,settings,solver_initalization);
+    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
     if stats.complementarity_stats(end) > 1e-3
@@ -213,11 +213,11 @@ for ii = 1:N_sim+additional_residual_ingeration_step
         model.p_val(end) = model.p_val(end)+model.T;
 
     end
-    solver_initalization.lbw(1:n_x) = x0;
-    solver_initalization.ubw(1:n_x) = x0;
+    solver_initialization.lbw(1:n_x) = x0;
+    solver_initialization.ubw(1:n_x) = x0;
 
     if use_previous_solution_as_initial_guess
-        solver_initalization.w0 = w_opt;
+        solver_initialization.w0 = w_opt;
     end
 
     % Store data
@@ -356,6 +356,6 @@ varargout{2} = stats;
 varargout{3} = model;
 varargout{4} = settings;
 varargout{5} = solver;
-varargout{6} = solver_initalization;
+varargout{6} = solver_initialization;
 end
 

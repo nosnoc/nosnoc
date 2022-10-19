@@ -17,12 +17,12 @@ gamma_h = 1;
 
 pss_mode = 'Stewart'; % possible options: Stewart and Step
 
-% initalization - Stewart
-lp_initalization = 0;
+% initialization - Stewart
+lp_initialization = 0;
 initial_theta = 0;
 initial_lambda = 0;
 initial_mu = 0;
-% initalization - Step
+% initialization - Step
 initial_alpha = 1;
 initial_lambda_0 = 1;
 initial_lambda_1 = 1;

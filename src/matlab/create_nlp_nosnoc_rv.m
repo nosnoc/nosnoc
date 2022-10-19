@@ -18,7 +18,7 @@
 %    Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %
 %
-% function [solver,solver_initalization, model,settings] = create_nlp_nosnoc(model,settings)
+% function [solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings)
 function [varargout] = create_nlp_nosnoc(varargin)
 % This functions creates the solver instance for the OCP discretized with FESD (or time-stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
@@ -55,7 +55,7 @@ mpcc_function ='Kanzow-Schwartz';
 % mpcc_function = 'Kadrani';
 
 [Psi_mpcc_fun] = create_mpcc_function(mpcc_function,casadi_symbolic_mode);
-%% Initalization and bounds for step-size
+%% Initialization and bounds for step-size
 if use_fesd
     ubh = (1+gamma_h)*h_k;
     lbh = (1-gamma_h)*h_k;
@@ -165,7 +165,7 @@ sum_h_ki_all = 0;
 sum_Theta_ki_vec = [];
 sum_Lambda_ki_vec = [];
 
-% Initalization of forward and backward sums for the step-equilibration
+% Initialization of forward and backward sums for the step-equilibration
 sigma_theta_B_k = 0; % backward sum of theta at finite element k
 sigma_lambda_B_k = 0; % backward sum of lambda at finite element k
 sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
@@ -175,7 +175,7 @@ nu_vector = [];
 sum_S_sot =0;
 n_cross_comp = zeros(max(N_finite_elements),N_stages);
 
-% Continuity of lambda initalization
+% Continuity of lambda initialization
 Z_kd_end = zeros(n_z,1);
 Lambda_end_previous_fe = zeros(n_theta,1);
 
@@ -372,7 +372,7 @@ for k=0:N_stages-1
         % index sets
         ind_z = [ind_z,ind_total(end)+1:ind_total(end)+n_z*n_s];
         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_z*n_s];
-        % bounds and initalization
+        % bounds and initialization
         lbw = [lbw; repmat(lbz,n_s,1)];
         ubw = [ubw; repmat(ubz,n_s,1)];
         w0 = [w0; repmat(z0,n_s,1)];
@@ -707,7 +707,7 @@ for k=0:N_stages-1
     end
 end
 sum_h_ki_all = sum(sum_h_ki_vec);
-ind_g_total(1)  = []; % drop the zero that was needed for initalization
+ind_g_total(1)  = []; % drop the zero that was needed for initialization
 %% Scalar-valued commplementarity residual
 if use_fesd
     % sum of all possible cross complementarities;
@@ -1031,15 +1031,15 @@ model.ind_total = ind_total;
 model.h = h;
 model.h_k = h_k;
 model.n_cross_comp_total = sum(n_cross_comp(:));
-%% Store solver initalization data
-solver_initalization.w0 = w0;
-solver_initalization.lbw = lbw;
-solver_initalization.ubw = ubw;
-solver_initalization.lbg = lbg;
-solver_initalization.ubg = ubg;
+%% Store solver initialization data
+solver_initialization.w0 = w0;
+solver_initialization.lbw = lbw;
+solver_initialization.ubw = ubw;
+solver_initialization.lbg = lbg;
+solver_initialization.ubg = ubg;
 %% Output
 varargout{1} = solver;
-varargout{2} = solver_initalization;
+varargout{2} = solver_initialization;
 varargout{3} = model;
 varargout{4} = settings;
 end
