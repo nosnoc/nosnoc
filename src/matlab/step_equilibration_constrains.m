@@ -5,7 +5,7 @@
 if step_equilibration
     % define the switching indicator function for previous  node/finite element boundary
     if  (k > 0 || i > 0)
-        % backward sums at stage k are equal to the forward sums at stage k-1
+        % backward sums at current stage k are equal to the forward sums at stage previous stage (k-1)
         sigma_lambda_B_k = sigma_lambda_F_k;
         sigma_theta_B_k = sigma_theta_F_k;
     end
