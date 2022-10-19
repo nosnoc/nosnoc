@@ -53,7 +53,7 @@ Z = [z1 z2 z3 z4];
 x0 = [y0;w0;t0];
 
 %% Define model dimensions, equations, constraint functions, regions an so on.
-n_simplex = 1;% number of Carteisna products in the model ("independet switches"), we call this layer
+n_simplex = 1;% number of Cartesian products in the model ("independet switches"), we call this layer
 m_1 = 4;
 m_vec = [m_1];
 %% Variable defintion
