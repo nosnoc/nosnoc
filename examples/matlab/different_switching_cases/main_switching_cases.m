@@ -28,21 +28,27 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontenus switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-example_num = 3;
+example_num = 2;
 %% NOS-NOC settings
 [settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
-settings.n_s = 3;
+settings.n_s = 2;
 settings.mpcc_mode = 3;
 settings.kappa = 0.1;
 % settings.use_fesd = 0;
 % settings.irk_scheme = 'Lobatto-IIIC';
 settings.irk_scheme = 'Gauss-Legendre';
+% settings.irk_scheme = 'Radau-IIA';
 settings.irk_representation= 'differential';
 settings.print_level = 2;
 % discretization parameters
 N_sim = 16;
-N_stages = 2;
+N_stages = 3;
 T_sim = 1.5;
+
+% N_sim = 16;
+% N_stages = 3;
+% T_sim = 1.5;
+
 
 % model.T_sim = T_sim ;
 model.N_sim = N_sim;
@@ -72,11 +78,13 @@ switch example_num
     case 2
         %% Sliding mode
         model.x0 = -0.5;
+%         model.x0 = -1;
         x = SX.sym('x',1);
         model.x = x;
         model.c = x;
         model.S = [-1; 1];
         f_1 = [1]; f_2 = [-1];
+%         f_1 = [3]; f_2 = [-1];
         model.F = [f_1 f_2];
 %         settings.use_previous_solution_as_initial_guess = 1;
         [results,stats] = integrator_fesd(model,settings);

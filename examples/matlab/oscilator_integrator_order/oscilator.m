@@ -29,10 +29,7 @@ else
     smooth_model = 0;
 end
 %% Model parameters
-
 omega = 2*pi;
-
-% omega = pi;
 A1 = [1 omega;...
     -omega 1];
 A2 = [1 -omega;...

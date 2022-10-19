@@ -10,8 +10,8 @@ if step_equilibration
         sigma_theta_B_k = sigma_theta_F_k;
     end
     % forward sums initalized (these were computed during the defintion of the algebraic variables)
-    sigma_lambda_F_k = Lambda_sum_finite_element_ki;
-    sigma_theta_F_k = Theta_sum_finite_element_ki;
+    sigma_lambda_F_k = sum_Lambda_ki;
+    sigma_theta_F_k = sum_Theta_ki;
 
     %     if ~(i == 0 && k== 0)
     %     if i>0

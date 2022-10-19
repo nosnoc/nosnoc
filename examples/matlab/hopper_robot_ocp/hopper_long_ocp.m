@@ -59,6 +59,7 @@ settings.pss_lift_step_functions = 1;
 settings.stagewise_clock_constraint = 1;
 settings.g_ineq_at_fe = 1; % evaluate path constraint on every integration step
 settings.g_ineq_at_stg = 1; % evaluate path constraint on every stage point
+
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 

@@ -35,19 +35,24 @@ import casadi.*
 settings.n_s = 2;                            
 settings.irk_scheme = 'Radau-IIA';     
 % settings.irk_scheme = 'Lobatto-IIIA';  
-% settings.irk_representation = 'differential';
+settings.irk_representation = 'differential';
+settings.lift_irk_differential = 1;
 settings.print_level = 2;
-settings.mpcc_mode = 5; % very fast    
-% settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
+% settings.mpcc_mode = 5; % very fast    
+settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
 settings.s_elastic_max = 1e1;                    
 settings.cross_comp_mode = 3;
-settings.comp_tol = 1e-5;
+settings.comp_tol = 1e-6;
+settings.N_homotopy = 7;
+
 %% Generate Model
 model = blocks_with_friction();
 %% Simulation setings
-N_finite_elements = 4;
-T_sim = 12;
+N_finite_elements = 3;
+% T_sim = 12;
+T_sim = 4;
 N_sim = 85;
+% N_sim = 3;
 % 
 settings.pss_mode = 'Stewart';
 % settings.pss_mode = 'Step';

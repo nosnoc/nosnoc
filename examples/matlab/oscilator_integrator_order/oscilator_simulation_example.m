@@ -36,20 +36,21 @@ R_osc  = 1;
 %% settings
 % collocation settings
 settings = default_settings_nosnoc();
-settings.use_fesd = 0;       % switch detection method on/off
+settings.use_fesd = 1;       % switch detection method on/off
 settings.irk_scheme = 'Radau-IIA';
-settings.irk_scheme = 'Gauss-Legendre';
+% settings.irk_scheme = 'Gauss-Legendre';
 settings.print_level = 2;
-settings.n_s = 3;
+settings.n_s = 4;
 settings.pss_mode = 'Stewart'; % 'Step;
 
 settings.mpcc_mode = 3;  % Scholtes regularization
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-9;
+settings.cross_comp_mode  = 1;
 
 settings.heuristic_step_equilibration = 1;
 %% Time settings
-omega = 2*pi;
+
 % analytic solution
 x_star = [exp(1);0];
 T = T_sim;
@@ -59,8 +60,29 @@ model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 model.R_osc = R_osc;
-model.smooth_model = 0; % if 1, use model without switch for a sanity check
-model = oscilator(model);
+smooth_model = 0; % if 1, use model without switch for a sanity check
+omega = -2*pi;
+A1 = [1 omega;...
+    -omega 1];
+A2 = [1 -omega;...
+    omega 1];
+if smooth_model
+    A2 = A1;
+end
+% Inital Value
+model.x0 = [exp(-1);0];
+% Variable defintion
+x1 = SX.sym('x1');
+x2 = SX.sym('x2');
+x = [x1;x2];
+c = x1^2+x2^2-1;
+model.x = x;
+model.c = c;
+model.S = [-1;1];
+f_11 = A1*x;
+f_12 = A2*x;
+F = [f_11 f_12];
+model.F = F;
 %% Call integrator
 [results,stats,model] = integrator_fesd(model,settings);
 %% numerical error
