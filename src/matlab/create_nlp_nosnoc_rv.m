@@ -874,7 +874,7 @@ if terminal_constraint
             ubw = [ubw;inf];
             w0 = [w0;1e3];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-            % relaxed contraint
+            % relaxed constraint
             g = [g; g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1)];
             g = [g; -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1)];
             lbg = [lbg; -inf*ones(2*n_terminal,1)];
@@ -886,13 +886,13 @@ if terminal_constraint
             if exist('s_elastic','var')
                 % l_inf
                 % define slack variable
-                % relaxed contraint
+                % relaxed constraint
                 g = [g; g_terminal-g_terminal_lb-S_elastic*ones(n_terminal,1);-(g_terminal-g_terminal_lb)-S_elastic*ones(n_terminal,1)];
                 lbg = [lbg; -inf*ones(2*n_terminal,1)];
                 ubg = [ubg; zeros(2*n_terminal,1)];
                 ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+2*n_terminal];
             else
-                error('This mode of terminal contraint relxation is only avilable if a MPCC elastic mode is used.')
+                error('This mode of terminal constraint relaxation is only avilable if a MPCC elastic mode is used.')
             end
     end
 end
