@@ -98,7 +98,6 @@ piecewise_equidistant_grid_slack_mode = 0;
 step_equilibration = 0;
 step_equilibration_mode = 1;
 % step_equilibration_penalty = 0.1;  %(rho_h in step_equilibration modde 1, as qudratic penalty)
-treat_step_equilibration_via_mpcc = 0;
 step_equilibration_sigma = 0.1;
 heuristic_step_equilibration = 1;
 heuristic_step_equilibration_mode = 1; % 1 standard (h_k - h), 2  - penalize delta h
