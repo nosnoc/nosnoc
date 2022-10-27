@@ -384,12 +384,15 @@ for k=0:N_stages-1
                     end
             end
             % Note that the algebraic variablies are treated the same way in both irk representation modes.
-            % Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
-            zkij = [];
-            for iz =1:n_z
-                zkij = vertcat(zkij, define_casadi_symbolic(casadi_symbolic_mode,[name(model.z(iz)) '_' num2str(j)], 1));
+            if strcmp(casadi_symbolic_mode, 'SX') || strcmp(casadi_symbolic_mode, 'casadi.SX') % TODO: remove this or
+                zkij = [];
+                for iz =1:n_z
+                    zkij = vertcat(zkij, define_casadi_symbolic(casadi_symbolic_mode,[name(model.z(iz)) '_' num2str(j)], 1));
+                end
+                Z_ki_stages{j} = zkij;
+            else
+                Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
             end
-            Z_ki_stages{j} = zkij;
 
             w = {w{:}, Z_ki_stages{j}};
             % index sets
