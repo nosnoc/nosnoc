@@ -36,20 +36,20 @@ u0 = 0; % guess for control variables
 
 %% Variable defintion
 % differential states
-q1 = MX.sym('q1');
-q2 = MX.sym('q2');
-q3 = MX.sym('q3');
-v1 = MX.sym('v1');
-v2 = MX.sym('v2');
-v3 = MX.sym('v3');
-t = MX.sym('t');
+q1 = SX.sym('q1');
+q2 = SX.sym('q2');
+q3 = SX.sym('q3');
+v1 = SX.sym('v1');
+v2 = SX.sym('v2');
+v3 = SX.sym('v3');
+t = SX.sym('t');
 
 q = [q1;q2;q3];
 v = [v1;v2;v3];
 x = [q;v;t];
 
 %% Control
-% u = MX.sym('u');
+% u = SX.sym('u');
 % n_u = 1;  % number of parameters,  we model it as control variables and merge them with simple equality constraints
 % 
 % % Guess and Bounds
