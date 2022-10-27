@@ -26,7 +26,7 @@ import casadi.*
 %% Initial value
 x0 = [-1;1;-1;-1;1;1;0];
 u0 = 0; % guess for control variables
-%% Numer of ODE layrs
+%% Numer of ODE layers
 % n_simplex = 3;% number of Cartesian products in the model ("independet switches"), we call this layer
 % % number of modes in every simplex
 % m_1 = 2;
