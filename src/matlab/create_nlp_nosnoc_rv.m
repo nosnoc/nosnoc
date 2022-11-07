@@ -462,7 +462,7 @@ for k=0:N_stages-1
         end
 
         %% The IRK Equations: evaluate equations (dynamics, algebraic, complementarities standard and cross at every stage point)
-        % Evaulate Differetinal and Algebraic Equations at stage points
+        % Evaulate Differential and Algebraic Equations at stage points
         if n_u > 0
             if virtual_forces && virtual_forces_convex_combination
                 if virtual_forces_parametric_multipler

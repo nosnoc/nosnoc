@@ -534,7 +534,7 @@ for k=0:N_stages-1
                     for r=1:n_s
                         xp = xp + C(r+1,j+1)*X_ki_stages{r};
                     end
-                    % Evaulate Differetinal and Algebraic Equations at stage points
+                    % Evaulate Differential and Algebraic Equations at stage points
                     if n_u > 0
                         if virtual_forces && virtual_forces_convex_combination
                             if virtual_forces_parametric_multipler
@@ -572,7 +572,7 @@ for k=0:N_stages-1
                     end
 
                 case 'differential'
-                    % Evaulate Differetinal and Algebraic Equations at stage points
+                    % Evaulate Differential and Algebraic Equations at stage points
                     if n_u > 0
                         [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                         gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
