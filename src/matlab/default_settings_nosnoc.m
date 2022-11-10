@@ -98,7 +98,6 @@ piecewise_equidistant_grid_slack_mode = 0;
 step_equilibration = 0;
 step_equilibration_mode = 1;
 % step_equilibration_penalty = 0.1;  %(rho_h in step_equilibration modde 1, as qudratic penalty)
-treat_step_equilibration_via_mpcc = 0;
 step_equilibration_sigma = 0.1;
 heuristic_step_equilibration = 1;
 heuristic_step_equilibration_mode = 1; % 1 standard (h_k - h), 2  - penalize delta h
@@ -160,7 +159,7 @@ opts_ipopt.ipopt.compl_inf_tol = tol_ipopt;
 opts_ipopt.ipopt.mu_strategy = 'adaptive';
 opts_ipopt.ipopt.mu_oracle = 'quality-function';
 
-%% Relxation of terminal constraint
+%% Relaxation of terminal constraint
 relax_terminal_constraint = 0; %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf;
 relax_terminal_constraint_from_above = 0; 
 rho_terminal = 1e2;

@@ -16,9 +16,6 @@ if step_equilibration
     %     if ~(i == 0 && k== 0)
     %     if i>0
     if i>0 || k >0
-        sigma_lambda_k = sigma_lambda_B_k+sigma_lambda_F_k;
-        sigma_theta_k = sigma_theta_B_k+sigma_theta_F_k;
-
         pi_lambda_k = sigma_lambda_B_k.*sigma_lambda_F_k;
         pi_theta_k = sigma_theta_B_k.*sigma_theta_F_k;
 

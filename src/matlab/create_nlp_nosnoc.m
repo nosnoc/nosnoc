@@ -30,12 +30,12 @@ function [varargout] = create_nlp_nosnoc(varargin)
 % 2 - Smooth the complementarity conditions.
 % 3 - Relax the complementarity conditions.
 % 4 - \ell_1 penalty, penalize the sum of all bilinear terms in the objective
-% 5 - \ell__infty elastic mode, upper bound all bilinear term with a positive slack, and penalize the slack in the objective.
-% 6 - \ell__infty elastic mode, equate all bilinear term to a positive slack, and penalize the slack in the objective.
-% 7 - \ell__infty, same as 5 but two sided.
-% 8 - \ell__infty, same as 5 but the penalty/slack is controlled via the barier formulation
-% 9 - \ell__infty, same as 6 but the penalty/slack is controlled via the barier formulation
-% 10 - \ell__1, same as 4 but the penalty/slack is controlled via the barier formulation
+% 5 - \ell_infty elastic mode, upper bound all bilinear term with a positive slack, and penalize the slack in the objective.
+% 6 - \ell_infty elastic mode, equate all bilinear term to a positive slack, and penalize the slack in the objective.
+% 7 - \ell_infty, same as 5 but two sided.
+% 8 - \ell_infty, same as 5 but the penalty/slack is controlled via the barier formulation
+% 9 - \ell_infty, same as 6 but the penalty/slack is controlled via the barier formulation
+% 10 - \ell_1, same as 4 but the penalty/slack is controlled via the barier formulation
 %% Import CasADi in the workspace of this function
 import casadi.*
 %% Read data
@@ -384,12 +384,15 @@ for k=0:N_stages-1
                     end
             end
             % Note that the algebraic variablies are treated the same way in both irk representation modes.
-            % Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
-            zkij = [];
-            for iz =1:n_z
-                zkij = vertcat(zkij, define_casadi_symbolic(casadi_symbolic_mode,[name(model.z(iz)) '_' num2str(j)], 1));
+            if strcmp(casadi_symbolic_mode, 'SX') || strcmp(casadi_symbolic_mode, 'casadi.SX') % TODO: remove this or
+                zkij = [];
+                for iz =1:n_z
+                    zkij = vertcat(zkij, define_casadi_symbolic(casadi_symbolic_mode,[name(model.z(iz)) '_' num2str(j)], 1));
+                end
+                Z_ki_stages{j} = zkij;
+            else
+                Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
             end
-            Z_ki_stages{j} = zkij;
 
             w = {w{:}, Z_ki_stages{j}};
             % index sets
@@ -531,7 +534,7 @@ for k=0:N_stages-1
                     for r=1:n_s
                         xp = xp + C(r+1,j+1)*X_ki_stages{r};
                     end
-                    % Evaulate Differetinal and Algebraic Equations at stage points
+                    % Evaluate Differential and Algebraic Equations at stage points
                     if n_u > 0
                         if virtual_forces && virtual_forces_convex_combination
                             if virtual_forces_parametric_multipler
@@ -569,7 +572,7 @@ for k=0:N_stages-1
                     end
 
                 case 'differential'
-                    % Evaulate Differetinal and Algebraic Equations at stage points
+                    % Evaluate Differential and Algebraic Equations at stage points
                     if n_u > 0
                         [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                         gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
@@ -889,7 +892,7 @@ if time_optimal_problem
 end
 
 %% Terminal Constraints
-% Add Terminal Constrint
+% Add Terminal Constraint
 if terminal_constraint
     if relax_terminal_constraint_homotopy
         rho_terminal_p = 1/sigma_p;
@@ -942,7 +945,7 @@ if terminal_constraint
             ubw = [ubw;inf];
             w0 = [w0;1e3];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-            % relaxed contraint
+            % relaxed constraint
             g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1)};
             g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1)};
             lbg = [lbg; -inf*ones(2*n_terminal,1)];
@@ -953,13 +956,13 @@ if terminal_constraint
             if exist('s_elastic','var')
                 % l_inf
                 % define slack variable
-                % relaxed contraint
+                % relaxed constraint
                 g = {g{:}, g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1)};
                 g = {g{:}, -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1)};
                 lbg = [lbg; -inf*ones(2*n_terminal,1)];
                 ubg = [ubg; zeros(2*n_terminal,1)];
             else
-                error('This mode of terminal contraint relxation is only avilable if a MPCC elastic mode is used.')
+                error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.')
             end
     end
 end
@@ -1063,7 +1066,7 @@ if mpcc_mode >= 8 && mpcc_mode <= 10
     lbg = [lbg; 0];
     ubg = [ubg; inf];
 
-    % add elastic variable to the vector of unknowns and add objeective contribution
+    % add elastic variable to the vector of unknowns and add objective contribution
     w = {w{:}, s_elastic};
     ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
     lbw = [lbw; s_elastic_min];

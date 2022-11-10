@@ -12,7 +12,7 @@ end
 
 if isequal(irk_scheme,'lobbato')
     error('Lobbato scheme are not supported with irk_representation = ''integral''.')
-   else
+else
     tau_root = [0 collocation_points(n_s, irk_scheme)];
 end
 
@@ -35,13 +35,13 @@ for j=1:n_s+1
     end
     % Evaluate the polynomial at the final time to get the coefficients of the continuity equation
     D(j) = polyval(coeff, 1.0);
-    
+
     % Evaluate the time derivative of the polynomial at all collocation points to get the coefficients of the continuity equation
     pder = polyder(coeff);
     for r=1:n_s+1
         C(j,r) = polyval(pder, tau_root(r));
     end
-    
+
     % Evaluate the integral of the polynomial to get the coefficients of the quadrature function
     pint = polyint(coeff);
     B(j) = polyval(pint, 1.0);

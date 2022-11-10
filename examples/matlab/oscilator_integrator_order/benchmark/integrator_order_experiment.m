@@ -62,7 +62,6 @@ comp_tol = 1e-16;
 settings.comp_tol = comp_tol;
 settings.N_homotopy = 40 ;% number of steps
 settings.kappa = 0.05;                      % decrease rate
-settings.fesd_complementartiy_mode = 3;       % turn on moving finite elements algortihm
 settings.equidistant_control_grid = 0;
 settings.use_previous_solution_as_initial_guess = 1; % warm start integrator
 %% Time settings
