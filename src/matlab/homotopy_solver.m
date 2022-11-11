@@ -66,6 +66,9 @@ ii = 0;
 vf_resiudal = 0;
 
 
+if print_level >= 3
+    fprintf('\nsigma \t\t compl_res \t CPU time \t status\n')
+end
 
 
 while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
@@ -105,12 +108,9 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
         results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',p_val);
         cpu_time_iter = toc ;
     end
-        if print_level > 1 && print_level < 4
-            fprintf(['NLP solver message (' num2str(ii+1) '/' num2str(N_homotopy)  '): ' solver.stats.return_status '\n']);
-            if isequal(solver.stats.return_status,'Infeasible_Problem_Detected')
-                error('NLP infeasible: try different mpcc_mode or check problem functions.');
-            end
-        end
+    if isequal(solver.stats.return_status,'Infeasible_Problem_Detected')
+        error('NLP infeasible: try different mpcc_mode or check problem functions.');
+    end
 
     cpu_time = [cpu_time,cpu_time_iter];
     w_opt = full(results.x);
@@ -128,10 +128,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
 
     % Verbose
     if print_level >= 3
-        fprintf('-----------------------------------------------------------------------------------------------\n');
-        fprintf('Homotopy iteration : %d / %d, with sigma = %2.2e completed.\n',ii,N_homotopy,sigma_k);
-        fprintf('Complementarity resiudal: %2.2e.\n',complementarity_iter);
-        fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
+        fprintf('%2.2e\t%2.2e\t%.3f\t%s\n', sigma_k, complementarity_iter, cpu_time_iter, solver.stats.return_status);
         if model.n_u >0
             % fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
             if time_optimal_problem
@@ -141,7 +138,6 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
                 fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
             end
         end
-        fprintf('-----------------------------------------------------------------------------------------------\n');
     end
     %
     %     if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
