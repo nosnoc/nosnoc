@@ -62,8 +62,8 @@ g_12 = norm([psi;w]-z2)^2;
 g_13 = norm([psi;w]-z3)^2;
 g_14 = norm([psi;w]-z4)^2;
 g_ind = [g_11;g_12;g_13;g_14];
-g_ind_all = [g_ind];
-c = g_ind_all;
+g_Stewart = [g_ind];
+c = g_Stewart;
 
 % control
 

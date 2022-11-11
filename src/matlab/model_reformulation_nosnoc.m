@@ -371,7 +371,7 @@ end
 %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
 pss_mode = settings.pss_mode;
 % Stewart's representation of the sets R_i and discirimant functions g_i
-g_ind_all = {};
+g_Stewart = {};
 g_ind_vec = [];
 c_all = [];
 m_vec = [];
@@ -406,7 +406,7 @@ if ~exist('S')
             for ii = 1:n_simplex
                 % discrimnant functions
                 g_ind_vec =  [g_ind_vec;g_ind{ii};];
-                g_ind_all{ii} = g_ind{ii};
+                g_Stewart{ii} = g_ind{ii};
                 c_all = [c_all; zeros(1,casadi_symbolic_mode)];
             end
         else
@@ -458,7 +458,7 @@ else
         switch pss_mode
             case 'Stewart'
                 % Create Stewart's indicator functions g_ind_ii
-                g_ind_all{ii} = -S{ii}*c{ii};
+                g_Stewart{ii} = -S{ii}*c{ii};
                 g_ind_vec = [g_ind_vec ;-S{ii}*c{ii}];
             case 'Step'
                 %eval(['c_' num2str(ii) '= c{ii};']);
@@ -837,7 +837,7 @@ for ii = 1:n_simplex
             % lambda_i >= 0;    for all i = 1,..., n_simplex
             % theta_i >= 0;     for all i = 1,..., n_simplex
             % Gradient of Lagrange Function of indicator LP
-            g_switching = [g_switching; g_ind_all{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
+            g_switching = [g_switching; g_Stewart{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
             g_convex = [g_convex;e_ones_all{ii}'*theta_all{ii}-1];
             f_comp_residual = f_comp_residual + lambda_all{ii}'*theta_all{ii};
         case 'Step'
@@ -889,10 +889,10 @@ n_algebraic_constraints = length(g_z_all);
 %% CasADi functions for indicator and region constraint functions
 % model equations
 % if n_u >0
-%     g_ind_all_fun = Function('g_ind_all_fun',{x,u},{g_ind_vec});
+%     g_Stewart_fun = Function('g_Stewart_fun',{x,u},{g_ind_vec});
 %     c_fun = Function('c_fun',{x,u},{c_all});
 % else
-g_ind_all_fun = Function('g_ind_all_fun',{x},{g_ind_vec});
+g_Stewart_fun = Function('g_Stewart_fun',{x},{g_ind_vec});
 c_fun = Function('c_fun',{x},{c_all});
 
 % end
@@ -1002,7 +1002,7 @@ model.g_z_all_fun = g_z_all_fun;
 model.f_q_T_fun = f_q_T_fun;
 
 model.J_cc_fun = J_cc_fun;
-model.g_ind_all_fun = g_ind_all_fun;
+model.g_Stewart_fun = g_Stewart_fun;
 model.c_fun = c_fun;
 model.dot_c_fun = dot_c_fun;
 %
