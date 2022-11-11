@@ -827,9 +827,11 @@ if  ~equidistant_control_grid
         end
     else
         % fixed numerical time (no time freezing or time optimal control, T_phy = T_num = T)
-        g = {g{:}, sum_h_ki_all-T};
-        lbg = [lbg; 0];
-        ubg = [ubg; 0];
+        if use_fesd
+            g = {g{:}, sum_h_ki_all-T};
+            lbg = [lbg; 0];
+            ubg = [ubg; 0];
+        end
     end
 end
 %% Terminal least square term
