@@ -52,6 +52,16 @@ settings = varargin{2};
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller');
 
+%% Parameters
+p_val = [sigma_0,rho_sot,rho_h,rho_terminal,T];
+% define parameters;
+sigma_p = define_casadi_symbolic(casadi_symbolic_mode,'sigma_p'); % homotopy parameter
+rho_sot_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_sot_p'); % homotopy parameter
+rho_h_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_h_p'); % homotopy parameter
+rho_terminal_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_terminal_p'); % homotopy parameter
+T_ctrl_p  = define_casadi_symbolic(casadi_symbolic_mode,'T_ctrl_p'); % homotopy parameter
+p = [sigma_p,rho_sot_p,rho_h_p,rho_terminal_p,T_ctrl_p];
+
 %% Initialization and bounds for step-size
 if use_fesd
     ubh = (1+gamma_h)*h_k;
@@ -1165,6 +1175,7 @@ model.n_cross_comp = n_cross_comp;
 model.ind_total = ind_total;
 model.h = h;
 model.h_k = h_k;
+model.p_val = p_val;
 model.n_cross_comp_total = sum(n_cross_comp(:));
 %% Store solver initialization data
 solver_initialization.w0 = w0;

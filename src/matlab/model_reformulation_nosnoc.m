@@ -495,17 +495,6 @@ if max(n_c_vec) < 2 && isequal(pss_mode,'Step')
     end
 end
 
-%% Parameters
-p_val = [sigma_0,rho_sot,rho_h,rho_terminal,T];
-% define parameters;
-sigma_p = define_casadi_symbolic(casadi_symbolic_mode,'sigma_p'); % homotopy parameter
-rho_sot_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_sot_p'); % homotopy parameter
-rho_h_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_h_p'); % homotopy parameter
-rho_terminal_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_terminal_p'); % homotopy parameter
-T_ctrl_p  = define_casadi_symbolic(casadi_symbolic_mode,'T_ctrl_p'); % homotopy parameter
-p = [sigma_p,rho_sot_p,rho_h_p,rho_terminal_p,T_ctrl_p];
-n_p = length(p);
-
 %% Algebraic variables defintion
 % Dummy variables for Stewart representation'
 theta = [];
@@ -939,14 +928,6 @@ if isequal(irk_representation,'differential')
 end
 
 %% Collect Outputs
-% parameters
-model.sigma_p = sigma_p;
-model.rho_sot_p = rho_sot_p;
-model.rho_h_p = rho_h_p;
-model.rho_terminal_p = rho_terminal_p;
-model.T_ctrl_p  = T_ctrl_p;
-model.p = p;
-model.p_val = p_val;
 %
 model.lbx = lbx;
 model.ubx = ubx;
@@ -1004,7 +985,6 @@ model.dot_c_fun = dot_c_fun;
 model.n_x = n_x;
 model.n_z = n_z;
 model.n_u = n_u;
-model.n_p = n_p;
 model.n_simplex = n_simplex;
 
 model.z = z;
