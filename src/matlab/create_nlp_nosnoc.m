@@ -1131,6 +1131,24 @@ if step_equilibration
     model.nu_fun = nu_fun;
 end
 
+% TODO: make member function
+if print_level > 4
+    disp("g")
+    print_casadi_vector(vertcat(g{:}))
+    disp('lbg, ubg')
+    disp([lbg, ubg])
+
+    disp("w")
+    print_casadi_vector(vertcat(w{:}))
+    disp('lbw, ubw')
+    disp([lbw, ubw])
+    disp('w0')
+    disp(w0)
+
+    disp('objective')
+    disp(J)
+end
+
 %% Model update: all index sets and dimensions
 model.ind_x = ind_x;
 model.ind_elastic = ind_elastic;
