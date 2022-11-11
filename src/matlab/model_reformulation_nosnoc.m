@@ -496,12 +496,6 @@ if max(n_c_vec) < 2 && isequal(pss_mode,'Step')
 end
 
 %% Parameters
-sigma = define_casadi_symbolic(casadi_symbolic_mode,'sigma');
-% all penalty factors;
-p = [sigma];
-n_p = length(p);
-%% Parameters extended
-% update values of parameters vector (as defualt settings might be overwritten)
 p_val = [sigma_0,rho_sot,rho_h,rho_terminal,T];
 % define parameters;
 sigma_p = define_casadi_symbolic(casadi_symbolic_mode,'sigma_p'); % homotopy parameter
