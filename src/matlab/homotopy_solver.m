@@ -42,7 +42,7 @@ nabla_J_fun = model.nabla_J_fun;
 s_elastic_iter = 1;
 
 sigma_k = sigma_0;
-x0 = model.x0;
+x0 = solver_initialization.lbw(1:model.dimensions.n_x);
 
 % lambda00 initialization
 if strcmp(settings.pss_mode, 'Stewart')
