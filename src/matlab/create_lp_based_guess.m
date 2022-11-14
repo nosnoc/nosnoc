@@ -12,9 +12,9 @@ lambda_guess = theta_guess;
 mu_guess = initial_theta*ones(n_simplex,1);
 %% objective gradient of the LP
 try
-    g_guess = full(g_ind_all_fun(x0));
+    g_guess = full(g_Stewart_fun(x0));
 catch
-    g_guess = full(g_ind_all_fun(x0,u0));
+    g_guess = full(g_Stewart_fun(x0,u0));
 end
 %% equality constraint for LP
 Aeq = (E');

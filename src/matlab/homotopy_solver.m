@@ -36,7 +36,6 @@ import casadi.*
 %%  unfold data
 unfold_struct(settings,'caller')
 unfold_struct(solver_initialization,'caller')
-p_val = model.p_val;
 
 comp_res = model.comp_res;
 nabla_J_fun = model.nabla_J_fun;
@@ -45,8 +44,19 @@ s_elastic_iter = 1;
 sigma_k = sigma_0;
 x0 = model.x0;
 
+% lambda00 initialization
+if strcmp(settings.pss_mode, 'Stewart')
+    g_eval = full(model.g_Stewart_fun(x0));
+    lambda00 = g_eval - min(g_eval);
+elseif strcmp(settings.pss_mode, 'Step')
+    c_x = full(model.c_fun(x0));
+    lambda00 = [ max(c_x, 0); min(c_x, 0)];
+end
+p_val = [model.p_val(:); lambda00];
+
+% TODO remove try!
 try
-    complementarity_stats = [full(comp_res(w0))];
+    complementarity_stats = [full(comp_res(w0, p_val))];
 catch
     w0 = w0(1:length(model.w));
     complementarity_stats = [full(comp_res(w0))];
@@ -118,7 +128,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     W = [W,w_opt]; % all homotopy iterations
 
     % complementarity
-    complementarity_iter = full(comp_res(w_opt));
+    complementarity_iter = full(comp_res(w_opt, p_val));
     complementarity_stats = [complementarity_stats;complementarity_iter];
     if virtual_forces
         vf_resiudal = full(model.J_virtual_froces_fun(w_opt));

@@ -52,6 +52,19 @@ settings = varargin{2};
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller');
 
+%% Parameters
+p_val = [sigma_0,rho_sot,rho_h,rho_terminal,T];
+% define parameters;
+sigma_p = define_casadi_symbolic(casadi_symbolic_mode,'sigma_p'); % homotopy parameter
+rho_sot_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_sot_p'); % homotopy parameter
+rho_h_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_h_p'); % homotopy parameter
+rho_terminal_p = define_casadi_symbolic(casadi_symbolic_mode,'rho_terminal_p'); % homotopy parameter
+T_ctrl_p  = define_casadi_symbolic(casadi_symbolic_mode,'T_ctrl_p'); % homotopy parameter
+
+lambda_00 = define_casadi_symbolic(casadi_symbolic_mode,'lambda_00', n_theta);
+
+p = vertcat(sigma_p,rho_sot_p,rho_h_p,rho_terminal_p,T_ctrl_p, lambda_00);
+
 %% Initialization and bounds for step-size
 if use_fesd
     ubh = (1+gamma_h)*h_k;
@@ -170,8 +183,8 @@ nu_vector = [];
 sum_s_sot =0;
 n_cross_comp = zeros(max(N_finite_elements),N_stages);
 
-% Continuity of lambda initialization
-Lambda_end_previous_fe = zeros(n_theta,1);
+% initialization
+Lambda_end_previous_fe = lambda_00;
 Z_kd_end = zeros(n_z,1);
 % initialize cross comp and mpcc related structs
 mpcc_var_current_fe.p = p;
@@ -1094,7 +1107,7 @@ end
 %% CasADi Functions for objective complementarity residual
 J_fun = Function('J_fun', {vertcat(w{:})},{J_objective});
 J_virtual_froces_fun = Function('J_virtual_froces_fun', {vertcat(w{:})},{J_virtual_froces});
-comp_res = Function('comp_res',{vertcat(w{:})},{J_comp});
+comp_res = Function('comp_res',{vertcat(w{:}), p},{J_comp});
 comp_res_fesd = Function('comp_res_fesd',{vertcat(w{:})},{J_comp_fesd});
 comp_res_std = Function('comp_res_std',{vertcat(w{:})},{J_comp_std});
 
@@ -1165,6 +1178,7 @@ model.n_cross_comp = n_cross_comp;
 model.ind_total = ind_total;
 model.h = h;
 model.h_k = h_k;
+model.p_val = p_val;
 model.n_cross_comp_total = sum(n_cross_comp(:));
 %% Store solver initialization data
 solver_initialization.w0 = w0;
