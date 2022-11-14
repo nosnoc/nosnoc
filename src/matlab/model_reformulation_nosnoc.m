@@ -809,6 +809,7 @@ end
 g_switching = []; % collects switching function algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
 g_convex = []; % equation for the convex multiplers 1 = e' \theta
 f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
+lambda00_expr =[];
 for ii = 1:n_simplex
     switch pss_mode
         case 'Stewart'
@@ -822,6 +823,7 @@ for ii = 1:n_simplex
             % Gradient of Lagrange Function of indicator LP
             g_switching = [g_switching; g_Stewart{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
             g_convex = [g_convex;e_ones_all{ii}'*theta_all{ii}-1];
+            lambda00_expr = [lambda00_expr; g_Stewart{ii}- min(g_Stewart{ii})];
             f_comp_residual = f_comp_residual + lambda_all{ii}'*theta_all{ii};
         case 'Step'
             % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_simplex
@@ -894,6 +896,7 @@ else
     g_z_all_fun = Function('g_z_all_fun',{x,z},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
     dot_c_fun = Function('c_fun',{x,z},{dot_c}); % total time derivative of switching functions
 end
+model.lambda00_fun = Function('lambda00_fun',{x},{lambda00_expr});
 
 J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
 f_q_T_fun = Function('f_q_T',{x},{f_q_T});
