@@ -43,4 +43,4 @@ jobs:
     - name: Check casadi install.
       uses: matlab-actions/run-command@v1
       with:
-        command: ${{runner.workspace}}/tests/check_casadi.m
+        command: tests/check_casadi
