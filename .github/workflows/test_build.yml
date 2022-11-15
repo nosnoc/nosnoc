@@ -41,6 +41,13 @@ jobs:
 
     # FIXME: This is just for debugging purposes.
     - name: Check casadi install.
-      uses: matlab-actions/run-command@v1
+      continue-on-error: true
+      uses: matlab-actions/run-command@v1.1.2
       with:
         command: tests/check_casadi
+
+    - name: Debugging is fun
+      shell: bash
+      run: |
+        ls /tmp
+        find data/ -name '/tmp/run_matlab_command*/*.m' -exec cat {} \;
