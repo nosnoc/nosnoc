@@ -48,10 +48,11 @@ x0 = solver_initialization.lbw(1:model.dimensions.n_x);
 if strcmp(settings.pss_mode, 'Stewart')
     lambda00 = full(model.lambda00_fun(x0));
 elseif strcmp(settings.pss_mode, 'Step')
-    c_x = full(model.c_fun(x0));
-    lambda00 = [ max(c_x, 0); min(c_x, 0)];
+%     c_x = full(model.c_fun(x0));
+%     lambda00 = [ max(c_x, 0); min(c_x, 0)];
+    lambda00 = full(model.lambda00_fun(x0));
 end
-p_val = [model.p_val(:); lambda00];
+p_val = [model.p_val(:); lambda00(:)];
 
 % TODO remove try!
 try

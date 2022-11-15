@@ -834,6 +834,8 @@ for ii = 1:n_simplex
             % alpha_i >= 0;     for all i = 1,..., n_simplex
             g_switching = [g_switching;c{ii}-lambda_1_all{ii}+lambda_0_all{ii}];
             f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_vec(ii),1)-alpha_all{ii});
+%             lambda00_expr = [lambda00_expr; max(c{ii},0); -min(c{ii}, 0)];
+            lambda00_expr = [lambda00_expr; -min(c{ii}, 0); max(c{ii},0)];
     end
 end
 
