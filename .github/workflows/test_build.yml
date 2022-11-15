@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - main
+  # FIXME: again temporary.
+  workflow_dispatch:
 
 jobs:
   # Main job that runs all the tests for NOSNOC in matlab.
