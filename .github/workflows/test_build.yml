@@ -34,7 +34,7 @@ jobs:
     - name: Install CasADi
       shell: bash
       run: |
-        tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v3.5.5.tar.gz . -C casadi
+        tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v3.5.5.tar.gz . -C ./casadi
         echo "MATLABPATH=$MATLABPATH:$(pwd)/casadi" >> $GITHUB_ENV
 
     - name: Install NOSNOC
@@ -51,7 +51,8 @@ jobs:
     - name: Debugging is fun
       shell: bash
       run: |
-        echo "------------------ws-----------------"
+        pwd
+        echo "------------------$GITHUB_WORKSPACE-----------------"
         ls $GITHUB_WORKSPACE
         echo "----------------casadi---------------"
         ls casadi
