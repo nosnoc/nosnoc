@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Install MATLAB
       uses: matlab-actions/setup-matlab@v1
@@ -27,7 +27,7 @@ jobs:
       uses: robinraju/release-downloader@v1.6
       with:
         repository: "casadi/casadi"
-        tag: "v3.5.5"
+        tag: "3.5.5"
         fileName: "casadi-linux-matlabR2014b-v3.5.5.tar.gz"
 
     # untar the casadi 3.5.5 release and then add it to the matlab path.
