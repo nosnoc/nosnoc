@@ -24,7 +24,6 @@ jobs:
         
     # TODO: Definitely cache this.
     - name: Download CasADi release
-      working-directory: ${{runner.workspace}}/casadi
       uses: robinraju/release-downloader@v1.6
       with:
         repository: "casadi/casadi"
@@ -36,7 +35,7 @@ jobs:
       working-directory: ${{runner.workspace}}/casadi
       shell: bash
       run: |
-        tar -zxvf casadi-linux-matlabR2014b-v3.5.5.tar.gz . -C .
+        tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v3.5.5.tar.gz . -C casadi
         echo "MATLABPATH=$MATLABPATH:$(pwd)" >> $GITHUB_ENV
         
 
