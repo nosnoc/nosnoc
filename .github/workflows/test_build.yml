@@ -6,6 +6,7 @@ on:
       - main
   # FIXME: again temporary.
   workflow_dispatch:
+  push:
 
 jobs:
   # Main job that runs all the tests for NOSNOC in matlab.
