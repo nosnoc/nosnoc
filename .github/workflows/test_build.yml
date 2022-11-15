@@ -1,0 +1,44 @@
+name: NOSNOC Test suite
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Main job that runs all the tests for NOSNOC in matlab.
+  test_nosnoc:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install MATLAB
+      uses: matlab-actions/setup-matlab@v1
+      with:
+        # TODO: what version do we want to use, this is the earliest one available.
+        release: R2020a
+        
+    # TODO: Definitely cache this.
+    - name: Download CasADi release
+      working-directory: ${{runner.workspace}}/casadi
+      uses: robinraju/release-downloader@v1.6
+      with:
+        repository: "casadi/casadi"
+        tag: "v3.5.5"
+        fileName: "casadi-linux-matlabR2014b-v3.5.5.tar.gz"
+
+    # untar the casadi 3.5.5 release and then add it to the matlab path.
+    - name: Install CasADi
+      working-directory: ${{runner.workspace}}/casadi
+      shell: bash
+      run: |
+        tar -zxvf casadi-linux-matlabR2014b-v3.5.5.tar.gz . -C .
+        echo "MATLABPATH=$MATLABPATH:$(pwd)" >> $GITHUB_ENV
+        
+
+    # FIXME: This is just for debugging purposes.
+    - name: Check casadi install.
+      uses: matlab-actions/run-command@v1
+      with:
+        command: ${{runner.workspace}}/tests/check_casadi.m
