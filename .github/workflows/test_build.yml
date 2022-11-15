@@ -32,7 +32,6 @@ jobs:
 
     # untar the casadi 3.5.5 release and then add it to the matlab path.
     - name: Install CasADi
-      working-directory: ${{runner.workspace}}
       shell: bash
       run: |
         tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v3.5.5.tar.gz . -C casadi
@@ -50,4 +49,5 @@ jobs:
       shell: bash
       run: |
         ls .
+        ls $GITHUB_WORKSPACE
         ls casadi
