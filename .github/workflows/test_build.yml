@@ -49,5 +49,5 @@ jobs:
     - name: Debugging is fun
       shell: bash
       run: |
-        ls /tmp
-        find /tmp -name '*.m' -exec cat {} \;
+        ls .
+        ls casadi
