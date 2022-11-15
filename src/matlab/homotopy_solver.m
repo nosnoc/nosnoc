@@ -42,12 +42,11 @@ nabla_J_fun = model.nabla_J_fun;
 s_elastic_iter = 1;
 
 sigma_k = sigma_0;
-x0 = model.x0;
+x0 = solver_initialization.lbw(1:model.dimensions.n_x);
 
 % lambda00 initialization
 if strcmp(settings.pss_mode, 'Stewart')
-    g_eval = full(model.g_Stewart_fun(x0));
-    lambda00 = g_eval - min(g_eval);
+    lambda00 = full(model.lambda00_fun(x0));
 elseif strcmp(settings.pss_mode, 'Step')
     c_x = full(model.c_fun(x0));
     lambda00 = [ max(c_x, 0); min(c_x, 0)];
@@ -59,7 +58,7 @@ try
     complementarity_stats = [full(comp_res(w0, p_val))];
 catch
     w0 = w0(1:length(model.w));
-    complementarity_stats = [full(comp_res(w0))];
+    complementarity_stats = [full(comp_res(w0, p_val))];
 end
 cpu_time = [];
 homotopy_iterations = [];
