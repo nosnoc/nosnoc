@@ -63,7 +63,7 @@ total_time = sum(stats.cpu_time)+cpu_time_presolve;
 unfold_struct(settings,'caller');
 unfold_struct(model,'caller');
 results = extract_results_from_solver(model,settings,results);
-complementarity_iter_ell_1 = full(comp_res(results.w_opt));
+complementarity_iter_ell_1 = full(comp_res(results.w_opt,[model.p_val';full(model.lambda00_fun(x0))]));
 switch pss_mode
     case 'Step'
     temp = [results.alpha_opt_extended.*results.lambda_0_opt_extended,(1-results.alpha_opt_extended).*results.lambda_1_opt_extended];
