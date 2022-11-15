@@ -44,7 +44,7 @@ jobs:
       continue-on-error: true
       uses: matlab-actions/run-command@v1.1.2
       with:
-        command: tests/check_casadi
+        command: cd tests; check_casadi
 
     - name: Debugging is fun
       shell: bash

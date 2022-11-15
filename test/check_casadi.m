@@ -1,1 +1,3 @@
-x = 5
+import casadi.*
+
+x = MX.sym('x');
