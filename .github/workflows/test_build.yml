@@ -50,4 +50,4 @@ jobs:
       shell: bash
       run: |
         ls /tmp
-        find data/ -name '/tmp/run_matlab_command*/*.m' -exec cat {} \;
+        find /tmp -name '*.m' -exec cat {} \;
