@@ -1,9 +1,12 @@
-function test_cross_comp_modes(cross_comp)
+function [results,stats,model,settings] = test_cross_comp_modes(cross_comp, mpcc_mode)
 %TEST_CROSS_COMP_MODES Test the simple car model accross all the cross_comp
 % options.
+import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
+% set the cross complimentarity mode that 
 settings.cross_comp_mode = cross_comp;
+settings.mpcc_mode = mpcc_mode;
 settings.n_s = 2;
 % Time-settings  - Solve an time optimal control problem
 settings.time_optimal_problem = 1;
@@ -33,10 +36,5 @@ model.g_terminal = [q-200;v-0];
 % Solve OCP
 [results,stats,model,settings] = nosnoc_solver(model,settings);
 
-%% Plot
-v_max = 20;
-u_max = 5;
-v_trash_hold = 10;
-plot_results_nosnoc_tutorial
 end
 

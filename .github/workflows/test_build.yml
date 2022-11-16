@@ -48,4 +48,4 @@ jobs:
     - name: Run NOSNOC tests
       uses: matlab-actions/run-command@v1.1.2
       with:
-        command: cd test; check_casadi
+        command: cd test; simple_test
