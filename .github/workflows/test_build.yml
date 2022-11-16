@@ -37,7 +37,7 @@ jobs:
         mkdir casadi
         cd casadi
         tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v3.5.5.tar.gz .
-        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE" >> $GITHUB_ENV
+        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/src/matlab" >> $GITHUB_ENV
 
     - name: Install NOSNOC
       shell: bash
