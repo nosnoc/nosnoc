@@ -47,4 +47,6 @@ jobs:
 
     - name: Run NOSNOC tests
       uses: matlab-actions/run-tests@v1.3.2
-      
+      with:
+        source-folder: test
+        test-results-junit: test-results/results.xml
