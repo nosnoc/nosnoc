@@ -119,7 +119,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
         cpu_time_iter = toc ;
     end
     if isequal(solver.stats.return_status,'Infeasible_Problem_Detected')
-        error('NLP infeasible: try different mpcc_mode or check problem functions.');
+        warning('NLP infeasible: try different mpcc_mode or check problem functions.');
     end
 
     cpu_time = [cpu_time,cpu_time_iter];
