@@ -3,7 +3,7 @@ classdef TestSettings < matlab.unittest.TestCase
     %   Detailed explanation goes here
     properties (TestParameter)
         cross_comp = {1,2,3};
-        mpcc_mode = {1,2,3,4};
+        mpcc_mode = {1,2,3,4,5,6,7,8,9};
     end
     
     methods (Test)
@@ -12,8 +12,7 @@ classdef TestSettings < matlab.unittest.TestCase
         function test_cross_comp_modes(testCase,cross_comp,mpcc_mode)
             import matlab.unittest.constraints.IssuesNoWarnings;
             issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 4);
-            testCase.verifyThat(@() test_cross_comp_modes(cross_comp,mpcc_mode), issuesNoWarningsConstraint);
-
+            testCase.verifyThat(@() test_simple_car_model(cross_comp,mpcc_mode), issuesNoWarningsConstraint);
         end
     end 
 end

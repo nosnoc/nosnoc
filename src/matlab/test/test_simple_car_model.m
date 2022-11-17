@@ -1,6 +1,6 @@
-function [results,stats,model,settings] = test_cross_comp_modes(cross_comp, mpcc_mode)
-%TEST_CROSS_COMP_MODES Test the simple car model accross all the cross_comp
-% options.
+function [results,stats,model,settings] = test_simple_car_model(cross_comp, mpcc_mode)
+%TEST_SIMPLE_CAR_MODEL Test the simple car model accross cross
+%complementarity and mpcc modes
 import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
