@@ -14,14 +14,17 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+    # Checkout repo
     - uses: actions/checkout@v3
 
+    # Install matlab to run tests.
     - name: Install MATLAB
       uses: matlab-actions/setup-matlab@v1
       with:
         # TODO: what version do we want to use, this is the earliest one available.
         release: R2020a
-        
+
+    # Download relevant release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
       uses: robinraju/release-downloader@v1.6
@@ -37,16 +40,23 @@ jobs:
         mkdir casadi
         cd casadi
         tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v3.5.5.tar.gz .
-        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/src/matlab" >> $GITHUB_ENV
+        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/casadi" >> $GITHUB_ENV
 
+    # Install nosnoc by adding it to the matlab path
     - name: Install NOSNOC
       shell: bash
       run: |
-        echo "MATLABPATH=$MATLABPATH:$(pwd)/casadi" >> $GITHUB_ENV
-    # FIXME: This is just for debugging purposes.
+        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/src/matlab" >> $GITHUB_ENV
 
+    # Run matlab tests from the test directory and dump the results in junit format.
     - name: Run NOSNOC tests
       uses: matlab-actions/run-tests@v1.3.2
       with:
         source-folder: test
         test-results-junit: test-results/results.xml
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: test-results/results.xml
