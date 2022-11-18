@@ -23,10 +23,14 @@ clear all
 clc
 close all
 import casadi.*
+
+% example settings
+illustrate_regions  = 1;
+terminal_constraint = 1;
+linear_control = 1;
+
 %% NOS-NOC settings
 [settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
-% settings.n_s = 2;
-% N_finite_elements = 6;
 
 settings.n_s = 2;
 N_finite_elements = 6;
@@ -44,51 +48,58 @@ settings.mpcc_mode = 5;
 settings.comp_tol = 1e-12;
 settings.equidistant_control_grid  = 1;
 
-illustrate_regions  = 1;
-terminal_constraint = 1;
-linear_control = 1;
-
 settings.step_equilibration = 0;
 settings.rho_h = 1e1;
 settings.heuristic_step_equilibration = 1;
 settings.step_equilibration_mode = 3;
-%% model equations
-x_target = [-pi/6;-pi/4];
 
-if linear_control
-    v0  = [0;0];
-else
-    v0 = [];
-end
-model.x0 = [2*pi/3;pi/3;v0];
-model.T = 4;
-model.N_stages = 6;
-model.N_finite_elements = N_finite_elements;
+%% model equations
 % Variable defintion
 x1 = MX.sym('x1');
 x2 = MX.sym('x2');
 
 v1 = MX.sym('v1');
 v2 = MX.sym('v2');
-if linear_control
-    x = [x1;x2;v1;v2];
-else
-    x = [x1;x2];
-end
-model.x = x;
+x_target = [-pi/6;-pi/4];
+
 % Control
 u1 = MX.sym('u1');
 u2 = MX.sym('u2');
 model.u = [u1;u2];
+
 if linear_control
+    v0  = [0;0];
+    x = [x1;x2;v1;v2];
     u_max = 10;
-    model.lbu  = -u_max*ones(2,1);
-    model.ubu  = u_max*ones(2,1);
+
+    % dynamics
+    f_11 = [-1+v1;0;u1;u2];
+    f_12 = [1+v1;0;u1;u2];
+    f_21 = [0;-1+v2;u1;u2];
+    f_22 = [0;1+v2;u1;u2];
+
+    % Objective
+    model.f_q = 1*(v1^2+v2^2)+0*(u1^2+u2^2);
 else
     u_max = 2;
-    model.lbu  = -u_max*ones(2,1);
-    model.ubu  = u_max*ones(2,1);
+    v0 = [];
+    x = [x1;x2];
+
+    % dynamics
+    f_11 = [-1+u1;0];
+    f_12 = [1+u1;0];
+    f_21 = [0;-1+u2];
+    f_22 = [0;1+u2];
+
+    % Objective
+    model.f_q = u1^2+u2^2;
 end
+model.x0 = [2*pi/3;pi/3;v0];
+model.x = x;
+model.T = 4;
+
+model.N_stages = 6;
+model.N_finite_elements = N_finite_elements;
 
 % Switching Functions
 p = 2; a = 0.15; a1 = 0;
@@ -102,34 +113,19 @@ model.c = {c1,c2};
 model.S = {S1,S2};
 
 %% Modes of the ODEs layers (for all  i = 1,...,n_simplex);
-% part independet of the nonsmoothness
-if linear_control
-    f_11 = [-1+v1;0;u1;u2];
-    f_12 = [1+v1;0;u1;u2];
-    f_21 = [0;-1+v2;u1;u2];
-    f_22 = [0;1+v2;u1;u2];
-else
-    f_11 = [-1+u1;0];
-    f_12 = [1+u1;0];
-    f_21 = [0;-1+u2];
-    f_22 = [0;1+u2];
-end
 F1 = [f_11 f_12];
 F2 = [f_21 f_22];
 model.F = {F1,F2};
 
-%% Objective
-% model.f_q = u1^2+u2^2;
-if linear_control
-    model.f_q = 1*(v1^2+v2^2)+0*(u1^2+u2^2);
-else
-    model.f_q = u1^2+u2^2;
-end
+% constraints
+model.lbu  = -u_max*ones(2,1);
+model.ubu  = u_max*ones(2,1);
 if terminal_constraint
     model.g_terminal = [x(1:2)-x_target(1:2)];
 else
     model.f_q_T = 100*(x(1:2)-x_target(1:2))'*(x(1:2)-x_target(1:2));
 end
+
 %% Solve and plot
 [results,stats,model,settings] = nosnoc_solver(model,settings);
 
