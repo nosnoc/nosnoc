@@ -53,7 +53,9 @@ mpcc_mode = 5;
 objective_scaling_direct = 1;
 sigma_0	= 1;
 sigma_N	= comp_tol;
+homotopy_parameter_rule = 'linear'; % 'linear' sigma_k = kappa*sigma_N 'superlinear' - sigma_k = max(sigma_N,min(kappa*sigma_k,sigma_k^kappa2));
 kappa =	0.1;
+kappa2 = 1.5; % the exponent in the superlinear rule
 N_homotopy = ceil(abs(log(sigma_N/sigma_0)/log(kappa)));
 s_elastic_0	= 1;
 s_elastic_max =	1e1;
