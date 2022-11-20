@@ -20,9 +20,9 @@
 %
 %
 
-%% Manipulation of discks
+%% Manipulation of two discs
 
-%% 
+%%
 clear all;
 close all;
 clc;
@@ -31,11 +31,11 @@ import casadi.*
 %%
 filename = 'discs_manipulation.gif';
 %%
-[settings] = default_settings_nosnoc();  
+[settings] = default_settings_nosnoc();
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
 
-settings.use_fesd = 1; 
+settings.use_fesd = 1;
 settings.mpcc_mode = 5; % \ell_inifnity penalization of the complementariy constraints
 settings.N_homotopy = 7;
 
@@ -63,9 +63,9 @@ r1 = 0.3;
 r2 = 0.2;
 
 
-ubx = [10; 10;10; 10; 5; 5; 5; 5]; 
+ubx = [10; 10;10; 10; 5; 5; 5; 5];
 lbx = -ubx;
-       
+
 q10 = [-1; -2];
 q20 = [-1;-1];
 v10 = [0;0];
@@ -88,7 +88,7 @@ u_min = -u_max;
 
 %% Symbolic variables and bounds
 q = SX.sym('q',4);
-v = SX.sym('v',4); 
+v = SX.sym('v',4);
 u = SX.sym('u',2);
 
 q1 = q(1:2);
@@ -103,12 +103,12 @@ model.u = u;
 model.e = 0;
 model.mu = 0.0;
 model.a_n = 10;
-model.x0 = x0; 
+model.x0 = x0;
 
 
 model.M = diag([m1;m1;m2;m2]); % inertia/mass matrix;
 model.f = [u;...
-           zeros(2,1)];
+    zeros(2,1)];
 
 % gap functions
 model.c = [norm(q1-q2)^2-(r1+r2)^2];
@@ -137,8 +137,7 @@ v4 = x_opt(8,:);
 t_opt = x_opt(9,:);
 
 %% animation
-% figure('Renderer', 'painters', 'Position', [100 100 1000 400])
-figure(1)
+figure('Renderer', 'painters', 'Position', [100 100 1000 800])
 
 x_min =min([p1,p2,p3,p4])-1;
 x_max = max([p1,p2,p3,p4])+1;
@@ -149,23 +148,24 @@ y1 = r1*sin(tt);
 
 x2 = r2*cos(tt);
 y2 = r2*sin(tt);
-for ii = 1:length(p1)
-    plot(x1+p1(ii),y1+p2(ii),'k-');
-    hold on
-    plot(x2+p3(ii),y2+p4(ii),'r-');
 
-    plot(q_target1(1),q_target1(2),'ko');
-    plot(q_target2(1),q_target2(2),'ro');
-    
-    
+for ii = 1:length(p1)
+    plot(x1+p1(ii),y1+p2(ii),'k-','LineWidth',2);
+    hold on
+    plot(x2+p3(ii),y2+p4(ii),'r-','LineWidth',2);
+
+    plot(x1+q_target1(1),y1+q_target1(2),'color',[0 0 0 0.6]);
+    plot(x2+q_target2(1),y2+q_target2(2),'color',[1 0 0 0.6]);
+
     axis equal
     xlim([x_min x_max])
     ylim([x_min x_max])
-%     pause(model.h_k);
-   
+    xlabel('$x$ [m]','Interpreter','latex');
+    ylabel('$y$ [m]','Interpreter','latex');
+
+    % save gif
     frame = getframe(1);
     im = frame2im(frame);
-
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
         imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
@@ -176,6 +176,7 @@ for ii = 1:length(p1)
     if ii~=length(p1)
         clf;
     end
+
 end
 
 %%
