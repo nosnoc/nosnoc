@@ -60,7 +60,6 @@ x2 = MX.sym('x2');
 
 v1 = MX.sym('v1');
 v2 = MX.sym('v2');
-x_target = [-pi/6;-pi/4];
 
 % Control
 u1 = MX.sym('u1');
@@ -107,9 +106,10 @@ b = -0.05; q = 3;
 
 c1 = x1+a*(x2-a1)^p;
 c2 = x2+b*x1^q;
+model.c = {c1,c2};
+
 S1 = [1;-1];
 S2 = [1;-1];
-model.c = {c1,c2};
 model.S = {S1,S2};
 
 %% Modes of the ODEs layers (for all  i = 1,...,n_simplex);
@@ -120,6 +120,8 @@ model.F = {F1,F2};
 % constraints
 model.lbu  = -u_max*ones(2,1);
 model.ubu  = u_max*ones(2,1);
+
+x_target = [-pi/6;-pi/4];
 if terminal_constraint
     model.g_terminal = [x(1:2)-x_target(1:2)];
 else
