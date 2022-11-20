@@ -126,7 +126,7 @@ if exist('u')
     n_u = length(u);
     % check  lbu
     if exist('lbu')
-        if length(lbu) ~= n_u && ~virtual_forces
+        if length(lbu) ~= n_u
             error('The vector lbu, for the lower bounds of u has the wrong size.')
         end
     else
@@ -134,7 +134,7 @@ if exist('u')
     end
     % check ubu
     if exist('ubu')
-        if length(ubu) ~= n_u && ~virtual_forces
+        if length(ubu) ~= n_u
             error('The vector ubu, for the upper bounds of u has the wrong size.')
         end
     else
@@ -142,7 +142,7 @@ if exist('u')
     end
     % check u0
     if exist('u0')
-        if length(u0) ~= n_u && ~virtual_forces
+        if length(u0) ~= n_u
             error('The vector u0, for the initial guess of u has the wrong size.')
         end
     else
@@ -155,18 +155,6 @@ else
     end
     lbu = [];
     ubu = [];
-end
-
-%% Virtual forces
-if virtual_forces
-    if tighthen_virtual_froces_bounds
-        M_virtual_forces_box = inf;
-    else
-        M_virtual_forces_box = M_virtual_forces;
-    end
-    u0 = [u0;0*ones(n_q,1)];
-    lbu = [lbu;-M_virtual_forces_box*ones(n_q,1)];
-    ubu = [ubu;M_virtual_forces_box*ones(n_q,1)];
 end
 
 %% Stage and terminal costs check
@@ -846,13 +834,8 @@ g_lift_forces = [];
 if time_freezing && time_freezing_lift_forces
     f_v = f_x(n_q+1:2*n_q);
     if n_u > 0
-        if virtual_forces_convex_combination
-            f_v_fun = Function('f_v_fun',{x,z,u,psi_vf},{f_v});
-            z0_forces = full(f_v_fun(x0,z0,u0,0));
-        else
             f_v_fun = Function('f_v_fun',{x,z,u},{f_v});
             z0_forces = full(f_v_fun(x0,z0,u0));
-        end
     else
         f_v_fun = Function('f_v_fun',{x,z},{f_v});
         z0_forces = full(f_v_fun(x0,z0));
@@ -885,12 +868,7 @@ c_fun = Function('c_fun',{x},{c_all});
 % end
 dot_c = c_all.jacobian(x)*f_x;
 if n_u >0
-    if virtual_forces && virtual_forces_convex_combination
-        % for time freezing systmes
-        f_x_fun = Function('f_x_fun',{x,z,u,psi_vf},{f_x,f_q});
-    else
-        f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
-    end
+    f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
     dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 else
@@ -916,14 +894,8 @@ if isequal(irk_representation,'differential')
         v0 = zeros(n_x,1);
     else
         if n_u>0
-            %             if virtual_forces && virtual_forces_convex_combination
-            %                 % for time freezing systmes
-            %                 [v0,~] = (f_x_fun(x0,z0,u0,1));
-            %                 v0 = full(v0);
-            %             else
             [v0,~] = (f_x_fun(x0,z0,u0));
             v0 = full(v0);
-            %             end
         else
             [v0,~] = (f_x_fun(x0,z0));
             v0 = full(v0);

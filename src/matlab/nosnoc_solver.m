@@ -50,15 +50,9 @@ if exist("w0",'var')
     end
 end
 
-%% Solve OCP with kinematics model in time-freezing
-cpu_time_presolve = 0;
-if settings.time_freezing && settings.virtual_forces_kinematic_iteration
-    settings_unedited.virtual_forces_in_every_mode = 1;
-    [w0,cpu_time_presolve,w0_unchanged] = time_freezing_kinematics_iteration(model_unedited,settings_unedited);
-end
 %% Solve the discrete-time OCP
 [results,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
-total_time = sum(stats.cpu_time)+cpu_time_presolve;
+total_time = sum(stats.cpu_time);
 %% Process and store results
 unfold_struct(settings,'caller');
 unfold_struct(model,'caller');

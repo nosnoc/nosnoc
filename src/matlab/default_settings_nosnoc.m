@@ -131,16 +131,6 @@ time_freezing_nonlinear_friction_cone = 1; % 1 - use nonlienar friction cone, 0 
 
 time_freezing_quadrature_state = 0; % make a nonsmooth quadrature state to integrate only if physical time is running
 time_freezing_lift_forces = 0; % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0; 
-%% Virtual forces in time-freezing systems
-virtual_forces = 0;
-tighthen_virtual_froces_bounds = 0; % squeez bounds for virual forces to zero
-penalize_virtual_forces = 1;  % increasing qudratic penalty for virtual forces
-virtual_forces_convex_combination = 0;  % 1- convex combination between kinematics and true dynamics, 0 - 
-virtual_forces_in_every_mode = 1; % 0 -is it just in uncondraind dynamics (nonsmoothnes presevred in convex mode), 1-it is in every pss mode (smooth kinematics ode in convex mode)
-virtual_forces_parametric_multipler = 0; % 1- multiplier is external parameter, 0 - optimization variable
-virtual_forces_kinematic_iteration = 0; % 1 - do one nlp solve with fixed psi_vf = 1 as "presolve"
-M_virtual_forces = 1e2; % bound for virtual forces
-
 
 %% Verbose
 print_level = 3;
