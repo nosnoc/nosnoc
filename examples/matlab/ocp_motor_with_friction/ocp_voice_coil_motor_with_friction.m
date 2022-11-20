@@ -9,7 +9,7 @@
 clear all; close all;
 %% Build problem
 import casadi.*
-[settings] = default_settings_nosnoc();  
+[settings] = default_settings_nosnoc();
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
@@ -31,23 +31,21 @@ m2 = 0.56; % load mass
 k = 2.4e3; %  spring constant N/m
 c = 0.00; % damping
 U_max = 5; % voltage Back-EMF, U = K_s*v_1;
-R  = 2; % coil resistancel ohm
+R  = 2; % coil resistance ohm
 L = 2e-3; % inductivity, henry
 K_F = 12; % force constant N/A ; F_L = K_F*I; % Lorenz force
 K_S = 12; % Vs/m (not provided in the paper above)
-F_R = 2.1; % guide friction forec, N
+F_R = 2.1; % guide friction force, N
 x0 = [0;0;0;0;0];
-x_target = [0.01;0;0.01;0;0];
-%% Symbolic variables and bounds
+%% Symbolic variables
 x1 = SX.sym('x1');  % motor mass position
 v1 = SX.sym('v1'); % motor mass velocity
 x2 = SX.sym('x2');  % load mass position
 v2 = SX.sym('v2'); % load mass velocity
-I = SX.sym('I'); % electrin current
+I = SX.sym('I'); % electric current
 x = [x1;v1;x2;v2;I];
 model.x = x;
-model.x0 =  x0;         
-n_x = length(model.x);
+model.x0 = x0;
 % control
 U = SX.sym('U'); % the motor voltage
 u = [U];
@@ -57,7 +55,7 @@ model.lbu = -U_max*ones(n_u,1);
 model.ubu = U_max*ones(n_u,1);
 
 
-%% Dynmiacs
+%% Dynamics
 
 A = [0  1   0   0   0;...
     -k/m1 -c/m1 k/m1 c/m1 K_F/m1;...
@@ -75,20 +73,22 @@ f_2 = A*x+B*u+C2; % v1<0
 % All modes
 F = [f_1, f_2];
 % Switching function
-c1 = v1; 
+c1 = v1;
 % Sign matrix (pass a cell when having indepdented subsystems)
 model.S = [1;-1];
 % The various modes
 model.F = F;
 % The switching functions
 model.c = c1;
+% OCP
+x_target = [0.01;0;0.01;0;0];
 % Stage cost
 model.f_q = u^2;
 model.g_terminal = x-x_target;
 
 
 % Inequality constraints
-% 
+%
 % cv = 10; cx = 10;
 % model.g_ineq = [v1-v2;x1-x2];
 % model.g_ineq_ub = [cv;cx];

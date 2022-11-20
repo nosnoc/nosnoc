@@ -77,7 +77,7 @@ vf_resiudal = 0;
 
 
 if print_level >= 3
-    fprintf('\nsigma \t\t compl_res \t CPU time \t status\n')
+    fprintf('\nsigma\t\tcompl_res\tCPU time\titer\tstatus\n')
 end
 
 
@@ -119,7 +119,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
         cpu_time_iter = toc ;
     end
     if isequal(solver.stats.return_status,'Infeasible_Problem_Detected')
-        error('NLP infeasible: try different mpcc_mode or check problem functions.');
+        warning('NLP infeasible: try different mpcc_mode or check problem functions.');
     end
 
     cpu_time = [cpu_time,cpu_time_iter];
@@ -138,7 +138,8 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
 
     % Verbose
     if print_level >= 3
-        fprintf('%2.2e\t%2.2e\t%.3f\t%s\n', sigma_k, complementarity_iter, cpu_time_iter, solver.stats.return_status);
+        fprintf('%2.2e\t%2.2e\t%.3f\t\t%d\t%s\n', sigma_k, complementarity_iter, ...
+            cpu_time_iter, solver.stats.iter_count, solver.stats.return_status);
         if model.n_u >0
             % fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
             if time_optimal_problem

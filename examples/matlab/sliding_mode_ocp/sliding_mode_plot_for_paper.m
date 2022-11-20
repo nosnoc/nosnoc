@@ -25,14 +25,13 @@ end
 plot(x_target(1),x_target(2),'rx')
 xlabel('$x_1$','interpreter','latex');
 ylabel('$x_2$','interpreter','latex');
-legend({'$x(t)$','$\varphi_1(x)=0$','$\varphi_2(x)=0$'},'Interpreter','latex',Location='best');
+legend({'$x(t)$','$\varphi_1(x)=0$','$\varphi_2(x)=0$'},'Interpreter','latex','Location','best');
 subplot(122)
 plot(t_grid_integrator,x_res_integrator(1:2,:))
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$x(t)$','interpreter','latex');
 legend({'$x_1(t)$','$x_2(t)$'},'Interpreter','latex');
-
 %% control functions
 u1_opt = u_opt(1,:);
 u2_opt = u_opt(2,:);
@@ -52,7 +51,7 @@ for ii = 1:6
     plot(xx*0+t_grid_control(ii+1),xx,'k--')
 end
 grid on
-legend({'$v_1(t)$','$v_2(t)$'},'Interpreter','latex',Location='best');
+legend({'$v_1(t)$','$v_2(t)$'},'Interpreter','latex','Location','best');
 subplot(122)
 stairs(t_grid_control,[u1_opt,nan],'LineWidth',1.5)
 hold on
@@ -65,7 +64,7 @@ ylim([-1.1*u_bar 1.1*u_bar])
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('${u}(t)$','interpreter','latex');
-legend({'${u}_1(t)$','${u}_2(t)$'},'Interpreter','latex',Location='best');
+legend({'${u}_1(t)$','${u}_2(t)$'},'Interpreter','latex','Location','best');
 
 %% indicator functio
 if 0
