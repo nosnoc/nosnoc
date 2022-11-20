@@ -44,14 +44,14 @@ settings.irk_scheme = 'Radau-IIA';
 
 settings.print_level = 3;
 settings.use_fesd = 1;
-settings.mpcc_mode = 5;
-settings.comp_tol = 1e-12;
-settings.equidistant_control_grid  = 1;
+settings.mpcc_mode = 3;
+settings.comp_tol = 1e-6;
+settings.equidistant_control_grid = 0;
 
 settings.step_equilibration = 0;
 settings.rho_h = 1e1;
 settings.heuristic_step_equilibration = 1;
-settings.step_equilibration_mode = 3;
+settings.step_equilibration_mode = 1;
 
 %% model equations
 % Variable defintion
