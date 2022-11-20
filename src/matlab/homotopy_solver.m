@@ -73,15 +73,13 @@ ubw_h(model.ind_h) = model.h_k(1);
 %% homotopy loop
 complementarity_iter = 1;
 ii = 0;
-vf_resiudal = 0;
-
 
 if print_level >= 3
     fprintf('\niter\tsigma\t\tcompl_res\tCPU time\tNLP iters\tstatus\n')
 end
 
 
-while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy && sigma_k > sigma_N
+while (complementarity_iter) > comp_tol && ii < N_homotopy && sigma_k > sigma_N
     % homotopy parameter update
     if ii == 0
         sigma_k = sigma_0;
@@ -126,9 +124,6 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy && sigma_
     % complementarity
     complementarity_iter = full(comp_res(w_opt, p_val));
     complementarity_stats = [complementarity_stats;complementarity_iter];
-    if virtual_forces
-        vf_resiudal = full(model.J_virtual_froces_fun(w_opt));
-    end
     % update counter
     ii = ii+1;
 
@@ -136,11 +131,6 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy && sigma_
     if print_level >= 3
         fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, ...
             cpu_time_iter, solver.stats.iter_count, solver.stats.return_status);
-        if model.n_u >0
-            if virtual_forces
-                fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
-            end
-        end
     end
     %
     %     if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
@@ -148,12 +138,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy && sigma_
     %         break;
     %     end
 end
-% Verbose
-    if print_level >= 3  
-        if model.n_u >0 && time_optimal_problem 
-                fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
-        end
-    end
+
 %% polish homotopy solution with fixed active set.
 if polishing_step
     [results] = polishing_homotopy_solution(model,settings,results,sigma_k);
