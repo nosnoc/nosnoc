@@ -44,6 +44,7 @@ settings.s_elastic_max = 1e1;
 settings.cross_comp_mode = 3;
 settings.comp_tol = 1e-6;
 settings.N_homotopy = 7;
+settings.homotopy_parameter_rule = 'superlinear';
 
 %% Generate Model
 model = blocks_with_friction();
