@@ -44,7 +44,7 @@ settings.time_freezing = 1;
 
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 25; % control intervals
@@ -142,7 +142,6 @@ t_opt = x_opt(9,:);
 
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
-figure(1)
 x_min = min([p1,p2,p3,p4])-1;
 x_max = max([p1,p2,p3,p4])+1;
 
@@ -152,14 +151,17 @@ x_t = cos(tt);
 y_t = sin(tt);
 
 for ii = 1:length(p1)
-    plot(r1*x_t+p1(ii),r1*y_t+p2(ii),'k-');
+    plot(r1*x_t+p1(ii),r1*y_t+p2(ii),'k-','LineWidth',2);
     hold on
-    plot(r2*x_t+p3(ii),r2*y_t+p4(ii),'r-');
+    plot(r2*x_t+p3(ii),r2*y_t+p4(ii),'r-','LineWidth',2);
 
     plot(q_target1(1),q_target1(2),'ko');
     plot(q_target2(1),q_target2(2),'ro');
     % obstacle
-    plot(r_ob*x_t+q_ob(1),r_ob*y_t+q_ob(2),'b-');
+    plot(r_ob*x_t+q_ob(1),r_ob*y_t+q_ob(2),'k-');
+    plot(q_ob(1),q_ob(2),'Color',0.5*ones(3,1),'Marker','.','MarkerSize',264)
+%     insertShape(I,'FilledCircle',[q_ob(1) q_ob(1) r_ob],'color',[1 1 1],'LineWidth',5); 
+
 
     axis equal
     xlim([x_min x_max])
