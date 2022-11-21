@@ -84,14 +84,13 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && sigma_k > sigma_N
     if ii == 0
         sigma_k = sigma_0;
     else
-        switch homotopy_parameter_rule
-            case 'linear'
-                  sigma_k = kappa*sigma_k;
-            case 'superlinear'
-                  sigma_k = max(sigma_N,min(kappa*sigma_k,sigma_k^kappa2));
-            otherwise 
-                % sigma_k fixed.
-        end
+        if isequal(homotopy_update_rule,'linear')
+            sigma_k = homotopy_update_slope*sigma_k;
+        elseif isequal(homotopy_update_rule,'superlinear')
+            sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent));
+        else
+            error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+        end  
     end
     p_val(1) = sigma_k;
     if h_fixed_to_free_homotopy

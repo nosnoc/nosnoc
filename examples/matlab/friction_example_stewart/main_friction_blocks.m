@@ -44,8 +44,9 @@ settings.s_elastic_max = 1e1;
 settings.cross_comp_mode = 3;
 settings.comp_tol = 1e-6;
 settings.N_homotopy = 7;
-settings.homotopy_parameter_rule = 'superlinear';
-
+settings.homotopy_update_rule = 'superlinear';
+settings.homotopy_update_slope = 0.2;
+settings.homotopy_update_exponent = 2;
 %% Generate Model
 model = blocks_with_friction();
 %% Simulation setings
