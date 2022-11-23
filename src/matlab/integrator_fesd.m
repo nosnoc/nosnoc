@@ -297,12 +297,12 @@ total_time = sum(time_per_iter);
 fprintf('\n');
 fprintf('-----------------------------------------------------------------------------------------------\n');
 if use_fesd
-    fprintf( ['Simulation with the FESD ' irk_scheme ' with %d-RK stages completed in %2.3f seconds.\n'],n_s,total_time);
+    fprintf( ['Simulation with the FESD ' irk_scheme ' with %d-RK stages completed.\nTotal CPU time: %2.3f seconds.\n'],n_s,total_time);
 else
     fprintf( ['Simulation with the standard ' irk_scheme ' with %d-RK stages completed in %2.3f seconds.\n'],n_s,total_time);
 end
 fprintf( ['RK representation: ' irk_representation '.\n']);
-fprintf('Total integration steps: %d, with nominal step-size h = %2.3f and %d finite elements.\n',N_sim,h_sim,N_finite_elements(1));
+fprintf('Total integration steps: %d, nominal step-size h = %2.3f and %d finite elements.\n',N_sim,h_sim,N_finite_elements(1));
 if additional_residual_ingeration_step
     fprintf('--> + additional residual step to reach T_sim with  T_residual =  %2.3f.\n',T_residual);
 end

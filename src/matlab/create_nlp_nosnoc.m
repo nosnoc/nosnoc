@@ -131,7 +131,6 @@ J_comp_std = 0;
 J_comp_fesd = 0;
 J_regularize_h = 0;
 J_regularize_sot = 0;
-J_virtual_froces = 0;
 % constraints
 g = {};
 lbg = [];
@@ -205,29 +204,6 @@ for k=0:N_stages-1
         ind_u = [ind_u,ind_total(end)+1:ind_total(end)+n_u];
         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_u];
 
-        % add pseudo froces in time-freezing problesm to aid convergence
-        if virtual_forces
-            if penalize_virtual_forces
-                J_virtual_froces = J_virtual_froces+f_q_virtual_fun(Uk);
-            end
-
-            if virtual_forces_convex_combination
-                J_virtual_froces = J_virtual_froces+psi_vf^2;
-            end
-            if tighthen_virtual_froces_bounds
-                J_virtual_froces= J_virtual_froces+f_q_virtual_fun(Uk);
-                U_virtual_k = Uk(end-n_q+1:end);
-                if mpcc_mode < 4
-                    g = {g{:}, U_virtual_k - M_virtual_forces*sigma_p};
-                    g = {g{:}, -M_virtual_forces*sigma_p-U_virtual_k };
-                else
-                    g = {g{:}, U_virtual_k - M_virtual_forces*s_elastic};
-                    g = {g{:}, -M_virtual_forces*s_elastic-U_virtual_k};
-                end
-                lbg = [lbg; -inf*ones(2*n_q,1)];
-                ubg = [ubg; 0*ones(2*n_q,1)];
-            end
-        end
     end
 
     %%  Time rescaling of the stages (speed of time) to acchieve e.g., a desired final time in Time-Freezing or to solve time optimal control problems.
@@ -549,15 +525,7 @@ for k=0:N_stages-1
                     end
                     % Evaluate Differential and Algebraic Equations at stage points
                     if n_u > 0
-                        if virtual_forces && virtual_forces_convex_combination
-                            if virtual_forces_parametric_multipler
-                                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,sigma_p);
-                            else
-                                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk,psi_vf);
-                            end
-                        else
-                            [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                        end
+                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                         gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
                     else
                         [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
@@ -996,32 +964,6 @@ if time_freezing
     J = J+rho_sot_p*J_regularize_sot;
 end
 
-%% Virtual forces
-if virtual_forces
-    if objective_scaling_direct
-        J = J + (1/sigma_p)*J_virtual_froces;
-    else
-        J = J+J_virtual_froces;
-    end
-    if virtual_forces_convex_combination
-        % treat the convex multipler of
-        w = {w{:}, psi_vf};
-        ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-        ind_vf  = ind_total(end);
-        w0 = [w0;1];
-        if virtual_forces_parametric_multipler
-            g = {g{:}, psi_vf-sigma_p};
-            lbg =[lbg;0];
-            ubg =[ubg;0];
-            lbw = [lbw; -inf];
-            ubw = [ubw; inf];
-        else
-            lbw = [lbw; 0];
-            ubw = [ubw; 1];
-        end
-    end
-end
-
 %% Add Terminal Cost to objective
 try
     J = J + f_q_T_fun(Xk_end);
@@ -1106,7 +1048,6 @@ end
 
 %% CasADi Functions for objective complementarity residual
 J_fun = Function('J_fun', {vertcat(w{:})},{J_objective});
-J_virtual_froces_fun = Function('J_virtual_froces_fun', {vertcat(w{:})},{J_virtual_froces});
 comp_res = Function('comp_res',{vertcat(w{:}), p},{J_comp});
 comp_res_fesd = Function('comp_res_fesd',{vertcat(w{:})},{J_comp_fesd});
 comp_res_std = Function('comp_res_std',{vertcat(w{:})},{J_comp_std});
@@ -1129,7 +1070,6 @@ model.g =  vertcat(g{:});
 model.w =  vertcat(w{:});
 model.J = J;
 model.J_fun = J_fun;
-model.J_virtual_froces_fun = J_virtual_froces_fun;
 model.comp_res = comp_res;
 model.comp_res_fesd = comp_res_fesd;
 model.comp_res_std = comp_res_std;

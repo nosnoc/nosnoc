@@ -61,7 +61,7 @@ settings.mpcc_mode = 3;
 comp_tol = 1e-16;
 settings.comp_tol = comp_tol;
 settings.N_homotopy = 40 ;% number of steps
-settings.kappa = 0.05;                      % decrease rate
+settings.homotopy_update_slope = 0.05;                      % decrease rate
 settings.equidistant_control_grid = 0;
 settings.use_previous_solution_as_initial_guess = 1; % warm start integrator
 %% Time settings

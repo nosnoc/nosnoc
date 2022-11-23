@@ -50,15 +50,9 @@ if exist("w0",'var')
     end
 end
 
-%% Solve OCP with kinematics model in time-freezing
-cpu_time_presolve = 0;
-if settings.time_freezing && settings.virtual_forces_kinematic_iteration
-    settings_unedited.virtual_forces_in_every_mode = 1;
-    [w0,cpu_time_presolve,w0_unchanged] = time_freezing_kinematics_iteration(model_unedited,settings_unedited);
-end
 %% Solve the discrete-time OCP
 [results,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
-total_time = sum(stats.cpu_time)+cpu_time_presolve;
+total_time = sum(stats.cpu_time);
 %% Process and store results
 unfold_struct(settings,'caller');
 unfold_struct(model,'caller');
@@ -83,19 +77,19 @@ if use_fesd
 else
     fprintf( ['OCP with the Std ' irk_scheme ' in ' irk_representation ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 end
-fprintf('Max homotopy iteration time: %2.3f seconds, min homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
 fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
 if sum(stats.cpu_time) <60
     fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
 else
     fprintf('Total homotopy solver time: %2.3f seconds /  %2.3f minutes. \n',sum(stats.cpu_time),sum(stats.cpu_time)/60);
 end
+fprintf('Max homotopy iteration time: %2.3f seconds. \nMin homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
 fprintf('Complementarity residual (1-norm): %2.2e.\n',complementarity_iter_ell_1);
 fprintf('Complementarity residual (inf-norm): %2.2e.\n',complementarity_iter_ell_inf);
 
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
-    fprintf('Final time T_opt: %2.4f.\n',T_opt);
+    fprintf('Time optimal problem solved with T_opt: %2.4f.\n',T_opt);
 end
 fprintf('-----------------------------------------------------------------------------------------------\n\n');
 

@@ -73,37 +73,30 @@ ubw_h(model.ind_h) = model.h_k(1);
 %% homotopy loop
 complementarity_iter = 1;
 ii = 0;
-vf_resiudal = 0;
-
 
 if print_level >= 3
-    fprintf('\nsigma\t\tcompl_res\tCPU time\titer\tstatus\n')
+    fprintf('\niter\tsigma\t\tcompl_res\tCPU time\tNLP iters\tstatus\n')
 end
 
 
-while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
+while (complementarity_iter) > comp_tol && ii < N_homotopy && sigma_k > sigma_N
     % homotopy parameter update
     if ii == 0
         sigma_k = sigma_0;
     else
-        sigma_k = kappa*sigma_k;
+        if isequal(homotopy_update_rule,'linear')
+            sigma_k = homotopy_update_slope*sigma_k;
+        elseif isequal(homotopy_update_rule,'superlinear')
+            sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent));
+        else
+            error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+        end  
     end
     p_val(1) = sigma_k;
     if h_fixed_to_free_homotopy
         p_val(3) = 1+(sigma_k*1e4);
     end
-    %     if integrator_forward_sweep_procedure
-    %         % do not do it in first iteration if kinematic presolve was done
-    %         if (virtual_forces_kinematic_iteration && ii >0) && ii >=0
-    %           u_sim = w0(model.ind_u);
-    %           model_int.T_sim = model.h;
-    %           settings_int.mpcc_mode = 4;
-    %           settings_int.print_level = 2;
-    %           u_sim = reshape(u_sim,model.n_u,model.N_stages);
-    %           [results,stats] = integrator_fesd(model_int,settings_int,u_sim);
-    % %           w0 = integrator_forward_sweep(model_int,solver_int,solve_initialization_int);
-    %         end
-    %     end
+
     % solve problem with fixed step size
     if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
         tic
@@ -130,25 +123,13 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     % complementarity
     complementarity_iter = full(comp_res(w_opt, p_val));
     complementarity_stats = [complementarity_stats;complementarity_iter];
-    if virtual_forces
-        vf_resiudal = full(model.J_virtual_froces_fun(w_opt));
-    end
     % update counter
     ii = ii+1;
 
     % Verbose
     if print_level >= 3
-        fprintf('%2.2e\t%2.2e\t%.3f\t\t%d\t%s\n', sigma_k, complementarity_iter, ...
+        fprintf('%d\t%2.2e\t%2.2e\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, ...
             cpu_time_iter, solver.stats.iter_count, solver.stats.return_status);
-        if model.n_u >0
-            % fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
-            if time_optimal_problem
-                fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
-            end
-            if virtual_forces
-                fprintf('Virtual forces residual: %2.2e.\n',vf_resiudal);
-            end
-        end
     end
     %
     %     if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
@@ -156,6 +137,7 @@ while (complementarity_iter+vf_resiudal) > comp_tol && ii < N_homotopy
     %         break;
     %     end
 end
+
 %% polish homotopy solution with fixed active set.
 if polishing_step
     [results] = polishing_homotopy_solution(model,settings,results,sigma_k);

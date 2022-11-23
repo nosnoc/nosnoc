@@ -46,7 +46,7 @@ settings.print_level = 3;
 settings.use_fesd = 1;
 settings.mpcc_mode = 3;
 settings.comp_tol = 1e-6;
-settings.equidistant_control_grid = 0;
+settings.equidistant_control_grid = 1;
 
 settings.step_equilibration = 0;
 settings.rho_h = 1e1;

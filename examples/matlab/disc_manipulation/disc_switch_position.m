@@ -21,9 +21,7 @@
 %
 
 %% Switch positions
-
-
-%% 
+ 
 clear all;
 close all;
 clc;
@@ -37,19 +35,17 @@ settings.n_s = 1;  % number of stages in IRK methods
 
 settings.use_fesd = 1; 
 settings.mpcc_mode = 3; 
-settings.N_homotopy = 6;
+settings.N_homotopy = 5;
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
-
 settings.time_freezing = 1;
-
-settings.print_level = 5;
+settings.print_level = 3;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
-T = 4;
+T = 3;
 N_stg = 25; % control intervals
 N_FE = 3;  % integration steps per control intevral
 
@@ -142,37 +138,29 @@ v4 = x_opt(8,:);
 t_opt = x_opt(9,:);
 
 %% animation
-% figure('Renderer', 'painters', 'Position', [100 100 1000 400])
-figure(1)
-
-
-x_min =min([p1,p2,p3,p4])-1;
+figure('Renderer', 'painters', 'Position', [100 100 1000 800])
+x_min = min([p1,p2,p3,p4])-1;
 x_max = max([p1,p2,p3,p4])+1;
 
 tt = linspace(0,2*pi,100);
+x_t = cos(tt);
+y_t = sin(tt);
 
-x1 = r1*cos(tt);
-y1 = r1*sin(tt);
-
-x2 = r2*cos(tt);
-y2 = r2*sin(tt);
 for ii = 1:length(p1)
-    plot(x1+p1(ii),y1+p2(ii),'k-');
+    plot(r1*x_t+p1(ii),r1*y_t+p2(ii),'k-','LineWidth',2);
     hold on
-    plot(x2+p3(ii),y2+p4(ii),'r-');
-
-    plot(q_target1(1),q_target1(2),'ko');
-    plot(q_target2(1),q_target2(2),'ro');
-    
-    
+    plot(r2*x_t+p3(ii),r2*y_t+p4(ii),'r-','LineWidth',2);
+    plot(r1*x_t+q_target1(1),r1*y_t+q_target1(2),'color',[0 0 0 0.6]);
+    plot(r2*x_t+q_target2(1),r2*y_t+q_target2(2),'color',[1 0 0 0.6]);
     axis equal
     xlim([x_min x_max])
     ylim([x_min x_max])
-%     pause(model.h_k);
-   
+    xlabel('$x$ [m]','Interpreter','latex');
+    ylabel('$y$ [m]','Interpreter','latex');
+
+    % save gif
     frame = getframe(1);
     im = frame2im(frame);
-
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
         imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
