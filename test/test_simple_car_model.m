@@ -8,6 +8,7 @@ settings.irk_scheme = 'Radau-IIA';
 settings.cross_comp_mode = cross_comp;
 settings.mpcc_mode = mpcc_mode;
 settings.n_s = 2;
+settings.N_homotopy = 10; 
 % Time-settings  - Solve an time optimal control problem
 settings.time_optimal_problem = 1;
 % Model - define all problem functions and

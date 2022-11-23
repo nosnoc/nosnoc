@@ -3,7 +3,10 @@ function [results,stats,model,settings] = test_fesd_and_time_options(use_fesd, t
 %complementarity and mpcc modes
 import casadi.*
 [settings] = default_settings_nosnoc();  
+settings.print_level = 3;
 settings.irk_scheme = 'Radau-IIA';
+disp('use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable');
+disp([use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable]);
 % set the cross complimentarity mode that 
 settings.cross_comp_mode = 3;
 settings.mpcc_mode = 3;
@@ -42,7 +45,7 @@ model.g_terminal = [q-200;v-0];
 if time_optimal_problem
     model.T = 1;    
 else
-    model.T = 20;   
+    model.T = 25;   
     model.f_q = u^2;
 end
 % Solve OCP
