@@ -38,8 +38,8 @@ settings.objective_scaling_direct = 0;                   % in penalty methods  1
 % Penalty/Relaxation paraemetr
 settings.sigma_0 = 1e1;                     % starting smouothing parameter
 settings.sigma_N = 1e-10;                   % end smoothing parameter
-settings.kappa = 0.1;                      % decrease rate
-settings.N_homotopy = ceil(abs(log(settings.sigma_N/settings.sigma_0)/log(settings.kappa)))+1 ;% number of steps
+settings.homotopy_update_slope = 0.1;                      % decrease rate
+settings.N_homotopy = ceil(abs(log(settings.sigma_N/settings.sigma_0)/log(settings.homotopy_update_slope)))+1 ;% number of steps
 settings.comp_tol = 1e-14;
 
 % time freezing settings 
