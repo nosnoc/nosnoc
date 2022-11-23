@@ -43,25 +43,26 @@ settings.mpcc_mode = 3;
 settings.N_homotopy = 10;
 settings.sigma_0 = 1;
 settings.cross_comp_mode = 3;
-settings.use_fesd = 1;
+settings.use_fesd = 0;
 % How is the homotopy parameter updated: linearly or superlinearly?
 settings.homotopy_parameter_rule = 'superlinear';
 
 
 settings.use_speed_of_time_variables = 1;
-% settings.local_speed_of_time_variable = 1;
+settings.local_speed_of_time_variable = 1;
+settings.equidistant_control_grid = 1;
 % settings.pss_mode = 'Step';
 % settings.polishing_step = 1;
 
 %% Time settings
 % Here we can indicate tha the Optimal Control Problem (OCP) is a time optimal control problem so the
 % solver can intorduce the needed time transfomrations and create the objective function.
-settings.time_optimal_problem = 1;
+settings.time_optimal_problem = 0;
 %% Model - define all problem functions and
 % Discretization parameters
 model.N_stages = 10; % number of control intervals
 model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
-model.T = 1;    % Time horizon
+model.T = 13;    % Time horizon
 
 % Symbolic variables and bounds
 q = SX.sym('q'); % position
