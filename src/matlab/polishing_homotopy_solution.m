@@ -133,13 +133,13 @@ lbw(ind_lambda0_sliding(:)) = 0;  ubw(ind_lambda0_sliding(:)) = 0;
 tic
 results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',0);
 cpu_time_iter = toc;
-complementarity_iter = full(model.comp_res(results.x));
+% complementarity_iter = full(model.comp_res(results.x,[p_val; zeros(n_x+n_theta,1)]);
 results = extract_results_from_solver(model,settings,results);
 results.complementarity_iter  = complementarity_iter ;
 %% Verbose
 if print_level>=2
     fprintf('-----------------------------------------------------------------------------------------------\n');
-    fprintf('Polishing step completed, complementarity resiudal %2.2e.\n',complementarity_iter);
+%     fprintf('Polishing step completed, complementarity resiudal %2.2e.\n',complementarity_iter);
     if model.n_u >0
         fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
         fprintf('Objective function value: %2.4e.\n',cpu_time_iter);

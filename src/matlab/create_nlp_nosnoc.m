@@ -179,7 +179,8 @@ sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
 sigma_theta_F_k = 0; % forward sum of theta at finite element k
 nu_vector = [];
 % Integral of the clock state if no time-freezing is present.
-sum_s_sot =0;
+integral_clock_state = 0;
+integral_clock_state_k = 0;
 n_cross_comp = zeros(max(N_finite_elements),N_stages);
 
 % initialization
@@ -203,7 +204,6 @@ for k=0:N_stages-1
         % index colector for contorl variables
         ind_u = [ind_u,ind_total(end)+1:ind_total(end)+n_u];
         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+n_u];
-
     end
 
     %%  Time rescaling of the stages (speed of time) to acchieve e.g., a desired final time in Time-Freezing or to solve time optimal control problems.
@@ -226,7 +226,6 @@ for k=0:N_stages-1
             if k == 0
                 % only once
                 s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k+1)],1);
-
                 w = {w{:}, s_sot_k};
                 % intialize speed of time (sot), lower and upper bounds
                 w0 = [w0; s_sot0];
@@ -239,6 +238,8 @@ for k=0:N_stages-1
                 J_regularize_sot = J_regularize_sot+(s_sot_k)^2;
             end
         end
+    else
+        s_sot_k = 1; % speed of time is one, if no transfomrations used
     end
 
     %% General Nonlinear constraint (on control interval boundary)
@@ -251,7 +252,7 @@ for k=0:N_stages-1
     end
     % path complementarity constraints
     if g_comp_path_constraint
-        g_comp_path_k = g_comp_path_fun(X_ki,Uk)-p(1);
+        g_comp_path_k = g_comp_path_fun(X_ki,Uk)-sigma_p;
         g = {g{:}, g_comp_path_k};
         lbg = [lbg; g_comp_path_lb];
         ubg = [ubg; g_comp_path_ub];
@@ -270,7 +271,13 @@ for k=0:N_stages-1
         sum_Theta_ki = 0;  % initialize sum of theta's (the pint at t_n is not included)
         sum_Lambda_ki = Lambda_end_previous_fe;
         %% Step size in FESD, Speed of Time variables, Step equilibration constraints
-        if use_fesd
+        if ~use_fesd
+            h_ki = h_k(k+1);
+            if time_optimal_problem && ~use_speed_of_time_variables
+                % final time is free, which implies a free step-size
+                h_ki = T_final/(N_stages*N_finite_elements(k+1));
+            end
+        else
             % Define step-size variables, if FESD is used.
             if  k>0 || i>0
                 h_ki_previous = h_ki;
@@ -285,13 +292,6 @@ for k=0:N_stages-1
             ind_h = [ind_h,ind_total(end)+1:ind_total(end)+1];
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
 
-            sum_h_ki_control_interval_k = sum_h_ki_control_interval_k + h_ki;
-            sum_h_ki_all = sum_h_ki_all + h_ki;
-
-            if time_optimal_problem && use_speed_of_time_variables
-                % integral of clock state (if no time-freezing is used, in time-freezing we use directly the (nonsmooth) differential clock state.
-                sum_s_sot = sum_s_sot + h_ki*s_sot_k;
-            end
 
             %             if (k > 0 && (i > 0 || couple_across_stages))
             if i > 0
@@ -312,6 +312,10 @@ for k=0:N_stages-1
                 end
             end
         end
+
+        integral_clock_state_k = integral_clock_state_k + h_ki*s_sot_k;
+        sum_h_ki_control_interval_k = sum_h_ki_control_interval_k + h_ki;
+        sum_h_ki_all = sum_h_ki_all + h_ki;
 
         %% Define Variables at stage points (IRK stages) for the current finite elements
         switch irk_representation
@@ -423,11 +427,7 @@ for k=0:N_stages-1
                 x_temp = X_ki;
                 % irk equations for stages
                 for r = 1:n_s
-                    if use_fesd
-                        x_temp = x_temp + h_ki*A_irk(j,r)*V_ki_stages{r};
-                    else
-                        x_temp = x_temp + h_k(k+1)*A_irk(j,r)*V_ki_stages{r};
-                    end
+                    x_temp = x_temp + h_ki*A_irk(j,r)*V_ki_stages{r};
                 end
                 if lift_irk_differential
                     X_ki_lift{j} =  X_ki_stages{j} - x_temp;
@@ -540,17 +540,9 @@ for k=0:N_stages-1
                     % Add contribution to the end state, Attention qj changes with time scaling!
                     Xk_end = Xk_end + D(j+1)*X_ki_stages{j};
                     % Add contribution to quadrature function
-                    if use_fesd
-                        J = J + B(j+1)*qj*h_ki;
-                    else
-                        J = J + B(j+1)*qj*h_k(k+1);
-                    end
+                    J = J + B(j+1)*qj*h_ki;
                     % Append IRK equations to NLP constraint
-                    if use_fesd
-                        g = {g{:}, h_ki*fj - xp};
-                    else
-                        g = {g{:}, h_k(k+1)*fj - xp};
-                    end
+                    g = {g{:}, h_ki*fj - xp};
 
                 case 'differential'
                     % Evaluate Differential and Algebraic Equations at stage points
@@ -726,45 +718,48 @@ for k=0:N_stages-1
     end
 
     %% equidistant grid in numerical time (Multiple-shooting type discretization)
-    if equidistant_control_grid
-        if time_rescaling && time_optimal_problem
-            % the querry here is because: No Time freezing: time_opt => time_rescaling (so this is always true if time_rescaling is on)
-            % If time freezing is present, but not ime optimal problem, then the final numerical time should not be changed, hence the query.
-            if use_speed_of_time_variables
-                % numerical time and speed of time are decoupled
-                g = {g{:}, sum_h_ki_control_interval_k-h};
-                lbg = [lbg; 0];
-                ubg = [ubg; 0];
-            else
-                % numerical time and speed of time are lumped together
-                g = {g{:}, sum_h_ki_control_interval_k-T_final/N_stages};
-                lbg = [lbg; 0];
-                ubg = [ubg; 0];
-            end
-        else
+    if equidistant_control_grid && use_fesd
+        if ~time_optimal_problem
             % numerical time is fixed.
             g = {g{:}, sum_h_ki_control_interval_k-h};
             lbg = [lbg; 0];
             ubg = [ubg; 0];
+        else
+            if ~time_freezing
+                % if time_freezing on, time optimal problems are regarded via the clock state
+                if use_speed_of_time_variables
+                    % numerical time and speed of time are decoupled
+                    g = {g{:}, sum_h_ki_control_interval_k-h};
+                    lbg = [lbg; 0];
+                    ubg = [ubg; 0];
+                    g = {g{:}, integral_clock_state_k-T_final/N_stages};
+                    lbg = [lbg; 0];
+                    ubg = [ubg; 0];
+                else
+                    % numerical time and speed of time are lumped together
+                    g = {g{:}, sum_h_ki_control_interval_k-T_final/N_stages};
+                    lbg = [lbg; 0];
+                    ubg = [ubg; 0];
+                end
+            end
         end
     end
 
-    %% equidistant grid in phyisical time (Stage-wise constraints on the colock state)
+    %% equidistant grid in phyisical time (Stage-wise constraints on the clock state)
     if time_freezing && stagewise_clock_constraint
         % This makes mostly sense if time freezin is on. Imposes the constraints t((k+1)*h) = (k+1)*h+t_0 , x0(end) = t_0.
         if time_optimal_problem
-            % this seems to be a critical constraint, T_final has to be
-            % set equal to the sum_sot at the end?
-            %             g = {g{:}, X_ki(end)-(k+1)*(T_final/N_stages)+x0(end)};
             g = {g{:}, Xk_end(end)-(k+1)*(T_final/N_stages)+x0(end)};
         else
-            %             g = {g{:}, X_ki(end)-(k+1)*h+x0(end)};
             g = {g{:}, Xk_end(end)-(k+1)*h+x0(end)};
         end
         lbg = [lbg; 0];
         ubg = [ubg; 0];
         ind_g_clock_state = [ind_g_clock_state;length(lbg)];
     end
+    %% Update integral of clock state in numerical time;
+    integral_clock_state = integral_clock_state + integral_clock_state_k ; 
+    integral_clock_state_k = 0;
 end
 
 %% Scalar-valued complementarity residual
@@ -782,52 +777,15 @@ end
 % If the control grid is not equidistant, the constraint on sum of h happen only at the end.
 % The constraints are splited to those which are related to numerical and physical time, to make it easier to read.
 
-%% Terminal numerical Time
-if  ~equidistant_control_grid
-    if time_rescaling
-        % this means this is a time optimal control problem without time freezing
-        if use_speed_of_time_variables
-            % numerical time is decupled from the sot scaling (no mather if local or not):
-            g = {g{:}, sum_h_ki_all-T};
-            lbg = [lbg; 0];
-            ubg = [ubg; 0];
-            % T = T_num,  T_phy = s_sot*T.
-            % note that objective contribution is added below (as it happens no
-            % mather if we use local or nonlocal variables and equdistiant grid or not.)
-        else
-            if time_optimal_problem
-                % the querry here is because: No Time freezing: time_opt => time_rescaling (so this is always true if time_rescaling is on)
-                % If time freezing is present, but not ime optimal problem, then the final numerical time should not be changed, hence the query.
-                g = {g{:}, sum_h_ki_all-T_final};
-                lbg = [lbg; 0];
-                ubg = [ubg; 0];
-                % add time to objective.
-                J = J+T_final;
-            end
-            % T_num = T_final = T_phy \neq T.
-        end
-    else
-        % fixed numerical time (no time freezing or time optimal control, T_phy = T_num = T)
-        if use_fesd
-            g = {g{:}, sum_h_ki_all-T};
-            lbg = [lbg; 0];
-            ubg = [ubg; 0];
-        end
-    end
-end
-%% Terminal least square term
-J = J + f_lsq_T_fun(X_ki,x_ref_end_val);
-
-%% Terminal Phyisical Time (Posssble terminal constraint on the clock state if time freezing is active).
+%% Terminal numerical and physical time
 if time_freezing
+    % Terminal Phyisical Time (Posssble terminal constraint on the clock state if time freezing is active).
     if time_optimal_problem
         g = {g{:}, Xk_end(end)-T_final};
         lbg = [lbg; 0];
         ubg = [ubg; 0];
     else
         if impose_terminal_phyisical_time && ~stagewise_clock_constraint
-            %             X0 = w{1};
-            %             g = {g{:}, Xk_end(end)-(T+X0(end))};
             g = {g{:}, Xk_end(end)-(T_ctrl_p)};
             lbg = [lbg; 0];
             ubg = [ubg; 0];
@@ -836,30 +794,57 @@ if time_freezing
             % is implicitly determined by
         end
     end
-end
-if equidistant_control_grid && ~stagewise_clock_constraint && time_freezing
-    if ~time_optimal_problem
-        g = {g{:}, Xk_end(end)-T};
-        lbg = [lbg; 0];
-        ubg = [ubg; 0];
+    if equidistant_control_grid && ~stagewise_clock_constraint
+        if ~time_optimal_problem
+            g = {g{:}, Xk_end(end)-T};
+            lbg = [lbg; 0];
+            ubg = [ubg; 0];
+        end
+    end
+else
+    if ~use_fesd
+        if time_optimal_problem
+            % if time_freezing is on, everything is done via the clock state.
+            if use_speed_of_time_variables
+                g = {g{:}, integral_clock_state-T_final};
+                lbg = [lbg; 0];
+                ubg = [ubg; 0];
+            else
+                % otherwise treated via variable h_ki, i.e.,  h_ki =  T_final/(N_stages*N_FE)
+            end
+        end
+    else
+        % if equidistant_control_grid = true all time constraint are added in
+        % the main control loop for every control stage k and the code
+        % below is skipped
+        if  ~equidistant_control_grid
+            % T_num = T_phy = T_final =  T.
+            % all step sizes add up to prescribed time T.
+            % if use_speed_of_time_variables = true, numerical time is decupled from the sot scaling (no mather if local or not):
+            if ~time_optimal_problem
+                g = {g{:}, sum_h_ki_all-T};
+                lbg = [lbg; 0];
+                ubg = [ubg; 0];
+            else
+                if ~use_speed_of_time_variables
+                    g = {g{:}, sum_h_ki_all-T_final};
+                    lbg = [lbg; 0];
+                    ubg = [ubg; 0];
+                else
+                    % T_num = T_phy = T_final \neq T.
+                    g = {g{:}, sum_h_ki_all-T};
+                    lbg = [lbg; 0];
+                    ubg = [ubg; 0];
+                    g = {g{:}, integral_clock_state-T_final};
+                    lbg = [lbg; 0];
+                    ubg = [ubg; 0];
+                end
+            end
+        end
     end
 end
 
 %%  Time-optimal problems: the objective.
-if time_optimal_problem && use_speed_of_time_variables
-    if time_freezing
-        J = J+T_final;
-    else
-        % This is both variants local and global sot vars. Hence, it is written here together and not in the loops or queries above.
-        % ( In this case,the trivial constraint T_final = sum_s_sot) is ommited and provided implicitly)
-        g = {g{:}, sum_s_sot-T_final};
-        lbg = [lbg; 0];
-        ubg = [ubg; 0];
-        J = J+T_final;
-        %         J = J+sum_s_sot;
-        % sum_s_sot is the integral of the clock state if no time freezing is present.
-    end
-end
 % Time-optimal problems: define auxilairy variable for the final time.
 ind_t_final = [];
 % if time_optimal_problem && (~use_speed_of_time_variables || time_freezing)
@@ -873,6 +858,9 @@ if time_optimal_problem
     ind_total  = [ind_total,ind_total(end)+1];
     J = J + T_final;
 end
+
+%% Terminal least square term
+J = J + f_lsq_T_fun(X_ki,x_ref_end_val);
 
 %% Terminal Constraints
 % Add Terminal Constraint
@@ -950,13 +938,13 @@ if terminal_constraint
     end
 end
 
- % path complementarity constraints
-    if g_comp_path_constraint
-        g_comp_path_k = g_comp_path_fun(Xk_end,Uk)-p(1);
-        g = {g{:}, g_comp_path_k};
-        lbg = [lbg; g_comp_path_lb];
-        ubg = [ubg; g_comp_path_ub];
-    end
+% path complementarity constraints
+if g_comp_path_constraint
+    g_comp_path_k = g_comp_path_fun(Xk_end,Uk)-p(1);
+    g = {g{:}, g_comp_path_k};
+    lbg = [lbg; g_comp_path_lb];
+    ubg = [ubg; g_comp_path_ub];
+end
 
 %% quadratic regularization for speed of time variables;
 % should be off in time optimal problems and on in time-freezing.
@@ -1068,6 +1056,7 @@ model.prob = prob;
 model.solver = solver;
 model.g =  vertcat(g{:});
 model.w =  vertcat(w{:});
+model.p =  p;
 model.J = J;
 model.J_fun = J_fun;
 model.comp_res = comp_res;

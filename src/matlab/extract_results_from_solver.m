@@ -9,12 +9,21 @@ algebraic_states = w_opt(ind_z);
 
 u_opt = w_opt(ind_u);
 u_opt = reshape(u_opt,n_u,N_stages);
+
+if time_optimal_problem
+    T_opt = w_opt(ind_t_final);
+else
+    T_opt = [];
+end
 if use_fesd
     h_opt = w_opt(ind_h);
 else
     h_opt = [];
+    if time_optimal_problem && ~use_speed_of_time_variables
+        T = T_opt;
+    end
     for ii = 1:N_stages
-        h_opt = [h_opt;h_k(ii)*ones(N_finite_elements(ii),1)];
+        h_opt = [h_opt;T/(N_stages*N_finite_elements(ii))*ones(N_finite_elements(ii),1)];
     end
 end
 
@@ -47,12 +56,6 @@ switch pss_mode
 end
 
 t_grid = cumsum([0;h_opt]);
-
-if time_optimal_problem
-    T_opt = w_opt(ind_t_final);
-else
-    T_opt = [];
-end
 
 %% Adapt the grid in case of time optimal problems
 if time_optimal_problem
