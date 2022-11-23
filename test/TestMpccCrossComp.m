@@ -1,4 +1,4 @@
-classdef TestSettings < matlab.unittest.TestCase
+classdef TestMpccCrossComp < matlab.unittest.TestCase
     %TESTSETTINGS Summary of this class goes here
     %   Detailed explanation goes here
     properties (TestParameter)
