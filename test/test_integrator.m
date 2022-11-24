@@ -6,6 +6,9 @@ T_sim = pi/2;
 N_sim  = 29;
 R_osc  = 1;
 
+
+fprintf('use_fesd\tirk_representation\tirk_scheme\tpss_mode\n')
+fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, irk_representation, irk_scheme, pss_mode);
 settings = default_settings_nosnoc();
 settings.use_fesd = use_fesd;
 settings.irk_representation = irk_representation;

@@ -10,7 +10,7 @@ classdef TestIntegrator < matlab.unittest.TestCase
     
     methods (Test)
     end
-    methods (Test, ParameterCombination = 'pairwise')
+    methods (Test, ParameterCombination = 'exhaustive')
         function test_fesd_integrator(testCase,use_fesd, irk_representation, irk_scheme, pss_mode)
             import matlab.unittest.constraints.IssuesNoWarnings;
             issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 4);

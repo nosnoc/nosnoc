@@ -12,6 +12,9 @@ settings.mpcc_mode = 3;
 settings.n_s = 2;
 settings.homotopy_parameter_rule = 'superlinear';
 settings.N_homotopy = 8;
+
+fprintf('use_fesd\ttime opt\teqdist. grid\t use sot\tlocal sot\n')
+fprintf('%d\t\t\t%d\t\t\t%d\t\t\t\t\t%d\t\t\t%d\n',use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable);
 % settings being tested
 settings.use_fesd = use_fesd;
 settings.time_optimal_problem = time_optimal_problem;
