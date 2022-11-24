@@ -39,11 +39,10 @@ settings.n_s = 1;  % number of stages in IRK methods
 
 settings.use_fesd = 1; 
 settings.mpcc_mode = 5; % \ell_inifnity penalization of the complementariy constraints
-settings.N_homotopy = 7;
+settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
-settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
 
 settings.equidistant_control_grid = 1; % equdistiant control grid in numerical time
@@ -54,7 +53,7 @@ settings.stagewise_clock_constraint = 1; % equdistiant control grid in physical 
 
 %% discretizatioon
 N_stg = 30; % control intervals
-N_FE = 2;  % integration steps per control intevral
+N_FE = 3;  % integration steps per control intevral
 T = 6;
 
 %% model parameters
@@ -75,15 +74,11 @@ x_ref = [-7; 0; 5; 0; 0; 0];
 u_ref = 0;
 
 Q = diag([10; 1; 10; 0.1; 0.1; 0.1]);
-Q_terminal = 100*Q;
+Q_terminal = 200*Q;
 R = 0.1;
 
 u_max = 30;
 u_min = -30;
-
-lbu = u_min;
-ubu = u_max;
-
 
 %% Symbolic variables and bounds
 q = SX.sym('q',3);
@@ -100,7 +95,6 @@ model.mu = 0.0;
 model.a_n = 10;
 model.x0 = x0; 
 
-
 model.M = diag([m1;m2;m3]); % inertia/mass matrix;
 model.f = [-c_damping*v(1);...
            u-c_damping*v(2);...
@@ -110,10 +104,9 @@ model.f = [-c_damping*v(1);...
 model.c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
-
 % box constraints on controls and states
-model.lbu = lbu;
-model.ubu = ubu;
+model.lbu = u_min;
+model.ubu = u_max;
 model.lbx = lbx;
 model.ubx = ubx;
 % Stage cost
@@ -133,8 +126,6 @@ v1 = x_opt(4,:);
 v2 = x_opt(5,:);
 v3 = x_opt(6,:);
 t_opt = x_opt(7,:);
-
-
 
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])

@@ -295,22 +295,28 @@ end
 total_time = sum(time_per_iter);
 %% Verbose
 fprintf('\n');
-fprintf('-----------------------------------------------------------------------------------------------\n');
+fprintf('----------------------------------------------------------------------------------------------------------------------\n');
 if use_fesd
-    fprintf( ['Simulation with the FESD ' irk_scheme ' with %d-RK stages completed.\nTotal CPU time: %2.3f seconds.\n'],n_s,total_time);
+    fprintf( ['Simulation with the FESD ' irk_scheme ' with %d-RK stages completed.\n'],n_s);
 else
-    fprintf( ['Simulation with the standard ' irk_scheme ' with %d-RK stages completed in %2.3f seconds.\n'],n_s,total_time);
+    fprintf( ['Simulation with the standard ' irk_scheme ' with %d-RK stages completed.\n'],n_s);
 end
 fprintf( ['RK representation: ' irk_representation '.\n']);
-fprintf('Total integration steps: %d, nominal step-size h = %2.3f and %d finite elements.\n',N_sim,h_sim,N_finite_elements(1));
+% fprintf('Total integration steps: %d, nominal step-size h = %2.3f.\n',N_sim,h_sim);
 if additional_residual_ingeration_step
     fprintf('--> + additional residual step to reach T_sim with  T_residual =  %2.3f.\n',T_residual);
 end
-fprintf('---------------------------- Stats ---------------------------------------------------------\n');
-fprintf('Total CPU time: %2.3f s.\nN_stg = %d, N_FE = %d.\n',sum(time_per_iter),N_stages,N_finite_elements(1));
-fprintf('Max iteration time: %2.3f s.\nMin iteration time: %2.3f s.\n',max(time_per_iter),min(time_per_iter));
-fprintf('Max complementarity residual: %2.3e.\nMin complementarity residual: %2.3e.\n',max(complementarity_stats),min(complementarity_stats));
-fprintf('-----------------------------------------------------------------------------------------------\n\n');
+%%
+% fprintf('---------------------------- Stats ---------------------------------------------------------\n');
+% fprintf('Total CPU time: %2.3f s.\nN_stg = %d, N_FE = %d.\n',sum(time_per_iter),N_stages,N_finite_elements(1));
+% fprintf('Max iteration time: %2.3f s.\nMin iteration time: %2.3f s.\n',max(time_per_iter),min(time_per_iter));
+% fprintf('Max complementarity residual: %2.3e.\nMin complementarity residual: %2.3e.\n',max(complementarity_stats),min(complementarity_stats));
+% fprintf('-----------------------------------------------------------------------------------------------\n\n');
+%%
+fprintf('---------------------------------------------- Final stats------------------------------------------------------------\n');
+fprintf('N_sim\t step-size\t\tN_stg\tN_FE\tTotal CPU (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
+fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n',N_sim,h_sim,N_stages,N_finite_elements(1),total_time,max(time_per_iter),min(time_per_iter),max(complementarity_stats),min(complementarity_stats));
+fprintf('----------------------------------------------------------------------------------------------------------------------\n\n');
 %% Output
 
 results.x_res  = x_res;

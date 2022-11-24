@@ -39,6 +39,7 @@ settings.irk_representation = 'differential';
 settings.lift_irk_differential = 1;
 settings.print_level = 2;
 % settings.mpcc_mode = 5; % very fast    
+settings.use_fesd = 0;
 settings.mpcc_mode = 3; % very robust e.g. with Gauss-Legendre for this example
 settings.s_elastic_max = 1e1;                    
 settings.cross_comp_mode = 3;

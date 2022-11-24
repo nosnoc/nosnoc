@@ -19,9 +19,7 @@ for ii = 1:length(fields_default_settings)
         jj = jj+1;
     end
 end
-if settings.print_level >=1
-    fprintf('Info: Added %d missing fields to the user provided settings.\n',jj);
-end
+
 %% The updated settings field.
 fields_settings = fieldnames(settings);
 
@@ -32,9 +30,7 @@ for ii = 1:length(fields_model)
         jj = jj+1;
     end
 end
-if settings.print_level >=1
-    fprintf('Info: Total of %d default settings fields overwritten by model data.\n',jj);
-end
+
 % %% Correct contradicting and missing settings
 settings = refine_settings(settings);
 

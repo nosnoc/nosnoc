@@ -7,34 +7,32 @@ linewidth = 2.5;
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
-
 settings.use_fesd = 1;
 settings.mpcc_mode = 3;
-settings.N_homotopy = 7;
+settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
 settings.time_freezing = 1;
 settings.s_sot_max = 10;
-settings.s_sot_min = 0.1;
+settings.s_sot_min = 0.99;
 settings.equidistant_control_grid = 1;
-settings.pss_lift_step_functions = 1;
+settings.homotopy_update_rule = 'superlinear';
 
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 % preprocess and polishings teps
 settings.polishing_step = 0;
-settings.virtual_forces = 0;
-settings.h_fixed_iterations = 1;
-settings.h_fixed_max_iter = 1; 
-settings.h_fixed_change_sigma = 0; 
+% settings.h_fixed_iterations = 1;
+% settings.h_fixed_max_iter = 1; 
+% settings.h_fixed_change_sigma = 0; 
 
 %%
 g = 9.81;
 u_max = 10;
-% N_stg = 25;  N_FE = 2; 
-N_stg = 15;  N_FE = 2; 
+N_stg = 20;  N_FE = 3; 
 % Symbolic variables and bounds
-q = SX.sym('q',2); v = SX.sym('v',2); 
+q = SX.sym('q',2);
+v = SX.sym('v',2); 
 u = SX.sym('u');
 x = [q;v];
 model.T = 2;
@@ -54,7 +52,7 @@ model.ubu = u_max;
 model.f_q = u'*u;
 %% Call nosnoc solver
 [results,stats,model,settings] = nosnoc_solver(model,settings);
-[results] = polishing_homotopy_solution(model,settings,results,stats.sigma_k);
+% [results] = polishing_homotopy_solution(model,settings,results,stats.sigma_k);
 %%
 qx = results.x_opt(1,:);
 qy = results.x_opt(2,:);
