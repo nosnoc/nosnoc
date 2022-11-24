@@ -5,8 +5,7 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.print_level = 3;
 settings.irk_scheme = 'Radau-IIA';
-disp('use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable');
-disp([use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable]);
+
 % set the cross complimentarity mode that 
 settings.cross_comp_mode = 3;
 settings.mpcc_mode = 3;
@@ -54,7 +53,6 @@ if ~isempty(results.T_opt) && results.T_opt < 1e-2
     warning('Something went wrong.')
     disp(results.T_opt)
 end
-disp(results.f_opt)
-
+% disp(results.f_opt)
 end
 
