@@ -26,11 +26,6 @@ function [settings] = refine_settings_integrator(settings);
 unfold_struct(settings,'caller')
 clear settings;
 %% Number of stages and times.
-if equidistant_control_grid == 0
-    couple_across_stages = 1;
-end
-
-
 if (time_freezing || time_optimal_problem) == 1
     time_rescaling = 1;
 else

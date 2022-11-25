@@ -1,6 +1,5 @@
 
 %% TODO: Make a function out of this segment
-% if step_equilibration && (k > 0 && (i > 0 || couple_across_stages))
 % if step_equilibration && i < N_finite_elements(end)-1
 if step_equilibration
     % define the switching indicator function for previous  node/finite element boundary
@@ -43,7 +42,6 @@ if step_equilibration
                     g = {g{:}, [tanh(nu_k)*delta_h_ki-s_elastic*M_elastic;...
                         -tanh(nu_k)*delta_h_ki-s_elastic*M_elastic]};
                 end
-        
                 lbg = [lbg; [-inf;-inf]];
                 ubg = [ubg; [0;0]];
 %                 g_step_eq   = [g_step_eq;[tanh(nu_k/sigma_scale)*delta_h_ki-sigma*M_elastic;...

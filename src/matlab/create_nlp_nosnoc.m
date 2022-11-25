@@ -293,7 +293,6 @@ for k=0:N_stages-1
             ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
 
 
-            %             if (k > 0 && (i > 0 || couple_across_stages))
             if i > 0
                 delta_h_ki = h_ki - h_ki_previous;
             else
