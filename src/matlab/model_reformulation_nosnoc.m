@@ -97,7 +97,6 @@ model.N_finite_elements = N_finite_elements;
 %% Determine is the SX or MX mode in CasADi used.
 casadi_symbolic_mode = class(model.x(1));
 settings.casadi_symbolic_mode  = casadi_symbolic_mode;
-settings.couple_across_stages = 1;
 
 %% Check is x provided
 if exist('x')

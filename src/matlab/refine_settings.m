@@ -51,11 +51,6 @@ if s_elastic_0 > s_elastic_max
     end
 end
 
-
-if equidistant_control_grid == 0
-    couple_across_stages = 1;
-end
-
 if nonlinear_sigma_rho_constraint
     convex_sigma_rho_constraint = 1;
 end

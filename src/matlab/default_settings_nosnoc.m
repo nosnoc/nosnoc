@@ -32,7 +32,6 @@ initial_gamma = 1;
 pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
 n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc), depth is number of multilinar terms to wich a lifting variables is equated to.
 
-couple_across_stages = 1;
 list_of_all_rk_schemes = {'radau','legendre','Radau-IIA','Gauss-Legendre','Radau-I','Radau-IA',...
                            'Lobatto-III','Lobatto-IIIA','Lobatto-IIIB','Lobatto-IIIC',...
                            'Explicit-RK'};
@@ -90,8 +89,7 @@ polishing_derivative_test = 0; % check in sliding mode also the derivative of sw
 h_fixed_to_free_homotopy = 0; % start with large penaly for equidistant grid, end with variable equilibrated grid. 
 
 
-%% Step equilibration	
-regularize_h = 1;
+%% Step equilibration
 rho_h = 1;
 delta_h_regularization = 0;
 piecewise_equidistant_grid	= 0;
