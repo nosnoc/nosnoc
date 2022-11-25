@@ -89,8 +89,7 @@ polishing_derivative_test = 0; % check in sliding mode also the derivative of sw
 h_fixed_to_free_homotopy = 0; % start with large penaly for equidistant grid, end with variable equilibrated grid. 
 
 
-%% Step equilibration	
-regularize_h = 1;
+%% Step equilibration
 rho_h = 1;
 delta_h_regularization = 0;
 piecewise_equidistant_grid	= 0;
