@@ -69,7 +69,7 @@ p = vertcat(sigma_p,rho_sot_p,rho_h_p,rho_terminal_p,T_ctrl_p, lambda_00);
 if use_fesd
     ubh = (1+gamma_h)*h_k;
     lbh = (1-gamma_h)*h_k;
-    if time_rescaling && ~use_speed_of_time_variables
+    if time_rescaling && ~use_speed_of_time_nuvariables
         % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
         ubh = (1+gamma_h)*h_k*s_sot_max;
         lbh = (1-gamma_h)*h_k/s_sot_min;
@@ -213,7 +213,7 @@ for k=0:N_stages-1
         if local_speed_of_time_variable
             % at every stage
             s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k)],1);
-            w = {w{:}, s_sot_k};
+            w = [w(:)', {s_sot_k}];
             % intialize speed of time (sot), lower and upper bounds
             w0 = [w0; s_sot0];
             ubw = [ubw;s_sot_max];
@@ -299,17 +299,7 @@ for k=0:N_stages-1
                 delta_h_ki  = 0;
             end
 
-            % Terms for heuristic step equilibration
-            if heuristic_step_equilibration
-                switch heuristic_step_equilibration_mode
-                    case 1
-                        J_regularize_h  = J_regularize_h + (h_ki-h_k(k+1))^2;
-                    case 2
-                        J_regularize_h  = J_regularize_h + delta_h_ki^2;
-                    otherwise
-                        error('Pick heuristic_step_equilibration_mode between 1 and 2.');
-                end
-            end
+
         end
 
         integral_clock_state_k = integral_clock_state_k + h_ki*s_sot_k;
@@ -658,8 +648,58 @@ for k=0:N_stages-1
         end
 
         %% Step equilibration
-        step_equilibration_constrains;
-
+        if use_fesd
+%         step_equilibration_constrains;
+            % Switch indicator function
+            % define the switching indicator function for previous  node/finite element boundary
+            if  (k > 0 || i > 0)
+                % backward sums at current stage k are equal to the forward sums at stage previous stage (k-1)
+                sigma_lambda_B_k = sigma_lambda_F_k;
+                sigma_theta_B_k = sigma_theta_F_k;
+            end
+            % forward sums initalized (these were computed during the defintion of the algebraic variables)
+            sigma_lambda_F_k = sum_Lambda_ki;
+            sigma_theta_F_k = sum_Theta_ki;
+            if i>0 || k >0
+                pi_lambda_k = sigma_lambda_B_k.*sigma_lambda_F_k;
+                pi_theta_k = sigma_theta_B_k.*sigma_theta_F_k;
+                eta_k =  pi_lambda_k+pi_theta_k;
+                nu_ki = 1;
+                for jjj = 1:n_theta
+                    nu_ki = nu_ki*eta_k(jjj);
+                end
+                nu_vector = [nu_vector;nu_ki];
+                %% Mode
+                if strcmpi(step_equilibration,'heuristic_mean')
+                    J_regularize_h  = J_regularize_h + (h_ki-h_k(k+1))^2;
+                elseif strcmpi(step_equilibration,'heuristic_diff')
+                    J_regularize_h  = J_regularize_h + delta_h_ki^2;
+                elseif strcmpi(step_equilibration,'l2_relaxed_scaled')
+                    J_regularize_h  = J_regularize_h + tanh(nu_ki/step_equilibration_sigma)*delta_h_ki^2;
+                elseif strcmpi(step_equilibration,'l2_relaxed')
+                    J_regularize_h  = J_regularize_h + (nu_ki)*delta_h_ki^2;
+                elseif strcmpi(step_equilibration,'direct')
+                    % step equilbiration as hard equality constraint
+%                     nu_ki_lift = define_casadi_symbolic(casadi_symbolic_mode,'nu_ki_lift ',1);
+%                          w = {w{:}, nu_ki_lift };
+%                         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+%                         w0 = [w0;1];
+%                         lbw = [lbw; -inf];
+%                         ubw = [ubw; inf];
+                    g = {g{:}, nu_ki*delta_h_ki};
+                    lbg = [lbg; 0];
+                    ubg = [ubg; 0];
+                elseif strcmpi(step_equilibration,'direct_homotopy')
+                        g = {g{:}, [nu_ki*delta_h_ki-sigma_p;-nu_ki*delta_h_ki-sigma_p]};
+                        lbg = [lbg; -inf;-inf];
+                        ubg = [ubg; 0;0];
+                elseif strcmpi(step_equilibration,'off')
+                    % do nothing, J_regularize stays zero
+                else
+                error('Invalid step_equlibration mode, please pick a valid option, e.g., ''l2_relaxed_scaled'' or ''heuristic_mean''');
+                end
+            end
+        end
         %% Continuity condition - new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
         X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
@@ -757,7 +797,7 @@ for k=0:N_stages-1
         ind_g_clock_state = [ind_g_clock_state;length(lbg)];
     end
     %% Update integral of clock state in numerical time;
-    integral_clock_state = integral_clock_state + integral_clock_state_k ; 
+    integral_clock_state = integral_clock_state + integral_clock_state_k ;
     integral_clock_state_k = 0;
 end
 
@@ -776,7 +816,7 @@ end
 % If the control grid is not equidistant, the constraint on sum of h happen only at the end.
 % The constraints are splited to those which are related to numerical and physical time, to make it easier to read.
 
-%% Terminal numerical and physical time
+% Terminal numerical and physical time
 if time_freezing
     % Terminal Phyisical Time (Posssble terminal constraint on the clock state if time freezing is active).
     if time_optimal_problem
@@ -1028,59 +1068,54 @@ if mpcc_mode >= 11 && mpcc_mode <= 13
 end
 %% Objective Terms for Grid Regularization
 % Heuristic Regularization.
-if heuristic_step_equilibration || step_equilibration
-    %     J = J + step_equilibration_penalty*J_regularize_h;
-    J = J + rho_h_p*J_regularize_h;
-end
+J = J + rho_h_p*J_regularize_h;
 
 %% CasADi Functions for objective complementarity residual
-J_fun = Function('J_fun', {vertcat(w{:})},{J_objective});
-comp_res = Function('comp_res',{vertcat(w{:}), p},{J_comp});
-comp_res_fesd = Function('comp_res_fesd',{vertcat(w{:})},{J_comp_fesd});
-comp_res_std = Function('comp_res_std',{vertcat(w{:})},{J_comp_std});
+w = vertcat(w{:}); % vectorize all variables
+g = vertcat(g{:}); % vectorize all constraint functions
+J_fun = Function('J_fun', {w} ,{J_objective});
+comp_res = Function('comp_res',{w, p},{J_comp});
+comp_res_fesd = Function('comp_res_fesd',{w},{J_comp_fesd});
+comp_res_std = Function('comp_res_std',{w},{J_comp_std});
 
 %% NLP Solver
-prob = struct('f', J, 'x', vertcat(w{:}), 'g', vertcat(g{:}),'p',p);
+prob = struct('f', J, 'x', w, 'g', g,'p',p);
 solver = nlpsol(solver_name, 'ipopt', prob,opts_ipopt);
 
 %% Define CasADi function for the switch indicator function.
-if step_equilibration
-    nu_fun = Function('nu_fun', {vertcat(w{:})},{nu_vector});
-end
+nu_fun = Function('nu_fun', {w,p},{nu_vector});
+
 
 %% settings update
-settings.right_boundary_point_explicit  = right_boundary_point_explicit  ;
+settings.right_boundary_point_explicit  = right_boundary_point_explicit;
 %% Outputs
 model.prob = prob;
 model.solver = solver;
-model.g =  vertcat(g{:});
-model.w =  vertcat(w{:});
+model.g =  g;
+model.w =  w;
 model.p =  p;
 model.J = J;
 model.J_fun = J_fun;
 model.comp_res = comp_res;
 model.comp_res_fesd = comp_res_fesd;
 model.comp_res_std = comp_res_std;
+model.nu_fun = nu_fun;
 
 % create CasADi function for objective gradient.
 nabla_J = J.jacobian(model.w);
-nabla_J_fun = Function('nabla_J_fun', {vertcat(w{:}),p},{nabla_J});
+nabla_J_fun = Function('nabla_J_fun', {w,p},{nabla_J});
 model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
-
-if step_equilibration
-    model.nu_fun = nu_fun;
-end
 
 % TODO: make member function
 if print_level > 4
     disp("g")
-    print_casadi_vector(vertcat(g{:}))
+    print_casadi_vector(g)
     disp('lbg, ubg')
     disp([lbg, ubg])
 
     disp("w")
-    print_casadi_vector(vertcat(w{:}))
+    print_casadi_vector(w)
     disp('lbw, ubw')
     disp([lbw, ubw])
     disp('w0')
