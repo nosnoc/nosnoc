@@ -26,26 +26,27 @@ import casadi.*
 
 %% Settings
 [settings] = default_settings_nosnoc();
-settings.n_s = 2;                       
-settings.mpcc_mode = 6; 
-settings.s_elastic_max = 1e0;             
+settings.n_s = 3;                       
 settings.opts_ipopt.ipopt.max_iter = 1e3;
-settings.step_equilibration = 'heuristic_mean';
 %% Time settings
 settings.time_freezing = 1;
 settings.time_freezing_hysteresis  = 1;
 settings.time_optimal_problem = 1;
-% Time freezing scaling / Speed of Time
-settings.s_sot_max = 3;
-settings.s_sot_min = 0.99;
-settings.use_speed_of_time_variables =  1; % introduce s_tof for e
+% Time-freezing scaling / speed of time
+settings.s_sot_max = 10;
+settings.s_sot_min = 1;
+settings.rho_sot = 1e-1;
+settings.use_speed_of_time_variables = 1; 
 settings.local_speed_of_time_variable = 1;
-% Grid settings
-settings.equidistant_control_grid = 1;
-settings.stagewise_clock_constraint = 1;
+% solver settings
+settings.opts_ipopt.ipopt.tol = 1e-8;
+settings.comp_tol = 1e-8;
+settings.mpcc_mode = 3; 
+settings.cross_comp_mode = 8;
+settings.homotopy_update_rule = 'superlinear';
+
 %% Model Settings
 model.fuel_cost_on = 0;
-% Discretization parameters
 model.N_finite_elements = 3;
 model.N_stages = 10;
 model.T = 5;

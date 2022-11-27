@@ -93,8 +93,6 @@ h_fixed_to_free_homotopy = 0; % start with large penaly for equidistant grid, en
 rho_h = 1;
 step_equilibration = 'heuristic_mean'; % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift, off
 step_equilibration_sigma = 0.1; % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma);
-heuristic_step_equilibration = 1;
-heuristic_step_equilibration_mode = 1; % 1 standard (h_k - h), 2  - penalize delta h
 
 %% Multiple shooting type discretization	
 equidistant_control_grid = 1;

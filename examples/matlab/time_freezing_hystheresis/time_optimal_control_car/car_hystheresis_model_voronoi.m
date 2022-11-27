@@ -77,7 +77,7 @@ f_B = [v;3*u;Pt;0;1];
 f_push_down = [0;0;0;-a_push_const;0];
 f_push_up = [0;0;0;a_push_const;0];
 
-a_push = 1;
+a_push = 2;
 f_push_down = [0;0;0;-a_push*(psi-1)^2/(1+(psi-1)^2);0];
 f_push_up = [0;0;0;a_push*(psi)^2/(1+(psi)^2);0];
 f_12 = f_push_down;
