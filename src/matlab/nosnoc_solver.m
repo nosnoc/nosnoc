@@ -95,13 +95,13 @@ else
     fprintf('H. iters\t CPU Time (m)\t Max. CPU (m)/iter\tMin. CPU (m)/iter\t Comp. res. (ell_1) \tComp. res. (ell_inf)\n');
     fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e\n',stats.homotopy_iterations,sum(stats.cpu_time)/60,max(stats.cpu_time)/60,min(stats.cpu_time)/60,complementarity_iter_ell_1,complementarity_iter_ell_inf);
 end
-fprintf('----------------------------------------------------------------------------------------------------------------------\n\n');
+fprintf('----------------------------------------------------------------------------------------------------------------------\n');
 %%
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
     fprintf('Time optimal problem solved with T_opt: %2.4f.\n',T_opt);
+    fprintf('----------------------------------------------------------------------------------------------------------------------\n');
 end
-fprintf('-----------------------------------------------------------------------------------------------\n\n');
 
 %% Output
 varargout{1} = results;

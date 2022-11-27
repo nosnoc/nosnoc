@@ -666,18 +666,19 @@ for k=0:N_stages-1
                     nu_ki = nu_ki*eta_ki(jjj);
                 end
                 nu_vector = [nu_vector;nu_ki];
+                nu_ki_scaled = tanh(nu_ki/step_equilibration_sigma); % (have nu_ku \in [0,1]);
                 %% Mode
                 if strcmpi(step_equilibration,'heuristic_mean')
                     J_regularize_h  = J_regularize_h + (h_ki-h_k(k+1))^2;
                 elseif strcmpi(step_equilibration,'heuristic_diff')
                     J_regularize_h  = J_regularize_h + delta_h_ki^2;
                 elseif strcmpi(step_equilibration,'l2_relaxed_scaled')
-                    J_regularize_h  = J_regularize_h + tanh(nu_ki/step_equilibration_sigma)*delta_h_ki^2;
+                    J_regularize_h  = J_regularize_h + nu_ki_scaled*delta_h_ki^2;
                 elseif strcmpi(step_equilibration,'l2_relaxed')
                     J_regularize_h  = J_regularize_h + (nu_ki)*delta_h_ki^2;
                 elseif strcmpi(step_equilibration,'direct')
                     % step equilbiration as hard equality constraint
-                    g = {g{:}, nu_ki*delta_h_ki};
+                    g = {g{:}, nu_ki_scaled*delta_h_ki};
                     lbg = [lbg; 0];
                     ubg = [ubg; 0];
                 elseif strcmpi(step_equilibration,'direct_homotopy')
@@ -1109,7 +1110,7 @@ model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
 
 % TODO: make member function
-if print_level > 4
+if print_level > 5
     disp("g")
     print_casadi_vector(g)
     disp('lbg, ubg')

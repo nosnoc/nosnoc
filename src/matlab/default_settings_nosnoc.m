@@ -6,7 +6,7 @@ solver_name = 'nosnoc_solver';
 use_fesd = 1;
 casadi_symbolic_mode = 'SX';
 %% Interface settings
-real_time_plot = 1; % Plot solution trajectories during execution
+real_time_plot = 0; % Plot solution trajectories during execution
 %% IRK and FESD Settings
 n_s = 2;                            % Number of IRK stages
 irk_scheme = 'radau';     % RK scheme
