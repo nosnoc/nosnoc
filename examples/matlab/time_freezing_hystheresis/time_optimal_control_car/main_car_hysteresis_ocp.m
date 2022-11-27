@@ -30,17 +30,14 @@ settings.n_s = 2;
 settings.mpcc_mode = 6; 
 settings.s_elastic_max = 1e0;             
 settings.opts_ipopt.ipopt.max_iter = 1e3;
-% settings.N_homotopy = 11;
-% Step Equlibration
-settings.step_equilibration_penalty = 1;
-settings.step_equilibration_mode = 3; %1 - penality relaxation, 3 - step equilibration as hard constraints
+settings.step_equilibration = 'heuristic_mean';
 %% Time settings
 settings.time_freezing = 1;
 settings.time_freezing_hysteresis  = 1;
 settings.time_optimal_problem = 1;
 % Time freezing scaling / Speed of Time
-settings.s_sot_max = 10;
-settings.s_sot_min = 0.1;
+settings.s_sot_max = 3;
+settings.s_sot_min = 0.99;
 settings.use_speed_of_time_variables =  1; % introduce s_tof for e
 settings.local_speed_of_time_variable = 1;
 % Grid settings

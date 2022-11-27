@@ -36,10 +36,6 @@ settings.n_s = 2;
 N_finite_elements = 6;
 
 settings.irk_representation = 'differential';
-% settings.irk_scheme = 'Explicit-RK';
-% settings.irk_scheme = 'Lobatto-IIIA';
-% settings.irk_scheme = 'Gauss-Legendre';
-% settings.irk_scheme = 'Lobatto-IIIC';
 settings.irk_scheme = 'Radau-IIA';
 
 settings.print_level = 3;
@@ -48,10 +44,8 @@ settings.mpcc_mode = 3;
 settings.comp_tol = 1e-6;
 settings.equidistant_control_grid = 1;
 
-settings.step_equilibration = 0;
-settings.rho_h = 1e1;
-settings.heuristic_step_equilibration = 1;
-settings.step_equilibration_mode = 1;
+settings.step_equilibration = 'l2_relaxed_scaled';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
+settings.rho_h = 1e2;
 
 %% model equations
 % Variable defintion
@@ -136,6 +130,11 @@ f_opt = full(results.f);
 
 t_grid_optimizer = [results.t_grid];
 x_res_optimizer = [results.x_opt];
+%%
+figure
+stairs(results.t_grid,[results.h_opt;nan])
+xlabel('$t$','Interpreter','latex');
+ylabel('$h_{ki}$','Interpreter','latex');
 %%
 fprintf('Objective value %2.4f \n',f_opt);
 f_star = 6.616653254750982;

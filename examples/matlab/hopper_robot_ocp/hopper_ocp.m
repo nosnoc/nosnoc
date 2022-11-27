@@ -64,7 +64,6 @@ settings.g_ineq_at_stg = 1; % evaluate path constraint on every stage point
 
 %% discretization
 T = 1; % prediction horizon
-
 N_stg = 20; % control intervals
 N_FE = 3;  % integration steps per control intevral
 
@@ -130,10 +129,8 @@ Q_terminal =diag([300; 300; 300; 300; 0.1; 0.1; 0.1; 0.1]);
 u_ref = [0; 0; 0];
 R = diag([0.01; 0.01; 1e-5]);
 
-
 % Avoid slipping motion
 g_comp_path = [v_tangent*u(3);f_c*u(3)];
-
 
 %% interpolate refernece
 x_ref = interp1([0 0.5 1],[x0,x_mid,x_end]',linspace(0,1,N_stg),'spline')'; %spline

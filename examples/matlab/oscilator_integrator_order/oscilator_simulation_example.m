@@ -27,31 +27,25 @@ import casadi.*
 plot_integrator_output = 1;
 plot_continious_time_sol = 0;
 %% discretization settings
-N_finite_elements = 2;
-
 T_sim = pi/2;
 N_sim  = 29;
+N_finite_elements = 2;
 R_osc  = 1;
 
 %% settings
 % collocation settings
 settings = default_settings_nosnoc();
 settings.use_fesd = 1;       % switch detection method on/off
-settings.irk_scheme = 'Radau-IIA';
-% settings.irk_scheme = 'Gauss-Legendre';
+settings.irk_scheme = 'Radau-IIA'; %'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 4;
 settings.pss_mode = 'Stewart'; % 'Step;
-
 settings.mpcc_mode = 3;  % Scholtes regularization
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-9;
-settings.cross_comp_mode  = 1;
+settings.cross_comp_mode  = 3;
 
-settings.heuristic_step_equilibration = 1;
 %% Time settings
-
-% analytic solution
 x_star = [exp(1);0];
 T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];

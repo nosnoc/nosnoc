@@ -45,9 +45,6 @@ settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
 settings.time_freezing = 1;
 
-settings.equidistant_control_grid = 1; % equdistiant control grid in numerical time
-settings.pss_lift_step_functions = 1;
-settings.stagewise_clock_constraint = 1; % equdistiant control grid in physical time
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
@@ -63,7 +60,6 @@ m3 = 1;
 cart_width1 = 2;
 cart_width2 = 2;
 cart_width3 = 2;
-
 c_damping = 2;
 
 ubx = [10; 15; 15; 5; 5; 5]; 
