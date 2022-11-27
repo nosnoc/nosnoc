@@ -128,7 +128,7 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && sigma_k > sigma_N
 
     % Verbose
     if print_level >= 3
-        fprintf('%d\t%2.2e\t%2.2e\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, ...
+        fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%d\t\t\t%s\n',ii, sigma_k, complementarity_iter, ...
             cpu_time_iter, solver.stats.iter_count, solver.stats.return_status);
     end
     %

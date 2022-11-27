@@ -313,8 +313,8 @@ end
 % fprintf('Max complementarity residual: %2.3e.\nMin complementarity residual: %2.3e.\n',max(complementarity_stats),min(complementarity_stats));
 % fprintf('-----------------------------------------------------------------------------------------------\n\n');
 %%
-fprintf('---------------------------------------------- Final stats------------------------------------------------------------\n');
-fprintf('N_sim\t step-size\t\tN_stg\tN_FE\tTotal CPU (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
+fprintf('---------------------------------------------- Stats summary----------------------------------------------------------\n');
+fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
 fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n',N_sim,h_sim,N_stages,N_finite_elements(1),total_time,max(time_per_iter),min(time_per_iter),max(complementarity_stats),min(complementarity_stats));
 fprintf('----------------------------------------------------------------------------------------------------------------------\n\n');
 %% Output

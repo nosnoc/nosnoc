@@ -69,7 +69,7 @@ p = vertcat(sigma_p,rho_sot_p,rho_h_p,rho_terminal_p,T_ctrl_p, lambda_00);
 if use_fesd
     ubh = (1+gamma_h)*h_k;
     lbh = (1-gamma_h)*h_k;
-    if time_rescaling && ~use_speed_of_time_nuvariables
+    if time_rescaling && ~use_speed_of_time_variables
         % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
         ubh = (1+gamma_h)*h_k*s_sot_max;
         lbh = (1-gamma_h)*h_k/s_sot_min;

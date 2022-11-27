@@ -47,7 +47,7 @@ terminal_constraint = 0;
 time_optimal_problem = 0;
 simple_v0_guess = 0;
 %% MPCC and Homotopy Settings	
-comp_tol = 1e-14;
+comp_tol = 1e-9;
 mpcc_mode = 5;
 objective_scaling_direct = 1;
 sigma_0	= 1;
@@ -91,7 +91,7 @@ h_fixed_to_free_homotopy = 0; % start with large penaly for equidistant grid, en
 
 %% Step equilibration
 rho_h = 1;
-step_equilibration = 'heuristic_diff'; % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift, off
+step_equilibration = 'heuristic_mean'; % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift, off
 step_equilibration_sigma = 0.1; % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma);
 heuristic_step_equilibration = 1;
 heuristic_step_equilibration_mode = 1; % 1 standard (h_k - h), 2  - penalize delta h
