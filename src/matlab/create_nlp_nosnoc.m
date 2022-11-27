@@ -213,7 +213,7 @@ for k=0:N_stages-1
         if local_speed_of_time_variable
             % at every stage
             s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k)],1);
-            w = [w(:)', {s_sot_k}];
+            w = {w{:}, s_sot_k};
             % intialize speed of time (sot), lower and upper bounds
             w0 = [w0; s_sot0];
             ubw = [ubw;s_sot_max];
