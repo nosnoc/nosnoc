@@ -173,10 +173,10 @@ ind_total = ind_x;
 sum_h_ki_control_interval_k = 0;
 sum_h_ki_all = 0;
 % Initialization of forward and backward sums for the step-equilibration
-sigma_theta_B_k = 0; % backward sum of theta at finite element k
-sigma_lambda_B_k = 0; % backward sum of lambda at finite element k
-sigma_lambda_F_k = 0; % forward sum of lambda at finite element k
-sigma_theta_F_k = 0; % forward sum of theta at finite element k
+sigma_theta_B_ki = 0; % backward sum of theta at finite element k
+sigma_lambda_B_ki = 0; % backward sum of lambda at finite element k
+sigma_lambda_F_ki = 0; % forward sum of lambda at finite element k
+sigma_theta_F_ki = 0; % forward sum of theta at finite element k
 nu_vector = [];
 % Integral of the clock state if no time-freezing is present.
 integral_clock_state = 0;
@@ -193,7 +193,7 @@ comp_var_current_fe.cross_comp_all = 0;
 
 %% Formulate the NLP / Main Discretization loop
 for k=0:N_stages-1
-    %% Variables for the controls
+    % control variables
     if n_u > 0
         Uk = define_casadi_symbolic(casadi_symbolic_mode,['U_' num2str(k)],n_u);
         w = {w{:}, Uk};
@@ -257,14 +257,14 @@ for k=0:N_stages-1
         lbg = [lbg; g_comp_path_lb];
         ubg = [ubg; g_comp_path_ub];
     end
-
-    sum_h_ki_control_interval_k = 0; % Integral of the clock state (if not time freezing) on the current stage.
+    sum_h_ki_control_interval_k = 0; % sum of all h_ki at current control interval
 
     %% Least square terms
     J = J+T/N_stages*f_lsq_x_fun(X_ki,x_ref_val(:,k+1));
     if n_u > 0
         J = J+T/N_stages*f_lsq_u_fun(Uk,u_ref_val(:,k+1));
     end
+
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
         %%  Sum of lambda and theta for current finite elememnt
@@ -298,10 +298,8 @@ for k=0:N_stages-1
             else
                 delta_h_ki  = 0;
             end
-
-
         end
-
+        % sum of h (for equidistant control grids) and integral of clock state (for time optimal problems)
         integral_clock_state_k = integral_clock_state_k + h_ki*s_sot_k;
         sum_h_ki_control_interval_k = sum_h_ki_control_interval_k + h_ki;
         sum_h_ki_all = sum_h_ki_all + h_ki;
@@ -650,23 +648,22 @@ for k=0:N_stages-1
         %% Step equilibration
         if use_fesd
 %         step_equilibration_constrains;
-            % Switch indicator function
             % define the switching indicator function for previous  node/finite element boundary
             if  (k > 0 || i > 0)
                 % backward sums at current stage k are equal to the forward sums at stage previous stage (k-1)
-                sigma_lambda_B_k = sigma_lambda_F_k;
-                sigma_theta_B_k = sigma_theta_F_k;
+                sigma_lambda_B_ki = sigma_lambda_F_ki;
+                sigma_theta_B_ki = sigma_theta_F_ki;
             end
             % forward sums initalized (these were computed during the defintion of the algebraic variables)
-            sigma_lambda_F_k = sum_Lambda_ki;
-            sigma_theta_F_k = sum_Theta_ki;
+            sigma_lambda_F_ki = sum_Lambda_ki;
+            sigma_theta_F_ki = sum_Theta_ki;
             if i>0 || k >0
-                pi_lambda_k = sigma_lambda_B_k.*sigma_lambda_F_k;
-                pi_theta_k = sigma_theta_B_k.*sigma_theta_F_k;
-                eta_k =  pi_lambda_k+pi_theta_k;
+                pi_lambda_ki = sigma_lambda_B_ki.*sigma_lambda_F_ki;
+                pi_theta_ki = sigma_theta_B_ki.*sigma_theta_F_ki;
+                eta_ki =  pi_lambda_ki+pi_theta_ki;
                 nu_ki = 1;
                 for jjj = 1:n_theta
-                    nu_ki = nu_ki*eta_k(jjj);
+                    nu_ki = nu_ki*eta_ki(jjj);
                 end
                 nu_vector = [nu_vector;nu_ki];
                 %% Mode
@@ -680,12 +677,6 @@ for k=0:N_stages-1
                     J_regularize_h  = J_regularize_h + (nu_ki)*delta_h_ki^2;
                 elseif strcmpi(step_equilibration,'direct')
                     % step equilbiration as hard equality constraint
-%                     nu_ki_lift = define_casadi_symbolic(casadi_symbolic_mode,'nu_ki_lift ',1);
-%                          w = {w{:}, nu_ki_lift };
-%                         ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
-%                         w0 = [w0;1];
-%                         lbw = [lbw; -inf];
-%                         ubw = [ubw; inf];
                     g = {g{:}, nu_ki*delta_h_ki};
                     lbg = [lbg; 0];
                     ubg = [ubg; 0];
@@ -693,10 +684,20 @@ for k=0:N_stages-1
                         g = {g{:}, [nu_ki*delta_h_ki-sigma_p;-nu_ki*delta_h_ki-sigma_p]};
                         lbg = [lbg; -inf;-inf];
                         ubg = [ubg; 0;0];
+                elseif strcmpi(step_equilibration,'direct_homotopy_lift')
+                        nu_ki_lift = define_casadi_symbolic(casadi_symbolic_mode,'nu_ki_lift ',1);
+                        w = {w{:}, nu_ki_lift };
+                        ind_total  = [ind_total,ind_total(end)+1:ind_total(end)+1];
+                        w0 = [w0;1];
+                        lbw = [lbw; -inf];
+                        ubw = [ubw; inf];
+                        g = {g{:}, [nu_ki-nu_ki_lift;nu_ki_lift*delta_h_ki-sigma_p;-nu_ki_lift*delta_h_ki-sigma_p]};
+                        lbg = [lbg;0;-inf;-inf];
+                        ubg = [ubg;0;0;0];
                 elseif strcmpi(step_equilibration,'off')
                     % do nothing, J_regularize stays zero
                 else
-                error('Invalid step_equlibration mode, please pick a valid option, e.g., ''l2_relaxed_scaled'' or ''heuristic_mean''');
+                    error('Invalid step_equlibration mode, please pick a valid option, e.g., ''l2_relaxed_scaled'' or ''heuristic_mean''');
                 end
             end
         end
