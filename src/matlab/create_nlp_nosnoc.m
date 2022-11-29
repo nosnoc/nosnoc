@@ -695,8 +695,6 @@ for k=0:N_stages-1
                         g = {g{:}, [nu_ki-nu_ki_lift;nu_ki_lift*delta_h_ki-sigma_p;-nu_ki_lift*delta_h_ki-sigma_p]};
                         lbg = [lbg;0;-inf;-inf];
                         ubg = [ubg;0;0;0];
-                elseif strcmpi(step_equilibration,'off')
-                    % do nothing, J_regularize stays zero
                 else
                     error('Invalid step_equlibration mode, please pick a valid option, e.g., ''l2_relaxed_scaled'' or ''heuristic_mean''');
                 end
