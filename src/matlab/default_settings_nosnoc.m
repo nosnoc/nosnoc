@@ -6,7 +6,7 @@ solver_name = 'nosnoc_solver';
 use_fesd = 1;
 casadi_symbolic_mode = 'SX';
 %% Interface settings
-real_time_plot = 1; % Plot solution trajectories during execution
+real_time_plot = 0; % Plot solution trajectories during execution
 %% IRK and FESD Settings
 n_s = 2;                            % Number of IRK stages
 irk_scheme = 'radau';     % RK scheme
@@ -47,7 +47,7 @@ terminal_constraint = 0;
 time_optimal_problem = 0;
 simple_v0_guess = 0;
 %% MPCC and Homotopy Settings	
-comp_tol = 1e-14;
+comp_tol = 1e-9;
 mpcc_mode = 5;
 objective_scaling_direct = 1;
 sigma_0	= 1;
@@ -91,18 +91,9 @@ h_fixed_to_free_homotopy = 0; % start with large penaly for equidistant grid, en
 
 %% Step equilibration
 rho_h = 1;
-delta_h_regularization = 0;
-piecewise_equidistant_grid	= 0;
-piecewise_equidistant_grid_sigma =	1;
-piecewise_equidistant_grid_slack_mode = 0;
+step_equilibration = 'heuristic_mean'; % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
+step_equilibration_sigma = 0.1; % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma);
 
-step_equilibration = 0;
-step_equilibration_mode = 1;
-% step_equilibration_penalty = 0.1;  %(rho_h in step_equilibration modde 1, as qudratic penalty)
-step_equilibration_sigma = 0.1;
-heuristic_step_equilibration = 1;
-heuristic_step_equilibration_mode = 1; % 1 standard (h_k - h), 2  - penalize delta h
-% heuristic_step_equilibration_penalty = 0.1;  %(rho_h)
 %% Multiple shooting type discretization	
 equidistant_control_grid = 1;
 	

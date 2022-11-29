@@ -6,7 +6,9 @@
 % Published in: 2008 47th IEEE Conference on Decision and Control
 % DOI: 10.1109/CDC.2008.4739025
 %% Clear
-clear all; close all;
+clc;
+clear all; 
+close all;
 %% Build problem
 import casadi.*
 [settings] = default_settings_nosnoc();
@@ -17,14 +19,13 @@ settings.n_s = 2;
 % MPCC Method
 settings.mpcc_mode = 3;
 settings.N_homotopy = 10;
-settings.print_level = 5;
+settings.print_level = 3;
 % Discretization parameters
 model.N_stages = 30; % number of control intervals
 model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 0.08;    % Time horizon
 
 %% The Model
-
 % Parameters
 m1 = 1.03; % slide mass
 m2 = 0.56; % load mass
@@ -37,6 +38,7 @@ K_F = 12; % force constant N/A ; F_L = K_F*I; % Lorenz force
 K_S = 12; % Vs/m (not provided in the paper above)
 F_R = 2.1; % guide friction force, N
 x0 = [0;0;0;0;0];
+
 %% Symbolic variables
 x1 = SX.sym('x1');  % motor mass position
 v1 = SX.sym('v1'); % motor mass velocity

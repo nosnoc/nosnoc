@@ -38,9 +38,8 @@ settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
 % MPCC Method
 settings.mpcc_mode = 3;
-% settings.comp_tol = 1e-9;
 settings.N_homotopy = 10;
-settings.print_level = 5;
+settings.print_level = 3;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
@@ -53,7 +52,6 @@ model.T = 4;    % Time horizon
 %% Model parameters and defintion
 q = SX.sym('q', 2);
 v = SX.sym('v', 2);
-%
 x = [q;v];
 u = SX.sym('u', 1); % control
 

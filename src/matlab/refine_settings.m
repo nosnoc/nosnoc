@@ -67,15 +67,9 @@ if ~exist('x_box_at_stg')
 end
 
 %% Correct contradictring settings, complete missing data (if any)
-step_equilibration = step_equilibration*use_fesd;
 there_exist_free_x0 = exist('ind_free_x0');
 
-    % if use_fesd & N_finite_elements < 2
-    %     N_finite_elements = 2;
-    %     warrning('Info:In FESD there must be at least 2 finite elements per control interval. Setting N_finite_elements = 2.')
-    % end
 %% Time Scaling
-
 if (time_freezing || time_optimal_problem) == 1
     time_rescaling = 1;
 else

@@ -6,7 +6,9 @@
 % Published in: 2008 47th IEEE Conference on Decision and Control
 % DOI: 10.1109/CDC.2008.4739025
 %% Clear
-clear all; close all;
+clc;
+clear all; 
+close all;
 %% Build problem
 import casadi.*
 [settings] = default_settings_nosnoc();  
@@ -17,16 +19,14 @@ settings.n_s = 2;
 % MPCC Method
 settings.mpcc_mode = 3;
 settings.N_homotopy = 10;
-settings.print_level = 5;
+settings.print_level = 3;
 % Discretization parameters
 model.N_stages = 30; % number of control intervals
 model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 0.09;    % Time horizon
 settings.time_optimal_problem = 1;
-settings.use_speed_of_time_variables = 0;
-settings.local_speed_of_time_variable = 0;
-%% The Model
 
+%% The Model
 % Parameters
 m1 = 1.03; % slide mass
 m2 = 0.56; % load mass
@@ -57,7 +57,6 @@ n_u = 1;
 model.u = u;
 model.lbu = -U_max*ones(n_u,1);
 model.ubu = U_max*ones(n_u,1);
-
 
 %% Dynmiacs
 

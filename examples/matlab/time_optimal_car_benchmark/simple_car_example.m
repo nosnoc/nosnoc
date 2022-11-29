@@ -36,12 +36,13 @@ settings.mpcc_mode = 3;
 settings.cross_comp_mode = 3;
 settings.use_fesd = 1;
 settings.use_speed_of_time_variables = 1;
+settings.homotopy_update_rule = 'superlinear';
 
 %% Time settings
 settings.time_optimal_problem = 1;
 %% Model - define all problem functions and
 % Discretization parameters
-model.N_stages = 80; % number of control intervals
+model.N_stages = 10; % number of control intervals
 model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 1;    % Time horizon
 
