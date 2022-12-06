@@ -755,7 +755,7 @@ switch pss_mode
             mu_guess = initial_mu*ones(n_simplex,1);
         end
         z0 = [theta_guess;lambda_guess;mu_guess];
-        n_lift_eq = 1;
+        n_lift_eq = n_simplex;
     case 'Step'
         z = [alpha;lambda_0;lambda_1;beta;gamma];
         lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
