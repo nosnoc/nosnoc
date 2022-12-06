@@ -1,0 +1,3 @@
+[submodule "external/nosnoc_py"]
+	path = external/nosnoc_py
+	url = git@github.com:FreyJo/nosnoc_py.git
