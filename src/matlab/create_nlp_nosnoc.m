@@ -159,7 +159,6 @@ problem.ind_v = [];
 problem.ind_z = [];
 problem.ind_h = [];
 problem.ind_elastic = [];
-problem.ind_vf  = [];
 problem.ind_sot = []; % index for speed of time variable
 problem.ind_boundary = []; % index of bundary value lambda and mu
 problem.ind_t_final = []; % Time-optimal problems: define auxilairy variable for the final time.
@@ -998,9 +997,6 @@ end
 J = J + rho_h_p*J_regularize_h;
 
 %% CasADi Functions for objective complementarity residual
-for optv=problem.w
-    print_casadi_vector(optv{:})
-end
 w = vertcat(problem.w{:}); % vectorize all variables, TODO: again, further cleanup necessary
 g = vertcat(g{:}); % vectorize all constraint functions
 J_fun = Function('J_fun', {w} ,{J_objective});
@@ -1038,7 +1034,7 @@ model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
 
 % TODO: make member function
-if print_level > 0
+if print_level > 1
     disp("g")
     print_casadi_vector(g)
     disp('lbg, ubg')
@@ -1063,7 +1059,6 @@ model.ind_v = problem.ind_v;
 model.ind_z = problem.ind_z;
 model.ind_u = problem.ind_u;
 model.ind_h = problem.ind_h;
-model.ind_vf = problem.ind_vf;
 model.ind_g_clock_state = ind_g_clock_state;
 model.ind_sot = problem.ind_sot;
 model.ind_t_final  = problem.ind_t_final;
