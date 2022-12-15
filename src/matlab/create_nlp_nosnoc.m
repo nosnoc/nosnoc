@@ -478,7 +478,7 @@ for k=0:N_stages-1
                 % Add contribution to quadrature function
                 J = J + B(j+1)*qj*h_ki;
                 % Append IRK equations to NLP constraint
-                problem = add_constraint(problem, h_ki*fj - xp, zeros(nx, 0), zeros(nx, 0));
+                problem = add_constraint(problem, h_ki*fj - xp, zeros(n_x, 0), zeros(n_x, 0));
 
               case 'differential'
                 % Evaluate Differential and Algebraic Equations at stage points
@@ -506,18 +506,18 @@ for k=0:N_stages-1
                 end
                 % Append IRK equations (differential part) to NLP constraint, note that we dont distingiush if use_fesd is on/off
                 % since it was done in the defintion of X_ki_stages which enters f_j
-                problem = add_constraint(problem, fj - V_ki_stages{j}, zeros(nx, 1), zeros(nx, 1));
+                problem = add_constraint(problem, fj - V_ki_stages{j}, zeros(n_x, 1), zeros(n_x, 1));
 
                 % lifting considerations
                 if lift_irk_differential
-                    problem = add_constraint(problem, X_ki_lift{j}, zeros(nx, 1), zeros(nx, 1));
+                    problem = add_constraint(problem, X_ki_lift{j}, zeros(n_x, 1), zeros(n_x, 1));
                 end
                 if  x_box_at_stg && ~lift_irk_differential
                     problem = add_constraint(problem, X_ki_lift{j}, lbx, ubx);
                 end
             end
             % Append IRK equations (algebraic part) to NLP constraint (same for both representations)
-            problem = add_constraint(problem, gj, zeros(n_algebraic_constraints,1), zeros(n_algebraic_constraints,1))
+            problem = add_constraint(problem, gj, zeros(n_algebraic_constraints,1), zeros(n_algebraic_constraints,1));
 
             %% General nonlinear constraint at stage points
             if g_ineq_constraint && g_ineq_at_stg
@@ -643,7 +643,7 @@ for k=0:N_stages-1
         end
 
         % Add equality constraint
-        problem = add_constrain(Xk_end-X_ki, zeros(n_x,1), zeros(n_x,1));
+        problem = add_constraint(problem, Xk_end-X_ki, zeros(n_x,1), zeros(n_x,1));
 
         %% Evaluate inequality constraints at finite elements boundaries
         % TODO?: This should be removed? the left boundary point is treated
@@ -777,7 +777,7 @@ end
 % if time_optimal_problem && (~use_speed_of_time_variables || time_freezing)
 if time_optimal_problem
     % Add to the vector of unknowns
-    problem = add_variable(problem, T_final, T_final_guess, T_final_min, T_final_max, 't_final')
+    problem = add_variable(problem, T_final, T_final_guess, T_final_min, T_final_max, 't_final');
     J = J + T_final;
 end
 
@@ -821,13 +821,11 @@ if terminal_constraint
         problem = add_constraint(problem,...
                                  g_terminal-g_terminal_lb-s_terminal_ell_1,...
                                  -inf*ones(n_terminal,1),...
-                                 zeros(n_terminal,1)
-                                );
+                                 zeros(n_terminal,1));
         problem = add_constraint(problem,...
                                  -(g_terminal-g_terminal_lb)-s_terminal_ell_1,...
                                  -inf*ones(n_terminal,1),...
-                                 zeros(n_terminal,1)
-                                );
+                                 zeros(n_terminal,1));
         % penalize slack
         J = J + rho_terminal_p*sum(s_terminal_ell_1);
       case 2
@@ -846,13 +844,11 @@ if terminal_constraint
         problem = add_constraint(problem,...
                                  g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
                                  -inf*ones(n_terminal,1),...
-                                 zeros(n_terminal,1)
-                                );
+                                 zeros(n_terminal,1));
         problem = add_constraint(problem,...
                                  -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
                                  -inf*ones(n_terminal,1),...
-                                 zeros(n_terminal,1)
-                                );
+                                 zeros(n_terminal,1));
         % penalize slack
         J = J + rho_terminal_p*(s_terminal_ell_inf);
       case 4
@@ -863,13 +859,11 @@ if terminal_constraint
             problem = add_constraint(problem,...
                                      g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1),...
                                      -inf*ones(n_terminal,1),...
-                                     zeros(n_terminal,1)
-                                    );
+                                     zeros(n_terminal,1));
             problem = add_constraint(problem,...
                                      -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1),...
                                      -inf*ones(n_terminal,1),...
-                                     zeros(n_terminal,1)
-                                    );
+                                     zeros(n_terminal,1));
         else
             error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.')
         end
@@ -1025,8 +1019,8 @@ model.n_cross_comp_total = sum(n_cross_comp(:));
 solver_initialization.w0 = problem.w0;
 solver_initialization.lbw = problem.lbw;
 solver_initialization.ubw = problem.ubw;
-solver_initialization.lbg = lbg;
-solver_initialization.ubg = ubg;
+solver_initialization.lbg = problem.lbg;
+solver_initialization.ubg = problem.ubg;
 %% Output
 varargout{1} = solver;
 varargout{2} = solver_initialization;
