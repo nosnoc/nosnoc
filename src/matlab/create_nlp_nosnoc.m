@@ -170,8 +170,6 @@ ind_g_clock_state = [];
 
 X_ki = define_casadi_symbolic(casadi_symbolic_mode,'X0',n_x);
 
-w = {w{:}, X_ki};
-
 if there_exist_free_x0
     x0_ub = x0;
     x0_lb = x0;
@@ -320,7 +318,7 @@ for k=0:N_stages-1
                 end
               case 'differential'
                 V_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['V_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
-                problem = add_variable(problem, V_ki_stages{j}, v0, lbx,  -inf*ones(n_x,1), inf*ones(n_x,1), 'v');
+                problem = add_variable(problem, V_ki_stages{j}, v0, -inf*ones(n_x,1), inf*ones(n_x,1), 'v');
                 
                 if lift_irk_differential
                     X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_x);
@@ -643,18 +641,15 @@ for k=0:N_stages-1
                     lbg = [lbg; 0];
                     ubg = [ubg; 0];
                 elseif strcmpi(step_equilibration,'direct_homotopy')
-                        g = {g{:}, [nu_ki*delta_h_ki-sigma_p;-nu_ki*delta_h_ki-sigma_p]};
-                        lbg = [lbg; -inf;-inf];
-                        ubg = [ubg; 0;0];
+                    g = {g{:}, [nu_ki*delta_h_ki-sigma_p;-nu_ki*delta_h_ki-sigma_p]};
+                    lbg = [lbg; -inf;-inf];
+                    ubg = [ubg; 0;0];
                 elseif strcmpi(step_equilibration,'direct_homotopy_lift')
-                        nu_ki_lift = define_casadi_symbolic(casadi_symbolic_mode,'nu_ki_lift ',1);
-                        w = {w{:}, nu_ki_lift };
-                        w0 = [w0;1];
-                        lbw = [lbw; -inf];
-                        ubw = [ubw; inf];
-                        g = {g{:}, [nu_ki-nu_ki_lift;nu_ki_lift*delta_h_ki-sigma_p;-nu_ki_lift*delta_h_ki-sigma_p]};
-                        lbg = [lbg;0;-inf;-inf];
-                        ubg = [ubg;0;0;0];
+                    nu_ki_lift = define_casadi_symbolic(casadi_symbolic_mode,'nu_ki_lift ',1);
+                    problem = add_variable(problem, nu_ki_lift, 1, -inf, inf);
+                    g = {g{:}, [nu_ki-nu_ki_lift;nu_ki_lift*delta_h_ki-sigma_p;-nu_ki_lift*delta_h_ki-sigma_p]};
+                    lbg = [lbg;0;-inf;-inf];
+                    ubg = [ubg;0;0;0];
                 else
                     error('Invalid step_equlibration mode, please pick a valid option, e.g., ''l2_relaxed_scaled'' or ''heuristic_mean''');
                 end
@@ -864,60 +859,62 @@ if terminal_constraint
         end
     end
     switch relax_terminal_constraint
-        case 0
-            % hard constraint
-            g = {g{:}, g_terminal };
-            lbg = [lbg; g_terminal_lb];
-            if relax_terminal_constraint_from_above
-                ubg = [ubg; g_terminal_ub*0+inf];
-            else
-                ubg = [ubg; g_terminal_ub];
-            end
-        case 1
-            % l_1
-            % define slack variables
-            s_terminal_ell_1= define_casadi_symbolic(casadi_symbolic_mode,'s_terminal_ell_1',n_terminal);
-            w = {w{:}, s_terminal_ell_1};
-            lbw = [lbw;-inf*ones(n_terminal,1)];
-            ubw = [ubw;inf*ones(n_terminal,1)];
-            w0 = [w0;1e3*ones(n_terminal,1)];
-            % relaxed constraints
-            g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_1};
-            g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_1};
-            lbg = [lbg; -inf*ones(2*n_terminal,1)];
-            ubg = [ubg; zeros(2*n_terminal,1)];
-            % penalize slack
-            J = J + rho_terminal_p*sum(s_terminal_ell_1);
-        case 2
-            % l_2
-            J = J + rho_terminal_p*(g_terminal-g_terminal_lb)'*(g_terminal-g_terminal_lb);
-        case 3
+      case 0
+        % hard constraint
+        g = {g{:}, g_terminal };
+        lbg = [lbg; g_terminal_lb];
+        if relax_terminal_constraint_from_above
+            ubg = [ubg; g_terminal_ub*0+inf];
+        else
+            ubg = [ubg; g_terminal_ub];
+        end
+      case 1
+        % l_1
+        % define slack variables
+        s_terminal_ell_1= define_casadi_symbolic(casadi_symbolic_mode,'s_terminal_ell_1',n_terminal);
+        problem = add_variable(problem,...
+                               s_terminal_ell_1,...
+                               1e3*ones(n_terminal,1),...
+                               -inf*ones(n_terminal,1),...
+                               inf*ones(n_terminal,1))
+        % relaxed constraints
+        g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_1};
+        g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_1};
+        lbg = [lbg; -inf*ones(2*n_terminal,1)];
+        ubg = [ubg; zeros(2*n_terminal,1)];
+        % penalize slack
+        J = J + rho_terminal_p*sum(s_terminal_ell_1);
+      case 2
+        % l_2
+        J = J + rho_terminal_p*(g_terminal-g_terminal_lb)'*(g_terminal-g_terminal_lb);
+      case 3
+        % l_inf
+        % define slack variable
+        s_terminal_ell_inf= define_casadi_symbolic(casadi_symbolic_mode,'s_terminal_ell_inf',1);
+        problem = add_variable(problem,...
+                               s_terminal_ell_inf,...
+                               1e3,...
+                               -inf,...
+                               inf);
+        % relaxed constraint
+        g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1)};
+        g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1)};
+        lbg = [lbg; -inf*ones(2*n_terminal,1)];
+        ubg = [ubg; zeros(2*n_terminal,1)];
+        % penalize slack
+        J = J + rho_terminal_p*(s_terminal_ell_inf);
+      case 4
+        if exist('s_elastic','var')
             % l_inf
             % define slack variable
-            s_terminal_ell_inf= define_casadi_symbolic(casadi_symbolic_mode,'s_terminal_ell_inf',1);
-            w = {w{:}, s_terminal_ell_inf};
-            lbw = [lbw;-inf];
-            ubw = [ubw;inf];
-            w0 = [w0;1e3];
             % relaxed constraint
-            g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1)};
-            g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1)};
+            g = {g{:}, g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1)};
+            g = {g{:}, -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1)};
             lbg = [lbg; -inf*ones(2*n_terminal,1)];
             ubg = [ubg; zeros(2*n_terminal,1)];
-            % penalize slack
-            J = J + rho_terminal_p*(s_terminal_ell_inf);
-        case 4
-            if exist('s_elastic','var')
-                % l_inf
-                % define slack variable
-                % relaxed constraint
-                g = {g{:}, g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1)};
-                g = {g{:}, -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1)};
-                lbg = [lbg; -inf*ones(2*n_terminal,1)];
-                ubg = [ubg; zeros(2*n_terminal,1)];
-            else
-                error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.')
-            end
+        else
+            error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.')
+        end
     end
 end
 
@@ -959,8 +956,6 @@ end
 if mpcc_mode >= 8 && mpcc_mode <= 10
     rho_elastic = define_casadi_symbolic(casadi_symbolic_mode,'rho_elastic',1);
 
-    w = {w{:}, rho_elastic};
-
     s_elastic_min = 1e-16;
     s_elastic_max = inf;
     rho_0 = max(rho_min,0.5);
@@ -972,9 +967,7 @@ if mpcc_mode >= 8 && mpcc_mode <= 10
     end
     rho_max = (log(rho_scale)-log(s_elastic_min))/rho_lambda;
 
-    lbw = [lbw; rho_min];
-    ubw = [ubw; rho_max];
-    w0 = [w0;rho_0];
+    problem = add_variable(problem, rho_elastic, rho_0, rho_min, rho_max);
     if nonlinear_sigma_rho_constraint
         if convex_sigma_rho_constraint
             g = {g{:}, -rho_scale*exp(-rho_lambda*rho_elastic)+s_elastic};
@@ -989,10 +982,7 @@ if mpcc_mode >= 8 && mpcc_mode <= 10
     ubg = [ubg; inf];
 
     % add elastic variable to the vector of unknowns and add objective contribution
-    w = {w{:}, s_elastic};
-    lbw = [lbw; s_elastic_min];
-    ubw = [ubw; s_elastic_max];
-    w0 = [w0;s_elastic_0];
+    problem = add_variable(problem, s_elastic, s_elastic_0, s_elastic_min, s_elastic_max);
     J = J-rho_penalty*(rho_elastic^2)+sigma_penalty*s_elastic;
 end
 %% Elastic mode variable for \ell_1 reformulations
