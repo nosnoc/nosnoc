@@ -140,14 +140,11 @@ J_comp_std = 0;
 J_comp_fesd = 0;
 J_regularize_h = 0;
 J_regularize_sot = 0;
-% constraints
-g = {};
-lbg = [];
-ubg = [];
 
 % Initialize problem struct
 % TODO also add constraints indices
 problem = struct();
+% Primal vars
 problem.w = {};
 problem.w0 = [];
 problem.lbw = [];
@@ -162,9 +159,11 @@ problem.ind_elastic = [];
 problem.ind_sot = []; % index for speed of time variable
 problem.ind_boundary = []; % index of bundary value lambda and mu
 problem.ind_t_final = []; % Time-optimal problems: define auxilairy variable for the final time.
-
-% TODO add this to problem
-ind_g_clock_state = [];
+% Constraints
+problem.g = {};
+problem.lbg = [];
+problem.ubg = [];
+problem.ind_g_clock_state = [];
 
 
 X_ki = define_casadi_symbolic(casadi_symbolic_mode,'X0',n_x);
@@ -237,17 +236,11 @@ for k=0:N_stages-1
     %% General Nonlinear constraint (on control interval boundary)
     % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
     if g_ineq_constraint
-        g_ineq_k = g_ineq_fun(X_ki,Uk);
-        g = {g{:}, g_ineq_k};
-        lbg = [lbg; g_ineq_lb];
-        ubg = [ubg; g_ineq_ub];
+        problem = add_constraint(problem, g_ineq_fun(X_ki,Uk), g_ineq_lb, g_ineq_ub);
     end
     % path complementarity constraints
     if g_comp_path_constraint
-        g_comp_path_k = g_comp_path_fun(X_ki,Uk)-sigma_p;
-        g = {g{:}, g_comp_path_k};
-        lbg = [lbg; g_comp_path_lb];
-        ubg = [ubg; g_comp_path_ub];
+        problem = add_constraint(problem, g_comp_path_fun(X_ki,Uk)-sigma_p, g_comp_path_lb, g_comp_path_ub);
     end
     sum_h_ki_control_interval_k = 0; % sum of all h_ki at current control interval
 
@@ -459,97 +452,83 @@ for k=0:N_stages-1
 
         for j=1:n_s
             switch irk_representation
-                case 'integral'
-                    % Expression for the state derivative at the stage point
-                    xp = C(1,j+1)*X_ki;
-                    % Lagrange polynomial with values at state
-                    for r=1:n_s
-                        xp = xp + C(r+1,j+1)*X_ki_stages{r};
-                    end
-                    % Evaluate Differential and Algebraic Equations at stage points
-                    if n_u > 0
-                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                    else
-                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
-                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
-                    end
-                    if time_rescaling && use_speed_of_time_variables
-                        % rescale equations
-                        fj = s_sot_k*fj;
-                        qj = s_sot_k*qj;
-                        gj = s_sot_k*gj;
-                    end
-                    % Add contribution to the end state, Attention qj changes with time scaling!
-                    Xk_end = Xk_end + D(j+1)*X_ki_stages{j};
-                    % Add contribution to quadrature function
-                    J = J + B(j+1)*qj*h_ki;
-                    % Append IRK equations to NLP constraint
-                    g = {g{:}, h_ki*fj - xp};
+              case 'integral'
+                % Expression for the state derivative at the stage point
+                xp = C(1,j+1)*X_ki;
+                % Lagrange polynomial with values at state
+                for r=1:n_s
+                    xp = xp + C(r+1,j+1)*X_ki_stages{r};
+                end
+                % Evaluate Differential and Algebraic Equations at stage points
+                if n_u > 0
+                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                    gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                else
+                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
+                    gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
+                end
+                if time_rescaling && use_speed_of_time_variables
+                    % rescale equations
+                    fj = s_sot_k*fj;
+                    qj = s_sot_k*qj;
+                    gj = s_sot_k*gj;
+                end
+                % Add contribution to the end state, Attention qj changes with time scaling!
+                Xk_end = Xk_end + D(j+1)*X_ki_stages{j};
+                % Add contribution to quadrature function
+                J = J + B(j+1)*qj*h_ki;
+                % Append IRK equations to NLP constraint
+                problem = add_constraint(problem, h_ki*fj - xp, zeros(nx, 0), zeros(nx, 0));
 
-                case 'differential'
-                    % Evaluate Differential and Algebraic Equations at stage points
-                    if n_u > 0
-                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                    else
-                        [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
-                        gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
-                    end
+              case 'differential'
+                % Evaluate Differential and Algebraic Equations at stage points
+                if n_u > 0
+                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                    gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                else
+                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
+                    gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
+                end
+                
+                if time_rescaling && use_speed_of_time_variables
+                    % rescale equations
+                    fj = s_sot_k*fj;
+                    qj = s_sot_k*qj;
+                    gj = s_sot_k*gj;
+                end
+                % Add contribution to the end state and quadrature term
+                if use_fesd
+                    Xk_end = Xk_end + h_ki*b_irk(j)*V_ki_stages{j};
+                    J = J + h_ki*b_irk(j)*qj;
+                else
+                    Xk_end = Xk_end + h_k(k+1)*b_irk(j)*V_ki_stages{j};
+                    J = J + h_k(k+1)*b_irk(j)*qj;
+                end
+                % Append IRK equations (differential part) to NLP constraint, note that we dont distingiush if use_fesd is on/off
+                % since it was done in the defintion of X_ki_stages which enters f_j
+                problem = add_constraint(problem, fj - V_ki_stages{j}, zeros(nx, 1), zeros(nx, 1));
 
-                    if time_rescaling && use_speed_of_time_variables
-                        % rescale equations
-                        fj = s_sot_k*fj;
-                        qj = s_sot_k*qj;
-                        gj = s_sot_k*gj;
-                    end
-                    % Add contribution to the end state and quadrature term
-                    if use_fesd
-                        Xk_end = Xk_end + h_ki*b_irk(j)*V_ki_stages{j};
-                        J = J + h_ki*b_irk(j)*qj;
-                    else
-                        Xk_end = Xk_end + h_k(k+1)*b_irk(j)*V_ki_stages{j};
-                        J = J + h_k(k+1)*b_irk(j)*qj;
-                    end
-                    % Append IRK equations (differential part) to NLP constraint, note that we dont distingiush if use_fesd is on/off
-                    % since it was done in the defintion of X_ki_stages which enters f_j
-                    g = {g{:}, fj - V_ki_stages{j}};
-
-                    % lifting considerations
-                    if lift_irk_differential
-                        g = {g{:}, X_ki_lift{j}};
-                        lbg = [lbg; zeros(n_x,1)];
-                        ubg = [ubg; zeros(n_x,1)];
-                    end
-                    if  x_box_at_stg && ~lift_irk_differential
-                        X_ki_stages{j}
-                        g
-                        g = {g{:};X_ki_stages{j}};
-                        lbg = [lbg; lbx];
-                        ubg = [ubg; ubx];
-                    end
+                % lifting considerations
+                if lift_irk_differential
+                    problem = add_constraint(problem, X_ki_lift{j}, zeros(nx, 1), zeros(nx, 1));
+                end
+                if  x_box_at_stg && ~lift_irk_differential
+                    problem = add_constraint(problem, X_ki_lift{j}, lbx, ubx);
+                end
             end
             % Append IRK equations (algebraic part) to NLP constraint (same for both representations)
-            g = {g{:}, gj};
-            lbg = [lbg; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
-            ubg = [ubg; zeros(n_x,1); zeros(n_algebraic_constraints,1)];
+            problem = add_constraint(problem, gj, zeros(n_algebraic_constraints,1), zeros(n_algebraic_constraints,1))
 
             %% General nonlinear constraint at stage points
             if g_ineq_constraint && g_ineq_at_stg
                 % indepednet of the fact is it lifter od not in the
                 % differential case
-                g_ineq_k = g_ineq_fun(X_ki_stages{j},Uk);
-                g = {g{:}, g_ineq_k};
-                lbg = [lbg; g_ineq_lb];
-                ubg = [ubg; g_ineq_ub];
+                problem = add_constraint(problem, g_ineq_fun(X_ki_stages{j},Uk), g_ineq_lb, g_ineq_ub);
             end
-
+            
             % path complementarity constraints
             if g_comp_path_constraint   && g_ineq_at_stg
-                g_comp_path_k = g_comp_path_fun(X_ki_stages{j},Uk)-p(1);
-                g = {g{:}, g_comp_path_k};
-                lbg = [lbg; g_comp_path_lb];
-                ubg = [ubg; g_comp_path_ub];
+                problem = add_constraint(problem, g_comp_path_fun(X_ki_stages{j},Uk)-p(1), g_comp_path_lb, g_comp_path_ub);
             end
 
             %% Complementarity constraints (standard and cross)
@@ -598,14 +577,12 @@ for k=0:N_stages-1
             end
 
             [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_current_fe,dimensions,current_index);
-            g = {g{:}, g_comp};
-            lbg = [lbg; g_comp_lb];
-            ubg = [ubg; g_comp_ub];
+            problem = add_constraint(problem, g_comp, g_comp_lb, g_comp_ub);
         end
 
         %% Step equilibration
         if use_fesd
-%         step_equilibration_constrains;
+            %         step_equilibration_constrains;
             % define the switching indicator function for previous  node/finite element boundary
             if  (k > 0 || i > 0)
                 % backward sums at current stage k are equal to the forward sums at stage previous stage (k-1)
@@ -636,19 +613,19 @@ for k=0:N_stages-1
                     J_regularize_h  = J_regularize_h + (nu_ki)*delta_h_ki^2;
                 elseif strcmpi(step_equilibration,'direct')
                     % step equilbiration as hard equality constraint
-                    g = {g{:}, nu_ki_scaled*delta_h_ki};
-                    lbg = [lbg; 0];
-                    ubg = [ubg; 0];
+                    problem = add_constraint(problem, nu_ki_scaled*delta_h_ki, 0, 0);
                 elseif strcmpi(step_equilibration,'direct_homotopy')
-                    g = {g{:}, [nu_ki*delta_h_ki-sigma_p;-nu_ki*delta_h_ki-sigma_p]};
-                    lbg = [lbg; -inf;-inf];
-                    ubg = [ubg; 0;0];
+                    problem = add_constraint(problem,...
+                                             [nu_ki*delta_h_ki-sigma_p;-nu_ki*delta_h_ki-sigma_p],...
+                                             [-inf;-inf],...
+                                             [0;0]);
                 elseif strcmpi(step_equilibration,'direct_homotopy_lift')
                     nu_ki_lift = define_casadi_symbolic(casadi_symbolic_mode,'nu_ki_lift ',1);
                     problem = add_variable(problem, nu_ki_lift, 1, -inf, inf);
-                    g = {g{:}, [nu_ki-nu_ki_lift;nu_ki_lift*delta_h_ki-sigma_p;-nu_ki_lift*delta_h_ki-sigma_p]};
-                    lbg = [lbg;0;-inf;-inf];
-                    ubg = [ubg;0;0;0];
+                    problem = add_constraint(problem,...
+                                             [nu_ki-nu_ki_lift;nu_ki_lift*delta_h_ki-sigma_p;-nu_ki_lift*delta_h_ki-sigma_p],...
+                                             [0;-inf;-inf],...
+                                             [0;0;0]);
                 else
                     error('Invalid step_equlibration mode, please pick a valid option, e.g., ''l2_relaxed_scaled'' or ''heuristic_mean''');
                 end
@@ -666,27 +643,19 @@ for k=0:N_stages-1
         end
 
         % Add equality constraint
-        g = {g{:}, Xk_end-X_ki};
-        lbg = [lbg; zeros(n_x,1)];
-        ubg = [ubg; zeros(n_x,1)];
+        problem = add_constrain(Xk_end-X_ki, zeros(n_x,1), zeros(n_x,1));
 
         %% Evaluate inequality constraints at finite elements boundaries
         % TODO?: This should be removed? the left boundary point is treated
         % after control defintion, the very last right point should be treated in the terminal constraint
         if g_ineq_constraint && g_ineq_at_fe && i<N_finite_elements(k+1)-1
             % the third flag is because at i = 0 the evaulation is at the control interval boundary (done above)
-            g_ineq_k = g_ineq_fun(X_ki,Uk);
-            g = {g{:}, g_ineq_k};
-            lbg = [lbg; g_ineq_lb];
-            ubg = [ubg; g_ineq_ub];
+            problem = add_constraint(problem, g_ineq_fun(X_ki,Uk), g_ineq_lb, g_ineq_ub);
         end
 
         % path complementarity constraints
         if g_comp_path_constraint   && g_ineq_at_fe && i<N_finite_elements(k+1)-1
-            g_comp_path_k = g_comp_path_fun(X_ki,Uk)-p(1);
-            g = {g{:}, g_comp_path_k};
-            lbg = [lbg; g_comp_path_lb];
-            ubg = [ubg; g_comp_path_ub];
+            problem = add_constraint(problem, g_comp_path_fun(X_ki,Uk)-p(1), g_comp_path_lb, g_comp_path_ub);
         end
 
         %% g_z_all constraint for boundary point and continuity of algebraic variables.
@@ -696,10 +665,11 @@ for k=0:N_stages-1
             else
                 temp = g_z_all_fun(X_ki,Z_kd_end);
             end
-            gj = temp(1:end-n_lift_eq);
-            lbg = [lbg; zeros(n_algebraic_constraints-n_lift_eq,1)];
-            ubg = [ubg; zeros(n_algebraic_constraints-n_lift_eq,1)];
-            g = {g{:}, gj};
+            % TODO This is a hack fix it as done in python.
+            problem = add_constraint(problem,...
+                                     temp(1:end-n_lift_eq),...
+                                     zeros(n_algebraic_constraints-n_lift_eq,1),...
+                                     zeros(n_algebraic_constraints-n_lift_eq,1));
         end
     end
 
@@ -707,25 +677,17 @@ for k=0:N_stages-1
     if equidistant_control_grid && use_fesd
         if ~time_optimal_problem
             % numerical time is fixed.
-            g = {g{:}, sum_h_ki_control_interval_k-h};
-            lbg = [lbg; 0];
-            ubg = [ubg; 0];
+            problem = add_constraint(problem, sum_h_ki_control_interval_k-h, 0, 0);
         else
             if ~time_freezing
                 % if time_freezing on, time optimal problems are regarded via the clock state
                 if use_speed_of_time_variables
                     % numerical time and speed of time are decoupled
-                    g = {g{:}, sum_h_ki_control_interval_k-h};
-                    lbg = [lbg; 0];
-                    ubg = [ubg; 0];
-                    g = {g{:}, integral_clock_state_k-T_final/N_stages};
-                    lbg = [lbg; 0];
-                    ubg = [ubg; 0];
+                    problem = add_constraint(problem, sum_h_ki_control_interval_k-h, 0, 0);
+                    problem = add_constraint(problem, integral_clock_state_k-T_final/N_stages, 0, 0);
                 else
                     % numerical time and speed of time are lumped together
-                    g = {g{:}, sum_h_ki_control_interval_k-T_final/N_stages};
-                    lbg = [lbg; 0];
-                    ubg = [ubg; 0];
+                    problem = add_constraint(problem, sum_h_ki_control_interval_k-T_final/N_stages, 0, 0);
                 end
             end
         end
@@ -735,13 +697,10 @@ for k=0:N_stages-1
     if time_freezing && stagewise_clock_constraint
         % This makes mostly sense if time freezin is on. Imposes the constraints t((k+1)*h) = (k+1)*h+t_0 , x0(end) = t_0.
         if time_optimal_problem
-            g = {g{:}, Xk_end(end)-(k+1)*(T_final/N_stages)+x0(end)};
+            problem = add_constraint(problem, Xk_end(end)-(k+1)*(T_final/N_stages)+x0(end), 0, 0, 'g_clock_state');
         else
-            g = {g{:}, Xk_end(end)-(k+1)*h+x0(end)};
+            problem = add_constraint(problem, Xk_end(end)-(k+1)*h+x0(end), 0, 0, 'g_clock_state');
         end
-        lbg = [lbg; 0];
-        ubg = [ubg; 0];
-        ind_g_clock_state = [ind_g_clock_state;length(lbg)];
     end
     %% Update integral of clock state in numerical time;
     integral_clock_state = integral_clock_state + integral_clock_state_k ;
@@ -767,14 +726,10 @@ end
 if time_freezing
     % Terminal Phyisical Time (Posssble terminal constraint on the clock state if time freezing is active).
     if time_optimal_problem
-        g = {g{:}, Xk_end(end)-T_final};
-        lbg = [lbg; 0];
-        ubg = [ubg; 0];
+        problem = add_constraint(problem, Xk_end(end)-T_final, 0, 0);
     else
         if impose_terminal_phyisical_time && ~stagewise_clock_constraint
-            g = {g{:}, Xk_end(end)-(T_ctrl_p)};
-            lbg = [lbg; 0];
-            ubg = [ubg; 0];
+            problem = add_constraint(problem, Xk_end(end)-(T_ctrl_p), 0, 0);
         else
             % no terminal constraint on the numerical time, as it
             % is implicitly determined by
@@ -782,9 +737,7 @@ if time_freezing
     end
     if equidistant_control_grid && ~stagewise_clock_constraint
         if ~time_optimal_problem
-            g = {g{:}, Xk_end(end)-T};
-            lbg = [lbg; 0];
-            ubg = [ubg; 0];
+            problem = add_constraint(problem, Xk_end(end)-T, 0, 0);
         end
     end
 else
@@ -792,9 +745,7 @@ else
         if time_optimal_problem
             % if time_freezing is on, everything is done via the clock state.
             if use_speed_of_time_variables
-                g = {g{:}, integral_clock_state-T_final};
-                lbg = [lbg; 0];
-                ubg = [ubg; 0];
+                problem = add_constraint(problem, integral_clock_state-T_final, 0, 0);
             else
                 % otherwise treated via variable h_ki, i.e.,  h_ki =  T_final/(N_stages*N_FE)
             end
@@ -808,22 +759,14 @@ else
             % all step sizes add up to prescribed time T.
             % if use_speed_of_time_variables = true, numerical time is decupled from the sot scaling (no mather if local or not):
             if ~time_optimal_problem
-                g = {g{:}, sum_h_ki_all-T};
-                lbg = [lbg; 0];
-                ubg = [ubg; 0];
+                problem = add_constraint(problem, sum_h_ki_all-T, 0, 0);
             else
                 if ~use_speed_of_time_variables
-                    g = {g{:}, sum_h_ki_all-T_final};
-                    lbg = [lbg; 0];
-                    ubg = [ubg; 0];
+                    problem = add_constraint(problem, sum_h_ki_all-T_final, 0, 0);
                 else
                     % T_num = T_phy = T_final \neq T.
-                    g = {g{:}, sum_h_ki_all-T};
-                    lbg = [lbg; 0];
-                    ubg = [ubg; 0];
-                    g = {g{:}, integral_clock_state-T_final};
-                    lbg = [lbg; 0];
-                    ubg = [ubg; 0];
+                    problem = add_constraint(problem, sum_h_ki_all-T, 0, 0);
+                    problem = add_constraint(problem, integral_clock_state-T_final, 0, 0);
                 end
             end
         end
@@ -860,12 +803,10 @@ if terminal_constraint
     switch relax_terminal_constraint
       case 0
         % hard constraint
-        g = {g{:}, g_terminal };
-        lbg = [lbg; g_terminal_lb];
         if relax_terminal_constraint_from_above
-            ubg = [ubg; g_terminal_ub*0+inf];
+            problem = add_constraint(problem, g_terminal, g_terminal_lb, inf);
         else
-            ubg = [ubg; g_terminal_ub];
+            problem = add_constraint(problem, g_terminal, g_terminal_lb, g_terminal_ub);
         end
       case 1
         % l_1
@@ -875,12 +816,18 @@ if terminal_constraint
                                s_terminal_ell_1,...
                                1e3*ones(n_terminal,1),...
                                -inf*ones(n_terminal,1),...
-                               inf*ones(n_terminal,1))
+                               inf*ones(n_terminal,1));
         % relaxed constraints
-        g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_1};
-        g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_1};
-        lbg = [lbg; -inf*ones(2*n_terminal,1)];
-        ubg = [ubg; zeros(2*n_terminal,1)];
+        problem = add_constraint(problem,...
+                                 g_terminal-g_terminal_lb-s_terminal_ell_1,...
+                                 -inf*ones(n_terminal,1),...
+                                 zeros(n_terminal,1)
+                                );
+        problem = add_constraint(problem,...
+                                 -(g_terminal-g_terminal_lb)-s_terminal_ell_1,...
+                                 -inf*ones(n_terminal,1),...
+                                 zeros(n_terminal,1)
+                                );
         % penalize slack
         J = J + rho_terminal_p*sum(s_terminal_ell_1);
       case 2
@@ -896,10 +843,16 @@ if terminal_constraint
                                -inf,...
                                inf);
         % relaxed constraint
-        g = {g{:}, g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1)};
-        g = {g{:}, -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1)};
-        lbg = [lbg; -inf*ones(2*n_terminal,1)];
-        ubg = [ubg; zeros(2*n_terminal,1)];
+        problem = add_constraint(problem,...
+                                 g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
+                                 -inf*ones(n_terminal,1),...
+                                 zeros(n_terminal,1)
+                                );
+        problem = add_constraint(problem,...
+                                 -(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
+                                 -inf*ones(n_terminal,1),...
+                                 zeros(n_terminal,1)
+                                );
         % penalize slack
         J = J + rho_terminal_p*(s_terminal_ell_inf);
       case 4
@@ -907,10 +860,16 @@ if terminal_constraint
             % l_inf
             % define slack variable
             % relaxed constraint
-            g = {g{:}, g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1)};
-            g = {g{:}, -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1)};
-            lbg = [lbg; -inf*ones(2*n_terminal,1)];
-            ubg = [ubg; zeros(2*n_terminal,1)];
+            problem = add_constraint(problem,...
+                                     g_terminal-g_terminal_lb-s_elastic*ones(n_terminal,1),...
+                                     -inf*ones(n_terminal,1),...
+                                     zeros(n_terminal,1)
+                                    );
+            problem = add_constraint(problem,...
+                                     -(g_terminal-g_terminal_lb)-s_elastic*ones(n_terminal,1),...
+                                     -inf*ones(n_terminal,1),...
+                                     zeros(n_terminal,1)
+                                    );
         else
             error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.')
         end
@@ -919,10 +878,7 @@ end
 
 % path complementarity constraints
 if g_comp_path_constraint
-    g_comp_path_k = g_comp_path_fun(Xk_end,Uk)-p(1);
-    g = {g{:}, g_comp_path_k};
-    lbg = [lbg; g_comp_path_lb];
-    ubg = [ubg; g_comp_path_ub];
+    problem = add_constraint(problem, g_comp_path_fun(Xk_end,Uk)-p(1), g_comp_path_lb, g_comp_path_ub);
 end
 
 %% quadratic regularization for speed of time variables;
@@ -969,16 +925,13 @@ if mpcc_mode >= 8 && mpcc_mode <= 10
     problem = add_variable(problem, rho_elastic, rho_0, rho_min, rho_max);
     if nonlinear_sigma_rho_constraint
         if convex_sigma_rho_constraint
-            g = {g{:}, -rho_scale*exp(-rho_lambda*rho_elastic)+s_elastic};
+            problem = add_constraint(problem, -rho_scale*exp(-rho_lambda*rho_elastic)+s_elastic, 0, inf);
         else
-            g = {g{:}, rho_scale*exp(-rho_lambda*rho_elastic)-s_elastic};
+            problem = add_constraint(problem, rho_scale*exp(-rho_lambda*rho_elastic)-s_elastic, 0, inf);
         end
     else
-        g = {g{:}, -(rho_elastic-rho_max)-s_elastic};
+        problem = add_constraint(problem, -(rho_elastic-rho_max)-s_elastic, 0, inf);
     end
-
-    lbg = [lbg; 0];
-    ubg = [ubg; inf];
 
     % add elastic variable to the vector of unknowns and add objective contribution
     problem = add_variable(problem, s_elastic, s_elastic_0, s_elastic_min, s_elastic_max);
@@ -998,7 +951,7 @@ J = J + rho_h_p*J_regularize_h;
 
 %% CasADi Functions for objective complementarity residual
 w = vertcat(problem.w{:}); % vectorize all variables, TODO: again, further cleanup necessary
-g = vertcat(g{:}); % vectorize all constraint functions
+g = vertcat(problem.g{:}); % vectorize all constraint functions
 J_fun = Function('J_fun', {w} ,{J_objective});
 comp_res = Function('comp_res',{w, p},{J_comp});
 comp_res_fesd = Function('comp_res_fesd',{w},{J_comp_fesd});
@@ -1059,7 +1012,7 @@ model.ind_v = problem.ind_v;
 model.ind_z = problem.ind_z;
 model.ind_u = problem.ind_u;
 model.ind_h = problem.ind_h;
-model.ind_g_clock_state = ind_g_clock_state;
+model.ind_g_clock_state = problem.ind_g_clock_state;
 model.ind_sot = problem.ind_sot;
 model.ind_t_final  = problem.ind_t_final;
 model.ind_boundary = problem.ind_boundary;
