@@ -478,7 +478,7 @@ for k=0:N_stages-1
                 % Add contribution to quadrature function
                 J = J + B(j+1)*qj*h_ki;
                 % Append IRK equations to NLP constraint
-                problem = add_constraint(problem, h_ki*fj - xp, zeros(n_x, 0), zeros(n_x, 0));
+                problem = add_constraint(problem, h_ki*fj - xp, zeros(n_x, 1), zeros(n_x, 1));
 
               case 'differential'
                 % Evaluate Differential and Algebraic Equations at stage points
@@ -985,7 +985,8 @@ if print_level > 5
     disp("g")
     print_casadi_vector(g)
     disp('lbg, ubg')
-    disp([lbg, ubg])
+    disp([length(problem.lbg), length(problem.ubg)])
+    disp([problem.lbg, problem.ubg])
 
     disp("w")
     print_casadi_vector(w)
