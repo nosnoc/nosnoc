@@ -183,7 +183,7 @@ if there_exist_free_x0
 
     problem = add_variable(problem, X_ki, x0, x0_lb, x0_ub, 'x');
 else
-    problem = add_variable(problem, X_ki, x0, x0, x, 'x');
+    problem = add_variable(problem, X_ki, x0, x0, x0, 'x');
 end
 
 % Integral of the clock state if no time rescaling is present.

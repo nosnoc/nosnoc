@@ -5,7 +5,7 @@ function [problem] = add_variable(problem, w, w0, lbw, ubw, type)
     ind_set = problem.(strcat('ind_', type));
     problem.(strcat('ind_', type)) = [ind_set, length(problem.w0)+1:length(problem.w0)+length(w)];
     problem.w0 = [problem.w0; w0];
-    problem.lbw = [problem.lbw; w0];
-    problem.ubw = [problem.ubw; w0];
+    problem.lbw = [problem.lbw; lbw];
+    problem.ubw = [problem.ubw; ubw];
 end
 
