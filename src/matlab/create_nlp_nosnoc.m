@@ -1057,9 +1057,9 @@ if print_level > 0
     disp("w")
     print_casadi_vector(w)
     disp('lbw, ubw')
-    disp([lbw, ubw])
+    disp([problem.lbw, problem.ubw])
     disp('w0')
-    disp(w0)
+    disp(problem.w0)
 
     disp('objective')
     disp(J)
