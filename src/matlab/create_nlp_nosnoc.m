@@ -146,7 +146,7 @@ lbg = [];
 ubg = [];
 
 % Initialize problem struct
-% TODO; also add constraints indices
+% TODO also add constraints indices
 problem = struct();
 problem.w = {};
 problem.w0 = [];
@@ -159,11 +159,13 @@ problem.ind_v = [];
 problem.ind_z = [];
 problem.ind_h = [];
 problem.ind_elastic = [];
-problem.ind_g_clock_state = [];
 problem.ind_vf  = [];
 problem.ind_sot = []; % index for speed of time variable
 problem.ind_boundary = []; % index of bundary value lambda and mu
 problem.ind_t_final = []; % Time-optimal problems: define auxilairy variable for the final time.
+
+% TODO add this to problem
+ind_g_clock_state = [];
 
 
 X_ki = define_casadi_symbolic(casadi_symbolic_mode,'X0',n_x);
@@ -390,22 +392,22 @@ for k=0:N_stages-1
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],n_theta);
                     Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_simplex);
                     % TODO: remove z0 indexing
-                    problem = add_variable(problem,
-                                           vertcat(Lambda_ki_end{j}, Mu_ki_end),
-                                           z0(n_theta+1:end),
-                                           lbz(n_theta+1:end),
-                                           ubz(n_theta+1:end),
+                    problem = add_variable(problem,...
+                                           vertcat(Lambda_ki_end{j}, Mu_ki_end),...
+                                           z0(n_theta+1:end),...
+                                           lbz(n_theta+1:end),...
+                                           ubz(n_theta+1:end),...
                                            'boundary');
                     Lambda_ki = {Lambda_ki{:}, Lambda_ki_end};
                     Mu_ki = {Mu_ki{:}, Mu_ki_end};
                 case 'Step'
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],2*n_alpha);
                     Mu_ki_end = [];
-                    problem = add_variable(problem,
-                                           vertcat(Lambda_ki_end{j}, Mu_ki_end),
-                                           z0(n_alpha+1:3*n_alpha),
-                                           lbz(n_alpha+1:3*n_alpha),
-                                           ubz(n_alpha+1:3*n_alpha),
+                    problem = add_variable(problem,...
+                                           vertcat(Lambda_ki_end{j}, Mu_ki_end),...
+                                           z0(n_alpha+1:3*n_alpha),...
+                                           lbz(n_alpha+1:3*n_alpha),...
+                                           ubz(n_alpha+1:3*n_alpha),...
                                            'boundary');
                     Lambda_ki = {Lambda_ki{:}, Lambda_ki_end};
                     Mu_ki = {Mu_ki{:}, []};
@@ -586,11 +588,11 @@ for k=0:N_stages-1
             end
             if s_ell_1_elastic_exists
                 s_elastic_ell_1  = define_casadi_symbolic(casadi_symbolic_mode,['s_elastic_'  num2str(k) '_' num2str(i) '_' num2str(j)], n_all_comp_j);
-                problem = add_variable(problem,
-                                       s_elastic_ell_1,
-                                       s_elastic_0*(n_all_comp_j,1),
-                                       s_elastic_min*(n_all_comp_j,1),
-                                       s_elastic_max*(n_all_comp_j,1),
+                problem = add_variable(problem,...
+                                       s_elastic_ell_1,...
+                                       s_elastic_0*ones(n_all_comp_j,1),...
+                                       s_elastic_min*ones(n_all_comp_j,1),...
+                                       s_elastic_max*ones(n_all_comp_j,1),...
                                        'elastic');
                 % sum of all elastic variables, to be passed penalized
                 sum_s_elastic = sum_s_elastic+ sum(s_elastic_ell_1);
@@ -664,9 +666,9 @@ for k=0:N_stages-1
 
         % box constraint always done at control interval boundary
         if x_box_at_fe
-            problem = add_variable(problem, X_ki_stages{j}, x0, lbx, ubx, 'x');
+            problem = add_variable(problem, X_ki, x0, lbx, ubx, 'x');
         else
-            problem = add_variable(problem, X_ki_stages{j}, x0, -inf*ones(n_x,1), inf*ones(n_x,1), 'x');
+            problem = add_variable(problem, X_ki, x0, -inf*ones(n_x,1), inf*ones(n_x,1), 'x');
         end
 
         % Add equality constraint
@@ -1006,6 +1008,9 @@ end
 J = J + rho_h_p*J_regularize_h;
 
 %% CasADi Functions for objective complementarity residual
+for optv=problem.w
+    print_casadi_vector(optv{:})
+end
 w = vertcat(problem.w{:}); % vectorize all variables, TODO: again, further cleanup necessary
 g = vertcat(g{:}); % vectorize all constraint functions
 J_fun = Function('J_fun', {w} ,{J_objective});
@@ -1068,9 +1073,9 @@ model.ind_v = problem.ind_v;
 model.ind_z = problem.ind_z;
 model.ind_u = problem.ind_u;
 model.ind_h = problem.ind_h;
-model.ind_vf = ind_vf;
+model.ind_vf = problem.ind_vf;
 model.ind_g_clock_state = ind_g_clock_state;
-model.ind_sot = ind_sot;
+model.ind_sot = problem.ind_sot;
 model.ind_t_final  = problem.ind_t_final;
 model.ind_boundary = problem.ind_boundary;
 model.n_cross_comp = n_cross_comp;
