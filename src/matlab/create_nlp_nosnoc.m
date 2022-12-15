@@ -145,7 +145,29 @@ g = {};
 lbg = [];
 ubg = [];
 
+% Initialize problem struct
+% TODO; also add constraints indices
+problem = struct();
+problem.w = {};
+problem.w0 = [];
+problem.lbw = [];
+problem.ubw = [];
+% Index vectors
+problem.ind_x = [];
+problem.ind_u = [];
+problem.ind_v = [];
+problem.ind_z = [];
+problem.ind_h = [];
+problem.ind_elastic = [];
+problem.ind_g_clock_state = [];
+problem.ind_vf  = [];
+problem.ind_sot = []; % index for speed of time variable
+problem.ind_boundary = []; % index of bundary value lambda and mu
+problem.ind_t_final = []; % Time-optimal problems: define auxilairy variable for the final time.
+
+
 X_ki = define_casadi_symbolic(casadi_symbolic_mode,'X0',n_x);
+
 w = {w{:}, X_ki};
 
 if there_exist_free_x0
@@ -156,26 +178,11 @@ if there_exist_free_x0
 
     x0_ub(ind_free_x0) = ubx(ind_free_x0);
     x0_lb(ind_free_x0) = lbx(ind_free_x0);
-    lbw = [lbw; x0_lb];
-    ubw = [ubw; x0_ub];
+
+    problem = add_variable(problem, X_ki, x0, x0_lb, x0_ub, 'x');
 else
-    lbw = [lbw; x0];
-    ubw = [ubw; x0];
+    problem = add_variable(problem, X_ki, x0, x0, x, 'x');
 end
-
-w0 = [w0; x0];
-
-% Index vectors
-ind_x = [1:n_x];
-ind_u = [];
-ind_v = [];
-ind_z = [];
-ind_h = [];
-ind_elastic = [];
-ind_g_clock_state = [];
-ind_vf  = [];
-ind_sot = []; % index for speed of time variable
-ind_boundary = []; % index of bundary value lambda and mu
 
 % Integral of the clock state if no time rescaling is present.
 sum_h_ki_control_interval_k = 0;
@@ -204,13 +211,7 @@ for k=0:N_stages-1
     % control variables
     if n_u > 0
         Uk = define_casadi_symbolic(casadi_symbolic_mode,['U_' num2str(k)],n_u);
-        w = {w{:}, Uk};
-        % index colector for control variables
-        ind_u = [ind_u,length(w0)+1:length(w0)+n_u];
-        % intialize controls, lower and upper bounds
-        w0 = [w0; u0];
-        lbw = [lbw;lbu];
-        ubw = [ubw;ubu];
+        problem = add_variable(problem, Uk, u0, lbu, ubu, 'u');
     end
 
     %%  Time rescaling of the stages (speed of time) to acchieve e.g., a desired final time in Time-Freezing or to solve time optimal control problems.
@@ -220,26 +221,13 @@ for k=0:N_stages-1
         if local_speed_of_time_variable
             % at every stage
             s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k)],1);
-            w = {w{:}, s_sot_k};
-            % index colector for sot variables
-            ind_sot = [ind_sot,length(w0)+1:length(w0)+1];
-            % intialize speed of time (sot), lower and upper bounds
-            w0 = [w0; s_sot0];
-            ubw = [ubw;s_sot_max];
-            lbw = [lbw;s_sot_min];
+            problem = add_variable(problem, s_sot_k, s_sot0, s_sot_min, s_sot_max, 'sot');
             J_regularize_sot = J_regularize_sot+(s_sot_k-1)^2;
         else
             if k == 0
                 % only once
                 s_sot_k = define_casadi_symbolic(casadi_symbolic_mode,['s_sot_' num2str(k+1)],1);
-                w = {w{:}, s_sot_k};
-                % index colector for sot variables
-                ind_sot = [ind_sot,length(w0)+1:length(w0)+1];
-                % intialize speed of time (sot), lower and upper bounds
-                w0 = [w0; s_sot0];
-                lbw = [lbw;s_sot_min];
-                ubw = [ubw;s_sot_max];
-                % enforce gradient steps towward smaller values of s_sot to aid convergence (large variaties of s_sot = high nonlinearity)
+                problem = add_variable(problem, s_sot_k, s_sot0, s_sot_min, s_sot_max, 'sot');
                 J_regularize_sot = J_regularize_sot+(s_sot_k)^2;
             end
         end
@@ -289,13 +277,7 @@ for k=0:N_stages-1
             end
             % define step-size
             h_ki = define_casadi_symbolic(casadi_symbolic_mode,['h_'  num2str(k) '_' num2str(i)],1);
-            w = {w{:}, h_ki};
-            % index sets for step-size variables
-            ind_h = [ind_h,length(w0)+1:length(w0)+1];
-            w0 = [w0; h0_k(k+1)];
-            ubw = [ubw;ubh(k+1)];
-            lbw = [lbw;lbh(k+1)];
-
+            problem = add_variable(problem, h_ki, h0_k(k+1), lbh(k+1), ubh(k+1), 'h');
             if i > 0
                 delta_h_ki = h_ki - h_ki_previous;
             else
@@ -326,42 +308,26 @@ for k=0:N_stages-1
         % loop over all stage points to carry out defintions, initializations and bounds
         for j=1:n_s
             switch irk_representation
-                case 'integral'
-                    % define symbolic variables for values of diff. state a stage points
-                    X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
-                    w = {w{:}, X_ki_stages{j}};
-                    ind_x = [ind_x,length(w0)+1:length(w0)+n_x];
-                    w0 = [w0; x0];
+              case 'integral'
+                % define symbolic variables for values of diff. state a stage points
+                X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
+                if x_box_at_stg
+                    problem = add_variable(problem, X_ki_stages{j}, x0, lbx, ubx, 'x');
+                else
+                    problem = add_variable(problem, X_ki_stages{j}, x0, -inf*ones(n_x,1), inf*ones(n_x,1), 'x');
+                end
+              case 'differential'
+                V_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['V_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
+                problem = add_variable(problem, V_ki_stages{j}, v0, lbx,  -inf*ones(n_x,1), inf*ones(n_x,1), 'v');
+                
+                if lift_irk_differential
+                    X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_x);
                     if x_box_at_stg
-                        lbw = [lbw; lbx];
-                        ubw = [ubw; ubx];
+                        problem = add_variable(problem, X_ki_stages{j}, x0, lbx, ubx, 'x');
                     else
-                        lbw = [lbw; -inf*ones(n_x,1)];
-                        ubw = [ubw; inf*ones(n_x,1)];
+                        problem = add_variable(problem, X_ki_stages{j}, x0, -inf*ones(n_x,1), inf*ones(n_x,1), 'x');
                     end
-                case 'differential'
-                    V_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['V_'  num2str(k) '_' num2str(i) '_' num2str(j) ],n_x);
-                    w = {w{:}, V_ki_stages{j}};
-                    ind_v = [ind_v,length(w0)+1:length(w0)+n_x];
-                    w0 = [w0; v0];
-                    lbw = [lbw; -inf*ones(n_x,1)];
-                    ubw = [ubw; inf*ones(n_x,1)];
-
-                    if lift_irk_differential
-                        X_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_x);
-
-                        w = {w{:}, X_ki_stages{j}};
-                        ind_x = [ind_x,length(w0)+1:length(w0)+n_x];
-                        w0 = [w0; x0];
-                        % Bounds
-                        if x_box_at_stg
-                            lbw = [lbw; lbx];
-                            ubw = [ubw; ubx];
-                        else
-                            lbw = [lbw; -inf*ones(n_x,1)];
-                            ubw = [ubw; +inf*ones(n_x,1)];
-                        end
-                    end
+                end
             end
             % Note that the algebraic variablies are treated the same way in both irk representation modes.
             if strcmp(casadi_symbolic_mode, 'SX') || strcmp(casadi_symbolic_mode, 'casadi.SX') % TODO: remove this or
@@ -374,13 +340,7 @@ for k=0:N_stages-1
                 Z_ki_stages{j} = define_casadi_symbolic(casadi_symbolic_mode,['Z_'  num2str(k) '_' num2str(i) '_' num2str(j)],n_z);
             end
 
-            w = {w{:}, Z_ki_stages{j}};
-            % index sets
-            ind_z = [ind_z,length(w0)+1:length(w0)+n_z];
-            % bounds and initialization
-            lbw = [lbw; lbz];
-            ubw = [ubw; ubz];
-            w0 = [w0; z0];
+            problem = add_variable(problem, Z_ki_stages{j}, z0, lbz, ubz, 'z');
 
             % collection of all lambda and theta for current finite element, they are used for cross complementarites and step equilibration
             switch pss_mode
@@ -429,24 +389,24 @@ for k=0:N_stages-1
                 case 'Stewart'
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],n_theta);
                     Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_simplex);
-                    w = {w{:}, Lambda_ki_end};
-                    w = {w{:}, Mu_ki_end};
-                    % bounds and index sets
-                    ind_boundary = [ind_boundary,length(w0)+1:(length(w0)+n_z-n_theta)];
-                    w0 = [w0; z0(n_theta+1:end)];
-                    lbw = [lbw; lbz(n_theta+1:end)];
-                    ubw = [ubw; ubz(n_theta+1:end)];
+                    % TODO: remove z0 indexing
+                    problem = add_variable(problem,
+                                           vertcat(Lambda_ki_end{j}, Mu_ki_end),
+                                           z0(n_theta+1:end),
+                                           lbz(n_theta+1:end),
+                                           ubz(n_theta+1:end),
+                                           'boundary');
                     Lambda_ki = {Lambda_ki{:}, Lambda_ki_end};
                     Mu_ki = {Mu_ki{:}, Mu_ki_end};
                 case 'Step'
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],2*n_alpha);
                     Mu_ki_end = [];
-                    w = {w{:}, Lambda_ki_end};
-                    % bounds and index sets
-                    ind_boundary = [ind_boundary,length(w0)+1:(length(w0)+2*n_alpha)];
-                    w0 = [w0; z0(n_alpha+1:3*n_alpha)];
-                    lbw = [lbw; lbz(n_alpha+1:3*n_alpha)];
-                    ubw = [ubw; ubz(n_alpha+1:3*n_alpha)];
+                    problem = add_variable(problem,
+                                           vertcat(Lambda_ki_end{j}, Mu_ki_end),
+                                           z0(n_alpha+1:3*n_alpha),
+                                           lbz(n_alpha+1:3*n_alpha),
+                                           ubz(n_alpha+1:3*n_alpha),
+                                           'boundary');
                     Lambda_ki = {Lambda_ki{:}, Lambda_ki_end};
                     Mu_ki = {Mu_ki{:}, []};
             end
@@ -626,11 +586,12 @@ for k=0:N_stages-1
             end
             if s_ell_1_elastic_exists
                 s_elastic_ell_1  = define_casadi_symbolic(casadi_symbolic_mode,['s_elastic_'  num2str(k) '_' num2str(i) '_' num2str(j)], n_all_comp_j);
-                w = {w{:}, s_elastic_ell_1};
-                ind_elastic = [ind_elastic,length(w0)+1:length(w0)+n_all_comp_j];
-                lbw = [lbw; s_elastic_min*ones(n_all_comp_j,1)];
-                ubw = [ubw; s_elastic_max*ones(n_all_comp_j,1)];
-                w0 = [w0;s_elastic_0*ones(n_all_comp_j,1)];                
+                problem = add_variable(problem,
+                                       s_elastic_ell_1,
+                                       s_elastic_0*(n_all_comp_j,1),
+                                       s_elastic_min*(n_all_comp_j,1),
+                                       s_elastic_max*(n_all_comp_j,1),
+                                       'elastic');
                 % sum of all elastic variables, to be passed penalized
                 sum_s_elastic = sum_s_elastic+ sum(s_elastic_ell_1);
                 % pass to constraint creation
@@ -700,17 +661,12 @@ for k=0:N_stages-1
         %% Continuity condition - new NLP variable for state at end of a finite element
         % Conntinuity conditions for differential state
         X_ki = define_casadi_symbolic(casadi_symbolic_mode,['X_'  num2str(k+1) '_' num2str(i+1) ],n_x);
-        w = {w{:}, X_ki};
-        ind_x = [ind_x,length(w0)+1:length(w0)+n_x];
-        w0 = [w0; x0];
 
         % box constraint always done at control interval boundary
         if x_box_at_fe
-            lbw = [lbw; lbx];
-            ubw = [ubw; ubx];
+            problem = add_variable(problem, X_ki_stages{j}, x0, lbx, ubx, 'x');
         else
-            lbw = [lbw; -inf*ones(n_x,1)];
-            ubw = [ubw; -inf*ones(n_x,1)];
+            problem = add_variable(problem, X_ki_stages{j}, x0, -inf*ones(n_x,1), inf*ones(n_x,1), 'x');
         end
 
         % Add equality constraint
@@ -879,16 +835,10 @@ else
 end
 
 %%  Time-optimal problems: the objective.
-% Time-optimal problems: define auxilairy variable for the final time.
-ind_t_final = [];
 % if time_optimal_problem && (~use_speed_of_time_variables || time_freezing)
 if time_optimal_problem
     % Add to the vector of unknowns
-    w = {w{:}, T_final};
-    ind_t_final = [length(w0)+1];
-    w0 = [w0; T_final_guess];
-    lbw = [lbw;T_final_min];
-    ubw = [ubw;T_final_max];
+    problem = add_variable(problem, T_final, T_final_guess, T_final_min, T_final_max, 't_final')
     J = J + T_final;
 end
 
@@ -994,12 +944,7 @@ J_objective = J;
 %% Elastic mode variable for \ell_infty reformulations
 if mpcc_mode >= 5 && mpcc_mode < 8
     % add elastic variable to the vector of unknowns and add objective contribution
-    w = {w{:}, s_elastic};
-    ind_elastic = [ind_elastic,length(w0)+1:length(w0)+1];
-    lbw = [lbw; s_elastic_min];
-    ubw = [ubw; s_elastic_max];
-    w0 = [w0;s_elastic_0];
-
+    problem = add_variable(problem, s_elastic, s_elastic_0, s_elastic_min, s_elastic_max, 'elastic');
 
     if objective_scaling_direct
         J = J + (1/sigma_p)*s_elastic;
@@ -1061,7 +1006,7 @@ end
 J = J + rho_h_p*J_regularize_h;
 
 %% CasADi Functions for objective complementarity residual
-w = vertcat(w{:}); % vectorize all variables
+w = vertcat(problem.w{:}); % vectorize all variables, TODO: again, further cleanup necessary
 g = vertcat(g{:}); % vectorize all constraint functions
 J_fun = Function('J_fun', {w} ,{J_objective});
 comp_res = Function('comp_res',{w, p},{J_comp});
@@ -1113,31 +1058,30 @@ if print_level > 0
 
     disp('objective')
     disp(J)
-
-    ind_x
 end
 
 %% Model update: all index sets and dimensions
-model.ind_x = ind_x;
-model.ind_elastic = ind_elastic;
-model.ind_v = ind_v;
-model.ind_z = ind_z;
-model.ind_u = ind_u;
-model.ind_h = ind_h;
+% TODO: Maybe just return the problem, currently trying not to break compatibility for now.
+model.ind_x = problem.ind_x;
+model.ind_elastic = problem.ind_elastic;
+model.ind_v = problem.ind_v;
+model.ind_z = problem.ind_z;
+model.ind_u = problem.ind_u;
+model.ind_h = problem.ind_h;
 model.ind_vf = ind_vf;
 model.ind_g_clock_state = ind_g_clock_state;
 model.ind_sot = ind_sot;
-model.ind_t_final  = ind_t_final;
-model.ind_boundary = ind_boundary;
+model.ind_t_final  = problem.ind_t_final;
+model.ind_boundary = problem.ind_boundary;
 model.n_cross_comp = n_cross_comp;
 model.h = h;
 model.h_k = h_k;
 model.p_val = p_val;
 model.n_cross_comp_total = sum(n_cross_comp(:));
 %% Store solver initialization data
-solver_initialization.w0 = w0;
-solver_initialization.lbw = lbw;
-solver_initialization.ubw = ubw;
+solver_initialization.w0 = problem.w0;
+solver_initialization.lbw = problem.lbw;
+solver_initialization.ubw = problem.ubw;
 solver_initialization.lbg = lbg;
 solver_initialization.ubg = ubg;
 %% Output
