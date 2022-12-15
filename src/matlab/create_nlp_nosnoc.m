@@ -1034,7 +1034,7 @@ model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
 
 % TODO: make member function
-if print_level > 1
+if print_level > 5
     disp("g")
     print_casadi_vector(g)
     disp('lbg, ubg')
