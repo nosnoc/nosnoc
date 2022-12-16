@@ -1,4 +1,5 @@
 function [problem] = add_variable(problem, w, w0, lbw, ubw, idx)
+    %ADD_VARIABLE Adds a primal variable with upper and lower bounds and initialization to the problem.
     dims = [length(w), length(w0), length(lbw), length(ubw)];
     if(~all(dims == dims(1)))
         error("dimension mismatch, with dims: w: %d, w0: %d, lbw: %d, ubw: %d", dims(1), dims(2), dims(3), dims(4));

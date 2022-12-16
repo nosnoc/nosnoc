@@ -142,7 +142,7 @@ J_regularize_h = 0;
 J_regularize_sot = 0;
 
 % Initialize problem struct
-% TODO also add constraints indices
+% TODO This may one day be a class!
 problem = struct();
 % Primal vars
 problem.w = {};
@@ -205,6 +205,10 @@ comp_var_current_fe.cross_comp_k = 0;
 comp_var_current_fe.cross_comp_all = 0;
 
 %% Formulate the NLP / Main Discretization loop
+% TODO cleanup steps:
+%      - Create primal variables all at once.
+%      - Separate sections into separate functions operating on the `problem` struct/class
+%      - time variables should probably not just be lumped into the state, for readability.
 for k=0:N_stages-1
     % control variables
     if n_u > 0

@@ -1,4 +1,6 @@
 function [problem] = add_constraint(problem, g, lbg, ubg, idx)
+    %ADD_CONSTRAINT Adds a general constraint with upper and lower bounds to the problem.
+
     dims = [length(g), length(lbg), length(ubg)];
     if(~all(dims == dims(1)))
         error("dimension mismatch, with dims: g: %d, lbg: %d, ubg: %d", dims(1), dims(2), dims(3));
