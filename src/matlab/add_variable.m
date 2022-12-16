@@ -6,6 +6,7 @@ function [problem] = add_variable(problem, w, w0, lbw, ubw, idx)
     end
     problem.w = {problem.w{:}, w};
     % This is a bit of a hack, to avoid a bunch of if statements.
+    % TODO Maybe separate these out as a "per variable" cell array like done in python. 
     if exist('idx','var')
         ind_set = problem.(strcat('ind_', idx));
         problem.(strcat('ind_', idx)) = [ind_set, length(problem.w0)+1:length(problem.w0)+length(w)];
