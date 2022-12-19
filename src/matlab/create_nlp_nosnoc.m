@@ -210,6 +210,10 @@ comp_var_current_fe.cross_comp_all = 0;
 %      - Create primal variables all at once.
 %      - Separate sections into separate functions operating on the `problem` struct/class
 %      - time variables should probably not just be lumped into the state, for readability.
+%      - remove index in symbolic variable defintions and add instructive
+%        names, e.g., Uk -> U,  h_ki -> h_fe, X_ki_stages ->  X_rk_stages
+%      - provide instructive names for terminal constraint relaxations
+%      - provide more instructive names for cross_comp (match python)
 for k=0:N_stages-1
     % control variables
     if n_u > 0
@@ -895,7 +899,6 @@ end
 J_objective = J;
 
 %% Elastic mode variable for \ell_infty reformulations
-% if mpcc_mode >= 5 && mpcc_mode < 8
 if strcmpi(mpcc_mode,'elastic_ineq') || strcmpi(mpcc_mode,'elastic_eq') || strcmpi(mpcc_mode,'elastic_two_sided')
     % add elastic variable to the vector of unknowns and add objective contribution
     problem = add_variable(problem, s_elastic, s_elastic_0, s_elastic_min, s_elastic_max, 'elastic');
@@ -933,9 +936,9 @@ solver = nlpsol(solver_name, 'ipopt', prob,opts_ipopt);
 %% Define CasADi function for the switch indicator function.
 nu_fun = Function('nu_fun', {w,p},{nu_vector});
 
-
 %% settings update
 settings.right_boundary_point_explicit  = right_boundary_point_explicit;
+
 %% Outputs
 model.prob = prob;
 model.solver = solver;
@@ -991,12 +994,14 @@ model.h = h;
 model.h_k = h_k;
 model.p_val = p_val;
 model.n_cross_comp_total = sum(n_cross_comp(:));
+
 %% Store solver initialization data
 solver_initialization.w0 = problem.w0;
 solver_initialization.lbw = problem.lbw;
 solver_initialization.ubw = problem.ubw;
 solver_initialization.lbg = problem.lbg;
 solver_initialization.ubg = problem.ubg;
+
 %% Output
 varargout{1} = solver;
 varargout{2} = solver_initialization;
