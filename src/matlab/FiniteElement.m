@@ -35,8 +35,7 @@ classdef FiniteElement < NosnocFormulationObject
 
             % TODO: create the finite element
             h = SX.sym(['h_' num2str(ctrl_idx) '_' num2str(fe_idx)]);
-            h_ctrl_stage = settings.terminal_time / settings.N_stages;
-            h0 = array([h_ctrl_stage / array(settings.Nfe_list[ctrl_idx])]);
+            h0 = h_ctrl_stage / model.N_finite_elements;
             ubh = (1 + settings.gamma_h) * h0;
             lbh = (1 - settings.gamma_h) * h0;
             obj.addVariable(h, 'h', lbh, ubh, h0);
