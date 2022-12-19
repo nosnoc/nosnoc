@@ -35,16 +35,17 @@ function [varargout] = create_nlp_nosnoc(varargin)
 % -------------------
 % Brief MPCC Wiki
 % There are several possible MPCC Solution strategies avilable, by setting mpcc_mode to :
-% 1 - treat complementarity conditions directly in the NLP, the bilinear term is tread as an inequality constraint.
-% 2 - Smooth the complementarity conditions.
-% 3 - Relax the complementarity conditions.
-% 4 - \ell_1 penalty, penalize the sum of all bilinear terms in the objective
-% 5 - \ell_infty elastic mode, upper bound all bilinear term with a positive slack, and penalize the slack in the objective.
-% 6 - \ell_infty elastic mode, equate all bilinear term to a positive slack, and penalize the slack in the objective.
-% 7 - \ell_infty, same as 5 but two sided.
-% 8 - \ell_infty, same as 5 but the penalty/slack is controlled via the barier formulation
-% 9 - \ell_infty, same as 6 but the penalty/slack is controlled via the barier formulation
-% 10 - \ell_1, same as 4 but the penalty/slack is controlled via the barier formulation
+% 'direct' - treat complementarity conditions directly in the NLP, the bilinear term is tread as an inequality constraint.
+% 'Scholtes_eq' - Smooth the complementarity conditions, Scholtes' smoothing.
+% 'Scholtes_ineq' - Relax the complementarity conditions, Scholtes' relaxation.
+% 'ell_1_penalty' - \ell_1 penalty, penalize the sum of all bilinear terms in the objective
+% 'elastic_ineq' - \ell_infty elastic mode, upper bound all bilinear term with a positive slack, and penalize the slack in the objective.
+% 'elastic_eq' - \ell_infty elastic mode, equate all bilinear term to a positive slack, and penalize the slack in the objective.
+% 'elastic_two_sided' - \ell_infty, same as 'elastic_ineq' but two sided.
+% 'elastic_ell_1_ineq' - \ell_1, elastic mode but penalize ell_1 norm of complementarities
+% 'elastic_ell_1_eq' - \ell_1, elastic mode but penalize ell_1 norm of complementarities
+% 'elastic_ell_1_two_sided' - \ell_1, elastic mode but penalize ell_1 norm of complementarities
+
 %% Import CasADi in the workspace of this function
 import casadi.*
 %% Read data
@@ -116,14 +117,14 @@ end
 
 %% Elastic Mode Variables
 s_ell_inf_elastic_exists  = 0;
-if mpcc_mode >= 5 && mpcc_mode <= 10
+if strcmpi(mpcc_mode,'elastic_ineq') || strcmpi(mpcc_mode,'elastic_eq') || strcmpi(mpcc_mode,'elastic_two_sided')
     s_elastic = define_casadi_symbolic(casadi_symbolic_mode,'s_elastic',1);
     s_ell_inf_elastic_exists = 1;
 end
 s_ell_1_elastic_exists  = 0;
 
 sum_s_elastic = 0;
-if mpcc_mode >= 11 && mpcc_mode <= 13
+if strcmpi(mpcc_mode,'elastic_ell_1_ineq') || strcmpi(mpcc_mode,'elastic_ell_1_eq') || strcmpi(mpcc_mode,'elastic_ell_1_two_sided')
     s_ell_1_elastic_exists  = 1;
 end
 
@@ -894,10 +895,10 @@ end
 J_objective = J;
 
 %% Elastic mode variable for \ell_infty reformulations
-if mpcc_mode >= 5 && mpcc_mode < 8
+% if mpcc_mode >= 5 && mpcc_mode < 8
+if strcmpi(mpcc_mode,'elastic_ineq') || strcmpi(mpcc_mode,'elastic_eq') || strcmpi(mpcc_mode,'elastic_two_sided')
     % add elastic variable to the vector of unknowns and add objective contribution
     problem = add_variable(problem, s_elastic, s_elastic_0, s_elastic_min, s_elastic_max, 'elastic');
-
     if objective_scaling_direct
         J = J + (1/sigma_p)*s_elastic;
     else
@@ -905,38 +906,8 @@ if mpcc_mode >= 5 && mpcc_mode < 8
     end
 end
 
-%% barrier controled penalty formulation
-if mpcc_mode >= 8 && mpcc_mode <= 10
-    rho_elastic = define_casadi_symbolic(casadi_symbolic_mode,'rho_elastic',1);
-
-    s_elastic_min = 1e-16;
-    s_elastic_max = inf;
-    rho_0 = max(rho_min,0.5);
-
-    if convex_sigma_rho_constraint
-        sigma_0 = (1+sigma_scale)*rho_scale*exp(-rho_lambda*rho_0);
-    else
-        sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0);
-    end
-    rho_max = (log(rho_scale)-log(s_elastic_min))/rho_lambda;
-
-    problem = add_variable(problem, rho_elastic, rho_0, rho_min, rho_max);
-    if nonlinear_sigma_rho_constraint
-        if convex_sigma_rho_constraint
-            problem = add_constraint(problem, -rho_scale*exp(-rho_lambda*rho_elastic)+s_elastic, 0, inf);
-        else
-            problem = add_constraint(problem, rho_scale*exp(-rho_lambda*rho_elastic)-s_elastic, 0, inf);
-        end
-    else
-        problem = add_constraint(problem, -(rho_elastic-rho_max)-s_elastic, 0, inf);
-    end
-
-    % add elastic variable to the vector of unknowns and add objective contribution
-    problem = add_variable(problem, s_elastic, s_elastic_0, s_elastic_min, s_elastic_max);
-    J = J-rho_penalty*(rho_elastic^2)+sigma_penalty*s_elastic;
-end
 %% Elastic mode variable for \ell_1 reformulations
-if mpcc_mode >= 11 && mpcc_mode <= 13
+if strcmpi(mpcc_mode,'elastic_ell_1_ineq') || strcmpi(mpcc_mode,'elastic_ell_1_eq') || strcmpi(mpcc_mode,'elastic_ell_1_two_sided')
     if objective_scaling_direct
         J = J + (1/sigma_p)*sum_s_elastic;
     else

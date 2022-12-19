@@ -34,21 +34,18 @@ unfold_struct(settings,'caller')
 % sigma_k = sigma_0;
 
 % Modify MPCC Settings
-if mpcc_mode == 1
+if strcmpi(mpcc_mode,'direct')
    N_homotopy = 1;
-   sigma_0 = 0;
-   sigma_N = 0;
-   mpcc_mode = 3;
+   sigma_0 = 1e-12;
+   sigma_N = 1e-12;
+   mpcc_mode = 'scholtes_ineq';
 end
 
-if mpcc_mode == 4 || mpcc_mode == 10
+if strcmpi(mpcc_mode,'ell_1_penalty')
    cross_comp_mode = 12;
 end
 
-if mpcc_mode >= 8 && mpcc_mode <= 10;
-    s_elastic_max = inf;
-    N_homotopy = 1;   
-end
+
 
 if s_elastic_0 > s_elastic_max
     s_elastic_max = s_elastic_0;
