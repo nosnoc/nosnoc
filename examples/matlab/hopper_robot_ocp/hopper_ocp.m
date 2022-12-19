@@ -47,7 +47,7 @@ settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;  % number of stages in IRK methods
 
 settings.use_fesd = 1;
-settings.mpcc_mode = 3;
+settings.mpcc_mode = 11;
 
 settings.N_homotopy = 6;
 settings.opts_ipopt.ipopt.tol = 1e-6;
