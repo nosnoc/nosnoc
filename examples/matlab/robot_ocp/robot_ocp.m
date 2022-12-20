@@ -28,20 +28,21 @@ scenario.width_vec = [0.5 0.5 0.5];
 
 %% Default settings NOSNOC
 [settings] = default_settings_nosnoc();
-settings.use_fesd = 1;
-settings.print_level = 5;
+settings.print_level = 3;
 settings.irk_scheme = 'Radau-IIA';
+settings.n_s = 2;
+
 %% homotopy settings
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 2500;
-settings.N_homotopy = 4;
+settings.N_homotopy = 5;
+settings.homotopy_update_rule = 'superlinear';
 settings.opts_ipopt.ipopt.tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_iter = 3;
 settings.comp_tol = 1e-10;
-settings.sigma_0 = 1;
 settings.opts_ipopt.ipopt.linear_solver = 'ma57';
-settings.mpcc_mode = 3;
+
 %% time-freezing
 settings.s_sot_max = 5;
 settings.s_sot_min = 1;
@@ -53,7 +54,7 @@ settings.stagewise_clock_constraint = 0;
 %% Discretization
 model.T = 2.5;
 model.N_stages = 25;
-settings.n_s = 2;
 model.N_FE = 3;
+
 %% call function to discretize, solve and plot results
 [results,stats,model] = solve_robot_ocp(model,settings,scenario);

@@ -112,7 +112,7 @@ else
 end
 
 %% create nlp
-settings.mpcc_mode = 1;
+settings.mpcc_mode = 'direct';
 settings.opts_ipopt.ipopt.tol = 1e-14;
 settings.opts_ipopt.ipopt.max_iter = 1.5e3;
 if create_nlp_solver 
@@ -133,7 +133,7 @@ lbw(ind_lambda0_sliding(:)) = 0;  ubw(ind_lambda0_sliding(:)) = 0;
 tic
 results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',0);
 cpu_time_iter = toc;
-% complementarity_iter = full(model.comp_res(results.x,[p_val; zeros(n_x+n_theta,1)]);
+complementarity_iter = full(model.comp_res(results.x,[zeros(n_x+n_theta,1)]));
 results = extract_results_from_solver(model,settings,results);
 results.complementarity_iter  = complementarity_iter ;
 %% Verbose

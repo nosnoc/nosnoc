@@ -14,7 +14,6 @@ settings.N_trails = N_trails;
 settings.sigma_0 = 10;
 % settings.N_homotopy = 20;
 settings.print_level = 0;
-settings.mpcc_mode = 3;
 settings.use_fesd = 1;
 settings.comp_tol = 1e-12;
 settings.time_optimal_problem = 1;
@@ -65,7 +64,7 @@ if run_std
     settings.use_fesd = 0;
     settings.use_speed_of_time_variables = 1;
     settings.local_speed_of_time_variable = 0;
-    settings.mpcc_mode = 3;
+
     for ii = 1:length(N_stages_vec)
         model.N_stages = N_stages_vec(ii);
         output = solve_car_turbo_with_nosnoc(model,settings);

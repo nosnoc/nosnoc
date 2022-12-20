@@ -7,25 +7,16 @@ close all
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
-
-settings.mpcc_mode = 3;
-
-settings.opts_ipopt.ipopt.max_iter = 5e2;
 settings.print_level = 2;
-settings.N_homotopy = 12;
-settings.use_fesd = 1;
+settings.N_homotopy = 6;
 settings.cross_comp_mode = 8;
 settings.time_freezing = 1;
 settings.pss_lift_step_functions = 1;
-settings.time_freezing_reduced_model = 0;
 
 settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
-
-% settings.rho_h = 0;
-settings.delta_h_regularization = 1;
-settings.step_equilibration = 0;
+settings.step_equilibration = 'l2_relaxed_scaled';
 %%
 g = 10;
 vertical_force = 0;

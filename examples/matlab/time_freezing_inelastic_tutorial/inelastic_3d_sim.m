@@ -6,7 +6,7 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
-settings.mpcc_mode = 5;
+settings.mpcc_mode = 'elastic_ineq';
 settings.opts_ipopt.ipopt.max_iter = 3e2;
 settings.print_level = 2;
 settings.N_homotopy = 10;
@@ -54,9 +54,9 @@ t_opt = results.x_res(7,:);
 figure
 plot3(qx,qy,qz);
 axis equal
-xlim([-1 10])
-ylim([-1 10])
-zlim([-1 10])
+xlim([-0.1 2])
+ylim([-0.1 2])
+zlim([-0.1 1])
 grid on
 xlabel('$q_x$','Interpreter','latex');
 ylabel('$q_y$','Interpreter','latex');

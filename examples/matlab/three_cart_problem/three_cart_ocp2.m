@@ -45,12 +45,9 @@ delete three_carts2.gif
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
 
-settings.use_fesd = 1; 
-settings.mpcc_mode = 5; % \ell_inifnity penalization of the complementariy constraints
+settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
 settings.N_homotopy = 6;
-settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
-settings.print_level = 3;
 settings.time_freezing = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
@@ -134,7 +131,7 @@ t_opt = x_opt(7,:);
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
 figure(1)
-filename = 'three_carts.gif';
+filename = 'three_carts2.gif';
 carts_appart = 2;
 x_min =min([p1,p2,p3])-2.5;
 x_max = max([p1,p2,p3])+2.5;

@@ -38,7 +38,6 @@ settings = default_settings_nosnoc();
 
 settings.n_s = 2;                            % Degree of interpolating polynomial
 % MPCC settings
-settings.mpcc_mode = 3;                    % 1 - extact, 2 - smooth  ,3 -relax , 4 - penalty, 5 - elastic mode
 settings.s_elastic_max = 1e1;              % upper bound for elastic variables
 settings.objective_scaling_direct = 0;                   % in penalty methods  1: J = J+(1/p)*J_comp (direct)  , 0 : J = p*J+J_comp (inverse)
 % Penalty/Relaxation paraemetr

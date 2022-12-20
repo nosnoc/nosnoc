@@ -45,10 +45,8 @@ delete three_carts.gif
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
 
-settings.use_fesd = 1; 
-settings.mpcc_mode = 5; % \ell_inifnity penalization of the complementariy constraints
+settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
 settings.N_homotopy = 7;
-settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 3;
 settings.comp_tol = 1e-9;

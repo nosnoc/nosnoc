@@ -47,7 +47,6 @@ settings.local_speed_of_time_variable = 1;
 % solver settings
 settings.opts_ipopt.ipopt.tol = 1e-8;
 settings.comp_tol = 1e-8;
-settings.mpcc_mode = 3; 
 settings.cross_comp_mode = 8;
 settings.homotopy_update_rule = 'superlinear';
 

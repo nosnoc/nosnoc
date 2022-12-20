@@ -38,8 +38,8 @@ import casadi.*
 %% Choosing the Runge - Kutta Method and number of stages
 settings.print_level = 3;
 settings.n_s = 2;
-settings.mpcc_mode = 3;
 settings.cross_comp_mode = 3;
+settings.mpcc_mode = 'elastic_ineq';
 settings.use_fesd = 1;
 settings.use_speed_of_time_variables = 1;
 settings.homotopy_update_rule = 'superlinear';
