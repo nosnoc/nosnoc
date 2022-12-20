@@ -370,7 +370,7 @@ g_Stewart = {};
 g_ind_vec = [];
 c_all = [];
 m_vec = [];
-n_c_vec = [];
+n_c_sys = [];
 
 if ~exist('F')
     error('Matrix F (or matrices F_i) with PSS modes not provided.');
@@ -461,7 +461,7 @@ else
         % dimensions of c
         c_all = [c_all; c{ii}];
         n_c{ii} = length(c{ii});
-        n_c_vec  = [n_c_vec;length(c{ii})];
+        n_c_sys  = [n_c_sys;length(c{ii})];
     end
 
 end
@@ -471,7 +471,7 @@ m_ind_vec = 1;
 if isequal(pss_mode,'Step')
     % double the size of the vectors, since alpha,1-alpha treated at same
     % time;
-    m_vec = sum(n_c_vec)*2;
+    m_vec = sum(n_c_sys)*2;
 end
 for ii = 1:length(m_vec)-1
     m_ind_vec  = [m_ind_vec,m_ind_vec(end)+m_vec(ii)];
@@ -479,11 +479,11 @@ end
 % m_ind_vec = [cumsum(m_vec)-m_vec(1)+1]; % index ranges of the corresponding thetas and lambdas
 m = sum(m_vec);
 
-if isempty(n_c_vec)
-    n_c_vec = 0;
+if isempty(n_c_sys)
+    n_c_sys = 0;
 end
 
-if max(n_c_vec) < 2 && isequal(pss_mode,'Step')
+if max(n_c_sys) < 2 && isequal(pss_mode,'Step')
     pss_lift_step_functions = 0;
     if print_level >=1
         fprintf('Info: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
@@ -547,10 +547,10 @@ switch pss_mode
             e_ones_all{ii} = ones(m_vec(ii),1);
         end
     case 'Step'
-        n_alpha = sum(n_c_vec);
+        n_alpha = sum(n_c_sys);
         n_f = sum(m_vec);
-        n_lambda_0 = sum(n_c_vec);
-        n_lambda_1 = sum(n_c_vec);
+        n_lambda_0 = sum(n_c_sys);
+        n_lambda_1 = sum(n_c_sys);
         % for creae_nlp_fesd
         n_theta = 2*n_alpha;
         n_lambda = n_lambda_0+n_lambda_1;
@@ -559,15 +559,15 @@ switch pss_mode
         for ii = 1:n_simplex
             ii_str = num2str(ii);
             % define alpha (selection of a set valued step function)
-            alpha_temp = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],n_c_vec(ii));
+            alpha_temp = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],n_c_sys(ii));
             alpha = [alpha;alpha_temp];
             alpha_all{ii} = alpha_temp;
             % define lambda_0_i (Lagrange multipler of alpha >= 0;)
-            lambda_0_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_0_' ii_str],n_c_vec(ii));
+            lambda_0_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_0_' ii_str],n_c_sys(ii));
             lambda_0 = [lambda_0;lambda_0_temp];
             lambda_0_all{ii} = lambda_0_temp;
             % define lambda_1_i (Lagrange multipler of alpha <= 1;)
-            lambda_1_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_1_' ii_str],n_c_vec(ii));
+            lambda_1_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_1_' ii_str],n_c_sys(ii));
             lambda_1 = [lambda_1;lambda_1_temp];
             lambda_1_all{ii} = lambda_1_temp;
         end
@@ -828,7 +828,7 @@ for ii = 1:n_simplex
             % lambda_1_i >= 0;    for all i = 1,..., n_simplex
             % alpha_i >= 0;     for all i = 1,..., n_simplex
             g_switching = [g_switching;c{ii}-lambda_1_all{ii}+lambda_0_all{ii}];
-            f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_vec(ii),1)-alpha_all{ii});
+            f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_sys(ii),1)-alpha_all{ii});
 %             lambda00_expr = [lambda00_expr; max(c{ii},0); -min(c{ii}, 0)];
             lambda00_expr = [lambda00_expr; -min(c{ii}, 0); max(c{ii},0)];
     end
@@ -981,7 +981,7 @@ model.n_lambda = n_lambda;
 model.n_algebraic_constraints = n_algebraic_constraints;
 model.n_lift_eq  = n_lift_eq;
 
-model.n_c_vec = n_c_vec;
+model.n_c_sys = n_c_sys;
 model.n_alpha = n_alpha;
 model.n_beta = n_beta;
 model.n_gamma = n_gamma;
@@ -1011,7 +1011,7 @@ dimensions.n_theta = n_theta;
 dimensions.n_simplex = n_simplex;
 dimensions.m_vec = m_vec;
 dimensions.m_ind_vec = m_ind_vec;
-dimensions.n_c_vec = n_c_vec;
+dimensions.n_c_sys = n_c_sys;
 dimensions.n_alpha = n_alpha;
 dimensions.n_beta = n_beta;
 dimensions.n_gamma = n_gamma;

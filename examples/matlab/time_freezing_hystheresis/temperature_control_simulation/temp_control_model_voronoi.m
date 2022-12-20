@@ -61,7 +61,7 @@ x0 = [y0;w0;t0];
 %% Define model dimensions, equations, constraint functions, regions an so on.
 n_simplex = 1;% number of Cartesian products in the model ("independet switches"), we call this layer
 m_1 = 4;
-m_vec = [m_1];
+n_f_sys = [m_1];
 %% Variable defintion
 y = MX.sym('y');
 w = MX.sym('w');

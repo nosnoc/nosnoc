@@ -38,7 +38,7 @@ u0 = 0; % guess for control variables
 % m_1 = 2;
 % m_2 = 2;
 % m_3 = 2;
-% m_vec = [m_1 m_2 m_3];
+% n_f_sys = [m_1 m_2 m_3];
 
 %% Variable defintion
 % differential states
