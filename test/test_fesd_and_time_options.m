@@ -8,7 +8,6 @@ settings.irk_scheme = 'Radau-IIA';
 
 % set the cross complimentarity mode that 
 settings.cross_comp_mode = 3;
-settings.mpcc_mode = 3;
 settings.n_s = 2;
 settings.homotopy_parameter_rule = 'superlinear';
 settings.N_homotopy = 8;
