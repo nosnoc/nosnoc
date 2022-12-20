@@ -4,7 +4,7 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.time_optimal_problem = 1;
 settings.n_s = 2; 
-settings.mpcc_mode = 5;
+settings.mpcc_mode = 'elastic_ineq';
 settings.s_sot_max =	25;
 settings.s_sot_min =	1/25;
 

@@ -40,14 +40,9 @@ filename = 'discs_switch_position.gif';
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
-
-settings.use_fesd = 1; 
-settings.mpcc_mode = 3; 
 settings.N_homotopy = 5;
-settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
-settings.print_level = 3;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';

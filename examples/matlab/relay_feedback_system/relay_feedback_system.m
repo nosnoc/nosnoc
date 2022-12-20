@@ -50,9 +50,7 @@ settings.irk_scheme = 'Radau-IIA'; %'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 2;
 settings.pss_mode = 'Stewart'; % 'Step;
-settings.mpcc_mode = 3;  % Scholtes regularization
 settings.comp_tol = 1e-9;
-settings.cross_comp_mode  = 3;
 settings.homotopy_update_rule = 'superlinear';
 %% Time settings
 model.N_finite_elements = N_finite_elements;

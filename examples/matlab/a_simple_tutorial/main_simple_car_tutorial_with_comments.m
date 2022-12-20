@@ -41,7 +41,7 @@ import casadi.*
 settings.irk_scheme = 'Radau-IIA'; % Lobatto-III
 settings.print_level = 3;
 settings.n_s = 2;
-settings.mpcc_mode = 3;
+settings.mpcc_mode = 'scholtes_ineq';
 
 % % Steffenson-Ulbrich
 % settings.sigma_0 = 10;
@@ -51,7 +51,7 @@ settings.mpcc_mode = 3;
 settings.N_homotopy = 10;
 settings.sigma_0 = 1;
 settings.cross_comp_mode = 3;
-settings.use_fesd = 0;
+settings.use_fesd = 1;
 % How is the homotopy parameter updated: linearly or superlinearly?
 settings.homotopy_parameter_rule = 'superlinear';
 

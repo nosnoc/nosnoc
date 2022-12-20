@@ -41,13 +41,11 @@ switching_case = 'sliding_mode';
 %% NOSNOC settings
 [settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;
-settings.mpcc_mode = 3;
 settings.homotopy_update_slope = 0.1;
 settings.irk_scheme = 'Gauss-Legendre';
 % settings.irk_scheme = 'Radau-IIA';
 settings.irk_representation= 'differential';
 settings.print_level = 2;
-settings.step_equilibration = 1;
 % discretization parameters
 N_sim = 16;
 T_sim = 1.5;
