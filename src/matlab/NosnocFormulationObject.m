@@ -64,9 +64,9 @@ classdef (Abstract) NosnocFormulationObject < handle
                 obj.(strcat('ind_', idx)) = [obj.(strcat('ind_', idx)), new_indices];
             else
                 if ~ismember('sys',p.UsingDefaults)
-                    obj.(strcat('ind_', idx)){stage, sys} = new_indices;
+                    obj.(strcat('ind_', idx)){p.Results.stage, p.Results.sys} = new_indices;
                 else
-                    obj.(strcat('ind_', idx)){stage} = new_indices;
+                    obj.(strcat('ind_', idx)){p.Results.stage} = new_indices;
                 end
             end
         end
