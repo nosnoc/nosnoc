@@ -877,10 +877,12 @@ dot_c = c_all.jacobian(x)*f_x;
 if n_u >0
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+    g_switching_fun = Function('g_switching_fun', {x, z, u}, {g_switching}); 
     dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 else
     f_x_fun = Function('f_x_fun',{x,z},{f_x,f_q});
     g_z_all_fun = Function('g_z_all_fun',{x,z},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+    g_switching_fun = Function('g_switching_fun', {x, z}, {g_switching}); 
     dot_c_fun = Function('c_fun',{x,z},{dot_c}); % total time derivative of switching functions
 end
 model.lambda00_fun = Function('lambda00_fun',{x},{lambda00_expr});
@@ -958,6 +960,7 @@ model.f_q_T = f_q_T;
 % CasADi Functions
 model.f_x_fun = f_x_fun;
 model.g_z_all_fun = g_z_all_fun;
+model.g_switching_fun = g_switching_fun
 model.f_q_T_fun = f_q_T_fun;
 
 model.J_cc_fun = J_cc_fun;
