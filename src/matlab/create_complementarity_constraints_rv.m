@@ -63,7 +63,7 @@ g_cross_comp_ki = [];
 %% Formlation of standard and cross complementarity consraints.
 n_lambda = size(Lambda_ki,2);% ; number of lambda_ki in finite element
 % main loop;
-for r = 1:n_simplex
+for r = 1:n_sys
     % for different subsystems the lambdas and thetas are decoupled and should be treated as such.
     ind_temp_theta = m_ind_vec(r):m_ind_vec(r)+m_vec(r)-1;
     Theta_ki_temp = Theta_ki(ind_temp_theta,:);

@@ -59,7 +59,7 @@ Z = [z1 z2 z3 z4];
 x0 = [y0;w0;t0];
 
 %% Define model dimensions, equations, constraint functions, regions an so on.
-n_simplex = 1;% number of Cartesian products in the model ("independet switches"), we call this layer
+n_sys = 1;% number of Cartesian products in the model ("independet switches"), we call this layer
 m_1 = 4;
 n_f_sys = [m_1];
 %% Variable defintion
@@ -101,7 +101,7 @@ else
     ubu = 0*ones(n_u,1);
 end
 
-%% modes of the ODEs layers (for all  i = 1,...,n_simplex);
+%% modes of the ODEs layers (for all  i = 1,...,n_sys);
 
 u_heat = 10;
 f_A = [lambda_cool_down*y+u_heat;0;1];

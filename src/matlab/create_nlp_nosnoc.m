@@ -384,7 +384,7 @@ for k=0:N_stages-1
             switch pss_mode
                 case 'Stewart'
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],n_theta);
-                    Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_simplex);
+                    Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_sys);
                     % TODO: remove z0 indexing
                     problem = add_variable(problem,...
                                            vertcat(Lambda_ki_end, Mu_ki_end),...

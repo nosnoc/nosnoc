@@ -70,7 +70,7 @@ if use_fesd
         cross_comp_k = cross_comp_k + diag(sum_Theta_ki)*sum_Lambda_ki;
         cross_comp_all = cross_comp_all + diag(sum_Theta_ki)*sum_Lambda_ki;
     end
-    for r = 1:n_simplex
+    for r = 1:n_sys
         % for different subsystems the lambdas and thetas are decoupled and should be treated as such.
         ind_temp_theta = m_ind_vec(r):m_ind_vec(r)+m_vec(r)-1;
         ind_temp_lambda = ind_temp_theta;

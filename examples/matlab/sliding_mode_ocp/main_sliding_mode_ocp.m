@@ -114,7 +114,7 @@ S1 = [1;-1];
 S2 = [1;-1];
 model.S = {S1,S2};
 
-%% Modes of the ODEs layers (for all  i = 1,...,n_simplex);
+%% Modes of the ODEs layers (for all  i = 1,...,n_sys);
 F1 = [f_11 f_12];
 F2 = [f_21 f_22];
 model.F = {F1,F2};

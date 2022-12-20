@@ -9,7 +9,7 @@ unfold_struct(model,'caller');
 initial_theta = 1;
 theta_guess = initial_theta*ones(n_theta,1)*1;
 lambda_guess = theta_guess;
-mu_guess = initial_theta*ones(n_simplex,1);
+mu_guess = initial_theta*ones(n_sys,1);
 %% objective gradient of the LP
 try
     g_guess = full(g_Stewart_fun(x0));
@@ -18,7 +18,7 @@ catch
 end
 %% equality constraint for LP
 Aeq = (E');
-beq = ones(n_simplex,1);
+beq = ones(n_sys,1);
 
 
  %% Ipopt setting for efficient LP solving

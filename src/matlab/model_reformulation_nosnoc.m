@@ -377,13 +377,13 @@ if ~exist('F')
 else
     % check how many subsystems are present
     if iscell(F)
-        n_simplex = length(F);
+        n_sys = length(F);
     else
         F = {F};
-        n_simplex = 1;
+        n_sys = 1;
     end
     % extract dimensions of subystems
-    for ii = 1:n_simplex
+    for ii = 1:n_sys
         m_temp = size(F{ii},2);
         m_vec  = [m_vec m_temp];
     end
@@ -398,7 +398,7 @@ if ~exist('S')
                 g_ind = {g_ind};
             end
 
-            for ii = 1:n_simplex
+            for ii = 1:n_sys
                 % discrimnant functions
                 g_ind_vec =  [g_ind_vec;g_ind{ii};];
                 g_Stewart{ii} = g_ind{ii};
@@ -416,7 +416,7 @@ else
     if ~iscell(S)
         S = {S};
     end
-    if length(S) ~= n_simplex
+    if length(S) ~= n_sys
         error('Number of matrices S does not match number of subsystems. Note that the number of subsystems is taken to be number of matrices F_i which collect the modes of every subsystem.')
     end
     % Check constraint function c
@@ -426,16 +426,16 @@ else
         if ~iscell(c)
             c = {c};
         end
-        if length(c) ~= n_simplex
+        if length(c) ~= n_sys
             error('Number of different expressions for c does not match number of subsystems (taken to be number of matrices F_i which collect the modes of every subsystem).')
         end
     end
 
     % check are the matrices dense
     if isequal(pss_mode,'Stewart')
-        for ii = 1:n_simplex
+        for ii = 1:n_sys
             if any(sum(abs(S{ii}),2)<size(S{ii},2))
-                if n_simplex == 1
+                if n_sys == 1
                     error('The matrix S is not dense. Either provide a dense matrix or use settings.mode = ''Step''.');
                 else
                     error(['The matrix S{' num2str(ii) '} of the provided matrices is not dense. Either provide all dense matrices or use settings.mode = ''Step''.']);
@@ -444,7 +444,7 @@ else
         end
     end
 
-    for ii = 1:n_simplex
+    for ii = 1:n_sys
         if size(S{ii},2) ~= length(c{ii})
             error('The matrix S and vector c do not have compatible dimension.');
         end
@@ -527,9 +527,9 @@ switch pss_mode
         n_theta = sum(m_vec); % number of modes
         n_lambda = n_theta;
         n_f = n_theta;
-        n_z = n_theta+n_lambda+n_simplex; % n_theta + n_lambda + n_mu
+        n_z = n_theta+n_lambda+n_sys; % n_theta + n_lambda + n_mu
         % Define symbolic variables for algebraic equtions.
-        for ii = 1:n_simplex
+        for ii = 1:n_sys
             ii_str = num2str(ii);
             % define theta (Filippov multiplers)
             theta_temp = define_casadi_symbolic(casadi_symbolic_mode,['theta_' ii_str],m_vec(ii));
@@ -556,7 +556,7 @@ switch pss_mode
         n_lambda = n_lambda_0+n_lambda_1;
         % algebraic varaibles so far
         n_z = n_alpha+n_lambda_0+n_lambda_1;
-        for ii = 1:n_simplex
+        for ii = 1:n_sys
             ii_str = num2str(ii);
             % define alpha (selection of a set valued step function)
             alpha_temp = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],n_c_sys(ii));
@@ -581,7 +581,7 @@ switch pss_mode
         % Upsilo collects the vector for dotx = F(x)Upsilon, it is either multiaffine
         % terms or gamma from lifting
         %         pss_lift_step_functions = 0;
-        for ii = 1:n_simplex
+        for ii = 1:n_sys
             upsilon_temp = [];
             ii_str = num2str(ii);
             S_temp = S{ii};
@@ -744,18 +744,18 @@ switch pss_mode
     case 'Stewart'
         % symbolic variables z = [theta;lambda;mu];
         z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
-        lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_simplex,1)];
-        ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_simplex,1)];
+        lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_sys,1)];
+        ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_sys,1)];
         % initial guess for z; % solve LP for guess;
         if lp_initialization
             [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
         else
             theta_guess = initial_theta*ones(n_theta,1);
             lambda_guess = initial_lambda*ones(n_theta,1);
-            mu_guess = initial_mu*ones(n_simplex,1);
+            mu_guess = initial_mu*ones(n_sys,1);
         end
         z0 = [theta_guess;lambda_guess;mu_guess];
-        n_lift_eq = n_simplex;
+        n_lift_eq = n_sys;
     case 'Step'
         z = [alpha;lambda_0;lambda_1;beta;gamma];
         lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
@@ -792,7 +792,7 @@ end
 f_x = zeros(n_x,1);
 % rhs of ODE;
 
-for ii = 1:n_simplex
+for ii = 1:n_sys
     switch pss_mode
         case 'Stewart'
             f_x = f_x + F{ii}*theta_all{ii};
@@ -805,28 +805,28 @@ g_switching = []; % collects switching function algebraic equations 0 = g_i(x) -
 g_convex = []; % equation for the convex multiplers 1 = e' \theta
 f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
 lambda00_expr =[];
-for ii = 1:n_simplex
+for ii = 1:n_sys
     switch pss_mode
         case 'Stewart'
             % basic algebraic equations and complementarity condtions of the DCS
             % (Note that the cross complementarities are later defined when the discrete
             % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
-            % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_simplex
-            % lambda_i'*theta_i = 0; for all i = 1,..., n_simplex
-            % lambda_i >= 0;    for all i = 1,..., n_simplex
-            % theta_i >= 0;     for all i = 1,..., n_simplex
+            % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_sys
+            % lambda_i'*theta_i = 0; for all i = 1,..., n_sys
+            % lambda_i >= 0;    for all i = 1,..., n_sys
+            % theta_i >= 0;     for all i = 1,..., n_sys
             % Gradient of Lagrange Function of indicator LP
             g_switching = [g_switching; g_Stewart{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
             g_convex = [g_convex;e_ones_all{ii}'*theta_all{ii}-1];
             lambda00_expr = [lambda00_expr; g_Stewart{ii}- min(g_Stewart{ii})];
             f_comp_residual = f_comp_residual + lambda_all{ii}'*theta_all{ii};
         case 'Step'
-            % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_simplex
-            % lambda_0_i'*alpha_i  = 0; for all i = 1,..., n_simplex
-            % lambda_1_i'*(e-alpha_i)  = 0; for all i = 1,..., n_simplex
-            % lambda_0_i >= 0;    for all i = 1,..., n_simplex
-            % lambda_1_i >= 0;    for all i = 1,..., n_simplex
-            % alpha_i >= 0;     for all i = 1,..., n_simplex
+            % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_sys
+            % lambda_0_i'*alpha_i  = 0; for all i = 1,..., n_sys
+            % lambda_1_i'*(e-alpha_i)  = 0; for all i = 1,..., n_sys
+            % lambda_0_i >= 0;    for all i = 1,..., n_sys
+            % lambda_1_i >= 0;    for all i = 1,..., n_sys
+            % alpha_i >= 0;     for all i = 1,..., n_sys
             g_switching = [g_switching;c{ii}-lambda_1_all{ii}+lambda_0_all{ii}];
             f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_sys(ii),1)-alpha_all{ii});
 %             lambda00_expr = [lambda00_expr; max(c{ii},0); -min(c{ii}, 0)];
@@ -969,7 +969,7 @@ model.dot_c_fun = dot_c_fun;
 model.n_x = n_x;
 model.n_z = n_z;
 model.n_u = n_u;
-model.n_simplex = n_simplex;
+model.n_sys = n_sys;
 
 model.z = z;
 model.e_alpha = e_alpha;
@@ -1008,7 +1008,7 @@ dimensions.n_u = n_u;
 dimensions.n_z = n_z;
 dimensions.n_s = n_s;
 dimensions.n_theta = n_theta;
-dimensions.n_simplex = n_simplex;
+dimensions.n_sys = n_sys;
 dimensions.m_vec = m_vec;
 dimensions.m_ind_vec = m_ind_vec;
 dimensions.n_c_sys = n_c_sys;
