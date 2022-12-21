@@ -1,4 +1,4 @@
-classdef (Abstract) NosnocFormulationObject < handle
+classdef NosnocFormulationObject < handle
 % NosnocFormulationObject
     properties
         % Primal variables
@@ -37,7 +37,7 @@ classdef (Abstract) NosnocFormulationObject < handle
             import casadi.*
 
             p = inputParser();
-            p.FunctionName('addVariable')
+            p.FunctionName = 'addVariable';
             
             % TODO: add checks.
             addRequired(p, 'obj');
