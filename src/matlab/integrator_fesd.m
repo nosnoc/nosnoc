@@ -189,7 +189,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
             theta_opt_extended = [alg_states_extended(1:n_theta,:)];
             lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
-            mu_opt_extended = [alg_states_extended(end-n_simplex+1:end,:)];
+            mu_opt_extended = [alg_states_extended(end-n_sys+1:end,:)];
 
             theta_opt= theta_opt_extended(:,1:n_s:end);
             lambda_opt= lambda_opt_extended(:,1:n_s:end);
@@ -252,7 +252,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
             if ~right_boundary_point_explicit && use_fesd
                 lambda_boundary_res = [lambda_boundary_res,alg_states_boundary(1:n_theta,:)];
-                mu_boundary_res = [mu_boundary_res,alg_states_boundary(end-n_simplex+1:end,:) ];
+                mu_boundary_res = [mu_boundary_res,alg_states_boundary(end-n_sys+1:end,:) ];
             end
         case 'Step'
             alpha_res = [alpha_res, alpha_opt];

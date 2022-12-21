@@ -84,7 +84,7 @@ S2 = [1;-1];
 model.c = {c1,c2};
 model.S = {S1,S2};
 
-%% Modes of the ODEs layers (for all  i = 1,...,n_simplex);
+%% Modes of the ODEs layers (for all  i = 1,...,n_sys);
 % part independet of the nonsmoothness
 if linear_control
     f_11 = [-1+v1;0;u1;u2];

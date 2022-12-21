@@ -389,7 +389,7 @@ for k=0:N_stages-1
             switch pss_mode
                 case 'Stewart'
                     Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],n_theta);
-                    Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_simplex);
+                    Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_sys);
                     % TODO: remove z0 indexing
                     problem = add_variable(problem,...
                                            vertcat(Lambda_ki_end, Mu_ki_end),...
@@ -670,13 +670,13 @@ for k=0:N_stages-1
         %% g_z_all constraint for boundary point and continuity of algebraic variables.
         if ~right_boundary_point_explicit && use_fesd && (k< N_stages-1 || i< N_finite_elements(k+1)-1)
             if n_u > 0
-                temp = g_z_all_fun(X_ki,Z_kd_end,Uk);
-            else
-                temp = g_z_all_fun(X_ki,Z_kd_end);
+                g_boundary = g_switching_fun(X_ki,Z_kd_end,Uk);
+            else 
+                g_boundary = g_switching_fun(X_ki,Z_kd_end);
             end
             % TODO This is a hack fix it as done in python.
             problem = add_constraint(problem,...
-                                     temp(1:end-n_lift_eq),...
+                                     g_boundary,...
                                      zeros(n_algebraic_constraints-n_lift_eq,1),...
                                      zeros(n_algebraic_constraints-n_lift_eq,1));
         end

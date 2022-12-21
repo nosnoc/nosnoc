@@ -38,7 +38,7 @@ switch pss_mode
         z_opt  = z_opt_extended(:,1:n_s:end);
         theta_opt_extended = [z_opt_extended(1:n_theta,:)];
         lambda_opt_extended = [z_opt_extended(n_theta+1:2*n_theta,:)];
-        mu_opt_extended = [z_opt_extended(end-n_simplex+1:end,:)];
+        mu_opt_extended = [z_opt_extended(end-n_sys+1:end,:)];
         %
         theta_opt= theta_opt_extended(:,1:n_s+1:end);
         lambda_opt= lambda_opt_extended(:,1:n_s+1:end);

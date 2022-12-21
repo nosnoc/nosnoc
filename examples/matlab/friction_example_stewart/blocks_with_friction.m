@@ -33,12 +33,12 @@ import casadi.*
 x0 = [-1;1;-1;-1;1;1;0];
 u0 = 0; % guess for control variables
 %% Numer of ODE layers
-% n_simplex = 3;% number of Cartesian products in the model ("independet switches"), we call this layer
+% n_sys = 3;% number of Cartesian products in the model ("independet switches"), we call this layer
 % % number of modes in every simplex
 % m_1 = 2;
 % m_2 = 2;
 % m_3 = 2;
-% m_vec = [m_1 m_2 m_3];
+% n_f_sys = [m_1 m_2 m_3];
 
 %% Variable defintion
 % differential states
@@ -77,7 +77,7 @@ S = {S1,S2,S3};
 c = {c1,c2,c3};
 
 
-%% Modes of the ODEs layers (for all  i = 1,...,n_simplex);
+%% Modes of the ODEs layers (for all  i = 1,...,n_sys);
 % part independet of the nonsmoothness
 F_external = 0; % external force, e.g., control
 F_input = 10; % variable force exicting

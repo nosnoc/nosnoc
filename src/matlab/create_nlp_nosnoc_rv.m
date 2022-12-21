@@ -417,7 +417,7 @@ for k=0:N_stages-1
                     case 'Stewart'
                         % n_s + 1 -th variable within current finite element
                         Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],n_theta);
-                        Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_simplex);
+                        Mu_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Mu_' num2str(k) '_' num2str(i) '_end'],n_sys);
                         w = [w; Lambda_ki_end];
                         w = [w; Mu_ki_end];
                         % bounds and index sets
