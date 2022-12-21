@@ -5,10 +5,8 @@ import casadi.*
 close all
 %%
 [settings] = default_settings_nosnoc();  
-settings.irk_scheme = 'Radau-IIA';
-% settings.irk_scheme = 'Gauss-Legendre';
+settings.irk_scheme = 'Gauss-Legendre';
 settings.n_s = 3;
-settings.mpcc_mode = 2;
 settings.print_level = 2;
 settings.use_fesd = 1;
 settings.comp_tol = 1e-7;
@@ -19,9 +17,6 @@ settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 
-% settings.rho_h = 0;
-% settings.delta_h_regularization = 1;
-% settings.step_equilibration = 0;
 %%
 g = 10;
 % Symbolic variables and bounds
@@ -35,8 +30,8 @@ model.f = -g;
 model.c = q;
 %% Simulation setings
 N_FE = 3;
-T_sim = 5;
-N_sim = 50;
+T_sim = 3;
+N_sim = 60;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

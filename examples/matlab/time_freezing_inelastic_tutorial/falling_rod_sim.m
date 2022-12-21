@@ -8,22 +8,16 @@ plot_results = 1;
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.use_fesd  = 1;
-settings.use_previous_solution_as_initial_guess = 1;
 settings.n_s = 1;
-settings.mpcc_mode = 2;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 2;
 settings.N_homotopy = 8;
-% settings.sigma_0 = 0.01;
 settings.use_fesd = 1;
-settings.cross_comp_mode = 3;
 settings.time_freezing = 1;
-settings.pss_lift_step_functions = 1;
 settings.time_freezing_reduced_model = 0;
 settings.use_speed_of_time_variables = 0;
 settings.stagewise_clock_constraint = 0;
 settings.impose_terminal_phyisical_time = 0;
-model.mu = 0.0;
 %%
 g = 9.81;
 m = 1;
@@ -50,6 +44,7 @@ p_right = p_com+0.5*l*[cos(theta);sin(theta)];
 
 model.x = [q;v]; 
 model.e = 0;
+model.mu = 0.0;
 model.a_n = g;
 model.x0 = [q0;v0]; 
 
@@ -63,6 +58,7 @@ N_sim = 30;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
+
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
 [results,stats,model] = integrator_fesd(model,settings);

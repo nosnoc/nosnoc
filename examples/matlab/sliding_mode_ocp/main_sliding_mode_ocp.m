@@ -48,7 +48,6 @@ settings.irk_scheme = 'Radau-IIA';
 
 settings.print_level = 3;
 settings.use_fesd = 1;
-settings.mpcc_mode = 3;
 settings.comp_tol = 1e-6;
 settings.equidistant_control_grid = 1;
 

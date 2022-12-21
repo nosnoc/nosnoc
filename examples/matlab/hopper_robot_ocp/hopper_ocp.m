@@ -47,7 +47,6 @@ settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;  % number of stages in IRK methods
 
 settings.use_fesd = 1;
-settings.mpcc_mode = 3;
 
 settings.N_homotopy = 6;
 settings.opts_ipopt.ipopt.tol = 1e-6;
@@ -56,7 +55,6 @@ settings.opts_ipopt.ipopt.acceptable_iter = 3;
 
 settings.cross_comp_mode = 1;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
-settings.print_level = 3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
 % settings.s_sot_max = 2;

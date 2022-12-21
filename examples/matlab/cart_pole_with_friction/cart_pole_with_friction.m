@@ -44,10 +44,8 @@ import casadi.*
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
-% MPCC Method
-settings.mpcc_mode = 3;
-settings.N_homotopy = 10;
-settings.print_level = 3;
+settings.N_homotopy = 8;
+settings.homotopy_update_rule = 'superlinear';
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';

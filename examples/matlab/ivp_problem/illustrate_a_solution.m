@@ -5,7 +5,6 @@ import casadi.*
 % settings
 settings = default_settings_nosnoc();
 settings.n_s = 1;     
-settings.mpcc_mode = 3;
 % Generate Model
 model.T_sim = 0.2;
 model.N_sim = 30;

@@ -48,7 +48,8 @@ time_optimal_problem = 0;
 simple_v0_guess = 0;
 %% MPCC and Homotopy Settings	
 comp_tol = 1e-9;
-mpcc_mode = 5;
+mpcc_mode = 'Scholtes_ineq'; % 'direct', 'Scholtes_eq', 'Scholtes_ineq', 'ell_1_penalty', 'elastic_ineq', 'elastic_eq' , 'elastic_two_sided', 
+% 'elastic_ell_1_ineq', 'elastic_ell_1_eq', 'elastic_ell_1_two_sided'
 objective_scaling_direct = 1;
 sigma_0	= 1;
 sigma_N	= comp_tol;

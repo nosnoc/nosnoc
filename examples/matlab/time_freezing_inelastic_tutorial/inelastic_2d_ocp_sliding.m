@@ -6,38 +6,34 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
-settings.mpcc_mode = 3;
-settings.N_homotopy = 3;
-settings.cross_comp_mode = 3;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.N_homotopy = 6;
+settings.homotopy_update_rule = 'superlinear';
 settings.print_level = 3;
-
 settings.time_freezing = 1;
 settings.s_sot_max = 10;
 settings.s_sot_min = 0.1;
 settings.equidistant_control_grid = 1;
-settings.step_equilibration = 1;
-settings.step_equilibration_mode = 3;
 settings.pss_lift_step_functions = 1;
 settings.polishing_step = 1;
-settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 %%
 g = 9.81;
 u_max = 10;
-N_stg = 15;  N_FE  = 2; 
 % Symbolic variables and bounds
-q = SX.sym('q',2); v = SX.sym('v',2); 
+q = SX.sym('q',2);
+v = SX.sym('v',2); 
 x = [q;v];
 u = SX.sym('u');
-model.T = 3;
-model.N_stages = N_stg;
+N_FE = 3;
+model.T = 4;
+model.N_stages = 15;
 model.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
 model.mu = 0.7;
 model.a_n = g;
-model.x0 = [0;0.0;0;0]; 
+model.x0 = [0;1;0;0]; 
 model.f = [0+u;-g];
 
 model.c = q(2);
@@ -82,8 +78,9 @@ grid on
 xlabel('$t$','Interpreter','latex');
 ylabel('$u$','Interpreter','latex');
 
-
 %%
+if 0
+
 figure
 subplot(131)
 plot(alpha_opt(1,:))
@@ -101,6 +98,7 @@ grid on
 theta1 = alpha_opt(1,:) + (1-alpha_opt(1,:)).*(alpha_opt(2,:));
 theta2 = (1-alpha_opt(1,:)).*(1-alpha_opt(2,:)).*(1-alpha_opt(3,:));
 theta3 = (1-alpha_opt(1,:)).*(1-alpha_opt(2,:)).*(alpha_opt(3,:));
+
 figure
 subplot(131)
 plot(theta1)
@@ -115,10 +113,6 @@ plot(theta3)
 ylabel('$\theta_3$','Interpreter','latex');
 grid on
 
-
-
-
-
 figure
 subplot(131)
 plot(t_grid,qy)
@@ -132,10 +126,6 @@ subplot(133)
 plot(t_grid,vx)
 ylabel('$t^top v$','Interpreter','latex');
 grid on
-
-
-
-
 
 %
 figure
@@ -152,7 +142,6 @@ plot(lambda_1_opt(3,:))
 ylabel('$\lambda^+_3$','Interpreter','latex');
 grid on
 
-
 figure
 subplot(131)
 plot(lambda_0_opt(1,:))
@@ -166,5 +155,4 @@ subplot(133)
 plot(lambda_0_opt(3,:))
 ylabel('$\lambda^+3$','Interpreter','latex');
 grid on
-
-
+end

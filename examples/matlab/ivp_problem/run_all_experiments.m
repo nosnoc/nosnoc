@@ -64,7 +64,7 @@ if run_local_minima_experiment
     % Scenario-1  : use FESD with fixed parameters
 %     scenario.scenario_name = 'local_min_GL4_fesd_fixed';
 %     settings.use_fesd = 1;
-%     settings.mpcc_mode = 3;
+%     settings.mpcc_mode = 'scholtes_ineq';
 %     settings.sigma_0 = 1e-15;
 %     settings.sigma_N = 1e-15;
 %     settings.N_homotopy = 1;
@@ -90,7 +90,7 @@ if run_objective_function_experiment
     % Scenario 1 : FESD
     scenario.scenario_name = 'objective_GL4_fesd_fixed';
     settings.use_fesd = 1;
-    settings.mpcc_mode = 1;
+    settings.mpcc_mode = 'direct';
     settings.sigma_0 = 1e-15;
     settings.sigma_N = 1e-15;
     settings.N_homotopy = 3;
@@ -98,7 +98,7 @@ if run_objective_function_experiment
     % Scenario 2 : Standard
     scenario.scenario_name = 'objective_GL4_std_fixed';
     settings.use_fesd = 0;
-    settings.mpcc_mode = 3;
+    settings.mpcc_mode = 'scholtes_ineq';
     settings.sigma_0 = 1e-15;
     settings.sigma_N = 1e-15;
     settings.N_homotopy = 1;

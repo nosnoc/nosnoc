@@ -17,9 +17,7 @@ settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 % MPCC Method
-settings.mpcc_mode = 3;
 settings.N_homotopy = 10;
-settings.print_level = 3;
 % Discretization parameters
 model.N_stages = 30; % number of control intervals
 model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)

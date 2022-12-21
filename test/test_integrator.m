@@ -14,12 +14,10 @@ settings.use_fesd = use_fesd;
 settings.irk_representation = irk_representation;
 settings.irk_scheme = irk_scheme;
 settings.real_time_plot = 0;
-
 settings.print_level = 2;
 settings.n_s = 4;
 settings.pss_mode = pss_mode;
 % 'Stewart'; % 'Step;
-settings.mpcc_mode = 3;  % Scholtes regularization
 settings.comp_tol = 1e-9;
 settings.cross_comp_mode  = 3;
 settings.heuristic_step_equilibration = 1;

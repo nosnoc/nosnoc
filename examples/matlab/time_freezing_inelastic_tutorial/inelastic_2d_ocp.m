@@ -6,30 +6,22 @@ import casadi.*
 linewidth = 2.5;
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
-settings.n_s = 2;
-settings.use_fesd = 1;
-settings.mpcc_mode = 3;
+settings.n_s = 1;
 settings.N_homotopy = 6;
-settings.cross_comp_mode = 3;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.opts_ipopt.ipopt.max_iter = 5e2;
 settings.print_level = 3;
 settings.time_freezing = 1;
 settings.s_sot_max = 10;
 settings.s_sot_min = 0.99;
-settings.equidistant_control_grid = 1;
 settings.homotopy_update_rule = 'superlinear';
 
-settings.opts_ipopt.ipopt.linear_solver = 'ma57';
-% preprocess and polishings teps
-settings.polishing_step = 0;
-% settings.h_fixed_iterations = 1;
-% settings.h_fixed_max_iter = 1; 
-% settings.h_fixed_change_sigma = 0; 
+% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 %%
 g = 9.81;
 u_max = 10;
-N_stg = 20;  N_FE = 3; 
+N_stg = 20;  
+N_FE = 3; 
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2); 
@@ -85,7 +77,6 @@ grid on
 xlabel('$t$','Interpreter','latex');
 ylabel('$u$','Interpreter','latex');
 %% 
-
 t_grid = results.t_grid;
 f_x_fun = model.f_x_fun;
 x_opt = results.x_opt;
@@ -98,6 +89,7 @@ for ii = 1:N_stg
        s_opt_extended  = [s_opt_extended,s_opt(ii)];
     end
 end
+
 %%
 figure
 subplot(221)

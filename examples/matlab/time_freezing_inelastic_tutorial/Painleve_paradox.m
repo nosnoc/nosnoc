@@ -6,33 +6,28 @@ import casadi.*
 %% 
 J = 1; % no frictioinal impulse
 J = 1/32; % frictional impulse apperas
-above_ground = 0.00;
+above_ground = 0.1;
 %%
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
-settings.n_s = 2;
+settings.n_s = 1;
 settings.pss_mode = 'Step';
 settings.pss_lift_step_functions= 1;
-settings.mpcc_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
 settings.print_level = 2;
 settings.N_homotopy = 10;
-settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
-settings.use_fesd = 1;
-settings.cross_comp_mode = 10;
+settings.cross_comp_mode = 3;
 settings.time_freezing = 1;
 %%
 model.e = 0;
 model.mu = 1;
 %% the dynamics
 model.n_q = 3;
-model.n_dim_contact = 2;
 model.g = -9.81*1;
 model.a_n = 100;
 qx = MX.sym('qx',1);
 qy = MX.sym('qy',1);
 qtheta = MX.sym('qtheta',1);
-
 vx = MX.sym('vx',1);
 vy = MX.sym('vy',1);
 omega = MX.sym('omega',1);
@@ -50,7 +45,6 @@ model.M = M;
 % contact points of the rod
 yc = qy-l/2*cos(qtheta);
 xc = qx-l/2*sin(qtheta);
-
 model.f = [0;-g;0];
 model.f_c = yc;
 model.tangent = xc.jacobian(q)';
@@ -58,9 +52,9 @@ model.tangent = xc.jacobian(q)';
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];
 %% Simulation setings
-N_finite_elements = 2;
+N_finite_elements = 3;
 T_sim = 0.6;
-N_sim = 20;
+N_sim = 40;
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
