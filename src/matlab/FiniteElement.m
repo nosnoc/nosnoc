@@ -14,8 +14,12 @@ classdef FiniteElement < NosnocFormulationObject
         ind_elastic
         ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
 
-        n_stage
-        s_sys
+        ctrl_idx
+        fe_idx
+        
+        model
+        settings
+        dims
         
         prev_fe
     end
@@ -51,6 +55,13 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_elastic = [];
             obj.ind_boundary = [];
 
+            obj.ctrl_idx = ctrl_idx;
+            obj.fe_idx = fe_idx;
+            
+            obj.settings = settings;
+            obj.model = model;
+            obj.dims = dims;
+
             obj.prev_fe = prev_fe;
 
             h = SX.sym(['h_' num2str(ctrl_idx) '_' num2str(fe_idx)]);
@@ -63,7 +74,8 @@ classdef FiniteElement < NosnocFormulationObject
             % RK stage stuff
             for ii = 1:dims.n_s
                 % state / state derivative variables
-                if settings.irk_representation == IrkRepresentation.DIFFERENTIAL
+                if (settings.irk_representation == IrkRepresentation.differential ||...
+                    settings.irk_representation == IrkRepresentation.differential_lift_x)
                     obj.addVariable(SX.sym(['V_' num2str(ctrl_idx) '_' num2str(fe_idx) '_' num2str(ii)'], dims.n_x),...
                                     'v',...
                                     -inf * ones(dims.n_x),...
@@ -71,7 +83,8 @@ classdef FiniteElement < NosnocFormulationObject
                                     zeros(dims.n_x),...
                                     ii);
                 end
-                if settings.irk_representation == IrkRepresentation.INTEGRAL || settings.lift_irk_differential
+                if (settings.irk_representation == IrkRepresentation.integral ||...
+                    settings.irk_representation == IrkRepresentation.differential_lift_x)
                     obj.addVariable(SX.sym(['X_' num2str(ctrl_idx) '_' num2str(fe_idx) '_' num2str(ii)], dims.n_x),...
                                     'x',...
                                     -inf * ones(dims.n_x),...
@@ -80,7 +93,7 @@ classdef FiniteElement < NosnocFormulationObject
                                     ii);
                 end
                 % algebraic variables
-                if settings.pss_mode == PssMode.STEWART
+                if settings.pss_mode == PssMode.Stewart
                     % add thetas
                     for ij = 1:dims.n_sys
                         obj.addVariable(SX.sym(['theta_' num2str(ctrl_idx) '_' num2str(fe_idx) '_' num2str(ii) '_' num2str(ij)], dims.n_f_sys(ij)),...
@@ -111,7 +124,7 @@ classdef FiniteElement < NosnocFormulationObject
                                         ii,...
                                         ij);
                     end
-                elseif settings.pss_mode == PssMode.STEP
+                elseif settings.pss_mode == PssMode.Step
                     % add alpha
                     for ij = 1:dims.n_sys
                         obj.addVariable(SX.sym(['alpha_' num2str(ctrl_idx) '_' num2str(fe_idx) '_' num2str(ii) '_' num2str(ij)], dims.n_c_sys(ij)),...
@@ -146,7 +159,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
             % Add right boundary points if needed
             if ~settings.right_boundary_point_explicit
-                if settings.pss_mode == PssMode.STEWART
+                if settings.pss_mode == PssMode.Stewart
                     % add lambdas
                     for ij = 1:dims.n_sys
                         obj.addVariable(SX.sym(['lambda_' num2str(ctrl_idx) '_' num2str(fe_idx) '_end_' num2str(ij)], dims.n_f_sys(ij)),...
@@ -167,7 +180,7 @@ classdef FiniteElement < NosnocFormulationObject
                                         dims.n_s,...
                                         ij);
                     end
-                elseif settings.pss_mode == PssMode.STEP
+                elseif settings.pss_mode == PssMode.Step
                     % add lambda_n
                     for ij = 1:dims.n_sys
                         obj.addVariable(SX.sym(['lambda_n_' num2str(ctrl_idx) '_' num2str(fe_idx) '_end_' num2str(ij)], dims.n_c_sys(ij)),...
@@ -190,8 +203,8 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                 end
             end
-            if (~settings.right_boundary_point_explicit ||
-                settings.irk_representation == IrkRepresentation.DIFFERENTIAL)
+            if (~settings.right_boundary_point_explicit ||...
+                settings.irk_representation == IrkRepresentation.differential)
                 % add final X variables
                 obj.addVariable(SX.sym(['X_end_' num2str(ctrl_idx) '_' num2str(fe_idx)], dims.n_x),...
                                 'x',...
@@ -218,14 +231,21 @@ classdef FiniteElement < NosnocFormulationObject
         end
 
         function theta = get.theta(obj)
-            import casadi.*
             grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a)) - obj.w(a));
 
             theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
         end
 
-        function h = get.g(obj)
+        function h = get.h(obj)
             h = obj.w(obj.ind_h);
+        end
+
+        function x = get.x(obj)
+            x= cellfun(@(x) obj.w(x), obj.ind_x, 'UniformOutput', false);
+        end
+
+        function v = get.v(obj)
+            v = cellfun(@(v) obj.w(v), obj.ind_v, 'UniformOutput', false);
         end
         
         function sum_lambda = sumLambda(obj, varargin)
@@ -269,16 +289,162 @@ classdef FiniteElement < NosnocFormulationObject
             z = obj.w(idx);
         end
 
-        function forwardSimulation(obj)
+        function forwardSimulation(obj, ocp, Uk, s_sot_k)
+            model = obj.model;
+            settings = obj.settings;
+            dims = obj.dims;
 
+            if settings.irk_representation == IrkRepresentation.integral
+                X_ki = obj.x;
+                Xk_end = settings.D_irk(1) * obj.prev_fe.x{end};
+            elseif settings.irk_representation == IrkRepresentation.differential
+                X_ki = {};
+                for j = 1:dims.n_s
+                    x_temp = obj.prev_fe.x{end};
+                    for r = 1:dims.n_s
+                        x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
+                    end
+                    X_ki = [X_ki{:} x_temp];
+                end
+                X_ki = [X_ki{:}, obj.x{end}];
+                Xk_end = obj.prev_fe.x{end};
+            elseif settings.irk_representation == IrkRepresentation.differential_lift_x
+                X_ki = {};
+                for j = 1:dims.n_s
+                    x_temp = obj.prev_fe.x{end};
+                    for r = 1:dims.n_s
+                        x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
+                    end
+                    X_ki = [X_ki{:} x_temp];
+                    obj.addConstraint(self.x{j}-x_temp)
+                end
+                X_ki = [X_ki{:}, obj.x{end}];
+                Xk_end = obj.prev_fe.x{end};
+            end
+
+            for j = 1:dims.n_s
+                % Multiply by s_sot_k which is 1 if not using speed of time variables
+                [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk);
+                fj = s_sot_k*fj;
+                qj = s_sot_k*qj;
+                gj = s_sot_k*model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk);
+                
+                obj.addConstraint(gj);
+                if settings.irk_representation == IrkRepresentation.integral
+                    xj = settings.C_irk(1, j+1) * obj.prev_fe.x{end};
+                    for r = 1:dims.n_s
+                        xj = xj + settings.C_irk(r+1, j+1) * X_ki{r};
+                    end
+                    Xk_end = Xk_end + settings.D_irk(j+1) * X_ki{j};
+                    obj.addConstraint(obj.h * fj - xj);
+                    obj.cost = obj.cost + settings.B_irk(j+1) * obj.h * qj;
+                else
+                    Xk_end = Xk_end + obj.h * settings.b_irk(j) * obj.v{j};
+                    obj.add_constraint(fj - obj.v{j})
+                    obj.cost = obj.cost + settings.b_irk(j) * obj.h * qj
+                end
+            end
+
+            if (~settings.right_boundary_point_explicit ||...
+                settings.irk_representation == IrkRepresentation.differential)
+                self.addConstraint(Xk_end - obj.x{end})
+            end
+            if (~settings.right_boundary_point_explicit &&...
+                settings.use_fesd &&...
+                obj.fe_idx < dims.N_finite_elements - 1) % TODO make this handle different numbers of FE
+                
+                % TODO verify this.
+                obj.addConstraint(model.g_z_switching_fun(obj.x{end}, self.rkStageZ(dims.n_s+1), Uk));
+            end
         end
 
-        function createComplementarityConstraints(obj)
+        function createComplementarityConstraints(obj, sigma_p)
+            import casadi.*
+            model = obj.model;
+            settings = obj.settings;
+            dims = obj.dims;
 
+            g_cross_comp = SX([]);
+            % TODO Implement other modes
+            if ~settings.use_fesd
+                % TODO vectorize?
+                for j=1:dims.n_s
+                    theta = vertcat(obj.theta{j,:});
+                    lambda = vertcat(obj.lambda{j,:});
+                    g_cross_comp = vertcat(g_cross_comp, dot(theta,lambda));
+                end
+            elseif settings.cross_comp_mode == 1 
+                % TODO vectorize?
+                theta = obj.theta;
+                lambda = obj.lambda;
+                % Complement within FE
+                for j=1:dims.n_s
+                    for jj = 1:dims.n_s
+                        for r=1:dims.n_sys 
+                            g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, lambda{jj,r}));
+                        end
+                    end
+                end
+                for j=1:dims.n_s
+                    for r=1:dims.n_sys
+                        g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, lambda{end,r}));
+                    end
+                end
+            elseif settings.cross_comp_mode == 3
+                % TODO vectorize?
+                theta = obj.theta;
+                for j=1:dims.n_s
+                    for r=1:dims.n_sys 
+                        sum_lambda = obj.sumLambda(r);
+                        g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, sum_lambda));
+                    end
+                end
+            end
+
+            n_cross_comp = length(g_cross_comp);
+            g_cross_comp = g_cross_comp - sigma_p;
+            g_cross_comp_ub = zeros(n_cross_comp,1);
+            if settings.mpcc_mode == 'Scholtes_ineq'
+                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+            elseif settings.mpcc_mode == 'Scholtes_eq'
+                g_cross_comp_lb = zeros(n_cross_comp,1);
+            end
+
+            obj.addConstraint(g_cross_comp, g_cross_comp_lb, g_cross_comp_ub);
         end
 
         function stepEquilibration(obj)
+            import casadi.*
+            model = obj.model;
+            settings = obj.settings;
+            dims = obj.dims;
 
+            % TODO implement other modes!
+            if settings.use_fesd && obj.fe_idx > 0
+                delta_h_ki = obj.h - obj.prev_fe.h;
+            end
+            if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
+                h_fe = model.T / (dims.N_stages * dims.N_finite_elements);
+                obj.cost = obj.cost + settings.rho_h * (obj.h - h_fe).^2;
+            elseif settings.step_equilibration == StepEquilibrationMode.heuristic_delta
+                obj.cost = obj.cost + settings.rho_h * delta_h_ki.^2;
+            elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
+                eta_k = obj.prev_fe.sumLambda() * obj.sumLambda() + obj.prev_fe.sumTheta() * obj.sumTheta();
+                nu_k = 1;
+                for jjj=1:length(eta_k)
+                    nu_k = nu_k * eta_k(jjj)
+                end
+                obj.cost = obj.cost + settings.rho_h * tanh(nu_k/settings.step_equilibration_sigma) * delta_h_ki.^2;
+            elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
+                eta_k = obj.prev_fe.sumLambda() * obj.sumLambda() + obj.prev_fe.sumTheta() * obj.sumTheta();
+                nu_k = 1;
+                for jjj=1:length(eta_k)
+                    nu_k = nu_k * eta_k(jjj)
+                end
+                obj.cost = obj.cost + settings.rho_h * nu_k * delta_h_ki.^2
+            else
+                error("Step equilibration mode not implemented");
+            end
         end
     end
 end

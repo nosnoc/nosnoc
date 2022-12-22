@@ -1,6 +1,6 @@
 classdef PssMode
     enumeration
-        STEWART
-        STEP
+        Stewart
+        Step
     end
 end

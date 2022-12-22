@@ -89,6 +89,7 @@ if use_fesd
 end
 
 %%  Butcher Tableu
+% TODO clean this up.
 switch irk_representation
     case 'integral'
         [B,C,D,tau_root] = generate_butcher_tableu_integral(n_s,irk_scheme);
@@ -97,6 +98,9 @@ switch irk_representation
         else
             right_boundary_point_explicit  = 0;
         end
+        settings.B_irk = B;
+        settings.C_irk = C;
+        settings.D_irk = D;
     case 'differential'
         [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(n_s,irk_scheme);
         if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
@@ -104,6 +108,8 @@ switch irk_representation
         else
             right_boundary_point_explicit  = 0;
         end
+        settings.A_irk = A_irk;
+        settings.b_irk = b_irk;
     otherwise
         error('Choose irk_representation either: ''integral'' or ''differential''')
 end
@@ -216,11 +222,16 @@ comp_var_current_fe.cross_comp_all = 0;
 %        names, e.g., Uk -> U,  h_ki -> h_fe, X_ki_stages ->  X_rk_stages
 %      - provide instructive names for terminal constraint relaxations
 %      - provide more instructive names for cross_comp (match python)
+
+fe0 = FiniteElement([], settings, model, dimensions, 0, 0);
+prev_fe = fe0;
 for k=0:N_stages-1
     % control variables
     if n_u > 0
         Uk = define_casadi_symbolic(casadi_symbolic_mode,['U_' num2str(k)],n_u);
         problem = add_variable(problem, Uk, u0, lbu, ubu, 'u');
+    else
+        Uk = SX([]);
     end
 
     %%  Time rescaling of the stages (speed of time) to acchieve e.g., a desired final time in Time-Freezing or to solve time optimal control problems.
@@ -263,6 +274,12 @@ for k=0:N_stages-1
 
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
+        fe = FiniteElement(prev_fe, settings, model, dimensions, k, i);
+        fe.forwardSimulation([], Uk, 1);
+        fe.createComplementarityConstraints(sigma_p);
+        fe.stepEquilibration();
+        fe.cost
+        prev_fe = fe;
         %%  Sum of lambda and theta for current finite elememnt
         sum_Theta_ki = 0;  % initialize sum of theta's (the pint at t_n is not included)
         sum_Lambda_ki = Lambda_end_previous_fe;
@@ -471,13 +488,9 @@ for k=0:N_stages-1
                     xp = xp + C(r+1,j+1)*X_ki_stages{r};
                 end
                 % Evaluate Differential and Algebraic Equations at stage points
-                if n_u > 0
-                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                    gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                else
-                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
-                    gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
-                end
+                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                
                 if time_rescaling && use_speed_of_time_variables
                     % rescale equations
                     fj = s_sot_k*fj;
@@ -493,14 +506,9 @@ for k=0:N_stages-1
 
               case 'differential'
                 % Evaluate Differential and Algebraic Equations at stage points
-                if n_u > 0
-                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                    gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
-                else
-                    [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j});
-                    gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j});
-                end
-                
+                [fj, qj] = f_x_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                gj = g_z_all_fun(X_ki_stages{j},Z_ki_stages{j},Uk);
+                                
                 if time_rescaling && use_speed_of_time_variables
                     % rescale equations
                     fj = s_sot_k*fj;

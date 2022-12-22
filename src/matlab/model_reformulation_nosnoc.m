@@ -156,6 +156,7 @@ if exist('u')
         u0 = 0*ones(n_u,1);
     end
 else
+    u = SX([]);
     n_u = 0;
     if print_level >=1
         fprintf('Info: No control vector u is provided. \n')
@@ -877,13 +878,13 @@ dot_c = c_all.jacobian(x)*f_x;
 if n_u >0
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    g_switching_fun = Function('g_switching_fun', {x, z, u}, {g_switching}); 
+    g_switching_fun = Function('g_switching_fun', {x,z,u}, {g_switching}); 
     dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 else
-    f_x_fun = Function('f_x_fun',{x,z},{f_x,f_q});
-    g_z_all_fun = Function('g_z_all_fun',{x,z},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    g_switching_fun = Function('g_switching_fun', {x, z}, {g_switching}); 
-    dot_c_fun = Function('c_fun',{x,z},{dot_c}); % total time derivative of switching functions
+    f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
+    g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+    g_switching_fun = Function('g_switching_fun', {x,z,u}, {g_switching}); 
+    dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 end
 model.lambda00_fun = Function('lambda00_fun',{x},{lambda00_expr});
 

@@ -1,7 +1,7 @@
 classdef IrkRepresentation
     enumeration
-        INTEGRAL
-        DIFFERENTIAL
-        DIFFERENTIAL_LIFT_X
+        integral
+        differential
+        differential_lift_x
     end
 end
