@@ -10,6 +10,7 @@ classdef FiniteElement < NosnocFormulationObject
         ind_lambda_n
         ind_lambda_p
         ind_h
+        ind_nu_lift
         ind_elastic
         ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
 
@@ -46,6 +47,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_lambda_n = cell(dims.n_s, dims.n_sys);
             obj.ind_lambda_p = cell(dims.n_s, dims.n_sys);
             obj.ind_h = [];
+            obj.ind_nu_lift = [];
             obj.ind_elastic = [];
             obj.ind_boundary = [];
 
@@ -143,7 +145,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             end
             % Add right boundary points if needed
-            if false % TODO: implement create_right_boundary_point
+            if ~settings.right_boundary_point_explicit
                 if settings.pss_mode == PssMode.STEWART
                     % add lambdas
                     for ij = 1:dims.n_sys
@@ -187,6 +189,9 @@ classdef FiniteElement < NosnocFormulationObject
                                         ij);
                     end
                 end
+            end
+            if (~settings.right_boundary_point_explicit ||
+                settings.irk_representation == IrkRepresentation.DIFFERENTIAL)
                 % add final X variables
                 obj.addVariable(SX.sym(['X_end_' num2str(ctrl_idx) '_' num2str(fe_idx)], dims.n_x),...
                                 'x',...
@@ -194,7 +199,15 @@ classdef FiniteElement < NosnocFormulationObject
                                 inf * ones(dims.n_x),...
                                 model.x0,...
                                 ii+1);
-            end 
+            end
+
+            if strcmpi(settings.step_equilibration, 'direct_homotopy_lift')
+                obj.addVariable(SX.sym(['nu_lift_' num2str(ctrl_idx) '_' num2str(fe_idx)], 1),...
+                                'nu_lift',...
+                                1,...
+                                -inf,...
+                                inf);
+            end
         end
         
         function lambda = get.lambda(obj)
@@ -211,6 +224,10 @@ classdef FiniteElement < NosnocFormulationObject
             theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
         end
 
+        function h = get.g(obj)
+            h = obj.w(obj.ind_h);
+        end
+        
         function sum_lambda = sumLambda(obj, varargin)
             import casadi.*
             p = inputParser();

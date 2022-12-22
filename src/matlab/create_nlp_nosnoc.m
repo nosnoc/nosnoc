@@ -107,6 +107,8 @@ switch irk_representation
     otherwise
         error('Choose irk_representation either: ''integral'' or ''differential''')
 end
+settings.right_boundary_point_explicit = right_boundary_point_explicit;
+
 
 %% Time optimal control
 if time_optimal_problem
