@@ -1,26 +1,28 @@
 # NOSNOC
 **NOSNOC** is an open source software package for NOnSmooth Numerical Optimal Control.
 
+You can use **NOSNOC**  from `MATLAB` or `python`.
 
 ## General
 It is a modular tool for numerically solving nonsmooth optimal control problems with Piecewise Smooth/Filippov Systems (PSS). It supports:
-1. Automatic discretization via the FESD method -  high accuracy and correct sensitivities. (Note that standard time-stepping methods have only first order accuracy and wrong sensitivities even when they appear to be differentiable!)
+1. Automatic discretization via the FESD method - high accuracy and correct sensitivities. (Note that standard time-stepping methods have only first order accuracy and wrong sensitivities even when they appear to be differentiable!)
 
 2. Automatic reformulations of systems with state jumps (e.g. contact problems) via time-freezing into Filippov systems/PSS.
-(enables high accuracy even for system with state jumps, check out the example library)
+(enables high accuracy even for system with state jumps)
 
 3. Solving the nonsmooth nonlinear programs via homotopy methods. Enables the use of off-the-shelf solvers like IPOPT.
 
 
 
-**NOSNOC**  relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS.
-It enables the treatment of a broad class of nonsmooth systems in a unified way. The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
+**NOSNOC** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS.
+It enables the treatment of a broad class of nonsmooth systems in a unified way. 
+The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
 
 ## Installation
 
 **NOSNOC** requires `CasADi` version 3.5.5.
 
-Currently, a `MATLAB` version is avilable. Versions to come will support a `python` interface as well.
+ Versions to come will support a `python` interface as well.
 ### Installation for MATLAB
 
 
@@ -40,57 +42,38 @@ Note that `IPOPT` is shipped with `CasADi`, but more information including a det
 
 ### Installation for python
 
-A `python` version is currently under development.
+Checkout the [submodule](https://github.com/nurkanovic/nosnoc/tree/main/external) in this repository.
+
+1. Setup virtual environment:
+```
+virtualenv env --python=python3
+```
+
+2. Source environment:
+```
+source env/bin/activate
+```
+
+3. Install
+```
+pip install -e .
+```
 	 
 ## Using NOSNOC
 
 The interface of **NOSNOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
 User inputs should be given as `CasADi` expressions.
 
-Minimal code example for time-optimal problem for a car with two modes of opration.
-```matlab
-import casadi.*
-% Call this function to have an overview of all options.
-[settings] = default_settings_nosnoc();  
-% Choosing the Runge - Kutta Method and number of stages
-settings.irk_scheme = 'Lobatto-IIIA';
-settings.n_s = 2;
-% Time-settings  - Solve an time optimal control problem
-settings.time_optimal_problem = 1;
-% Model - define all problem functions and
-% Discretization parameters
-model.N_stages = 10; % number of control intervals
-model.N_finite_elements = 6; % number of finite element on every control intevral (optionally a vector might be passed)
-model.T = 15;    % Time horizon
-% Symbolic variables and bounds
-q = SX.sym('q'); v = SX.sym('v'); 
-model.x = [q;v]; % add all important data to the struct model,
-model.x0 = [0;0]; % inital value
-% bounds on states
-model.lbx = [-inf;-20];
-model.ubx = [inf;20];
-% control
-u = SX.sym('u'); model.u = u;
-model.lbu = -5; model.ubu = 5;
-% Dyanmics and the regions
-f_1 = [v;u]; % mode 1 - nominal
-f_2 = [v;3*u]; % mode 2 - turbo
-model.S = [-1;1];
-model.F = [f_1 f_2];
-model.c = v-10;
-% Add terminal constraint
-model.g_terminal = [q-200;v-0];
-% Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+To get started we recommend you to check out our example library in 
+[MATLAB](https://github.com/nurkanovic/nosnoc/tree/main/examples/matlab) or [python](https://github.com/FreyJo/nosnoc_py/tree/main/examples).  
 
-````
-
+In case you need help, feel free to contact us! 
 
 More details can be found in the [user manual](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
 
 
 
-## Literature - theory and algortihms
+## Literature - theory and algorithms
 
 ### FESD
 [Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://arxiv.org/abs/2205.05337) \
@@ -135,6 +118,8 @@ Mathematical programming, 2006
 
 ## Contact
 
-Feel free to contact the main developer directly: Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
-If you have got questions, remarks or comments, you are strongly encouraged to report them by creating a new issue on this github page. Success stories and source code contributions are very welcome.
+Feel free to contact on of the main developer directly: Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
+Jonathan Frey [jonathan.frey@imtek.uni-freiburg.de](mailto:jonathan.frey@imtek.uni-freiburg.de)
+If you have got questions, remarks or comments, you are strongly encouraged to report them by creating a new issue on this github page.
+Success stories and source code contributions are very welcome.
 
