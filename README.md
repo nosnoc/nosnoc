@@ -42,7 +42,8 @@ Note that `IPOPT` is shipped with `CasADi`, but more information including a det
 
 ### Installation for python
 
-Checkout the [submodule](https://github.com/nurkanovic/nosnoc/tree/main/external) in this repository.
+Checkout the [submodule](https://github.com/nurkanovic/nosnoc/tree/main/external) in this repository and clone the python repository.
+Afterwards,
 
 1. Setup virtual environment:
 ```
