@@ -18,7 +18,8 @@ classdef NosnocProblem < NosnocFormulationObject
         sigma_p
 
         p
-        
+
+        fe0
         stages
     end
 
@@ -80,12 +81,38 @@ classdef NosnocProblem < NosnocFormulationObject
 
         % TODO this should be private
         function createPrimalVariables(obj)
+            fe0 = FiniteElementZero(obj.settings, obj.model);
+            obj.fe0 = fe0;
             
+            obj.p = vertcat(obj.p, fe0.lambda);
+
+            self.addVariable(fe0.x{1},...
+                             'x',...
+                             fe0.lbw(fe0.ind_x{1}),...
+                             fe0.ubw(fe0.ind_x{1}),...
+                             fe0.w0(fe0.ind_x{1}));
+
+            prev_fe = fe0;
+            for ii=1:obj.settings.N_stages
+                stage = obj.createControlStage(obj);
+                obj.stages = [obj.stages{:}, stage];
+                prev_fe = stage{end};
+            end
         end
 
         % TODO this should be private
-        function createControlStage(obj)
-            
+        function createControlStage(obj, ctrl_idx, prev_fe)
+            Uk = SX.sym(['U_' num2str(ctrl_idx)], obj.dims.n_u);
+            obj.addVariable(Uk, 'u', obj.model.lbu, obj.model.ubu,...
+                            zeros(obj.dims.n_u,1));
+
+            control_stage = {};
+            for ii=1:obj.dims.N_finite_elements
+                fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii);
+                obj.addFiniteElement(fe);
+                control_stage = [control_stage{:}, fe];
+                prev_fe = fe;
+            end
         end
 
         % TODO this should be private
