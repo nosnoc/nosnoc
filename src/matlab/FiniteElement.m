@@ -51,9 +51,8 @@ classdef FiniteElement < NosnocFormulationObject
 
             obj.prev_fe = prev_fe;
 
-            % TODO: create the finite element
             h = SX.sym(['h_' num2str(ctrl_idx) '_' num2str(fe_idx)]);
-            h_ctrl_stage = settings.T_val/dims.N_stages; % TODO: this should be different.
+            h_ctrl_stage = model.T/dims.N_stages;
             h0 = h_ctrl_stage / dims.N_finite_elements;
             ubh = (1 + settings.gamma_h) * h0;
             lbh = (1 - settings.gamma_h) * h0;
@@ -188,14 +187,14 @@ classdef FiniteElement < NosnocFormulationObject
                                         ij);
                     end
                 end
-            end
-            % add final X variables
-            obj.addVariable(SX.sym(['X_end_' num2str(ctrl_idx) '_' num2str(fe_idx)], dims.n_x),...
-                            'x',...
-                            -inf * ones(dims.n_x),...
-                            inf * ones(dims.n_x),...
-                            model.x0,...
-                            ii+1);
+                % add final X variables
+                obj.addVariable(SX.sym(['X_end_' num2str(ctrl_idx) '_' num2str(fe_idx)], dims.n_x),...
+                                'x',...
+                                -inf * ones(dims.n_x),...
+                                inf * ones(dims.n_x),...
+                                model.x0,...
+                                ii+1);
+            end 
         end
         
         function lambda = get.lambda(obj)
@@ -209,45 +208,48 @@ classdef FiniteElement < NosnocFormulationObject
             import casadi.*
             grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a)) - obj.w(a));
 
-            theta = cellfun(grab, obj.ind_lam, obj.ind_alpha, 'UniformOutput', false);
+            theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
         end
 
         function sum_lambda = sumLambda(obj, varargin)
             import casadi.*
             p = inputParser();
-            p.FunctionName('sumLambda')
+            p.FunctionName = 'sumLambda';
             
             % TODO: add checks.
             addRequired(p, 'obj');
             addOptional(p, 'sys',[]);
-            parse(p, obj, symbolic, lb, ub, initial, idx, varargin{:});
+            parse(p, obj, varargin{:});
 
-            n_stages = shape(obj.ind_lam, 1);
             if ismember('sys', p.UsingDefaults)
-                lambdas = obj.lambda(1:n_stages);
-                lambdas = [lambdas, obj.prev_fe.lambda(-1)];
+                lambda = obj.lambda;
+                lambdas = arrayfun(@(row) vertcat(lambda{row, :}), 1:size(lambda,1), 'UniformOutput', false);
+                lambdas = [lambdas, {vertcat(obj.prev_fe.lambda{end,:})}];
             else
-                lambdas = obj.lambda(1:n_stages, p.Results.sys);
+                lambdas = obj.lambda(:,p.Results.sys).';
+                lambdas = [lambdas, obj.prev_fe.lambda(end,p.Results.sys)];
             end
-            
-            sum_lambda = sum(lambdas, 2);
+            sum_lambda = sum([lambdas{:}], 2);
+        end
+
+        function sum_theta = sumTheta(obj)
+            theta = obj.theta;
+            thetas = arrayfun(@(row) vertcat(theta{row, :}), 1:size(theta,1), 'UniformOutput', false);
+
+            sum_theta = sum([thetas{:}], 2);
         end
 
         function z = rkStageZ(obj, stage)
             import casadi.*
 
             idx = [[obj.ind_theta{stage, :}],...
-                   [ebj.ind_lam{stage, :}],...
+                   [obj.ind_lam{stage, :}],...
                    [obj.ind_mu{stage, :}],...
                    [obj.ind_alpha{stage, :}],...
                    [obj.ind_lambda_n{stage, :}],...
                    [obj.ind_lambda_p{stage, :}]];
 
             z = obj.w(idx);
-        end
-
-        function sum_theta = sumTheta(obj)
-
         end
 
         function forwardSimulation(obj)
