@@ -117,9 +117,20 @@ classdef NosnocProblem < NosnocFormulationObject
 
         % TODO this should be private
         function addFiniteElement(obj, fe)
+            w_len = length(obj.w);
+
+            obj.addPrimalVector(fe.w, fe.lbw, fe.ubw, fe.w0);
+
             
         end
 
+        function addPrimalVector(obj, symbolic, lb, ub, initial)
+            obj.w = vertcat(obj.w, symbolic);
+            obj.lbw = vertcat(obj.lbw, lb);
+            obj.lbw = vertcat(obj.ubw, ub);
+            obj.lbw = vertcat(obj.w0, initial);
+        end
+        
         function u = get.u(obj)
             u = cellfun(@(x) obj.w(u), obj.ind_u, 'UniformOutput', false);
         end
