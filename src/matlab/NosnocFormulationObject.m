@@ -48,7 +48,7 @@ classdef NosnocFormulationObject < handle
             addRequired(p, 'idx');
             addOptional(p, 'stage', []);
             addOptional(p, 'sys', []);
-            parse(p, obj, symbolic, lb, ub, initial, idx, varargin{:});
+            parse(p, obj, symbolic, lb, ub, initial, idx, varargin{:})
             
             n = length(symbolic);
             nw = length(obj.w);

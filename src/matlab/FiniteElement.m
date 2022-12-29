@@ -417,7 +417,7 @@ classdef FiniteElement < NosnocFormulationObject
             dims = obj.dims;
 
             % TODO implement other modes!
-            if settings.use_fesd && obj.fe_idx > 0
+            if settings.use_fesd && obj.fe_idx > 1
                 delta_h_ki = obj.h - obj.prev_fe.h;
             end
             if settings.step_equilibration == StepEquilibrationMode.heuristic_mean

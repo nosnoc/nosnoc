@@ -32,6 +32,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
     properties(Dependent, SetAccess=private, Hidden)
         u
+        sot
     end
     methods
         function obj = NosnocProblem(settings, dims, model)
@@ -65,59 +66,94 @@ classdef NosnocProblem < NosnocFormulationObject
             for ii=1:dims.N_stages
                 stage = obj.stages{ii};
                 Uk = obj.u{ii};
+                if settings.time_rescaling && settings.use_speed_of_time_variables
+                    if settings.local_speed_of_time_variable
+                        s_sot = obj.sot(ii);
+                    else
+                        s_sot = obj.sot(1);
+                    end
+                else
+                    s_sot = 1;
+                end
                 for fe=stage
                     % TODO: OCP
                     % 1) Stewart Runge-Kutta discretization
-                    fe.forward_simulation(obj.ocp, Uk)
+                    fe.forwardSimulation(obj.ocp, Uk, s_sot);
 
                     % 2) Complementarity Constraints
-                    fe.create_complementarity_constraints(sigma_p)
+                    fe.createComplementarityConstraints(sigma_p);
 
                     % 3) Step Equilibration
-                    fe.step_equilibration()
+                    fe.stepEquilibration();
 
                     % 4) add cost and constraints from FE to problem
-                    obj.cost = obj.cost + fe.cost
-                    self.add_constraint(fe.g, fe.lbg, fe.ubg)
+                    obj.cost = obj.cost + fe.cost;
+                    obj.addConstraint(fe.g, fe.lbg, fe.ubg);
                 end
                 if settings.use_fesd && settings.equidistant_control_grid
-                    self.addConstraint(sum(arrayfun(@(fe) fe.h, stage)) - h_ctrl_stage)
+                    obj.addConstraint(sum(vertcat(stage.h)) - model.T / dims.N_stages);
                 end
             end
         end
 
         % TODO this should be private
         function createPrimalVariables(obj)
-            fe0 = FiniteElementZero(obj.settings, obj.model);
+            fe0 = FiniteElementZero(obj.settings, obj.dims, obj.model);
             obj.fe0 = fe0;
             
-            obj.p = vertcat(obj.p, fe0.lambda);
+            obj.p = vertcat(obj.p, fe0.lambda{1,:});
 
-            self.addVariable(fe0.x{1},...
-                             'x',...
-                             fe0.lbw(fe0.ind_x{1}),...
-                             fe0.ubw(fe0.ind_x{1}),...
-                             fe0.w0(fe0.ind_x{1}));
+            obj.addVariable(fe0.x{1},...
+                            'x',...
+                            fe0.lbw(fe0.ind_x{1}),...
+                            fe0.ubw(fe0.ind_x{1}),...
+                            fe0.w0(fe0.ind_x{1}));
 
             prev_fe = fe0;
-            for ii=1:obj.settings.N_stages
-                stage = obj.createControlStage(obj);
-                obj.stages = [obj.stages{:}, stage];
-                prev_fe = stage{end};
+            for ii=1:obj.dims.N_stages
+                stage = obj.createControlStage(ii, prev_fe);
+                obj.stages = [obj.stages{:}, {stage}];
+                prev_fe = stage(end);
             end
         end
 
         % TODO this should be private
-        function createControlStage(obj, ctrl_idx, prev_fe)
+        function control_stage = createControlStage(obj, ctrl_idx, prev_fe)
+            import casadi.*
             Uk = SX.sym(['U_' num2str(ctrl_idx)], obj.dims.n_u);
             obj.addVariable(Uk, 'u', obj.model.lbu, obj.model.ubu,...
                             zeros(obj.dims.n_u,1));
 
-            control_stage = {};
+            if obj.settings.time_rescaling && obj.settings.use_speed_of_time_variables
+                if obj.settings.local_speed_of_time_variable
+                    % at every stage
+                    s_sot_k = SX.sym(['s_sot_' num2str(ctrl_idx)], 1);
+                    obj.addVariable(s_sot_k,...
+                                    'sot',...
+                                    obj.settings.s_sot_min,...
+                                    obj.settings.s_sot_max,...
+                                    obj.settings.s_sot0,...
+                                    ctrl_idx);
+                    obj.cost = obj.cost + (s_sot_k-1)^2;
+                else
+                    if ctrl_idx == 0
+                        % only once
+                        s_sot = SX.sym('s_sot', 1);
+                        obj.addVariable(s_sot,...
+                                        'sot',...
+                                        obj.settings.s_sot_min,...
+                                        obj.settings.s_sot_max,...
+                                        obj.settings.s_sot0);
+                        obj.cost = obj.cost + (s_sot-1)^2;
+                    end
+                end
+            end
+            
+            control_stage = [];
             for ii=1:obj.dims.N_finite_elements
                 fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii);
                 obj.addFiniteElement(fe);
-                control_stage = [control_stage{:}, fe];
+                control_stage = [control_stage, fe];
                 prev_fe = fe;
             end
         end
@@ -129,26 +165,48 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.addPrimalVector(fe.w, fe.lbw, fe.ubw, fe.w0);
 
             obj.ind_h = [obj.ind_h, fe.ind_h+w_len];
-            obj.ind_x = [obj.ind_x, increment_indices(fe.ind_x, w_len)];
+            obj.ind_x = [obj.ind_x; increment_indices(fe.ind_x, w_len)];
             obj.ind_v = [obj.ind_v, increment_indices(fe.ind_v, w_len)];
             obj.ind_theta = [obj.ind_theta, increment_indices(fe.ind_theta, w_len)];
             obj.ind_lam = [obj.ind_lam, increment_indices(fe.ind_lam, w_len)];
             obj.ind_mu = [obj.ind_mu, increment_indices(fe.ind_mu, w_len)];
             obj.ind_alpha = [obj.ind_alpha, increment_indices(fe.ind_alpha, w_len)];
-            obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(fe.ind_lambdla_n, w_len)];
-            obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(fe.ind_lambdla_p, w_len)];
+            obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(fe.ind_lambda_n, w_len)];
+            obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(fe.ind_lambda_p, w_len)];
             obj.ind_nu_lift = [obj.ind_x, fe.ind_nu_lift+w_len];
         end
 
         function addPrimalVector(obj, symbolic, lb, ub, initial)
             obj.w = vertcat(obj.w, symbolic);
             obj.lbw = vertcat(obj.lbw, lb);
-            obj.lbw = vertcat(obj.ubw, ub);
-            obj.lbw = vertcat(obj.w0, initial);
+            obj.ubw = vertcat(obj.ubw, ub);
+            obj.w0 = vertcat(obj.w0, initial);
         end
         
         function u = get.u(obj)
-            u = cellfun(@(x) obj.w(u), obj.ind_u, 'UniformOutput', false);
+            u = obj.w(obj.ind_u);
+        end
+
+        function sot = get.sot(obj)
+            sot = obj.w(obj.ind_sot);
+        end
+        
+        function print(obj)
+            disp("g");
+            print_casadi_vector(obj.g);
+            disp('lbg, ubg');
+            disp([length(obj.lbg), length(obj.ubg)]);
+            disp([obj.lbg, obj.ubg]);
+
+            disp("w");
+            print_casadi_vector(obj.w);
+            disp('lbw, ubw');
+            disp([obj.lbw, obj.ubw]);
+            disp('w0');
+            disp(obj.w0);
+
+            disp('objective');
+            disp(obj.cost);
         end
     end
 end

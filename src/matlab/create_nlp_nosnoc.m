@@ -223,8 +223,8 @@ comp_var_current_fe.cross_comp_all = 0;
 %      - provide instructive names for terminal constraint relaxations
 %      - provide more instructive names for cross_comp (match python)
 
-fe0 = FiniteElement([], settings, model, dimensions, 0, 0);
-prev_fe = fe0;
+problem = NosnocProblem(settings, model.dimensions, model);
+
 for k=0:N_stages-1
     % control variables
     if n_u > 0
@@ -274,12 +274,6 @@ for k=0:N_stages-1
 
     %% Loop over all finite elements in the current k-th control stage.
     for i = 0:N_finite_elements(k+1)-1
-        fe = FiniteElement(prev_fe, settings, model, dimensions, k, i);
-        fe.forwardSimulation([], Uk, 1);
-        fe.createComplementarityConstraints(sigma_p);
-        fe.stepEquilibration();
-        fe.cost
-        prev_fe = fe;
         %%  Sum of lambda and theta for current finite elememnt
         sum_Theta_ki = 0;  % initialize sum of theta's (the pint at t_n is not included)
         sum_Lambda_ki = Lambda_end_previous_fe;

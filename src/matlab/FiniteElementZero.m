@@ -12,22 +12,36 @@ classdef FiniteElementZero < NosnocFormulationObject
         prev_fe
     end
 
+    properties(Dependent, SetAccess=private, Hidden)
+        x
+        v
+        theta
+        lam
+        mu
+        alpha
+        lambda_n
+        lambda_p
+        h
+
+        lambda
+    end
+    
     methods
         function obj = FiniteElementZero(settings, dims, model)
             import casadi.*
             obj@NosnocFormulationObject();
 
-            obj.ind_x = {};
-            obj.ind_lam = {};
-            obj.ind_lambda_n = {};
-            obj.ind_lambda_p = {};
+            obj.ind_x = cell(1, 1);
+            obj.ind_lam = cell(1,dims.n_sys);
+            obj.ind_lambda_n = cell(1,dims.n_sys);
+            obj.ind_lambda_p = cell(1,dims.n_sys);
 
             % X0
             % TODO: add bounds
             obj.addVariable(SX.sym('X0', dims.n_x),...
                             'x',...
                             model.x0,...
-                            model.x0...
+                            model.x0,...
                             model.x0,...
                             1);
 
@@ -60,6 +74,17 @@ classdef FiniteElementZero < NosnocFormulationObject
                                         ij);
                 end
             end
+        end
+
+        function lambda = get.lambda(obj)
+            import casadi.*
+            grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
+
+            lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_p, obj.ind_lambda_n, 'UniformOutput', false);
+        end
+
+        function x = get.x(obj)
+            x= cellfun(@(x) obj.w(x), obj.ind_x, 'UniformOutput', false);
         end
     end
 end
