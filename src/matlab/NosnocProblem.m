@@ -4,7 +4,13 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_x
         ind_u
         ind_v
-        ind_z
+        ind_theta
+        ind_lam
+        ind_mu
+        ind_alpha
+        ind_lambda_n
+        ind_lambda_p
+        ind_nu_lift
         ind_h
         ind_elastic
         ind_sot % index for speed of time variable
@@ -14,6 +20,7 @@ classdef NosnocProblem < NosnocFormulationObject
         model
         settings
         dims
+        ocp
 
         sigma_p
 
@@ -27,7 +34,7 @@ classdef NosnocProblem < NosnocFormulationObject
         u
     end
     methods
-        function obj = NosnocProblem()
+        function obj = NosnocProblem(settings, dims, model)
             import casadi.*
             obj@NosnocFormulationObject();
 
@@ -121,7 +128,16 @@ classdef NosnocProblem < NosnocFormulationObject
 
             obj.addPrimalVector(fe.w, fe.lbw, fe.ubw, fe.w0);
 
-            
+            obj.ind_h = [obj.ind_h, fe.ind_h+w_len];
+            obj.ind_x = [obj.ind_x, increment_indices(fe.ind_x, w_len)];
+            obj.ind_v = [obj.ind_v, increment_indices(fe.ind_v, w_len)];
+            obj.ind_theta = [obj.ind_theta, increment_indices(fe.ind_theta, w_len)];
+            obj.ind_lam = [obj.ind_lam, increment_indices(fe.ind_lam, w_len)];
+            obj.ind_mu = [obj.ind_mu, increment_indices(fe.ind_mu, w_len)];
+            obj.ind_alpha = [obj.ind_alpha, increment_indices(fe.ind_alpha, w_len)];
+            obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(fe.ind_lambdla_n, w_len)];
+            obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(fe.ind_lambdla_p, w_len)];
+            obj.ind_nu_lift = [obj.ind_x, fe.ind_nu_lift+w_len];
         end
 
         function addPrimalVector(obj, symbolic, lb, ub, initial)
