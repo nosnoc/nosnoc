@@ -14,6 +14,8 @@ classdef FiniteElement < NosnocFormulationObject
         ind_elastic
         ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
 
+        ind_g_comp_path
+        
         ctrl_idx
         fe_idx
         
@@ -351,21 +353,42 @@ classdef FiniteElement < NosnocFormulationObject
                     obj.add_constraint(fj - obj.v{j})
                     obj.cost = obj.cost + settings.b_irk(j) * obj.h * qj
                 end
-                if model.g_ineq_constraint && model.g_ineq_at_stg
+            end
+
+            % nonlinear inequality.
+            % TODO: do this cleaner
+            for j=1:dims.n_s-settings.right_boundary_point_explicit
+                % TODO: there has to be a better way to do this.
+                if settings.g_ineq_constraint && settings.g_ineq_at_stg
                     obj.addContsraint(model.g_ineq_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
                 end
             end
-            if model.g_ineq_constraint && model.g_ineq_at_stg && ~settings.right_boundary_point_explicit
-                    obj.addContsraint(model.g_ineq_fun(X_ki{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
+            if (settings.g_ineq_constraint &&...
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
+                obj.addContsraint(model.g_ineq_fun(X_ki{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
             end
 
+            % path complementarities
+            % TODO: do this cleaner
+            for j=1:dims.n_s-settings.right_boundary_point_explicit
+                % TODO: there has to be a better way to do this.
+                if settings.g_comp_path_constraint && settings.g_ineq_at_stg
+                    obj.addContsraint(model.g_comp_path_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
+                end
+            end
+            if (settings.g_comp_path_constraint &&...
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
+                obj.addContsraint(model.g_ineq_fun(X_ki{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
+            end
+
+            % end constraints
             if (~settings.right_boundary_point_explicit ||...
                 settings.irk_representation == IrkRepresentation.differential)
-                self.addConstraint(Xk_end - obj.x{end})
+                self.addConstraint(Xk_end - obj.x{end});
             end
             if (~settings.right_boundary_point_explicit &&...
                 settings.use_fesd &&...
-                obj.fe_idx < dims.N_finite_elements - 1) % TODO make this handle different numbers of FE
+                obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx)) % TODO make this handle different numbers of FE
                 
                 % TODO verify this.
                 obj.addConstraint(model.g_z_switching_fun(obj.x{end}, self.rkStageZ(dims.n_s+1), Uk));
