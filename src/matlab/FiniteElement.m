@@ -266,10 +266,21 @@ classdef FiniteElement < NosnocFormulationObject
             sum_lambda = sum([lambdas{:}], 2);
         end
 
-        function sum_theta = sumTheta(obj)
-            theta = obj.theta;
-            thetas = arrayfun(@(row) vertcat(theta{row, :}), 1:size(theta,1), 'UniformOutput', false);
+        function sum_theta = sumTheta(obj, varargin)
+            p = inputParser();
+            p.FunctionName = 'sumLambda';
+            
+            % TODO: add checks.
+            addRequired(p, 'obj');
+            addOptional(p, 'sys',[]);
+            parse(p, obj, varargin{:});
 
+            if ismember('sys', p.UsingDefaults)
+                theta = obj.theta;
+                thetas = arrayfun(@(row) vertcat(theta{row, :}), 1:size(theta,1), 'UniformOutput', false);
+            else
+                thetas = obj.theta{:,p.Results.sys}.';
+            end
             sum_theta = sum([thetas{:}], 2);
         end
 
@@ -355,8 +366,8 @@ classdef FiniteElement < NosnocFormulationObject
             end
         end
 
-        function createComplementarityConstraints(obj, sigma_p)
-            import casadi.*
+        function createComplementarityConstraints(obj, sigma_p, s_elastic)
+            import casadi.*           
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
@@ -378,13 +389,28 @@ classdef FiniteElement < NosnocFormulationObject
                 for j=1:dims.n_s
                     for jj = 1:dims.n_s
                         for r=1:dims.n_sys 
-                            g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, lambda{jj,r}));
+                            g_cross_comp = vertcat(g_cross_comp, diag(theta{j,r})*lambda{jj,r});
                         end
                     end
                 end
                 for j=1:dims.n_s
                     for r=1:dims.n_sys
-                        g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, lambda{end,r}));
+                        g_cross_comp = vertcat(g_cross_comp, diag(theta{j,r})*obj.prev_fe.lambda{end,r});
+                    end
+                end
+            elseif settings.cross_comp_mode == 2
+                theta = obj.theta;
+                lambda = obj.lambda;
+                for r=1:dims.n_sys
+                    for j=1:dims.n_s
+                        for jj=1:dims.n_s
+                            g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r},lambda{jj,r}));
+                        end
+                    end
+                end
+                for r=1:dims.n_sys
+                    for j=1:dims.n_sys
+                        g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, obj.prev_fe.lambda{end,r}));
                     end
                 end
             elseif settings.cross_comp_mode == 3
@@ -393,21 +419,118 @@ classdef FiniteElement < NosnocFormulationObject
                 for j=1:dims.n_s
                     for r=1:dims.n_sys 
                         sum_lambda = obj.sumLambda(r);
+                        g_cross_comp = vertcat(g_cross_comp, diag(theta{j,r})*sum_lambda);
+                    end
+                end
+            elseif settings.cross_comp_mode == 4
+                lambda = obj.lambda;
+                for r=1:dims.n_sys
+                    sum_theta = obj.sumTheta(r);
+                    for j=1:dims.n_s
+                        g_cross_comp = vertcat(g_cross_comp, diag(sum_theta)*lambda{j,r});
+                    end
+                    g_cross_comp = vertcat(g_cross_comp, diag(sum_theta)*obj.prev_fe.lambda{end,r});
+                end
+
+            elseif settings.cross_comp_mode == 5
+                theta = obj.theta;
+                for j=1:dims.n_s
+                    for r=1:dims.n_sys
+                        sum_lambda = obj.sumLambda(r);
                         g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, sum_lambda));
                     end
                 end
+            elseif settings.cross_comp_mode == 6
+                for r=1:dims.n_sys
+                    sum_theta = obj.sumTheta(r);
+                    for j=1:dims.n_s
+                        g_cross_comp = vertcat(g_cross_comp, dot(sum_theta,lambda{j, r}));
+                    end
+                    g_cross_comp = vertcat(g_cross_comp, dot(sum_theta,obj.prev_fe.lambda{end,r}));
+                end
+            elseif settings.cross_comp_mode == 7
+                error('TODO: not implemented');
+            elseif settings.cross_comp_mode == 8
+                error('TODO: not implemented');
+            elseif settings.cross_comp_mode == 9
+                error('TODO: not implemented');
+            elseif settings.cross_comp_mode == 10
+                error('TODO: not implemented');
+            elseif settings.cross_comp_mode == 11
+                error('TODO: not implemented');
+            elseif settings.cross_comp_mode == 12
+                error('TODO: not implemented');
             end
 
+           
             n_cross_comp = length(g_cross_comp);
-            g_cross_comp = g_cross_comp - sigma_p;
-            g_cross_comp_ub = zeros(n_cross_comp,1);
+
+            %
+            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
+                for ii=1:n_s
+                    obj.addVariable(SX.sym(['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx) '_' num2str(ii), ], n_cross_comp),...
+                                    'elastic',...
+                                    s_elastic_0*ones(n_all_comp_j,1),...
+                                    s_elastic_min*ones(n_all_comp_j,1),...
+                                    s_elastic_max*ones(n_all_comp_j,1),...
+                                    ii)
+                end
+            end
+            
+            % Do MPCC formulation
+            % TODO this should be done on the problem level, and take into account passed in vars. fine for now.
             if settings.mpcc_mode == 'Scholtes_ineq'
+                g_cross_comp = g_cross_comp - sigma_p;
+                g_cross_comp_ub = zeros(n_cross_comp,1);
                 g_cross_comp_lb = -inf * ones(n_cross_comp,1);
             elseif settings.mpcc_mode == 'Scholtes_eq'
+                g_cross_comp = g_cross_comp - sigma_p;
+                g_cross_comp_ub = zeros(n_cross_comp,1);
                 g_cross_comp_lb = zeros(n_cross_comp,1);
+            elseif settings.mpcc_mode == 'ell_1_penalty'
+                if settings.objective_scaling_direct
+                    obj.cost = obj.cost + (1/sigma_p)*sum(g_cross_comp);
+                else
+                    obj.cost = sigma_p*obj.cost + sum(g_cross_comp);
+                end
+            elseif settings.mpcc_mode == 'elastic_ineq'
+                g_cross_comp = g_cross_comp - s_elastic;
+                g_cross_comp_ub = zeros(n_cross_comp,1);
+                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+            elseif settings.mpcc_mode == 'elastic_eq'
+                g_cross_comp = g_cross_comp - s_elastic;
+                g_cross_comp_ub = zeros(n_cross_comp,1);
+                g_cross_comp_lb = zeros(n_cross_comp,1);
+            elseif settings.mpcc_mode == 'elastic_two_sided'
+                g_cross_comp = g_cross_comp - s_elastic;
+                g_cross_comp_ub = zeros(n_cross_comp,1);
+                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+
+                g_cross_comp = [g_cross_comp;g_all_comp_j+s_elastic*ones(n_cross_comp,1)];
+                g_cross_comp_ub = [g_cross_comp_ub; inf*ones(n_cross_comp,1)];
+                g_cross_comp_lb = [g_cross_comp_lb;  zeros(n_cross_comp,1)];
+                % TODO these should be merged probably
+            elseif settings.mpcc_mode == 'elastic_ell_1_ineq'
+                g_cross_comp = g_cross_comp - s_elastic;
+                g_cross_comp_ub = zeros(n_cross_comp,1);
+                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+            elseif settings.mpcc_mode == 'elastic_ell_1_eq'
+                g_cross_comp = g_cross_comp - s_elastic;
+                g_cross_comp_ub = zeros(n_cross_comp,1);
+                g_cross_comp_lb = zeros(n_cross_comp,1);
+            elseif settings.mpcc_mode == 'elastic_ell_1_two_sided'
+                g_cross_comp = g_cross_comp - s_elastic;
+                g_cross_comp_ub = zeros(n_cross_comp,1);
+                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+
+                g_cross_comp = [g_cross_comp;g_all_comp_j+s_elastic*ones(n_cross_comp,1)];
+                g_cross_comp_ub = [g_cross_comp_ub; inf*ones(n_cross_comp,1)];
+                g_cross_comp_lb = [g_cross_comp_lb;  zeros(n_cross_comp,1)];
             end
 
-            obj.addConstraint(g_cross_comp, g_cross_comp_lb, g_cross_comp_ub);
+            if settings.mpcc_mode ~= 'ell_1_penalty'
+                obj.addConstraint(g_cross_comp, g_cross_comp_lb, g_cross_comp_ub);
+            end
         end
 
         function stepEquilibration(obj)

@@ -61,6 +61,11 @@ classdef NosnocProblem < NosnocFormulationObject
             sigma_p = SX.sym('sigma_p');
             obj.p = sigma_p;
 
+            if ismember(settings.mpcc_mode, MpccMode.elastic)
+                s_elastic = SX.sym('s_elastic',1);
+            else
+                s_elastic = [];
+            end
             obj.createPrimalVariables();
 
             for ii=1:dims.N_stages
@@ -77,11 +82,12 @@ classdef NosnocProblem < NosnocFormulationObject
                 end
                 for fe=stage
                     % TODO: OCP
+                    % TODO: add path constraints
                     % 1) Stewart Runge-Kutta discretization
                     fe.forwardSimulation(obj.ocp, Uk, s_sot);
 
                     % 2) Complementarity Constraints
-                    fe.createComplementarityConstraints(sigma_p);
+                    fe.createComplementarityConstraints(sigma_p, s_elastic);
 
                     % 3) Step Equilibration
                     fe.stepEquilibration();
@@ -92,6 +98,33 @@ classdef NosnocProblem < NosnocFormulationObject
                 end
                 if settings.use_fesd && settings.equidistant_control_grid
                     obj.addConstraint(sum(vertcat(stage.h)) - model.T / dims.N_stages);
+                end
+            end
+
+            % Process terminal costs
+            try
+                last_fe = obj.stages{end}(end);
+                obj.cost = obj.cost + model.f_q_T_fun(last_fe.x(end));
+            catch
+                warning('Terminal cost not defined');
+            end
+            
+            % Process elastic costs
+            if ismember(settings.mpcc_mode, MpccMode.elastic)
+                obj.addVariable(s_elastic, 'elastic', settings.s_elastic_0, settings.s_elastic_min, settings.s_elastic_max);
+                if settings.objective_scaling_direct
+                    obj.cost = obj.cost + (1/sigma_p)*s_elastic;
+                else
+                    obj.cost = sigma_p*obj.cost + s_elastic;
+                end
+            end
+            if ismember(settings.mpcc_mode, MpccMode.elastic)
+                sum_s_elastic = [] % TODO
+                obj.addVariable(s_elastic, 'elastic', settings.s_elastic_0, settings.s_elastic_min, settings.s_elastic_max);
+                if settings.objective_scaling_direct
+                    obj.cost = obj.cost + (1/sigma_p)*sum_s_elastic;
+                else
+                    obj.cost = sigma_p*obj.cost + sum_s_elastic;
                 end
             end
         end
