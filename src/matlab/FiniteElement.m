@@ -351,6 +351,12 @@ classdef FiniteElement < NosnocFormulationObject
                     obj.add_constraint(fj - obj.v{j})
                     obj.cost = obj.cost + settings.b_irk(j) * obj.h * qj
                 end
+                if model.g_ineq_constraint && model.g_ineq_at_stg
+                    obj.addContsraint(model.g_ineq_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
+                end
+            end
+            if model.g_ineq_constraint && model.g_ineq_at_stg && ~settings.right_boundary_point_explicit
+                    obj.addContsraint(model.g_ineq_fun(X_ki{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
             end
 
             if (~settings.right_boundary_point_explicit ||...
