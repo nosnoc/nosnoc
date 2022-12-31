@@ -37,6 +37,8 @@ classdef FiniteElement < NosnocFormulationObject
         lambda_p
         h
 
+        elastic
+
         lambda
     end
 
@@ -54,7 +56,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_lambda_p = cell(dims.n_s, dims.n_sys);
             obj.ind_h = [];
             obj.ind_nu_lift = [];
-            obj.ind_elastic = [];
+            obj.ind_elastic = cell(dims.n_s, 1);
             obj.ind_boundary = [];
 
             obj.ctrl_idx = ctrl_idx;
@@ -223,7 +225,6 @@ classdef FiniteElement < NosnocFormulationObject
         end
         
         function lambda = get.lambda(obj)
-            import casadi.*
             grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
 
             lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_p, obj.ind_lambda_n, 'UniformOutput', false);
@@ -240,11 +241,15 @@ classdef FiniteElement < NosnocFormulationObject
         end
 
         function x = get.x(obj)
-            x= cellfun(@(x) obj.w(x), obj.ind_x, 'UniformOutput', false);
+            x = cellfun(@(x) obj.w(x), obj.ind_x, 'UniformOutput', false);
         end
 
         function v = get.v(obj)
             v = cellfun(@(v) obj.w(v), obj.ind_v, 'UniformOutput', false);
+        end
+
+        function elastic = get.elastic(obj)
+            elastic = cellfun(@(ell) obj.w(ell), obj.ind_elastic, 'UniformOutput', false);
         end
         
         function sum_lambda = sumLambda(obj, varargin)
@@ -284,6 +289,11 @@ classdef FiniteElement < NosnocFormulationObject
                 thetas = obj.theta{:,p.Results.sys}.';
             end
             sum_theta = sum([thetas{:}], 2);
+        end
+
+        function sum_elastic = sumElastic(obj)
+            elastic = obj.elastic;
+            sum_elastic = sum([elastic{:}]);
         end
 
         function z = rkStageZ(obj, stage)
@@ -493,7 +503,6 @@ classdef FiniteElement < NosnocFormulationObject
 
            
             n_cross_comp = length(g_cross_comp);
-
             %
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
                 for ii=1:n_s
