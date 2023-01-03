@@ -50,7 +50,7 @@ classdef NosnocFormulationObject < handle
             addOptional(p, 'sys', []);
             parse(p, obj, symbolic, lb, ub, initial, idx, varargin{:})
             
-            n = length(symbolic);
+            n = size(symbolic, 1);
             nw = length(obj.w);
 
             obj.w = vertcat(obj.w, symbolic);

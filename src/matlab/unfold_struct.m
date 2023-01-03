@@ -37,7 +37,7 @@ names = fieldnames(input);
 for iii=1:length(names)
     eval([names{iii} '=input.' names{iii} ';']);
 %     if eval(['~exist( '''  names{i} ''', ''var'')'])
-        %         Check if a variable exists in the workspace, within a function
+%         Check if a variable exists in the workspace, within a function
         assignin(mode, names{iii}, eval(names{iii}));
 %     end
 end

@@ -59,9 +59,11 @@ settings = varargin{2};
 [settings] = fill_in_missing_settings(settings,model);
 
 %% Load user settings and model details
-unfold_struct(settings,'caller')
+settings_save = settings;
+unfold_struct(settings,'caller');
+% TODO: I absoletely do not understand why unfold struct is modifying its arguments.
+settings = settings_save;
 unfold_struct(model,'caller');
-
 %% Parameters
 p_val = [sigma_0,rho_sot,rho_h,rho_terminal,T];
 % define parameters;
@@ -87,7 +89,7 @@ if use_fesd
     % initial guess for the step-size
     h0_k = h_k.*ones(N_stages,1);
 end
-
+settings.x_box_at_fe
 %%  Butcher Tableu
 % TODO clean this up.
 switch irk_representation
@@ -114,7 +116,7 @@ switch irk_representation
         error('Choose irk_representation either: ''integral'' or ''differential''')
 end
 settings.right_boundary_point_explicit = right_boundary_point_explicit;
-
+settings.x_box_at_fe
 
 %% Time optimal control
 if time_optimal_problem
@@ -122,7 +124,7 @@ if time_optimal_problem
     T_final = define_casadi_symbolic(casadi_symbolic_mode,'T_final',1);
     T_final_guess = T;
 end
-
+settings.x_box_at_fe
 %% Elastic Mode Variables
 s_ell_inf_elastic_exists  = 0;
 if strcmpi(mpcc_mode,'elastic_ineq') || strcmpi(mpcc_mode,'elastic_eq') || strcmpi(mpcc_mode,'elastic_two_sided')
@@ -222,8 +224,8 @@ comp_var_current_fe.cross_comp_all = 0;
 %        names, e.g., Uk -> U,  h_ki -> h_fe, X_ki_stages ->  X_rk_stages
 %      - provide instructive names for terminal constraint relaxations
 %      - provide more instructive names for cross_comp (match python)
-
-problem = NosnocProblem(settings, model.dimensions, model);
+settings
+prob = NosnocProblem(settings, model.dimensions, model);
 
 for k=0:N_stages-1
     % control variables
@@ -1011,5 +1013,4 @@ varargout{1} = solver;
 varargout{2} = solver_initialization;
 varargout{3} = model;
 varargout{4} = settings;
-
 end

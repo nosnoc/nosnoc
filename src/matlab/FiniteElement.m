@@ -13,8 +13,6 @@ classdef FiniteElement < NosnocFormulationObject
         ind_nu_lift
         ind_elastic
         ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
-
-        ind_g_comp_path
         
         ctrl_idx
         fe_idx
@@ -22,6 +20,8 @@ classdef FiniteElement < NosnocFormulationObject
         model
         settings
         dims
+
+        u
         
         prev_fe
     end
@@ -35,10 +35,11 @@ classdef FiniteElement < NosnocFormulationObject
         alpha
         lambda_n
         lambda_p
+        nu_lift
         h
 
         elastic
-
+        
         lambda
     end
 
@@ -70,10 +71,12 @@ classdef FiniteElement < NosnocFormulationObject
 
             h = SX.sym(['h_' num2str(ctrl_idx) '_' num2str(fe_idx)]);
             h_ctrl_stage = model.T/dims.N_stages;
-            h0 = h_ctrl_stage / dims.N_finite_elements;
+            h0 = h_ctrl_stage / dims.N_finite_elements(ctrl_idx);
             ubh = (1 + settings.gamma_h) * h0;
             lbh = (1 - settings.gamma_h) * h0;
             obj.addVariable(h, 'h', lbh, ubh, h0);
+
+            settings
 
             % RK stage stuff
             for ii = 1:dims.n_s
@@ -89,10 +92,23 @@ classdef FiniteElement < NosnocFormulationObject
                 end
                 if (settings.irk_representation == IrkRepresentation.integral ||...
                     settings.irk_representation == IrkRepresentation.differential_lift_x)
+                    if settings.x_box_at_stg
+                        lbx = model.lbx;
+                        ubx = model.ubx;
+                    elseif settings.x_box_at_fe && ii == dims.n_s && settings.right_boundary_point_explicit
+                        lbx = model.lbx;
+                        ubx = model.ubx;
+                    elseif fe_idx == dims.N_finite_elements(ctrl_idx) && ii == dims.n_s && settings.right_boundary_point_explicit
+                        lbx = model.lbx;
+                        ubx = model.ubx;
+                    else
+                        lbx = -inf * ones(dims.n_x);
+                        ubx = inf * ones(dims.n_x);
+                    end
                     obj.addVariable(SX.sym(['X_' num2str(ctrl_idx) '_' num2str(fe_idx) '_' num2str(ii)], dims.n_x),...
                                     'x',...
-                                    -inf * ones(dims.n_x),...
-                                    inf * ones(dims.n_x),...
+                                    lbx,...
+                                    ubx,...
                                     model.x0,...
                                     ii);
                 end
@@ -206,11 +222,20 @@ classdef FiniteElement < NosnocFormulationObject
             end
             if (~settings.right_boundary_point_explicit ||...
                 settings.irk_representation == IrkRepresentation.differential)
+                if settings.x_box_at_stg || settings.x_box_at_fe || fe_idx == dims.N_finite_elements(ctrl_idx)
+                    lbx = model.lbx;
+                    ubx = model.ubx;
+
+                else
+                    lbx = -inf * ones(dims.n_x);
+                    ubx = inf * ones(dims.n_x);
+                end
+                
                 % add final X variables
                 obj.addVariable(SX.sym(['X_end_' num2str(ctrl_idx) '_' num2str(fe_idx)], dims.n_x),...
                                 'x',...
-                                -inf * ones(dims.n_x),...
-                                inf * ones(dims.n_x),...
+                                lbx,...
+                                ubx,...
                                 model.x0,...
                                 ii+1);
             end
@@ -250,6 +275,10 @@ classdef FiniteElement < NosnocFormulationObject
 
         function elastic = get.elastic(obj)
             elastic = cellfun(@(ell) obj.w(ell), obj.ind_elastic, 'UniformOutput', false);
+        end
+
+        function nu_lift = get.nu_lift(obj)
+            nu_lift = obj.w(obj.ind_nu_lift);
         end
         
         function sum_lambda = sumLambda(obj, varargin)
@@ -313,6 +342,8 @@ classdef FiniteElement < NosnocFormulationObject
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
+
+            u = Uk;
 
             if settings.irk_representation == IrkRepresentation.integral
                 X_ki = obj.x;
@@ -378,19 +409,6 @@ classdef FiniteElement < NosnocFormulationObject
                 obj.addContsraint(model.g_ineq_fun(X_ki{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
             end
 
-            % path complementarities
-            % TODO: do this cleaner
-            for j=1:dims.n_s-settings.right_boundary_point_explicit
-                % TODO: there has to be a better way to do this.
-                if settings.g_comp_path_constraint && settings.g_ineq_at_stg
-                    obj.addContsraint(model.g_comp_path_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
-                end
-            end
-            if (settings.g_comp_path_constraint &&...
-                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
-                obj.addContsraint(model.g_ineq_fun(X_ki{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
-            end
-
             % end constraints
             if (~settings.right_boundary_point_explicit ||...
                 settings.irk_representation == IrkRepresentation.differential)
@@ -410,6 +428,20 @@ classdef FiniteElement < NosnocFormulationObject
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
+
+            g_path_comp = SX([]);
+            % path complementarities
+            % TODO: do this cleaner
+            for j=1:dims.n_s-settings.right_boundary_point_explicit
+                % TODO: there has to be a better way to do this.
+                if settings.g_comp_path_constraint && settings.g_ineq_at_stg
+                    g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u));
+                end
+            end
+            if (settings.g_comp_path_constraint &&...
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
+                g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{end}, obj.u));
+            end
 
             g_cross_comp = SX([]);
             % TODO Implement other modes
@@ -501,16 +533,19 @@ classdef FiniteElement < NosnocFormulationObject
                 error('TODO: not implemented');
             end
 
+            g_comp = vertcat(g_cross_comp, g_path_comp);
            
             n_cross_comp = length(g_cross_comp);
+            n_path_comp = length(g_path_comp);
+            n_comp = n_cross_comp + n_path_comp;
             %
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
                 for ii=1:n_s
-                    obj.addVariable(SX.sym(['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx) '_' num2str(ii), ], n_cross_comp),...
+                    obj.addVariable(SX.sym(['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx) '_' num2str(ii), ], n_comp),...
                                     'elastic',...
-                                    s_elastic_0*ones(n_all_comp_j,1),...
-                                    s_elastic_min*ones(n_all_comp_j,1),...
-                                    s_elastic_max*ones(n_all_comp_j,1),...
+                                    s_elastic_0*ones(n_comp,1),...
+                                    s_elastic_min*ones(n_comp,1),...
+                                    s_elastic_max*ones(n_comp,1),...
                                     ii)
                 end
             end
@@ -518,60 +553,60 @@ classdef FiniteElement < NosnocFormulationObject
             % Do MPCC formulation
             % TODO this should be done on the problem level, and take into account passed in vars. fine for now.
             if settings.mpcc_mode == 'Scholtes_ineq'
-                g_cross_comp = g_cross_comp - sigma_p;
-                g_cross_comp_ub = zeros(n_cross_comp,1);
-                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+                g_comp = g_comp - sigma_p;
+                g_comp_ub = zeros(n_cross_comp,1);
+                g_comp_lb = -inf * ones(n_cross_comp,1);
             elseif settings.mpcc_mode == 'Scholtes_eq'
-                g_cross_comp = g_cross_comp - sigma_p;
-                g_cross_comp_ub = zeros(n_cross_comp,1);
-                g_cross_comp_lb = zeros(n_cross_comp,1);
+                g_comp = g_comp - sigma_p;
+                g_comp_ub = zeros(n_cross_comp,1);
+                g_comp_lb = zeros(n_cross_comp,1);
             elseif settings.mpcc_mode == 'ell_1_penalty'
                 if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*sum(g_cross_comp);
+                    obj.cost = obj.cost + (1/sigma_p)*sum(g_comp);
                 else
-                    obj.cost = sigma_p*obj.cost + sum(g_cross_comp);
+                    obj.cost = sigma_p*obj.cost + sum(g_comp);
                 end
             elseif settings.mpcc_mode == 'elastic_ineq'
-                g_cross_comp = g_cross_comp - s_elastic;
-                g_cross_comp_ub = zeros(n_cross_comp,1);
-                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+                g_comp = g_comp - s_elastic;
+                g_comp_ub = zeros(n_cross_comp,1);
+                g_comp_lb = -inf * ones(n_cross_comp,1);
             elseif settings.mpcc_mode == 'elastic_eq'
-                g_cross_comp = g_cross_comp - s_elastic;
-                g_cross_comp_ub = zeros(n_cross_comp,1);
-                g_cross_comp_lb = zeros(n_cross_comp,1);
+                g_comp = g_comp - s_elastic;
+                g_comp_ub = zeros(n_cross_comp,1);
+                g_comp_lb = zeros(n_cross_comp,1);
             elseif settings.mpcc_mode == 'elastic_two_sided'
-                g_cross_comp = g_cross_comp - s_elastic;
-                g_cross_comp_ub = zeros(n_cross_comp,1);
-                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+                g_comp = g_comp - s_elastic;
+                g_comp_ub = zeros(n_cross_comp,1);
+                g_comp_lb = -inf * ones(n_cross_comp,1);
 
-                g_cross_comp = [g_cross_comp;g_all_comp_j+s_elastic*ones(n_cross_comp,1)];
-                g_cross_comp_ub = [g_cross_comp_ub; inf*ones(n_cross_comp,1)];
-                g_cross_comp_lb = [g_cross_comp_lb;  zeros(n_cross_comp,1)];
+                g_comp = [g_comp;g_all_comp_j+s_elastic*ones(n_cross_comp,1)];
+                g_comp_ub = [g_comp_ub; inf*ones(n_cross_comp,1)];
+                g_comp_lb = [g_comp_lb;  zeros(n_cross_comp,1)];
                 % TODO these should be merged probably
             elseif settings.mpcc_mode == 'elastic_ell_1_ineq'
-                g_cross_comp = g_cross_comp - s_elastic;
-                g_cross_comp_ub = zeros(n_cross_comp,1);
-                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+                g_comp = g_comp - s_elastic;
+                g_comp_ub = zeros(n_cross_comp,1);
+                g_comp_lb = -inf * ones(n_cross_comp,1);
             elseif settings.mpcc_mode == 'elastic_ell_1_eq'
-                g_cross_comp = g_cross_comp - s_elastic;
-                g_cross_comp_ub = zeros(n_cross_comp,1);
-                g_cross_comp_lb = zeros(n_cross_comp,1);
+                g_comp = g_comp - s_elastic;
+                g_comp_ub = zeros(n_cross_comp,1);
+                g_comp_lb = zeros(n_cross_comp,1);
             elseif settings.mpcc_mode == 'elastic_ell_1_two_sided'
-                g_cross_comp = g_cross_comp - s_elastic;
-                g_cross_comp_ub = zeros(n_cross_comp,1);
-                g_cross_comp_lb = -inf * ones(n_cross_comp,1);
+                g_comp = g_comp - s_elastic;
+                g_comp_ub = zeros(n_cross_comp,1);
+                g_comp_lb = -inf * ones(n_cross_comp,1);
 
-                g_cross_comp = [g_cross_comp;g_all_comp_j+s_elastic*ones(n_cross_comp,1)];
-                g_cross_comp_ub = [g_cross_comp_ub; inf*ones(n_cross_comp,1)];
-                g_cross_comp_lb = [g_cross_comp_lb;  zeros(n_cross_comp,1)];
+                g_comp = [g_comp;g_all_comp_j+s_elastic*ones(n_cross_comp,1)];
+                g_comp_ub = [g_comp_ub; inf*ones(n_cross_comp,1)];
+                g_comp_lb = [g_comp_lb;  zeros(n_cross_comp,1)];
             end
 
             if settings.mpcc_mode ~= 'ell_1_penalty'
-                obj.addConstraint(g_cross_comp, g_cross_comp_lb, g_cross_comp_ub);
+                obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
             end
         end
 
-        function stepEquilibration(obj)
+        function stepEquilibration(obj, sigma_p)
             import casadi.*
             model = obj.model;
             settings = obj.settings;
@@ -580,28 +615,34 @@ classdef FiniteElement < NosnocFormulationObject
             % TODO implement other modes!
             if settings.use_fesd && obj.fe_idx > 1
                 delta_h_ki = obj.h - obj.prev_fe.h;
-            end
-            if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
-                h_fe = model.T / (dims.N_stages * dims.N_finite_elements);
-                obj.cost = obj.cost + settings.rho_h * (obj.h - h_fe).^2;
-            elseif settings.step_equilibration == StepEquilibrationMode.heuristic_delta
-                obj.cost = obj.cost + settings.rho_h * delta_h_ki.^2;
-            elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
-                eta_k = obj.prev_fe.sumLambda() * obj.sumLambda() + obj.prev_fe.sumTheta() * obj.sumTheta();
+                eta_k = obj.prev_fe.sumLambda().*obj.sumLambda() + obj.prev_fe.sumTheta().*obj.sumTheta();
                 nu_k = 1;
                 for jjj=1:length(eta_k)
                     nu_k = nu_k * eta_k(jjj)
                 end
-                obj.cost = obj.cost + settings.rho_h * tanh(nu_k/settings.step_equilibration_sigma) * delta_h_ki.^2;
-            elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
-                eta_k = obj.prev_fe.sumLambda() * obj.sumLambda() + obj.prev_fe.sumTheta() * obj.sumTheta();
-                nu_k = 1;
-                for jjj=1:length(eta_k)
-                    nu_k = nu_k * eta_k(jjj)
+                
+                if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
+                    h_fe = model.T / (dims.N_stages * dims.N_finite_elements);
+                    obj.cost = obj.cost + settings.rho_h * (obj.h - h_fe).^2;
+                elseif settings.step_equilibration == StepEquilibrationMode.heuristic_delta
+                    obj.cost = obj.cost + settings.rho_h * delta_h_ki.^2;
+                elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
+                    obj.cost = obj.cost + settings.rho_h * tanh(nu_k/settings.step_equilibration_sigma) * delta_h_ki.^2;
+                elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
+                    obj.cost = obj.cost + settings.rho_h * nu_k * delta_h_ki.^2
+                elseif settings.step_equilibration == StepEquilibrationMode.direct
+                    obj.addConstraint(nu_k*delta_h_ki, 0, 0);
+                elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy
+                    obj.addConstraints([nu_k*delta_h_ki-sigma_p;-nu_k*delta_h_ki-sigma_p],...
+                                       [-inf;-inf],...
+                                       [0;0]);
+                elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy_lift
+                    obj.addConstraints([obj.nu_lift-nu_k;obj.nu_lift*delta_h_ki-sigma_p;-obj.nu_lift*delta_h_ki-sigma_p],...
+                                       [0;-inf;-inf],...
+                                       [0;0;0]);
+                else
+                    error("Step equilibration mode not implemented");
                 end
-                obj.cost = obj.cost + settings.rho_h * nu_k * delta_h_ki.^2
-            else
-                error("Step equilibration mode not implemented");
             end
         end
     end

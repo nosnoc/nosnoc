@@ -29,6 +29,10 @@ classdef NosnocProblem < NosnocFormulationObject
         fe0
         stages
     end
+    % remaining list of TODOs
+    % TODO: stagewise_clock_constraint
+    % TODO: time optimal problem
+    % TODO: 
 
     properties(Dependent, SetAccess=private, Hidden)
         u
@@ -39,6 +43,7 @@ classdef NosnocProblem < NosnocFormulationObject
             import casadi.*
             obj@NosnocFormulationObject();
 
+            obj.ind_u = cell(dims.N_stages,1);
             obj.ind_x = {};
             obj.ind_v = {};
             obj.ind_theta = {};
@@ -90,7 +95,7 @@ classdef NosnocProblem < NosnocFormulationObject
                     fe.createComplementarityConstraints(sigma_p, s_elastic);
 
                     % 3) Step Equilibration
-                    fe.stepEquilibration();
+                    fe.stepEquilibration(sigma_p);
 
                     % 4) add cost and constraints from FE to problem
                     obj.cost = obj.cost + fe.cost;
@@ -118,8 +123,14 @@ classdef NosnocProblem < NosnocFormulationObject
                     obj.cost = sigma_p*obj.cost + s_elastic;
                 end
             end
-            if ismember(settings.mpcc_mode, MpccMode.elastic)
-                sum_s_elastic = [] % TODO
+            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
+                sum_s_elastic = 0 % TODO
+                for k=1:N_stages
+                    stage=obj.stages{ii};
+                    for fe=stage
+                        sum_s_elastic = sum_s_elastic + fe.sumElastic;
+                    end
+                end
                 obj.addVariable(s_elastic, 'elastic', settings.s_elastic_0, settings.s_elastic_min, settings.s_elastic_max);
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*sum_s_elastic;
@@ -155,7 +166,7 @@ classdef NosnocProblem < NosnocFormulationObject
             import casadi.*
             Uk = SX.sym(['U_' num2str(ctrl_idx)], obj.dims.n_u);
             obj.addVariable(Uk, 'u', obj.model.lbu, obj.model.ubu,...
-                            zeros(obj.dims.n_u,1));
+                            zeros(obj.dims.n_u,1), ctrl_idx);
 
             if obj.settings.time_rescaling && obj.settings.use_speed_of_time_variables
                 if obj.settings.local_speed_of_time_variable
@@ -217,7 +228,7 @@ classdef NosnocProblem < NosnocFormulationObject
         end
         
         function u = get.u(obj)
-            u = obj.w(obj.ind_u);
+            u = cellfun(@(u) obj.w(u), obj.ind_u, 'UniformOutput', false);;
         end
 
         function sot = get.sot(obj)
