@@ -41,8 +41,8 @@ g_comp_path_constraint = 0;
 g_ineq_at_fe = 0; % evaluate nonlinear path constraint at every finte element boundary
 g_ineq_at_stg = 0; % evaluate nonlinear path constraint at every stage 
 
-% x_box_at_fe = 1; % evaluate box constraint for diff states at every finite element boundary point
-% x_box_at_stg = 1; % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
+x_box_at_fe = 1; % evaluate box constraint for diff states at every finite element boundary point
+x_box_at_stg = 1; % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
 
 terminal_constraint = 0;
 time_optimal_problem = 0;

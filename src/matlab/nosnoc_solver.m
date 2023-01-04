@@ -62,7 +62,9 @@ end
 [results,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
 total_time = sum(stats.cpu_time);
 %% Process and store results
+settings_bkp = settings;
 unfold_struct(settings,'caller');
+settings = settings_bkp; % TODO: figure out why unfold settings breaks things.
 unfold_struct(model,'caller');
 results = extract_results_from_solver(model,settings,results);
 complementarity_iter_ell_1 = full(comp_res(results.w_opt,[model.p_val';full(model.lambda00_fun(x0))]));

@@ -76,8 +76,6 @@ classdef FiniteElement < NosnocFormulationObject
             lbh = (1 - settings.gamma_h) * h0;
             obj.addVariable(h, 'h', lbh, ubh, h0);
 
-            settings
-
             % RK stage stuff
             for ii = 1:dims.n_s
                 % state / state derivative variables
@@ -546,7 +544,7 @@ classdef FiniteElement < NosnocFormulationObject
                                     s_elastic_0*ones(n_comp,1),...
                                     s_elastic_min*ones(n_comp,1),...
                                     s_elastic_max*ones(n_comp,1),...
-                                    ii)
+                                    ii);
                 end
             end
             
@@ -606,7 +604,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
         end
 
-        function stepEquilibration(obj, sigma_p)
+        function stepEquilibration(obj, sigma_p, rho_h_p)
             import casadi.*
             model = obj.model;
             settings = obj.settings;
@@ -618,18 +616,18 @@ classdef FiniteElement < NosnocFormulationObject
                 eta_k = obj.prev_fe.sumLambda().*obj.sumLambda() + obj.prev_fe.sumTheta().*obj.sumTheta();
                 nu_k = 1;
                 for jjj=1:length(eta_k)
-                    nu_k = nu_k * eta_k(jjj)
+                    nu_k = nu_k * eta_k(jjj);
                 end
                 
                 if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
                     h_fe = model.T / (dims.N_stages * dims.N_finite_elements);
-                    obj.cost = obj.cost + settings.rho_h * (obj.h - h_fe).^2;
-                elseif settings.step_equilibration == StepEquilibrationMode.heuristic_delta
-                    obj.cost = obj.cost + settings.rho_h * delta_h_ki.^2;
+                    obj.cost = obj.cost + rho_h_p * (obj.h - h_fe).^2;
+                elseif settings.step_equilibration ==  StepEquilibrationMode.heuristic_delta
+                    obj.cost = obj.cost + rho_h_p * delta_h_ki.^2;
                 elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
-                    obj.cost = obj.cost + settings.rho_h * tanh(nu_k/settings.step_equilibration_sigma) * delta_h_ki.^2;
+                    obj.cost = obj.cost + rho_h_p * tanh(nu_k/settings.step_equilibration_sigma) * delta_h_ki.^2;
                 elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
-                    obj.cost = obj.cost + settings.rho_h * nu_k * delta_h_ki.^2
+                    obj.cost = obj.cost + rho_h_p * nu_k * delta_h_ki.^2
                 elseif settings.step_equilibration == StepEquilibrationMode.direct
                     obj.addConstraint(nu_k*delta_h_ki, 0, 0);
                 elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy
