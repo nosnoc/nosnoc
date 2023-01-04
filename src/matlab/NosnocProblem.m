@@ -28,6 +28,7 @@ classdef NosnocProblem < NosnocFormulationObject
         sigma_p
 
         p
+        p0
 
         fe0
         stages
@@ -45,6 +46,7 @@ classdef NosnocProblem < NosnocFormulationObject
     properties(Dependent, SetAccess=private, Hidden)
         u
         sot
+        nu_vector
     end
     methods
         function obj = NosnocProblem(settings, dims, model)
@@ -368,6 +370,8 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.comp_std = Function('comp_std', {obj.w, obj.p}, {J_comp_std});
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
             obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
+
+            p0 = [settings.sigma_0, settings.rho_sot, settings.rho_h, settings.rho_terminal, model.T];
         end
 
         % TODO this should be private
@@ -467,6 +471,16 @@ classdef NosnocProblem < NosnocFormulationObject
 
         function sot = get.sot(obj)
             sot = obj.w(obj.ind_sot);
+        end
+
+        function nu_vector = get.nu_vector(obj)
+            nu_vector = [];
+            for stage=obj.stages
+                for fe=stage
+                    fe
+                    nu_vector = vertcat(nu_vector,fe.nu_vector);
+                end
+            end
         end
         
         function print(obj)

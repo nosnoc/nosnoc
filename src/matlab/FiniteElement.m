@@ -41,6 +41,8 @@ classdef FiniteElement < NosnocFormulationObject
         elastic
         
         lambda
+
+        nu_vector
     end
 
     methods
@@ -74,6 +76,11 @@ classdef FiniteElement < NosnocFormulationObject
             h0 = h_ctrl_stage / dims.N_finite_elements(ctrl_idx);
             ubh = (1 + settings.gamma_h) * h0;
             lbh = (1 - settings.gamma_h) * h0;
+            if settings.time_rescaling && ~use_speed_of_time_variables
+                % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
+                ubh = (1+gamma_h)*h0*settings.s_sot_max;
+                lbh = (1-gamma_h)*h0/settings.s_sot_min;
+            end
             obj.addVariable(h, 'h', lbh, ubh, h0);
 
             % RK stage stuff
@@ -277,6 +284,19 @@ classdef FiniteElement < NosnocFormulationObject
 
         function nu_lift = get.nu_lift(obj)
             nu_lift = obj.w(obj.ind_nu_lift);
+        end
+
+        function nu_vector = get.nu_vector(obj)
+            if obj.settings.use_fesd && obj.fe_idx > 1
+                delta_h_ki = obj.h - obj.prev_fe.h;
+                eta_k = obj.prev_fe.sumLambda().*obj.sumLambda() + obj.prev_fe.sumTheta().*obj.sumTheta();
+                nu_vector = 1;
+                for jjj=1:length(eta_k)
+                    nu_vector = nu_vector * eta_k(jjj);
+                end
+            else
+                nu_vector = SX([]);
+            end
         end
         
         function sum_lambda = sumLambda(obj, varargin)
@@ -612,12 +632,7 @@ classdef FiniteElement < NosnocFormulationObject
 
             % TODO implement other modes!
             if settings.use_fesd && obj.fe_idx > 1
-                delta_h_ki = obj.h - obj.prev_fe.h;
-                eta_k = obj.prev_fe.sumLambda().*obj.sumLambda() + obj.prev_fe.sumTheta().*obj.sumTheta();
-                nu_k = 1;
-                for jjj=1:length(eta_k)
-                    nu_k = nu_k * eta_k(jjj);
-                end
+                nu = obj.nu_vector;
                 
                 if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
                     h_fe = model.T / (dims.N_stages * dims.N_finite_elements);
@@ -625,17 +640,17 @@ classdef FiniteElement < NosnocFormulationObject
                 elseif settings.step_equilibration ==  StepEquilibrationMode.heuristic_delta
                     obj.cost = obj.cost + rho_h_p * delta_h_ki.^2;
                 elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
-                    obj.cost = obj.cost + rho_h_p * tanh(nu_k/settings.step_equilibration_sigma) * delta_h_ki.^2;
+                    obj.cost = obj.cost + rho_h_p * tanh(nu/settings.step_equilibration_sigma) * delta_h_ki.^2;
                 elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
-                    obj.cost = obj.cost + rho_h_p * nu_k * delta_h_ki.^2
+                    obj.cost = obj.cost + rho_h_p * nu * delta_h_ki.^2
                 elseif settings.step_equilibration == StepEquilibrationMode.direct
-                    obj.addConstraint(nu_k*delta_h_ki, 0, 0);
+                    obj.addConstraint(nu*delta_h_ki, 0, 0);
                 elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy
-                    obj.addConstraints([nu_k*delta_h_ki-sigma_p;-nu_k*delta_h_ki-sigma_p],...
+                    obj.addConstraints([nu*delta_h_ki-sigma_p;-nu*delta_h_ki-sigma_p],...
                                        [-inf;-inf],...
                                        [0;0]);
                 elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy_lift
-                    obj.addConstraints([obj.nu_lift-nu_k;obj.nu_lift*delta_h_ki-sigma_p;-obj.nu_lift*delta_h_ki-sigma_p],...
+                    obj.addConstraints([obj.nu_lift-nu;obj.nu_lift*delta_h_ki-sigma_p;-obj.nu_lift*delta_h_ki-sigma_p],...
                                        [0;-inf;-inf],...
                                        [0;0;0]);
                 else
