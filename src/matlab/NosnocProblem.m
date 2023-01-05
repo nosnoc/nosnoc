@@ -138,8 +138,8 @@ classdef NosnocProblem < NosnocFormulationObject
                         obj.addConstraint(sum(vertcat(stage.h)) - model.h);
                     elseif ~settings.time_freezing
                         if settings.use_speed_of_time_variables
-                            obj.addConstraint(sum(s_sot*vertcat(stage.h)) - model.h)
-                            obj.addConstraint(sum(vertcat(stage.h)) - T_final/dims.N_stages);
+                            obj.addConstraint(sum(vertcat(stage.h)) - model.h)
+                            obj.addConstraint(sum(s_sot*vertcat(stage.h)) - T_final/dims.N_stages);
                         else
                             obj.addConstraint(sum(vertcat(stage.h)) - T_final/dims.N_stages);
                         end
