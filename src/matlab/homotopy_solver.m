@@ -39,7 +39,6 @@ if nargin>4
     settings_int = varargin{6};
 end
 
-
 import casadi.*
 %%  unfold data
 unfold_struct(settings,'caller')
@@ -67,6 +66,8 @@ try
     complementarity_stats = [full(comp_res(w0, p_val))];
 catch
     w0 = w0(1:length(model.w));
+    w0
+    p_val
     complementarity_stats = [full(comp_res(w0, p_val))];
 end
 cpu_time = [];

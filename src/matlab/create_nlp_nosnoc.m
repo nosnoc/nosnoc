@@ -115,11 +115,12 @@ nu_fun = Function('nu_fun', {w,p},{problem.nu_vector});
 
 %% Outputs
 model.prob = prob;
+model.problem = problem;
 model.solver = solver;
 model.g =  g;
 model.w =  w;
 model.p =  p;
-model.J = J;
+model.J = problem.cost;
 model.J_fun = J_fun;
 model.comp_res = comp_res;
 model.comp_res_fesd = comp_res_fesd;
@@ -133,7 +134,7 @@ model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
 
 % TODO: make member function
-if print_level > 5
+if settings.print_level > 1
     disp("g")
     print_casadi_vector(g)
     disp('lbg, ubg')
@@ -148,15 +149,14 @@ if print_level > 5
     disp(problem.w0)
 
     disp('objective')
-    disp(J)
+    disp(problem.cost)
 end
 
 %% Model update: all index sets and dimensions
 % TODO: Maybe just return the problem, currently trying not to break compatibility for now.
-model.ind_x = [problem.ind_x0{:}, flatten_ind(problem.ind_x)];
-model.ind_elastic = flatten_ind(problem.ind_elastic);
+model.ind_x = [problem.ind_x0.'; flatten_ind(problem.ind_x)];
 model.ind_v = flatten_ind(problem.ind_v);
-%model.ind_z = problem.ind_z; TODO fix this most likely by breaking compat.
+model.ind_z = problem.ind_z; %TODO fix this by breaking compat
 model.ind_u = flatten_ind(problem.ind_u);
 model.ind_h = flatten_ind(problem.ind_h);
 model.ind_sot = flatten_ind(problem.ind_sot);

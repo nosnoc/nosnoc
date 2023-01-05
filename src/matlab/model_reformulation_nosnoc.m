@@ -491,6 +491,8 @@ if max(n_c_sys) < 2 && isequal(pss_mode,'Step')
     end
 end
 
+n_f_sys = arrayfun(@(sys) size(F{sys},2),1:n_sys);
+
 %% Algebraic variables defintion
 % Dummy variables for Stewart representation'
 theta = [];
@@ -961,7 +963,7 @@ model.f_q_T = f_q_T;
 % CasADi Functions
 model.f_x_fun = f_x_fun;
 model.g_z_all_fun = g_z_all_fun;
-model.g_switching_fun = g_switching_fun
+model.g_switching_fun = g_switching_fun;
 model.f_q_T_fun = f_q_T_fun;
 
 model.J_cc_fun = J_cc_fun;
@@ -1021,6 +1023,7 @@ dimensions.n_beta = n_beta;
 dimensions.n_gamma = n_gamma;
 dimensions.n_lambda_0 = n_lambda_0;
 dimensions.n_lambda_1 = n_lambda_1;
+dimensions.n_f_sys = n_f_sys;
 model.dimensions = dimensions;
 
 end

@@ -3,9 +3,13 @@ clear all
 import casadi.*
 [settings] = default_settings_nosnoc();
 settings.n_s = 2;
-settings.pss_mode = 'Step';
+settings.pss_mode = 'Stewart';
 settings.mpcc_mode = 'Scholtes_ineq';
-settings.print_level = 5;
+settings.step_equilibration = StepEquilibrationMode.heuristic_diff;
+settings.initial_lambda = 1;
+settings.initial_theta = 1;
+settings.initial_mu = 1;
+settings.print_level = 3;
 x1 = SX.sym('x1');
 model.x = x1;
 model.c = [x1];

@@ -29,7 +29,7 @@ end
 
 x_opt_extended = w_opt(ind_x);
 x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
-x_opt  = x_opt_extended(:,1:n_s+1:end);
+x_opt  = x_opt_extended(:,1:n_s:end);
 
 
 switch pss_mode

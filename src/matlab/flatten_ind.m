@@ -1,4 +1,4 @@
 function flat = flatten_ind(ind)
-    ind = ind.';
-    flat = vertcat(ind{:});
+    flat = [ind{:}].';
+    %flat = sort(flat);
 end

@@ -47,6 +47,8 @@ classdef NosnocProblem < NosnocFormulationObject
         u
         sot
         nu_vector
+
+        ind_z
     end
     methods
         function obj = NosnocProblem(settings, dims, model)
@@ -85,7 +87,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
             if settings.time_optimal_problem
                 % the final time in time optimal control problems
-                T_final = define_casadi_symbolic(casadi_symbolic_mode,'T_final',1);
+                T_final = SX.sym('T_final', 1);
                 T_final_guess = model.T;
             end
 
@@ -101,9 +103,9 @@ classdef NosnocProblem < NosnocFormulationObject
                 Uk = obj.u{ii};
                 if settings.time_rescaling && settings.use_speed_of_time_variables
                     if settings.local_speed_of_time_variable
-                        s_sot = obj.sot(ii);
+                        s_sot = obj.sot{ii};
                     else
-                        s_sot = obj.sot(1);
+                        s_sot = obj.sot{1};
                     end
                 else
                     s_sot = 1;
@@ -157,9 +159,9 @@ classdef NosnocProblem < NosnocFormulationObject
             % Process terminal constraint.
             if settings.terminal_constraint
                 if settings.relax_terminal_constraint_homotopy
-                    rho_terminal_p = 1/sigma_p
+                    rho_terminal_p = 1/sigma_p;
                 end
-                X_end = last_fe.x(end);
+                X_end = last_fe.x{end};
                 g_terminal = model.g_terminal_fun(X_end);
                 n_terminal = length(g_terminal);
                 if ~isequal(model.g_terminal_lb,model.g_terminal_ub)
@@ -168,11 +170,12 @@ classdef NosnocProblem < NosnocFormulationObject
                         fprintf('Info: Only terminal-equality constraint relaxation is supported, you have an inequality constraint.\n')
                     end
                 end
-
-                switch model.relax_terminal_constraint % TODO name these.
+                switch settings.relax_terminal_constraint % TODO name these.
                   case 0 % hard constraint
                     if settings.relax_terminal_constraint_from_above
+                        obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1));
                     else
+                        obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub);
                     end
                   case 1 % l_1
                     s_terminal_ell_1 = SX.sym('s_terminal_ell_1', n_terminal);
@@ -312,7 +315,7 @@ classdef NosnocProblem < NosnocFormulationObject
             
             % Process elastic costs
             if ismember(settings.mpcc_mode, MpccMode.elastic)
-                obj.addVariable(s_elastic, 'elastic', settings.s_elastic_0, settings.s_elastic_min, settings.s_elastic_max);
+                obj.addVariable(s_elastic, 'elastic', settings.s_elastic_min, settings.s_elastic_max, settings.s_elastic_0);
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*s_elastic;
                 else
@@ -320,14 +323,14 @@ classdef NosnocProblem < NosnocFormulationObject
                 end
             end
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                sum_s_elastic = 0
+                sum_s_elastic = 0;
                 for k=1:dims.N_stages
                     stage=obj.stages{ii};
                     for fe=stage
                         sum_s_elastic = sum_s_elastic + fe.sumElastic;
                     end
                 end
-                obj.addVariable(s_elastic, 'elastic', settings.s_elastic_0, settings.s_elastic_min, settings.s_elastic_max);
+                obj.addVariable(s_elastic, 'elastic', settings.s_elastic_min, settings.s_elastic_max, settings.s_elastic_0);
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*sum_s_elastic;
                 else
@@ -337,12 +340,12 @@ classdef NosnocProblem < NosnocFormulationObject
 
             if settings.time_optimal_problem
                 % Add to the vector of unknowns
-                obj.addVariable(T_final, T_final_guess, T_final_min, T_final_max, 't_final');
+                obj.addVariable(T_final, 't_final', settings.T_final_min, settings.T_final_max, T_final_guess);
                 obj.cost = obj.cost + T_final;
             end
 
             % Calculate standard complementarities.
-            J_comp_std = 0
+            J_comp_std = 0;
             for k=1:dims.N_stages
                 for fe=stage
                     for j=1:dims.n_s
@@ -371,7 +374,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
             obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
 
-            p0 = [settings.sigma_0, settings.rho_sot, settings.rho_h, settings.rho_terminal, model.T];
+            obj.p0 = [settings.sigma_0, settings.rho_sot, settings.rho_h, settings.rho_terminal, model.T];
         end
 
         % TODO this should be private
@@ -390,7 +393,7 @@ classdef NosnocProblem < NosnocFormulationObject
             prev_fe = fe0;
             for ii=1:obj.dims.N_stages
                 stage = obj.createControlStage(ii, prev_fe);
-                obj.stages = [obj.stages{:}, {stage}];
+                obj.stages = [obj.stages, {stage}];
                 prev_fe = stage(end);
             end
         end
@@ -424,7 +427,7 @@ classdef NosnocProblem < NosnocFormulationObject
                                         obj.settings.s_sot_min,...
                                         obj.settings.s_sot_max,...
                                         obj.settings.s_sot0);
-                        if settings.time_freezing
+                        if obj.settings.time_freezing
                             obj.cost = obj.cost + rho_sot_p*(s_sot-1)^2;
                         end
                     end
@@ -466,21 +469,31 @@ classdef NosnocProblem < NosnocFormulationObject
         end
         
         function u = get.u(obj)
-            u = cellfun(@(u) obj.w(u), obj.ind_u, 'UniformOutput', false);;
+            u = cellfun(@(u) obj.w(u), obj.ind_u, 'UniformOutput', false);
         end
 
         function sot = get.sot(obj)
-            sot = obj.w(obj.ind_sot);
+            sot = cellfun(@(sot) obj.w(sot), obj.ind_sot, 'UniformOutput', false);
         end
 
         function nu_vector = get.nu_vector(obj)
             nu_vector = [];
-            for stage=obj.stages
+            for k=obj.dims.N_stages
+                stage = obj.stages{k};
                 for fe=stage
-                    fe
                     nu_vector = vertcat(nu_vector,fe.nu_vector);
                 end
             end
+        end
+
+        function ind_z = get.ind_z(obj)
+            ind_z = [flatten_ind(obj.ind_theta)
+                     flatten_ind(obj.ind_lam)
+                     flatten_ind(obj.ind_mu)
+                     flatten_ind(obj.ind_alpha)
+                     flatten_ind(obj.ind_lambda_n)
+                     flatten_ind(obj.ind_lambda_p)];
+            ind_z = sort(ind_z);
         end
         
         function print(obj)
