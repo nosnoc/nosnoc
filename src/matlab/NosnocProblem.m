@@ -510,12 +510,13 @@ classdef NosnocProblem < NosnocFormulationObject
         end
 
         function ind_z = get.ind_z(obj)
-            ind_z = [flatten_ind(obj.ind_theta)
-                     flatten_ind(obj.ind_lam)
-                     flatten_ind(obj.ind_mu)
-                     flatten_ind(obj.ind_alpha)
-                     flatten_ind(obj.ind_lambda_n)
-                     flatten_ind(obj.ind_lambda_p)];
+            % only 
+            ind_z = [flatten_ind(obj.ind_theta(1:obj.dims.n_s,:))
+                     flatten_ind(obj.ind_lam(1:obj.dims.n_s,:))
+                     flatten_ind(obj.ind_mu(1:obj.dims.n_s,:))
+                     flatten_ind(obj.ind_alpha(1:obj.dims.n_s,:))
+                     flatten_ind(obj.ind_lambda_n(1:obj.dims.n_s,:))
+                     flatten_ind(obj.ind_lambda_p(1:obj.dims.n_s,:))];
             ind_z = sort(ind_z);
         end
         

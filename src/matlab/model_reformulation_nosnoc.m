@@ -774,51 +774,53 @@ g_lift = [g_lift_beta; g_lift_gamma];
 
 %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS
 switch pss_mode
-    case 'Stewart'
-        % symbolic variables z = [theta;lambda;mu];
-        z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
-        lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_sys,1)];
-        ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_sys,1)];
-        % initial guess for z; % solve LP for guess;
-        if lp_initialization
-            [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
-        else
-            theta_guess = initial_theta*ones(n_theta,1);
-            lambda_guess = initial_lambda*ones(n_theta,1);
-            mu_guess = initial_mu*ones(n_sys,1);
-        end
-        z0 = [theta_guess;lambda_guess;mu_guess];
-        n_lift_eq = n_sys;
-    case 'Step'
-        z = [alpha;lambda_0;lambda_1;beta;gamma];
-        lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
-        ubz = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
+  case 'Stewart'
+    % symbolic variables z = [theta;lambda;mu];
+    z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
+    z_switching = [vertcat(lambda_all{:});vertcat(mu_all{:})];
+    lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_sys,1)];
+    ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_sys,1)];
+    % initial guess for z; % solve LP for guess;
+    if lp_initialization
+        [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
+    else
+        theta_guess = initial_theta*ones(n_theta,1);
+        lambda_guess = initial_lambda*ones(n_theta,1);
+        mu_guess = initial_mu*ones(n_sys,1);
+    end
+    z0 = [theta_guess;lambda_guess;mu_guess];
+    n_lift_eq = n_sys;
+  case 'Step'
+    z = [alpha;lambda_0;lambda_1;beta;gamma];
+    z_switching = [lambda_0;lambda_1];
+    lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
+    ubz = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
 
-        alpha_guess = initial_alpha*ones(n_alpha,1);
-        lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
-        lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
-        %         beta_guess = initial_beta*ones(n_beta,1);
-        %         gamma_guess = initial_gamma*ones(n_gamma,1);
-        if pss_lift_step_functions
-            if friction_is_present
-                beta_guess = full(g_lift_beta_fun(alpha_guess));
-                gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
-            else
-                beta_guess = [];
-                if n_beta >0
-                    beta_guess = full(g_lift_beta_fun(alpha_guess));
-                    gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess ));
-                else
-                    gamma_guess = full(g_lift_gamma_fun(alpha_guess));
-                end
-            end
+    alpha_guess = initial_alpha*ones(n_alpha,1);
+    lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
+    lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
+    %         beta_guess = initial_beta*ones(n_beta,1);
+    %         gamma_guess = initial_gamma*ones(n_gamma,1);
+    if pss_lift_step_functions
+        if friction_is_present
+            beta_guess = full(g_lift_beta_fun(alpha_guess));
+            gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
         else
             beta_guess = [];
-            gamma_guess = [];
+            if n_beta >0
+                beta_guess = full(g_lift_beta_fun(alpha_guess));
+                gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess ));
+            else
+                gamma_guess = full(g_lift_gamma_fun(alpha_guess));
+            end
         end
-        % eval functios for gamma and beta?
-        z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
-        n_lift_eq =length(g_lift);
+    else
+        beta_guess = [];
+        gamma_guess = [];
+    end
+    % eval functios for gamma and beta?
+    z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
+    n_lift_eq =length(g_lift);
 end
 
 %% Reformulate the Filippov ODE into a DCS
@@ -910,12 +912,13 @@ dot_c = c_all.jacobian(x)*f_x;
 if n_u >0
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    g_switching_fun = Function('g_switching_fun', {x,z,u}, {g_switching}); 
+    
+    g_switching_fun = Function('g_switching_fun', {x,z_switching,u}, {g_switching}); 
     dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 else
     f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
     g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    g_switching_fun = Function('g_switching_fun', {x,z,u}, {g_switching}); 
+    g_switching_fun = Function('g_switching_fun', {x,z_switching,u}, {g_switching}); 
     dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
 end
 model.lambda00_fun = Function('lambda00_fun',{x},{lambda00_expr});
