@@ -51,14 +51,21 @@ classdef FiniteElement < NosnocFormulationObject
         function obj = FiniteElement(prev_fe, settings, model,  dims, ctrl_idx, fe_idx)
             import casadi.*
             obj@NosnocFormulationObject();
-            obj.ind_x = cell(dims.n_s, 1);
+
+            if settings.right_boundary_point_explicit
+                rbp_allowance = 0;
+            else
+                rbp_allowance = 1;
+            end
+            
+            obj.ind_x = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_v = cell(dims.n_s, 1);
-            obj.ind_theta = cell(dims.n_s, dims.n_sys);
-            obj.ind_lam = cell(dims.n_s, dims.n_sys);
-            obj.ind_mu = cell(dims.n_s, dims.n_sys);
-            obj.ind_alpha = cell(dims.n_s, dims.n_sys);
-            obj.ind_lambda_n = cell(dims.n_s, dims.n_sys);
-            obj.ind_lambda_p = cell(dims.n_s, dims.n_sys);
+            obj.ind_theta = cell(dims.n_s+rbp_allowance, dims.n_sys);
+            obj.ind_lam = cell(dims.n_s+rbp_allowance, dims.n_sys);
+            obj.ind_mu = cell(dims.n_s+rbp_allowance, dims.n_sys);
+            obj.ind_alpha = cell(dims.n_s+rbp_allowance, dims.n_sys);
+            obj.ind_lambda_n = cell(dims.n_s+rbp_allowance, dims.n_sys);
+            obj.ind_lambda_p = cell(dims.n_s+rbp_allowance, dims.n_sys);
             obj.ind_h = [];
             obj.ind_nu_lift = [];
             obj.ind_elastic = [];
@@ -260,7 +267,7 @@ classdef FiniteElement < NosnocFormulationObject
         function lambda = get.lambda(obj)
             grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
 
-            lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_p, obj.ind_lambda_n, 'UniformOutput', false);
+            lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
         end
 
         function theta = get.theta(obj)
@@ -438,7 +445,8 @@ classdef FiniteElement < NosnocFormulationObject
                 obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx)) % TODO make this handle different numbers of FE
                 
                 % TODO verify this.
-                obj.addConstraint(model.g_z_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk));
+                model
+                obj.addConstraint(model.g_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk));
             end
         end
 
