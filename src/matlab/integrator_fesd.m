@@ -278,7 +278,6 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
 end
-x_res
 total_time = sum(time_per_iter);
 %% Verbose
 fprintf('\n');

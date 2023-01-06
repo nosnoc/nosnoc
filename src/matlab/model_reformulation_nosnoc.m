@@ -157,6 +157,7 @@ if exist('u')
     end
 else
     u = SX([]);
+    u0 = [];
     n_u = 0;
     if print_level >=1
         fprintf('Info: No control vector u is provided. \n')
@@ -362,6 +363,35 @@ else
     if print_level >=1
         fprintf('Info: No terminal constraints are provided. \n')
     end
+end
+%% Parameters
+if exist('p_global')
+    n_p_global = length(p_global);
+    if exist('p_global_val')
+        if length(p_global_val) ~= n_p_global
+            error('User provided p_global_val has the wrong size.')
+        end
+    else
+        p_global_val = zeros(n_p_global,1);
+    end
+else
+    n_p_global = 0;
+    if print_level >= 1
+        fprintf('Info: No global parameters given')
+    end
+end
+
+if exist('p_time_var')
+    n_p_time_var = length(p_time_var);
+    if exist('p_time_var_val')
+        if size(p_time_var_val) ~= [n_p_time_var, N_stages]
+            error('User provided p_global_val has the wrong size.')
+        end
+    else
+        p_global_val = zeros(n_p_global, N_stages);
+    end
+else
+    n_p_time_var = 0;
 end
 
 %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach

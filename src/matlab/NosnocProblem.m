@@ -327,7 +327,7 @@ classdef NosnocProblem < NosnocFormulationObject
                 last_fe = obj.stages{end}(end);
                 obj.cost = obj.cost + model.f_q_T_fun(last_fe.x(end));
             catch
-                warning('Terminal cost not defined');
+                fprintf('Terminal cost not defined');
             end
             
             % Process elastic costs
