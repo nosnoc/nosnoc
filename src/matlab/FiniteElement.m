@@ -381,17 +381,15 @@ classdef FiniteElement < NosnocFormulationObject
                 X_ki = [X_ki, {obj.x{end}}];
                 Xk_end = obj.prev_fe.x{end};
             elseif settings.irk_representation == IrkRepresentation.differential_lift_x
-                X_ki = {};
+                X_ki = obj.x;
+                Xk_end = obj.prev_fe.x{end};
                 for j = 1:dims.n_s
                     x_temp = obj.prev_fe.x{end};
                     for r = 1:dims.n_s
                         x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
                     end
-                    X_ki = [X_ki{:} x_temp];
-                    obj.addConstraint(self.x{j}-x_temp);
+                    obj.addConstraint(obj.x{j}-x_temp);
                 end
-                X_ki = [X_ki{:}, obj.x{end}];
-                Xk_end = obj.prev_fe.x{end};
             end
 
             for j = 1:dims.n_s
@@ -440,7 +438,7 @@ classdef FiniteElement < NosnocFormulationObject
                 obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx)) % TODO make this handle different numbers of FE
                 
                 % TODO verify this.
-                obj.addConstraint(model.g_z_switching_fun(obj.x{end}, self.rkStageZ(dims.n_s+1), Uk));
+                obj.addConstraint(model.g_z_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk));
             end
         end
 

@@ -287,7 +287,7 @@ if use_fesd
 else
     fprintf( ['Simulation with the standard ' irk_scheme ' with %d-RK stages completed.\n'],n_s);
 end
-fprintf( ['RK representation: ' irk_representation '.\n']);
+fprintf( ['RK representation: ' char(irk_representation) '.\n']);
 % fprintf('Total integration steps: %d, nominal step-size h = %2.3f.\n',N_sim,h_sim);
 if additional_residual_ingeration_step
     fprintf('--> + additional residual step to reach T_sim with  T_residual =  %2.3f.\n',T_residual);

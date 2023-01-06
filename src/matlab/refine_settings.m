@@ -124,6 +124,10 @@ if isequal(irk_representation,'integral')
     lift_irk_differential = 0;
 end
 
+if lift_irk_differential
+    irk_representation = IrkRepresentation.differential_lift_x;
+end
+
 %% Save data for output into struct
 % settings = [];
 names = who;

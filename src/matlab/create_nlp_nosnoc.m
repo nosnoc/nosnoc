@@ -61,27 +61,27 @@ settings = varargin{2};
 %%  Butcher Tableu
 % TODO clean this up.
 switch settings.irk_representation
-    case 'integral'
-        [B,C,D,tau_root] = generate_butcher_tableu_integral(model.dimensions.n_s,settings.irk_scheme);
-        if tau_root(end) == 1
-            right_boundary_point_explicit  = 1;
-        else
-            right_boundary_point_explicit  = 0;
-        end
-        settings.B_irk = B;
-        settings.C_irk = C;
-        settings.D_irk = D;
-    case 'differential'
-        [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dimensions.n_s,settings.irk_scheme);
-        if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
-            right_boundary_point_explicit  = 1;
-        else
-            right_boundary_point_explicit  = 0;
-        end
-        settings.A_irk = A_irk;
-        settings.b_irk = b_irk;
-    otherwise
-        error('Choose irk_representation either: ''integral'' or ''differential''')
+  case 'integral'
+    [B,C,D,tau_root] = generate_butcher_tableu_integral(model.dimensions.n_s,settings.irk_scheme);
+    if tau_root(end) == 1
+        right_boundary_point_explicit  = 1;
+    else
+        right_boundary_point_explicit  = 0;
+    end
+    settings.B_irk = B;
+    settings.C_irk = C;
+    settings.D_irk = D;
+  case {'differential', 'differential_lift_x'}
+    [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dimensions.n_s,settings.irk_scheme);
+    if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
+        right_boundary_point_explicit  = 1;
+    else
+        right_boundary_point_explicit  = 0;
+    end
+    settings.A_irk = A_irk;
+    settings.b_irk = b_irk;
+  otherwise
+    error('Choose irk_representation either: ''integral'' or ''differential''')
 end
 settings.right_boundary_point_explicit = right_boundary_point_explicit;
 
@@ -134,7 +134,7 @@ model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
 
 % TODO: make member function
-if settings.print_level > 5
+if settings.print_level > 1
     problem.print();
 end
 
