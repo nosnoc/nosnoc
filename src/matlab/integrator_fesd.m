@@ -223,8 +223,8 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
     %sot
     s_sot_res  = [s_sot_res,w_opt(ind_sot)];
-    %differntial
-    x_res = [x_res, x_opt(:,2:end)];
+    %differntial.
+    x_res = [x_res, x_opt(:,end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 
     % algebraic

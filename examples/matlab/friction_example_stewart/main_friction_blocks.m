@@ -77,7 +77,5 @@ settings.use_previous_solution_as_initial_guess = 1;
 unfold_struct(model,'base');
 unfold_struct(settings,'base');
 unfold_struct(results,'base');
-t_grid
-x_res_extended
 plot_results_friction_blocks
 

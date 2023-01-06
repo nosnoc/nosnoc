@@ -75,7 +75,6 @@ if time_optimal_problem
     end
 end
 
-
 ind_t_grid_u = cumsum([1; N_finite_elements]);
 
 results.x_opt = x_opt;
