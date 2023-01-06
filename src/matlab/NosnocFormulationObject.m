@@ -49,6 +49,15 @@ classdef NosnocFormulationObject < handle
             addOptional(p, 'stage', []);
             addOptional(p, 'sys', []);
             parse(p, obj, symbolic, lb, ub, initial, idx, varargin{:})
+
+            lens = [size(symbolic,1),size(lb,1),size(ub,1), size(initial,1)];
+            if ~all(lens == lens(1))
+                symbolic
+                lb
+                ub
+                initial
+                error("mismatched dims")
+            end
             
             n = size(symbolic, 1);
             nw = length(obj.w);

@@ -54,7 +54,6 @@ switch pss_mode
         lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);
         lambda_1_opt= lambda_1_opt_extended(:,1:n_s+1:end);
 end
-
 t_grid = cumsum([0;h_opt]);
 
 %% Adapt the grid in case of time optimal problems

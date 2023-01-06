@@ -106,9 +106,6 @@ mu_res = [];
 lambda_res_extended = [];
 theta_res_extended = [];
 mu_res_extended = [];
-% if c_{n_s} \neq 1 output also the boundary lambda and mu
-lambda_boundary_res = [];
-mu_boundary_res = [];
 
 % Step
 alpha_res = [];
@@ -118,9 +115,6 @@ lambda_1_res = [];
 alpha_res_extended = [];
 lambda_0_res_extended = [];
 lambda_1_res_extended = [];
-% if c_{n_s} \neq 1 output also the boundary lambda and mu
-lambda_0_boundary_res = [];
-lambda_1_boundary_res = [];
 
 % step size
 h_vec = [];
@@ -157,24 +151,17 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     w_opt = full(sol.x);
     diff_states = w_opt(ind_x);
     alg_states = w_opt(ind_z);
-    alg_states_boundary = w_opt(ind_boundary);
 
     diff_res = [diff_res;diff_states ];
     alg_res = [alg_res;alg_states];
 
 
-    if ~right_boundary_point_explicit && use_fesd
-        try
-            alg_states_boundary = reshape(alg_states_boundary,(n_z-n_theta),N_finite_elements(1)-1);
-        catch
-
-        end
-    end
     % step-size
     h_opt = w_opt(ind_h);
     % differential
     x_opt_extended = w_opt(ind_x);
     x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
+
     % only bounadry value
     if isequal(irk_representation,'integral') || lift_irk_differential
         x_opt  = x_opt_extended(:,1:n_s+1:end);
@@ -237,7 +224,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     %sot
     s_sot_res  = [s_sot_res,w_opt(ind_sot)];
     %differntial
-    x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
+    x_res = [x_res, x_opt(:,2:end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 
     % algebraic
@@ -250,10 +237,6 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             lambda_res_extended = [lambda_res_extended,lambda_opt_extended];
             mu_res_extended = [mu_res_extended,mu_opt_extended];
 
-            if ~right_boundary_point_explicit && use_fesd
-                lambda_boundary_res = [lambda_boundary_res,alg_states_boundary(1:n_theta,:)];
-                mu_boundary_res = [mu_boundary_res,alg_states_boundary(end-n_sys+1:end,:) ];
-            end
         case 'Step'
             alpha_res = [alpha_res, alpha_opt];
             lambda_0_res = [lambda_0_res, lambda_0_opt];
@@ -262,11 +245,6 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             alpha_res_extended = [alpha_res_extended, alpha_opt_extended];
             lambda_0_res_extended = [lambda_0_res_extended, lambda_0_opt_extended];
             lambda_1_res_extended = [lambda_1_res_extended, lambda_1_opt_extended];
-
-            if ~right_boundary_point_explicit && use_fesd
-                lambda_0_boundary_res = [lambda_0_boundary_res ,alg_states_boundary(1:n_alpha,:)];
-                lambda_1_boundary_res = [lambda_1_boundary_res,alg_states_boundary(n_alpha+1:end,:) ];
-            end
     end
 
     %stats
@@ -300,6 +278,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
 end
+x_res
 total_time = sum(time_per_iter);
 %% Verbose
 fprintf('\n');
@@ -338,9 +317,6 @@ switch pss_mode
         results.theta_res_extended  = theta_res_extended;
         results.lambda_res_extended  = lambda_res_extended;
         results.mu_res_extended  = mu_res_extended;
-        % Output boundary points
-        results.lambda_boundary_res = lambda_boundary_res;
-        results.mu_boundary_res= mu_boundary_res;
     case 'Step'
         results.alpha_res = alpha_res;
         results.lambda_0_res = lambda_0_res;
@@ -348,10 +324,6 @@ switch pss_mode
         results.alpha_res_extended = alpha_res_extended;
         results.lambda_0_res_extended = lambda_0_res_extended;
         results.lambda_1_res_extended = lambda_1_res_extended;
-
-        % Output boundary points
-        results.lambda_1_boundary_res = lambda_1_boundary_res;
-        results.lambda_0_boundary_res = lambda_0_boundary_res;
 end
 stats.complementarity_stats   = complementarity_stats;
 stats.time_per_iter = time_per_iter;

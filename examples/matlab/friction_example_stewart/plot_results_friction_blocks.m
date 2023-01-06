@@ -1,19 +1,19 @@
 %%
 figure
 subplot(211)
-plot(t_grid,x_res(1,:));
+plot(t_grid,x_res_extended(1,:));
 hold on
-plot(t_grid,x_res(2,:));
-plot(t_grid,x_res(3,:));
+plot(t_grid,x_res_extended(2,:));
+plot(t_grid,x_res_extended(3,:));
 xlabel('$t$','interpreter','latex');
 ylabel('$q(t)$','interpreter','latex');
 legend({'$q_1(t)$','$q_2(t)$','$q_3(t)$'},'interpreter','latex');
 grid on
 subplot(212)
-plot(t_grid,x_res(4,:));
+plot(t_grid,x_res_extended(4,:));
 hold on
-plot(t_grid,x_res(5,:));
-plot(t_grid,x_res(6,:));
+plot(t_grid,x_res_extended(5,:));
+plot(t_grid,x_res_extended(6,:));
 xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$','interpreter','latex');
 legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex');

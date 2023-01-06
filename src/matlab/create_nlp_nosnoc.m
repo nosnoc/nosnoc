@@ -134,22 +134,8 @@ model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
 
 % TODO: make member function
-if settings.print_level > 1
-    disp("g")
-    print_casadi_vector(g)
-    disp('lbg, ubg')
-    disp([length(problem.lbg), length(problem.ubg)])
-    disp([problem.lbg, problem.ubg])
-
-    disp("w")
-    print_casadi_vector(w)
-    disp('lbw, ubw')
-    disp([problem.lbw, problem.ubw])
-    disp('w0')
-    disp(problem.w0)
-
-    disp('objective')
-    disp(problem.cost)
+if settings.print_level > 5
+    problem.print();
 end
 
 %% Model update: all index sets and dimensions

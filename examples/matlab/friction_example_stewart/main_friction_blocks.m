@@ -44,9 +44,9 @@ settings.n_s = 2;
 settings.irk_scheme = 'Radau-IIA';     
 settings.irk_representation = 'differential';
 settings.lift_irk_differential = 1;
-settings.print_level = 3;
+settings.print_level = 2;
 settings.use_fesd = 1;
-settings.mpcc_mode = 'scholtes_ineq';
+settings.mpcc_mode = 'Scholtes_ineq';
 settings.sigma_0 = 1e4;
 settings.s_elastic_max = 1e1;                    
 settings.cross_comp_mode = 3;
@@ -77,5 +77,7 @@ settings.use_previous_solution_as_initial_guess = 1;
 unfold_struct(model,'base');
 unfold_struct(settings,'base');
 unfold_struct(results,'base');
+t_grid
+x_res_extended
 plot_results_friction_blocks
 

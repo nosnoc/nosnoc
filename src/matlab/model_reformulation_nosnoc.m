@@ -905,13 +905,8 @@ if isequal(irk_representation,'differential')
     if simple_v0_guess
         v0 = zeros(n_x,1);
     else
-        if n_u>0
-            [v0,~] = (f_x_fun(x0,z0,u0));
-            v0 = full(v0);
-        else
-            [v0,~] = (f_x_fun(x0,z0));
-            v0 = full(v0);
-        end
+        [v0,~] = (f_x_fun(x0,z0,u0));
+        v0 = full(v0);
     end
     model.v0 = v0;
 end

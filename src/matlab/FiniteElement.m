@@ -13,6 +13,8 @@ classdef FiniteElement < NosnocFormulationObject
         ind_nu_lift
         ind_elastic
         ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
+        ind_beta
+        ind_gamma
         
         ctrl_idx
         fe_idx
@@ -59,7 +61,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_lambda_p = cell(dims.n_s, dims.n_sys);
             obj.ind_h = [];
             obj.ind_nu_lift = [];
-            obj.ind_elastic = cell(dims.n_s, 1);
+            obj.ind_elastic = [];
             obj.ind_boundary = [];
 
             obj.ctrl_idx = ctrl_idx;
@@ -84,15 +86,16 @@ classdef FiniteElement < NosnocFormulationObject
             obj.addVariable(h, 'h', lbh, ubh, h0);
 
             % RK stage stuff
+            % TODO: beta and gamma
             for ii = 1:dims.n_s
                 % state / state derivative variables
                 if (settings.irk_representation == IrkRepresentation.differential ||...
                     settings.irk_representation == IrkRepresentation.differential_lift_x)
                     obj.addVariable(SX.sym(['V_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)'], dims.n_x),...
                                     'v',...
-                                    -inf * ones(dims.n_x),...
-                                    inf * ones(dims.n_x),...
-                                    zeros(dims.n_x),...
+                                    -inf * ones(dims.n_x,1),...
+                                    inf * ones(dims.n_x,1),...
+                                    zeros(dims.n_x,1),...
                                     ii);
                 end
                 if (settings.irk_representation == IrkRepresentation.integral ||...
@@ -107,8 +110,8 @@ classdef FiniteElement < NosnocFormulationObject
                         lbx = model.lbx;
                         ubx = model.ubx;
                     else
-                        lbx = -inf * ones(dims.n_x);
-                        ubx = inf * ones(dims.n_x);
+                        lbx = -inf * ones(dims.n_x, 1);
+                        ubx = inf * ones(dims.n_x, 1);
                     end
                     obj.addVariable(SX.sym(['X_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)], dims.n_x),...
                                     'x',...
@@ -279,7 +282,7 @@ classdef FiniteElement < NosnocFormulationObject
         end
 
         function elastic = get.elastic(obj)
-            elastic = cellfun(@(ell) obj.w(ell), obj.ind_elastic, 'UniformOutput', false);
+            elastic = obj.w(obj.ind_elastic);
         end
 
         function nu_lift = get.nu_lift(obj)
@@ -340,7 +343,7 @@ classdef FiniteElement < NosnocFormulationObject
 
         function sum_elastic = sumElastic(obj)
             elastic = obj.elastic;
-            sum_elastic = sum([elastic{:}]);
+            sum_elastic = sum(elastic);
         end
 
         function z = rkStageZ(obj, stage)
@@ -373,9 +376,9 @@ classdef FiniteElement < NosnocFormulationObject
                     for r = 1:dims.n_s
                         x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
                     end
-                    X_ki = [X_ki{:} x_temp];
+                    X_ki = [X_ki {x_temp}];
                 end
-                X_ki = [X_ki{:}, obj.x{end}];
+                X_ki = [X_ki, {obj.x{end}}];
                 Xk_end = obj.prev_fe.x{end};
             elseif settings.irk_representation == IrkRepresentation.differential_lift_x
                 X_ki = {};
@@ -385,7 +388,7 @@ classdef FiniteElement < NosnocFormulationObject
                         x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
                     end
                     X_ki = [X_ki{:} x_temp];
-                    obj.addConstraint(self.x{j}-x_temp)
+                    obj.addConstraint(self.x{j}-x_temp);
                 end
                 X_ki = [X_ki{:}, obj.x{end}];
                 Xk_end = obj.prev_fe.x{end};
@@ -409,8 +412,8 @@ classdef FiniteElement < NosnocFormulationObject
                     obj.cost = obj.cost + settings.B_irk(j+1) * obj.h * qj;
                 else
                     Xk_end = Xk_end + obj.h * settings.b_irk(j) * obj.v{j};
-                    obj.add_constraint(fj - obj.v{j})
-                    obj.cost = obj.cost + settings.b_irk(j) * obj.h * qj
+                    obj.addConstraint(fj - obj.v{j});
+                    obj.cost = obj.cost + settings.b_irk(j) * obj.h * qj;
                 end
             end
 
@@ -430,7 +433,7 @@ classdef FiniteElement < NosnocFormulationObject
             % end constraints
             if (~settings.right_boundary_point_explicit ||...
                 settings.irk_representation == IrkRepresentation.differential)
-                self.addConstraint(Xk_end - obj.x{end});
+                obj.addConstraint(Xk_end - obj.x{end});
             end
             if (~settings.right_boundary_point_explicit &&...
                 settings.use_fesd &&...
@@ -558,68 +561,58 @@ classdef FiniteElement < NosnocFormulationObject
             n_comp = n_cross_comp + n_path_comp;
             %
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                for ii=1:n_s
-                    obj.addVariable(SX.sym(['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx) '_' num2str(ii), ], n_comp),...
-                                    'elastic',...
-                                    s_elastic_0*ones(n_comp,1),...
-                                    s_elastic_min*ones(n_comp,1),...
-                                    s_elastic_max*ones(n_comp,1),...
-                                    ii);
-                end
+                s_elastic = SX.sym(['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
+                obj.addVariable(s_elastic,...
+                                'elastic',...
+                                settings.s_elastic_min*ones(n_comp,1),...
+                                settings.s_elastic_max*ones(n_comp,1),...
+                                settings.s_elastic_0*ones(n_comp,1));
             end
             
             % Do MPCC formulation
             % TODO this should be done on the problem level, and take into account passed in vars. fine for now.
-            if settings.mpcc_mode == 'Scholtes_ineq'
+            if settings.mpcc_mode == MpccMode.Scholtes_ineq
                 g_comp = g_comp - sigma_p;
-                g_comp_ub = zeros(n_cross_comp,1);
-                g_comp_lb = -inf * ones(n_cross_comp,1);
-            elseif settings.mpcc_mode == 'Scholtes_eq'
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = -inf * ones(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.Scholtes_eq
                 g_comp = g_comp - sigma_p;
-                g_comp_ub = zeros(n_cross_comp,1);
-                g_comp_lb = zeros(n_cross_comp,1);
-            elseif settings.mpcc_mode == 'ell_1_penalty'
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = zeros(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.ell_1_penalty
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*sum(g_comp);
                 else
                     obj.cost = sigma_p*obj.cost + sum(g_comp);
                 end
-            elseif settings.mpcc_mode == 'elastic_ineq'
-                g_comp = g_comp - s_elastic;
-                g_comp_ub = zeros(n_cross_comp,1);
-                g_comp_lb = -inf * ones(n_cross_comp,1);
-            elseif settings.mpcc_mode == 'elastic_eq'
-                g_comp = g_comp - s_elastic;
-                g_comp_ub = zeros(n_cross_comp,1);
-                g_comp_lb = zeros(n_cross_comp,1);
-            elseif settings.mpcc_mode == 'elastic_two_sided'
-                g_comp = g_comp - s_elastic;
-                g_comp_ub = zeros(n_cross_comp,1);
-                g_comp_lb = -inf * ones(n_cross_comp,1);
-
-                g_comp = [g_comp;g_all_comp_j+s_elastic*ones(n_cross_comp,1)];
-                g_comp_ub = [g_comp_ub; inf*ones(n_cross_comp,1)];
-                g_comp_lb = [g_comp_lb;  zeros(n_cross_comp,1)];
+            elseif settings.mpcc_mode == MpccMode.elastic_ineq
+                g_comp = g_comp - s_elastic*ones(n_comp,1);
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = -inf * ones(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.elastic_eq
+                g_comp = g_comp - s_elastic*ones(n_comp,1);
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = zeros(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.elastic_two_sided
+                g_comp = [g_comp-s_elastic*ones(n_comp,1);g_comp+s_elastic*ones(n_comp,1)];
+                g_comp_ub = [zeros(n_comp,1); inf*ones(n_comp,1)];
+                g_comp_lb = [-inf*ones(n_comp,1);  zeros(n_comp,1)];
                 % TODO these should be merged probably
-            elseif settings.mpcc_mode == 'elastic_ell_1_ineq'
+            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_ineq
                 g_comp = g_comp - s_elastic;
-                g_comp_ub = zeros(n_cross_comp,1);
-                g_comp_lb = -inf * ones(n_cross_comp,1);
-            elseif settings.mpcc_mode == 'elastic_ell_1_eq'
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = -inf * ones(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_eq
                 g_comp = g_comp - s_elastic;
-                g_comp_ub = zeros(n_cross_comp,1);
-                g_comp_lb = zeros(n_cross_comp,1);
-            elseif settings.mpcc_mode == 'elastic_ell_1_two_sided'
-                g_comp = g_comp - s_elastic;
-                g_comp_ub = zeros(n_cross_comp,1);
-                g_comp_lb = -inf * ones(n_cross_comp,1);
-
-                g_comp = [g_comp;g_all_comp_j+s_elastic*ones(n_cross_comp,1)];
-                g_comp_ub = [g_comp_ub; inf*ones(n_cross_comp,1)];
-                g_comp_lb = [g_comp_lb;  zeros(n_cross_comp,1)];
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = zeros(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_two_sided
+                g_comp = [g_comp-s_elastic;g_comp+s_elastic];
+                g_comp_ub = [zeros(n_comp,1); inf*ones(n_comp,1)];
+                g_comp_lb = [-inf*ones(n_comp,1);  zeros(n_comp,1)];
             end
 
-            if settings.mpcc_mode ~= 'ell_1_penalty'
+            if settings.mpcc_mode ~= MpccMode.ell_1_penalty
                 obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
             end
         end

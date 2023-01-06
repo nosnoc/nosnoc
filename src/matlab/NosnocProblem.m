@@ -27,6 +27,8 @@ classdef NosnocProblem < NosnocFormulationObject
 
         sigma_p
 
+        rho_sot_p
+
         p
         p0
 
@@ -39,9 +41,7 @@ classdef NosnocProblem < NosnocFormulationObject
         cost_fun
     end
     % remaining list of TODOs
-    % TODO: stagewise_clock_constraint
-    % TODO: time optimal problem
-    % TODO: 
+    % TODO: cleanup properties
 
     properties(Dependent, SetAccess=private, Hidden)
         u
@@ -80,6 +80,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
             sigma_p = SX.sym('sigma_p');
             rho_sot_p = SX.sym('rho_sot_p');
+            obj.rho_sot_p = rho_sot_p;
             rho_h_p = SX.sym('rho_h_p');
             rho_terminal_p = SX.sym('rho_terminal_p');
             T_ctrl_p  = SX.sym('T_ctrl_p');
@@ -127,7 +128,10 @@ classdef NosnocProblem < NosnocFormulationObject
                     % 3) Step Equilibration
                     fe.stepEquilibration(sigma_p, rho_h_p);
 
-                    % 4) add cost and constraints from FE to problem
+                    % 4) add finite element variables
+                    obj.addFiniteElement(fe);
+                    
+                    % 5) add cost and constraints from FE to problem
                     obj.cost = obj.cost + fe.cost;
                     obj.addConstraint(fe.g, fe.lbg, fe.ubg);
                 end
@@ -234,21 +238,21 @@ classdef NosnocProblem < NosnocFormulationObject
             % The constraints are splited to those which are related to numerical and physical time, to make it easier to read.
 
             % terminal numerical and physical time
-            % TODO: clean this up 
+            % TODO: clean this up (sum_h/intergal_clock_state need to be functions probabaly)
             if settings.time_freezing
                 % Terminal Phyisical Time (Posssble terminal constraint on the clock state if time freezing is active).
                 if settings.time_optimal_problem
-                    problem = add_constraint(problem, last_fe.x{end}(end)-T_final);
+                    obj.addConstraint(last_fe.x{end}(end)-T_final);
                 else
                     if settings.impose_terminal_phyisical_time && ~settings.stagewise_clock_constraint
-                        problem = add_constraint(problem, last_fe.x{end}(end)-T_ctrl_p);
+                        obj.addConstraint(last_fe.x{end}(end)-T_ctrl_p);
                     else
                         % no terminal constraint on the numerical time
                     end
                 end
                 if settings.equidistant_control_grid && ~settings.stagewise_clock_constraint
                     if ~settings.time_optimal_problem
-                        problem = add_constraint(problem, last_fe.x{end}(end)-model.T);
+                        obj.addConstraint(last_fe.x{end}(end)-model.T);
                     end
                 end
             else
@@ -256,7 +260,19 @@ classdef NosnocProblem < NosnocFormulationObject
                     if settings.time_optimal_problem
                         % if time_freezing is on, everything is done via the clock state.
                         if settings.use_speed_of_time_variables
-                            problem = add_constraint(problem, integral_clock_state-T_final, 0, 0);
+                            integral_clock_state = 0;
+                            for k=1:dims.N_stages
+                                stage = obj.stages{k};
+                                if settings.local_speed_of_time_variable
+                                    s_sot = obj.sot(ii);
+                                else
+                                    s_sot = obj.sot(1);
+                                end
+                                for fe=stage
+                                    integral_clock_state = integral_clock_state + fe.h*s_sot;
+                                end
+                            end
+                            obj.addConstraint(integral_clock_state-T_final, 0, 0);
                         else
                             % otherwise treated via variable h_ki, i.e.,  h_ki =  T_final/(N_stages*N_FE)
                         end
@@ -270,16 +286,17 @@ classdef NosnocProblem < NosnocFormulationObject
                         % all step sizes add up to prescribed time T.
                         % if use_speed_of_time_variables = true, numerical time is decupled from the sot scaling (no mather if local or not):
                         sum_h_all = 0;
-                        for stage=obj.stages
+                        for k=1:dims.N_stages
+                            stage=obj.stages{k};
                             for fe=stage
                                 sum_h_all = sum_h_all+fe.h;
                             end
                         end
                         if ~settings.time_optimal_problem
-                            problem = add_constraint(problem, sum_h_all-model.T, 0, 0);
+                            obj.addConstraint(sum_h_all-model.T, 0, 0);
                         else
                             if ~settings.use_speed_of_time_variables
-                                problem = add_constraint(problem, sum_h_all-T_final, 0, 0);
+                                obj.addConstraint(sum_h_all-T_final, 0, 0);
                             else
                                 integral_clock_state = 0;
                                 for k=1:dims.N_stages
@@ -294,8 +311,8 @@ classdef NosnocProblem < NosnocFormulationObject
                                     end
                                 end
                                 % T_num = T_phy = T_final \neq T.
-                                problem = add_constraint(problem, sum_h_all-model.T, 0, 0);
-                                problem = add_constraint(problem, integral_clock_state-T_final, 0, 0);
+                                obj.addConstraint(sum_h_all-model.T, 0, 0);
+                                obj.addConstraint(integral_clock_state-T_final, 0, 0);
                             end
                         end
                     end
@@ -330,7 +347,6 @@ classdef NosnocProblem < NosnocFormulationObject
                         sum_s_elastic = sum_s_elastic + fe.sumElastic;
                     end
                 end
-                obj.addVariable(s_elastic, 'elastic', settings.s_elastic_min, settings.s_elastic_max, settings.s_elastic_0);
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*sum_s_elastic;
                 else
@@ -415,8 +431,8 @@ classdef NosnocProblem < NosnocFormulationObject
                                     obj.settings.s_sot_max,...
                                     obj.settings.s_sot0,...
                                     ctrl_idx);
-                    if settings.time_freezing
-                        obj.cost = obj.cost + rho_sot_p*(s_sot_k-1)^2;
+                    if obj.settings.time_freezing
+                        obj.cost = obj.cost + obj.rho_sot_p*(s_sot_k-1)^2;
                     end
                 else
                     if ctrl_idx == 1
@@ -428,7 +444,7 @@ classdef NosnocProblem < NosnocFormulationObject
                                         obj.settings.s_sot_max,...
                                         obj.settings.s_sot0);
                         if obj.settings.time_freezing
-                            obj.cost = obj.cost + rho_sot_p*(s_sot-1)^2;
+                            obj.cost = obj.cost + obj.rho_sot_p*(s_sot-1)^2;
                         end
                     end
                 end
@@ -437,7 +453,6 @@ classdef NosnocProblem < NosnocFormulationObject
             control_stage = [];
              for ii=1:obj.dims.N_finite_elements
                 fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii);
-                obj.addFiniteElement(fe);
                 control_stage = [control_stage, fe];
                 prev_fe = fe;
             end
@@ -462,6 +477,14 @@ classdef NosnocProblem < NosnocFormulationObject
         end
 
         function addPrimalVector(obj, symbolic, lb, ub, initial)
+            lens = [size(symbolic,1), size(lb,1), size(ub,1), size(initial,1)];
+            if ~all(lens == lens(1))
+                symbolic
+                lb
+                ub
+                initial
+                error("mismatched dims")
+            end
             obj.w = vertcat(obj.w, symbolic);
             obj.lbw = vertcat(obj.lbw, lb);
             obj.ubw = vertcat(obj.ubw, ub);
@@ -498,16 +521,20 @@ classdef NosnocProblem < NosnocFormulationObject
         
         function print(obj)
             disp("g");
+            disp(length(obj.g))
             print_casadi_vector(obj.g);
             disp('lbg, ubg');
             disp([length(obj.lbg), length(obj.ubg)]);
             disp([obj.lbg, obj.ubg]);
 
             disp("w");
+            disp(length(obj.w))
             print_casadi_vector(obj.w);
             disp('lbw, ubw');
+            disp([length(obj.lbw), length(obj.ubw)]);
             disp([obj.lbw, obj.ubw]);
             disp('w0');
+            disp(length(obj.w0));
             disp(obj.w0);
 
             disp('objective');
