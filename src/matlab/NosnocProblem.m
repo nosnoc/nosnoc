@@ -104,7 +104,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
             for ii=1:dims.N_stages
                 stage = obj.stages{ii};
-                Uk = obj.U(ii);
+                Uk = obj.U{ii};
                 obj.addVariable(Uk, 'u', obj.model.lbu, obj.model.ubu,...
                             zeros(obj.dims.n_u,1), ii);
                 if settings.time_rescaling && settings.use_speed_of_time_variables
@@ -414,7 +414,7 @@ classdef NosnocProblem < NosnocFormulationObject
             prev_fe = fe0;
             for ii=1:obj.dims.N_stages
                 [stage, Uk] = obj.createControlStage(ii, prev_fe);
-                obj.U = [obj.U, Uk];
+                obj.U = [obj.U, {Uk}];
                 obj.stages = [obj.stages, {stage}];
                 prev_fe = stage(end);
             end

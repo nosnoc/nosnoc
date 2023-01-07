@@ -600,7 +600,9 @@ classdef FiniteElement < NosnocFormulationObject
             
             % Do MPCC formulation
             % TODO this should be done on the problem level, and take into account passed in vars. fine for now.
-            if settings.mpcc_mode == MpccMode.Scholtes_ineq
+            if settings.mpcc_mode == MpccMode.direct
+                
+            elseif settings.mpcc_mode == MpccMode.Scholtes_ineq
                 g_comp = g_comp - sigma_p;
                 g_comp_ub = zeros(n_comp,1);
                 g_comp_lb = -inf * ones(n_comp,1);
