@@ -34,6 +34,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
         fe0
         stages
+        U
 
         comp_res
         comp_std
@@ -103,7 +104,9 @@ classdef NosnocProblem < NosnocFormulationObject
 
             for ii=1:dims.N_stages
                 stage = obj.stages{ii};
-                Uk = obj.u{ii};
+                Uk = obj.U(ii);
+                obj.addVariable(Uk, 'u', obj.model.lbu, obj.model.ubu,...
+                            zeros(obj.dims.n_u,1), ii);
                 if settings.time_rescaling && settings.use_speed_of_time_variables
                     if settings.local_speed_of_time_variable
                         s_sot = obj.sot{ii};
@@ -161,79 +164,6 @@ classdef NosnocProblem < NosnocFormulationObject
             end
             last_fe = obj.stages{end}(end);
              % TODO time_freezing/time_optimal numerical/physical time
-
-            % Process terminal constraint.
-            if settings.terminal_constraint
-                if settings.relax_terminal_constraint_homotopy
-                    rho_terminal_p = 1/sigma_p;
-                end
-                X_end = last_fe.x{end};
-                g_terminal = model.g_terminal_fun(X_end);
-                n_terminal = length(g_terminal);
-                if ~isequal(model.g_terminal_lb,model.g_terminal_ub)
-                    settings.relax_terminal_constraint = 0;
-                    if settings.print_level >2
-                        fprintf('Info: Only terminal-equality constraint relaxation is supported, you have an inequality constraint.\n')
-                    end
-                end
-                switch settings.relax_terminal_constraint % TODO name these.
-                  case 0 % hard constraint
-                    if settings.relax_terminal_constraint_from_above
-                        obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1));
-                    else
-                        obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub);
-                    end
-                  case 1 % l_1
-                    s_terminal_ell_1 = SX.sym('s_terminal_ell_1', n_terminal);
-                    obj.addVariable(s_terminal_ell_1,...
-                                    's_terminal',...
-                                    1e3*ones(n_terminal,1),...
-                                    -inf*ones(n_terminal,1),...
-                                    inf*ones(n_terminal,1));
-
-                    obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_1,...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-                    obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_1,...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-
-                    obj.cost = obj.cost + rho_terminal_p*sum(s_terminal_ell_1);
-                  case 2 % l_2
-                    obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-g_terminal_lb);
-                  case 3 % l_inf
-                    s_terminal_ell_inf = SX.sym('s_terminal_ell_inf', 1);
-                    obj.addVariable(s_terminal_ell_inf,...
-                                    's_terminal',...
-                                    1e3,...
-                                    -inf,...
-                                    inf);
-
-                    obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-                    obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-
-                    obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
-                  case 4 % l_inf, relaxed
-                    % TODO: ask armin if this is correct.
-                    if ismember(settings.mpcc_mode, MpccMode.elastic)
-                        elastic = s_elastic*ones(n_terminal,1);
-                    elseif ismemeber(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                        elastic = last_fe.elastic{end};
-                    else
-                        error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
-                    end
-                    obj.addConstraint(g_terminal-g_terminal_lb-elastic,...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-                    obj.addConstraint(-(g_terminal-g_terminal_lb)-elastic,...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-                end
-            end
 
             %  -- Constraint for the terminal numerical and physical time (if no equidistant grids are required) --
             % If the control grid is not equidistant, the constraint on sum of h happen only at the end.
@@ -318,6 +248,79 @@ classdef NosnocProblem < NosnocFormulationObject
                             end
                         end
                     end
+                end
+            end
+
+            % Process terminal constraint.
+            if settings.terminal_constraint
+                if settings.relax_terminal_constraint_homotopy
+                    rho_terminal_p = 1/sigma_p;
+                end
+                X_end = last_fe.x{end};
+                g_terminal = model.g_terminal_fun(X_end);
+                n_terminal = length(g_terminal);
+                if ~isequal(model.g_terminal_lb,model.g_terminal_ub)
+                    settings.relax_terminal_constraint = 0;
+                    if settings.print_level >2
+                        fprintf('Info: Only terminal-equality constraint relaxation is supported, you have an inequality constraint.\n')
+                    end
+                end
+                switch settings.relax_terminal_constraint % TODO name these.
+                  case 0 % hard constraint
+                    if settings.relax_terminal_constraint_from_above
+                        obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1));
+                    else
+                        obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub);
+                    end
+                  case 1 % l_1
+                    s_terminal_ell_1 = SX.sym('s_terminal_ell_1', n_terminal);
+                    obj.addVariable(s_terminal_ell_1,...
+                                    's_terminal',...
+                                    1e3*ones(n_terminal,1),...
+                                    -inf*ones(n_terminal,1),...
+                                    inf*ones(n_terminal,1));
+
+                    obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_1,...
+                                      -inf*ones(n_terminal,1),...
+                                      zeros(n_terminal,1));
+                    obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_1,...
+                                      -inf*ones(n_terminal,1),...
+                                      zeros(n_terminal,1));
+
+                    obj.cost = obj.cost + rho_terminal_p*sum(s_terminal_ell_1);
+                  case 2 % l_2
+                    obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-g_terminal_lb);
+                  case 3 % l_inf
+                    s_terminal_ell_inf = SX.sym('s_terminal_ell_inf', 1);
+                    obj.addVariable(s_terminal_ell_inf,...
+                                    's_terminal',...
+                                    1e3,...
+                                    -inf,...
+                                    inf);
+
+                    obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
+                                      -inf*ones(n_terminal,1),...
+                                      zeros(n_terminal,1));
+                    obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
+                                      -inf*ones(n_terminal,1),...
+                                      zeros(n_terminal,1));
+
+                    obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
+                  case 4 % l_inf, relaxed
+                    % TODO: ask armin if this is correct.
+                    if ismember(settings.mpcc_mode, MpccMode.elastic)
+                        elastic = s_elastic*ones(n_terminal,1);
+                    elseif ismemeber(settings.mpcc_mode, MpccMode.elastic_ell_1)
+                        elastic = last_fe.elastic{end};
+                    else
+                        error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
+                    end
+                    obj.addConstraint(g_terminal-g_terminal_lb-elastic,...
+                                      -inf*ones(n_terminal,1),...
+                                      zeros(n_terminal,1));
+                    obj.addConstraint(-(g_terminal-g_terminal_lb)-elastic,...
+                                      -inf*ones(n_terminal,1),...
+                                      zeros(n_terminal,1));
                 end
             end
 
@@ -410,18 +413,18 @@ classdef NosnocProblem < NosnocFormulationObject
 
             prev_fe = fe0;
             for ii=1:obj.dims.N_stages
-                stage = obj.createControlStage(ii, prev_fe);
+                [stage, Uk] = obj.createControlStage(ii, prev_fe);
+                obj.U = [obj.U, Uk];
                 obj.stages = [obj.stages, {stage}];
                 prev_fe = stage(end);
             end
         end
 
         % TODO this should be private
-        function control_stage = createControlStage(obj, ctrl_idx, prev_fe)
+        function [control_stage, Uk] = createControlStage(obj, ctrl_idx, prev_fe)
             import casadi.*
             Uk = SX.sym(['U_' num2str(ctrl_idx)], obj.dims.n_u);
-            obj.addVariable(Uk, 'u', obj.model.lbu, obj.model.ubu,...
-                            zeros(obj.dims.n_u,1), ctrl_idx);
+            
 
             if obj.settings.time_rescaling && obj.settings.use_speed_of_time_variables
                 if obj.settings.local_speed_of_time_variable
