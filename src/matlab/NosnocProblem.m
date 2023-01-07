@@ -264,9 +264,9 @@ classdef NosnocProblem < NosnocFormulationObject
                             for k=1:dims.N_stages
                                 stage = obj.stages{k};
                                 if settings.local_speed_of_time_variable
-                                    s_sot = obj.sot(ii);
+                                    s_sot = obj.sot{ii};
                                 else
-                                    s_sot = obj.sot(1);
+                                    s_sot = obj.sot{1};
                                 end
                                 for fe=stage
                                     integral_clock_state = integral_clock_state + fe.h*s_sot;
@@ -302,9 +302,9 @@ classdef NosnocProblem < NosnocFormulationObject
                                 for k=1:dims.N_stages
                                     stage = obj.stages{k};
                                     if settings.local_speed_of_time_variable
-                                        s_sot = obj.sot(ii);
+                                        s_sot = obj.sot{ii};
                                     else
-                                        s_sot = obj.sot(1);
+                                        s_sot = obj.sot{1};
                                     end
                                     for fe=stage
                                         integral_clock_state = integral_clock_state + fe.h*s_sot;

@@ -87,8 +87,8 @@ classdef FiniteElement < NosnocFormulationObject
             lbh = (1 - settings.gamma_h) * h0;
             if settings.time_rescaling && ~settings.use_speed_of_time_variables
                 % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
-                ubh = (1+gamma_h)*h0*settings.s_sot_max;
-                lbh = (1-gamma_h)*h0/settings.s_sot_min;
+                ubh = (1+settings.gamma_h)*h0*settings.s_sot_max;
+                lbh = (1-settings.gamma_h)*h0/settings.s_sot_min;
             end
             obj.addVariable(h, 'h', lbh, ubh, h0);
 
@@ -366,7 +366,7 @@ classdef FiniteElement < NosnocFormulationObject
             z = obj.w(idx);
         end
 
-        function forwardSimulation(obj, ocp, Uk, s_sot_k)
+        function forwardSimulation(obj, ocp, Uk, s_sot)
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
@@ -402,9 +402,9 @@ classdef FiniteElement < NosnocFormulationObject
             for j = 1:dims.n_s
                 % Multiply by s_sot_k which is 1 if not using speed of time variables
                 [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk);
-                fj = s_sot_k*fj;
-                qj = s_sot_k*qj;
-                gj = s_sot_k*model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk);
+                fj = s_sot*fj;
+                qj = s_sot*qj;
+                gj = s_sot*model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk);
                 
                 obj.addConstraint(gj);
                 if settings.irk_representation == IrkRepresentation.integral
