@@ -143,7 +143,7 @@ end
 model.ind_x = [problem.ind_x0.'; flatten_ind(problem.ind_x)];
 model.ind_v = flatten_ind(problem.ind_v);
 model.ind_z = problem.ind_z; %TODO fix this by breaking compat
-model.ind_u = flatten_ind(problem.ind_u);
+model.ind_u = problem.ind_u;
 model.ind_h = flatten_ind(problem.ind_h);
 model.ind_sot = flatten_ind(problem.ind_sot);
 model.ind_t_final  = problem.ind_t_final;

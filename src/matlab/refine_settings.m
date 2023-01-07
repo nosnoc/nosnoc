@@ -38,7 +38,7 @@ if strcmpi(mpcc_mode,'direct')
    N_homotopy = 1;
    sigma_0 = 1e-12;
    sigma_N = 1e-12;
-   mpcc_mode = 'scholtes_ineq';
+   mpcc_mode = 'Scholtes_ineq';
 end
 
 if strcmpi(mpcc_mode,'ell_1_penalty')

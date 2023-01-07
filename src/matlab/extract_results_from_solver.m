@@ -3,6 +3,7 @@ import casadi.*
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 % Store differential states
+results
 w_opt = full(results.x);
 diff_states = w_opt(ind_x);
 algebraic_states = w_opt(ind_z);

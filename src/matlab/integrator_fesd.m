@@ -164,7 +164,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
     % only bounadry value
     if isequal(irk_representation,'integral') || lift_irk_differential
-        x_opt  = x_opt_extended(:,1:n_s+1:end);
+        x_opt  = x_opt_extended(:,1:n_s:end);
     else
         % ??
         x_opt  = x_opt_extended(:,1:n_s:end);
@@ -217,7 +217,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
     % Store data
     if use_fesd
-        h_vec = [h_vec;h_opt];
+        h_vec = [h_vec;sum(h_opt)];
     else
         h_vec = [h_vec;h_k(1)*ones(N_stages*N_finite_elements(1),1)];
     end

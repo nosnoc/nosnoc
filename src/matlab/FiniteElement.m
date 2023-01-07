@@ -570,13 +570,18 @@ classdef FiniteElement < NosnocFormulationObject
                     g_cross_comp = vertcat(g_cross_comp, dot(sum_theta,obj.prev_fe.lambda{end,r}));
                 end
             elseif settings.cross_comp_mode == 7
-                error('TODO: not implemented');
+                for r=1:dims.n_sys
+                    sum_theta = obj.sumTheta(r);
+                    sum_lambda = obj.sumlambda(r)
+                    g_cross_comp = vertcat(g_cross_comp, diag(sum_theta)*sum_lambda);
+                end
+                    
             elseif settings.cross_comp_mode == 8
-                error('TODO: not implemented');
-            elseif settings.cross_comp_mode == 9
-                error('TODO: not implemented');
-            elseif settings.cross_comp_mode == 10
-                error('TODO: not implemented');
+                for r=1:dims.n_sys
+                    sum_theta = obj.sumTheta(r);
+                    sum_lambda = obj.sumlambda(r)
+                    g_cross_comp = vertcat(g_cross_comp, dot(sum_theta, sum_lambda));
+                end
             elseif settings.cross_comp_mode == 11
                 error('TODO: not implemented');
             elseif settings.cross_comp_mode == 12
@@ -600,9 +605,7 @@ classdef FiniteElement < NosnocFormulationObject
             
             % Do MPCC formulation
             % TODO this should be done on the problem level, and take into account passed in vars. fine for now.
-            if settings.mpcc_mode == MpccMode.direct
-                
-            elseif settings.mpcc_mode == MpccMode.Scholtes_ineq
+            if settings.mpcc_mode == MpccMode.Scholtes_ineq
                 g_comp = g_comp - sigma_p;
                 g_comp_ub = zeros(n_comp,1);
                 g_comp_lb = -inf * ones(n_comp,1);

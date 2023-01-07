@@ -26,7 +26,10 @@ classdef NosnocProblem < NosnocFormulationObject
         ocp
 
         sigma_p
+        rho_h_p
         rho_sot_p
+
+        s_elastic
         T_final
 
         p
@@ -57,7 +60,7 @@ classdef NosnocProblem < NosnocFormulationObject
             import casadi.*
             obj@NosnocFormulationObject();
 
-            obj.ind_u = cell(dims.N_stages,1);
+            obj.ind_u = [];
             obj.ind_x = {};
             obj.ind_x0 = [];
             obj.ind_v = {};
@@ -78,12 +81,14 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.dims = dims;
             obj.ocp = []; % TODO create ocp objects
 
-            obj.stages = {};
+            obj.stages = [];
 
             sigma_p = SX.sym('sigma_p');
+            obj.sigma_p = sigma_p;
             rho_sot_p = SX.sym('rho_sot_p');
             obj.rho_sot_p = rho_sot_p;
             rho_h_p = SX.sym('rho_h_p');
+            obj.rho_h_p = rho_h_p;
             rho_terminal_p = SX.sym('rho_terminal_p');
             T_ctrl_p  = SX.sym('T_ctrl_p');
             obj.p = [sigma_p;rho_sot_p;rho_h_p;rho_terminal_p;T_ctrl_p];
@@ -95,76 +100,11 @@ classdef NosnocProblem < NosnocFormulationObject
                 T_final_guess = model.T;
             end
 
-            if ismember(settings.mpcc_mode, MpccMode.elastic)
-                s_elastic = SX.sym('s_elastic',1);
-            else
-                s_elastic = [];
-            end
             obj.createPrimalVariables();
-
-            for ii=1:dims.N_stages
-                stage = obj.stages{ii};
-                Uk = obj.U{ii};
-                obj.addVariable(Uk, 'u', obj.model.lbu, obj.model.ubu,...
-                            zeros(obj.dims.n_u,1), ii);
-                if settings.time_rescaling && settings.use_speed_of_time_variables
-                    if settings.local_speed_of_time_variable
-                        s_sot = obj.sot{ii};
-                    else
-                        s_sot = obj.sot{1};
-                    end
-                else
-                    s_sot = 1;
-                end
-
-                obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_x_fun(stage(end).x{end},model.x_ref_val(:,ii));
-                if dims.n_u > 0
-                    obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_u_fun(Uk,model.u_ref_val(:,ii));
-                end
-                
-                for fe=stage
-                    % TODO: OCP
-                    % 1) Stewart Runge-Kutta discretization
-                    fe.forwardSimulation(obj.ocp, Uk, s_sot);
-
-                    % 2) Complementarity Constraints
-                    fe.createComplementarityConstraints(sigma_p, s_elastic);
-
-                    % 3) Step Equilibration
-                    fe.stepEquilibration(sigma_p, rho_h_p);
-
-                    % 4) add finite element variables
-                    obj.addFiniteElement(fe);
-                    
-                    % 5) add cost and constraints from FE to problem
-                    obj.cost = obj.cost + fe.cost;
-                    obj.addConstraint(fe.g, fe.lbg, fe.ubg);
-                end
-
-                % TODO: combine this into a function
-                if settings.use_fesd && settings.equidistant_control_grid
-                    if ~settings.time_optimal_problem
-                        obj.addConstraint(sum(vertcat(stage.h)) - model.h);
-                    elseif ~settings.time_freezing
-                        if settings.use_speed_of_time_variables
-                            obj.addConstraint(sum(vertcat(stage.h)) - model.h)
-                            obj.addConstraint(sum(s_sot*vertcat(stage.h)) - T_final/dims.N_stages);
-                        else
-                            obj.addConstraint(sum(vertcat(stage.h)) - T_final/dims.N_stages);
-                        end
-                    end
-                end
-                if settings.time_freezing && settings.stagewise_clock_constraint
-                    if time_optimal_problem
-                        obj.addConstraint(fe.x{end}(end) - ii*(T_final/dims.N_stages) + model.x0(end));
-                    else
-                        obj.addConstraint(fe.x{end}(end) - ii*model.h + model.x0(end));
-                    end
-                end
-            end
-            last_fe = obj.stages{end}(end);
-             % TODO time_freezing/time_optimal numerical/physical time
-
+            
+            last_stage = obj.stages(end);
+            last_fe = last_stage.stage(end);
+            
             %  -- Constraint for the terminal numerical and physical time (if no equidistant grids are required) --
             % If the control grid is not equidistant, the constraint on sum of h happen only at the end.
             % The constraints are splited to those which are related to numerical and physical time, to make it easier to read.
@@ -172,7 +112,7 @@ classdef NosnocProblem < NosnocFormulationObject
             % terminal numerical and physical time
             % TODO: clean this up (sum_h/intergal_clock_state need to be functions probabaly)
             if settings.time_freezing
-                % Terminal Phyisical Time (Posssble terminal constraint on the clock state if time freezing is active).
+                % Terminal Phyisical Time (Possible terminal constraint on the clock state if time freezing is active).
                 if settings.time_optimal_problem
                     obj.addConstraint(last_fe.x{end}(end)-T_final);
                 else
@@ -194,13 +134,13 @@ classdef NosnocProblem < NosnocFormulationObject
                         if settings.use_speed_of_time_variables
                             integral_clock_state = 0;
                             for k=1:dims.N_stages
-                                stage = obj.stages{k};
+                                stage = obj.stages(k);
                                 if settings.local_speed_of_time_variable
-                                    s_sot = obj.sot{ii};
+                                    s_sot = obj.sot{k};
                                 else
                                     s_sot = obj.sot{1};
                                 end
-                                for fe=stage
+                                for fe=stage.stage
                                     integral_clock_state = integral_clock_state + fe.h*s_sot;
                                 end
                             end
@@ -219,8 +159,8 @@ classdef NosnocProblem < NosnocFormulationObject
                         % if use_speed_of_time_variables = true, numerical time is decupled from the sot scaling (no mather if local or not):
                         sum_h_all = 0;
                         for k=1:dims.N_stages
-                            stage=obj.stages{k};
-                            for fe=stage
+                            stage=obj.stages(k);
+                            for fe=stage.stage
                                 sum_h_all = sum_h_all+fe.h;
                             end
                         end
@@ -232,13 +172,13 @@ classdef NosnocProblem < NosnocFormulationObject
                             else
                                 integral_clock_state = 0;
                                 for k=1:dims.N_stages
-                                    stage = obj.stages{k};
+                                    stage = obj.stages(k);
                                     if settings.local_speed_of_time_variable
-                                        s_sot = obj.sot{ii};
+                                        s_sot = obj.sot{k};
                                     else
                                         s_sot = obj.sot{1};
                                     end
-                                    for fe=stage
+                                    for fe=stage.stage
                                         integral_clock_state = integral_clock_state + fe.h*s_sot;
                                     end
                                 end
@@ -329,7 +269,6 @@ classdef NosnocProblem < NosnocFormulationObject
             
             % Process terminal costs
             try
-                last_fe = obj.stages{end}(end);
                 obj.cost = obj.cost + model.f_q_T_fun(last_fe.x(end));
             catch
                 fprintf('Terminal cost not defined');
@@ -337,18 +276,17 @@ classdef NosnocProblem < NosnocFormulationObject
             
             % Process elastic costs
             if ismember(settings.mpcc_mode, MpccMode.elastic)
-                obj.addVariable(s_elastic, 'elastic', settings.s_elastic_min, settings.s_elastic_max, settings.s_elastic_0);
                 if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*s_elastic;
+                    obj.cost = obj.cost + (1/sigma_p)*obj.s_elastic;
                 else
-                    obj.cost = sigma_p*obj.cost + s_elastic;
+                    obj.cost = sigma_p*obj.cost + obj.s_elastic;
                 end
             end
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
                 sum_s_elastic = 0;
                 for k=1:dims.N_stages
-                    stage=obj.stages{ii};
-                    for fe=stage
+                    stage=obj.stages(ii);
+                    for fe=stage.stage
                         sum_s_elastic = sum_s_elastic + fe.sumElastic;
                     end
                 end
@@ -368,7 +306,8 @@ classdef NosnocProblem < NosnocFormulationObject
             % Calculate standard complementarities.
             J_comp_std = 0;
             for k=1:dims.N_stages
-                for fe=stage
+                stage = obj.stages(k);
+                for fe=stage.stage
                     for j=1:dims.n_s
                         J_comp_std = J_comp_std + model.J_cc_fun(fe.rkStageZ(j));
                     end
@@ -380,7 +319,7 @@ classdef NosnocProblem < NosnocFormulationObject
             if settings.use_fesd
                 J_comp_fesd = 0;
                 for k=1:dims.N_stages
-                    for fe=stage
+                    for fe=stage.stage
                         J_comp_fesd = J_comp_fesd + sum(diag(fe.sumTheta())*fe.sumLambda());
                     end
                 end
@@ -400,6 +339,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
         % TODO this should be private
         function createPrimalVariables(obj)
+            import casadi.*
             fe0 = FiniteElementZero(obj.settings, obj.dims, obj.model);
             obj.fe0 = fe0;
             
@@ -412,73 +352,153 @@ classdef NosnocProblem < NosnocFormulationObject
                             fe0.w0(fe0.ind_x{1}));
 
             prev_fe = fe0;
-            for ii=1:obj.dims.N_stages
-                [stage, Uk] = obj.createControlStage(ii, prev_fe);
-                obj.U = [obj.U, {Uk}];
-                obj.stages = [obj.stages, {stage}];
-                prev_fe = stage(end);
-            end
-        end
 
-        % TODO this should be private
-        function [control_stage, Uk] = createControlStage(obj, ctrl_idx, prev_fe)
-            import casadi.*
-            Uk = SX.sym(['U_' num2str(ctrl_idx)], obj.dims.n_u);
-            
-
+            s_sot = [];
             if obj.settings.time_rescaling && obj.settings.use_speed_of_time_variables
-                if obj.settings.local_speed_of_time_variable
-                    % at every stage
-                    s_sot_k = SX.sym(['s_sot_' num2str(ctrl_idx)], 1);
-                    obj.addVariable(s_sot_k,...
+                if ~obj.settings.local_speed_of_time_variable
+                    s_sot = SX.sym('s_sot', 1);
+                    obj.addVariable(s_sot,...
                                     'sot',...
                                     obj.settings.s_sot_min,...
                                     obj.settings.s_sot_max,...
-                                    obj.settings.s_sot0,...
-                                    ctrl_idx);
+                                    obj.settings.s_sot0);
                     if obj.settings.time_freezing
-                        obj.cost = obj.cost + obj.rho_sot_p*(s_sot_k-1)^2;
-                    end
-                else
-                    if ctrl_idx == 1
-                        % only once
-                        s_sot = SX.sym('s_sot', 1);
-                        obj.addVariable(s_sot,...
-                                        'sot',...
-                                        obj.settings.s_sot_min,...
-                                        obj.settings.s_sot_max,...
-                                        obj.settings.s_sot0);
-                        if obj.settings.time_freezing
-                            obj.cost = obj.cost + obj.rho_sot_p*(s_sot-1)^2;
-                        end
+                        obj.cost = obj.cost + obj.rho_sot_p*(s_sot-1)^2;
                     end
                 end
             end
-            
-            control_stage = [];
-            for ii=1:obj.dims.N_finite_elements
-                fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii, obj.T_final);
-                control_stage = [control_stage, fe];
-                prev_fe = fe;
+
+            if ismember(obj.settings.mpcc_mode, MpccMode.elastic)
+                s_elastic = SX.sym('s_elastic',1);
+                obj.s_elastic = s_elastic;
+                obj.addVariable(s_elastic, 'elastic', obj.settings.s_elastic_min, obj.settings.s_elastic_max, obj.settings.s_elastic_0);
+            else
+                s_elastic = [];
+            end
+                
+            for ii=1:obj.dims.N_stages
+                stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.sigma_p, obj.rho_h_p, obj.rho_sot_p, s_elastic);
+                obj.stages = [obj.stages, stage];
+
+                obj.addControlStage(stage);
+                prev_fe = stage.stage(end);
             end
         end
 
+        function createComplementarityConstraints(obj)
+            import casadi.*           
+            model = obj.model;
+            settings = obj.settings;
+            dims = obj.dims;
+
+            g_cross_comp = SX([]);
+            % TODO Implement other modes
+            if ~settings.use_fesd || settings.cross_comp_mode < 11
+                % Do nothing, handled at the FE or stage level
+                return
+            elseif settings.cross_comp_mode == 11
+                for r=1:dims.n_sys
+                    g_r = 0;
+                    for stage=obj.stages
+                        for fe=stage.stage
+                            g_r = g_r + diag(fe.sumTheta(r))*fe.sumLambda(r);
+                        end
+                    end
+                    g_cross_comp = vertcat(g_cross_comp, g_r);
+                end
+            elseif settings.cross_comp_mode == 12
+                for r=1:dims.n_sys
+                    g_r = 0;
+                    for stage=obj.stages
+                        for fe=stage.stage
+                            g_r = g_r + dot(fe.sumTheta(r),fe.sumLambda(r));
+                        end
+                    end
+                    g_cross_comp = vertcat(g_cross_comp, g_r);
+                end
+            end
+
+            g_comp = g_cross_comp;
+            n_comp = length(g_cross_comp);
+            
+            %
+            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
+                s_elastic = SX.sym(['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
+                obj.addVariable(s_elastic,...
+                                'elastic',...
+                                settings.s_elastic_min*ones(n_comp,1),...
+                                settings.s_elastic_max*ones(n_comp,1),...
+                                settings.s_elastic_0*ones(n_comp,1));
+            end
+            
+            % Do MPCC formulation
+            % TODO This should be centralized
+            if settings.mpcc_mode == MpccMode.Scholtes_ineq
+                g_comp = g_comp - sigma_p;
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = -inf * ones(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.Scholtes_eq
+                g_comp = g_comp - sigma_p;
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = zeros(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.ell_1_penalty
+                if settings.objective_scaling_direct
+                    obj.cost = obj.cost + (1/sigma_p)*sum(g_comp);
+                else
+                    obj.cost = sigma_p*obj.cost + sum(g_comp);
+                end
+            elseif settings.mpcc_mode == MpccMode.elastic_ineq
+                g_comp = g_comp - s_elastic*ones(n_comp,1);
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = -inf * ones(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.elastic_eq
+                g_comp = g_comp - s_elastic*ones(n_comp,1);
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = zeros(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.elastic_two_sided
+                g_comp = [g_comp-s_elastic*ones(n_comp,1);g_comp+s_elastic*ones(n_comp,1)];
+                g_comp_ub = [zeros(n_comp,1); inf*ones(n_comp,1)];
+                g_comp_lb = [-inf*ones(n_comp,1);  zeros(n_comp,1)];
+                % TODO these should be merged probably
+            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_ineq
+                g_comp = g_comp - s_elastic;
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = -inf * ones(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_eq
+                g_comp = g_comp - s_elastic;
+                g_comp_ub = zeros(n_comp,1);
+                g_comp_lb = zeros(n_comp,1);
+            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_two_sided
+                g_comp = [g_comp-s_elastic;g_comp+s_elastic];
+                g_comp_ub = [zeros(n_comp,1); inf*ones(n_comp,1)];
+                g_comp_lb = [-inf*ones(n_comp,1);  zeros(n_comp,1)];
+            end
+
+            if settings.mpcc_mode ~= MpccMode.ell_1_penalty
+                obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
+            end
+        end
+        
         % TODO this should be private
-        function addFiniteElement(obj, fe)
+        function addControlStage(obj, stage)
             w_len = length(obj.w);
 
-            obj.addPrimalVector(fe.w, fe.lbw, fe.ubw, fe.w0);
+            obj.addPrimalVector(stage.w, stage.lbw, stage.ubw, stage.w0);
 
-            obj.ind_h = [obj.ind_h, fe.ind_h+w_len];
-            obj.ind_x = [obj.ind_x, increment_indices(fe.ind_x, w_len)];
-            obj.ind_v = [obj.ind_v, increment_indices(fe.ind_v, w_len)];
-            obj.ind_theta = [obj.ind_theta, increment_indices(fe.ind_theta, w_len)];
-            obj.ind_lam = [obj.ind_lam, increment_indices(fe.ind_lam, w_len)];
-            obj.ind_mu = [obj.ind_mu, increment_indices(fe.ind_mu, w_len)];
-            obj.ind_alpha = [obj.ind_alpha, increment_indices(fe.ind_alpha, w_len)];
-            obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(fe.ind_lambda_n, w_len)];
-            obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(fe.ind_lambda_p, w_len)];
-            obj.ind_nu_lift = [obj.ind_x, fe.ind_nu_lift+w_len];
+            obj.ind_h = [obj.ind_h, stage.ind_h+w_len];
+            obj.ind_u = [obj.ind_u, stage.ind_u+w_len];
+            obj.ind_sot = [obj.ind_sot, stage.ind_sot+w_len];
+            obj.ind_x = [obj.ind_x, increment_indices(stage.ind_x, w_len)];
+            obj.ind_v = [obj.ind_v, increment_indices(stage.ind_v, w_len)];
+            obj.ind_theta = [obj.ind_theta, increment_indices(stage.ind_theta, w_len)];
+            obj.ind_lam = [obj.ind_lam, increment_indices(stage.ind_lam, w_len)];
+            obj.ind_mu = [obj.ind_mu, increment_indices(stage.ind_mu, w_len)];
+            obj.ind_alpha = [obj.ind_alpha, increment_indices(stage.ind_alpha, w_len)];
+            obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(stage.ind_lambda_n, w_len)];
+            obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(stage.ind_lambda_p, w_len)];
+            obj.ind_nu_lift = [obj.ind_x, increment_indices(stage.ind_nu_lift, w_len)];
+
+            obj.addConstraint(stage.g, stage.lbg, stage.ubg);
         end
 
         function addPrimalVector(obj, symbolic, lb, ub, initial)
@@ -507,8 +527,8 @@ classdef NosnocProblem < NosnocFormulationObject
         function nu_vector = get.nu_vector(obj)
             nu_vector = [];
             for k=obj.dims.N_stages
-                stage = obj.stages{k};
-                for fe=stage
+                stage = obj.stages(k);
+                for fe=stage.stage
                     nu_vector = vertcat(nu_vector,fe.nu_vector);
                 end
             end
@@ -548,4 +568,3 @@ classdef NosnocProblem < NosnocFormulationObject
         end
     end
 end
-
