@@ -24,6 +24,8 @@ classdef FiniteElement < NosnocFormulationObject
         dims
 
         u
+
+        T_final
         
         prev_fe
     end
@@ -48,9 +50,22 @@ classdef FiniteElement < NosnocFormulationObject
     end
 
     methods
-        function obj = FiniteElement(prev_fe, settings, model,  dims, ctrl_idx, fe_idx)
+        function obj = FiniteElement(prev_fe, settings, model,  dims, ctrl_idx, fe_idx, varargin)
             import casadi.*
             obj@NosnocFormulationObject();
+
+            p = inputParser();
+            p.FunctionName = 'FiniteElement';
+            
+            % TODO: add checks.
+            addRequired(p, 'prev_fe');
+            addRequired(p, 'settings');
+            addRequired(p, 'model');
+            addRequired(p, 'dims');
+            addRequired(p, 'ctrl_idx');
+            addRequired(p, 'fe_idx');
+            addOptional(p, 'T_final',[]);
+            parse(p, prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin{:});
 
             if settings.right_boundary_point_explicit
                 rbp_allowance = 0;
@@ -80,18 +95,21 @@ classdef FiniteElement < NosnocFormulationObject
 
             obj.prev_fe = prev_fe;
 
-            h = SX.sym(['h_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)]);
-            h_ctrl_stage = model.T/dims.N_stages;
-            h0 = h_ctrl_stage / dims.N_finite_elements(ctrl_idx);
-            ubh = (1 + settings.gamma_h) * h0;
-            lbh = (1 - settings.gamma_h) * h0;
-            if settings.time_rescaling && ~settings.use_speed_of_time_variables
-                % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
-                ubh = (1+settings.gamma_h)*h0*settings.s_sot_max;
-                lbh = (1-settings.gamma_h)*h0/settings.s_sot_min;
+            if settings.use_fesd
+                h = SX.sym(['h_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)]);
+                h_ctrl_stage = model.T/dims.N_stages;
+                h0 = h_ctrl_stage / dims.N_finite_elements(ctrl_idx);
+                ubh = (1 + settings.gamma_h) * h0;
+                lbh = (1 - settings.gamma_h) * h0;
+                if settings.time_rescaling && ~settings.use_speed_of_time_variables
+                    % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
+                    ubh = (1+settings.gamma_h)*h0*settings.s_sot_max;
+                    lbh = (1-settings.gamma_h)*h0/settings.s_sot_min;
+                end
+                obj.addVariable(h, 'h', lbh, ubh, h0);
             end
-            obj.addVariable(h, 'h', lbh, ubh, h0);
-
+            obj.T_final = p.Results.T_final;
+                
             % RK stage stuff
             % TODO: beta and gamma
             for ii = 1:dims.n_s
@@ -277,7 +295,11 @@ classdef FiniteElement < NosnocFormulationObject
         end
 
         function h = get.h(obj)
-            h = obj.w(obj.ind_h);
+            if obj.settings.use_fesd
+                h = obj.w(obj.ind_h);
+            elseif obj.settings.time_optimal_problem
+                h = obj.T_final/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
+            end
         end
 
         function x = get.x(obj)
@@ -445,7 +467,6 @@ classdef FiniteElement < NosnocFormulationObject
                 obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx)) % TODO make this handle different numbers of FE
                 
                 % TODO verify this.
-                model
                 obj.addConstraint(model.g_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk));
             end
         end

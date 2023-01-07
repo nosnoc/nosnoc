@@ -26,8 +26,8 @@ classdef NosnocProblem < NosnocFormulationObject
         ocp
 
         sigma_p
-
         rho_sot_p
+        T_final
 
         p
         p0
@@ -47,9 +47,10 @@ classdef NosnocProblem < NosnocFormulationObject
         u
         sot
         nu_vector
-
+        
         ind_z
     end
+    
     methods
         function obj = NosnocProblem(settings, dims, model)
             import casadi.*
@@ -89,6 +90,7 @@ classdef NosnocProblem < NosnocFormulationObject
             if settings.time_optimal_problem
                 % the final time in time optimal control problems
                 T_final = SX.sym('T_final', 1);
+                obj.T_final = T_final;
                 T_final_guess = model.T;
             end
 
@@ -451,8 +453,8 @@ classdef NosnocProblem < NosnocFormulationObject
             end
             
             control_stage = [];
-             for ii=1:obj.dims.N_finite_elements
-                fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii);
+            for ii=1:obj.dims.N_finite_elements
+                fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii, obj.T_final);
                 control_stage = [control_stage, fe];
                 prev_fe = fe;
             end
@@ -494,7 +496,7 @@ classdef NosnocProblem < NosnocFormulationObject
         function u = get.u(obj)
             u = cellfun(@(u) obj.w(u), obj.ind_u, 'UniformOutput', false);
         end
-
+        
         function sot = get.sot(obj)
             sot = cellfun(@(sot) obj.w(sot), obj.ind_sot, 'UniformOutput', false);
         end
