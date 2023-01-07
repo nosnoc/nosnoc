@@ -297,8 +297,10 @@ classdef FiniteElement < NosnocFormulationObject
         function h = get.h(obj)
             if obj.settings.use_fesd
                 h = obj.w(obj.ind_h);
-            elseif obj.settings.time_optimal_problem
+            elseif obj.settings.time_optimal_problem && ~obj.settings.use_speed_of_time_variables
                 h = obj.T_final/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
+            else
+                h = obj.model.T/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
             end
         end
 
