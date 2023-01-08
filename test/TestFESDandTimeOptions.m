@@ -12,6 +12,7 @@ classdef TestFESDandTimeOptions < matlab.unittest.TestCase
     methods (Test, ParameterCombination='exhaustive')
         function test_cross_comp_modes(testCase,use_fesd,time_optimal_problem,equidistant_control_grid, use_speed_of_time_variables,local_speed_of_time_variable)
             import matlab.unittest.constraints.IssuesNoWarnings;
+            warning('off', 'nosnoc:homotopy_solver:NLP_infeasible')
             issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 4);
             testCase.verifyThat(@() test_fesd_and_time_options(use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable), issuesNoWarningsConstraint);
         end

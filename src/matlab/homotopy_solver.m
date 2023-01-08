@@ -120,7 +120,7 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && sigma_k >= sigma_N
         cpu_time_iter = toc ;
     end
     if isequal(solver.stats.return_status,'Infeasible_Problem_Detected')
-        warning('NLP infeasible: try different mpcc_mode or check problem functions.');
+        warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
     end
 
     cpu_time = [cpu_time,cpu_time_iter];

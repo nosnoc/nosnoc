@@ -134,7 +134,7 @@ model.nabla_J = nabla_J;
 model.nabla_J_fun = nabla_J_fun;
 
 % TODO: make member function
-if settings.print_level > 1
+if settings.print_level > 5
     problem.print();
 end
 
