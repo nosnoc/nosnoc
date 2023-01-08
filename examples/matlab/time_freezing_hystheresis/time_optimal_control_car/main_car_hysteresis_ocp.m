@@ -50,6 +50,10 @@ settings.comp_tol = 1e-8;
 settings.cross_comp_mode = 8;
 settings.homotopy_update_rule = 'superlinear';
 
+settings.initial_lambda = 0.0;
+settings.initial_theta = 0.0;
+settings.initial_mu = 0.0;
+
 %% Model Settings
 model.fuel_cost_on = 0;
 model.N_finite_elements = 3;

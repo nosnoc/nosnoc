@@ -83,7 +83,7 @@ stats.total_time  = total_time;
 fprintf('\n');
 fprintf('-----------------------------------------------------------------------------------------------\n');
 if use_fesd
-    fprintf( ['OCP with the FESD ' irk_scheme ' in ' irk_representation ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
+    fprintf( ['OCP with the FESD ' char(irk_scheme) ' in ' char(irk_representation) ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 else
     fprintf( ['OCP with the Std ' irk_scheme ' in ' irk_representation ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 end

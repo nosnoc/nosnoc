@@ -136,7 +136,7 @@ u_opt = results.u_opt;
 f_opt = full(results.f);
 
 t_grid_optimizer = [results.t_grid];
-x_res_optimizer = [results.x_opt_extended];
+x_res_optimizer = [results.x_opt];
 %%
 figure
 stairs(results.t_grid,[results.h_opt;nan])
