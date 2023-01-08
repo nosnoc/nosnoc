@@ -500,7 +500,7 @@ classdef FiniteElement < NosnocFormulationObject
                 for j=1:dims.n_s
                     theta = vertcat(obj.theta{j,:});
                     lambda = vertcat(obj.lambda{j,:});
-                    g_cross_comp = vertcat(g_cross_comp, dot(theta,lambda));
+                    g_cross_comp = vertcat(g_cross_comp, diag(theta)*lambda);
                 end
             elseif settings.cross_comp_mode == 1 
                 % TODO vectorize?

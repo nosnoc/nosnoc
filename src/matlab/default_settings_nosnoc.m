@@ -19,9 +19,9 @@ pss_mode = 'Stewart'; % possible options: Stewart and Step
 
 % initialization - Stewart
 lp_initialization = 0;
-initial_theta = 0;
-initial_lambda = 0;
-initial_mu = 0;
+initial_theta = 1;
+initial_lambda = 1;
+initial_mu = 1;
 % initialization - Step
 initial_alpha = 1;
 initial_lambda_0 = 1;
