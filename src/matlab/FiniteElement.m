@@ -572,14 +572,14 @@ classdef FiniteElement < NosnocFormulationObject
             elseif settings.cross_comp_mode == 7
                 for r=1:dims.n_sys
                     sum_theta = obj.sumTheta(r);
-                    sum_lambda = obj.sumlambda(r)
+                    sum_lambda = obj.sumLambda(r)
                     g_cross_comp = vertcat(g_cross_comp, diag(sum_theta)*sum_lambda);
                 end
                     
             elseif settings.cross_comp_mode == 8
                 for r=1:dims.n_sys
                     sum_theta = obj.sumTheta(r);
-                    sum_lambda = obj.sumlambda(r)
+                    sum_lambda = obj.sumLambda(r);
                     g_cross_comp = vertcat(g_cross_comp, dot(sum_theta, sum_lambda));
                 end
             elseif settings.cross_comp_mode > 8

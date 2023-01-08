@@ -54,7 +54,7 @@ classdef ControlStage < NosnocFormulationObject
                                     settings.s_sot_max,...
                                     settings.s_sot0);
                     if settings.time_freezing
-                        obj.cost = obj.cost + obj.rho_sot_p*(s_sot_k-1)^2;
+                        obj.cost = obj.cost + rho_sot_p*(s_sot-1)^2;
                     end
                 end
             else
@@ -106,7 +106,7 @@ classdef ControlStage < NosnocFormulationObject
                 end
             end
             if settings.time_freezing && settings.stagewise_clock_constraint
-                if time_optimal_problem
+                if settings.time_optimal_problem
                     obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/dims.N_stages) + model.x0(end));
                 else
                     obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end));

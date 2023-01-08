@@ -178,9 +178,9 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
             mu_opt_extended = [alg_states_extended(end-n_sys+1:end,:)];
 
-            theta_opt= theta_opt_extended(:,1:n_s:end);
-            lambda_opt= lambda_opt_extended(:,1:n_s:end);
-            mu_opt= mu_opt_extended(:,1:n_s:end);
+            theta_opt= theta_opt_extended(:,end);
+            lambda_opt= lambda_opt_extended(:,end);
+            mu_opt= mu_opt_extended(:,end);
         case 'Step'
             alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
             alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
@@ -229,22 +229,22 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
     % algebraic
     switch pss_mode
-        case 'Stewart'
-            theta_res = [theta_res, theta_opt];
-            lambda_res = [lambda_res, lambda_opt];
-            mu_res = [mu_res, mu_opt];
-            theta_res_extended = [theta_res_extended,theta_opt_extended ];
-            lambda_res_extended = [lambda_res_extended,lambda_opt_extended];
-            mu_res_extended = [mu_res_extended,mu_opt_extended];
+      case 'Stewart'
+        theta_res = [theta_res, theta_opt];
+        lambda_res = [lambda_res, lambda_opt];
+        mu_res = [mu_res, mu_opt];
+        theta_res_extended = [theta_res_extended,theta_opt_extended ];
+        lambda_res_extended = [lambda_res_extended,lambda_opt_extended];
+        mu_res_extended = [mu_res_extended,mu_opt_extended];
 
-        case 'Step'
-            alpha_res = [alpha_res, alpha_opt];
-            lambda_0_res = [lambda_0_res, lambda_0_opt];
-            lambda_1_res = [lambda_1_res, lambda_1_opt];
+      case 'Step'
+        alpha_res = [alpha_res, alpha_opt];
+        lambda_0_res = [lambda_0_res, lambda_0_opt];
+        lambda_1_res = [lambda_1_res, lambda_1_opt];
 
-            alpha_res_extended = [alpha_res_extended, alpha_opt_extended];
-            lambda_0_res_extended = [lambda_0_res_extended, lambda_0_opt_extended];
-            lambda_1_res_extended = [lambda_1_res_extended, lambda_1_opt_extended];
+        alpha_res_extended = [alpha_res_extended, alpha_opt_extended];
+        lambda_0_res_extended = [lambda_0_res_extended, lambda_0_opt_extended];
+        lambda_1_res_extended = [lambda_1_res_extended, lambda_1_opt_extended];
     end
 
     %stats
