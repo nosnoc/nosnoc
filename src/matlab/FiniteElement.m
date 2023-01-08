@@ -356,18 +356,18 @@ classdef FiniteElement < NosnocFormulationObject
 
         function sum_theta = sumTheta(obj, varargin)
             p = inputParser();
-            p.FunctionName = 'sumLambda';
+            p.FunctionName = 'sumTheta';
             
             % TODO: add checks.
             addRequired(p, 'obj');
             addOptional(p, 'sys',[]);
             parse(p, obj, varargin{:});
-
+            %obj.theta
             if ismember('sys', p.UsingDefaults)
                 theta = obj.theta;
                 thetas = arrayfun(@(row) vertcat(theta{row, :}), 1:size(theta,1), 'UniformOutput', false);
             else
-                thetas = obj.theta{:,p.Results.sys}.';
+                thetas = obj.theta(:,p.Results.sys).';
             end
             sum_theta = sum([thetas{:}], 2);
         end
@@ -582,10 +582,9 @@ classdef FiniteElement < NosnocFormulationObject
                     sum_lambda = obj.sumlambda(r)
                     g_cross_comp = vertcat(g_cross_comp, dot(sum_theta, sum_lambda));
                 end
-            elseif settings.cross_comp_mode == 11
-                error('TODO: not implemented');
-            elseif settings.cross_comp_mode == 12
-                error('TODO: not implemented');
+            elseif settings.cross_comp_mode > 8
+                % do nothing in this case
+                return
             end
 
             g_comp = vertcat(g_cross_comp, g_path_comp);

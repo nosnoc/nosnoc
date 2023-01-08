@@ -101,6 +101,8 @@ classdef NosnocProblem < NosnocFormulationObject
             end
 
             obj.createPrimalVariables();
+
+            obj.createComplementarityConstraints();
             
             last_stage = obj.stages(end);
             last_fe = last_stage.stage(end);
@@ -391,6 +393,9 @@ classdef NosnocProblem < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
+            sigma_p = obj.sigma_p;
+            s_elastic = obj.s_elastic;
+            
             g_cross_comp = SX([]);
             % TODO Implement other modes
             if ~settings.use_fesd || settings.cross_comp_mode < 11
