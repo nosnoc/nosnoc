@@ -67,7 +67,7 @@ classdef ControlStage < NosnocFormulationObject
             for ii=1:obj.dims.N_finite_elements
                 fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii, T_final);
                 % TODO: OCP
-                % 1) Stewart Runge-Kutta discretization
+                % 1) Runge-Kutta discretization
                 fe.forwardSimulation(obj.ocp, obj.Uk, s_sot);
 
                 % 2) Complementarity Constraints
@@ -75,6 +75,7 @@ classdef ControlStage < NosnocFormulationObject
 
                 % 3) Step Equilibration
                 fe.stepEquilibration(sigma_p, rho_h_p);
+
                 % 4) add finite element variables
                 obj.addFiniteElement(fe);
                 
@@ -180,10 +181,6 @@ classdef ControlStage < NosnocFormulationObject
                     end
                     g_cross_comp = vertcat(g_cross_comp, g_r);
                 end
-            elseif settings.cross_comp_mode == 11
-                error('TODO: not implemented');
-            elseif settings.cross_comp_mode == 12
-                error('TODO: not implemented');
             end
 
             g_comp = g_cross_comp;

@@ -37,7 +37,6 @@ classdef FiniteElementZero < NosnocFormulationObject
             obj.ind_lambda_p = cell(1,dims.n_sys);
 
             % X0
-            % TODO: add bounds
             if settings.there_exist_free_x0
                 x0_lb = model.x0;
                 x0_ub = model.x0;
@@ -63,6 +62,7 @@ classdef FiniteElementZero < NosnocFormulationObject
             end
 
             % lambda00
+            % TODO Use define_casadi_symbolic
             if settings.pss_mode == PssMode.Stewart
                 for ij=1:dims.n_sys
                     obj.addVariable(SX.sym(['lambda00_' num2str(ij)], dims.n_f_sys(ij)),...

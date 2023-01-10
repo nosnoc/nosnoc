@@ -163,8 +163,10 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
 
     % only bounadry value
-    if isequal(irk_representation,'integral') || lift_irk_differential
-        x_opt  = x_opt_extended(:,1:n_s:end);
+    if isequal(irk_representation,'integral')
+        x_opt  = x_opt_extended(:,1:n_s+1:end);
+    elseif isequal(irk_representation, 'differential_lift_x')
+        x_opt = x_opt_extended(:, 1:n_s+1:end);
     else
         % ??
         x_opt  = x_opt_extended(:,1:n_s:end);
@@ -217,14 +219,14 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
     % Store data
     if use_fesd
-        h_vec = [h_vec;sum(h_opt)];
+        h_vec = [h_vec;h_opt];
     else
         h_vec = [h_vec;h_k(1)*ones(N_stages*N_finite_elements(1),1)];
     end
     %sot
     s_sot_res  = [s_sot_res,w_opt(ind_sot)];
     %differntial.
-    x_res = [x_res, x_opt(:,end)];
+    x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 
     % algebraic

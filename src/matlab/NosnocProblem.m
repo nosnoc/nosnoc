@@ -11,7 +11,6 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_alpha
         ind_lambda_n
         ind_lambda_p
-        ind_nu_lift
         ind_h
         ind_elastic
         ind_sot % index for speed of time variable
@@ -23,28 +22,35 @@ classdef NosnocProblem < NosnocFormulationObject
 
         ind_s_terminal
 
+        % Problem data
         model
         settings
         dims
         ocp
 
+        % Algorithmic parameters
         sigma_p
         rho_h_p
         rho_sot_p
 
+        % Algorithmic global variables (time independent)
         s_elastic
         T_final
 
+        % Parameters
         p
         p0
 
+        % Problem components
         fe0
-        stages
-        U
+        stages % control stages
 
+        % complementarity residual functions
         comp_res
         comp_std
         comp_fesd
+
+        % Problem cost function
         cost_fun
     end
     % remaining list of TODOs
@@ -75,7 +81,6 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_lambda_n = {};
             obj.ind_lambda_p = {};
             obj.ind_h = {};
-            obj.ind_nu_lift = {};
             obj.ind_sot = {};
 
             obj.ind_s_terminal = [];
@@ -116,6 +121,7 @@ classdef NosnocProblem < NosnocFormulationObject
                 T_final_guess = model.T;
             end
 
+            % TODO Rename
             obj.createPrimalVariables();
 
             obj.createComplementarityConstraints();
@@ -287,7 +293,7 @@ classdef NosnocProblem < NosnocFormulationObject
             
             % Process terminal costs
             try
-                obj.cost = obj.cost + model.f_q_T_fun(last_fe.x(end));
+                obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end});
             catch
                 fprintf('Terminal cost not defined');
             end
@@ -490,7 +496,6 @@ classdef NosnocProblem < NosnocFormulationObject
                 g_comp = [g_comp-s_elastic*ones(n_comp,1);g_comp+s_elastic*ones(n_comp,1)];
                 g_comp_ub = [zeros(n_comp,1); inf*ones(n_comp,1)];
                 g_comp_lb = [-inf*ones(n_comp,1);  zeros(n_comp,1)];
-                % TODO these should be merged probably
             elseif settings.mpcc_mode == MpccMode.elastic_ell_1_ineq
                 g_comp = g_comp - s_elastic;
                 g_comp_ub = zeros(n_comp,1);
@@ -527,7 +532,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_alpha = [obj.ind_alpha, increment_indices(stage.ind_alpha, w_len)];
             obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(stage.ind_lambda_n, w_len)];
             obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(stage.ind_lambda_p, w_len)];
-            obj.ind_nu_lift = [obj.ind_x, increment_indices(stage.ind_nu_lift, w_len)];
+            %obj.ind_nu_lift = [obj.ind_x, increment_indices(stage.ind_nu_lift, w_len)];
 
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
         end
@@ -566,7 +571,7 @@ classdef NosnocProblem < NosnocFormulationObject
         end
 
         function ind_z = get.ind_z(obj)
-            % only 
+            % TODO Add gamma/beta
             ind_z = [flatten_ind(obj.ind_theta(1:obj.dims.n_s,:))
                      flatten_ind(obj.ind_lam(1:obj.dims.n_s,:))
                      flatten_ind(obj.ind_mu(1:obj.dims.n_s,:))
