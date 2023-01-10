@@ -358,7 +358,7 @@ classdef NosnocProblem < NosnocFormulationObject
             s_sot = [];
             if obj.settings.time_rescaling && obj.settings.use_speed_of_time_variables
                 if ~obj.settings.local_speed_of_time_variable
-                    s_sot = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_sot', 1);
+                    s_sot = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_sot', 1);
                     obj.addVariable(s_sot,...
                                     'sot',...
                                     obj.settings.s_sot_min,...
@@ -371,7 +371,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
 
             if ismember(obj.settings.mpcc_mode, MpccMode.elastic)
-                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_elastic',1);
+                s_elastic = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_elastic',1);
                 obj.s_elastic = s_elastic;
                 obj.addVariable(s_elastic, 'elastic', obj.settings.s_elastic_min, obj.settings.s_elastic_max, obj.settings.s_elastic_0);
             else
@@ -429,7 +429,7 @@ classdef NosnocProblem < NosnocFormulationObject
             
             %
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
+                s_elastic = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
                 obj.addVariable(s_elastic,...
                                 'elastic',...
                                 settings.s_elastic_min*ones(n_comp,1),...
