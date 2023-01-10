@@ -18,6 +18,9 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_boundary % index of bundary value lambda and mu
         ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
 
+        ind_p_global
+        ind_p_time_var
+
         ind_s_terminal
 
         model
@@ -45,7 +48,8 @@ classdef NosnocProblem < NosnocFormulationObject
         cost_fun
     end
     % remaining list of TODOs
-    % TODO: cleanup properties
+    % TODO: cleanup/add properties (in all components)
+    % TODO: Create solver object, which will interact with setting parameters. 
 
     properties(Dependent, SetAccess=private, Hidden)
         u
@@ -92,6 +96,18 @@ classdef NosnocProblem < NosnocFormulationObject
             rho_terminal_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_terminal_p');
             T_ctrl_p  = define_casadi_symbolic(settings.casadi_symbolic_mode, 'T_ctrl_p');
             obj.p = [sigma_p;rho_sot_p;rho_h_p;rho_terminal_p;T_ctrl_p];
+
+            % Populate parameter indices
+            if dims.n_p_global > 0
+                n_p = length(obj.p);
+                ind_p_global = n_p+1:n_p+dims.n_p_global;
+                obj.p = [obj.p; model.p_global];
+            end
+            if dims.n_p_time_var > 0;
+                n_p = length(obj.p);
+                ind_p_time_var = arrayfun(@(s) (n_p+(s*dims.n_p_time_var)+1):(n_p+(s*dims.n_p_time_var)+dims.n_p_time_var) , 0:dims.N_stages-1);
+                obj.p = [obj.p; model.p_time_var];
+            end
 
             if settings.time_optimal_problem
                 % the final time in time optimal control problems
@@ -336,7 +352,16 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
             obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
 
-            obj.p0 = [settings.sigma_0, settings.rho_sot, settings.rho_h, settings.rho_terminal, model.T];
+            obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
+            obj.p0
+
+            if dims.n_p_global > 0;
+                obj.p0 = [obj.p0; model.p_global_val];
+            end
+            
+            if dims.n_p_time_var > 0;
+                obj.p0 = [obj.p0; model.time_var_val];
+            end
         end
 
         % TODO this should be private

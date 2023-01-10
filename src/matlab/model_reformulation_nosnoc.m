@@ -382,7 +382,7 @@ else
 end
 
 if exist('p_time_var')
-    n_p_time_var = length(p_time_var);
+    n_p_time_var = size(p_time_var, 1);
     if exist('p_time_var_val')
         if size(p_time_var_val) ~= [n_p_time_var, N_stages]
             error('User provided p_global_val has the wrong size.')
@@ -1035,6 +1035,18 @@ model.u_ref_val = u_ref_val;
 model.f_lsq_T_fun = f_lsq_T_fun;
 model.x_ref_end_val = x_ref_end_val;
 
+% global parameters
+if n_p_global > 0
+    model.p_global = p_global;
+    model.p_global_val = p_global_val;
+end
+
+% time varying parameters
+% TODO maybe make these functions and actually optimization vars. (actually this might just be algebraic vars)
+if n_p_time_var > 0
+    model.p_time_var = p_time_var;
+    model.p_time_var_val = p_time_var_val;
+end
 
 %% collect all dimensions in one sperate struct as it is needed by several other functions later.
 dimensions.N_stages = N_stages;
@@ -1055,6 +1067,8 @@ dimensions.n_gamma = n_gamma;
 dimensions.n_lambda_0 = n_lambda_0;
 dimensions.n_lambda_1 = n_lambda_1;
 dimensions.n_f_sys = n_f_sys;
+dimensions.n_p_global = n_p_global;
+dimensions.n_p_time_var = n_p_time_var;
 model.dimensions = dimensions;
 
 end
