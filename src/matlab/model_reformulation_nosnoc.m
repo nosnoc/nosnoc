@@ -377,7 +377,7 @@ if exist('p_global')
 else
     n_p_global = 0;
     if print_level >= 1
-        fprintf('Info: No global parameters given')
+        fprintf('Info: No global parameters given. \n')
     end
 end
 
@@ -392,6 +392,9 @@ if exist('p_time_var')
     end
 else
     n_p_time_var = 0;
+    if print_level >= 1
+        fprintf('Info: No time varying parameters given. \n')
+    end
 end
 
 %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach

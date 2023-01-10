@@ -30,6 +30,8 @@ classdef ControlStage < NosnocFormulationObject
     end
 
     methods
+        % TODO: This probably should take less arguments somehow. Maybe a store of "global_variables" to be
+        % added along with v_global.
         function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, s_sot, T_final, sigma_p, rho_h_p, rho_sot_p, s_elastic)
             import casadi.*
             obj@NosnocFormulationObject();
