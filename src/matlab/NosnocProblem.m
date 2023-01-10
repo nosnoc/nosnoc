@@ -83,19 +83,19 @@ classdef NosnocProblem < NosnocFormulationObject
 
             obj.stages = [];
 
-            sigma_p = SX.sym('sigma_p');
+            sigma_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'sigma_p');
             obj.sigma_p = sigma_p;
-            rho_sot_p = SX.sym('rho_sot_p');
+            rho_sot_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_sot_p');
             obj.rho_sot_p = rho_sot_p;
-            rho_h_p = SX.sym('rho_h_p');
+            rho_h_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_h_p');
             obj.rho_h_p = rho_h_p;
-            rho_terminal_p = SX.sym('rho_terminal_p');
-            T_ctrl_p  = SX.sym('T_ctrl_p');
+            rho_terminal_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_terminal_p');
+            T_ctrl_p  = define_casadi_symbolic(settings.casadi_symbolic_mode, 'T_ctrl_p');
             obj.p = [sigma_p;rho_sot_p;rho_h_p;rho_terminal_p;T_ctrl_p];
 
             if settings.time_optimal_problem
                 % the final time in time optimal control problems
-                T_final = SX.sym('T_final', 1);
+                T_final = define_casadi_symbolic(settings.casadi_symbolic_mode, 'T_final', 1);
                 obj.T_final = T_final;
                 T_final_guess = model.T;
             end
@@ -215,7 +215,7 @@ classdef NosnocProblem < NosnocFormulationObject
                         obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub);
                     end
                   case 1 % l_1
-                    s_terminal_ell_1 = SX.sym('s_terminal_ell_1', n_terminal);
+                    s_terminal_ell_1 = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
                     obj.addVariable(s_terminal_ell_1,...
                                     's_terminal',...
                                     1e3*ones(n_terminal,1),...
@@ -233,7 +233,7 @@ classdef NosnocProblem < NosnocFormulationObject
                   case 2 % l_2
                     obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-g_terminal_lb);
                   case 3 % l_inf
-                    s_terminal_ell_inf = SX.sym('s_terminal_ell_inf', 1);
+                    s_terminal_ell_inf = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
                     obj.addVariable(s_terminal_ell_inf,...
                                     's_terminal',...
                                     1e3,...
@@ -358,7 +358,7 @@ classdef NosnocProblem < NosnocFormulationObject
             s_sot = [];
             if obj.settings.time_rescaling && obj.settings.use_speed_of_time_variables
                 if ~obj.settings.local_speed_of_time_variable
-                    s_sot = SX.sym('s_sot', 1);
+                    s_sot = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_sot', 1);
                     obj.addVariable(s_sot,...
                                     'sot',...
                                     obj.settings.s_sot_min,...
@@ -371,7 +371,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
 
             if ismember(obj.settings.mpcc_mode, MpccMode.elastic)
-                s_elastic = SX.sym('s_elastic',1);
+                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_elastic',1);
                 obj.s_elastic = s_elastic;
                 obj.addVariable(s_elastic, 'elastic', obj.settings.s_elastic_min, obj.settings.s_elastic_max, obj.settings.s_elastic_0);
             else
@@ -429,7 +429,7 @@ classdef NosnocProblem < NosnocFormulationObject
             
             %
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                s_elastic = SX.sym(['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
+                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
                 obj.addVariable(s_elastic,...
                                 'elastic',...
                                 settings.s_elastic_min*ones(n_comp,1),...

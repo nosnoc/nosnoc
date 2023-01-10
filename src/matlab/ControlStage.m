@@ -42,14 +42,14 @@ classdef ControlStage < NosnocFormulationObject
 
             obj.ctrl_idx = ctrl_idx;
             
-            obj.Uk = SX.sym(['U_' num2str(ctrl_idx)], obj.dims.n_u);
+            obj.Uk = define_casadi_symbolic(settings.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
             obj.addVariable(obj.Uk, 'u', obj.model.lbu, obj.model.ubu,...
                             zeros(obj.dims.n_u,1));
 
             if settings.time_rescaling && settings.use_speed_of_time_variables
                 if settings.local_speed_of_time_variable
                     % at every stage
-                    s_sot = SX.sym(['s_sot_' num2str(ctrl_idx)], 1);
+                    s_sot = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_sot_' num2str(ctrl_idx)], 1);
                     obj.addVariable(s_sot,...
                                     'sot',...
                                     settings.s_sot_min,...
@@ -191,7 +191,7 @@ classdef ControlStage < NosnocFormulationObject
             
             %
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                s_elastic = SX.sym(['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
+                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
                 obj.addVariable(s_elastic,...
                                 'elastic',...
                                 settings.s_elastic_min*ones(n_comp,1),...
