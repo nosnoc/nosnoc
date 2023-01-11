@@ -81,8 +81,8 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_alpha = cell(dims.n_s+rbp_allowance, dims.n_sys);
             obj.ind_lambda_n = cell(dims.n_s+rbp_allowance, dims.n_sys);
             obj.ind_lambda_p = cell(dims.n_s+rbp_allowance, dims.n_sys);
-            obj.ind_gamma = cell(dims.n_s, 1);
-            obj.ind_beta = cell(dims.n_s, 1);
+            obj.ind_gamma = cell(dims.n_s+rbp_allowance, 1);
+            obj.ind_beta = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_h = [];
             obj.ind_elastic = [];
             obj.ind_boundary = [];
