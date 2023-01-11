@@ -11,6 +11,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_alpha
         ind_lambda_n
         ind_lambda_p
+        ind_nu_lift
         ind_h
         ind_elastic
         ind_sot % index for speed of time variable
@@ -80,6 +81,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_alpha = {};
             obj.ind_lambda_n = {};
             obj.ind_lambda_p = {};
+            obj.ind_nu_lift = {};
             obj.ind_h = {};
             obj.ind_sot = {};
 
@@ -532,7 +534,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_alpha = [obj.ind_alpha, increment_indices(stage.ind_alpha, w_len)];
             obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(stage.ind_lambda_n, w_len)];
             obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(stage.ind_lambda_p, w_len)];
-            %obj.ind_nu_lift = [obj.ind_x, increment_indices(stage.ind_nu_lift, w_len)];
+            obj.ind_nu_lift = [obj.ind_x, increment_indices(stage.ind_nu_lift, w_len)];
 
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
         end
