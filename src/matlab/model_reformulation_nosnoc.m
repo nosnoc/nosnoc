@@ -984,6 +984,12 @@ if terminal_constraint
     model.g_terminal_fun = g_terminal_fun;
 end
 
+if exist('g_lift_gamma_fun')
+    model.g_lift_gamma_fun = g_lift_gamma_fun;
+end
+if exist('g_lift_beta_fun')
+    model.g_lift_beta_fun = g_lift_beta_fun;
+end
 
 % CasADi Expressions
 model.f_x = f_x;
