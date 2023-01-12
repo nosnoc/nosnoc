@@ -158,7 +158,7 @@ classdef ControlStage < NosnocFormulationObject
 
             % path constraints handled at fe level not here
             
-            g_cross_comp = SX([]);
+            g_cross_comp = [];
             % TODO Implement other modes
             if ~settings.use_fesd || settings.cross_comp_mode < 9 || settings.cross_comp_mode > 10
                 % Do nothing, handled at the FE level

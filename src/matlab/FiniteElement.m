@@ -425,7 +425,7 @@ classdef FiniteElement < NosnocFormulationObject
                     nu_vector = nu_vector * eta_k(jjj);
                 end
             else
-                nu_vector = SX([]);
+                nu_vector = [];
             end
         end
         
@@ -578,7 +578,7 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
-            g_path_comp = SX([]);
+            g_path_comp = [];
             % path complementarities
             % TODO: do this cleaner
             for j=1:dims.n_s-settings.right_boundary_point_explicit
@@ -592,7 +592,7 @@ classdef FiniteElement < NosnocFormulationObject
                 g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{end}, obj.u));
             end
 
-            g_cross_comp = SX([]);
+            g_cross_comp = [];
             % TODO Implement other modes
             if ~settings.use_fesd
                 % TODO vectorize?

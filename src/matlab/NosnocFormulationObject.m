@@ -19,18 +19,18 @@ classdef NosnocFormulationObject < handle
             import casadi.*
 
             % Primal variables.
-            obj.w = SX([]); % TODO use create_casadi_symbolic
+            obj.w = [];
             obj.w0 = [];
             obj.lbw = [];
             obj.ubw = [];
 
             % Constraints
-            obj.g = SX([]);
+            obj.g = [];
             obj.lbg = [];
             obj.ubg = [];
 
             % Cost
-            obj.cost = SX.zeros(1);
+            obj.cost = 1;
         end
 
         function [] = addVariable(obj, symbolic, type, lb, ub, initial, varargin)
