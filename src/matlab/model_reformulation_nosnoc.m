@@ -872,15 +872,14 @@ for ii = 1:n_sys
     end
 end
 
-
 %% Lifting of forces in time-freezing
 % the r.h.s of M(q)ddot{q} = f(q,dor{q},u) into  M{q}z-f(q,dor{q},u)= 0; \ddot{q} = z
 g_lift_forces = [];
 if time_freezing && time_freezing_lift_forces
     f_v = f_x(n_q+1:2*n_q);
     if n_u > 0
-            f_v_fun = Function('f_v_fun',{x,z,u},{f_v});
-            z0_forces = full(f_v_fun(x0,z0,u0));
+        f_v_fun = Function('f_v_fun',{x,z,u},{f_v});
+        z0_forces = full(f_v_fun(x0,z0,u0));
     else
         f_v_fun = Function('f_v_fun',{x,z},{f_v});
         z0_forces = full(f_v_fun(x0,z0));

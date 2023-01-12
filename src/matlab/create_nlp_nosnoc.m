@@ -145,7 +145,7 @@ model.structured_ind.lam = problem.ind_lam;
 model.structured_ind.mu = problem.ind_mu;
 model.structured_ind.lambda_n = problem.ind_lambda_n;
 model.structured_ind.lambda_p = problem.ind_lambda_p;
-model.structured_ind.lambda_alpha = problem.ind_alpha;
+model.structured_ind.alpha = problem.ind_alpha;
 
 
 %% Store solver initialization data

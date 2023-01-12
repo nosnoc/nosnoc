@@ -90,9 +90,12 @@ classdef ControlStage < NosnocFormulationObject
             obj.createComplementarityConstraints(sigma_p, s_elastic);
 
             % least squares cost
+            model.x_ref_val
             obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx));
             if dims.n_u > 0
-                obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,ii));
+                model.u_ref_val
+                dims.n_u
+                obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx));
             end
             
             % TODO: combine this into a function
@@ -132,6 +135,8 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_alpha = [obj.ind_alpha, increment_indices(fe.ind_alpha, w_len)];
             obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(fe.ind_lambda_n, w_len)];
             obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(fe.ind_lambda_p, w_len)];
+            obj.ind_beta = [obj.ind_beta, increment_indices(fe.ind_beta, w_len)];
+            obj.ind_gamma = [obj.ind_gamma, increment_indices(fe.ind_gamma, w_len)];
             obj.ind_nu_lift = [obj.ind_x, fe.ind_nu_lift+w_len];
         end
 

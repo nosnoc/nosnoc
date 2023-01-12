@@ -11,6 +11,8 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_alpha
         ind_lambda_n
         ind_lambda_p
+        ind_gamma
+        ind_beta
         ind_nu_lift
         ind_h
         ind_elastic
@@ -534,6 +536,8 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_alpha = [obj.ind_alpha, increment_indices(stage.ind_alpha, w_len)];
             obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(stage.ind_lambda_n, w_len)];
             obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(stage.ind_lambda_p, w_len)];
+            obj.ind_beta = [obj.ind_beta, increment_indices(stage.ind_beta, w_len)];
+            obj.ind_gamma = [obj.ind_gamma, increment_indices(stage.ind_gamma, w_len)];
             obj.ind_nu_lift = [obj.ind_x, increment_indices(stage.ind_nu_lift, w_len)];
 
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
@@ -579,7 +583,9 @@ classdef NosnocProblem < NosnocFormulationObject
                      flatten_ind(obj.ind_mu(1:obj.dims.n_s,:))
                      flatten_ind(obj.ind_alpha(1:obj.dims.n_s,:))
                      flatten_ind(obj.ind_lambda_n(1:obj.dims.n_s,:))
-                     flatten_ind(obj.ind_lambda_p(1:obj.dims.n_s,:))];
+                     flatten_ind(obj.ind_lambda_p(1:obj.dims.n_s,:))
+                     flatten_ind(obj.ind_beta(1:obj.dims.n_s,:))
+                     flatten_ind(obj.ind_gamma(1:obj.dims.n_s,:))];
             ind_z = sort(ind_z);
         end
         
