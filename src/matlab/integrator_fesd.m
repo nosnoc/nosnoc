@@ -138,6 +138,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
     [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
+    res = extract_results_from_solver(model, settings, sol);
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
     if stats.complementarity_stats(end) > 1e-3
@@ -164,12 +165,12 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
     % only bounadry value
     if isequal(irk_representation,'integral')
-        x_opt  = x_opt_extended(:,1:n_s+1:end);
+        x_opt  = res.x_opt(:,2:end);
     elseif isequal(irk_representation, 'differential_lift_x')
-        x_opt = x_opt_extended(:, 1:n_s+1:end);
+        x_opt = res.x_opt(:, 2:end);
     else
         % ??
-        x_opt  = x_opt_extended(:,1:n_s:end);
+        x_opt  = res.x_opt(:,2:end);
     end
 
 
@@ -226,6 +227,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     %sot
     s_sot_res  = [s_sot_res,w_opt(ind_sot)];
     %differntial.
+    x_opt(:,end-N_finite_elements(1)*N_stages+1:end);
     x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 
