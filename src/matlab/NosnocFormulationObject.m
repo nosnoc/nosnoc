@@ -30,7 +30,7 @@ classdef NosnocFormulationObject < handle
             obj.ubg = [];
 
             % Cost
-            obj.cost = 1;
+            obj.cost = 0;
         end
 
         function [] = addVariable(obj, symbolic, type, lb, ub, initial, varargin)
