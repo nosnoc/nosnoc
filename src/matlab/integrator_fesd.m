@@ -169,9 +169,8 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     if isequal(irk_representation,'integral')
         x_opt  = res.x_opt(:,2:end);
     elseif isequal(irk_representation, 'differential_lift_x')
-        x_opt = res.x_opt(:, 2:end);
+        x_opt  = res.x_opt(:,2:end);
     else
-        % ??
         x_opt  = res.x_opt(:,2:end);
     end
 
@@ -207,7 +206,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
     % update initial guess and inital value
-    x0 = x_opt(:,end)
+    x0 = x_opt(:,end);
     %     update clock state
     if impose_terminal_phyisical_time
         model.p_val(end) = model.p_val(end)+model.T;
@@ -229,7 +228,6 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     %sot
     s_sot_res  = [s_sot_res,w_opt(ind_sot)];
     %differntial.
-    x_opt(:,end-N_finite_elements(1)*N_stages+1:end);
     x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 

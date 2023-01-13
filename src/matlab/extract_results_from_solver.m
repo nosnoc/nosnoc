@@ -31,7 +31,8 @@ end
 
 x_opt_extended = w_opt(ind_x);
 x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
-x_opt  = x_opt_extended(:,1:n_s:end);
+x_opt_s = [cellfun(@(x) w_opt(x), structured_ind.x, 'uni', 0)];
+x_opt  = [x_opt_extended(:,1), x_opt_s{end,:}];
 
 
 switch pss_mode
@@ -80,7 +81,6 @@ end
 ind_t_grid_u = cumsum([1; N_finite_elements]);
 
 %% Get structured output (These do not contain x0)
-x_opt_s = cellfun(@(x) w_opt(x), structured_ind.x, 'uni', 0);
 switch pss_mode
   case 'Stewart'
     theta_opt_s = cellfun(@(theta) w_opt(theta), structured_ind.theta(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
