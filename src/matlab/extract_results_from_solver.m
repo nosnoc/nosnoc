@@ -1,7 +1,9 @@
 function results = extract_results_from_solver(model,settings,results)
 import casadi.*
+settings_bkp = settings;    
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
+settings = settings_bkp;
 % Store differential states
 w_opt = full(results.x);
 diff_states = w_opt(ind_x);
@@ -81,11 +83,11 @@ ind_t_grid_u = cumsum([1; N_finite_elements]);
 x_opt_s = cellfun(@(x) w_opt(x), structured_ind.x, 'uni', 0);
 switch pss_mode
   case 'Stewart'
-    theta_opt_s = cellfun(@(theta) w_opt(theta), structured_ind.theta, 'uni', 0);
+    theta_opt_s = cellfun(@(theta) w_opt(theta), structured_ind.theta(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
     lambda_opt_s = cellfun(@(lam) w_opt(lam), structured_ind.lam, 'uni', 0);
     mu_opt_s = cellfun(@(mu) w_opt(mu), structured_ind.mu, 'uni', 0);
   case 'Step'
-    alpha_opt_s = cellfun(@(alpha) w_opt(alpha), structured_ind.alpha, 'uni', 0);
+    alpha_opt_s = cellfun(@(alpha) w_opt(alpha), structured_ind.alpha(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
     lambda_n_opt_s = cellfun(@(lam) w_opt(lam), structured_ind.lambda_n, 'uni', 0);
     lambda_p_opt_s = cellfun(@(lam) w_opt(lam), structured_ind.lambda_p, 'uni', 0);
 end

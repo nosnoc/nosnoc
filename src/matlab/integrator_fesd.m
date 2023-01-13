@@ -81,10 +81,12 @@ if ~solver_exists
         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
     end
 end
-
+% TODO remove this but needed now because unfold_struct clobers fields for some reason
+settings_bkp = settings;
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 unfold_struct(solver_initialization,'caller')
+settings = settings_bkp;
 
 %% chekc does the provided u_sim has correct dimensions
 if exist('u_sim','var')
