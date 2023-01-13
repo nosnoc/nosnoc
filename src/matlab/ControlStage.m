@@ -90,11 +90,8 @@ classdef ControlStage < NosnocFormulationObject
             obj.createComplementarityConstraints(sigma_p, s_elastic);
 
             % least squares cost
-            model.x_ref_val
             obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx));
             if dims.n_u > 0
-                model.u_ref_val
-                dims.n_u
                 obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx));
             end
             
