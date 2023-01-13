@@ -87,7 +87,7 @@ if print_level >= 3
     fprintf('\niter\tsigma\t\tcompl_res\tCPU time\tNLP iters\tstatus\n')
 end
 
-while (complementarity_iter) > comp_tol && ii < N_homotopy && sigma_k > sigma_N
+while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N || ii == 0)
     % homotopy parameter update
     if ii == 0
         sigma_k = sigma_0;
