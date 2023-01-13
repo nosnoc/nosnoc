@@ -102,7 +102,7 @@ classdef FiniteElementZero < NosnocFormulationObject
             import casadi.*
             grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
 
-            lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_p, obj.ind_lambda_n, 'UniformOutput', false);
+            lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
         end
 
         function x = get.x(obj)

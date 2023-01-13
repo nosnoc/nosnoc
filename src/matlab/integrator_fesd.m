@@ -207,7 +207,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
     % update initial guess and inital value
-    x0 = x_opt(:,end);
+    x0 = x_opt(:,end)
     %     update clock state
     if impose_terminal_phyisical_time
         model.p_val(end) = model.p_val(end)+model.T;
