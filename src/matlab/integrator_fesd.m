@@ -212,8 +212,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
         model.p_val(end) = model.p_val(end)+model.T;
 
     end
-    solver_initialization.lbw(1:n_x) = x0;
-    solver_initialization.ubw(1:n_x) = x0;
+    solver_initialization.w0(1:n_x) = x0;
 
     if use_previous_solution_as_initial_guess
         solver_initialization.w0 = w_opt;

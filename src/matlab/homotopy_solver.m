@@ -49,7 +49,7 @@ nabla_J_fun = model.nabla_J_fun;
 s_elastic_iter = 1;
 
 sigma_k = sigma_0;
-x0 = solver_initialization.lbw(1:model.dimensions.n_x);
+x0 = solver_initialization.w0(1:model.dimensions.n_x);
 
 % lambda00 initialization
 if strcmp(settings.pss_mode, 'Stewart')
@@ -59,7 +59,7 @@ elseif strcmp(settings.pss_mode, 'Step')
 %     lambda00 = [ max(c_x, 0); min(c_x, 0)];
     lambda00 = full(model.lambda00_fun(x0));
 end
-p_val = [model.p_val(:); lambda00(:)];
+p_val = [model.p_val(:);x0(:); lambda00(:)];
 
 % TODO remove try!
 try

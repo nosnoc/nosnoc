@@ -6,6 +6,8 @@ classdef FiniteElementZero < NosnocFormulationObject
         ind_lambda_n
         ind_lambda_p
 
+        x0
+
         ctrl_idx
         fe_idx
 
@@ -36,31 +38,37 @@ classdef FiniteElementZero < NosnocFormulationObject
             obj.ind_lambda_n = cell(1,dims.n_sys);
             obj.ind_lambda_p = cell(1,dims.n_sys);
 
-            % X0
-            if settings.there_exist_free_x0
-                x0_lb = model.x0;
-                x0_ub = model.x0;
-                x0_ub(model.ind_free_x0) = inf;
-                x0_lb(model.ind_free_x0) = -inf;
+            X0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'X0', dims.n_x); % variable
+            obj.x0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'x0', dims.n_x); % Param
 
+            if settings.there_exist_free_x0
+                for i=1:dims.n_x
+                    if ~ismember(i, model.ind_free_x0)
+                        obj.addConstraint(X0(i) - obj.x0(i),0,0);
+                    end
+                end
+                x0_ub = inf*ones(dims.n_x,1);
+                x0_lb = -inf*ones(dims.n_x,1);
                 x0_ub(model.ind_free_x0) = ubx(model.ind_free_x0);
                 x0_lb(model.ind_free_x0) = lbx(model.ind_free_x0);
 
-                x0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'X0', dims.n_x);
-                obj.addVariable(x0,...
-                                'x',...
-                                x0_lb,...
-                                x0_ub,...
-                                model.x0,...
-                                1);
+                obj.addVariable(X0,...
+                            'x',...
+                            x0_lb,...
+                            x0_ub,...
+                            model.x0,...
+                            1);
+                
             else
-                x0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'X0', dims.n_x);
-                obj.addVariable(x0,...
-                                'x',...
-                                model.x0,...
-                                model.x0,...
-                                model.x0,...
-                                1);
+                for i=1:dims.n_x
+                    obj.addConstraint(X0(i) - obj.x0(i),0,0);
+                end
+                obj.addVariable(X0,...
+                            'x',...
+                            -inf*ones(dims.n_x, 1),...
+                            inf*ones(dims.n_x, 1),...
+                            model.x0,...
+                            1);
             end
 
             % lambda00

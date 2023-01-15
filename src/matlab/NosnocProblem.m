@@ -20,6 +20,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_boundary % index of bundary value lambda and mu
         ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
 
+        ind_p_x0
         ind_p_global
         ind_p_time_var
 
@@ -363,7 +364,6 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
 
             obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
-            obj.p0
 
             if dims.n_p_global > 0;
                 obj.p0 = [obj.p0; model.p_global_val];
@@ -379,15 +379,16 @@ classdef NosnocProblem < NosnocFormulationObject
             import casadi.*
             fe0 = FiniteElementZero(obj.settings, obj.dims, obj.model);
             obj.fe0 = fe0;
-            
-            obj.p = vertcat(obj.p, fe0.lambda{1,:});
 
-            obj.addVariable(fe0.x{1},...
+            obj.p = vertcat(obj.p, fe0.x0, fe0.lambda{1,:});
+
+            X0 = fe0.x{1};
+            obj.addVariable(X0,...
                             'x0',...
                             fe0.lbw(fe0.ind_x{1}),...
                             fe0.ubw(fe0.ind_x{1}),...
                             fe0.w0(fe0.ind_x{1}));
-
+            obj.addConstraint(fe0.g, fe0.lbg, fe0.ubg);
             prev_fe = fe0;
 
             s_sot = [];

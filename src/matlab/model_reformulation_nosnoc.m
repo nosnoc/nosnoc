@@ -156,7 +156,7 @@ if exist('u')
         u0 = 0*ones(n_u,1);
     end
 else
-    u = SX([]);
+    u = define_casadi_symbolic(casadi_symbolic_mode,'',0);
     u0 = [];
     n_u = 0;
     if print_level >=1
