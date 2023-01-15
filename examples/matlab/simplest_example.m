@@ -20,4 +20,6 @@ model.T = pi/4;
 model.N_stages = 1;
 model.N_finite_elements = 2;
 
+model.p_time_var = SX.sym('t_var',1)
+
 [results,stats,model,settings] = nosnoc_solver(model,settings);

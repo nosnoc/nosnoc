@@ -110,13 +110,14 @@ classdef NosnocProblem < NosnocFormulationObject
             % Populate parameter indices
             if dims.n_p_global > 0
                 n_p = length(obj.p);
-                ind_p_global = n_p+1:n_p+dims.n_p_global;
+                obj.ind_p_global = n_p+1:n_p+dims.n_p_global;
                 obj.p = [obj.p; model.p_global];
             end
             if dims.n_p_time_var > 0;
                 n_p = length(obj.p);
-                ind_p_time_var = arrayfun(@(s) (n_p+(s*dims.n_p_time_var)+1):(n_p+(s*dims.n_p_time_var)+dims.n_p_time_var) , 0:dims.N_stages-1);
-                obj.p = [obj.p; model.p_time_var];
+                obj.ind_p_time_var = arrayfun(@(s) (n_p+(s*dims.n_p_time_var)+1):(n_p+(s*dims.n_p_time_var)+dims.n_p_time_var) , 0:dims.N_stages-1);
+                p_time_var = define_casadi_symbolic(settings.casadi_symbolic_mode, 'p_time_var', [dims.n_p_time_var, dims.N_stages]);
+                obj.p = [obj.p; p_time_var];
             end
 
             if settings.time_optimal_problem
@@ -370,7 +371,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
             
             if dims.n_p_time_var > 0;
-                obj.p0 = [obj.p0; model.time_var_val];
+                obj.p0 = [obj.p0; model.p_time_var_val];
             end
         end
 
@@ -415,7 +416,9 @@ classdef NosnocProblem < NosnocFormulationObject
             end
                 
             for ii=1:obj.dims.N_stages
-                stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.sigma_p, obj.rho_h_p, obj.rho_sot_p, s_elastic);
+                % TODO: maybe this should be a function
+                p_stage = vertcat(obj.p(obj.ind_p_global), obj.p(obj.ind_p_time_var(:,ii)));
+                stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, p_stage, s_sot, obj.T_final, obj.sigma_p, obj.rho_h_p, obj.rho_sot_p, s_elastic);
                 obj.stages = [obj.stages, stage];
 
                 obj.addControlStage(stage);

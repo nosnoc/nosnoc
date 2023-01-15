@@ -22,6 +22,8 @@ classdef ControlStage < NosnocFormulationObject
         ind_sot
 
         ctrl_idx
+
+        p_stage
         
         model
         settings
@@ -32,7 +34,7 @@ classdef ControlStage < NosnocFormulationObject
     methods
         % TODO: This probably should take less arguments somehow. Maybe a store of "global_variables" to be
         % added along with v_global.
-        function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, s_sot, T_final, sigma_p, rho_h_p, rho_sot_p, s_elastic)
+        function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, p_stage, s_sot, T_final, sigma_p, rho_h_p, rho_sot_p, s_elastic)
             import casadi.*
             obj@NosnocFormulationObject();
             
@@ -41,6 +43,8 @@ classdef ControlStage < NosnocFormulationObject
             obj.dims = dims;
 
             obj.ctrl_idx = ctrl_idx;
+
+            obj.p_stage = p_stage;
             
             obj.Uk = define_casadi_symbolic(settings.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
             obj.addVariable(obj.Uk, 'u', obj.model.lbu, obj.model.ubu,...

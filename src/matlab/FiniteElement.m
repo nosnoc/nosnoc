@@ -50,7 +50,7 @@ classdef FiniteElement < NosnocFormulationObject
     end
 
     methods
-        function obj = FiniteElement(prev_fe, settings, model,  dims, ctrl_idx, fe_idx, varargin)
+        function obj = FiniteElement(prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin)
             import casadi.*
             obj@NosnocFormulationObject();
 
@@ -489,7 +489,7 @@ classdef FiniteElement < NosnocFormulationObject
             z = obj.w(idx);
         end
 
-        function forwardSimulation(obj, ocp, Uk, s_sot)
+        function forwardSimulation(obj, ocp, Uk, p_stage, s_sot)
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
@@ -524,10 +524,10 @@ classdef FiniteElement < NosnocFormulationObject
 
             for j = 1:dims.n_s
                 % Multiply by s_sot_k which is 1 if not using speed of time variable
-                [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk);
+                [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
                 fj = s_sot*fj;
                 qj = s_sot*qj;
-                gj = s_sot*model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk);
+                gj = s_sot*model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
                 
                 obj.addConstraint(gj);
                 if settings.irk_representation == IrkRepresentation.integral
@@ -572,7 +572,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
         end
 
-        function createComplementarityConstraints(obj, sigma_p, s_elastic)
+        function createComplementarityConstraints(obj, sigma_p, p_stage, s_elastic)
             import casadi.*           
             model = obj.model;
             settings = obj.settings;

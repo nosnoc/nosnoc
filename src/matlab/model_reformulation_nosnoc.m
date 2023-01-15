@@ -376,6 +376,7 @@ if exist('p_global')
     end
 else
     n_p_global = 0;
+    p_global = define_casadi_symbolic(casadi_symbolic_mode,'',0);
     if print_level >= 1
         fprintf('Info: No global parameters given. \n')
     end
@@ -388,14 +389,17 @@ if exist('p_time_var')
             error('User provided p_global_val has the wrong size.')
         end
     else
-        p_global_val = zeros(n_p_global, N_stages);
+        p_time_var_val = zeros(n_p_time_var, N_stages);
     end
 else
     n_p_time_var = 0;
+    p_time_var = define_casadi_symbolic(casadi_symbolic_mode,'',0);
     if print_level >= 1
         fprintf('Info: No time varying parameters given. \n')
     end
 end
+
+p = vertcat(p_global,p_time_var);
 
 %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
 pss_mode = settings.pss_mode;
@@ -906,34 +910,29 @@ n_algebraic_constraints = length(g_z_all);
 %     g_Stewart_fun = Function('g_Stewart_fun',{x,u},{g_ind_vec});
 %     c_fun = Function('c_fun',{x,u},{c_all});
 % else
-g_Stewart_fun = Function('g_Stewart_fun',{x},{g_ind_vec});
-c_fun = Function('c_fun',{x},{c_all});
+g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
+c_fun = Function('c_fun',{x,p},{c_all});
 
 % end
 dot_c = c_all.jacobian(x)*f_x;
-if n_u >0
-    f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
-    g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    
-    g_switching_fun = Function('g_switching_fun', {x,z_switching,u}, {g_switching}); 
-    dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
-else
-    f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
-    g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    g_switching_fun = Function('g_switching_fun', {x,z_switching,u}, {g_switching}); 
-    dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
-end
-model.lambda00_fun = Function('lambda00_fun',{x},{lambda00_expr});
 
-J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
-f_q_T_fun = Function('f_q_T',{x},{f_q_T});
+f_x_fun = Function('f_x_fun',{x,z,u,p},{f_x,f_q});
+g_z_all_fun = Function('g_z_all_fun',{x,z,u,p},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+
+g_switching_fun = Function('g_switching_fun', {x,z_switching,u,p}, {g_switching}); 
+dot_c_fun = Function('c_fun',{x,z,u,p},{dot_c}); % total time derivative of switching functions
+
+model.lambda00_fun = Function('lambda00_fun',{x,p},{lambda00_expr});
+
+J_cc_fun = Function('J_cc_fun',{z,p},{f_comp_residual});
+f_q_T_fun = Function('f_q_T',{x,p},{f_q_T});
 
 %%  CasADi functions for lest-square objective function terms
-f_lsq_x_fun = Function('f_lsq_x_fun',{x,x_ref},{f_lsq_x});
+f_lsq_x_fun = Function('f_lsq_x_fun',{x,x_ref,p},{f_lsq_x});
 if n_u > 0
-    f_lsq_u_fun = Function('f_lsq_u_fun',{u,u_ref},{f_lsq_u});
+    f_lsq_u_fun = Function('f_lsq_u_fun',{u,u_ref,p},{f_lsq_u});
 end
-f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end},{f_lsq_T});
+f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end,p},{f_lsq_T});
 
 %% Initial guess for state derivatives at stage points
 if isequal(irk_representation,'differential')
