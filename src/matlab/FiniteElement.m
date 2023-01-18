@@ -489,7 +489,7 @@ classdef FiniteElement < NosnocFormulationObject
             z = obj.w(idx);
         end
 
-        function forwardSimulation(obj, ocp, Uk, p_stage, s_sot)
+        function forwardSimulation(obj, ocp, Uk, s_sot, p_stage)
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
@@ -572,7 +572,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
         end
 
-        function createComplementarityConstraints(obj, sigma_p, p_stage, s_elastic)
+        function createComplementarityConstraints(obj, sigma_p, s_elastic, p_stage)
             import casadi.*           
             model = obj.model;
             settings = obj.settings;

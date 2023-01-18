@@ -165,6 +165,52 @@ else
     lbu = [];
     ubu = [];
 end
+%% Parameters
+if exist('p_global')
+    n_p_global = length(p_global);
+    if exist('p_global_val')
+        if length(p_global_val) ~= n_p_global
+            error('User provided p_global_val has the wrong size.')
+        end
+    else
+        p_global_val = zeros(n_p_global,1);
+    end
+else
+    n_p_global = 0;
+    p_global = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+    p_global_val = [];
+    if print_level >= 1
+        fprintf('Info: No global parameters given. \n')
+    end
+end
+
+if exist('p_time_var')
+    n_p_time_var = size(p_time_var, 1);
+    if exist('p_time_var_val')
+        if size(p_time_var_val) ~= [n_p_time_var, N_stages]
+            error('User provided p_global_val has the wrong size.')
+        end
+    else
+        p_time_var_val = zeros(n_p_time_var, N_stages);
+    end
+
+    p_time_var_stages = [];
+    for ii=1:N_stages
+        var_full = define_casadi_symbolic(casadi_symbolic_mode, ['p_time_var_' num2str(ii)], n_p_time_var);
+        p_time_var_stages = horzcat(p_time_var_stages, var_full);
+    end
+    p_time_var
+else
+    n_p_time_var = 0;
+    p_time_var = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+    p_time_var_stages = define_casadi_symbolic(casadi_symbolic_mode,'', [0,N_stage]);
+    p_time_var_val = [];
+    if print_level >= 1
+        fprintf('Info: No time varying parameters given. \n')
+    end
+end
+
+p = vertcat(p_global,p_time_var);
 
 %% Stage and terminal costs check
 if ~exist('f_q')
@@ -364,42 +410,6 @@ else
         fprintf('Info: No terminal constraints are provided. \n')
     end
 end
-%% Parameters
-if exist('p_global')
-    n_p_global = length(p_global);
-    if exist('p_global_val')
-        if length(p_global_val) ~= n_p_global
-            error('User provided p_global_val has the wrong size.')
-        end
-    else
-        p_global_val = zeros(n_p_global,1);
-    end
-else
-    n_p_global = 0;
-    p_global = define_casadi_symbolic(casadi_symbolic_mode,'',0);
-    if print_level >= 1
-        fprintf('Info: No global parameters given. \n')
-    end
-end
-
-if exist('p_time_var')
-    n_p_time_var = size(p_time_var, 1);
-    if exist('p_time_var_val')
-        if size(p_time_var_val) ~= [n_p_time_var, N_stages]
-            error('User provided p_global_val has the wrong size.')
-        end
-    else
-        p_time_var_val = zeros(n_p_time_var, N_stages);
-    end
-else
-    n_p_time_var = 0;
-    p_time_var = define_casadi_symbolic(casadi_symbolic_mode,'',0);
-    if print_level >= 1
-        fprintf('Info: No time varying parameters given. \n')
-    end
-end
-
-p = vertcat(p_global,p_time_var);
 
 %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
 pss_mode = settings.pss_mode;
@@ -916,15 +926,15 @@ c_fun = Function('c_fun',{x,p},{c_all});
 % end
 dot_c = c_all.jacobian(x)*f_x;
 
-f_x_fun = Function('f_x_fun',{x,z,u,p},{f_x,f_q});
-g_z_all_fun = Function('g_z_all_fun',{x,z,u,p},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+f_x_fun = Function('f_x_fun',{x,z,u,p},{f_x,f_q,p});
+g_z_all_fun = Function('g_z_all_fun',{x,z,u,p},{g_z_all,p}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
 
 g_switching_fun = Function('g_switching_fun', {x,z_switching,u,p}, {g_switching}); 
 dot_c_fun = Function('c_fun',{x,z,u,p},{dot_c}); % total time derivative of switching functions
 
-model.lambda00_fun = Function('lambda00_fun',{x,p},{lambda00_expr});
+model.lambda00_fun = Function('lambda00_fun',{x,p_global},{lambda00_expr});
 
-J_cc_fun = Function('J_cc_fun',{z,p},{f_comp_residual});
+J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
 f_q_T_fun = Function('f_q_T',{x,p},{f_q_T});
 
 %%  CasADi functions for lest-square objective function terms
@@ -932,7 +942,7 @@ f_lsq_x_fun = Function('f_lsq_x_fun',{x,x_ref,p},{f_lsq_x});
 if n_u > 0
     f_lsq_u_fun = Function('f_lsq_u_fun',{u,u_ref,p},{f_lsq_u});
 end
-f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end,p},{f_lsq_T});
+f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end,p_global},{f_lsq_T});
 
 %% Initial guess for state derivatives at stage points
 if isequal(irk_representation,'differential')
@@ -1040,18 +1050,16 @@ model.f_lsq_T_fun = f_lsq_T_fun;
 model.x_ref_end_val = x_ref_end_val;
 
 % global parameters
-if n_p_global > 0
-    model.p_global = p_global;
-    model.p_global_val = p_global_val;
-end
+model.p_global = p_global;
+model.p_global_val = p_global_val;
 
 % time varying parameters
 % TODO maybe make these functions and actually optimization vars. (actually this might just be algebraic vars)
-if n_p_time_var > 0
-    model.p_time_var = p_time_var;
-    model.p_time_var_val = p_time_var_val;
-end
+model.p_time_var = p_time_var;
+model.p_time_var_stages = p_time_var_stages
+model.p_time_var_val = p_time_var_val;
 
+model.p_dyn = [p_global, p_time_var_stages];
 %% collect all dimensions in one sperate struct as it is needed by several other functions later.
 dimensions.N_stages = N_stages;
 dimensions.N_finite_elements = N_finite_elements;

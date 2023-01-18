@@ -22,8 +22,6 @@ classdef ControlStage < NosnocFormulationObject
         ind_sot
 
         ctrl_idx
-
-        p_stage
         
         model
         settings
@@ -34,7 +32,7 @@ classdef ControlStage < NosnocFormulationObject
     methods
         % TODO: This probably should take less arguments somehow. Maybe a store of "global_variables" to be
         % added along with v_global.
-        function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, p_stage, s_sot, T_final, sigma_p, rho_h_p, rho_sot_p, s_elastic)
+        function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, s_sot, T_final, sigma_p, rho_h_p, rho_sot_p, s_elastic)
             import casadi.*
             obj@NosnocFormulationObject();
             
@@ -43,13 +41,12 @@ classdef ControlStage < NosnocFormulationObject
             obj.dims = dims;
 
             obj.ctrl_idx = ctrl_idx;
-
-            obj.p_stage = p_stage;
             
             obj.Uk = define_casadi_symbolic(settings.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
             obj.addVariable(obj.Uk, 'u', obj.model.lbu, obj.model.ubu,...
                             zeros(obj.dims.n_u,1));
 
+            p_stage = vertcat(model.p_global, model.p_time_var_stages(ctrl_idx,:))
             if settings.time_rescaling && settings.use_speed_of_time_variables
                 if settings.local_speed_of_time_variable
                     % at every stage
@@ -72,7 +69,7 @@ classdef ControlStage < NosnocFormulationObject
                 fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii, T_final);
                 % TODO: OCP
                 % 1) Runge-Kutta discretization
-                fe.forwardSimulation(obj.ocp, obj.Uk, s_sot);
+                fe.forwardSimulation(obj.ocp, obj.Uk, s_sot, p_stage);
 
                 % 2) Complementarity Constraints
                 fe.createComplementarityConstraints(sigma_p, s_elastic);
@@ -84,7 +81,10 @@ classdef ControlStage < NosnocFormulationObject
                 obj.addFiniteElement(fe);
                 
                 % 5) add cost and constraints from FE to problem
+                fe.cost
+                obj.cost + fe.cost
                 obj.cost = obj.cost + fe.cost;
+                
                 obj.addConstraint(fe.g, fe.lbg, fe.ubg);
                 
                 obj.stage = [obj.stage, fe];
@@ -93,10 +93,12 @@ classdef ControlStage < NosnocFormulationObject
 
             obj.createComplementarityConstraints(sigma_p, s_elastic);
 
+            obj.cost
+
             % least squares cost
-            obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx));
+            obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             if dims.n_u > 0
-                obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx));
+                obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
             end
             
             % TODO: combine this into a function

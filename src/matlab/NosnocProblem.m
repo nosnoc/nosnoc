@@ -116,10 +116,8 @@ classdef NosnocProblem < NosnocFormulationObject
             if dims.n_p_time_var > 0;
                 n_p = length(obj.p);
                 obj.ind_p_time_var = arrayfun(@(s) (n_p+(s*dims.n_p_time_var)+1):(n_p+(s*dims.n_p_time_var)+dims.n_p_time_var) , 0:dims.N_stages-1);
-                p_time_var = define_casadi_symbolic(settings.casadi_symbolic_mode, 'p_time_var', [dims.n_p_time_var, dims.N_stages]);
-                obj.p = [obj.p; p_time_var];
+                obj.p = [obj.p; model.p_time_var_stages(:)];
             end
-
             if settings.time_optimal_problem
                 % the final time in time optimal control problems
                 T_final = define_casadi_symbolic(settings.casadi_symbolic_mode, 'T_final', 1);
@@ -295,7 +293,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
 
             % terminal least squares
-            obj.cost = obj.cost + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val);
+            obj.cost = obj.cost + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
             
             % Process terminal costs
             try
@@ -417,12 +415,12 @@ classdef NosnocProblem < NosnocFormulationObject
                 
             for ii=1:obj.dims.N_stages
                 % TODO: maybe this should be a function
-                p_stage = vertcat(obj.p(obj.ind_p_global), obj.p(obj.ind_p_time_var(:,ii)));
-                stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, p_stage, s_sot, obj.T_final, obj.sigma_p, obj.rho_h_p, obj.rho_sot_p, s_elastic);
+                stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.sigma_p, obj.rho_h_p, obj.rho_sot_p, s_elastic);
                 obj.stages = [obj.stages, stage];
 
                 obj.addControlStage(stage);
                 obj.cost = obj.cost + stage.cost;
+                obj.cost
                 prev_fe = stage.stage(end);
             end
         end
