@@ -203,7 +203,7 @@ if exist('p_time_var')
 else
     n_p_time_var = 0;
     p_time_var = define_casadi_symbolic(casadi_symbolic_mode,'',0);
-    p_time_var_stages = define_casadi_symbolic(casadi_symbolic_mode,'', [0,N_stage]);
+    p_time_var_stages = define_casadi_symbolic(casadi_symbolic_mode,'', [0, N_stages]);
     p_time_var_val = [];
     if print_level >= 1
         fprintf('Info: No time varying parameters given. \n')

@@ -84,7 +84,6 @@ settings.right_boundary_point_explicit = right_boundary_point_explicit;
 %      - provide instructive names for terminal constraint relaxations
 %      - provide more instructive names for cross_comp (match python)
 problem = NosnocProblem(settings, model.dimensions, model);
-problem.print()
 %% CasADi Functions for objective complementarity residual
 w = problem.w; % vectorize all variables, TODO: again, further cleanup necessary
 g = problem.g; % vectorize all constraint functions

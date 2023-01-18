@@ -420,7 +420,6 @@ classdef NosnocProblem < NosnocFormulationObject
 
                 obj.addControlStage(stage);
                 obj.cost = obj.cost + stage.cost;
-                obj.cost
                 prev_fe = stage.stage(end);
             end
         end

@@ -46,7 +46,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.addVariable(obj.Uk, 'u', obj.model.lbu, obj.model.ubu,...
                             zeros(obj.dims.n_u,1));
 
-            p_stage = vertcat(model.p_global, model.p_time_var_stages(ctrl_idx,:))
+            p_stage = vertcat(model.p_global, model.p_time_var_stages(:, ctrl_idx))
             if settings.time_rescaling && settings.use_speed_of_time_variables
                 if settings.local_speed_of_time_variable
                     % at every stage
@@ -81,8 +81,6 @@ classdef ControlStage < NosnocFormulationObject
                 obj.addFiniteElement(fe);
                 
                 % 5) add cost and constraints from FE to problem
-                fe.cost
-                obj.cost + fe.cost
                 obj.cost = obj.cost + fe.cost;
                 
                 obj.addConstraint(fe.g, fe.lbg, fe.ubg);
