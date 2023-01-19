@@ -1,4 +1,5 @@
 function [g_out, lbg, ubg, cost] = reformulate_complementarities(g, mpcc_mode, sigma_p, s_elastic)
+% For An explanation of the reformulations see the MpccMode class. 
 % TODO mpcc_mode should be a structure with C-fun, relaxation type, etc.
 
     g_out = [];

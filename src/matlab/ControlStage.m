@@ -91,8 +91,6 @@ classdef ControlStage < NosnocFormulationObject
 
             obj.createComplementarityConstraints(sigma_p, s_elastic);
 
-            obj.cost
-
             % least squares cost
             obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             if dims.n_u > 0
@@ -127,17 +125,19 @@ classdef ControlStage < NosnocFormulationObject
 
             obj.addPrimalVector(fe.w, fe.lbw, fe.ubw, fe.w0);
 
-            obj.ind_h = [obj.ind_h, fe.ind_h+w_len];
+            flatten_sys =  @(ind) arrayfun(@(ii) [ind{ii,:}], transpose(1:size(ind,1)), 'uni', 0);
+
+            obj.ind_h = [obj.ind_h, {fe.ind_h+w_len}];
             obj.ind_x = [obj.ind_x, increment_indices(fe.ind_x, w_len)];
             obj.ind_v = [obj.ind_v, increment_indices(fe.ind_v, w_len)];
-            obj.ind_theta = [obj.ind_theta, increment_indices(fe.ind_theta, w_len)];
-            obj.ind_lam = [obj.ind_lam, increment_indices(fe.ind_lam, w_len)];
-            obj.ind_mu = [obj.ind_mu, increment_indices(fe.ind_mu, w_len)];
-            obj.ind_alpha = [obj.ind_alpha, increment_indices(fe.ind_alpha, w_len)];
-            obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(fe.ind_lambda_n, w_len)];
-            obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(fe.ind_lambda_p, w_len)];
-            obj.ind_beta = [obj.ind_beta, increment_indices(fe.ind_beta, w_len)];
-            obj.ind_gamma = [obj.ind_gamma, increment_indices(fe.ind_gamma, w_len)];
+            obj.ind_theta = [obj.ind_theta, flatten_sys(increment_indices(fe.ind_theta, w_len))];
+            obj.ind_lam = [obj.ind_lam, flatten_sys(increment_indices(fe.ind_lam, w_len))];
+            obj.ind_mu = [obj.ind_mu, flatten_sys(increment_indices(fe.ind_mu, w_len))];
+            obj.ind_alpha = [obj.ind_alpha, flatten_sys(increment_indices(fe.ind_alpha, w_len))];
+            obj.ind_lambda_n = [obj.ind_lambda_n, flatten_sys(increment_indices(fe.ind_lambda_n, w_len))];
+            obj.ind_lambda_p = [obj.ind_lambda_p, flatten_sys(increment_indices(fe.ind_lambda_p, w_len))];
+            obj.ind_beta = [obj.ind_beta, flatten_sys(increment_indices(fe.ind_beta, w_len))];
+            obj.ind_gamma = [obj.ind_gamma, flatten_sys(increment_indices(fe.ind_gamma, w_len))];
             obj.ind_nu_lift = [obj.ind_x, fe.ind_nu_lift+w_len];
         end
 
@@ -209,7 +209,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
             
             % If We need to add a cost from the reformulation do that as needed;
-            if cost ~= 0
+            if settings.mpcc_mode == MpccMode.ell_1_penalty
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*cost;
                 else

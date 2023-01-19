@@ -297,7 +297,7 @@ classdef NosnocProblem < NosnocFormulationObject
             
             % Process terminal costs
             try
-                obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end});
+                obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global);
             catch
                 fprintf('Terminal cost not defined');
             end
@@ -480,7 +480,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
 
             % If We need to add a cost from the reformulation do that as needed;
-            if cost ~= 0
+            if settings.mpcc_mode == MpccMode.ell_1_penalty
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*cost;
                 else
@@ -495,8 +495,8 @@ classdef NosnocProblem < NosnocFormulationObject
 
             obj.addPrimalVector(stage.w, stage.lbw, stage.ubw, stage.w0);
 
-            obj.ind_h = [obj.ind_h, stage.ind_h+w_len];
-            obj.ind_u = [obj.ind_u, stage.ind_u+w_len];
+            obj.ind_h = [obj.ind_h, increment_indices(stage.ind_h,w_len)];
+            obj.ind_u = [obj.ind_u, {stage.ind_u+w_len}];
             obj.ind_sot = [obj.ind_sot, stage.ind_sot+w_len];
             obj.ind_x = [obj.ind_x, increment_indices(stage.ind_x, w_len)];
             obj.ind_v = [obj.ind_v, increment_indices(stage.ind_v, w_len)];

@@ -9,7 +9,7 @@ w_opt = full(results.x);
 diff_states = w_opt(ind_x);
 algebraic_states = w_opt(ind_z);
 
-u_opt = w_opt(ind_u);
+u_opt = w_opt([ind_u{:}]);
 u_opt = reshape(u_opt,n_u,N_stages);
 
 if time_optimal_problem

@@ -1056,7 +1056,7 @@ model.p_global_val = p_global_val;
 % time varying parameters
 % TODO maybe make these functions and actually optimization vars. (actually this might just be algebraic vars)
 model.p_time_var = p_time_var;
-model.p_time_var_stages = p_time_var_stages
+model.p_time_var_stages = p_time_var_stages;
 model.p_time_var_val = p_time_var_val;
 
 model.p_dyn = [p_global, p_time_var_stages];

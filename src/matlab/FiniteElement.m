@@ -709,7 +709,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
 
             % If We need to add a cost from the reformulation do that as needed;
-            if cost ~= 0
+            if settings.mpcc_mode == MpccMode.ell_1_penalty
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*cost;
                 else
