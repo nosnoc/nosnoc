@@ -70,7 +70,7 @@ for jj = 1:N_samples
         f_opt  = 0;
     end
     L_numeric = [L_numeric;f_opt];
-    complementarity_iter = full(comp_res(w_opt));
+    complementarity_iter = full(comp_res(w_opt,[]));
     complementarity_stats = [complementarity_stats;complementarity_iter];
     ts = -x0/3;
     L_analytic =(8/3*ts^3 +8/3*x0*ts^2 + 8/9*x0^2*ts +1/3*T^3+1/3*x0*T^2+x0^2*T/9) + (T+(x0-5)/3)^2;
