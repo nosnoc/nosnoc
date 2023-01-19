@@ -88,7 +88,7 @@ N_finite_elements = N_finite_elements(:); % make a column vector of the input
 if length(N_finite_elements) > N_stages
     N_finite_elements = N_finite_elements(1:N_stages);
     if print_level >=1
-        fprintf('Info: Provided N_finite_elements had more antries then N_stages, the surplus of entries was removed. \n')
+        fprintf('Info: Provided N_finite_elements had more entries then N_stages, the surplus of entries was removed. \n')
     end
 end
 if length(N_finite_elements) == 1
@@ -380,7 +380,7 @@ else
     n_g_comp_path = 0;
     g_comp_path_constraint  = 0;
     if print_level >=1
-        fprintf('Info: No path constraints are provided. \n')
+        fprintf('Info: No path complementarity constraints are provided. \n')
     end
 end
 %% Terminal constraints
