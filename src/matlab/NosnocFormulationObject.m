@@ -72,18 +72,8 @@ classdef NosnocFormulationObject < handle
             if length(varargin) ~= 0
                 obj.(strcat('ind_', type)){varargin{:}} = new_indices;
             else
-                obj.(strcat('ind_', type)) = new_indices;
+                obj.(strcat('ind_', type)) = [obj.(strcat('ind_', type)),new_indices];
             end
-            
-            % if ismember('stage',p.UsingDefaults)
-            %     obj.(strcat('ind_', type)) = [obj.(strcat('ind_', type)), new_indices];
-            % else
-            %     if ~ismember('sys',p.UsingDefaults)
-            %         obj.(strcat('ind_', type)){p.Results.stage, p.Results.sys} = new_indices;
-            %     else
-            %         obj.(strcat('ind_', type)){p.Results.stage} = new_indices;
-            %     end
-            % end
         end
 
         function [] = addConstraint(obj, symbolic, varargin)
