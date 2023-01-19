@@ -79,7 +79,7 @@ tgrid_z = linspace(0, T, N_stages);
 %% Read solutions
 
 diff_states = w_opt(ind_x);
-controls = w_opt(ind_u);
+controls = w_opt([ind_u{:}]);
 alg_states = w_opt(ind_z);
 
 % differential states
