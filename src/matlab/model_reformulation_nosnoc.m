@@ -36,7 +36,9 @@ if ~settings.time_freezing_model_exists && settings.time_freezing && ~settings.t
 end
 
 unfold_struct(model,'caller');
+settings_bkp = settings;
 unfold_struct(settings,'caller')
+settings = settings_bkp;
 
 %% Some settings refinments
 % update prin_level
@@ -167,9 +169,9 @@ else
 end
 %% Parameters
 if exist('p_global')
-    n_p_global = length(p_global);
+    n_p_global = size(p_global,1);
     if exist('p_global_val')
-        if length(p_global_val) ~= n_p_global
+        if size(p_global_val,1) ~= n_p_global
             error('User provided p_global_val has the wrong size.')
         end
     else
@@ -199,7 +201,6 @@ if exist('p_time_var')
         var_full = define_casadi_symbolic(casadi_symbolic_mode, ['p_time_var_' num2str(ii)], n_p_time_var);
         p_time_var_stages = horzcat(p_time_var_stages, var_full);
     end
-    p_time_var
 else
     n_p_time_var = 0;
     p_time_var = define_casadi_symbolic(casadi_symbolic_mode,'',0);

@@ -41,7 +41,9 @@ end
 
 import casadi.*
 %%  unfold data
+settings_bkp = settings;
 unfold_struct(settings,'caller')
+settings = settings_bkp;
 unfold_struct(solver_initialization,'caller')
 
 comp_res = model.comp_res;

@@ -1,6 +1,6 @@
 function results = extract_results_from_solver(model,settings,results)
 import casadi.*
-settings_bkp = settings;    
+settings_bkp = settings;
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 settings = settings_bkp;
