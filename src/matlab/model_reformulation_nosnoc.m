@@ -204,7 +204,7 @@ else
     n_p_time_var = 0;
     p_time_var = define_casadi_symbolic(casadi_symbolic_mode,'',0);
     p_time_var_stages = define_casadi_symbolic(casadi_symbolic_mode,'', [0, N_stages]);
-    p_time_var_val = [];
+    p_time_var_val = double.empty(0,N_stages);
     if print_level >= 1
         fprintf('Info: No time varying parameters given. \n')
     end
@@ -949,7 +949,7 @@ if isequal(irk_representation,'differential')
     if simple_v0_guess
         v0 = zeros(n_x,1);
     else
-        [v0,~] = (f_x_fun(x0,z0,u0));
+        [v0,~] = (f_x_fun(x0,z0,u0,[p_global_val; p_time_var_val(:,1)]));
         v0 = full(v0);
     end
     model.v0 = v0;

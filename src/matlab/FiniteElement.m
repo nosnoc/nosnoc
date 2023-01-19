@@ -568,7 +568,7 @@ classdef FiniteElement < NosnocFormulationObject
                 obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx))
                 
                 % TODO verify this.
-                obj.addConstraint(model.g_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk));
+                obj.addConstraint(model.g_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk, p_stage));
             end
         end
 
