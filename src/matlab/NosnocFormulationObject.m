@@ -34,21 +34,6 @@ classdef NosnocFormulationObject < handle
         end
 
         function [] = addVariable(obj, symbolic, type, lb, ub, initial, varargin)
-            import casadi.*
-
-            p = inputParser();
-            p.FunctionName = 'addVariable';
-            
-            % TODO: add checks.
-            addRequired(p, 'obj');
-            addRequired(p, 'symbolic');
-            addRequired(p, 'lb');
-            addRequired(p, 'ub');
-            addRequired(p, 'initial');
-            addRequired(p, 'type');
-            addOptional(p, 'stage', []);
-            addOptional(p, 'sys', []);
-            parse(p, obj, symbolic, lb, ub, initial, type, varargin{:})
 
             lens = [size(symbolic,1),size(lb,1),size(ub,1), size(initial,1)];
             if ~all(lens == lens(1))
