@@ -180,11 +180,11 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
             theta_opt_extended = [alg_states_extended(1:n_theta,:)];
             lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
-            mu_opt_extended = [alg_states_extended(end-n_sys+1:end,:)];
+            mu_opt_extended = [alg_states_extended(end-n_sys+1:end,:)]
 
             theta_opt= theta_opt_extended(:,1:n_s:end);
             lambda_opt= lambda_opt_extended(:,1:n_s:end);
-            mu_opt= mu_opt_extended(:,end);
+            mu_opt= mu_opt_extended(:,1:n_s:end);
         case 'Step'
             alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
             alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
@@ -214,8 +214,9 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
     solver_initialization.w0(1:n_x) = x0;
 
+    % TODO Set up homotopy solver to take p_val explicitly
     if use_previous_solution_as_initial_guess
-        solver_initialization.w0 = w_opt;
+        solver_initialization.w0(n_x+1:end) = w_opt(n_x+1:end);
     end
 
     % Store data
