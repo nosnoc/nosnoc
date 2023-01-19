@@ -135,8 +135,8 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
     if control_exists
-        solver_initialization.lbw(ind_u) = repmat(u_sim(:,ii),N_stages,1);
-        solver_initialization.ubw(ind_u)  = repmat(u_sim(:,ii),N_stages,1);
+        solver_initialization.lbw([ind_u{:}]) = repmat(u_sim(:,ii),N_stages,1);
+        solver_initialization.ubw([ind_u{:}])  = repmat(u_sim(:,ii),N_stages,1);
     end
 
     [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
