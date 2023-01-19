@@ -46,7 +46,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.addVariable(obj.Uk, 'u', obj.model.lbu, obj.model.ubu,...
                             zeros(obj.dims.n_u,1));
 
-            p_stage = vertcat(model.p_global, model.p_time_var_stages(:, ctrl_idx))
+            p_stage = vertcat(model.p_global, model.p_time_var_stages(:, ctrl_idx));
             if settings.time_rescaling && settings.use_speed_of_time_variables
                 if settings.local_speed_of_time_variable
                     % at every stage
@@ -203,50 +203,18 @@ classdef ControlStage < NosnocFormulationObject
             end
             
             % Do MPCC formulation
-            % TODO this should be done on the problem level, and take into account passed in vars. fine for now.
-            if settings.mpcc_mode == MpccMode.Scholtes_ineq
-                g_comp = g_comp - sigma_p;
-                g_comp_ub = zeros(n_comp,1);
-                g_comp_lb = -inf * ones(n_comp,1);
-            elseif settings.mpcc_mode == MpccMode.Scholtes_eq
-                g_comp = g_comp - sigma_p;
-                g_comp_ub = zeros(n_comp,1);
-                g_comp_lb = zeros(n_comp,1);
-            elseif settings.mpcc_mode == MpccMode.ell_1_penalty
+            [g_comp, g_comp_lb, g_comp_ub, cost] = reformulate_complementarities(g_comp, settings.mpcc_mode, sigma_p, s_elastic);
+            
+            % Add reformulated constraints
+            obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
+            
+            % If We need to add a cost from the reformulation do that as needed;
+            if cost ~= 0
                 if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*sum(g_comp);
+                    obj.cost = obj.cost + (1/sigma_p)*cost;
                 else
-                    obj.cost = sigma_p*obj.cost + sum(g_comp);
+                    obj.cost = sigma_p*obj.cost + cost;
                 end
-            elseif settings.mpcc_mode == MpccMode.elastic_ineq
-                g_comp = g_comp - s_elastic*ones(n_comp,1);
-                g_comp_ub = zeros(n_comp,1);
-                g_comp_lb = -inf * ones(n_comp,1);
-            elseif settings.mpcc_mode == MpccMode.elastic_eq
-                g_comp = g_comp - s_elastic*ones(n_comp,1);
-                g_comp_ub = zeros(n_comp,1);
-                g_comp_lb = zeros(n_comp,1);
-            elseif settings.mpcc_mode == MpccMode.elastic_two_sided
-                g_comp = [g_comp-s_elastic*ones(n_comp,1);g_comp+s_elastic*ones(n_comp,1)];
-                g_comp_ub = [zeros(n_comp,1); inf*ones(n_comp,1)];
-                g_comp_lb = [-inf*ones(n_comp,1);  zeros(n_comp,1)];
-                % TODO these should be merged probably
-            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_ineq
-                g_comp = g_comp - s_elastic;
-                g_comp_ub = zeros(n_comp,1);
-                g_comp_lb = -inf * ones(n_comp,1);
-            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_eq
-                g_comp = g_comp - s_elastic;
-                g_comp_ub = zeros(n_comp,1);
-                g_comp_lb = zeros(n_comp,1);
-            elseif settings.mpcc_mode == MpccMode.elastic_ell_1_two_sided
-                g_comp = [g_comp-s_elastic;g_comp+s_elastic];
-                g_comp_ub = [zeros(n_comp,1); inf*ones(n_comp,1)];
-                g_comp_lb = [-inf*ones(n_comp,1);  zeros(n_comp,1)];
-            end
-
-            if settings.mpcc_mode ~= MpccMode.ell_1_penalty
-                obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
             end
         end
     end
