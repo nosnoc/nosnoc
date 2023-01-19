@@ -180,7 +180,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
             theta_opt_extended = [alg_states_extended(1:n_theta,:)];
             lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
-            mu_opt_extended = [alg_states_extended(end-n_sys+1:end,:)]
+            mu_opt_extended = [alg_states_extended(end-n_sys+1:end,:)];
 
             theta_opt= theta_opt_extended(:,1:n_s:end);
             lambda_opt= lambda_opt_extended(:,1:n_s:end);
