@@ -68,7 +68,6 @@ classdef ControlStage < NosnocFormulationObject
             obj.stage = [];
             for ii=1:obj.dims.N_finite_elements
                 fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii, T_final);
-                % TODO: OCP
                 % 1) Runge-Kutta discretization
                 fe.forwardSimulation(obj.ocp, obj.Uk, s_sot, p_stage);
 

@@ -45,23 +45,10 @@ classdef FiniteElement < NosnocFormulationObject
     end
 
     methods
-        function obj = FiniteElement(prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin)
+        function obj = FiniteElement(prev_fe, settings, model, dims, ctrl_idx, fe_idx, T_final)
             import casadi.*
             obj@NosnocFormulationObject();
-
-            p = inputParser();
-            p.FunctionName = 'FiniteElement';
             
-            % TODO: add checks.
-            addRequired(p, 'prev_fe');
-            addRequired(p, 'settings');
-            addRequired(p, 'model');
-            addRequired(p, 'dims');
-            addRequired(p, 'ctrl_idx');
-            addRequired(p, 'fe_idx');
-            addOptional(p, 'T_final',[]);
-            parse(p, prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin{:});
-
             if settings.right_boundary_point_explicit
                 rbp_allowance = 0;
             else
@@ -103,7 +90,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
                 obj.addVariable(h, 'h', lbh, ubh, h0);
             end
-            obj.T_final = p.Results.T_final;
+            obj.T_final = T_final;
             
             % RK stage stuff
             % TODO: beta and gamma
@@ -470,7 +457,6 @@ classdef FiniteElement < NosnocFormulationObject
         function z = rkStageZ(obj, stage)
             import casadi.*
 
-            % TODO: gamma/beta
             idx = [[obj.ind_theta{stage, :}],...
                    [obj.ind_lam{stage, :}],...
                    [obj.ind_mu{stage, :}],...
@@ -538,9 +524,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             % nonlinear inequality.
-            % TODO: do this cleaner
             for j=1:dims.n_s-settings.right_boundary_point_explicit
-                % TODO: there has to be a better way to do this.
                 if settings.g_ineq_constraint && settings.g_ineq_at_stg
                     obj.addConstraint(model.g_ineq_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
                 end
@@ -558,8 +542,6 @@ classdef FiniteElement < NosnocFormulationObject
             if (~settings.right_boundary_point_explicit &&...
                 settings.use_fesd &&...
                 obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx))
-                
-                % TODO verify this.
                 obj.addConstraint(model.g_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk, p_stage));
             end
         end
@@ -572,9 +554,7 @@ classdef FiniteElement < NosnocFormulationObject
 
             g_path_comp = [];
             % path complementarities
-            % TODO: do this cleaner
             for j=1:dims.n_s-settings.right_boundary_point_explicit
-                % TODO: there has to be a better way to do this.
                 if settings.g_comp_path_constraint && settings.g_ineq_at_stg
                     g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u));
                 end
@@ -585,16 +565,13 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             g_cross_comp = [];
-            % TODO Implement other modes
             if ~settings.use_fesd
-                % TODO vectorize?
                 for j=1:dims.n_s
                     theta = vertcat(obj.theta{j,:});
                     lambda = vertcat(obj.lambda{j,:});
                     g_cross_comp = vertcat(g_cross_comp, diag(theta)*lambda);
                 end
             elseif settings.cross_comp_mode == 1 
-                % TODO vectorize?
                 theta = obj.theta;
                 lambda = obj.lambda;
                 % Complement within FE
@@ -626,7 +603,6 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                 end
             elseif settings.cross_comp_mode == 3
-                % TODO vectorize?
                 theta = obj.theta;
                 for j=1:dims.n_s
                     for r=1:dims.n_sys 

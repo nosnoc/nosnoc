@@ -551,7 +551,6 @@ classdef NosnocProblem < NosnocFormulationObject
         end
 
         function ind_z = get.ind_z(obj)
-            % TODO Add gamma/beta
             ind_z = [flatten_ind(obj.ind_theta(1:obj.dims.n_s,:))
                      flatten_ind(obj.ind_lam(1:obj.dims.n_s,:))
                      flatten_ind(obj.ind_mu(1:obj.dims.n_s,:))
