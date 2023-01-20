@@ -80,8 +80,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_beta = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_h = [];
             obj.ind_elastic = [];
-            obj.ind_boundary = [];
-
+            
             obj.ctrl_idx = ctrl_idx;
             obj.fe_idx = fe_idx;
             
