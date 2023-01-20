@@ -79,15 +79,17 @@ classdef NosnocProblem < NosnocFormulationObject
             obj@NosnocFormulationObject();
 
             obj.ind_u = [];
-            obj.ind_x = {};
+            obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
             obj.ind_x0 = [];
-            obj.ind_v = {};
-            obj.ind_theta = {};
-            obj.ind_lam = {};
-            obj.ind_mu = {};
-            obj.ind_alpha = {};
-            obj.ind_lambda_n = {};
-            obj.ind_lambda_p = {};
+            obj.ind_v = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_theta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_lam = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_mu = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_alpha = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_lambda_n = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_lambda_p = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_beta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_gamma = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
             obj.ind_nu_lift = {};
             obj.ind_h = {};
             obj.ind_sot = {};
@@ -502,17 +504,17 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_h = [obj.ind_h, increment_indices(stage.ind_h,w_len)];
             obj.ind_u = [obj.ind_u, {stage.ind_u+w_len}];
             obj.ind_sot = [obj.ind_sot, stage.ind_sot+w_len];
-            obj.ind_x = [obj.ind_x, increment_indices(stage.ind_x, w_len)];
-            obj.ind_v = [obj.ind_v, increment_indices(stage.ind_v, w_len)];
-            obj.ind_theta = [obj.ind_theta, increment_indices(stage.ind_theta, w_len)];
-            obj.ind_lam = [obj.ind_lam, increment_indices(stage.ind_lam, w_len)];
-            obj.ind_mu = [obj.ind_mu, increment_indices(stage.ind_mu, w_len)];
-            obj.ind_alpha = [obj.ind_alpha, increment_indices(stage.ind_alpha, w_len)];
-            obj.ind_lambda_n = [obj.ind_lambda_n, increment_indices(stage.ind_lambda_n, w_len)];
-            obj.ind_lambda_p = [obj.ind_lambda_p, increment_indices(stage.ind_lambda_p, w_len)];
-            obj.ind_beta = [obj.ind_beta, increment_indices(stage.ind_beta, w_len)];
-            obj.ind_gamma = [obj.ind_gamma, increment_indices(stage.ind_gamma, w_len)];
-            obj.ind_nu_lift = [obj.ind_x, increment_indices(stage.ind_nu_lift, w_len)];
+            obj.ind_x(stage.ctrl_idx, :, :) = increment_indices(stage.ind_x, w_len);
+            obj.ind_v(stage.ctrl_idx, :, :) = increment_indices(stage.ind_v, w_len);
+            obj.ind_theta(stage.ctrl_idx, :, :) = increment_indices(stage.ind_theta, w_len);
+            obj.ind_lam(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lam, w_len);
+            obj.ind_mu(stage.ctrl_idx, :, :) = increment_indices(stage.ind_mu, w_len);
+            obj.ind_alpha(stage.ctrl_idx, :, :) = increment_indices(stage.ind_alpha, w_len);
+            obj.ind_lambda_n(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lambda_n, w_len);
+            obj.ind_lambda_p(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lambda_p, w_len);
+            obj.ind_beta(stage.ctrl_idx, :, :) = increment_indices(stage.ind_beta, w_len);
+            obj.ind_gamma(stage.ctrl_idx, :, :) = increment_indices(stage.ind_gamma, w_len);
+            obj.ind_nu_lift = [obj.ind_nu_lift, increment_indices(stage.ind_nu_lift, w_len)];
 
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
         end

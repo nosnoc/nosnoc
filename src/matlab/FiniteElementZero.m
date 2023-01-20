@@ -6,25 +6,13 @@ classdef FiniteElementZero < NosnocFormulationObject
         ind_lambda_n
         ind_lambda_p
 
-        x0
-
-        ctrl_idx
-        fe_idx
-
-        prev_fe
+        % Parameter for initial conditions
+        x0        
     end
 
     properties(Dependent, SetAccess=private, Hidden)
+        % Casadi symbolics for FE variables
         x
-        v
-        theta
-        lam
-        mu
-        alpha
-        lambda_n
-        lambda_p
-        h
-
         lambda
     end
     

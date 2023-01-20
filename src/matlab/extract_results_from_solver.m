@@ -32,7 +32,8 @@ end
 x_opt_extended = w_opt(ind_x);
 x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
 x_opt_s = [cellfun(@(x) w_opt(x), structured_ind.x, 'uni', 0)];
-x_opt  = [x_opt_extended(:,1), x_opt_s{end,:}];
+x_opt = reshape(transpose(x_opt_s(:,:,end)), prod(size(x_opt_s(:,:,end))), 1);
+x_opt = [x_opt_extended(:,1), x_opt{:}];
 
 
 switch pss_mode
