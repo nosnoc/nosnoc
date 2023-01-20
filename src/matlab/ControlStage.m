@@ -15,14 +15,15 @@ classdef ControlStage < NosnocFormulationObject
         ind_h
         ind_nu_lift
         ind_elastic
-        ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
         ind_beta
         ind_gamma
         ind_u
         ind_sot
 
+        % Index of this control stage.
         ctrl_idx
-        
+
+        % Problem data
         model
         settings
         dims
@@ -31,7 +32,7 @@ classdef ControlStage < NosnocFormulationObject
 
     methods
         % TODO: This probably should take less arguments somehow. Maybe a store of "global_variables" to be
-        % added along with v_global.
+        % added along with v_global. This will likely be done when I get around to cleaning up the `model` struct.
         function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, s_sot, T_final, sigma_p, rho_h_p, rho_sot_p, s_elastic)
             import casadi.*
             obj@NosnocFormulationObject();
@@ -161,16 +162,12 @@ classdef ControlStage < NosnocFormulationObject
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
-
-            % path constraints handled at fe level not here
             
             g_cross_comp = [];
-            % TODO Implement other modes
             if ~settings.use_fesd || settings.cross_comp_mode < 9 || settings.cross_comp_mode > 10
                 % Do nothing, handled at the FE level
                 % along with modes 1-8
-                return
-                
+                return                
             elseif settings.cross_comp_mode == 9
                 for r=1:dims.n_sys
                     g_r = 0;
@@ -192,7 +189,7 @@ classdef ControlStage < NosnocFormulationObject
             g_comp = g_cross_comp;
             n_comp = length(g_cross_comp);
             
-            %
+            % Generate the s_elastic variable if necessary.
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
                 s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
                 obj.addVariable(s_elastic,...
@@ -208,7 +205,7 @@ classdef ControlStage < NosnocFormulationObject
             % Add reformulated constraints
             obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
             
-            % If We need to add a cost from the reformulation do that as needed;
+            % If We need to add a cost from the reformulation do that.
             if settings.mpcc_mode == MpccMode.ell_1_penalty
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*cost;

@@ -47,7 +47,7 @@ settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+%settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 25; % control intervals

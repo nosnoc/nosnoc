@@ -43,14 +43,15 @@ settings.n_s = 1;  % number of stages in IRK methods
 settings.N_homotopy = 5;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
+settings.use_fesd = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 T = 3;
-N_stg = 25; % control intervals
-N_FE = 3;  % integration steps per control intevral
+N_stg = 20; % control intervals
+N_FE = 5;  % integration steps per control intevral
 
 %% model parameters
 m1 = 2;

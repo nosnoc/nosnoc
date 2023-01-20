@@ -12,40 +12,35 @@ classdef FiniteElement < NosnocFormulationObject
         ind_h
         ind_nu_lift
         ind_elastic
-        ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
         ind_beta
         ind_gamma
-        
+
+        % Indices of this finite element
         ctrl_idx
         fe_idx
-        
+
+        % Problem data
         model
         settings
         dims
 
-        u
-
+        % Final time parameter TODO: Probably should live within `model`
         T_final
-        
+
+        % Reference to the previous finite element. Used for continuity conditions.
         prev_fe
     end
 
     properties(Dependent, SetAccess=private, Hidden)
+
+        % Casadi symbolics/expressions generated on the fly
         x
         v
         theta
-        lam
-        mu
-        alpha
-        lambda_n
-        lambda_p
+        lambda
         nu_lift
         h
-
         elastic
-        
-        lambda
-
         nu_vector
     end
 
@@ -494,8 +489,6 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
-            u = Uk;
-
             if settings.irk_representation == IrkRepresentation.integral
                 X_ki = obj.x;
                 Xk_end = settings.D_irk(1) * obj.prev_fe.x{end};
@@ -685,13 +678,13 @@ classdef FiniteElement < NosnocFormulationObject
                 % do nothing in this case
                 return
             end
-
-            g_comp = vertcat(g_cross_comp, g_path_comp);
             
+            g_comp = vertcat(g_cross_comp, g_path_comp);
             n_cross_comp = length(g_cross_comp);
             n_path_comp = length(g_path_comp);
             n_comp = n_cross_comp + n_path_comp;
-            %
+
+            % Generate s_elastic if necessary. 
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
                 s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode,...
                                                    ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)],...
@@ -724,7 +717,6 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
-            % TODO implement other modes!
             if settings.use_fesd && obj.fe_idx > 1
                 nu = obj.nu_vector;
                 delta_h_ki = obj.h - obj.prev_fe.h;

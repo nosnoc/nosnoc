@@ -17,14 +17,14 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_h
         ind_elastic
         ind_sot % index for speed of time variable
-        ind_boundary % index of bundary value lambda and mu
         ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
+        ind_s_terminal
+        
 
+        % Parameter index variables
         ind_p_x0
         ind_p_global
         ind_p_time_var
-
-        ind_s_terminal
 
         % Problem data
         model
@@ -46,7 +46,7 @@ classdef NosnocProblem < NosnocFormulationObject
         p0
 
         % Problem components
-        fe0
+        fe0 % Zeroth finite element (contains X0, lambda00)
         stages % control stages
 
         % complementarity residual functions
@@ -62,10 +62,14 @@ classdef NosnocProblem < NosnocFormulationObject
     % TODO: Create solver object, which will interact with setting parameters. 
 
     properties(Dependent, SetAccess=private, Hidden)
+        % Properties generated on the fly.
+
+        % casadi symbolics/expresions for u, sot, and nu
         u
         sot
         nu_vector
-        
+
+        % Indices for all algebraic vars in the problem
         ind_z
     end
     
