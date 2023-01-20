@@ -78,18 +78,24 @@ classdef NosnocProblem < NosnocFormulationObject
             import casadi.*
             obj@NosnocFormulationObject();
 
+            if settings.right_boundary_point_explicit
+                rbp_allowance = 0;
+            else
+                rbp_allowance = 1;
+            end
+            
             obj.ind_u = [];
-            obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_x0 = [];
             obj.ind_v = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_theta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_lam = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_mu = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_alpha = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_lambda_n = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_lambda_p = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_beta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_gamma = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_theta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lam = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_mu = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_alpha = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_n = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_p = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_gamma = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_nu_lift = {};
             obj.ind_h = {};
             obj.ind_sot = {};
@@ -553,14 +559,14 @@ classdef NosnocProblem < NosnocFormulationObject
         end
 
         function ind_z = get.ind_z(obj)
-            ind_z = [flatten_ind(obj.ind_theta)
-                     flatten_ind(obj.ind_lam)
-                     flatten_ind(obj.ind_mu)
-                     flatten_ind(obj.ind_alpha)
-                     flatten_ind(obj.ind_lambda_n)
-                     flatten_ind(obj.ind_lambda_p)
-                     flatten_ind(obj.ind_beta)
-                     flatten_ind(obj.ind_gamma)];
+            ind_z = [flatten_ind(obj.ind_theta(:,:,1:obj.dims.n_s))
+                     flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
+                     flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
+                     flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
+                     flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
+                     flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
+                     flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
+                     flatten_ind(obj.ind_gamma(:,:,1:obj.dims.n_s))];
             ind_z = sort(ind_z);
         end
         
