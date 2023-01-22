@@ -12,43 +12,61 @@ classdef FiniteElement < NosnocFormulationObject
         ind_h
         ind_nu_lift
         ind_elastic
+        ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
         ind_beta
         ind_gamma
-
-        % Indices of this finite element
+        
         ctrl_idx
         fe_idx
-
-        % Problem data
+        
         model
         settings
         dims
 
-        % Final time parameter TODO: Probably should live within `model`
-        T_final
+        u
 
-        % Reference to the previous finite element. Used for continuity conditions.
+        T_final
+        
         prev_fe
     end
 
     properties(Dependent, SetAccess=private, Hidden)
-
-        % Casadi symbolics/expressions generated on the fly
         x
         v
         theta
-        lambda
+        lam
+        mu
+        alpha
+        lambda_n
+        lambda_p
         nu_lift
         h
+
         elastic
+        
+        lambda
+
         nu_vector
     end
 
     methods
-        function obj = FiniteElement(prev_fe, settings, model, dims, ctrl_idx, fe_idx, T_final)
+        function obj = FiniteElement(prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin)
             import casadi.*
             obj@NosnocFormulationObject();
+
+            p = inputParser();
+            p.FunctionName = 'FiniteElement';
             
+            % TODO: add checks.
+            addRequired(p, 'prev_fe');
+            addRequired(p, 'settings');
+            addRequired(p, 'model');
+            addRequired(p, 'dims');
+            addRequired(p, 'ctrl_idx');
+            addRequired(p, 'fe_idx');
+            addOptional(p, 'T_final',[]);
+            parse(p, prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin{:});
+
             if settings.right_boundary_point_explicit
                 rbp_allowance = 0;
             else
@@ -67,7 +85,8 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_beta = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_h = [];
             obj.ind_elastic = [];
-            
+            obj.ind_boundary = [];
+
             obj.ctrl_idx = ctrl_idx;
             obj.fe_idx = fe_idx;
             
@@ -90,7 +109,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
                 obj.addVariable(h, 'h', lbh, ubh, h0);
             end
-            obj.T_final = T_final;
+            obj.T_final = p.Results.T_final;
             
             % RK stage stuff
             % TODO: beta and gamma
@@ -457,6 +476,7 @@ classdef FiniteElement < NosnocFormulationObject
         function z = rkStageZ(obj, stage)
             import casadi.*
 
+            % TODO: gamma/beta
             idx = [[obj.ind_theta{stage, :}],...
                    [obj.ind_lam{stage, :}],...
                    [obj.ind_mu{stage, :}],...
@@ -473,6 +493,8 @@ classdef FiniteElement < NosnocFormulationObject
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
+
+            obj.u = Uk;
 
             if settings.irk_representation == IrkRepresentation.integral
                 X_ki = obj.x;
@@ -524,7 +546,9 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             % nonlinear inequality.
+            % TODO: do this cleaner
             for j=1:dims.n_s-settings.right_boundary_point_explicit
+                % TODO: there has to be a better way to do this.
                 if settings.g_ineq_constraint && settings.g_ineq_at_stg
                     obj.addConstraint(model.g_ineq_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
                 end
@@ -542,6 +566,8 @@ classdef FiniteElement < NosnocFormulationObject
             if (~settings.right_boundary_point_explicit &&...
                 settings.use_fesd &&...
                 obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx))
+                
+                % TODO verify this.
                 obj.addConstraint(model.g_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk, p_stage));
             end
         end
@@ -554,7 +580,9 @@ classdef FiniteElement < NosnocFormulationObject
 
             g_path_comp = [];
             % path complementarities
+            % TODO: do this cleaner
             for j=1:dims.n_s-settings.right_boundary_point_explicit
+                % TODO: there has to be a better way to do this.
                 if settings.g_comp_path_constraint && settings.g_ineq_at_stg
                     g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u));
                 end
@@ -565,13 +593,16 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             g_cross_comp = [];
+            % TODO Implement other modes
             if ~settings.use_fesd
+                % TODO vectorize?
                 for j=1:dims.n_s
                     theta = vertcat(obj.theta{j,:});
                     lambda = vertcat(obj.lambda{j,:});
                     g_cross_comp = vertcat(g_cross_comp, diag(theta)*lambda);
                 end
             elseif settings.cross_comp_mode == 1 
+                % TODO vectorize?
                 theta = obj.theta;
                 lambda = obj.lambda;
                 % Complement within FE
@@ -603,6 +634,7 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                 end
             elseif settings.cross_comp_mode == 3
+                % TODO vectorize?
                 theta = obj.theta;
                 for j=1:dims.n_s
                     for r=1:dims.n_sys 
@@ -653,13 +685,13 @@ classdef FiniteElement < NosnocFormulationObject
                 % do nothing in this case
                 return
             end
-            
+
             g_comp = vertcat(g_cross_comp, g_path_comp);
+            
             n_cross_comp = length(g_cross_comp);
             n_path_comp = length(g_path_comp);
             n_comp = n_cross_comp + n_path_comp;
-
-            % Generate s_elastic if necessary. 
+            %
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
                 s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode,...
                                                    ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)],...
@@ -692,6 +724,7 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
+            % TODO implement other modes!
             if settings.use_fesd && obj.fe_idx > 1
                 nu = obj.nu_vector;
                 delta_h_ki = obj.h - obj.prev_fe.h;
