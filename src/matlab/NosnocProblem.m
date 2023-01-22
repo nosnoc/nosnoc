@@ -325,7 +325,7 @@ classdef NosnocProblem < NosnocFormulationObject
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
                 sum_s_elastic = 0;
                 for k=1:dims.N_stages
-                    stage=obj.stages(ii);
+                    stage=obj.stages(k);
                     for fe=stage.stage
                         sum_s_elastic = sum_s_elastic + fe.sumElastic;
                     end
