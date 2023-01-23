@@ -570,26 +570,32 @@ classdef NosnocProblem < NosnocFormulationObject
             ind_z = sort(ind_z);
         end
         
-        function print(obj)
-            disp("g");
-            disp(length(obj.g))
-            print_casadi_vector(obj.g);
-            disp('lbg, ubg');
-            disp([length(obj.lbg), length(obj.ubg)]);
-            disp([obj.lbg, obj.ubg]);
+        function print(obj,filename)
+            if exist('filename')
+                delete(filename);
+                fileID = fopen(filename, 'w');
+            else
+                fileID = 1;
+            end
+            fprintf(fileID, "g\n");
+            fprintf(fileID, strcat(formattedDisplayText(length(obj.g)), "\n"));
+            print_casadi_vector(obj.g, fileID);
+            fprintf(fileID, 'lbg, ubg\n');
+            fprintf(fileID, strcat(formattedDisplayText([length(obj.lbg), length(obj.ubg)]), "\n"));
+            fprintf(fileID, strcat(formattedDisplayText([obj.lbg, obj.ubg]), '\n'));
 
-            disp("w");
-            disp(length(obj.w))
-            print_casadi_vector(obj.w);
-            disp('lbw, ubw');
-            disp([length(obj.lbw), length(obj.ubw)]);
-            disp([obj.lbw, obj.ubw]);
-            disp('w0');
-            disp(length(obj.w0));
-            disp(obj.w0);
+            fprintf(fileID, "w\n");
+            fprintf(fileID, strcat(formattedDisplayText(length(obj.w)), '\n'));
+            print_casadi_vector(obj.w, fileID);
+            fprintf(fileID, 'lbw, ubw\n');
+            fprintf(fileID, strcat(formattedDisplayText([length(obj.lbw), length(obj.ubw)]), "\n"));
+            fprintf(fileID, strcat(formattedDisplayText([obj.lbw, obj.ubw]), '\n'));
+            fprintf(fileID, 'w0\n');
+            fprintf(fileID, strcat(formattedDisplayText(length(obj.w0)), '\n'));
+            fprintf(fileID, strcat(formattedDisplayText(obj.w0), '\n'));
 
-            disp('objective');
-            disp(obj.cost);
+            fprintf(fileID, 'objective');
+            fprintf(fileID, strcat(formattedDisplayText(obj.cost), '\n'));
         end
     end
 end
