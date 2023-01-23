@@ -547,15 +547,15 @@ classdef FiniteElement < NosnocFormulationObject
 
             % nonlinear inequality.
             % TODO: do this cleaner
+            if (settings.g_ineq_constraint &&...
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
+                obj.addConstraint(model.g_ineq_fun(obj.prev_fe.x{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
+            end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if settings.g_ineq_constraint && settings.g_ineq_at_stg
                     obj.addConstraint(model.g_ineq_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
                 end
-            end
-            if (settings.g_ineq_constraint &&...
-                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
-                obj.addConstraint(model.g_ineq_fun(X_ki{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
             end
 
             % end constraints
@@ -581,15 +581,15 @@ classdef FiniteElement < NosnocFormulationObject
             g_path_comp = [];
             % path complementarities
             % TODO: do this cleaner
+            if (settings.g_comp_path_constraint &&...
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
+                g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u));
+            end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if settings.g_comp_path_constraint && settings.g_ineq_at_stg
                     g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u));
                 end
-            end
-            if (settings.g_comp_path_constraint &&...
-                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
-                g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{end}, obj.u));
             end
 
             g_cross_comp = [];
