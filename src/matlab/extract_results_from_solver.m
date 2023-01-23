@@ -31,7 +31,7 @@ end
 
 x_opt_extended = w_opt(ind_x);
 x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
-x_opt_s = [cellfun(@(x) w_opt(x), structured_ind.x, 'uni', 0)];
+x_opt_s = [cellfun(@(x) w_opt(x), problem.ind_x, 'uni', 0)];
 x_opt = reshape(transpose(x_opt_s(:,:,end)), prod(size(x_opt_s(:,:,end))), 1);
 x_opt = [x_opt_extended(:,1), x_opt{:}];
 
@@ -84,13 +84,13 @@ ind_t_grid_u = cumsum([1; N_finite_elements]);
 %% Get structured output (These do not contain x0)
 switch pss_mode
   case 'Stewart'
-    theta_opt_s = cellfun(@(theta) w_opt(theta), structured_ind.theta(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
-    lambda_opt_s = cellfun(@(lam) w_opt(lam), structured_ind.lam, 'uni', 0);
-    mu_opt_s = cellfun(@(mu) w_opt(mu), structured_ind.mu, 'uni', 0);
+    theta_opt_s = cellfun(@(theta) w_opt(theta), problem.ind_theta(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
+    lambda_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lam, 'uni', 0);
+    mu_opt_s = cellfun(@(mu) w_opt(mu), problem.ind_mu, 'uni', 0);
   case 'Step'
-    alpha_opt_s = cellfun(@(alpha) w_opt(alpha), structured_ind.alpha(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
-    lambda_n_opt_s = cellfun(@(lam) w_opt(lam), structured_ind.lambda_n, 'uni', 0);
-    lambda_p_opt_s = cellfun(@(lam) w_opt(lam), structured_ind.lambda_p, 'uni', 0);
+    alpha_opt_s = cellfun(@(alpha) w_opt(alpha), problem.ind_alpha(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
+    lambda_n_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lambda_n, 'uni', 0);
+    lambda_p_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lambda_p, 'uni', 0);
 end
 x_i_opt = cell(n_x, 1);
 x_i_opt_flat = cell(n_x, 1);

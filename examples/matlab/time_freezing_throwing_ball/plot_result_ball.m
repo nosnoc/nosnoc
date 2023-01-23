@@ -50,10 +50,10 @@ diff_states = w_opt(ind_x);
 controls = w_opt([ind_u{:}]);
 alg_states = w_opt(ind_z);
 
-x_opt_s = cellfun(@(x) w_opt(x), structured_ind.x, 'uni', 0);
-theta_opt_s = cellfun(@(theta) w_opt(theta), structured_ind.theta, 'uni', 0);
-lambda_opt_s = cellfun(@(lam) w_opt(lam), structured_ind.lam, 'uni', 0);
-mu_opt_s = cellfun(@(mu) w_opt(mu), structured_ind.mu, 'uni', 0);
+x_opt_s = cellfun(@(x) w_opt(x), problem.ind_x, 'uni', 0);
+theta_opt_s = cellfun(@(theta) w_opt(theta), problem.ind_theta, 'uni', 0);
+lambda_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lam, 'uni', 0);
+mu_opt_s = cellfun(@(mu) w_opt(mu), problem.ind_mu, 'uni', 0);
 
 % differential states
 x_opt = cell(n_x, 1);
