@@ -40,6 +40,8 @@ filename = 'discs_switch_position.gif';
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
+settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
+settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 5;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
@@ -51,7 +53,7 @@ settings.use_fesd = 1;
 %% discretizatioon
 T = 3;
 N_stg = 20; % control intervals
-N_FE = 5;  % integration steps per control intevral
+N_FE = 3;  % integration steps per control intevral
 
 %% model parameters
 m1 = 2;
