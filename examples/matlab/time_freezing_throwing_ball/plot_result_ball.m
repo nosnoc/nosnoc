@@ -95,7 +95,7 @@ end
 if strcmp(mpcc_mode, 'Sholtes_eq')
     ind_t = find([1;theta1_opt]>1e-2);
 else
-    ind_t = find(diff([nan;x_opt_flat{1};nan])>1e-5);
+    ind_t = find(diff([nan;results.st.x_i_opt{1};nan])>1e-5);
 end
 
 % TODO: fix this
@@ -122,7 +122,7 @@ if 0
 
     matlab_blue = [0 0.4470 0.7410];
     matlab_red = [0.8500 0.3250 0.0980];
-    figure
+    ofigure
     subplot(121)
     plot(x_opt{5},x_opt{3},'linewidth',1.2,'color',matlab_blue,'LineStyle','--');
     hold on
@@ -161,18 +161,18 @@ x = [0 x_target x_target 0];
 y = [0 0 -1 -1];
 patch(x,y,'k','FaceAlpha',0.2)
 hold on
-plot(x_opt_flat{1}(ind_t),x_opt_flat{2}(ind_t),'linewidth',1.2,'color',0*ones(3,1));
+plot(results.st.x_i_opt{1}(ind_t),results.st.x_i_opt{2}(ind_t),'linewidth',1.2,'color',0*ones(3,1));
 grid on
 hold on
 xlabel('$q_1$','interpreter','latex');
 ylabel('$q_2$','interpreter','latex');
 % axis equal
-ylim([-0.4 max(x_opt_flat{2})*1.15])
+ylim([-0.4 max(results.st.x_i_opt{2})*1.15])
 xlim([0.0 x_target])
 subplot(132)
-plot(x_opt_flat{5},x_opt_flat{3},'linewidth',1.2,'color',matlab_blue);
+plot(results.st.x_i_opt{5},results.st.x_i_opt{3},'linewidth',1.2,'color',matlab_blue);
 hold on
-plot(x_opt_flat{5},x_opt_flat{4},'linewidth',1.2,'color',matlab_red);
+plot(results.st.x_i_opt{5},results.st.x_i_opt{4},'linewidth',1.2,'color',matlab_red);
 xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$','interpreter','latex');
 grid on
@@ -180,9 +180,9 @@ legend({'$v_1(t)$','$v_2(t)$'},'interpreter','latex','NumColumns',2);
 xlim([0 T]);
 ylim([-6 6])
 subplot(133)
-stairs([x0(5),x_opt{5}(end, N_finite_elements:N_finite_elements:end)],[u1_opt;nan],'color',matlab_blue,'linewidth',1.2);
+stairs(results.st.x_i_opt{5}(1:N_finite_elements:end),[u1_opt;nan],'color',matlab_blue,'linewidth',1.2);
 hold on
-stairs([x0(5),x_opt{5}(end,N_finite_elements:N_finite_elements:end)],[u2_opt;nan],'color',matlab_red,'linewidth',1.2);
+stairs(results.st.x_i_opt{5}(1:N_finite_elements:end),[u2_opt;nan],'color',matlab_red,'linewidth',1.2);
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$u(t)$','interpreter','latex');

@@ -31,7 +31,7 @@ end
 
 x_opt_extended = w_opt(ind_x);
 x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
-x_opt_s = [cellfun(@(x) w_opt(x), problem.ind_x, 'uni', 0)];
+x_opt_s = [cellfun(@(x) w_opt(x), problem.ind_x(:,:,end), 'uni', 0)];
 x_opt = reshape(transpose(x_opt_s(:,:,end)), prod(size(x_opt_s(:,:,end))), 1);
 x_opt = [x_opt_extended(:,1), x_opt{:}];
 
@@ -84,19 +84,19 @@ ind_t_grid_u = cumsum([1; N_finite_elements]);
 %% Get structured output (These do not contain x0)
 switch pss_mode
   case 'Stewart'
-    theta_opt_s = cellfun(@(theta) w_opt(theta), problem.ind_theta(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
-    lambda_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lam, 'uni', 0);
-    mu_opt_s = cellfun(@(mu) w_opt(mu), problem.ind_mu, 'uni', 0);
+    theta_opt_s = cellfun(@(theta) w_opt(theta), problem.ind_theta(:,:,end-(~settings.right_boundary_point_explicit)), 'uni', 0);
+    lambda_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lam(:,:,end), 'uni', 0);
+    mu_opt_s = cellfun(@(mu) w_opt(mu), problem.ind_mu(:,:,end), 'uni', 0);
   case 'Step'
-    alpha_opt_s = cellfun(@(alpha) w_opt(alpha), problem.ind_alpha(1:end-(~settings.right_boundary_point_explicit),:), 'uni', 0);
-    lambda_n_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lambda_n, 'uni', 0);
-    lambda_p_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lambda_p, 'uni', 0);
+    alpha_opt_s = cellfun(@(alpha) w_opt(alpha), problem.ind_alpha(:,:,end-(~settings.right_boundary_point_explicit)), 'uni', 0);
+    lambda_n_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lambda_n(:,:,end), 'uni', 0);
+    lambda_p_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lambda_p(:,:,end), 'uni', 0);
 end
 x_i_opt = cell(n_x, 1);
 x_i_opt_flat = cell(n_x, 1);
 for i = 1:n_x
     x_i_opt{i} = cellfun(@(x) x(i), x_opt_s);
-    x_i_opt_flat{i} = reshape(x_i_opt{i}, prod(size(x_i_opt{i})), 1);
+    x_i_opt_flat{i} = [x_opt_extended(i,1);reshape(transpose(x_i_opt{i}), prod(size(x_i_opt{i})), 1)];
 end
 
 switch pss_mode
@@ -106,7 +106,7 @@ switch pss_mode
     % convex multiplers
     for i = 1:n_theta
         theta_i_opt{i} = cellfun(@(t) t(i), theta_opt_s);
-        theta_i_opt_flat{i} = reshape(theta_i_opt{i}, prod(size(theta_i_opt{i})), 1);
+        theta_i_opt_flat{i} = reshape(transpose(theta_i_opt{i}), prod(size(theta_i_opt{i})), 1);
     end
 
     lambda_i_opt = cell(n_theta, 1);
@@ -114,7 +114,7 @@ switch pss_mode
     % lambdas
     for i = 1:n_theta
         lambda_i_opt{i} = cellfun(@(l) l(i), lambda_opt_s);
-        lambda_i_opt_flat{i} = reshape(lambda_i_opt{i}, prod(size(lambda_i_opt{i})), 1);
+        lambda_i_opt_flat{i} = reshape(transpose(lambda_i_opt{i}), prod(size(lambda_i_opt{i})), 1);
     end
 
     mu_i_opt = cell(n_sys, 1);
@@ -122,7 +122,7 @@ switch pss_mode
     % mu
     for i = 1:n_sys
         mu_i_opt{i} = cellfun(@(l) l(i), mu_opt_s);
-        mu_i_opt_flat{i} = reshape(mu_i_opt{i}, prod(size(mu_i_opt{i})), 1);
+        mu_i_opt_flat{i} = reshape(transpose(mu_i_opt{i}), prod(size(mu_i_opt{i})), 1);
     end
   case 'Step'
     alpha_i_opt = cell(n_alpha, 1);
@@ -130,7 +130,7 @@ switch pss_mode
     % convex multiplers
     for i = 1:n_alpha
         alpha_i_opt{i} = cellfun(@(t) t(i), alpha_opt_s);
-        alpha_i_opt_flat{i} = reshape(alpha_i_opt{i}, prod(size(alpha_i_opt{i})), 1);
+        alpha_i_opt_flat{i} = reshape(transpose(alpha_i_opt{i}), prod(size(alpha_i_opt{i})), 1);
     end
 
     lambda_n_i_opt = cell(n_lambda, 1);
@@ -138,7 +138,7 @@ switch pss_mode
     % lambdas
     for i = 1:n_lambda/2
         lambda_n_i_opt{i} = cellfun(@(l) l(i), lambda_n_opt_s);
-        lambda_n_i_opt_flat{i} = reshape(lambda_n_i_opt{i}, prod(size(lambda_n_i_opt{i})), 1);
+        lambda_n_i_opt_flat{i} = reshape(transpose(lambda_n_i_opt{i}), prod(size(lambda_n_i_opt{i})), 1);
     end
 
     lambda_p_i_opt = cell(n_lambda, 1);
@@ -146,7 +146,7 @@ switch pss_mode
     % lambdas
     for i = 1:n_lambda/2
         lambda_p_i_opt{i} = cellfun(@(l) l(i), lambda_p_opt_s);
-        lambda_p_i_opt_flat{i} = reshape(lambda_p_i_opt{i}, prod(size(lambda_p_i_opt{i})), 1);
+        lambda_p_i_opt_flat{i} = reshape(transpose(lambda_p_i_opt{i}), prod(size(lambda_p_i_opt{i})), 1);
     end
 end
 

@@ -153,7 +153,7 @@ ylabel('$v(t)$ ','Interpreter','latex')
 grid on
 
 subplot(222)
-stairs(st.x_i_opt{5}(1:N_finite_elements*n_s:end),[u1_opt],'LineWidth',1.5)
+stairs(st.x_i_opt{5}(1:N_finite_elements:end),[u1_opt;nan],'LineWidth',1.5)
 ylim([-u_max*1.1 u_max*1.1])
 xlim([0 max(st.x_i_opt{5}(1:N_finite_elements:end))])
 xlabel('$t$ ','Interpreter','latex')
