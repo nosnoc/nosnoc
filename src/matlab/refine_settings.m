@@ -38,7 +38,7 @@ if strcmpi(mpcc_mode,'direct')
    N_homotopy = 1;
    sigma_0 = 1e-12;
    sigma_N = 1e-12;
-   mpcc_mode = 'scholtes_ineq';
+   mpcc_mode = 'Scholtes_ineq';
 end
 
 if strcmpi(mpcc_mode,'ell_1_penalty')
@@ -122,6 +122,10 @@ end
 % lifting does not make sense in integral mode
 if isequal(irk_representation,'integral') 
     lift_irk_differential = 0;
+end
+
+if lift_irk_differential
+    irk_representation = IrkRepresentation.differential_lift_x;
 end
 
 %% Save data for output into struct

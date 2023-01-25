@@ -39,10 +39,11 @@ if nargin>4
     settings_int = varargin{6};
 end
 
-
 import casadi.*
 %%  unfold data
+settings_bkp = settings;
 unfold_struct(settings,'caller')
+settings = settings_bkp;
 unfold_struct(solver_initialization,'caller')
 
 comp_res = model.comp_res;
@@ -50,23 +51,25 @@ nabla_J_fun = model.nabla_J_fun;
 s_elastic_iter = 1;
 
 sigma_k = sigma_0;
-x0 = solver_initialization.lbw(1:model.dimensions.n_x);
+x0 = solver_initialization.w0(1:model.dimensions.n_x);
 
 % lambda00 initialization
 if strcmp(settings.pss_mode, 'Stewart')
-    lambda00 = full(model.lambda00_fun(x0));
+    lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
 elseif strcmp(settings.pss_mode, 'Step')
 %     c_x = full(model.c_fun(x0));
 %     lambda00 = [ max(c_x, 0); min(c_x, 0)];
-    lambda00 = full(model.lambda00_fun(x0));
+    lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
 end
-p_val = [model.p_val(:); lambda00(:)];
+p_val = [model.p_val(:);x0(:); lambda00(:)];
 
 % TODO remove try!
 try
     complementarity_stats = [full(comp_res(w0, p_val))];
 catch
     w0 = w0(1:length(model.w));
+    w0
+    p_val
     complementarity_stats = [full(comp_res(w0, p_val))];
 end
 cpu_time = [];
@@ -86,8 +89,7 @@ if print_level >= 3
     fprintf('\niter\tsigma\t\tcompl_res\tCPU time\tNLP iters\tstatus\n')
 end
 
-
-while (complementarity_iter) > comp_tol && ii < N_homotopy && sigma_k > sigma_N
+while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N || ii == 0)
     % homotopy parameter update
     if ii == 0
         sigma_k = sigma_0;
@@ -120,7 +122,7 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && sigma_k > sigma_N
         cpu_time_iter = toc ;
     end
     if isequal(solver.stats.return_status,'Infeasible_Problem_Detected')
-        warning('NLP infeasible: try different mpcc_mode or check problem functions.');
+        warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
     end
 
     cpu_time = [cpu_time,cpu_time_iter];

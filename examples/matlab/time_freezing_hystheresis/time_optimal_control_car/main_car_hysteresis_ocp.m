@@ -46,15 +46,19 @@ settings.use_speed_of_time_variables = 1;
 settings.local_speed_of_time_variable = 1;
 % solver settings
 settings.opts_ipopt.ipopt.tol = 1e-8;
-settings.comp_tol = 1e-8;
+settings.comp_tol = 1e-5;
 settings.cross_comp_mode = 8;
 settings.homotopy_update_rule = 'superlinear';
+
+settings.initial_lambda = 0.0;
+settings.initial_theta = 0.0;
+settings.initial_mu = 0.0;
 
 %% Model Settings
 model.fuel_cost_on = 0;
 model.N_finite_elements = 3;
 model.N_stages = 10;
-model.T = 5;
+model.T = 1;
 %% solve OCP
 model = car_hystheresis_model_voronoi(model);
 [results,stats,model,settings] = nosnoc_solver(model,settings);

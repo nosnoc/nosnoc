@@ -81,10 +81,12 @@ if ~solver_exists
         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
     end
 end
-
+% TODO remove this but needed now because unfold_struct clobers fields for some reason
+settings_bkp = settings;
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 unfold_struct(solver_initialization,'caller')
+settings = settings_bkp;
 
 %% chekc does the provided u_sim has correct dimensions
 if exist('u_sim','var')
@@ -106,9 +108,6 @@ mu_res = [];
 lambda_res_extended = [];
 theta_res_extended = [];
 mu_res_extended = [];
-% if c_{n_s} \neq 1 output also the boundary lambda and mu
-lambda_boundary_res = [];
-mu_boundary_res = [];
 
 % Step
 alpha_res = [];
@@ -118,9 +117,6 @@ lambda_1_res = [];
 alpha_res_extended = [];
 lambda_0_res_extended = [];
 lambda_1_res_extended = [];
-% if c_{n_s} \neq 1 output also the boundary lambda and mu
-lambda_0_boundary_res = [];
-lambda_1_boundary_res = [];
 
 % step size
 h_vec = [];
@@ -139,11 +135,12 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
     if control_exists
-        solver_initialization.lbw(ind_u) = repmat(u_sim(:,ii),N_stages,1);
-        solver_initialization.ubw(ind_u)  = repmat(u_sim(:,ii),N_stages,1);
+        solver_initialization.lbw([ind_u{:}]) = repmat(u_sim(:,ii),N_stages,1);
+        solver_initialization.ubw([ind_u{:}])  = repmat(u_sim(:,ii),N_stages,1);
     end
 
     [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
+    res = extract_results_from_solver(model, settings, sol);
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
     if stats.complementarity_stats(end) > 1e-3
@@ -157,30 +154,24 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     w_opt = full(sol.x);
     diff_states = w_opt(ind_x);
     alg_states = w_opt(ind_z);
-    alg_states_boundary = w_opt(ind_boundary);
 
     diff_res = [diff_res;diff_states ];
     alg_res = [alg_res;alg_states];
 
 
-    if ~right_boundary_point_explicit && use_fesd
-        try
-            alg_states_boundary = reshape(alg_states_boundary,(n_z-n_theta),N_finite_elements(1)-1);
-        catch
-
-        end
-    end
     % step-size
     h_opt = w_opt(ind_h);
     % differential
     x_opt_extended = w_opt(ind_x);
     x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
+
     % only bounadry value
-    if isequal(irk_representation,'integral') || lift_irk_differential
-        x_opt  = x_opt_extended(:,1:n_s+1:end);
+    if isequal(irk_representation,'integral')
+        x_opt  = res.x_opt(:,2:end);
+    elseif isequal(irk_representation, 'differential_lift_x')
+        x_opt  = res.x_opt(:,2:end);
     else
-        % ??
-        x_opt  = x_opt_extended(:,1:n_s:end);
+        x_opt  = res.x_opt(:,2:end);
     end
 
 
@@ -221,11 +212,11 @@ for ii = 1:N_sim+additional_residual_ingeration_step
         model.p_val(end) = model.p_val(end)+model.T;
 
     end
-    solver_initialization.lbw(1:n_x) = x0;
-    solver_initialization.ubw(1:n_x) = x0;
+    solver_initialization.w0(1:n_x) = x0;
 
+    % TODO Set up homotopy solver to take p_val explicitly
     if use_previous_solution_as_initial_guess
-        solver_initialization.w0 = w_opt;
+        solver_initialization.w0(n_x+1:end) = w_opt(n_x+1:end);
     end
 
     % Store data
@@ -236,37 +227,28 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
     %sot
     s_sot_res  = [s_sot_res,w_opt(ind_sot)];
-    %differntial
+    %differntial.
     x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 
     % algebraic
     switch pss_mode
-        case 'Stewart'
-            theta_res = [theta_res, theta_opt];
-            lambda_res = [lambda_res, lambda_opt];
-            mu_res = [mu_res, mu_opt];
-            theta_res_extended = [theta_res_extended,theta_opt_extended ];
-            lambda_res_extended = [lambda_res_extended,lambda_opt_extended];
-            mu_res_extended = [mu_res_extended,mu_opt_extended];
+      case 'Stewart'
+        theta_res = [theta_res, theta_opt];
+        lambda_res = [lambda_res, lambda_opt];
+        mu_res = [mu_res, mu_opt];
+        theta_res_extended = [theta_res_extended,theta_opt_extended ];
+        lambda_res_extended = [lambda_res_extended,lambda_opt_extended];
+        mu_res_extended = [mu_res_extended,mu_opt_extended];
 
-            if ~right_boundary_point_explicit && use_fesd
-                lambda_boundary_res = [lambda_boundary_res,alg_states_boundary(1:n_theta,:)];
-                mu_boundary_res = [mu_boundary_res,alg_states_boundary(end-n_sys+1:end,:) ];
-            end
-        case 'Step'
-            alpha_res = [alpha_res, alpha_opt];
-            lambda_0_res = [lambda_0_res, lambda_0_opt];
-            lambda_1_res = [lambda_1_res, lambda_1_opt];
+      case 'Step'
+        alpha_res = [alpha_res, alpha_opt];
+        lambda_0_res = [lambda_0_res, lambda_0_opt];
+        lambda_1_res = [lambda_1_res, lambda_1_opt];
 
-            alpha_res_extended = [alpha_res_extended, alpha_opt_extended];
-            lambda_0_res_extended = [lambda_0_res_extended, lambda_0_opt_extended];
-            lambda_1_res_extended = [lambda_1_res_extended, lambda_1_opt_extended];
-
-            if ~right_boundary_point_explicit && use_fesd
-                lambda_0_boundary_res = [lambda_0_boundary_res ,alg_states_boundary(1:n_alpha,:)];
-                lambda_1_boundary_res = [lambda_1_boundary_res,alg_states_boundary(n_alpha+1:end,:) ];
-            end
+        alpha_res_extended = [alpha_res_extended, alpha_opt_extended];
+        lambda_0_res_extended = [lambda_0_res_extended, lambda_0_opt_extended];
+        lambda_1_res_extended = [lambda_1_res_extended, lambda_1_opt_extended];
     end
 
     %stats
@@ -309,7 +291,7 @@ if use_fesd
 else
     fprintf( ['Simulation with the standard ' irk_scheme ' with %d-RK stages completed.\n'],n_s);
 end
-fprintf( ['RK representation: ' irk_representation '.\n']);
+fprintf( ['RK representation: ' char(irk_representation) '.\n']);
 % fprintf('Total integration steps: %d, nominal step-size h = %2.3f.\n',N_sim,h_sim);
 if additional_residual_ingeration_step
     fprintf('--> + additional residual step to reach T_sim with  T_residual =  %2.3f.\n',T_residual);
@@ -338,9 +320,6 @@ switch pss_mode
         results.theta_res_extended  = theta_res_extended;
         results.lambda_res_extended  = lambda_res_extended;
         results.mu_res_extended  = mu_res_extended;
-        % Output boundary points
-        results.lambda_boundary_res = lambda_boundary_res;
-        results.mu_boundary_res= mu_boundary_res;
     case 'Step'
         results.alpha_res = alpha_res;
         results.lambda_0_res = lambda_0_res;
@@ -348,10 +327,6 @@ switch pss_mode
         results.alpha_res_extended = alpha_res_extended;
         results.lambda_0_res_extended = lambda_0_res_extended;
         results.lambda_1_res_extended = lambda_1_res_extended;
-
-        % Output boundary points
-        results.lambda_1_boundary_res = lambda_1_boundary_res;
-        results.lambda_0_boundary_res = lambda_0_boundary_res;
 end
 stats.complementarity_stats   = complementarity_stats;
 stats.time_per_iter = time_per_iter;

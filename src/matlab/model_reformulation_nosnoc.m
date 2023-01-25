@@ -36,7 +36,9 @@ if ~settings.time_freezing_model_exists && settings.time_freezing && ~settings.t
 end
 
 unfold_struct(model,'caller');
+settings_bkp = settings;
 unfold_struct(settings,'caller')
+settings = settings_bkp;
 
 %% Some settings refinments
 % update prin_level
@@ -88,7 +90,7 @@ N_finite_elements = N_finite_elements(:); % make a column vector of the input
 if length(N_finite_elements) > N_stages
     N_finite_elements = N_finite_elements(1:N_stages);
     if print_level >=1
-        fprintf('Info: Provided N_finite_elements had more antries then N_stages, the surplus of entries was removed. \n')
+        fprintf('Info: Provided N_finite_elements had more entries then N_stages, the surplus of entries was removed. \n')
     end
 end
 if length(N_finite_elements) == 1
@@ -156,6 +158,8 @@ if exist('u')
         u0 = 0*ones(n_u,1);
     end
 else
+    u = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+    u0 = [];
     n_u = 0;
     if print_level >=1
         fprintf('Info: No control vector u is provided. \n')
@@ -163,6 +167,51 @@ else
     lbu = [];
     ubu = [];
 end
+%% Parameters
+if exist('p_global')
+    n_p_global = size(p_global,1);
+    if exist('p_global_val')
+        if size(p_global_val,1) ~= n_p_global
+            error('User provided p_global_val has the wrong size.')
+        end
+    else
+        p_global_val = zeros(n_p_global,1);
+    end
+else
+    n_p_global = 0;
+    p_global = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+    p_global_val = [];
+    if print_level >= 1
+        fprintf('Info: No global parameters given. \n')
+    end
+end
+
+if exist('p_time_var')
+    n_p_time_var = size(p_time_var, 1);
+    if exist('p_time_var_val')
+        if size(p_time_var_val) ~= [n_p_time_var, N_stages]
+            error('User provided p_global_val has the wrong size.')
+        end
+    else
+        p_time_var_val = zeros(n_p_time_var, N_stages);
+    end
+
+    p_time_var_stages = [];
+    for ii=1:N_stages
+        var_full = define_casadi_symbolic(casadi_symbolic_mode, ['p_time_var_' num2str(ii)], n_p_time_var);
+        p_time_var_stages = horzcat(p_time_var_stages, var_full);
+    end
+else
+    n_p_time_var = 0;
+    p_time_var = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+    p_time_var_stages = define_casadi_symbolic(casadi_symbolic_mode,'', [0, N_stages]);
+    p_time_var_val = double.empty(0,N_stages);
+    if print_level >= 1
+        fprintf('Info: No time varying parameters given. \n')
+    end
+end
+
+p = vertcat(p_global,p_time_var);
 
 %% Stage and terminal costs check
 if ~exist('f_q')
@@ -332,7 +381,7 @@ else
     n_g_comp_path = 0;
     g_comp_path_constraint  = 0;
     if print_level >=1
-        fprintf('Info: No path constraints are provided. \n')
+        fprintf('Info: No path complementarity constraints are provided. \n')
     end
 end
 %% Terminal constraints
@@ -489,6 +538,8 @@ if max(n_c_sys) < 2 && isequal(pss_mode,'Step')
         fprintf('Info: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
     end
 end
+
+n_f_sys = arrayfun(@(sys) size(F{sys},2),1:n_sys);
 
 %% Algebraic variables defintion
 % Dummy variables for Stewart representation'
@@ -741,51 +792,53 @@ g_lift = [g_lift_beta; g_lift_gamma];
 
 %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS
 switch pss_mode
-    case 'Stewart'
-        % symbolic variables z = [theta;lambda;mu];
-        z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
-        lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_sys,1)];
-        ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_sys,1)];
-        % initial guess for z; % solve LP for guess;
-        if lp_initialization
-            [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
-        else
-            theta_guess = initial_theta*ones(n_theta,1);
-            lambda_guess = initial_lambda*ones(n_theta,1);
-            mu_guess = initial_mu*ones(n_sys,1);
-        end
-        z0 = [theta_guess;lambda_guess;mu_guess];
-        n_lift_eq = n_sys;
-    case 'Step'
-        z = [alpha;lambda_0;lambda_1;beta;gamma];
-        lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
-        ubz = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
+  case 'Stewart'
+    % symbolic variables z = [theta;lambda;mu];
+    z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
+    z_switching = [vertcat(lambda_all{:});vertcat(mu_all{:})];
+    lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_sys,1)];
+    ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_sys,1)];
+    % initial guess for z; % solve LP for guess;
+    if lp_initialization
+        [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
+    else
+        theta_guess = initial_theta*ones(n_theta,1);
+        lambda_guess = initial_lambda*ones(n_theta,1);
+        mu_guess = initial_mu*ones(n_sys,1);
+    end
+    z0 = [theta_guess;lambda_guess;mu_guess];
+    n_lift_eq = n_sys;
+  case 'Step'
+    z = [alpha;lambda_0;lambda_1;beta;gamma];
+    z_switching = [lambda_0;lambda_1];
+    lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
+    ubz = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
 
-        alpha_guess = initial_alpha*ones(n_alpha,1);
-        lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
-        lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
-        %         beta_guess = initial_beta*ones(n_beta,1);
-        %         gamma_guess = initial_gamma*ones(n_gamma,1);
-        if pss_lift_step_functions
-            if friction_is_present
-                beta_guess = full(g_lift_beta_fun(alpha_guess));
-                gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
-            else
-                beta_guess = [];
-                if n_beta >0
-                    beta_guess = full(g_lift_beta_fun(alpha_guess));
-                    gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess ));
-                else
-                    gamma_guess = full(g_lift_gamma_fun(alpha_guess));
-                end
-            end
+    alpha_guess = initial_alpha*ones(n_alpha,1);
+    lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
+    lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
+    %         beta_guess = initial_beta*ones(n_beta,1);
+    %         gamma_guess = initial_gamma*ones(n_gamma,1);
+    if pss_lift_step_functions
+        if friction_is_present
+            beta_guess = full(g_lift_beta_fun(alpha_guess));
+            gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
         else
             beta_guess = [];
-            gamma_guess = [];
+            if n_beta >0
+                beta_guess = full(g_lift_beta_fun(alpha_guess));
+                gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess ));
+            else
+                gamma_guess = full(g_lift_gamma_fun(alpha_guess));
+            end
         end
-        % eval functios for gamma and beta?
-        z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
-        n_lift_eq =length(g_lift);
+    else
+        beta_guess = [];
+        gamma_guess = [];
+    end
+    % eval functios for gamma and beta?
+    z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
+    n_lift_eq =length(g_lift);
 end
 
 %% Reformulate the Filippov ODE into a DCS
@@ -834,15 +887,14 @@ for ii = 1:n_sys
     end
 end
 
-
 %% Lifting of forces in time-freezing
 % the r.h.s of M(q)ddot{q} = f(q,dor{q},u) into  M{q}z-f(q,dor{q},u)= 0; \ddot{q} = z
 g_lift_forces = [];
 if time_freezing && time_freezing_lift_forces
     f_v = f_x(n_q+1:2*n_q);
     if n_u > 0
-            f_v_fun = Function('f_v_fun',{x,z,u},{f_v});
-            z0_forces = full(f_v_fun(x0,z0,u0));
+        f_v_fun = Function('f_v_fun',{x,z,u},{f_v});
+        z0_forces = full(f_v_fun(x0,z0,u0));
     else
         f_v_fun = Function('f_v_fun',{x,z},{f_v});
         z0_forces = full(f_v_fun(x0,z0));
@@ -869,46 +921,37 @@ n_algebraic_constraints = length(g_z_all);
 %     g_Stewart_fun = Function('g_Stewart_fun',{x,u},{g_ind_vec});
 %     c_fun = Function('c_fun',{x,u},{c_all});
 % else
-g_Stewart_fun = Function('g_Stewart_fun',{x},{g_ind_vec});
-c_fun = Function('c_fun',{x},{c_all});
+g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
+c_fun = Function('c_fun',{x,p},{c_all});
 
 % end
 dot_c = c_all.jacobian(x)*f_x;
-if n_u >0
-    f_x_fun = Function('f_x_fun',{x,z,u},{f_x,f_q});
-    g_z_all_fun = Function('g_z_all_fun',{x,z,u},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    g_switching_fun = Function('g_switching_fun', {x, z, u}, {g_switching}); 
-    dot_c_fun = Function('c_fun',{x,z,u},{dot_c}); % total time derivative of switching functions
-else
-    f_x_fun = Function('f_x_fun',{x,z},{f_x,f_q});
-    g_z_all_fun = Function('g_z_all_fun',{x,z},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
-    g_switching_fun = Function('g_switching_fun', {x, z}, {g_switching}); 
-    dot_c_fun = Function('c_fun',{x,z},{dot_c}); % total time derivative of switching functions
-end
-model.lambda00_fun = Function('lambda00_fun',{x},{lambda00_expr});
+
+f_x_fun = Function('f_x_fun',{x,z,u,p},{f_x,f_q,p});
+g_z_all_fun = Function('g_z_all_fun',{x,z,u,p},{g_z_all,p}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+
+g_switching_fun = Function('g_switching_fun', {x,z_switching,u,p}, {g_switching}); 
+dot_c_fun = Function('c_fun',{x,z,u,p},{dot_c}); % total time derivative of switching functions
+
+model.lambda00_fun = Function('lambda00_fun',{x,p_global},{lambda00_expr});
 
 J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
-f_q_T_fun = Function('f_q_T',{x},{f_q_T});
+f_q_T_fun = Function('f_q_T',{x,p},{f_q_T});
 
 %%  CasADi functions for lest-square objective function terms
-f_lsq_x_fun = Function('f_lsq_x_fun',{x,x_ref},{f_lsq_x});
+f_lsq_x_fun = Function('f_lsq_x_fun',{x,x_ref,p},{f_lsq_x});
 if n_u > 0
-    f_lsq_u_fun = Function('f_lsq_u_fun',{u,u_ref},{f_lsq_u});
+    f_lsq_u_fun = Function('f_lsq_u_fun',{u,u_ref,p},{f_lsq_u});
 end
-f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end},{f_lsq_T});
+f_lsq_T_fun = Function('f_lsq_T_fun',{x,x_ref_end,p_global},{f_lsq_T});
 
 %% Initial guess for state derivatives at stage points
 if isequal(irk_representation,'differential')
     if simple_v0_guess
         v0 = zeros(n_x,1);
     else
-        if n_u>0
-            [v0,~] = (f_x_fun(x0,z0,u0));
-            v0 = full(v0);
-        else
-            [v0,~] = (f_x_fun(x0,z0));
-            v0 = full(v0);
-        end
+        [v0,~] = (f_x_fun(x0,z0,u0,[p_global_val; p_time_var_val(:,1)]));
+        v0 = full(v0);
     end
     model.v0 = v0;
 end
@@ -950,6 +993,12 @@ if terminal_constraint
     model.g_terminal_fun = g_terminal_fun;
 end
 
+if exist('g_lift_gamma_fun')
+    model.g_lift_gamma_fun = g_lift_gamma_fun;
+end
+if exist('g_lift_beta_fun')
+    model.g_lift_beta_fun = g_lift_beta_fun;
+end
 
 % CasADi Expressions
 model.f_x = f_x;
@@ -960,7 +1009,7 @@ model.f_q_T = f_q_T;
 % CasADi Functions
 model.f_x_fun = f_x_fun;
 model.g_z_all_fun = g_z_all_fun;
-model.g_switching_fun = g_switching_fun
+model.g_switching_fun = g_switching_fun;
 model.f_q_T_fun = f_q_T_fun;
 
 model.J_cc_fun = J_cc_fun;
@@ -1001,7 +1050,17 @@ model.u_ref_val = u_ref_val;
 model.f_lsq_T_fun = f_lsq_T_fun;
 model.x_ref_end_val = x_ref_end_val;
 
+% global parameters
+model.p_global = p_global;
+model.p_global_val = p_global_val;
 
+% time varying parameters
+% TODO maybe make these functions and actually optimization vars. (actually this might just be algebraic vars)
+model.p_time_var = p_time_var;
+model.p_time_var_stages = p_time_var_stages;
+model.p_time_var_val = p_time_var_val;
+
+model.p_dyn = [p_global, p_time_var_stages];
 %% collect all dimensions in one sperate struct as it is needed by several other functions later.
 dimensions.N_stages = N_stages;
 dimensions.N_finite_elements = N_finite_elements;
@@ -1020,6 +1079,9 @@ dimensions.n_beta = n_beta;
 dimensions.n_gamma = n_gamma;
 dimensions.n_lambda_0 = n_lambda_0;
 dimensions.n_lambda_1 = n_lambda_1;
+dimensions.n_f_sys = n_f_sys;
+dimensions.n_p_global = n_p_global;
+dimensions.n_p_time_var = n_p_time_var;
 model.dimensions = dimensions;
 
 end

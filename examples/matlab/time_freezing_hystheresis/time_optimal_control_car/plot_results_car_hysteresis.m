@@ -79,7 +79,7 @@ tgrid_z = linspace(0, T, N_stages);
 %% Read solutions
 
 diff_states = w_opt(ind_x);
-controls = w_opt(ind_u);
+controls = w_opt([ind_u{:}]);
 alg_states = w_opt(ind_z);
 
 % differential states
@@ -134,47 +134,47 @@ end
 if mpcc_mode == 4
     ind_t = find([1;theta1_opt]>1e-2);
 else
-    ind_t = find(diff([nan;x5_opt;nan])>1e-5);
+    ind_t = find(diff([nan;st.x_i_opt{5};nan])>1e-5);
 end
-time_physical = x5_opt(ind_t);
+time_physical = st.x_i_opt{5}(ind_t);
 
 
 
 %% plots in phyisical time for paper
 figure
 subplot(221)
-plot(x5_opt,x2_opt,'LineWidth',1.5)
+plot(st.x_i_opt{5},st.x_i_opt{2},'LineWidth',1.5)
 hold on
-plot(x5_opt,x2_opt*0+v1,'k--','LineWidth',1.0)
-plot(x5_opt,x2_opt*0+v2,'k--','LineWidth',1.0)
-plot(x5_opt,x2_opt*0+v_max,'r--','LineWidth',1.5)
+plot(st.x_i_opt{5},st.x_i_opt{2}*0+v1,'k--','LineWidth',1.0)
+plot(st.x_i_opt{5},st.x_i_opt{2}*0+v2,'k--','LineWidth',1.0)
+plot(st.x_i_opt{5},st.x_i_opt{2}*0+v_max,'r--','LineWidth',1.5)
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$v(t)$ ','Interpreter','latex')
 grid on
 
 subplot(222)
-stairs(x5_opt(1:N_finite_elements:end),[u1_opt;nan],'LineWidth',1.5)
+stairs(st.x_i_opt{5}(1:N_finite_elements:end),[u1_opt;nan],'LineWidth',1.5)
 ylim([-u_max*1.1 u_max*1.1])
-xlim([0 max(x5_opt(1:N_finite_elements:end))])
+xlim([0 max(st.x_i_opt{5}(1:N_finite_elements:end))])
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$u(t)$ ','Interpreter','latex')
 grid on
 
 subplot(223)
-plot(x5_opt,x4_opt,'LineWidth',1.5)
+plot(st.x_i_opt{5},st.x_i_opt{4},'LineWidth',1.5)
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$w(t)$ ','Interpreter','latex')
 ylim([-0.1 1.1]);
 grid on
 
-ind_t = find(diff(x5_opt)>0.01);
-ind_t_complement = find(abs(diff(x5_opt))<0.00000000000001);
-x2_opt_phy = x2_opt;
-x4_opt_phy = x4_opt;
+ind_t = find(diff(st.x_i_opt{5})>0.01);
+ind_t_complement = find(abs(diff(st.x_i_opt{5}))<0.00000000000001);
+x2_opt_phy = st.x_i_opt{2};
+x4_opt_phy = st.x_i_opt{4};
 x2_opt_phy(ind_t_complement) = nan;
 x4_opt_phy(ind_t_complement) = nan;
 subplot(224)
-plot(x2_opt,x4_opt,'LineWidth',1.5)
+plot(st.x_i_opt{2},st.x_i_opt{4},'LineWidth',1.5)
 hold on
 % plot(x2_opt_phy,x4_opt_phy,linewidth=2)
 % plot(x2_opt(ind_t),x4_opt(ind_t),linewidth=2)
@@ -192,7 +192,7 @@ saveas(gcf,'states_and_control')
 %% phase plot
 
 figure
-    plot(x2_opt,x4_opt)
+    plot(st.x_i_opt{2},st.x_i_opt{4})
     grid on
     ylim([-0.1 1.1])
     ylabel('$w$ [hystheresis state]','Interpreter','latex')

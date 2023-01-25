@@ -43,6 +43,7 @@ filename = 'discs_manipulation.gif';
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
 settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
+settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 7;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.comp_tol = 1e-9;
@@ -53,7 +54,7 @@ settings.time_freezing = 1;
 
 %% discretizatioon
 N_stg = 10; % control intervals
-N_FE = 3;  % integration steps per control intevral
+N_FE = 5;  % integration steps per control intevral
 T = 2;
 
 %% model parameters

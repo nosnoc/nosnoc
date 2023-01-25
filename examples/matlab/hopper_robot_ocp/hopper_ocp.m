@@ -183,7 +183,8 @@ t_opt = x_opt(9,:);
 % Swtiching functions: Gap function, normal velocity, tangentail velocity
 c_eval = [];
 for ii = 1:length(x_opt)
-    c_eval = [c_eval,full(model.c_fun(x_opt(:,ii)))];
+    % Note: Empty parameter argument as there are no global/time_varying params.
+    c_eval = [c_eval,full(model.c_fun(x_opt(:,ii),[]))];
 end
 %%  plots
 fig_num = 2;

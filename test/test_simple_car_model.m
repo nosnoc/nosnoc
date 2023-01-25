@@ -7,6 +7,8 @@ settings.irk_scheme = 'Radau-IIA';
 % set the cross complimentarity mode that 
 settings.cross_comp_mode = cross_comp;
 settings.mpcc_mode = mpcc_mode;
+fprintf('cross_comp\tmpcc_mode\n')
+fprintf('%d\t\t%s\n', cross_comp, mpcc_mode);
 settings.n_s = 2;
 settings.N_homotopy = 10; 
 % Time-settings  - Solve an time optimal control problem

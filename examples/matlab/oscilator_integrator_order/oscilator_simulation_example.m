@@ -44,10 +44,10 @@ R_osc  = 1;
 % collocation settings
 settings = default_settings_nosnoc();
 settings.use_fesd = 1;       % switch detection method on/off
-settings.irk_scheme = 'Radau-IIA'; %'Gauss-Legendre';
+settings.irk_scheme = 'Gauss-Legendre'; %'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 4;
-settings.pss_mode = 'Stewart'; % 'Step;
+settings.pss_mode = 'Step'; % 'Step;
 settings.mpcc_mode = 'Scholtes_ineq';  % Scholtes regularization
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-9;

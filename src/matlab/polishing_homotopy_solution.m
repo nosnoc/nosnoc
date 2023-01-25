@@ -29,7 +29,9 @@ if isequal(settings.pss_mode,'Stewart');
 end
 %% unfold
 import casadi.*
+settings_bkp = settings;
 unfold_struct(settings,'caller');
+settings = settings_bkp;
 unfold_struct(model,'caller');
 
 
@@ -51,7 +53,8 @@ ind_lambda1  = [ind_z_extended(2*n_alpha+1:3*n_alpha,:)];
 %% evaluating switching futction
 c_eval = [];
 for ii = 1:length(x_modified)
-    c_eval = [c_eval,full(c_fun(x_modified(:,ii)))];
+    % TODO Make this work with parameters
+    c_eval = [c_eval,full(c_fun(x_modified(:,ii),[]))];
 end
 
 if polishing_derivative_test
@@ -131,9 +134,10 @@ lbw(ind_lambda0_sliding(:)) = 0;  ubw(ind_lambda0_sliding(:)) = 0;
 
 %% Solve nlp
 tic
-results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',0);
+p_val = [model.p_val; model.x0;full(model.lambda00_fun(x0, model.p_global_val))];
+results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p', p_val);
 cpu_time_iter = toc;
-complementarity_iter = full(model.comp_res(results.x,[zeros(n_x+n_theta,1)]));
+complementarity_iter = full(model.comp_res(results.x,[zeros(5+n_x+n_theta,1)]));
 results = extract_results_from_solver(model,settings,results);
 results.complementarity_iter  = complementarity_iter ;
 %% Verbose

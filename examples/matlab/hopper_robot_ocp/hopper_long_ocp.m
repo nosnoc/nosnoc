@@ -55,7 +55,7 @@ settings.opts_ipopt.ipopt.tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_iter = 3;
 
-settings.print_level = 5;
+% settings.print_level = 2;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
 % settings.s_sot_max = 2;
@@ -182,7 +182,8 @@ t_opt = x_opt(9,:);
 % gap function, normal and tangential velocity
 c_eval = [];
 for ii = 1:length(q_opt)
-    c_eval = [c_eval,full(model.c_fun(x_opt(:,ii)))];
+    % Note: Empty parameter argument as there are no global/time_varying params.
+    c_eval = [c_eval,full(model.c_fun(x_opt(:,ii),[]))];
 end
 
 %%  plots
