@@ -25,44 +25,41 @@
 
 % This file is part of NOSNOC.
 
-%% Info
-% TODO Add paper reference
-%%
-clear all
-clc
-close all
-import casadi.*
+function plot_two_gene(results, arrows)
+% Warning plotting arrow is _very_ slow because matlab is weird.
+    hold on
+    for result=results
+        plot(result.x_res(1,:), result.x_res(2,:));
+        if arrows
+            dx = gradient(result.x_res(1,:));
+            dy = gradient(result.x_res(2,:));
+            quiv = quiver(result.x_res(1,:),result.x_res(2,:),dx,dy,10^-10);
 
-%% Discretization
-N_finite_elements = 2;
-T_sim = 1;
-N_sim = 10;
+            % Hack to get arrows
+            U = quiv.UData;
+            V = quiv.VData;
+            X = quiv.XData;
+            Y = quiv.YData;
 
-%% Settings
-settings = default_settings_nosnoc();
-settings.use_fesd = 1;
-settings.irk_scheme = 'Radau-IIA';
-settings.print_level = 2;
-settings.n_s = 4;
-settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
-settings.comp_tol = 1e-5;
-settings.homotopy_update_rule = 'superlinear';
+            %right version (with annotation)
+            head_width = 2.5;
+            head_length = 2.5;
+            line_length = 1e-10;
+            for ii = 1:size(X,1)
+                for ij = 1:size(X,2)
+                    ah = annotation('arrow',...
+                                    'headStyle','cback1','HeadLength',head_length,'HeadWidth',head_width,...
+                                    'Color', quiv.Color);
+                    set(ah,'parent',gca);
+                    set(ah,'position',[X(ii,ij) Y(ii,ij) line_length*U(ii,ij) line_length*V(ii,ij)]);
 
-%% Generate different trajectories
-results = [];
-for x1 = 3:3:12
-    for x2 = 3:3:12
-        x0 = [x1;x2];
-        % Generate model
-        model = two_gene_model(x0);
-        % Time
-        model.N_finite_elements = N_finite_elements;
-        model.T_sim = T_sim;
-        model.N_sim = N_sim;
-
-        [result,stats,model] = integrator_fesd(model,settings);
-        results = [results,result];
+                end
+            end
+        end
     end
-end
 
-plot_two_gene(results, false)
+    xline([4,8],'--',{'$\theta_1^1$','$\theta_1^2$'},'Interpreter','latex')
+    yline([4,8],'--',{'$\theta_2^1$','$\theta_2^2$'},'Interpreter','latex')
+    xlabel('$x_1$','Interpreter','latex');
+    ylabel('$x_2$','Interpreter','latex');
+end

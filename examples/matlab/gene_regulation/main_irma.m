@@ -34,35 +34,28 @@ close all
 import casadi.*
 
 %% Discretization
-N_finite_elements = 2;
-T_sim = 1;
-N_sim = 10;
+N_finite_elements = 3;
+T_sim = 10;
+N_sim = 100;
 
 %% Settings
 settings = default_settings_nosnoc();
 settings.use_fesd = 1;
 settings.irk_scheme = 'Radau-IIA';
+settings.mpcc_mode = MpccMode.elastic_ineq
 settings.print_level = 2;
-settings.n_s = 4;
+settings.n_s = 2;
 settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
 settings.comp_tol = 1e-5;
 settings.homotopy_update_rule = 'superlinear';
 
-%% Generate different trajectories
-results = [];
-for x1 = 3:3:12
-    for x2 = 3:3:12
-        x0 = [x1;x2];
-        % Generate model
-        model = two_gene_model(x0);
-        % Time
-        model.N_finite_elements = N_finite_elements;
-        model.T_sim = T_sim;
-        model.N_sim = N_sim;
+% Generate model
+model = irma_model(0);
+% Time
+model.N_finite_elements = N_finite_elements;
+model.T_sim = T_sim;
+model.N_sim = N_sim;
 
-        [result,stats,model] = integrator_fesd(model,settings);
-        results = [results,result];
-    end
-end
+[result,stats,model] = integrator_fesd(model,settings);
 
-plot_two_gene(results, false)
+

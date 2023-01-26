@@ -25,44 +25,44 @@
 
 % This file is part of NOSNOC.
 
-%% Info
-% TODO Add paper reference
-%%
-clear all
-clc
-close all
-import casadi.*
+function [model] = irma_model(switch_on)
+% Generate model for two gene regulatory network with given initial conditions
+    import casadi.*
+    % Initial Value
+    model.x0 = [0.011;1;0.0;0.09;0.005];
+    % Variables
+    % Concentrations
+    x = SX.sym('x', 5);
+    % alphas for general inclusions
+    alpha = SX.sym('alpha', 7);
+    % Thresholds
+    theta = {[0.01],[0.01;0.06;0.08],[0.035],[0.04],[0.01]};
+    % Synthesis
+    kappa = [1.1e-4, 9e-4;
+             3e-4, 0.15;
+             6e-4, 0.018;
+             5e-4, 0.03;
+             7.5e-3, 0.015];
+    % Degradation
+    gamma = [0.05;0.04;0.05;0.02;0.6];
+    % Switching function
+    c = [x(1)-theta{1};
+         x(2)-theta{2};
+         x(3)-theta{3};
+         x(4)-theta{4};
+         x(5)-theta{5}];
+    % f_x
+    s = [1, alpha(6);
+         1, alpha(1)*(1-(1-switch_on)*alpha(7));
+         1, alpha(3);
+         alpha(2),alpha(2)*(1-alpha(5));
+         1, alpha(4)];
+    f_x = -gamma.*x + sum(kappa.*s, 2);
 
-%% Discretization
-N_finite_elements = 2;
-T_sim = 1;
-N_sim = 10;
-
-%% Settings
-settings = default_settings_nosnoc();
-settings.use_fesd = 1;
-settings.irk_scheme = 'Radau-IIA';
-settings.print_level = 2;
-settings.n_s = 4;
-settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
-settings.comp_tol = 1e-5;
-settings.homotopy_update_rule = 'superlinear';
-
-%% Generate different trajectories
-results = [];
-for x1 = 3:3:12
-    for x2 = 3:3:12
-        x0 = [x1;x2];
-        % Generate model
-        model = two_gene_model(x0);
-        % Time
-        model.N_finite_elements = N_finite_elements;
-        model.T_sim = T_sim;
-        model.N_sim = N_sim;
-
-        [result,stats,model] = integrator_fesd(model,settings);
-        results = [results,result];
-    end
+    % set model parameters
+    model.x = x;
+    model.alpha = alpha;
+    model.f_x = f_x;
+    model.c = c;
 end
 
-plot_two_gene(results, false)
