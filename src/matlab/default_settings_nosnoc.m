@@ -124,6 +124,8 @@ time_freezing_nonlinear_friction_cone = 1; % 1 - use nonlienar friction cone, 0 
 time_freezing_quadrature_state = 0; % make a nonsmooth quadrature state to integrate only if physical time is running
 time_freezing_lift_forces = 0; % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0; 
 
+friction_is_present = 0;
+
 %% Verbose
 print_level = 3;
 

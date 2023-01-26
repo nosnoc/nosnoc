@@ -58,10 +58,10 @@ if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end
 
-if exists('model.alpha')
-    settings.general_inclusions = 1;
+if isfield(model, 'alpha')
+    settings.general_inclusion = 1;
 else
-    settings.general_inclusions = 0;
+    settings.general_inclusion = 0;
 end
 
 %% If different names are used...
@@ -429,7 +429,14 @@ m_vec = [];
 n_c_sys = [];
 
 if ~exist('F')
-    error('Matrix F (or matrices F_i) with PSS modes not provided.');
+    % Don't need F
+    if ~settings.general_inclusion
+        error('Matrix F (or matrices F_i) with PSS modes not provided.');
+    else
+        % TODO Implement more subsystems.
+        n_sys = 1;
+        m_vec = [size(f_x,1)];
+    end
 else
     % check how many subsystems are present
     if iscell(F)
@@ -446,26 +453,46 @@ else
 end
 
 if ~exist('S')
-    % if not the matrix S is provided, maybe the g_ind are avilable
-    % directly?
-    if isequal(pss_mode,'Stewart')
-        if exist('g_ind')
-            if ~iscell(g_ind)
-                g_ind = {g_ind};
-            end
+    % if we are using general inclusions we dont need S.
+    if ~settings.general_inclusion    
+        % if the matrix S is not provided, maybe the g_ind are available
+        % directly?
+        if isequal(pss_mode,'Stewart')
+            if exist('g_ind')
+                if ~iscell(g_ind)
+                    g_ind = {g_ind};
+                end
 
-            for ii = 1:n_sys
-                % discrimnant functions
-                g_ind_vec =  [g_ind_vec;g_ind{ii};];
-                g_Stewart{ii} = g_ind{ii};
-                c_all = [c_all; zeros(1,casadi_symbolic_mode)];
+                for ii = 1:n_sys
+                    % discriminant functions
+                    g_ind_vec =  [g_ind_vec;g_ind{ii};];
+                    g_Stewart{ii} = g_ind{ii};
+                    c_all = [c_all; zeros(1,casadi_symbolic_mode)];
+                end
+            else
+                error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
+                       'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
             end
         else
-            error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
-                'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
+            error(['The user uses settings.pss_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
         end
     else
-        error(['The user usses settings.pss_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
+        if ~exist('c')
+            error('Expresion for c, the constraint function for regions R_i is not provided.');
+        else
+            if ~iscell(c)
+                c = {c};
+            end
+            if length(c) ~= n_sys
+                error('Number of different expressions for c does not match number of subsystems.')
+            end
+            for ii = 1:n_sys
+                c_all = [c_all; c{ii}];
+                n_c{ii} = length(c{ii});
+                n_c_sys  = [n_c_sys;length(c{ii})];
+            end
+            
+        end
     end
 else
     % Check if all data is avilable and if dimensions match.
@@ -477,7 +504,7 @@ else
     end
     % Check constraint function c
     if ~exist('c')
-        error('Expreesion for c, the constraint function for regions R_i is not provided.');
+        error('Expresion for c, the constraint function for regions R_i is not provided.');
     else
         if ~iscell(c)
             c = {c};
@@ -546,8 +573,11 @@ if max(n_c_sys) < 2 && isequal(pss_mode,'Step')
     end
 end
 
-n_f_sys = arrayfun(@(sys) size(F{sys},2),1:n_sys);
-
+if ~settings.general_inclusion
+    n_f_sys = arrayfun(@(sys) size(F{sys},2),1:n_sys);
+else
+    n_f_sys = [size(f_x,1)];
+end
 %% Algebraic variables defintion
 % Dummy variables for Stewart representation'
 theta = [];
@@ -561,8 +591,10 @@ e_ones_all = {};
 
 
 % dummy values for Step representation
-if ~settings.general_inclusions
-    alpha  = [];
+if ~settings.general_inclusion
+    alpha = [];
+else
+    alpha = model.alpha;
 end
 lambda_0 = [];
 lambda_1 = [];
@@ -607,8 +639,6 @@ switch pss_mode
         e_ones_all{ii} = ones(m_vec(ii),1);
     end
   case 'Step'
-    if settings.general_inclusions && length(alpha )
-    end
     n_alpha = sum(n_c_sys);
     n_f = sum(m_vec);
     n_lambda_0 = sum(n_c_sys);
@@ -621,10 +651,13 @@ switch pss_mode
     for ii = 1:n_sys
         ii_str = num2str(ii);
         % define alpha (selection of a set valued step function)
-        if ~settings.general_inclusions
+        if ~settings.general_inclusion
             alpha_temp = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],n_c_sys(ii));
             alpha = [alpha;alpha_temp];
             alpha_all{ii} = alpha_temp;
+        else
+            % TODO this needs to change if subsystems.
+            alpha_all{ii} = alpha;
         end
         % define lambda_0_i (Lagrange multipler of alpha >= 0;)
         lambda_0_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_0_' ii_str],n_c_sys(ii));
@@ -639,80 +672,35 @@ switch pss_mode
     e_alpha = ones(n_alpha,1);
 
     % Define already here lifting variables and functions
+    % TODO allow for custom beta lifting
     beta = [];
     gamma = [];
 
-    % Upsilo collects the vector for dotx = F(x)Upsilon, it is either multiaffine
-    % terms or gamma from lifting
-    %         pss_lift_step_functions = 0;
-    for ii = 1:n_sys
-        upsilon_temp = [];
-        ii_str = num2str(ii);
-        S_temp = S{ii};
-        if pss_lift_step_functions
-            %                 [n_f_i,n_c_i] = size(S_temp);
-            %                 n_R_i = sum(abs(S_temp),2);
-            %                 % define gamma which etner the odes r.h.s. linearly
-            %                 eval(['gamma_' i_str ' = ' casadi_symbolic_mode '.sym(''gamma_' i_str ''',n_f_i);']);
-            %                 eval(['gamma = [gamma; gamma_' i_str '];']);
-            %
-            %                 eval(['g_lift_beta_' i_str ' = [];']);
-            %                 eval(['g_lift_gamma_' i_str ' = [];']);
-            %
-            %                 temp = ones(n_f_i,1);
-            %                 S_temp_reduced  = S_temp;
-            %                 ind_progress = 0;
-            %                 for ii = 1:n_c_i
-            %                     n_R_i = sum(abs(S_temp_reduced),2);
-            %                     ind_done = find(n_R_i >= ii);
-            %                     eval(['temp = (temp).*((1-S_temp_reduced(ind_done,ii))/2+S_temp_reduced(ind_done,ii).*alpha_' i_str '(ii));'])
-            %                     ind_done= find(n_R_i == ii);
-            %                     ind_done_complement = find(n_R_i ~= ii);
-            %                     if ~isempty(ind_done)
-            % %                         g_lift_gamma = [g_lift_gamma ;theta(ind_progress+ind_done)-(temp(ind_done))];
-            %                         eval(['g_lift_gamma_' i_str '= [g_lift_gamma_' i_str ';gamma(ind_progress+ind_done)-(temp(ind_done))];'])
-            %                         ind_full = 1:length(temp);
-            % %                         temp(ind_done) = [];
-            %                         if isempty(ind_done_complement)
-            %                             temp = [];
-            %                         else
-            %                             temp = temp(ind_done_complement);
-            %                         end
-            %                         S_temp_reduced(ind_done,:) = [];
-            %                         ind_progress = ind_progress+ind_done(end);
-            %                     end
-            %                     % start defining betas;
-            %                     if ii >= n_depth_step_lifting && ii< n_c_i
-            %                         [temp_S_red,temp_S_IA,temp_S_IC] = unique(S_temp_reduced(:,ii) ,'rows');
-            %                         n_beta_ii = size(temp_S_red,1);
-            %                         % defin intermediate beta
-            %                         eval(['beta_' i_str '_' num2str(ii) '=' casadi_symbolic_mode '.sym(''beta_' i_str '_' num2str(ii) ''',n_beta_ii);'])
-            %                         eval(['beta = [beta; beta_' i_str '_' num2str(ii) '];'])
-            % %                         eval(['beta_' num2str(ii+1-n_depth_step_lifting) '=' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ',n_beta_ii);'])
-            %                         eval(['beta_temp =' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ''',n_beta_ii);'])
-            % %                         beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
-            %                         eval(['g_lift_beta_' i_str '= [g_lift_beta_' i_str ';beta_temp - temp(temp_S_IA)];'])
-            %                         temp = beta_temp(temp_S_IC)';
-            %                     end
-            %                 end
-            %                 eval(['g_lift_beta = [g_lift_beta;g_lift_beta_' i_str '];'])
-            %                 eval(['g_lift_gamma = [g_lift_gamma;g_lift_gamma_' i_str '];'])
-            %                 eval(['upsilon_' i_str '= gamma_' i_str ';'])
-        else
-            if ~settings.time_freezing_inelastic
-                for j = 1:size(S_temp,1)
-                    upsilon_ij = 1;
-                    for k = 1:size(S_temp,2)
-                        % create multiafine term
-                        if S_temp(j,k) ~=0
-                            upsilon_ij = upsilon_ij * (0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_all{ii}(k) ) ;
+    % Upsilon collects the vector for dotx = F(x)Upsilon, it is either multiaffine
+    % terms or gamma from lifting;
+    if ~settings.general_inclusion
+        for ii = 1:n_sys
+            upsilon_temp = [];
+            ii_str = num2str(ii);
+            S_temp = S{ii};
+            if pss_lift_step_functions
+                % TODO implement automatic lifting
+            else
+                if ~settings.time_freezing_inelastic
+                    for j = 1:size(S_temp,1)
+                        upsilon_ij = 1;
+                        for k = 1:size(S_temp,2)
+                            % create multiafine term
+                            if S_temp(j,k) ~=0
+                                upsilon_ij = upsilon_ij * (0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_all{ii}(k) ) ;
+                            end
                         end
+                        upsilon_temp = [upsilon_temp;upsilon_ij];
                     end
-                    upsilon_temp = [upsilon_temp;upsilon_ij];
                 end
             end
+            upsilon_all{ii} = upsilon_temp;
         end
-        upsilon_all{ii} = upsilon_temp;
     end
 
     %% prepare for time freezing lifting and co,
@@ -832,7 +820,8 @@ switch pss_mode
     lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
     %         beta_guess = initial_beta*ones(n_beta,1);
     %         gamma_guess = initial_gamma*ones(n_gamma,1);
-    if pss_lift_step_functions
+    % TODO beta guess should exist once custom lifting is implemented
+    if pss_lift_step_functions && ~settings.general_inclusion
         if friction_is_present
             beta_guess = full(g_lift_beta_fun(alpha_guess));
             gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
@@ -858,7 +847,7 @@ end
 
 % if f_x doesnt exist we generate it from F
 % if it does we are in expert mode. TODO name.
-if ~exist('model.f_x')
+if ~isfield(model, 'f_x')
     f_x = zeros(n_x,1);
     % rhs of ODE;
 
