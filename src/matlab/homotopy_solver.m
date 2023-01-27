@@ -79,7 +79,7 @@ complementarity_iter = 1;
 ii = 0;
 
 if print_level >= 3
-    fprintf('\niter\tsigma\t\tcompl_res\tobjective\tCPU time\tNLP iters\tstatus\n')
+    fprintf('\niter\t\tsigma\t\tcompl_res\tobjective\tCPU time\tNLP iters\tstatus\n')
 end
 
 while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N || ii == 0)
@@ -127,13 +127,13 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
     complementarity_iter = full(comp_res(w_opt, p_val));
     complementarity_stats = [complementarity_stats;complementarity_iter];
 
-    objective = full(model.problem.objective_fun(w_opt));
+    objective = full(model.problem.objective_fun(w_opt, p_val));
     % update counter
     ii = ii+1;
 
     % Verbose
     if print_level >= 3
-        fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t%.3f\t\t%d\t\t\t%s\n',ii, sigma_k, complementarity_iter, objective,...
+        fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, objective,...
             cpu_time_iter, solver.stats.iter_count, solver.stats.return_status);
     end
     %

@@ -375,7 +375,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.comp_std = Function('comp_std', {obj.w, obj.p}, {J_comp_std});
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
             obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
-            obj.objective_fun = Function('objective_fun', {obj.w}, {obj.objective});
+            obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
             
             obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
 
