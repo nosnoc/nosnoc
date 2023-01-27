@@ -538,10 +538,12 @@ classdef FiniteElement < NosnocFormulationObject
                     Xk_end = Xk_end + settings.D_irk(j+1) * X_ki{j};
                     obj.addConstraint(obj.h * fj - xj);
                     obj.cost = obj.cost + settings.B_irk(j+1) * obj.h * qj;
+                    obj.objective = obj.objective + settings.B_irk(j+1) * obj.h * qj;
                 else
                     Xk_end = Xk_end + obj.h * settings.b_irk(j) * obj.v{j};
                     obj.addConstraint(fj - obj.v{j});
                     obj.cost = obj.cost + settings.b_irk(j) * obj.h * qj;
+                    obj.objective = obj.objective + settings.B_irk(j+1) * obj.h * qj;
                 end
             end
 

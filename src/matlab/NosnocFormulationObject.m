@@ -12,6 +12,8 @@ classdef NosnocFormulationObject < handle
         ubg
         % Cost
         cost
+        % Objective
+        objective
     end
 
     methods
@@ -31,6 +33,9 @@ classdef NosnocFormulationObject < handle
 
             % Cost
             obj.cost = 0;
+
+            % Objective
+            obj.objective = 0;
         end
 
         function [] = addVariable(obj, symbolic, type, lb, ub, initial, varargin)

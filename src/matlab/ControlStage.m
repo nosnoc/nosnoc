@@ -80,8 +80,9 @@ classdef ControlStage < NosnocFormulationObject
                 % 4) add finite element variables
                 obj.addFiniteElement(fe);
                 
-                % 5) add cost and constraints from FE to problem
+                % 5) add cost, objective and, constraints from FE to problem
                 obj.cost = obj.cost + fe.cost;
+                obj.objective = obj.objective + fe.objective;
                 
                 obj.addConstraint(fe.g, fe.lbg, fe.ubg);
                 
@@ -93,8 +94,10 @@ classdef ControlStage < NosnocFormulationObject
 
             % least squares cost
             obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.objective = obj.objective + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             if dims.n_u > 0
                 obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.objective = obj.objective + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
             end
             
             % TODO: combine this into a function

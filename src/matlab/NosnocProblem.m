@@ -56,6 +56,9 @@ classdef NosnocProblem < NosnocFormulationObject
 
         % Problem cost function
         cost_fun
+
+        % Problem objective function
+        objective_fun
     end
     % remaining list of TODOs
     % TODO: cleanup/add properties (in all components)
@@ -306,13 +309,11 @@ classdef NosnocProblem < NosnocFormulationObject
 
             % terminal least squares
             obj.cost = obj.cost + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
+            obj.objective = obj.objective + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
             
             % Process terminal costs
-            try
-                obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global);
-            catch
-                fprintf('Terminal cost not defined');
-            end
+            obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global);
+            obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global);
             
             % Process elastic costs
             if ismember(settings.mpcc_mode, MpccMode.elastic)
@@ -341,6 +342,7 @@ classdef NosnocProblem < NosnocFormulationObject
                 % Add to the vector of unknowns
                 obj.addVariable(T_final, 't_final', settings.T_final_min, settings.T_final_max, T_final_guess);
                 obj.cost = obj.cost + T_final;
+                obj.objective = obj.objective + T_final;
             end
 
             % Calculate standard complementarities.
@@ -373,7 +375,8 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.comp_std = Function('comp_std', {obj.w, obj.p}, {J_comp_std});
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
             obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
-
+            obj.objective_fun = Function('objective_fun', {obj.w}, {obj.objective});
+            
             obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
 
             if dims.n_p_global > 0;
@@ -432,6 +435,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
                 obj.addControlStage(stage);
                 obj.cost = obj.cost + stage.cost;
+                obj.objective = obj.objective + stage.objective;
                 prev_fe = stage.stage(end);
             end
         end
