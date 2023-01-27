@@ -53,7 +53,7 @@ settings.use_fesd = 1;
 %% discretizatioon
 T = 3;
 N_stg = 20; % control intervals
-N_FE = 3;  % integration steps per control intevral
+N_FE = 5;  % integration steps per control intevral
 
 %% model parameters
 m1 = 2;

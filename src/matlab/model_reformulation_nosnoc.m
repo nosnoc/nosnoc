@@ -57,6 +57,13 @@ end
 if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end
+
+if isfield(model, 'alpha')
+    settings.general_inclusion = 1;
+else
+    settings.general_inclusion = 0;
+end
+
 %% If different names are used...
 if exist('N_ctrl','var')
     N_stg = N_ctrl;
@@ -422,7 +429,14 @@ m_vec = [];
 n_c_sys = [];
 
 if ~exist('F')
-    error('Matrix F (or matrices F_i) with PSS modes not provided.');
+    % Don't need F
+    if ~settings.general_inclusion
+        error('Matrix F (or matrices F_i) with PSS modes not provided.');
+    else
+        % TODO Implement more subsystems.
+        n_sys = 1;
+        m_vec = [size(f_x,1)];
+    end
 else
     % check how many subsystems are present
     if iscell(F)
@@ -439,26 +453,46 @@ else
 end
 
 if ~exist('S')
-    % if not the matrix S is provided, maybe the g_ind are avilable
-    % directly?
-    if isequal(pss_mode,'Stewart')
-        if exist('g_ind')
-            if ~iscell(g_ind)
-                g_ind = {g_ind};
-            end
+    % if we are using general inclusions we dont need S.
+    if ~settings.general_inclusion    
+        % if the matrix S is not provided, maybe the g_ind are available
+        % directly?
+        if isequal(pss_mode,'Stewart')
+            if exist('g_ind')
+                if ~iscell(g_ind)
+                    g_ind = {g_ind};
+                end
 
-            for ii = 1:n_sys
-                % discrimnant functions
-                g_ind_vec =  [g_ind_vec;g_ind{ii};];
-                g_Stewart{ii} = g_ind{ii};
-                c_all = [c_all; zeros(1,casadi_symbolic_mode)];
+                for ii = 1:n_sys
+                    % discriminant functions
+                    g_ind_vec =  [g_ind_vec;g_ind{ii};];
+                    g_Stewart{ii} = g_ind{ii};
+                    c_all = [c_all; zeros(1,casadi_symbolic_mode)];
+                end
+            else
+                error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
+                       'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
             end
         else
-            error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
-                'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
+            error(['The user uses settings.pss_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
         end
     else
-        error(['The user usses settings.pss_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
+        if ~exist('c')
+            error('Expresion for c, the constraint function for regions R_i is not provided.');
+        else
+            if ~iscell(c)
+                c = {c};
+            end
+            if length(c) ~= n_sys
+                error('Number of different expressions for c does not match number of subsystems.')
+            end
+            for ii = 1:n_sys
+                c_all = [c_all; c{ii}];
+                n_c{ii} = length(c{ii});
+                n_c_sys  = [n_c_sys;length(c{ii})];
+            end
+            
+        end
     end
 else
     % Check if all data is avilable and if dimensions match.
@@ -470,7 +504,7 @@ else
     end
     % Check constraint function c
     if ~exist('c')
-        error('Expreesion for c, the constraint function for regions R_i is not provided.');
+        error('Expresion for c, the constraint function for regions R_i is not provided.');
     else
         if ~iscell(c)
             c = {c};
@@ -539,8 +573,11 @@ if max(n_c_sys) < 2 && isequal(pss_mode,'Step')
     end
 end
 
-n_f_sys = arrayfun(@(sys) size(F{sys},2),1:n_sys);
-
+if ~settings.general_inclusion
+    n_f_sys = arrayfun(@(sys) size(F{sys},2),1:n_sys);
+else
+    n_f_sys = [size(f_x,1)];
+end
 %% Algebraic variables defintion
 % Dummy variables for Stewart representation'
 theta = [];
@@ -554,7 +591,11 @@ e_ones_all = {};
 
 
 % dummy values for Step representation
-alpha  = [];
+if ~settings.general_inclusion
+    alpha = [];
+else
+    alpha = model.alpha;
+end
 lambda_0 = [];
 lambda_1 = [];
 upsilon  = [];
@@ -573,118 +614,77 @@ n_lambda_1 = 0;
 g_lift_beta = [];
 g_lift_gamma  =[];
 switch pss_mode
-    case 'Stewart'
-        % dimensions
-        n_theta = sum(m_vec); % number of modes
-        n_lambda = n_theta;
-        n_f = n_theta;
-        n_z = n_theta+n_lambda+n_sys; % n_theta + n_lambda + n_mu
-        % Define symbolic variables for algebraic equtions.
-        for ii = 1:n_sys
-            ii_str = num2str(ii);
-            % define theta (Filippov multiplers)
-            theta_temp = define_casadi_symbolic(casadi_symbolic_mode,['theta_' ii_str],m_vec(ii));
-            theta = [theta;theta_temp];
-            theta_all{ii} = theta_temp;
-            % define mu_i (Lagrange multipler of e'theta =1;)
-            mu_temp = define_casadi_symbolic(casadi_symbolic_mode,['mu_' ii_str],1);
-            mu = [mu;mu_temp];
-            mu_all{ii} = mu_temp;
-            % define lambda_i (Lagrange multipler of theta >= 0;)
-            lambda_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_' ii_str],m_vec(ii));
-            lambda = [lambda;lambda_temp];
-            lambda_all{ii} = lambda_temp;
-            % define appropiate vector of ones (the struct below stores them for every mode)
-            e_ones_all{ii} = ones(m_vec(ii),1);
-        end
-    case 'Step'
-        n_alpha = sum(n_c_sys);
-        n_f = sum(m_vec);
-        n_lambda_0 = sum(n_c_sys);
-        n_lambda_1 = sum(n_c_sys);
-        % for creae_nlp_fesd
-        n_theta = 2*n_alpha;
-        n_lambda = n_lambda_0+n_lambda_1;
-        % algebraic varaibles so far
-        n_z = n_alpha+n_lambda_0+n_lambda_1;
-        for ii = 1:n_sys
-            ii_str = num2str(ii);
-            % define alpha (selection of a set valued step function)
+  case 'Stewart'
+    % dimensions
+    n_theta = sum(m_vec); % number of modes
+    n_lambda = n_theta;
+    n_f = n_theta;
+    n_z = n_theta+n_lambda+n_sys; % n_theta + n_lambda + n_mu
+                                  % Define symbolic variables for algebraic equtions.
+    for ii = 1:n_sys
+        ii_str = num2str(ii);
+        % define theta (Filippov multiplers)
+        theta_temp = define_casadi_symbolic(casadi_symbolic_mode,['theta_' ii_str],m_vec(ii));
+        theta = [theta;theta_temp];
+        theta_all{ii} = theta_temp;
+        % define mu_i (Lagrange multipler of e'theta =1;)
+        mu_temp = define_casadi_symbolic(casadi_symbolic_mode,['mu_' ii_str],1);
+        mu = [mu;mu_temp];
+        mu_all{ii} = mu_temp;
+        % define lambda_i (Lagrange multipler of theta >= 0;)
+        lambda_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_' ii_str],m_vec(ii));
+        lambda = [lambda;lambda_temp];
+        lambda_all{ii} = lambda_temp;
+        % define appropiate vector of ones (the struct below stores them for every mode)
+        e_ones_all{ii} = ones(m_vec(ii),1);
+    end
+  case 'Step'
+    n_alpha = sum(n_c_sys);
+    n_f = sum(m_vec);
+    n_lambda_0 = sum(n_c_sys);
+    n_lambda_1 = sum(n_c_sys);
+    % for creae_nlp_fesd
+    n_theta = 2*n_alpha;
+    n_lambda = n_lambda_0+n_lambda_1;
+    % algebraic varaibles so far
+    n_z = n_alpha+n_lambda_0+n_lambda_1;
+    for ii = 1:n_sys
+        ii_str = num2str(ii);
+        % define alpha (selection of a set valued step function)
+        if ~settings.general_inclusion
             alpha_temp = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],n_c_sys(ii));
             alpha = [alpha;alpha_temp];
             alpha_all{ii} = alpha_temp;
-            % define lambda_0_i (Lagrange multipler of alpha >= 0;)
-            lambda_0_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_0_' ii_str],n_c_sys(ii));
-            lambda_0 = [lambda_0;lambda_0_temp];
-            lambda_0_all{ii} = lambda_0_temp;
-            % define lambda_1_i (Lagrange multipler of alpha <= 1;)
-            lambda_1_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_1_' ii_str],n_c_sys(ii));
-            lambda_1 = [lambda_1;lambda_1_temp];
-            lambda_1_all{ii} = lambda_1_temp;
+        else
+            % TODO this needs to change if subsystems.
+            alpha_all{ii} = alpha;
         end
-        % define appropiate vector of ones % for the kkt conditions of the LP
-        e_alpha = ones(n_alpha,1);
+        % define lambda_0_i (Lagrange multipler of alpha >= 0;)
+        lambda_0_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_0_' ii_str],n_c_sys(ii));
+        lambda_0 = [lambda_0;lambda_0_temp];
+        lambda_0_all{ii} = lambda_0_temp;
+        % define lambda_1_i (Lagrange multipler of alpha <= 1;)
+        lambda_1_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_1_' ii_str],n_c_sys(ii));
+        lambda_1 = [lambda_1;lambda_1_temp];
+        lambda_1_all{ii} = lambda_1_temp;
+    end
+    % define appropiate vector of ones % for the kkt conditions of the LP
+    e_alpha = ones(n_alpha,1);
 
-        % Define already here lifting variables and functions
-        beta = [];
-        gamma = [];
+    % Define already here lifting variables and functions
+    % TODO allow for custom beta lifting
+    beta = [];
+    gamma = [];
 
-        % Upsilo collects the vector for dotx = F(x)Upsilon, it is either multiaffine
-        % terms or gamma from lifting
-        %         pss_lift_step_functions = 0;
+    % Upsilon collects the vector for dotx = F(x)Upsilon, it is either multiaffine
+    % terms or gamma from lifting;
+    if ~settings.general_inclusion
         for ii = 1:n_sys
             upsilon_temp = [];
             ii_str = num2str(ii);
             S_temp = S{ii};
             if pss_lift_step_functions
-                %                 [n_f_i,n_c_i] = size(S_temp);
-                %                 n_R_i = sum(abs(S_temp),2);
-                %                 % define gamma which etner the odes r.h.s. linearly
-                %                 eval(['gamma_' i_str ' = ' casadi_symbolic_mode '.sym(''gamma_' i_str ''',n_f_i);']);
-                %                 eval(['gamma = [gamma; gamma_' i_str '];']);
-                %
-                %                 eval(['g_lift_beta_' i_str ' = [];']);
-                %                 eval(['g_lift_gamma_' i_str ' = [];']);
-                %
-                %                 temp = ones(n_f_i,1);
-                %                 S_temp_reduced  = S_temp;
-                %                 ind_progress = 0;
-                %                 for ii = 1:n_c_i
-                %                     n_R_i = sum(abs(S_temp_reduced),2);
-                %                     ind_done = find(n_R_i >= ii);
-                %                     eval(['temp = (temp).*((1-S_temp_reduced(ind_done,ii))/2+S_temp_reduced(ind_done,ii).*alpha_' i_str '(ii));'])
-                %                     ind_done= find(n_R_i == ii);
-                %                     ind_done_complement = find(n_R_i ~= ii);
-                %                     if ~isempty(ind_done)
-                % %                         g_lift_gamma = [g_lift_gamma ;theta(ind_progress+ind_done)-(temp(ind_done))];
-                %                         eval(['g_lift_gamma_' i_str '= [g_lift_gamma_' i_str ';gamma(ind_progress+ind_done)-(temp(ind_done))];'])
-                %                         ind_full = 1:length(temp);
-                % %                         temp(ind_done) = [];
-                %                         if isempty(ind_done_complement)
-                %                             temp = [];
-                %                         else
-                %                             temp = temp(ind_done_complement);
-                %                         end
-                %                         S_temp_reduced(ind_done,:) = [];
-                %                         ind_progress = ind_progress+ind_done(end);
-                %                     end
-                %                     % start defining betas;
-                %                     if ii >= n_depth_step_lifting && ii< n_c_i
-                %                         [temp_S_red,temp_S_IA,temp_S_IC] = unique(S_temp_reduced(:,ii) ,'rows');
-                %                         n_beta_ii = size(temp_S_red,1);
-                %                         % defin intermediate beta
-                %                         eval(['beta_' i_str '_' num2str(ii) '=' casadi_symbolic_mode '.sym(''beta_' i_str '_' num2str(ii) ''',n_beta_ii);'])
-                %                         eval(['beta = [beta; beta_' i_str '_' num2str(ii) '];'])
-                % %                         eval(['beta_' num2str(ii+1-n_depth_step_lifting) '=' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ',n_beta_ii);'])
-                %                         eval(['beta_temp =' casadi_symbolic_mode '.sym(''beta_' num2str(ii+1-n_depth_step_lifting) ''',n_beta_ii);'])
-                % %                         beta_temp = sym(['beta_' num2str(ii+1-n_depth_step_lifting)], [n_beta_ii 1]);
-                %                         eval(['g_lift_beta_' i_str '= [g_lift_beta_' i_str ';beta_temp - temp(temp_S_IA)];'])
-                %                         temp = beta_temp(temp_S_IC)';
-                %                     end
-                %                 end
-                %                 eval(['g_lift_beta = [g_lift_beta;g_lift_beta_' i_str '];'])
-                %                 eval(['g_lift_gamma = [g_lift_gamma;g_lift_gamma_' i_str '];'])
-                %                 eval(['upsilon_' i_str '= gamma_' i_str ';'])
+                % TODO implement automatic lifting
             else
                 if ~settings.time_freezing_inelastic
                     for j = 1:size(S_temp,1)
@@ -701,92 +701,93 @@ switch pss_mode
             end
             upsilon_all{ii} = upsilon_temp;
         end
+    end
 
-        %% prepare for time freezing lifting and co,
-        if settings.time_freezing_inelastic
-            % gamma are the lifting variables that enter the ODE r.h.s.
-            % linearly, they have the role as theta in Stewart's representation
-            if pss_lift_step_functions
-                if ~friction_is_present
-                    switch n_unilateral
-                        case 1
-                            gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',2);
-                            g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                                gamma(2)-(1-alpha(1))*(1-alpha(2))];
-                            upsilon_all{1} = gamma;
-                            g_lift_gamma_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
-                                (1-alpha(1))*(1-alpha(2))];
-                            g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha},{g_lift_gamma_fun});
-                        case 2
-                            gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',4);
-                            beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
-                            % alpha1 ~ f_c1, alpha2  ~ f_c2, alpha3 ~ n1^top v,alpha4 ~ n1^top v
-                            g_lift_beta = [beta(1)-(1-alpha(1))*(1-alpha(2));...
-                                beta(2)-(alpha(1))*(1-alpha(2));...
-                                beta(3)-(1-alpha(1))*(alpha(2));...
-                                beta(4)-(1-alpha(3))*(1-alpha(4));...
-                                beta(5)-(alpha(3))*(alpha(4))];
-                            g_lift_gamma = [gamma(1)-(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
-                                gamma(2)-(1-alpha(1))*(1-alpha(3));...
-                                gamma(3)-(1-alpha(2))*(1-alpha(4));...
-                                gamma(4)-(beta(1)*beta(3))];
-
-                            upsilon_all{1} = gamma;
-                            g_lift_beta_fun = [(1-alpha(1))*(1-alpha(2));...
-                                (alpha(1))*(1-alpha(2));...
-                                (1-alpha(1))*(alpha(2));...
-                                (1-alpha(3))*(1-alpha(4));...
-                                (alpha(3))*(alpha(4))];
-                            g_lift_gamma_fun = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
-                                (1-alpha(1))*(1-alpha(3));...
-                                (1-alpha(2))*(1-alpha(4));...
-                                (beta(1)*beta(3))];
-
-                            g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
-                            g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
-                    end
-                else
-                    beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
-                    gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',3);
-                    % lifting functions and indicators
-                    g_lift_beta = [beta-(1-alpha(1))*(1-alpha(2))];
+    %% prepare for time freezing lifting and co,
+    if settings.time_freezing_inelastic
+        % gamma are the lifting variables that enter the ODE r.h.s.
+        % linearly, they have the role as theta in Stewart's representation
+        if pss_lift_step_functions
+            if ~friction_is_present
+                switch n_unilateral
+                  case 1
+                    gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',2);
                     g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                        gamma(2)-beta*(1-alpha(3));...
-                        gamma(3)-beta*alpha(3);...
-                        ];
+                                    gamma(2)-(1-alpha(1))*(1-alpha(2))];
                     upsilon_all{1} = gamma;
-                    % create casadi expressions for proper initialization
-                    g_lift_beta_fun = (1-alpha(1))*(1-alpha(2));
-                    g_lift_gamma_fun = [alpha(1)+(1-alpha(1))*alpha(2);...
-                        beta*(1-alpha(2))*(1-alpha(3));...
-                        beta*(1-alpha(2))*alpha(3)];
-                    % casadi functions
-                    g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
+                    g_lift_gamma_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
+                                        (1-alpha(1))*(1-alpha(2))];
+                    g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha},{g_lift_gamma_fun});
+                  case 2
+                    gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',4);
+                    beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
+                    % alpha1 ~ f_c1, alpha2  ~ f_c2, alpha3 ~ n1^top v,alpha4 ~ n1^top v
+                    g_lift_beta = [beta(1)-(1-alpha(1))*(1-alpha(2));...
+                                   beta(2)-(alpha(1))*(1-alpha(2));...
+                                   beta(3)-(1-alpha(1))*(alpha(2));...
+                                   beta(4)-(1-alpha(3))*(1-alpha(4));...
+                                   beta(5)-(alpha(3))*(alpha(4))];
+                    g_lift_gamma = [gamma(1)-(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
+                                    gamma(2)-(1-alpha(1))*(1-alpha(3));...
+                                    gamma(3)-(1-alpha(2))*(1-alpha(4));...
+                                    gamma(4)-(beta(1)*beta(3))];
+
+                    upsilon_all{1} = gamma;
+                    g_lift_beta_fun = [(1-alpha(1))*(1-alpha(2));...
+                                       (alpha(1))*(1-alpha(2));...
+                                       (1-alpha(1))*(alpha(2));...
+                                       (1-alpha(3))*(1-alpha(4));...
+                                       (alpha(3))*(alpha(4))];
+                    g_lift_gamma_fun = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
+                                        (1-alpha(1))*(1-alpha(3));...
+                                        (1-alpha(2))*(1-alpha(4));...
+                                        (beta(1)*beta(3))];
+
                     g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
+                    g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
                 end
             else
-                if ~friction_is_present
+                beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
+                gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',3);
+                % lifting functions and indicators
+                g_lift_beta = [beta-(1-alpha(1))*(1-alpha(2))];
+                g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
+                                gamma(2)-beta*(1-alpha(3));...
+                                gamma(3)-beta*alpha(3);...
+                               ];
+                upsilon_all{1} = gamma;
+                % create casadi expressions for proper initialization
+                g_lift_beta_fun = (1-alpha(1))*(1-alpha(2));
+                g_lift_gamma_fun = [alpha(1)+(1-alpha(1))*alpha(2);...
+                                    beta*(1-alpha(2))*(1-alpha(3));...
+                                    beta*(1-alpha(2))*alpha(3)];
+                % casadi functions
+                g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
+                g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
+            end
+        else
+            if ~friction_is_present
+                upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
+                                  (1-alpha(1))*(1-alpha(2))];
+            else
+                switch n_dim_contact
+                  case 2
                     upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                        (1-alpha(1))*(1-alpha(2))];
-                else
-                    switch n_dim_contact
-                        case 2
-                            upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                (1-alpha(1))*(1-alpha(2))*(1-alpha(3));...
-                                (1-alpha(1))*(1-alpha(2))*(alpha(3))];
-                        case 3
-                            upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(1-alpha(4));...
-                                (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(alpha(4));...
-                                (1-alpha(1))*(1-alpha(2))*(alpha(3))*(1-alpha(4));...
-                                (1-alpha(1))*(1-alpha(2))*(alpha(3))*(alpha(4))];
-                    end
+                                      (1-alpha(1))*(1-alpha(2))*(1-alpha(3));...
+                                      (1-alpha(1))*(1-alpha(2))*(alpha(3))];
+                  case 3
+                    upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
+                                      (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(1-alpha(4));...
+                                      (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(alpha(4));...
+                                      (1-alpha(1))*(1-alpha(2))*(alpha(3))*(1-alpha(4));...
+                                      (1-alpha(1))*(1-alpha(2))*(alpha(3))*(alpha(4))];
                 end
             end
         end
-        n_beta = length(beta);
-        n_gamma = length(gamma);
-        n_z = n_z + n_beta+n_gamma;
+    end
+    n_beta = length(beta);
+    n_gamma = length(gamma);
+    n_z = n_z + n_beta+n_gamma;
 end
 g_lift = [g_lift_beta; g_lift_gamma];
 
@@ -819,7 +820,8 @@ switch pss_mode
     lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
     %         beta_guess = initial_beta*ones(n_beta,1);
     %         gamma_guess = initial_gamma*ones(n_gamma,1);
-    if pss_lift_step_functions
+    % TODO beta guess should exist once custom lifting is implemented
+    if pss_lift_step_functions && ~settings.general_inclusion
         if friction_is_present
             beta_guess = full(g_lift_beta_fun(alpha_guess));
             gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
@@ -842,15 +844,20 @@ switch pss_mode
 end
 
 %% Reformulate the Filippov ODE into a DCS
-f_x = zeros(n_x,1);
-% rhs of ODE;
 
-for ii = 1:n_sys
-    switch pss_mode
-        case 'Stewart'
+% if f_x doesnt exist we generate it from F
+% if it does we are in expert mode. TODO name.
+if ~isfield(model, 'f_x')
+    f_x = zeros(n_x,1);
+    % rhs of ODE;
+
+    for ii = 1:n_sys
+        switch pss_mode
+          case 'Stewart'
             f_x = f_x + F{ii}*theta_all{ii};
-        case 'Step'
+          case 'Step'
             f_x = f_x + F{ii}*upsilon_all{ii};
+        end
     end
 end
 
@@ -860,30 +867,30 @@ f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
 lambda00_expr =[];
 for ii = 1:n_sys
     switch pss_mode
-        case 'Stewart'
-            % basic algebraic equations and complementarity condtions of the DCS
-            % (Note that the cross complementarities are later defined when the discrete
-            % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
-            % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_sys
-            % lambda_i'*theta_i = 0; for all i = 1,..., n_sys
-            % lambda_i >= 0;    for all i = 1,..., n_sys
-            % theta_i >= 0;     for all i = 1,..., n_sys
-            % Gradient of Lagrange Function of indicator LP
-            g_switching = [g_switching; g_Stewart{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
-            g_convex = [g_convex;e_ones_all{ii}'*theta_all{ii}-1];
-            lambda00_expr = [lambda00_expr; g_Stewart{ii}- min(g_Stewart{ii})];
-            f_comp_residual = f_comp_residual + lambda_all{ii}'*theta_all{ii};
-        case 'Step'
-            % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_sys
-            % lambda_0_i'*alpha_i  = 0; for all i = 1,..., n_sys
-            % lambda_1_i'*(e-alpha_i)  = 0; for all i = 1,..., n_sys
-            % lambda_0_i >= 0;    for all i = 1,..., n_sys
-            % lambda_1_i >= 0;    for all i = 1,..., n_sys
-            % alpha_i >= 0;     for all i = 1,..., n_sys
-            g_switching = [g_switching;c{ii}-lambda_1_all{ii}+lambda_0_all{ii}];
-            f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_sys(ii),1)-alpha_all{ii});
-%             lambda00_expr = [lambda00_expr; max(c{ii},0); -min(c{ii}, 0)];
-            lambda00_expr = [lambda00_expr; -min(c{ii}, 0); max(c{ii},0)];
+      case 'Stewart'
+        % basic algebraic equations and complementarity condtions of the DCS
+        % (Note that the cross complementarities are later defined when the discrete
+        % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
+        % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_sys
+        % lambda_i'*theta_i = 0; for all i = 1,..., n_sys
+        % lambda_i >= 0;    for all i = 1,..., n_sys
+        % theta_i >= 0;     for all i = 1,..., n_sys
+        % Gradient of Lagrange Function of indicator LP
+        g_switching = [g_switching; g_Stewart{ii}-lambda_all{ii}+mu_all{ii}*e_ones_all{ii}];
+        g_convex = [g_convex;e_ones_all{ii}'*theta_all{ii}-1];
+        lambda00_expr = [lambda00_expr; g_Stewart{ii}- min(g_Stewart{ii})];
+        f_comp_residual = f_comp_residual + lambda_all{ii}'*theta_all{ii};
+      case 'Step'
+        % c_i(x) - (lambda_1_i-lambda_0_i)  = 0; for all i = 1,..., n_sys
+        % lambda_0_i'*alpha_i  = 0; for all i = 1,..., n_sys
+        % lambda_1_i'*(e-alpha_i)  = 0; for all i = 1,..., n_sys
+        % lambda_0_i >= 0;    for all i = 1,..., n_sys
+        % lambda_1_i >= 0;    for all i = 1,..., n_sys
+        % alpha_i >= 0;     for all i = 1,..., n_sys
+        g_switching = [g_switching;c{ii}-lambda_1_all{ii}+lambda_0_all{ii}];
+        f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_sys(ii),1)-alpha_all{ii});
+        %             lambda00_expr = [lambda00_expr; max(c{ii},0); -min(c{ii}, 0)];
+        lambda00_expr = [lambda00_expr; -min(c{ii}, 0); max(c{ii},0)];
     end
 end
 
@@ -906,7 +913,7 @@ if time_freezing && time_freezing_lift_forces
     lbz = [lbz;-inf*ones(n_q,1)];
     ubz = [ubz;inf*ones(n_q,1)];
     g_lift_forces = [M*z_forces - f_v]; % lifting function
-    % new simple dynamics after lifting
+                                        % new simple dynamics after lifting
     f_x = [f_x(1:n_q); z_forces; f_x(end-n_quad:end)];
 end
 
