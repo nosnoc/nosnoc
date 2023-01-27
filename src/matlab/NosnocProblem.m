@@ -548,15 +548,15 @@ classdef NosnocProblem < NosnocFormulationObject
                 for fe=stage.stage
                     theta = fe.theta;
                     lambda = fe.lambda;
-                    for j=1:dims.n_s
-                        for jj = j:dims.n_s
-                            for r=1:dims.n_sys 
+                    for j=1:obj.dims.n_s
+                        for jj = j:obj.dims.n_s
+                            for r=1:obj.dims.n_sys 
                                 cc_vector = vertcat(cc_vector, diag(theta{j,r})*lambda{jj,r});
                             end
                         end
                     end
-                    for j=1:dims.n_s
-                        for r=1:dims.n_sys
+                    for j=1:obj.dims.n_s
+                        for r=1:obj.dims.n_sys
                             cc_vector = vertcat(cc_vector, diag(theta{j,r})*fe.prev_fe.lambda{end,r});
                         end
                     end

@@ -88,15 +88,15 @@ if ~settings.time_optimal_problem
 end
 
 %%  general nonlinear constraints are possible as well
-% model.g_ineq = u^2;
-% model.g_ineq_lb = [-inf];
-% model.g_ineq_ub = [u_max^2];
+% model.g_path = u^2;
+% model.g_path_lb = [-inf];
+% model.g_path_ub = [u_max^2];
 
-%  model.g_ineq = v;
-% model.g_ineq_lb = [-inf];
-% model.g_ineq_ub = [20];
-% settings.g_ineq_at_fe = 1;
-% settings.g_ineq_at_stg = 1;
+%  model.g_path = v;
+% model.g_path_lb = [-inf];
+% model.g_path_ub = [20];
+% settings.g_path_at_fe = 1;
+% settings.g_path_at_stg = 1;
 %% terminal constraint
 q_goal = 200;
 v_goal = 0;

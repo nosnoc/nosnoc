@@ -99,28 +99,28 @@ else
 end
 
 %% Inequality constraints
-if exist('g_ineq')
-    g_ineq_constraint  = 1;
-    n_g_ineq = length(g_ineq);
-    if exist('g_ineq_lb')
-        if length(g_ineq_lb)~=n_g_ineq;
-            error('The user provided vector g_ineq_lb has the wrong size.')
+if exist('g_path')
+    g_path_constraint  = 1;
+    n_g_path = length(g_path);
+    if exist('g_path_lb')
+        if length(g_path_lb)~=n_g_path;
+            error('The user provided vector g_path_lb has the wrong size.')
         end
     else
-        g_ineq_lb = -inf*ones(n_g_ineq,1);
+        g_path_lb = -inf*ones(n_g_path,1);
     end
 
-    if exist('g_ineq_ub')
-        if length(g_ineq_ub)~=n_g_ineq;
-            error('The user provided vector g_ineq_ub has the wrong size.')
+    if exist('g_path_ub')
+        if length(g_path_ub)~=n_g_path;
+            error('The user provided vector g_path_ub has the wrong size.')
         end
     else
-        g_ineq_ub =  0*ones(n_g_ineq,1);
+        g_path_ub =  0*ones(n_g_path,1);
     end
-    g_ineq_fun  = Function('g_ineq_fun',{x,u},{g_ineq});
+    g_path_fun  = Function('g_path_fun',{x,u},{g_path});
 else
-    n_g_ineq = 0;
-    g_ineq_constraint  = 0;
+    n_g_path = 0;
+    g_path_constraint  = 0;
     if print_level >=1
         fprintf('Info: No path constraints are provided. \n')
     end
@@ -166,11 +166,11 @@ if n_u > 0
     model.u0 = u0;
 end
 
-if g_ineq_constraint
-    model.g_ineq_lb = g_ineq_lb;
-    model.g_ineq_ub = g_ineq_ub;
-    model.g_ineq_fun = g_ineq_fun;
-    model.g_ineq_constraint = g_ineq_constraint;
+if g_path_constraint
+    model.g_path_lb = g_path_lb;
+    model.g_path_ub = g_path_ub;
+    model.g_path_fun = g_path_fun;
+    model.g_path_constraint = g_path_constraint;
 end
 
 if terminal_constraint

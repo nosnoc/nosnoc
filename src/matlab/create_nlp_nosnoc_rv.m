@@ -267,13 +267,13 @@ for k=0:N_stages-1
     end
 
     %% General Nonlinear constraint (on control interval boundary)
-    % The CasADi function g_ineq_fun and its lower and upper bound are provieded in model.
-    if g_ineq_constraint
-        g_ineq_k = g_ineq_fun(X_k0,U_k);
-        g = [g;  g_ineq_k];
-        lbg = [lbg; g_ineq_lb];
-        ubg = [ubg; g_ineq_ub];
-        ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+length(g_ineq_ub)];
+    % The CasADi function g_path_fun and its lower and upper bound are provieded in model.
+    if g_path_constraint
+        g_path_k = g_path_fun(X_k0,U_k);
+        g = [g;  g_path_k];
+        lbg = [lbg; g_path_lb];
+        ubg = [ubg; g_path_ub];
+        ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+length(g_path_ub)];
     end
 
     %% Loop over all finite elements in the current k-th control stage.
@@ -530,14 +530,14 @@ for k=0:N_stages-1
         ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+n_algebraic_constraints*n_s];
 
         %% General nonlinear constraint at stage points
-        if g_ineq_constraint && g_ineq_at_stg
+        if g_path_constraint && g_path_at_stg
             % indepednet of the fact is it lifter od not in the
             % differential case
-            g_ineq_k = g_ineq_fun(X_ki,U_k);
-            g = [g;  g_ineq_k(:)];
-            lbg = [lbg; repmat(g_ineq_lb,n_s,1)];
-            ubg = [ubg; repmat(g_ineq_ub,n_s,1)];
-            ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+length(g_ineq_lb)*n_s];
+            g_path_k = g_path_fun(X_ki,U_k);
+            g = [g;  g_path_k(:)];
+            lbg = [lbg; repmat(g_path_lb,n_s,1)];
+            ubg = [ubg; repmat(g_path_ub,n_s,1)];
+            ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+length(g_path_lb)*n_s];
         end
 
         %% Complementarity constraints (standard and cross)
@@ -640,13 +640,13 @@ for k=0:N_stages-1
         %% Evaluate inequality constraints at finite elements boundaries
         % TODO?: This should be removed? the left boundary point is treated
         % after control defintion, the very last right point should be treated in the terminal constraint
-        if g_ineq_constraint && g_ineq_at_fe && i<N_finite_elements(k+1)-1
+        if g_path_constraint && g_path_at_fe && i<N_finite_elements(k+1)-1
             % the third flag is because at i = 0 the evaulation is at the control interval boundary (done above)
-            g_ineq_k = g_ineq_fun(X_k0,U_k);
-            g = [g;  g_ineq_k];
-            lbg = [lbg; g_ineq_lb];
-            ubg = [ubg; g_ineq_ub];
-            ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+length(g_ineq_lb)];
+            g_path_k = g_path_fun(X_k0,U_k);
+            g = [g;  g_path_k];
+            lbg = [lbg; g_path_lb];
+            ubg = [ubg; g_path_ub];
+            ind_g_total = [ind_g_total,ind_g_total(end)+1:ind_g_total(end)+length(g_path_lb)];
         end
 
         %% g_z_all constraint for boundary point and continuity of algebraic variables.

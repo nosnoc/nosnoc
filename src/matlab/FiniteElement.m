@@ -527,7 +527,7 @@ classdef FiniteElement < NosnocFormulationObject
                 [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
                 fj = s_sot*fj;
                 qj = s_sot*qj;
-                gj = s_sot*model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
+                gj = model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
                 
                 obj.addConstraint(gj);
                 if settings.irk_representation == IrkRepresentation.integral
@@ -549,14 +549,14 @@ classdef FiniteElement < NosnocFormulationObject
 
             % nonlinear inequality.
             % TODO: do this cleaner
-            if (settings.g_ineq_constraint &&...
-                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
-                obj.addConstraint(model.g_ineq_fun(obj.prev_fe.x{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
+            if (settings.g_path_constraint &&...
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
+                obj.addConstraint(model.g_path_fun(obj.prev_fe.x{end},Uk), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
-                if settings.g_ineq_constraint && settings.g_ineq_at_stg
-                    obj.addConstraint(model.g_ineq_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
+                if settings.g_path_constraint && settings.g_path_at_stg
+                    obj.addConstraint(model.g_path_fun(X_ki{j},Uk), model.g_path_lb, model.g_path_ub);
                 end
             end
 
@@ -584,12 +584,12 @@ classdef FiniteElement < NosnocFormulationObject
             % path complementarities
             % TODO: do this cleaner
             if (settings.g_comp_path_constraint &&...
-                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u));
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
-                if settings.g_comp_path_constraint && settings.g_ineq_at_stg
+                if settings.g_comp_path_constraint && settings.g_path_at_stg
                     g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u));
                 end
             end
