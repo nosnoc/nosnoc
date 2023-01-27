@@ -71,6 +71,7 @@ classdef NosnocProblem < NosnocFormulationObject
         u
         sot
         nu_vector
+        cc_vector
 
         % Indices for all algebraic vars in the problem
         ind_z
@@ -347,6 +348,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
             % Calculate standard complementarities.
             J_comp_std = 0;
+            J_comp_std_infty = 0;
             for k=1:dims.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
@@ -359,12 +361,7 @@ classdef NosnocProblem < NosnocFormulationObject
             
             % Scalar-valued complementairity residual
             if settings.use_fesd
-                J_comp_fesd = 0;
-                for k=1:dims.N_stages
-                    for fe=stage.stage
-                        J_comp_fesd = J_comp_fesd + sum(diag(fe.sumTheta())*fe.sumLambda());
-                    end
-                end
+                J_comp_fesd = max(obj.cc_vector);
                 J_comp = J_comp_fesd;
             else
                 J_comp_fesd = J_comp_std;
@@ -543,7 +540,29 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ubw = vertcat(obj.ubw, ub);
             obj.w0 = vertcat(obj.w0, initial);
         end
-        
+
+        function cc_vector = get.cc_vector(obj)
+            cc_vector = [];
+
+            for stage=obj.stages
+                for fe=stage.stage
+                    theta = fe.theta;
+                    lambda = fe.lambda;
+                    for j=1:dims.n_s
+                        for jj = j:dims.n_s
+                            for r=1:dims.n_sys 
+                                cc_vector = vertcat(cc_vector, diag(theta{j,r})*lambda{jj,r});
+                            end
+                        end
+                    end
+                    for j=1:dims.n_s
+                        for r=1:dims.n_sys
+                            cc_vector = vertcat(cc_vector, diag(theta{j,r})*fe.prev_fe.lambda{end,r});
+                        end
+                    end
+                end
+            end
+        end
         function u = get.u(obj)
             u = cellfun(@(u) obj.w(u), obj.ind_u, 'UniformOutput', false);
         end
