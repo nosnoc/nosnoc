@@ -34,17 +34,17 @@ close all
 import casadi.*
 
 %% Discretization
-N_finite_elements = 3;
-T_sim = 10;
-N_sim = 100;
+N_finite_elements = 5;
+T_sim = 1000;
+N_sim = 1000;
 
 %% Settings
 settings = default_settings_nosnoc();
 settings.use_fesd = 1;
 settings.irk_scheme = 'Radau-IIA';
-settings.mpcc_mode = MpccMode.elastic_ineq
+settings.mpcc_mode = MpccMode.elastic_ineq;
 settings.print_level = 2;
-settings.n_s = 2;
+settings.n_s = 4;
 settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
 settings.comp_tol = 1e-5;
 settings.homotopy_update_rule = 'superlinear';
@@ -56,6 +56,7 @@ model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 
-[result,stats,model] = integrator_fesd(model,settings);
+[results,stats,model] = integrator_fesd(model,settings);
 
 
+plot_irma(results);
