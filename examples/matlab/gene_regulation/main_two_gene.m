@@ -32,11 +32,13 @@ clear all
 clc
 close all
 import casadi.*
+%% Model parameters
+lifting = true;
 
 %% Discretization
-N_finite_elements = 2;
-T_sim = 1;
-N_sim = 10;
+N_finite_elements = 3;
+T_sim = 0.5;
+N_sim = 20;
 
 %% Settings
 settings = default_settings_nosnoc();
@@ -45,7 +47,7 @@ settings.irk_scheme = 'Radau-IIA';
 settings.print_level = 2;
 settings.n_s = 4;
 settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
-settings.comp_tol = 1e-5;
+settings.mpcc_mode = MpccMode.Scholtes_ineq; %MpccMode.elastic_ineq;
 settings.homotopy_update_rule = 'superlinear';
 
 %% Generate different trajectories
@@ -53,8 +55,9 @@ results = [];
 for x1 = 3:3:12
     for x2 = 3:3:12
         x0 = [x1;x2];
+        disp(x0);
         % Generate model
-        model = two_gene_model(x0);
+        model = two_gene_model(x0, lifting);
         % Time
         model.N_finite_elements = N_finite_elements;
         model.T_sim = T_sim;

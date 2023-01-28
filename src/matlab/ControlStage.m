@@ -17,6 +17,7 @@ classdef ControlStage < NosnocFormulationObject
         ind_elastic
         ind_beta
         ind_gamma
+        ind_z_user
         ind_u
         ind_sot
 
@@ -141,6 +142,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_lambda_p = [obj.ind_lambda_p; transpose(flatten_sys(increment_indices(fe.ind_lambda_p, w_len)))];
             obj.ind_beta = [obj.ind_beta; transpose(flatten_sys(increment_indices(fe.ind_beta, w_len)))];
             obj.ind_gamma = [obj.ind_gamma; transpose(flatten_sys(increment_indices(fe.ind_gamma, w_len)))];
+            obj.ind_z_user = [obj.ind_z_user; transpose(flatten_sys(increment_indices(fe.ind_z_user, w_len)))];
             obj.ind_nu_lift = [obj.ind_nu_lift, {fe.ind_nu_lift+w_len}];
         end
 

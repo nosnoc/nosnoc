@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-function [model] = irma_model(switch_on)
+function [model] = irma_model(switch_on, lifting)
 % Generate model for two gene regulatory network with given initial conditions
     import casadi.*
     % Initial Value
@@ -51,14 +51,16 @@ function [model] = irma_model(switch_on)
          x(3)-theta{3};
          x(4)-theta{4};
          x(5)-theta{5}];
-    % f_x
-    s = [1, alpha(6);
-         1, alpha(1)*(1-(1-switch_on)*(1-alpha(7)));
-         1, alpha(3);
-         alpha(2),alpha(2)*(1-alpha(5));
-         1, alpha(4)];
-    f_x = -gamma.*x + sum(kappa.*s, 2);
-
+    if lifting
+    else
+        % f_x
+        s = [1, alpha(6);
+             1, alpha(1)*(1-(1-switch_on)*(1-alpha(7)));
+             1, alpha(3);
+             alpha(2),alpha(2)*(1-alpha(5));
+             1, alpha(4)];
+        f_x = -gamma.*x + sum(kappa.*s, 2);
+    end
     % set model parameters
     model.x = x;
     model.alpha = alpha;
