@@ -37,7 +37,7 @@ lifting = true;
 
 %% Discretization
 N_finite_elements = 3;
-T_sim = 0.5;
+T_sim = 1;
 N_sim = 20;
 
 %% Settings
