@@ -29,7 +29,7 @@ function [model] = irma_model(switch_on, lifting)
 % Generate model for two gene regulatory network with given initial conditions
     import casadi.*
     % Initial Value
-    model.x0 = [0.011;0.1;0.04;0.09;0.015];
+    model.x0 = [0.011;0.09;0.04;0.05;0.015];
     % Variables
     % Concentrations
     x = SX.sym('x', 5);
@@ -52,10 +52,29 @@ function [model] = irma_model(switch_on, lifting)
          x(4)-theta{4};
          x(5)-theta{5}];
     if lifting
+        if switch_on
+            beta = SX.sym('beta', 1);
+            model.f_alg = beta - alpha(2)*(1-alpha(5));% lifted equations
+            s = [1, alpha(6);
+             1, alpha(1);
+             1, alpha(3);
+             alpha(2), beta(1);
+             1, alpha(4)];
+        else
+            beta = SX.sym('beta', 2);
+            model.f_alg = beta - [alpha(1)*(1-alpha(7)); alpha(2)*(1-alpha(5))];% lifted equations
+            s = [1, alpha(6);
+             1, beta(1);
+             1, alpha(3);
+             alpha(2), beta(2);
+             1, alpha(4)];
+        end
+        model.z_user = beta;
+        f_x = -gamma.*x + sum(kappa.*s, 2);
     else
         % f_x
         s = [1, alpha(6);
-             1, alpha(1)*(1-(1-switch_on)*(1-alpha(7)));
+             1, alpha(1)*(1-(1-switch_on)*(alpha(7)));
              1, alpha(3);
              alpha(2),alpha(2)*(1-alpha(5));
              1, alpha(4)];
