@@ -188,7 +188,7 @@ if exist('z_user')
 else
     n_z_user = 0;
     z_user_0 = [];
-    z_user = u = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+    z_user = define_casadi_symbolic(casadi_symbolic_mode,'',0);
 end
 %% Parameters
 if exist('p_global')
@@ -236,6 +236,14 @@ end
 
 p = vertcat(p_global,p_time_var);
 
+%% f_alg: stage algebraic constraints
+% TODO  long term: split up model_reformulation to allow f_alg to use the rest of stage Z 
+if exist('f_alg')
+    n_f_alg = length(f_alg);
+else
+    f_alg = [];
+    n_f_alg = 0;
+end
 %% Stage and terminal costs check
 if ~exist('f_q')
     if print_level >=1
@@ -859,6 +867,11 @@ switch pss_mode
     n_lift_eq =length(g_lift);
 end
 
+%% Add user provided algebraic
+z = vertcat(z,z_user);
+z0 = [z0;z_user_0];
+n_z = n_z + n_z_user;
+
 %% Reformulate the Filippov ODE into a DCS
 
 % if f_x doesnt exist we generate it from F
@@ -951,6 +964,7 @@ c_fun = Function('c_fun',{x,p},{c_all});
 dot_c = c_all.jacobian(x)*f_x;
 
 f_x_fun = Function('f_x_fun',{x,z,u,p},{f_x,f_q,p});
+f_alg_fun = Function('f_alg_fun', {x,z,u,p},{f_alg});
 g_z_all_fun = Function('g_z_all_fun',{x,z,u,p},{g_z_all,p}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
 
 g_switching_fun = Function('g_switching_fun', {x,z_switching,u,p}, {g_switching}); 
@@ -994,6 +1008,7 @@ model.z0 = z0;
 model.lbz = lbz;
 model.ubz = ubz;
 
+model.z_user_0 = z_user_0;
 
 model.g_path_constraint = g_path_constraint;
 if g_path_constraint
@@ -1025,12 +1040,14 @@ end
 
 % CasADi Expressions
 model.f_x = f_x;
+model.f_alg = f_alg;
 model.f_q = f_q;
 model.g_switching = g_switching;
 model.g_z_all = g_z_all;
 model.f_q_T = f_q_T;
 % CasADi Functions
 model.f_x_fun = f_x_fun;
+model.f_alg_fun = f_alg_fun;
 model.g_z_all_fun = g_z_all_fun;
 model.g_switching_fun = g_switching_fun;
 model.f_q_T_fun = f_q_T_fun;
@@ -1091,6 +1108,7 @@ dimensions.n_x = n_x;
 dimensions.n_f = n_f;
 dimensions.n_u = n_u;
 dimensions.n_z = n_z;
+dimensions.n_z_user = n_z_user;
 dimensions.n_s = n_s;
 dimensions.n_theta = n_theta;
 dimensions.n_sys = n_sys;

@@ -15,6 +15,7 @@ classdef FiniteElement < NosnocFormulationObject
         ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
         ind_beta
         ind_gamma
+        ind_z_user
         
         ctrl_idx
         fe_idx
@@ -83,6 +84,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_lambda_p = cell(dims.n_s+rbp_allowance, dims.n_sys);
             obj.ind_gamma = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_beta = cell(dims.n_s+rbp_allowance, 1);
+            obj.ind_z_user = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_h = [];
             obj.ind_elastic = [];
             obj.ind_boundary = [];
@@ -112,7 +114,6 @@ classdef FiniteElement < NosnocFormulationObject
             obj.T_final = p.Results.T_final;
             
             % RK stage stuff
-            % TODO: beta and gamma
             for ii = 1:dims.n_s
                 % state / state derivative variables
                 if (settings.irk_representation == IrkRepresentation.differential ||...
@@ -143,7 +144,7 @@ classdef FiniteElement < NosnocFormulationObject
                         ubx = inf * ones(dims.n_x, 1);
                     end
                     x = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                                               ['X_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)'],...
+                                               ['X_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
                                                dims.n_x);
                     obj.addVariable(x,...
                                     'x',...
@@ -282,6 +283,17 @@ classdef FiniteElement < NosnocFormulationObject
                         end
                     end
                 end
+
+                % add user variables
+                z_user = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                                                ['z_user_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
+                                                dims.n_z_user);
+                obj.addVariable(z_user,...
+                                'z_user',...
+                                -inf*ones(dims.n_z_user,1),...
+                                inf*ones(dims.n_z_user,1),...
+                                model.z_user_0,...
+                                ii);
             end
             % Add right boundary points if needed
             if ~settings.right_boundary_point_explicit
@@ -484,7 +496,8 @@ classdef FiniteElement < NosnocFormulationObject
                    [obj.ind_lambda_n{stage, :}],...
                    [obj.ind_lambda_p{stage, :}],...
                    [obj.ind_beta{stage}],...
-                   [obj.ind_gamma{stage}]];
+                   [obj.ind_gamma{stage}],...
+                   [obj.ind_z_user{stage}]];
 
             z = obj.w(idx);
         end
@@ -528,8 +541,10 @@ classdef FiniteElement < NosnocFormulationObject
                 fj = s_sot*fj;
                 qj = s_sot*qj;
                 gj = model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
+                galg = model.f_alg_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
                 
                 obj.addConstraint(gj);
+                obj.addConstraint(galg);
                 if settings.irk_representation == IrkRepresentation.integral
                     xj = settings.C_irk(1, j+1) * obj.prev_fe.x{end};
                     for r = 1:dims.n_s
