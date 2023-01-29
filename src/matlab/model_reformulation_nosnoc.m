@@ -174,6 +174,40 @@ else
     lbu = [];
     ubu = [];
 end
+%% Check if z is provided
+if exist('z')
+    n_z = length(z);
+
+    if exist('z0')
+        if length(z0) ~= n_z
+            error('The vector z0, for the initial guess of z has the wrong size.')
+        end
+    else
+        z0 = zeros(n_z, 1);
+    end
+
+    if exist('lbz')
+        if length(lbz) ~= n_z
+            error('The vector lbz, for the lower bound of z has the wrong size.')
+        end
+    else
+        lbz = -inf*ones(n_z, 1);
+    end
+
+    if exist('ubz')
+        if length(ubz) ~= n_z
+            error('The vector ubz, for the lower bound of z has the wrong size.')
+        end
+    else
+        ubz = inf*ones(n_z, 1);
+    end
+else
+    n_z = 0;
+    z0 = [];
+    lbz = [];
+    ubz = [];
+    z = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+end
 %% Parameters
 if exist('p_global')
     n_p_global = size(p_global,1);
@@ -220,6 +254,14 @@ end
 
 p = vertcat(p_global,p_time_var);
 
+%% g_z: stage algebraic constraints
+% TODO  long term: split up model_reformulation to allow f_alg to use the rest of stage Z 
+if exist('g_z')
+    n_g_z = length(g_z);
+else
+    g_z = [];
+    n_g_z = 0;
+end
 %% Stage and terminal costs check
 if ~exist('f_q')
     if print_level >=1
@@ -336,28 +378,28 @@ else
 end
 
 %% Inequality constraints check
-if exist('g_ineq')
-    g_ineq_constraint  = 1;
-    n_g_ineq = length(g_ineq);
-    if exist('g_ineq_lb')
-        if length(g_ineq_lb)~=n_g_ineq;
-            error('The user provided vector g_ineq_lb has the wrong size.')
+if exist('g_path')
+    g_path_constraint  = 1;
+    n_g_path = length(g_path);
+    if exist('g_path_lb')
+        if length(g_path_lb)~=n_g_path;
+            error('The user provided vector g_path_lb has the wrong size.')
         end
     else
-        g_ineq_lb = -inf*ones(n_g_ineq,1);
+        g_path_lb = -inf*ones(n_g_path,1);
     end
 
-    if exist('g_ineq_ub')
-        if length(g_ineq_ub)~=n_g_ineq;
-            error('The user provided vector g_ineq_ub has the wrong size.')
+    if exist('g_path_ub')
+        if length(g_path_ub)~=n_g_path;
+            error('The user provided vector g_path_ub has the wrong size.')
         end
     else
-        g_ineq_ub =  0*ones(n_g_ineq,1);
+        g_path_ub =  0*ones(n_g_path,1);
     end
-    g_ineq_fun  = Function('g_ineq_fun',{x,u},{g_ineq});
+    g_path_fun  = Function('g_path_fun',{x,u},{g_path});
 else
-    n_g_ineq = 0;
-    g_ineq_constraint  = 0;
+    n_g_path = 0;
+    g_path_constraint  = 0;
     if print_level >=1
         fprintf('Info: No path constraints are provided. \n')
     end
@@ -594,7 +636,7 @@ e_ones_all = {};
 if ~settings.general_inclusion
     alpha = [];
 else
-    alpha = model.alpha;
+    alpha = vertcat(model.alpha{:});
 end
 lambda_0 = [];
 lambda_1 = [];
@@ -619,8 +661,8 @@ switch pss_mode
     n_theta = sum(m_vec); % number of modes
     n_lambda = n_theta;
     n_f = n_theta;
-    n_z = n_theta+n_lambda+n_sys; % n_theta + n_lambda + n_mu
-                                  % Define symbolic variables for algebraic equtions.
+    n_z_all = n_theta+n_lambda+n_sys; % n_theta + n_lambda + n_mu
+                                      % Define symbolic variables for algebraic equtions.
     for ii = 1:n_sys
         ii_str = num2str(ii);
         % define theta (Filippov multiplers)
@@ -647,7 +689,7 @@ switch pss_mode
     n_theta = 2*n_alpha;
     n_lambda = n_lambda_0+n_lambda_1;
     % algebraic varaibles so far
-    n_z = n_alpha+n_lambda_0+n_lambda_1;
+    n_z_all = n_alpha+n_lambda_0+n_lambda_1;
     for ii = 1:n_sys
         ii_str = num2str(ii);
         % define alpha (selection of a set valued step function)
@@ -657,7 +699,7 @@ switch pss_mode
             alpha_all{ii} = alpha_temp;
         else
             % TODO this needs to change if subsystems.
-            alpha_all{ii} = alpha;
+            alpha_all{ii} = alpha{ii};
         end
         % define lambda_0_i (Lagrange multipler of alpha >= 0;)
         lambda_0_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_0_' ii_str],n_c_sys(ii));
@@ -787,7 +829,7 @@ switch pss_mode
     end
     n_beta = length(beta);
     n_gamma = length(gamma);
-    n_z = n_z + n_beta+n_gamma;
+    n_z_all = n_z_all + n_beta+n_gamma;
 end
 g_lift = [g_lift_beta; g_lift_gamma];
 
@@ -795,10 +837,10 @@ g_lift = [g_lift_beta; g_lift_gamma];
 switch pss_mode
   case 'Stewart'
     % symbolic variables z = [theta;lambda;mu];
-    z = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
+    z_all = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
     z_switching = [vertcat(lambda_all{:});vertcat(mu_all{:})];
-    lbz = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_sys,1)];
-    ubz = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_sys,1)];
+    lbz_all = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_sys,1)];
+    ubz_all = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_sys,1)];
     % initial guess for z; % solve LP for guess;
     if lp_initialization
         [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
@@ -807,13 +849,13 @@ switch pss_mode
         lambda_guess = initial_lambda*ones(n_theta,1);
         mu_guess = initial_mu*ones(n_sys,1);
     end
-    z0 = [theta_guess;lambda_guess;mu_guess];
+    z0_all = [theta_guess;lambda_guess;mu_guess];
     n_lift_eq = n_sys;
   case 'Step'
-    z = [alpha;lambda_0;lambda_1;beta;gamma];
+    z_all = [alpha;lambda_0;lambda_1;beta;gamma];
     z_switching = [lambda_0;lambda_1];
-    lbz = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
-    ubz = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
+    lbz_all = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
+    ubz_all = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
 
     alpha_guess = initial_alpha*ones(n_alpha,1);
     lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
@@ -839,9 +881,16 @@ switch pss_mode
         gamma_guess = [];
     end
     % eval functios for gamma and beta?
-    z0 = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
+    z0_all = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
     n_lift_eq =length(g_lift);
 end
+
+%% Add user provided algebraic
+z_all = vertcat(z_all,z);
+z0_all = [z0_all;z0];
+lbz_all = [lbz_all;lbz];
+ubz_all = [ubz_all;ubz];
+n_z_all = n_z_all + n_z;
 
 %% Reformulate the Filippov ODE into a DCS
 
@@ -900,18 +949,18 @@ g_lift_forces = [];
 if time_freezing && time_freezing_lift_forces
     f_v = f_x(n_q+1:2*n_q);
     if n_u > 0
-        f_v_fun = Function('f_v_fun',{x,z,u},{f_v});
-        z0_forces = full(f_v_fun(x0,z0,u0));
+        f_v_fun = Function('f_v_fun',{x,z_all,u},{f_v});
+        z0_forces = full(f_v_fun(x0,z0_all,u0));
     else
-        f_v_fun = Function('f_v_fun',{x,z},{f_v});
-        z0_forces = full(f_v_fun(x0,z0));
+        f_v_fun = Function('f_v_fun',{x,z_all},{f_v});
+        z0_forces = full(f_v_fun(x0,z0_all));
     end
     z_forces = define_casadi_symbolic(casadi_symbolic_mode,'z_forces',n_q);
-    z = [z;z_forces];
-    n_z = n_z+n_q;
-    z0 = [z0;z0_forces];
-    lbz = [lbz;-inf*ones(n_q,1)];
-    ubz = [ubz;inf*ones(n_q,1)];
+    z_all = [z_all;z_forces];
+    n_z_all = n_z_all+n_q;
+    z0_all = [z0_all;z0_forces];
+    lbz_all = [lbz_all;-inf*ones(n_q,1)];
+    ubz_all = [ubz_all;inf*ones(n_q,1)];
     g_lift_forces = [M*z_forces - f_v]; % lifting function
                                         % new simple dynamics after lifting
     f_x = [f_x(1:n_q); z_forces; f_x(end-n_quad:end)];
@@ -919,7 +968,7 @@ end
 
 %%  collect all algebraic equations
 g_lp = [g_switching;g_convex;g_lift];
-g_z_all = [g_lp;g_lift_forces];
+g_z_all = [g_lp;g_z;g_lift_forces];
 n_algebraic_constraints = length(g_z_all);
 
 %% CasADi functions for indicator and region constraint functions
@@ -934,15 +983,15 @@ c_fun = Function('c_fun',{x,p},{c_all});
 % end
 dot_c = c_all.jacobian(x)*f_x;
 
-f_x_fun = Function('f_x_fun',{x,z,u,p},{f_x,f_q,p});
-g_z_all_fun = Function('g_z_all_fun',{x,z,u,p},{g_z_all,p}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+f_x_fun = Function('f_x_fun',{x,z_all,u,p},{f_x,f_q,p});
+g_z_all_fun = Function('g_z_all_fun',{x,z_all,u,p},{g_z_all,p}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
 
 g_switching_fun = Function('g_switching_fun', {x,z_switching,u,p}, {g_switching}); 
-dot_c_fun = Function('c_fun',{x,z,u,p},{dot_c}); % total time derivative of switching functions
+dot_c_fun = Function('c_fun',{x,z_all,u,p},{dot_c}); % total time derivative of switching functions
 
 model.lambda00_fun = Function('lambda00_fun',{x,p_global},{lambda00_expr});
 
-J_cc_fun = Function('J_cc_fun',{z},{f_comp_residual});
+J_cc_fun = Function('J_cc_fun',{z_all},{f_comp_residual});
 f_q_T_fun = Function('f_q_T',{x,p},{f_q_T});
 
 %%  CasADi functions for lest-square objective function terms
@@ -957,7 +1006,7 @@ if isequal(irk_representation,'differential')
     if simple_v0_guess
         v0 = zeros(n_x,1);
     else
-        [v0,~] = (f_x_fun(x0,z0,u0,[p_global_val; p_time_var_val(:,1)]));
+        [v0,~] = (f_x_fun(x0,z0_all,u0,[p_global_val; p_time_var_val(:,1)]));
         v0 = full(v0);
     end
     model.v0 = v0;
@@ -974,16 +1023,19 @@ if n_u > 0
     model.u0 = u0;
 end
 
+model.z0_all = z0_all;
+model.lbz_all = lbz_all;
+model.ubz_all = ubz_all;
+
 model.z0 = z0;
 model.lbz = lbz;
 model.ubz = ubz;
 
-
-model.g_ineq_constraint = g_ineq_constraint;
-if g_ineq_constraint
-    model.g_ineq_lb = g_ineq_lb;
-    model.g_ineq_ub = g_ineq_ub;
-    model.g_ineq_fun = g_ineq_fun;
+model.g_path_constraint = g_path_constraint;
+if g_path_constraint
+    model.g_path_lb = g_path_lb;
+    model.g_path_ub = g_path_ub;
+    model.g_path_fun = g_path_fun;
 end
 
 model.g_comp_path_constraint = g_comp_path_constraint;
@@ -1026,11 +1078,10 @@ model.dot_c_fun = dot_c_fun;
 %
 % % Model Dimensions;
 model.n_x = n_x;
-model.n_z = n_z;
+model.n_z_all = n_z_all;
 model.n_u = n_u;
 model.n_sys = n_sys;
 
-model.z = z;
 model.e_alpha = e_alpha;
 
 model.m_vec = m_vec;
@@ -1074,6 +1125,7 @@ dimensions.N_finite_elements = N_finite_elements;
 dimensions.n_x = n_x;
 dimensions.n_f = n_f;
 dimensions.n_u = n_u;
+dimensions.n_z_all = n_z_all;
 dimensions.n_z = n_z;
 dimensions.n_s = n_s;
 dimensions.n_theta = n_theta;

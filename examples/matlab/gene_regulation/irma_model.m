@@ -25,11 +25,11 @@
 
 % This file is part of NOSNOC.
 
-function [model] = irma_model(switch_on)
+function [model] = irma_model(switch_on, lifting)
 % Generate model for two gene regulatory network with given initial conditions
     import casadi.*
     % Initial Value
-    model.x0 = [0.011;0.1;0.04;0.09;0.015];
+    model.x0 = [0.011;0.09;0.04;0.05;0.015];
     % Variables
     % Concentrations
     x = SX.sym('x', 5);
@@ -51,17 +51,38 @@ function [model] = irma_model(switch_on)
          x(3)-theta{3};
          x(4)-theta{4};
          x(5)-theta{5}];
-    % f_x
-    s = [1, alpha(6);
-         1, alpha(1)*(1-(1-switch_on)*(1-alpha(7)));
-         1, alpha(3);
-         alpha(2),alpha(2)*(1-alpha(5));
-         1, alpha(4)];
-    f_x = -gamma.*x + sum(kappa.*s, 2);
-
+    if lifting
+        if switch_on
+            beta = SX.sym('beta', 1);
+            model.g_z = beta - alpha(2)*(1-alpha(5));% lifted equations
+            s = [1, alpha(6);
+             1, alpha(1);
+             1, alpha(3);
+             alpha(2), beta(1);
+             1, alpha(4)];
+        else
+            beta = SX.sym('beta', 2);
+            model.g_z = beta - [alpha(1)*(1-alpha(7)); alpha(2)*(1-alpha(5))];% lifted equations
+            s = [1, alpha(6);
+             1, beta(1);
+             1, alpha(3);
+             alpha(2), beta(2);
+             1, alpha(4)];
+        end
+        model.z = beta;
+        f_x = -gamma.*x + sum(kappa.*s, 2);
+    else
+        % f_x
+        s = [1, alpha(6);
+             1, alpha(1)*(1-(1-switch_on)*(alpha(7)));
+             1, alpha(3);
+             alpha(2),alpha(2)*(1-alpha(5));
+             1, alpha(4)];
+        f_x = -gamma.*x + sum(kappa.*s, 2);
+    end
     % set model parameters
     model.x = x;
-    model.alpha = alpha;
+    model.alpha = {alpha};
     model.f_x = f_x;
     model.c = c;
 end

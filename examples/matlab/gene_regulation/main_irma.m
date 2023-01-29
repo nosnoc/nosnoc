@@ -26,17 +26,22 @@
 % This file is part of NOSNOC.
 
 %% Info
-% TODO Add paper reference
+% Example synthetic benchmark from:
+% Numerical simulation of piecewise-linear models of gene regulatory networks using complementarity systems
+% V. Acary, H. De Jong, B. Brogliato
 %%
 clear all
 clc
 close all
 import casadi.*
+%% Model parameters
+switch_on = 1;
+lifting = true;
 
 %% Discretization
-N_finite_elements = 5;
+N_finite_elements = 3;
 T_sim = 1000;
-N_sim = 1000;
+N_sim = 200;
 
 %% Settings
 settings = default_settings_nosnoc();
@@ -44,13 +49,13 @@ settings.use_fesd = 1;
 settings.irk_scheme = 'Radau-IIA';
 settings.mpcc_mode = MpccMode.elastic_ineq;
 settings.print_level = 2;
-settings.n_s = 4;
+settings.n_s = 2;
 settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
 settings.comp_tol = 1e-5;
 settings.homotopy_update_rule = 'superlinear';
 
 % Generate model
-model = irma_model(0);
+model = irma_model(switch_on, lifting);
 % Time
 model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;

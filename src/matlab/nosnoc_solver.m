@@ -67,15 +67,15 @@ unfold_struct(settings,'caller');
 settings = settings_bkp; % TODO: figure out why unfold settings breaks things.
 unfold_struct(model,'caller');
 results = extract_results_from_solver(model,settings,results);
-complementarity_iter_ell_1 = full(comp_res(results.w_opt,[model.p_val;x0;full(model.lambda00_fun(x0,model.p_global_val))]));
+complementarity_iter_ell_inf = full(comp_res(results.w_opt,[model.p_val;x0;full(model.lambda00_fun(x0,model.p_global_val))]));
 switch pss_mode
     case 'Step'
-    temp = [results.alpha_opt_extended.*results.lambda_0_opt_extended,(1-results.alpha_opt_extended).*results.lambda_1_opt_extended];
-    complementarity_iter_ell_inf = max(temp(:));
+    temp = [results.alpha_opt_extended.*results.lambda_0_opt_extended,(1-results.alpha_opt_extended)*results.lambda_1_opt_extended];
+    complementarity_iter_ell_1 = sum(temp(:));
     case 'Stewart'
         % TODO: considert cross comps as well in the inf norm
      temp = [results.theta_opt_extended.*results.lambda_opt_extended];
-    complementarity_iter_ell_inf = max(temp(:));
+    complementarity_iter_ell_1 = sum(temp(:));
 end
 
 %% Verbose

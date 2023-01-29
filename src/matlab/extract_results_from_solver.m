@@ -7,7 +7,7 @@ settings = settings_bkp;
 % Store differential states
 w_opt = full(results.x);
 diff_states = w_opt(ind_x);
-algebraic_states = w_opt(ind_z);
+algebraic_states = w_opt(ind_z_all);
 
 u_opt = w_opt([ind_u{:}]);
 u_opt = reshape(u_opt,n_u,N_stages);
@@ -38,7 +38,7 @@ x_opt = [x_opt_extended(:,1), x_opt{:}];
 
 switch pss_mode
     case 'Stewart'
-        z_opt_extended = reshape(algebraic_states,n_z,length(algebraic_states)/n_z);
+        z_opt_extended = reshape(algebraic_states,n_z_all,length(algebraic_states)/n_z_all);
         z_opt  = z_opt_extended(:,1:n_s:end);
         theta_opt_extended = [z_opt_extended(1:n_theta,:)];
         lambda_opt_extended = [z_opt_extended(n_theta+1:2*n_theta,:)];
@@ -48,7 +48,7 @@ switch pss_mode
         lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
         mu_opt= mu_opt_extended(:,1:n_s+1:end);
     case 'Step'
-        z_opt_extended = reshape(algebraic_states,n_z,length(algebraic_states)/n_z);
+        z_opt_extended = reshape(algebraic_states,n_z_all,length(algebraic_states)/n_z_all);
         z_opt  = z_opt_extended(:,1:n_s:end);
         alpha_opt_extended = [z_opt_extended(1:n_alpha,:)];
         lambda_0_opt_extended = [z_opt_extended(n_alpha+1:2*n_alpha,:)];

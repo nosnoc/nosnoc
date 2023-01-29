@@ -1,3 +1,29 @@
+% BSD 2-Clause License
+
+% Copyright (c) 2023, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
+
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+
+% 1. Redistributions of source code must retain the above copyright notice, this
+%    list of conditions and the following disclaimer.
+
+% 2. Redistributions in binary form must reproduce the above copyright notice,
+%    this list of conditions and the following disclaimer in the documentation
+%    and/or other materials provided with the distribution.
+
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+% FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+% DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+% SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+% CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+% OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+% OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+% This file is part of NOSNOC.
 classdef NosnocProblem < NosnocFormulationObject
     properties
         % Index vectors
@@ -13,6 +39,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_lambda_p
         ind_gamma
         ind_beta
+        ind_z
         ind_nu_lift
         ind_h
         ind_elastic
@@ -71,9 +98,10 @@ classdef NosnocProblem < NosnocFormulationObject
         u
         sot
         nu_vector
+        cc_vector
 
         % Indices for all algebraic vars in the problem
-        ind_z
+        ind_z_all
     end
     
     methods
@@ -99,6 +127,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_lambda_p = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_beta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_gamma = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_z = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_nu_lift = {};
             obj.ind_h = {};
             obj.ind_sot = {};
@@ -347,6 +376,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
             % Calculate standard complementarities.
             J_comp_std = 0;
+            J_comp_std_infty = 0;
             for k=1:dims.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
@@ -359,12 +389,7 @@ classdef NosnocProblem < NosnocFormulationObject
             
             % Scalar-valued complementairity residual
             if settings.use_fesd
-                J_comp_fesd = 0;
-                for k=1:dims.N_stages
-                    for fe=stage.stage
-                        J_comp_fesd = J_comp_fesd + sum(diag(fe.sumTheta())*fe.sumLambda());
-                    end
-                end
+                J_comp_fesd = max(obj.cc_vector);
                 J_comp = J_comp_fesd;
             else
                 J_comp_fesd = J_comp_std;
@@ -524,6 +549,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_lambda_p(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lambda_p, w_len);
             obj.ind_beta(stage.ctrl_idx, :, :) = increment_indices(stage.ind_beta, w_len);
             obj.ind_gamma(stage.ctrl_idx, :, :) = increment_indices(stage.ind_gamma, w_len);
+            obj.ind_z(stage.ctrl_idx, :, :) = increment_indices(stage.ind_z, w_len);
             obj.ind_nu_lift = [obj.ind_nu_lift, increment_indices(stage.ind_nu_lift, w_len)];
 
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
@@ -543,7 +569,29 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ubw = vertcat(obj.ubw, ub);
             obj.w0 = vertcat(obj.w0, initial);
         end
-        
+
+        function cc_vector = get.cc_vector(obj)
+            cc_vector = [];
+
+            for stage=obj.stages
+                for fe=stage.stage
+                    theta = fe.theta;
+                    lambda = fe.lambda;
+                    for j=1:obj.dims.n_s
+                        for jj = j:obj.dims.n_s
+                            for r=1:obj.dims.n_sys 
+                                cc_vector = vertcat(cc_vector, diag(theta{j,r})*lambda{jj,r});
+                            end
+                        end
+                    end
+                    for j=1:obj.dims.n_s
+                        for r=1:obj.dims.n_sys
+                            cc_vector = vertcat(cc_vector, diag(theta{j,r})*fe.prev_fe.lambda{end,r});
+                        end
+                    end
+                end
+            end
+        end
         function u = get.u(obj)
             u = cellfun(@(u) obj.w(u), obj.ind_u, 'UniformOutput', false);
         end
@@ -562,16 +610,17 @@ classdef NosnocProblem < NosnocFormulationObject
             end
         end
 
-        function ind_z = get.ind_z(obj)
-            ind_z = [flatten_ind(obj.ind_theta(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_gamma(:,:,1:obj.dims.n_s))];
-            ind_z = sort(ind_z);
+        function ind_z_all = get.ind_z_all(obj)
+            ind_z_all = [flatten_ind(obj.ind_theta(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_gamma(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_z(:,:,1:obj.dims.n_s))];
+            ind_z_all = sort(ind_z_all);
         end
         
         function print(obj,filename)

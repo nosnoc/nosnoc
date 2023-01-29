@@ -111,34 +111,34 @@ p_knee_z = p_knee(2);
 p_foot_x = p_foot(1);
 p_foot_z = p_foot(2);
 
-g_ineq = [];
-g_ineq_lb = [];
-g_ineq_ub = [];
+g_path = [];
+g_path_lb = [];
+g_path_ub = [];
 % constraint on knee x
 if (lb_knee_x ~= -inf) || (ub_knee_x ~= inf)
-    g_ineq = [g_ineq;p_knee_x];
-    g_ineq_lb = [g_ineq_lb;lb_knee_x];
-    g_ineq_ub = [g_ineq_ub;ub_knee_x];
+    g_path = [g_path;p_knee_x];
+    g_path_lb = [g_path_lb;lb_knee_x];
+    g_path_ub = [g_path_ub;ub_knee_x];
 end
 % constraint on knee z
 if (lb_knee_z ~= -inf) || (ub_knee_z ~= inf)
-    g_ineq = [g_ineq;p_knee_z];
-    g_ineq_lb = [g_ineq_lb;lb_knee_z];
-    g_ineq_ub = [g_ineq_ub;ub_knee_z];
+    g_path = [g_path;p_knee_z];
+    g_path_lb = [g_path_lb;lb_knee_z];
+    g_path_ub = [g_path_ub;ub_knee_z];
 end
 
 % constraint on foot x
 if (lb_foot_x ~= -inf) || (ub_foot_x ~= inf)
-    g_ineq = [g_ineq;p_foot_x];
-    g_ineq_lb = [g_ineq_lb;lb_foot_x];
-    g_ineq_ub = [g_ineq_ub;ub_foot_x];
+    g_path = [g_path;p_foot_x];
+    g_path_lb = [g_path_lb;lb_foot_x];
+    g_path_ub = [g_path_ub;ub_foot_x];
 end
 
 % constraint on foot z
 if (lb_foot_z ~= -inf) || (ub_foot_z ~= inf)
-    g_ineq = [g_ineq;p_foot_z];
-    g_ineq_lb = [g_ineq_lb;lb_foot_z];
-    g_ineq_ub = [g_ineq_ub;ub_foot_z];
+    g_path = [g_path;p_foot_z];
+    g_path_lb = [g_path_lb;lb_foot_z];
+    g_path_ub = [g_path_ub;ub_foot_z];
 end
 
 % obstacle constraints
@@ -149,17 +149,17 @@ if hole_constraint
     a_vec = width_vec/2;
     b_vec = height_vec;
     for ii = 1:n_holes
-        g_ineq = [g_ineq; ((p_foot_x-xc_vec(ii))/a_vec(ii))^2+((p_foot_z-zc_vec(ii))/b_vec(ii))^2-1];
+        g_path = [g_path; ((p_foot_x-xc_vec(ii))/a_vec(ii))^2+((p_foot_z-zc_vec(ii))/b_vec(ii))^2-1];
     end
-    g_ineq_lb = [g_ineq_lb;0*ones(n_holes ,1)];
-    g_ineq_ub = [g_ineq_ub;inf*ones(n_holes ,1)];
+    g_path_lb = [g_path_lb;0*ones(n_holes ,1)];
+    g_path_ub = [g_path_ub;inf*ones(n_holes ,1)];
 end
 
 if general_inequality_constraints
-    if ~isempty(g_ineq)
-        model.g_ineq = g_ineq;
-        model.g_ineq_ub = g_ineq_ub;
-        model.g_ineq_lb = g_ineq_lb;
+    if ~isempty(g_path)
+        model.g_path = g_path;
+        model.g_path_ub = g_path_ub;
+        model.g_path_lb = g_path_lb;
     end
 end
 

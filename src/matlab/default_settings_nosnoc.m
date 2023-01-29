@@ -36,10 +36,10 @@ list_of_all_rk_schemes = {'radau','legendre','Radau-IIA','Gauss-Legendre','Radau
                            'Lobatto-III','Lobatto-IIIA','Lobatto-IIIB','Lobatto-IIIC',...
                            'Explicit-RK'};
 %% General NLP/OCP Settings
-g_ineq_constraint = 0; % is nonlinear path constraint present (by default evaluated only on control grid points)
+g_path_constraint = 0; % is nonlinear path constraint present (by default evaluated only on control grid points)
 g_comp_path_constraint = 0;
-g_ineq_at_fe = 0; % evaluate nonlinear path constraint at every finte element boundary
-g_ineq_at_stg = 0; % evaluate nonlinear path constraint at every stage 
+g_path_at_fe = 0; % evaluate nonlinear path constraint at every finte element boundary
+g_path_at_stg = 0; % evaluate nonlinear path constraint at every stage 
 
 x_box_at_fe = 1; % evaluate box constraint for diff states at every finite element boundary point
 x_box_at_stg = 1; % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)

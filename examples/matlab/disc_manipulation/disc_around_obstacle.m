@@ -49,7 +49,7 @@ settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
 
 % enforce inequality at finite elements.
-%settings.g_ineq_at_fe = 1;
+%settings.g_path_at_fe = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 %settings.opts_ipopt.ipopt.linear_solver = 'ma57';
@@ -121,9 +121,9 @@ model.f_c = [norm(q1-q2)^2-(r1+r2)^2];
 %% obstacle
 r_ob = 1;
 q_ob = [0;0];
-g_ineq = -[(q1(1)-q_ob(1))^2+(q1(2)-q_ob(2))^2-(r_ob+r1)^2;...
+g_path = -[(q1(1)-q_ob(1))^2+(q1(2)-q_ob(2))^2-(r_ob+r1)^2;...
     (q2(1)-q_ob(1))^2+(q2(2)-q_ob(2))^2-(r_ob+r2)^2];
-model.g_ineq = g_ineq;
+model.g_path = g_path;
 
 %% box constraints on controls and states
 model.lbu = lbu;

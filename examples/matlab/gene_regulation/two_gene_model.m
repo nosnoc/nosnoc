@@ -24,7 +24,8 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-function [model] = two_gene_model(x0)
+
+function [model] = two_gene_model(x0, lifting)
 % Generate model for two gene regulatory network with given initial conditions
     import casadi.*
     % Initial Value
@@ -43,11 +44,20 @@ function [model] = two_gene_model(x0)
     gamma = [4.5;1.5];
     % Switching function
     c = [x(1)-theta_1; x(2)-theta_2];
-    % f_x
+    % Switching multipliers
     s = [(1-alpha(2))*alpha(3);
          alpha(1)*(1-alpha(4))];
-    f_x = -gamma.*x + kappa.*s;
+    if lifting
+        beta = SX.sym('beta', 2);
+        model.f_alg = beta - s; % lifted equations
+        model.z = beta;
 
+        % f_x
+        f_x = -gamma.*x + kappa.*beta;
+    else
+        % f_x
+        f_x = -gamma.*x + kappa.*s;
+    end
     % set model parameters
     model.x = x;
     model.alpha = alpha;

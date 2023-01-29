@@ -153,7 +153,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     % Store differential states
     w_opt = full(sol.x);
     diff_states = w_opt(ind_x);
-    alg_states = w_opt(ind_z);
+    alg_states = w_opt(ind_z_all);
 
     diff_res = [diff_res;diff_states ];
     alg_res = [alg_res;alg_states];
@@ -177,7 +177,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
     switch pss_mode
         case 'Stewart'
-            alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
+            alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
             theta_opt_extended = [alg_states_extended(1:n_theta,:)];
             lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
             mu_opt_extended = [alg_states_extended(end-n_sys+1:end,:)];
@@ -186,7 +186,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             lambda_opt= lambda_opt_extended(:,1:n_s:end);
             mu_opt= mu_opt_extended(:,1:n_s:end);
         case 'Step'
-            alg_states_extended = reshape(alg_states,n_z,length(alg_states)/n_z);
+            alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
             alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
             lambda_0_opt_extended = [alg_states_extended(n_alpha+1:2*n_alpha,:)];
             lambda_1_opt_extended = [alg_states_extended(2*n_alpha+1:3*n_alpha,:)];

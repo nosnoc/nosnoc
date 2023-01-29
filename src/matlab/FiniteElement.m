@@ -1,3 +1,29 @@
+% BSD 2-Clause License
+
+% Copyright (c) 2023, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
+
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+
+% 1. Redistributions of source code must retain the above copyright notice, this
+%    list of conditions and the following disclaimer.
+
+% 2. Redistributions in binary form must reproduce the above copyright notice,
+%    this list of conditions and the following disclaimer in the documentation
+%    and/or other materials provided with the distribution.
+
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+% FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+% DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+% SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+% CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+% OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+% OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+% This file is part of NOSNOC.
 classdef FiniteElement < NosnocFormulationObject
     properties
         % Index vectors
@@ -15,6 +41,7 @@ classdef FiniteElement < NosnocFormulationObject
         ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
         ind_beta
         ind_gamma
+        ind_z
         
         ctrl_idx
         fe_idx
@@ -83,6 +110,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_lambda_p = cell(dims.n_s+rbp_allowance, dims.n_sys);
             obj.ind_gamma = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_beta = cell(dims.n_s+rbp_allowance, 1);
+            obj.ind_z = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_h = [];
             obj.ind_elastic = [];
             obj.ind_boundary = [];
@@ -112,7 +140,6 @@ classdef FiniteElement < NosnocFormulationObject
             obj.T_final = p.Results.T_final;
             
             % RK stage stuff
-            % TODO: beta and gamma
             for ii = 1:dims.n_s
                 % state / state derivative variables
                 if (settings.irk_representation == IrkRepresentation.differential ||...
@@ -143,7 +170,7 @@ classdef FiniteElement < NosnocFormulationObject
                         ubx = inf * ones(dims.n_x, 1);
                     end
                     x = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                                               ['X_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)'],...
+                                               ['X_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
                                                dims.n_x);
                     obj.addVariable(x,...
                                     'x',...
@@ -282,6 +309,17 @@ classdef FiniteElement < NosnocFormulationObject
                         end
                     end
                 end
+
+                % add user variables
+                z = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                                           ['z_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
+                                           dims.n_z);
+                obj.addVariable(z,...
+                                'z',...
+                                model.lbz,...
+                                model.ubz,...
+                                model.z0,...
+                                ii);
             end
             % Add right boundary points if needed
             if ~settings.right_boundary_point_explicit
@@ -484,7 +522,8 @@ classdef FiniteElement < NosnocFormulationObject
                    [obj.ind_lambda_n{stage, :}],...
                    [obj.ind_lambda_p{stage, :}],...
                    [obj.ind_beta{stage}],...
-                   [obj.ind_gamma{stage}]];
+                   [obj.ind_gamma{stage}],...
+                   [obj.ind_z{stage}]];
 
             z = obj.w(idx);
         end
@@ -527,7 +566,7 @@ classdef FiniteElement < NosnocFormulationObject
                 [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
                 fj = s_sot*fj;
                 qj = s_sot*qj;
-                gj = s_sot*model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
+                gj = model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
                 
                 obj.addConstraint(gj);
                 if settings.irk_representation == IrkRepresentation.integral
@@ -549,14 +588,14 @@ classdef FiniteElement < NosnocFormulationObject
 
             % nonlinear inequality.
             % TODO: do this cleaner
-            if (settings.g_ineq_constraint &&...
-                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
-                obj.addConstraint(model.g_ineq_fun(obj.prev_fe.x{end},Uk), model.g_ineq_lb, model.g_ineq_ub);
+            if (settings.g_path_constraint &&...
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
+                obj.addConstraint(model.g_path_fun(obj.prev_fe.x{end},Uk), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
-                if settings.g_ineq_constraint && settings.g_ineq_at_stg
-                    obj.addConstraint(model.g_ineq_fun(X_ki{j},Uk), model.g_ineq_lb, model.g_ineq_ub);
+                if settings.g_path_constraint && settings.g_path_at_stg
+                    obj.addConstraint(model.g_path_fun(X_ki{j},Uk), model.g_path_lb, model.g_path_ub);
                 end
             end
 
@@ -584,12 +623,12 @@ classdef FiniteElement < NosnocFormulationObject
             % path complementarities
             % TODO: do this cleaner
             if (settings.g_comp_path_constraint &&...
-                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_ineq_at_fe))
+                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u));
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
-                if settings.g_comp_path_constraint && settings.g_ineq_at_stg
+                if settings.g_comp_path_constraint && settings.g_path_at_stg
                     g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u));
                 end
             end

@@ -91,9 +91,9 @@ model.g_terminal = x-x_target;
 % Inequality constraints
 % 
 % cv = 10; cx = 10;
-% model.g_ineq = [v1-v2;x1-x2];
-% model.g_ineq_ub = [cv;cx];
-% model.g_ineq_lb = -[cv;cx];
+% model.g_path = [v1-v2;x1-x2];
+% model.g_path_ub = [cv;cx];
+% model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
 [results,stats,model,settings] = nosnoc_solver(model,settings);
