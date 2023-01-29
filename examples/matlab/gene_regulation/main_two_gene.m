@@ -33,10 +33,10 @@ clc
 close all
 import casadi.*
 %% Model parameters
-lifting = true;
+lifting = false;
 
 %% Discretization
-N_finite_elements = 3;
+N_finite_elements = 2;
 T_sim = 1;
 N_sim = 20;
 
@@ -44,8 +44,8 @@ N_sim = 20;
 settings = default_settings_nosnoc();
 settings.use_fesd = 1;
 settings.irk_scheme = 'Radau-IIA';
-settings.print_level = 2;
-settings.n_s = 4;
+settings.print_level = 1;
+settings.n_s = 2;
 settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
 settings.mpcc_mode = MpccMode.Scholtes_ineq; %MpccMode.elastic_ineq;
 settings.homotopy_update_rule = 'superlinear';

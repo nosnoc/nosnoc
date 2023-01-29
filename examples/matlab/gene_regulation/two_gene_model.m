@@ -50,7 +50,7 @@ function [model] = two_gene_model(x0, lifting)
     if lifting
         beta = SX.sym('beta', 2);
         model.f_alg = beta - s; % lifted equations
-        model.z_user = beta;
+        model.z = beta;
 
         % f_x
         f_x = -gamma.*x + kappa.*beta;

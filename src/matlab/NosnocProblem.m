@@ -39,7 +39,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_lambda_p
         ind_gamma
         ind_beta
-        ind_z_user
+        ind_z
         ind_nu_lift
         ind_h
         ind_elastic
@@ -101,7 +101,7 @@ classdef NosnocProblem < NosnocFormulationObject
         cc_vector
 
         % Indices for all algebraic vars in the problem
-        ind_z
+        ind_z_all
     end
     
     methods
@@ -127,7 +127,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_lambda_p = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_beta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_gamma = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_z_user = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_z = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_nu_lift = {};
             obj.ind_h = {};
             obj.ind_sot = {};
@@ -549,7 +549,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_lambda_p(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lambda_p, w_len);
             obj.ind_beta(stage.ctrl_idx, :, :) = increment_indices(stage.ind_beta, w_len);
             obj.ind_gamma(stage.ctrl_idx, :, :) = increment_indices(stage.ind_gamma, w_len);
-            obj.ind_z_user(stage.ctrl_idx, :, :) = increment_indices(stage.ind_z_user, w_len);
+            obj.ind_z(stage.ctrl_idx, :, :) = increment_indices(stage.ind_z, w_len);
             obj.ind_nu_lift = [obj.ind_nu_lift, increment_indices(stage.ind_nu_lift, w_len)];
 
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
@@ -610,17 +610,17 @@ classdef NosnocProblem < NosnocFormulationObject
             end
         end
 
-        function ind_z = get.ind_z(obj)
-            ind_z = [flatten_ind(obj.ind_theta(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_gamma(:,:,1:obj.dims.n_s))
-                     flatten_ind(obj.ind_z_user(:,:,1:obj.dims.n_s))];
-            ind_z = sort(ind_z);
+        function ind_z_all = get.ind_z_all(obj)
+            ind_z_all = [flatten_ind(obj.ind_theta(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_gamma(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_z(:,:,1:obj.dims.n_s))];
+            ind_z_all = sort(ind_z_all);
         end
         
         function print(obj,filename)

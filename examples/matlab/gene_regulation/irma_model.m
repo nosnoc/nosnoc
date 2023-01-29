@@ -54,7 +54,7 @@ function [model] = irma_model(switch_on, lifting)
     if lifting
         if switch_on
             beta = SX.sym('beta', 1);
-            model.f_alg = beta - alpha(2)*(1-alpha(5));% lifted equations
+            model.g_z = beta - alpha(2)*(1-alpha(5));% lifted equations
             s = [1, alpha(6);
              1, alpha(1);
              1, alpha(3);
@@ -62,14 +62,14 @@ function [model] = irma_model(switch_on, lifting)
              1, alpha(4)];
         else
             beta = SX.sym('beta', 2);
-            model.f_alg = beta - [alpha(1)*(1-alpha(7)); alpha(2)*(1-alpha(5))];% lifted equations
+            model.g_z = beta - [alpha(1)*(1-alpha(7)); alpha(2)*(1-alpha(5))];% lifted equations
             s = [1, alpha(6);
              1, beta(1);
              1, alpha(3);
              alpha(2), beta(2);
              1, alpha(4)];
         end
-        model.z_user = beta;
+        model.z = beta;
         f_x = -gamma.*x + sum(kappa.*s, 2);
     else
         % f_x
@@ -82,7 +82,7 @@ function [model] = irma_model(switch_on, lifting)
     end
     % set model parameters
     model.x = x;
-    model.alpha = alpha;
+    model.alpha = {alpha};
     model.f_x = f_x;
     model.c = c;
 end
