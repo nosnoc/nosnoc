@@ -26,7 +26,9 @@
 % This file is part of NOSNOC.
 
 %% Info
-% TODO Add paper reference
+% Example synthetic benchmark from:
+% Numerical simulation of piecewise-linear models of gene regulatory networks using complementarity systems
+% V. Acary, H. De Jong, B. Brogliato
 %%
 clear all
 clc
