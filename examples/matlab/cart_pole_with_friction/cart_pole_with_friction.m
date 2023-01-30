@@ -47,7 +47,7 @@ settings.n_s = 2;
 settings.N_homotopy = 8;
 settings.homotopy_update_rule = 'superlinear';
 
-%% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
+%% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better performance:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 %% Discretization parameters
@@ -72,10 +72,10 @@ M = [m1 + m2, m2*link_length*cos(q(2));...
 C = [0, -m2 * link_length*v(2)*sin(q(2));...
     0,   0];
 
-% F_all (all forces) = Gravity+Control+Coriolis (+Friction)
+% f_all (all forces) = Gravity+Control+Coriolis (+Friction)
 f_all = [0;-m2*g*link_length*sin(x(2))]+[u;0]-C*v;
 
-%  there is friction bewteen cart and ground
+% there is friction between cart and ground
 F_friction = 2;
 % Dynamics with $ v > 0$
 f_1 = [v;...
@@ -83,9 +83,11 @@ f_1 = [v;...
 % Dynamics with $ v < 0$
 f_2 = [v;...
         inv(M)*(f_all+[F_friction;0])];
-F = [f_1,f_2];
+F = [f_1, f_2];
 % switching function (cart velocity)
 c = v(1);
+% Sign matrix % f_1 for c=v>0, f_2 for c=v<0
+S = [1; -1];
 
 % specify initial and end state, cost ref and weight matrix
 x0 = [1; 0/180*pi; 0; 0]; % start downwards
@@ -113,15 +115,14 @@ model.x0 =  x0;
 model.u = u;
 model.lbu = -u_max;
 model.ubu = u_max;
-% Sign matrix % f_1 for c=v>0, f_2 for c=v<0
-model.S = [1;-1];
+model.S = S;
 
 % Stage cost
 if 1
     % directly via generic stage and terminal costs
     model.f_q = (x-x_ref)'*Q*(x-x_ref)+ (u-u_ref)'*R*(u-u_ref);
     % terminal cost
-    model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
+    model.f_terminal = (x-x_ref)'*Q_terminal*(x-x_ref);
     % model.g_terminal = x-x_target;
 else
     % via least squares cost interace (makes time variable reference possible)
@@ -135,9 +136,9 @@ end
 % unfold structure to workspace of this script
 unfold_struct(results,'base');
 q1_opt = x_opt(1,:);
-q2_opt= x_opt(2,:);
-v1_opt= x_opt(3,:);
-v2_opt= x_opt(4,:);
+q2_opt = x_opt(2,:);
+v1_opt = x_opt(3,:);
+v2_opt = x_opt(4,:);
 
 
 %% Animation
@@ -202,26 +203,26 @@ end
 %% states
 
 figure
-subplot(131)
+subplot(311)
 plot(t_grid,q1_opt)
 hold on
 plot(t_grid,q2_opt)
-yline(pi,'k--')
+yline(pi,'k--');
 ylabel('$q(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
 legend({'$q_1(t)$ - cart ','$q_2(t)$ - pole'},'Interpreter','latex','Location','best')
-subplot(132)
+subplot(312)
 plot(t_grid,v1_opt)
 hold on
 plot(t_grid,v2_opt)
-yline(0,'k--')
+yline(0,'k--');
 ylabel('$v(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
 legend({'$v_1(t)$ - cart ','$v_2(t)$ - pole'},'Interpreter','latex','Location','best')
 % t_grid_u = t_grid_u';
-subplot(133)
+subplot(313)
 stairs(t_grid_u,[u_opt,nan]);
 ylabel('$u(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
