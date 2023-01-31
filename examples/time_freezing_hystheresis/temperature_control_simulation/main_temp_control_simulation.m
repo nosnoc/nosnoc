@@ -28,42 +28,20 @@
 clear all
 clc
 close all
-
 import casadi.*
 
 
 %% settings
 % collocation settings
 settings = default_settings_nosnoc();
-
 settings.n_s = 2;                            % Degree of interpolating polynomial
-% MPCC settings
-settings.s_elastic_max = 1e1;              % upper bound for elastic variables
-settings.objective_scaling_direct = 0;                   % in penalty methods  1: J = J+(1/p)*J_comp (direct)  , 0 : J = p*J+J_comp (inverse)
-% Penalty/Relaxation paraemetr
-settings.sigma_0 = 1e1;                     % starting smouothing parameter
-settings.sigma_N = 1e-10;                   % end smoothing parameter
-settings.homotopy_update_slope = 0.1;                      % decrease rate
-settings.N_homotopy = ceil(abs(log(settings.sigma_N/settings.sigma_0)/log(settings.homotopy_update_slope)))+1 ;% number of steps
-settings.comp_tol = 1e-14;
-
-% time freezing settings 
-settings.initial_theta = 0.5;
-
-%^ IPOPT Settings
-opts_ipopt.verbose = false;
-opts_ipopt.ipopt.max_iter = 250;
-opts_ipopt.ipopt.print_level = 0;
-opts_ipopt.ipopt.mu_strategy = 'adaptive';
-opts_ipopt.ipopt.mu_oracle = 'quality-function';
-settings.opts_ipopt = opts_ipopt;
+settings.print_level = 2;
 %% Generate Model
 model = temp_control_model_voronoi();
 %% - Simulation settings
-model.T_sim = 3;
-model.N_stages = 1;
+model.T_sim = 4;
 model.N_finite_elements = 2;
-model.N_sim = 30;
+model.N_sim = 40;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator 
 [results,stats,model] = integrator_fesd(model,settings);
