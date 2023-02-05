@@ -32,8 +32,7 @@ import casadi.*
 
 %% Settings
 [settings] = default_settings_nosnoc();
-settings.n_s = 3;                       
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.n_s = 2;                       
 %% Time settings
 settings.time_freezing = 1;
 settings.time_freezing_hysteresis  = 1;
@@ -44,15 +43,13 @@ settings.s_sot_min = 1;
 settings.rho_sot = 1e-1;
 settings.use_speed_of_time_variables = 1; 
 settings.local_speed_of_time_variable = 1;
+settings.stagewise_clock_constraint = 1;
 % solver settings
-settings.opts_ipopt.ipopt.tol = 1e-8;
-settings.comp_tol = 1e-5;
-settings.cross_comp_mode = 8;
+settings.comp_tol = 1e-8;
+settings.cross_comp_mode = 3;
+% settings.homotopy_update_slope = 0.2;
 settings.homotopy_update_rule = 'superlinear';
-
-settings.initial_lambda = 0.0;
-settings.initial_theta = 0.0;
-settings.initial_mu = 0.0;
+settings.mpcc_mode = 'Scholtes_eq';
 
 %% Model Settings
 model.fuel_cost_on = 0;

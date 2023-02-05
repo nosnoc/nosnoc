@@ -12,88 +12,69 @@ v_goal = 0;
 v_max = 25;
 u_max = 5;
 %% Model Parameters
-% inital value
-q0 = 0;
-v0 = 0;
-L0 = 0; % cost integral
-a0 = 0;
-t0 = 0;
-%% Hystheresis parameters
-a1 = 0;
-a2 = 1;
+% Hystheresis parameters
 v1 = 10;
 v2 = 15;
-u0 = 0;
-
 % fual costs of turbo and nominal
 Pn = 1;
 Pt = 2.5;
 
-%% Inital Value
-x0 = [q0;v0;L0;a0;t0];
-
 %% Variable defintion
 % states
-q = MX.sym('q');
-v = MX.sym('v');
-L = MX.sym('L');
-w = MX.sym('w');
-t = MX.sym('t');
+q = SX.sym('q');
+v = SX.sym('v');
+L = SX.sym('L');
+w = SX.sym('w');
+t = SX.sym('t');
 x = [q;v;L;w;t];
 % controls
-u = MX.sym('u');
+u = SX.sym('u');
 
-
+% Bounds on x and u
 lbx = -[inf;0;inf;inf;inf];
 ubx = [inf;v_max;inf;inf;inf];
-
+lbu = -u_max;
+ubu = u_max;
+%% Inital Value
+x0 = zeros(5,1);
+% u0 = 10;
 %% PSS via Voronoi Cuts
 z1 = [1/4;-1/4];
 z2 = [1/4;1/4];
 z3 = [3/4;3/4];
 z4 = [3/4;5/4];
-Z = [z1 z2 z3 z4];
 
 psi = (v-v1)/(v2-v1);
-z = [psi;w];
 
-g_11 = norm([psi;w]-z1)^2;
-g_12 = norm([psi;w]-z2)^2;
-g_13 = norm([psi;w]-z3)^2;
-g_14 = norm([psi;w]-z4)^2;
-g_ind = [g_11;g_12;g_13;g_14];
-g_Stewart = [g_ind];
-c = g_Stewart;
+g_1 = norm([psi;w]-z1)^2;
+g_2 = norm([psi;w]-z2)^2;
+g_3 = norm([psi;w]-z3)^2;
+g_4 = norm([psi;w]-z4)^2;
 
-% control
-
-lbu = -u_max;
-ubu = u_max;
+g_ind = [g_1;g_2;g_3;g_4];
 
 % modes of the ODEs layers
-a_push_const = 0.5;
 f_A = [v;u;Pn;0;1];
 f_B = [v;3*u;Pt;0;1];
-f_push_down = [0;0;0;-a_push_const;0];
-f_push_up = [0;0;0;a_push_const;0];
 
 a_push = 2;
-f_push_down = [0;0;0;-a_push*(psi-1)^2/(1+(psi-1)^2);0];
-f_push_up = [0;0;0;a_push*(psi)^2/(1+(psi)^2);0];
-f_12 = f_push_down;
-f_13 = f_push_up;
-f_14 = 2*f_B-f_13;
-f_11 = 2*f_A-f_12;
-% in matrix form
-f_1 = [f_11 f_12 f_13 f_14];
+f_push_down = [0;0;0;-a_push;0];
+f_push_up = [0;0;0;a_push;0];
 
-% matrix with all vector fields
-F = f_1;
+f_2 = f_push_down;
+f_3 = f_push_up;
+f_4 = 2*f_B-f_3;
+f_1 = 2*f_A-f_2;
+% in matrix form
+F = [f_1 f_2 f_3 f_4];
 %% objective and terminal constraint
 f_q = fuel_cost_on*L;
 % terminal constraint
 g_terminal = [q-q_goal;v-v_goal];
-%% Generic part
+% g_terminal_lb = zeros(2,1);
+% g_terminal_ub = zeros(2,1);
+% f_q_T = 1e3*[q-q_goal;v-v_goal]'*[q-q_goal;v-v_goal];
+%% populate model struct
 % (make of local workspace a struct and pass to output
 names = who;
 for ii = 1:length(names)

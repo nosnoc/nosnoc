@@ -51,7 +51,7 @@ elseif nargin == 3
     unfold_struct(model,'caller');
     unfold_struct(settings,'caller');
 else
-        results = varargin{1};
+    results = varargin{1};
     settings = varargin{2};
     model = varargin{3};
     stats = varargin{4};
@@ -74,44 +74,12 @@ grey = [0.85 0.85 0.85];
 %%
 n = n_x+n_u;
 nn = n-1;
-tgrid = linspace(0, T, N_stages+1);
-tgrid_z = linspace(0, T, N_stages);
 %% Read solutions
-
-diff_states = w_opt(ind_x);
-controls = w_opt([ind_u{:}]);
-alg_states = w_opt(ind_z);
-
-% differential states
-for i = 1:n_x
-    eval( ['x' num2str(i) '_opt = diff_states(' num2str(i) ':n_x+n_x*n_s:end);']);
-end
-% convex multiplers
-for i = 1:n_theta
-    eval( ['theta' num2str(i) '_opt = alg_states(' num2str(i) ':n_z+n_z*(n_s-1):end);']);
-    
-end
-% lambdas
-for i = 1:n_theta
-    eval( ['lambda' num2str(i) '_opt = alg_states(' num2str(i+n_theta) ':n_z+n_z*(n_s-1):end);']);
-end
-% mu
-for i = 1:n_sys
-    eval( ['mu' num2str(i) '_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*(n_s-1):end);']);
-end
-for i = 1:n_u
-    eval( ['u' num2str(i) '_opt = controls(' num2str(i) ':n_u:end);']);
-end
-
-
 if use_fesd
     h_opt = w_opt(ind_h);
     tgrid = (cumsum([0;h_opt]));
     tgrid_z = cumsum(h_opt)';
 end
-
-
-%%
 
 %%
 % figure
@@ -138,8 +106,6 @@ else
 end
 time_physical = st.x_i_opt{5}(ind_t);
 
-
-
 %% plots in phyisical time for paper
 figure
 subplot(221)
@@ -153,7 +119,7 @@ ylabel('$v(t)$ ','Interpreter','latex')
 grid on
 
 subplot(222)
-stairs(st.x_i_opt{5}(1:N_finite_elements:end),[u1_opt;nan],'LineWidth',1.5)
+stairs(st.x_i_opt{5}(1:N_finite_elements:end),[u_opt';nan],'LineWidth',1.5)
 ylim([-u_max*1.1 u_max*1.1])
 xlim([0 max(st.x_i_opt{5}(1:N_finite_elements:end))])
 xlabel('$t$ ','Interpreter','latex')
