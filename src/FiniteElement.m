@@ -563,10 +563,10 @@ classdef FiniteElement < NosnocFormulationObject
 
             for j = 1:dims.n_s
                 % Multiply by s_sot_k which is 1 if not using speed of time variable
-                [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
+                [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage, model.v_global);
                 fj = s_sot*fj;
                 qj = s_sot*qj;
-                gj = model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage);
+                gj = model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage, model.v_global);
                 
                 obj.addConstraint(gj);
                 if settings.irk_representation == IrkRepresentation.integral
@@ -624,12 +624,12 @@ classdef FiniteElement < NosnocFormulationObject
             % TODO: do this cleaner
             if (settings.g_comp_path_constraint &&...
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
-                g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u));
+                g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, model.v_global));
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if settings.g_comp_path_constraint && settings.g_path_at_stg
-                    g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u));
+                    g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u, model.v_global));
                 end
             end
 

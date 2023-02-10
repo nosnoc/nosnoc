@@ -45,6 +45,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_elastic
         ind_sot % index for speed of time variable
         ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
+        ind_v_global
         ind_s_terminal
         
 
@@ -131,6 +132,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_nu_lift = {};
             obj.ind_h = {};
             obj.ind_sot = {};
+            obj.ind_v_global = [];
 
             obj.ind_s_terminal = [];
 
@@ -169,6 +171,13 @@ classdef NosnocProblem < NosnocFormulationObject
                 T_final_guess = model.T;
             end
 
+            % Add global vars
+            obj.addVariable(model.v_global,...
+                            'v_global',...
+                            model.lbv_global,...
+                            model.ubv_global,...
+                            model.v0_global)
+            
             % TODO Rename
             obj.createPrimalVariables();
 

@@ -208,6 +208,40 @@ else
     ubz = [];
     z = define_casadi_symbolic(casadi_symbolic_mode,'',0);
 end
+%% Global vars
+if exist('v_global')
+    n_v_global = length(v_global);
+    if exist('v0_global')
+        if length(v0_global) ~= n_v_global
+            error('The vector v0_global, for the initial guess of v_global has the wrong size.')
+        end
+    else
+        z0 = zeros(n_z, 1);
+    end
+
+    if exist('lbv_global')
+        if length(lbv_global) ~= n_v_global
+            error('The vector lbv_global, for the lower bound of v_global has the wrong size.')
+        end
+    else
+        lbz = -inf*ones(n_z, 1);
+    end
+
+    if exist('ubv_global')
+        if length(ubv_global) ~= n_v_global
+            error('The vector ubv_global, for the upper bound of v_global has the wrong size.')
+        end
+    else
+        ubz = inf*ones(n_z, 1);
+    end
+else
+    n_v_global = 0;
+    v_global = define_casadi_symbolic('', 0);
+    v0_global = [];
+    lbv_global = [];
+    ubv_global = [];
+end
+
 %% Parameters
 if exist('p_global')
     n_p_global = size(p_global,1);
@@ -396,7 +430,7 @@ if exist('g_path')
     else
         g_path_ub =  0*ones(n_g_path,1);
     end
-    g_path_fun  = Function('g_path_fun',{x,u},{g_path});
+    g_path_fun  = Function('g_path_fun',{x,u,p,v_global},{g_path});
 else
     n_g_path = 0;
     g_path_constraint  = 0;
@@ -425,7 +459,7 @@ if exist('g_comp_path')
     else
         g_comp_path_ub =  0*ones(n_g_comp_path,1);
     end
-    g_comp_path_fun  = Function('g_comp_path_fun',{x,u},{g_comp_path});
+    g_comp_path_fun  = Function('g_comp_path_fun',{x,u,p,v_global},{g_comp_path});
 else
     n_g_comp_path = 0;
     g_comp_path_constraint  = 0;
@@ -452,7 +486,7 @@ if exist('g_terminal')
     else
         g_terminal_ub =  0*ones(n_g_terminal,1);
     end
-    g_terminal_fun  = Function('g_terminal_fun',{x},{g_terminal});
+    g_terminal_fun  = Function('g_terminal_fun',{x,p_global,v_global},{g_terminal});
 else
     terminal_constraint = 0;
     n_g_terminal = 0;
@@ -946,14 +980,14 @@ end
 %% Lifting of forces in time-freezing
 % the r.h.s of M(q)ddot{q} = f(q,dor{q},u) into  M{q}z-f(q,dor{q},u)= 0; \ddot{q} = z
 g_lift_forces = [];
-if time_freezing && time_freezing_lift_forces
+if time_freezing && time_freezing_lift_forces % TODO Is this broken with parameters/v_global
     f_v = f_x(n_q+1:2*n_q);
     if n_u > 0
-        f_v_fun = Function('f_v_fun',{x,z_all,u},{f_v});
-        z0_forces = full(f_v_fun(x0,z0_all,u0));
-    else
-        f_v_fun = Function('f_v_fun',{x,z_all},{f_v});
-        z0_forces = full(f_v_fun(x0,z0_all));
+        f_v_fun = Function('f_v_fun',{x,z_all,u,v_global},{f_v});
+        z0_forces = full(f_v_fun(x0,z0_all,u0,v0_global));
+    else % TODO remove this?
+        f_v_fun = Function('f_v_fun',{x,z_all,v_global},{f_v});
+        z0_forces = full(f_v_fun(x0,z0_all,v0_global));
     end
     z_forces = define_casadi_symbolic(casadi_symbolic_mode,'z_forces',n_q);
     z_all = [z_all;z_forces];
@@ -973,18 +1007,15 @@ n_algebraic_constraints = length(g_z_all);
 
 %% CasADi functions for indicator and region constraint functions
 % model equations
-% if n_u >0
-%     g_Stewart_fun = Function('g_Stewart_fun',{x,u},{g_ind_vec});
-%     c_fun = Function('c_fun',{x,u},{c_all});
-% else
+% TODO should this be a function of v_global as well (could be interesting for formulation)
 g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
 c_fun = Function('c_fun',{x,p},{c_all});
 
 % end
 dot_c = c_all.jacobian(x)*f_x;
 
-f_x_fun = Function('f_x_fun',{x,z_all,u,p},{f_x,f_q,p});
-g_z_all_fun = Function('g_z_all_fun',{x,z_all,u,p},{g_z_all,p}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+f_x_fun = Function('f_x_fun',{x,z_all,u,p,v_global},{f_x,f_q});
+g_z_all_fun = Function('g_z_all_fun',{x,z_all,u,p,v_global},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
 
 g_switching_fun = Function('g_switching_fun', {x,z_switching,u,p}, {g_switching}); 
 dot_c_fun = Function('c_fun',{x,z_all,u,p},{dot_c}); % total time derivative of switching functions
@@ -992,7 +1023,7 @@ dot_c_fun = Function('c_fun',{x,z_all,u,p},{dot_c}); % total time derivative of 
 model.lambda00_fun = Function('lambda00_fun',{x,p_global},{lambda00_expr});
 
 J_cc_fun = Function('J_cc_fun',{z_all},{f_comp_residual});
-f_q_T_fun = Function('f_q_T',{x,p},{f_q_T});
+f_q_T_fun = Function('f_q_T',{x,p,v_global},{f_q_T});
 
 %%  CasADi functions for lest-square objective function terms
 f_lsq_x_fun = Function('f_lsq_x_fun',{x,x_ref,p},{f_lsq_x});
