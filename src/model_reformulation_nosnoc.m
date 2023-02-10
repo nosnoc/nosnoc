@@ -1037,7 +1037,7 @@ if isequal(irk_representation,'differential')
     if simple_v0_guess
         v0 = zeros(n_x,1);
     else
-        [v0,~] = (f_x_fun(x0,z0_all,u0,[p_global_val; p_time_var_val(:,1)]));
+        [v0,~] = (f_x_fun(x0,z0_all,u0,[p_global_val; p_time_var_val(:,1)], v0_global));
         v0 = full(v0);
     end
     model.v0 = v0;

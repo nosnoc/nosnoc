@@ -278,7 +278,7 @@ classdef NosnocProblem < NosnocFormulationObject
                     rho_terminal_p = 1/sigma_p;
                 end
                 X_end = last_fe.x{end};
-                g_terminal = model.g_terminal_fun(X_end);
+                g_terminal = model.g_terminal_fun(X_end, model.p_global, model.v_global);
                 n_terminal = length(g_terminal);
                 if ~isequal(model.g_terminal_lb,model.g_terminal_ub)
                     settings.relax_terminal_constraint = 0;
