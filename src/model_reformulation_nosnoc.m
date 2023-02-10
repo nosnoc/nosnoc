@@ -236,7 +236,7 @@ if exist('v_global')
     end
 else
     n_v_global = 0;
-    v_global = define_casadi_symbolic('', 0);
+    v_global = define_casadi_symbolic(casadi_symbolic_mode, '', 0);
     v0_global = [];
     lbv_global = [];
     ubv_global = [];
@@ -1061,6 +1061,11 @@ model.ubz_all = ubz_all;
 model.z0 = z0;
 model.lbz = lbz;
 model.ubz = ubz;
+
+model.v_global = v_global;
+model.v0_global = v0_global;
+model.lbv_global = lbv_global;
+model.ubv_global = ubv_global;
 
 model.g_path_constraint = g_path_constraint;
 if g_path_constraint

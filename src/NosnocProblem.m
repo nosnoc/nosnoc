@@ -350,8 +350,8 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.objective = obj.objective + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
             
             % Process terminal costs
-            obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global);
-            obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global);
+            obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
+            obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
             
             % Process elastic costs
             if ismember(settings.mpcc_mode, MpccMode.elastic)
