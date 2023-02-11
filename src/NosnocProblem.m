@@ -45,6 +45,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_elastic
         ind_sot % index for speed of time variable
         ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
+        ind_v_global
         ind_s_terminal
         
 
@@ -131,6 +132,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_nu_lift = {};
             obj.ind_h = {};
             obj.ind_sot = {};
+            obj.ind_v_global = [];
 
             obj.ind_s_terminal = [];
 
@@ -169,6 +171,13 @@ classdef NosnocProblem < NosnocFormulationObject
                 T_final_guess = model.T;
             end
 
+            % Add global vars
+            obj.addVariable(model.v_global,...
+                            'v_global',...
+                            model.lbv_global,...
+                            model.ubv_global,...
+                            model.v0_global)
+            
             % TODO Rename
             obj.createPrimalVariables();
 
@@ -269,7 +278,7 @@ classdef NosnocProblem < NosnocFormulationObject
                     rho_terminal_p = 1/sigma_p;
                 end
                 X_end = last_fe.x{end};
-                g_terminal = model.g_terminal_fun(X_end);
+                g_terminal = model.g_terminal_fun(X_end, model.p_global, model.v_global);
                 n_terminal = length(g_terminal);
                 if ~isequal(model.g_terminal_lb,model.g_terminal_ub)
                     settings.relax_terminal_constraint = 0;
@@ -341,8 +350,8 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.objective = obj.objective + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
             
             % Process terminal costs
-            obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global);
-            obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global);
+            obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
+            obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
             
             % Process elastic costs
             if ismember(settings.mpcc_mode, MpccMode.elastic)
