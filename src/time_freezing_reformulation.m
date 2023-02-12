@@ -7,28 +7,19 @@ time_freezing_model_exists = 0;
 % TODO shift all model updates to the end of the file
 % TODO add to all functions model. prefix to get rid of unfold_struct
 inv_M_once = 0; % experimental option, 
-if time_freezing
     % check is the model partially filled
-    if exist('S')
         if exist('F')
-            fprintf('nosnoc: model.F and model.S already exist, the automated model reformulation will be not performed. \n')
-            time_freezing_model_exists = 1;
-        end
-    else
-        if exist('F')
-            fprintf('nosnoc: model.F provided, model.S missing, the automated model reformulation will be not performed. \n')
+            fprintf('nosnoc: model.F provided, the automated model reformulation will be not performed. \n')
             time_freezing_model_exists = 1;
         else
             time_freezing_model_exists = 0;
         end
-    end
 
-    %% Check is there a switching function
+    %% Check is there a gap gunctions
     if ~exist('f_c')
         error('nosnoc: Please provide the gap functions model.f_c.')
     end
     n_contacts = length(f_c);
-
 
     % check dimensions of contacts
     if ~exist('n_dim_contact')
@@ -90,10 +81,7 @@ if time_freezing
             q = x(1:n_q);
             v = x(n_q+1:2*n_q);
         end
-        % update model with this data
-        model.n_q = n_q;
-        model.q = q;
-        model.v = v;
+        
 
 
         % check model function
@@ -155,7 +143,7 @@ if time_freezing
         if J_normal_exists
             if size(J_normal,1)~=n_q && size(J_normal,2)~=n_contacts
                 fprintf('nosnoc: J_normal should be %d x %d matrix.\n',n_q,n_contacts);
-                error('J_normal has the wrong size.')
+                error('nosnoc: J_normal has the wrong size.')
             end
             J_normal_exists = 1;
         else
@@ -246,71 +234,13 @@ if time_freezing
 
             % compute tangents and frictional auxiliary dynamics
             if friction_exists
-                switch n_dim_contact
-                    case 2
-                        switch n_contacts
-                            case 1
-                                if exist('tangent1','var') || exist('tangent','var')
-                                    fprintf('Time-freezing: tangents provided by the user. \n');
-                                    if exist('tangent','var')
-                                        tangent1 = tangent;
-                                    end
-                                else
-                                    fprintf('Time-freezing: user did not provide tangent vectors at contact, generating them automatically...\n');
-                                    t1 = 1; t2 = 1;
-                                    if is_zero(nabla_q_f_c(1))
-                                        t2 = 0;
-                                    elseif is_zero(nabla_q_f_c(2))
-                                        t1 = 0;
-                                    else
-                                        t2 = -nabla_q_f_c(1)*t1/nabla_q_f_c(2);
-                                    end
-                                    tangent1 = [t1;t2];
-                                end
-                            case 2
-                                if ~exist('tangent1','var') || ~exist('tangent2','var')
-                                    error('Time-freezing: user did not provide tangent vectors at contact points. Please specify model.tangent1 and model.tangent2.');
-                                end
-
-                        end
-                    case 3
-                        if exist('tangent1') && exist('tangent2')
-                            fprintf('Time-freezing: tangents provided by the user. \n');
-                        else
-                            % tangent 1
-                            %                             fprintf('Time-freezing: user did not provide tangent vectors at contact, generating them automatically...\n');
-                            fprintf('Time-freezing: user did not provide tangent vectors at contact, settings mu = 0. \n');
-                            mu = 0;
-                            t1 = 1; t2 = 1; t3 = 1;
-                            ind_tangent1 = 1;
-                            if ~is_zero(nabla_q_f_c(1))
-                                t1 = -(t2*nabla_q_f_c(2)+t3*nabla_q_f_c(3))/nabla_q_f_c(1);
-                                ind_tangent1 = 1;
-                            elseif ~is_zero(nabla_q_f_c(2))
-                                t2 = -(t1*nabla_q_f_c(1)+t3*nabla_q_f_c(3))/nabla_q_f_c(2);
-                                ind_tangent1 = 2;
-                            else
-                                t3 = -(t1*nabla_q_f_c(1)+t2*nabla_q_f_c(2))/nabla_q_f_c(3);
-                                ind_tangent1 = 3;
-                            end
-                        end
-                end
-
+               
                 % create auxiliary dynamics
                 a_t = mu*a_n;
                 switch n_dim_contact
-                    case 2
-                        %                         switch n_u_virtual
-                        %                             case 1
-                        f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-                        f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-                        %                             case 2
-                        %                                 f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-                        %                                 f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-                        %                                 f_aux_t3 = [zeros(n_q,1);invM*tangent2*a_t;zeros(n_quad+1,1)];
-                        %                                 f_aux_t4 = -[zeros(n_q,1);invM*tangent2*a_t;zeros(n_quad+1,1)];
-                        %                         end
-
+                    case 2              
+                        f_aux_t1 = [zeros(n_q,1);invM*J_tangent(:,1)*a_t;zeros(n_quad+1,1)];
+                        f_aux_t2 = -f_aux_t1;
                     case 3
                         eps_tangential = 1e-8;
                         T_q = [tangent1 tangent2]; % spans tangent space
@@ -328,7 +258,7 @@ if time_freezing
             if friction_exists
                 switch n_dim_contact
                     case 2
-                        c3 = tangent1'*v;
+                        c3 = J_tangent(:,1)'*v;
                     case 3
                         c3 = eps_tangential-v_tan_norm;
                 end
@@ -356,14 +286,14 @@ if time_freezing
                         F{1} = [f_ode f_aux_n1 f_aux_n2 f_aux_n1+f_aux_n];
                         S{1} = eye(4);
                         F{1} = [f_ode,f_aux_n1+f_aux_t1,f_aux_n1+f_aux_t2,f_aux_n2+f_aux_t3,f_aux_n2+f_aux_t4, f_aux_n1+f_aux_n2];
-
                 end
-
             end
 
             c{1} = [c1;c2;c3];
             % store results and flag that model is created
-            model.F = F; model.c = c;  model.S = S;
+            model.F = F; 
+            model.c = c;
+            model.S = S;
             time_freezing_model_exists = 1;
         else
             % elastic
@@ -391,11 +321,16 @@ if time_freezing
             time_freezing_model_exists = 1;
         end
     end
-else
-    fprintf('nosnoc: No action was done. Consider setting settings.time_freezing = 1, if calling this function.\n')
-end
+
+% fprintf('nosnoc: No action was done. Consider setting settings.time_freezing = 1, if calling this function.\n')
+
+%% Settings updates
 settings.time_freezing_model_exists = time_freezing_model_exists;
 settings.friction_exists  = friction_exists;
-model.n_dim_contact = n_dim_contact;
+
+%% Model updates
+model.n_q = n_q;
+model.q = q;
+model.v = v;
 model.n_contacts = n_contacts;
 end

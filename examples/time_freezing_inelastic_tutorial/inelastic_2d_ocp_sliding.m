@@ -35,7 +35,7 @@ model.mu = 0.7;
 model.a_n = g;
 model.x0 = [0;1;0;0]; 
 model.f_v = [0+u;-g];
-
+model.J_tangent = [1;0];
 model.c = q(2);
 model.g_terminal = [x-[2;0;0;0]];
 model.lbu = -u_max;
