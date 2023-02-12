@@ -18,12 +18,14 @@ settings.time_freezing_reduced_model = 0;
 settings.use_speed_of_time_variables = 0;
 settings.stagewise_clock_constraint = 0;
 settings.impose_terminal_phyisical_time = 0;
-%%
+
+%% model prameters
+n_dim_contact  = 2;
 g = 9.81;
 m = 1;
 l = 0.5;
 J = m*l^2/12;
-% Symbolic variables and bounds
+%% Symbolic variables and model functions
 qx = SX.sym('qx',1); 
 qy = SX.sym('qy',1); 
 theta = SX.sym('theta',1); 
@@ -48,9 +50,11 @@ model.mu = 0.0;
 model.a_n = g;
 model.x0 = [q0;v0]; 
 
+
 model.M = diag([m,m,J]);
-model.f = [0;-g;0];
+model.f_v = [0;-g;0];
 model.f_c = [p_left(2);p_right(2)];
+model.n_dim_contact = n_dim_contact ;
 %% Simulation setings
 N_FE = 2;
 T_sim = 0.8;

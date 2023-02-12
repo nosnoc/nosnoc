@@ -260,15 +260,18 @@ classdef FiniteElement < NosnocFormulationObject
                     % TODO: Clean this up (maybe as a function to reduce the indent level.
                     if settings.time_freezing_inelastic
                         if settings.pss_lift_step_functions
-                            if ~settings.friction_is_present
+                            if ~settings.friction_exists
                                 switch model.n_contacts
                                   case 1
                                     theta_step = define_casadi_symbolic(settings.casadi_symbolic_mode, ['theta_step_'  num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],2);
+                                    eta = define_casadi_symbolic(settings.casadi_symbolic_mode, ['beta_'  num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],5);
+                                    beta_guess = full(model.g_lift_beta_fun(settings.initial_alpha*ones(dims.n_alpha,1)));
+                                    theta_step_guess = full(model.g_lift_theta_step_fun(settings.initial_alpha*ones(dims.n_alpha,1),beta_guess));
                                     obj.addVariable(theta_step,...
                                                     'theta_step',...
                                                     -inf*ones(dims.n_theta_step,1),...
                                                     inf*ones(dims.n_theta_step,1),...
-                                                    full(model.g_lift_theta_step_fun(settings.initial_alpha*ones(dims.n_alpha,1))),...
+                                                    theta_step_guess,...
                                                     ii);
                                   case 2
                                     theta_step = define_casadi_symbolic(settings.casadi_symbolic_mode, ['theta_step_'  num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],4);

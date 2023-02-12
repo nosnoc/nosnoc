@@ -25,9 +25,10 @@ model.mu = 0.3;
 model.a_n = g;
 model.a_n = 200;
 model.x0 = [0;1;3;0]; 
-model.f = [0;-g+vertical_force*g*q(1)];
-model.c = q(2);
-model.tangent1 = [1; 0];
+model.f_v = [0;-g+vertical_force*g*q(1)];
+model.f_c = q(2);
+model.J_tangent = [1; 0];
+model.n_dim_contact = 2;
 
 settings.rho_sot = 0;
 %% Simulation setings

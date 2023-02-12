@@ -782,7 +782,7 @@ switch pss_mode
     %% prepare for time freezing lifting and co,
     if settings.time_freezing_inelastic
         % theta_step are the lifting variables that enter the ODE r.h.s.
-            if ~friction_is_present
+            if ~friction_exists
                 switch n_contacts
                   case 1
                     theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',2);
@@ -820,11 +820,17 @@ switch pss_mode
                 % lifting functions and indicators
                 
             end
-                g_lift_beta = [beta-beta_lift_expr];
+                try
+                    g_lift_beta = [beta-beta_lift_expr];
+                    g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{beta_lift_expr});
+                catch
+                    % this is temporaly, as this part of the code will be
+                    % replaced completley
+                   g_lift_beta  = [];
+                end
                 g_lift_theta_step = [theta_step-theta_step_expr];               
                 theta_step_all{1} = theta_step;
                 % create casadi expressions for proper initialization
-                g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{beta_lift_expr});
                 g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{theta_step_expr});
     end
     n_beta = length(beta);
@@ -864,7 +870,7 @@ switch pss_mode
     %         theta_step_guess = initial_theta_step*ones(n_theta_step,1);
     % TODO beta guess should exist once custom lifting is implemented
     if pss_lift_step_functions && ~settings.general_inclusion
-        if friction_is_present
+        if friction_exists
             beta_guess = full(g_lift_beta_fun(alpha_guess));
             theta_step_guess = full(g_lift_theta_step_fun(alpha_guess,beta_guess));
         else
@@ -873,7 +879,7 @@ switch pss_mode
                 beta_guess = full(g_lift_beta_fun(alpha_guess));
                 theta_step_guess = full(g_lift_theta_step_fun(alpha_guess,beta_guess ));
             else
-                theta_step_guess = full(g_lift_theta_step_fun(alpha_guess));
+                theta_step_guess = full(g_lift_theta_step_fun(alpha_guess,beta_guess));
             end
         end
     else
