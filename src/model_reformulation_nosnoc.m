@@ -782,6 +782,19 @@ switch pss_mode
     %% prepare for time freezing lifting and co,
     if settings.time_freezing_inelastic
         % theta_step are the lifting variables that enter the ODE r.h.s.
+        if ~settings.nonsmooth_switching_fun 
+            alpha_q = alpha(1:n_contacts);
+            alpha_v_normal = alpha(n_contacts+1:2*n_contacts);
+            if friction_exists
+                alpha_v_tangent = alpha(2*n_contacts+1:end);
+            end
+        else
+            alpha_qv = alpha(1:n_contacts);
+            if friction_exists
+                alpha_v_tangent = alpha(n_contacts+1:end);
+            end
+        end
+        
             if ~friction_exists
                 switch n_contacts
                   case 1
@@ -791,24 +804,26 @@ switch pss_mode
                     g_lift_theta_step = [theta_step-theta_step_expr];
                     g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha},{theta_step_expr});
                   case 2
-                    theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',4);
-                    beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
-                    % alpha1 ~ f_c1, alpha2  ~ f_c2, alpha3 ~ n1^top v,alpha4 ~ n1^top v
-                    beta_lift_expr =[(1-alpha(1))*(1-alpha(2));...
-                                       (alpha(1))*(1-alpha(2));...
-                                       (1-alpha(1))*(alpha(2));...
-                                       (1-alpha(3))*(1-alpha(4));...
-                                       (alpha(3))*(alpha(4))];
-                    theta_step_expr = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
-                                        (1-alpha(1))*(1-alpha(3));...
-                                        (1-alpha(2))*(1-alpha(4));...
-                                        (beta(1)*beta(3))];
-                    g_lift_beta = [beta-beta_lift_expr];
-                    g_lift_theta_step = [theta_step-theta_step_expr];
-                    theta_step_all{1} = theta_step;
+                    if settings.nonsmooth_switching_fun 
+                        theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',3);
+                    beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',2);
+                    beta_lift_expr =[alpha_qv(1);alpha_qv(2)];
+                    theta_step_expr = [(alpha_qv(1))*(alpha_qv(2));...
+                                       (1-alpha_qv(1));...
+                                       (1-alpha_qv(2));...
+                                        ];
 
-                    g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{beta_lift_expr});
-                    g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{theta_step_expr });
+                    else
+                    theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',3);
+                    beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',2);
+                    % alpha1 ~ f_c1, alpha2  ~ f_c2, alpha3 ~ n1^top v,alpha4 ~ n1^top v
+                    beta_lift_expr =[alpha_q(1)*alpha_v_normal(1);...
+                                     alpha_q(2)*alpha_v_normal(2)];
+                    theta_step_expr = [(alpha_q(1)+alpha_v_normal(1)-beta(1))*(alpha_q(2)+alpha_v_normal(2)-beta(2));...
+                                       (1-alpha_q(1))*(1-alpha_v_normal(1));...
+                                       (1-alpha_q(2))*(1-alpha_v_normal(2));...
+                                        ];
+                    end
                 end
             else
                 beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
@@ -817,8 +832,6 @@ switch pss_mode
                 theta_step_expr = [alpha(1)+(1-alpha(1))*alpha(2);...
                                     beta*(1-alpha(2))*(1-alpha(3));...
                                     beta*(1-alpha(2))*alpha(3)];
-                % lifting functions and indicators
-                
             end
                 try
                     g_lift_beta = [beta-beta_lift_expr];

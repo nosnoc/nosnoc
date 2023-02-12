@@ -4,11 +4,10 @@ import casadi.*
 unfold_struct(model,'caller');
 time_freezing = settings.time_freezing;
 time_freezing_model_exists = 0;
-%% TODOS 
+%% TODOS
 % %shift all model updates to the end of the file
 % add to all functions model. prefix to get rid of unfold_struct
 % refactor time_freezing_quadrature_state = true
-inv_M_once = 0; % experimental option,
 % check is the model partially filled
 if isfield(model,'F')
     fprintf('nosnoc: model.F provided, the automated model reformulation will be not performed. \n')
@@ -16,17 +15,26 @@ if isfield(model,'F')
 else
     time_freezing_model_exists = 0;
 end
-   
+
+%% Experimental options
+inv_M_once = 0;
+nonsmooth_switching_fun = 1;
+%% Auxiliary functions
+sigma = SX.sym('sigma',1);
+a = SX.sym('a',1);
+b = SX.sym('b',1);
+f_natural_residual = 0.5*(b+a+sqrt((b-a+sigma)^2));
+max_smooth_fun = Function('max_smooth_fun',{a,b,sigma},{f_natural_residual});
 %% Chek is the provided user data valid and complete
-    % Check is there a gap gunctions
-        if ~isfield(model,'f_c')
-            error('nosnoc: Please provide the gap functions model.f_c.')
-        end
-        n_contacts = length(f_c);
-        % check dimensions of contacts
-        if ~isfield(model,'n_dim_contact')
-            error('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
-        end
+% Check is there a gap gunctions
+if ~isfield(model,'f_c')
+    error('nosnoc: Please provide the gap functions model.f_c.')
+end
+n_contacts = length(f_c);
+% check dimensions of contacts
+if ~isfield(model,'n_dim_contact')
+    error('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
+end
 
 if ~time_freezing_model_exists
     % coefficent of restiution
@@ -60,7 +68,7 @@ if ~time_freezing_model_exists
     else
         friction_exists = 0;
     end
-    
+
     % dimensions and state space split
     casadi_symbolic_mode = model.x(1).type_name();
     if mod(size(x,1),2)
@@ -71,7 +79,7 @@ if ~time_freezing_model_exists
         n_q = n_x/2;
     end
 
-    if ~isfield(model,'q') && ~isfield(model,'v') 
+    if ~isfield(model,'q') && ~isfield(model,'v')
         q = x(1:n_q);
         v = x(n_q+1:2*n_q);
     end
@@ -90,11 +98,11 @@ if ~time_freezing_model_exists
         invM = inv(M);
     end
 
-    
+
     %  Normal Contact Jacobian
     if isfield(model,'J_normal')
         J_normal = model.J_normal;
-        J_normal_exists = 1;      
+        J_normal_exists = 1;
     else
         J_normal_exists = 0;
     end
@@ -112,7 +120,7 @@ if ~time_freezing_model_exists
     end
 
     if is_zero(J_normal)
-            error('nosnoc: The normal vector should have at least one non-zero entry.')
+        error('nosnoc: The normal vector should have at least one non-zero entry.')
     end
 
     % Tangent Contact Jacobian
@@ -123,7 +131,7 @@ if ~time_freezing_model_exists
         else
             J_tangent_exists = 0;
         end
-    
+
         if J_tangent_exists
             if size(J_tangent,1)~=n_q && size(J_tangent,2)~=n_contacts*(n_dim_contact-1)
                 fprintf('nosnoc: J_tangent should be %d x %d matrix.\n',n_q,n_contacts*(n_dim_contact-1));
@@ -137,8 +145,8 @@ if ~time_freezing_model_exists
         J_tangent_exists = 0;
     end
 
-    % qudrature state 
-        n_quad  = 0;
+    % qudrature state
+    n_quad  = 0;
     if settings.time_freezing_quadrature_state
         % define quadrature state
         L = define_casadi_symbolic(casadi_symbolic_mode,'L',1);
@@ -176,11 +184,36 @@ if ~time_freezing_model_exists
         x0 = [x0;0];
     end
 
+    % normal and tangential velocities
+    eps_t = 1e-7;
+    v_normal = J_normal'*v;
+    if friction_exists
+        if n_dim_contact == 2
+            v_tangent = J_tangent'*v;
+        else
+            v_tangent = J_tangent'*v;
+            v_tangent = reshape(v_tangent,2,n_contacts); % 2 x n_c , the columns are the tangential velocities of the contact points
+            v_tangent_norms = [];
+            for ii = 1:n_contacts
+                v_tangent_norms = [v_tangent_norms;norm(v_tangent(:,ii))];
+            end
+        end
+    else
+        v_tangent  = [];
+    end
+
+    % joint switching function
+    if nonsmooth_switching_fun
+        c = [max_smooth_fun(f_c,v_normal,0);v_tangent];
+        %         c = max_smooth_fun(f_c,v_normal,sigma0);
+    else
+        c = [f_c;v_normal;v_tangent];        
+    end
+
     % parameter for auxiliary dynamics
-    if ~isfield(model,'a_n');
+    if ~isfield(model,'a_n')
         a_n  = 100;
     end
-    F = {}; c = {};  S = {};
     %% Time-freezing reformulation
     if e == 0
         % Basic settings
@@ -189,91 +222,46 @@ if ~time_freezing_model_exists
         %% unconstrained dynamcis with clock state
         inv_M = inv(M);
         f_ode = [v;...
-                 inv_M*f_v;
-                 1];
+            inv_M*f_v;
+            1];
+        
         %% Auxiliary dynamics
         % where to use invM, in every aux dyn or only at the end
         if inv_M_once
             inv_M_aux = eye(n_q);
+            inv_M_ext = blkdiag(zeros(n_q),inv_M,0);
         else
             inv_M_aux = inv_M;
+            inv_M_ext = eye(n_x+1);
         end
-        % create auxiliary dynamics
-        switch n_contacts
-            case 1
-                f_aux_n1 = [zeros(n_q,1);invM*J_normal*a_n;zeros(n_quad+1,1)];
-            case 2
-                if n_dim_contact >2
-                    error('Multiple contacts currently only for planar models avilable.')
+        f_aux_pos = []; % matrix wit all aux tan dyn
+        f_aux_neg = [];
+        % time freezing dynamics
+        f_aux_normal = [zeros(n_q,n_contacts);inv_M_aux*J_normal*a_n;zeros(1,n_contacts)];
+        for ii = 1:n_contacts
+            if friction_exists && mu(ii)>0
+                % auxiliary tangent;
+                if n_dim_contact == 2
+                    v_tangent_ii = J_tangent(:,ii)'*v;
+                    f_aux_pos_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)-J_tangent(:,ii)*(mu(ii)))*a_n;0]; % for v>0
+                    f_aux_neg_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)+J_tangent(:,ii)*(mu(ii)))*a_n;0]; % for v<0
+                else
+                    v_tangent_ii = v_tangent(:,ii);
+                    f_aux_pos_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)*a_n-J_tangent(:,ii*2-1:ii*2)*mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
+                    f_aux_neg_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)*a_n+J_tangent(:,ii*2-1:ii*2)*mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
                 end
-                f_aux_n1 = [zeros(n_q,1);invM*J_normal(:,1)*a_n;zeros(n_quad+1,1)];
-                f_aux_n2 = [zeros(n_q,1);invM*J_normal(:,2)*a_n;zeros(n_quad+1,1)];
-            otherwise
-                error('Currently only up to two unilateral constraint in the planar case suported.')
+                f_aux_pos = [f_aux_pos,f_aux_pos_ii];
+                f_aux_neg= [f_aux_neg,f_aux_neg_ii];
+            end
         end
-
-        % compute tangents and frictional auxiliary dynamics
+        % f_aux_normal = inv_M_aux*J_normal*a_n;
+        % f_aux_tangent = inv_M_aux*J_tangent*mu(ii)*a_n;
         if friction_exists
-
-            % create auxiliary dynamics
-            a_t = mu*a_n;
-            switch n_dim_contact
-                case 2
-                    f_aux_t1 = [zeros(n_q,1);invM*J_tangent(:,1)*a_t;zeros(n_quad+1,1)];
-                    f_aux_t2 = -f_aux_t1;
-                case 3
-                    eps_tangential = 1e-8;
-                    T_q = [tangent1 tangent2]; % spans tangent space
-                    v_tan = T_q'*v;
-                    v_tan_norm = norm(v_tan+1e-16); % avoid dividing by zero at initalisation.
-                    % auxiliary dynamics pushing towards origin
-                    f_aux_t1 = [zeros(n_q,1);-invM*T_q*(a_t*v_tan/(v_tan_norm));zeros(n_quad+1,1)];
-                    % relaxed pushing toward relaxed circle around origin
-                    f_aux_t2 = [zeros(n_q,1);invM*T_q*v_tan;zeros(n_quad+1,1)];
-            end
-        end
-        % switching functions
-        c1 = f_c;
-        c2 = J_normal'*v;
-        if friction_exists
-            switch n_dim_contact
-                case 2
-                    c3 = J_tangent(:,1)'*v;
-                case 3
-                    c3 = eps_tangential-v_tan_norm;
-            end
+            f_aux = [f_aux_pos,f_aux_neg];
         else
-            c3 = [];
+            f_aux = f_aux_normal;
         end
-
-        if ~friction_exists
-            switch n_contacts
-                case 1
-                    F{1} = [f_ode f_aux_n1];
-                    S{1} = [1 0;-1 1;-1 -1];
-                case 2
-                    F{1} = [f_ode f_aux_n1 f_aux_n2 f_aux_n1+f_aux_n2];
-                    S{1} = eye(4);
-                otherwise
-                    error('not implemented.')
-            end
-        else
-            switch n_contacts
-                case 1
-                    F{1} = [f_ode,f_aux_n1+f_aux_t1,f_aux_n1+f_aux_t2];
-                    S{1} = [1 0 0;-1 -1 -1;-1 -1 1];
-                case 2
-                    F{1} = [f_ode f_aux_n1 f_aux_n2 f_aux_n1+f_aux_n];
-                    S{1} = eye(4);
-                    F{1} = [f_ode,f_aux_n1+f_aux_t1,f_aux_n1+f_aux_t2,f_aux_n2+f_aux_t3,f_aux_n2+f_aux_t4, f_aux_n1+f_aux_n2];
-            end
-        end
-
-        c{1} = [c1;c2;c3];
-        % store results and flag that model is created
-        model.F = F;
-        model.c = c;
-        model.S = S;
+        F = [f_ode (inv_M_ext*f_aux)];
         time_freezing_model_exists = 1;
     else
         % elastic
@@ -307,7 +295,7 @@ end
 %% Settings updates
 settings.time_freezing_model_exists = time_freezing_model_exists;
 settings.friction_exists  = friction_exists;
-
+settings.nonsmooth_switching_fun = nonsmooth_switching_fun;
 %% Model updates
 model.n_quad = n_quad;
 model.n_q = n_q;
@@ -317,8 +305,11 @@ model.x = x;
 model.x0 = x0;
 model.M = M;
 model.n_contacts = n_contacts;
-model.J_normal = J_normal;
-model.c = c;
-model.F = F;
 model.mu = mu;
+model.J_normal = J_normal;
+model.F = F;
+model.c = c;
+% dummy value to pass error checks
+model.S = ones(size(F,2),length(c));
+
 end
