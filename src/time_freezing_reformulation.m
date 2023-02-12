@@ -30,12 +30,12 @@ if time_freezing
             model.f_c = f_c;
         end
     end
-    n_unilateral = length(f_c);
+    n_contacts = length(f_c);
 
-    if n_unilateral > 2
+    if n_contacts > 2
         error('Time-Freezing is currently implemented for only up to two unilateral constraints.')
     end
-    %     if n_unilateral > 1
+    %     if n_contacts > 1
     %         error('Time-Freezing is currently supported only for a single scalar constraint.')
     %     end
 
@@ -173,7 +173,7 @@ if time_freezing
 
 
         % multiple impacts
-        if n_unilateral > 2
+        if n_contacts > 2
             friction_is_present = 0;
             n_dim_contact = 1;
             % remark: friction is currently only if a single constraint is present.
@@ -217,7 +217,7 @@ if time_freezing
 
             % auxiliary dynamics for normal velocity jumps;
             % create auxiliary dynamics
-            switch n_unilateral
+            switch n_contacts
                 case 1
                     f_aux_n1 = [zeros(n_q,1);invM*nabla_q_f_c*a_n;zeros(n_quad+1,1)];
                 case 2
@@ -234,7 +234,7 @@ if time_freezing
             if friction_is_present
                 switch n_dim_contact
                     case 2
-                        switch n_unilateral
+                        switch n_contacts
                             case 1
                                 if exist('tangent1','var') || exist('tangent','var')
                                     fprintf('Time-freezing: tangents provided by the user. \n');
@@ -323,7 +323,7 @@ if time_freezing
             end
 
             if ~friction_is_present
-                switch n_unilateral
+                switch n_contacts
                     case 1
                         F{1} = [f_ode f_aux_n1];
                         S{1} = [1 0;-1 1;-1 -1];
@@ -334,7 +334,7 @@ if time_freezing
                         error('not implemented.')
                 end
             else
-                switch n_unilateral
+                switch n_contacts
                     case 1
                         F{1} = [f_ode,f_aux_n1+f_aux_t1,f_aux_n1+f_aux_t2];
                         S{1} = [1 0 0;-1 -1 -1;-1 -1 1];
@@ -383,5 +383,5 @@ end
 settings.time_freezing_model_exists = time_freezing_model_exists;
 settings.friction_is_present  = friction_is_present;
 model.n_dim_contact = n_dim_contact;
-model.n_unilateral = n_unilateral;
+model.n_contacts = n_contacts;
 end

@@ -261,7 +261,7 @@ classdef FiniteElement < NosnocFormulationObject
                     if settings.time_freezing_inelastic
                         if settings.pss_lift_step_functions
                             if ~settings.friction_is_present
-                                switch model.n_unilateral
+                                switch model.n_contacts
                                   case 1
                                     theta_step = define_casadi_symbolic(settings.casadi_symbolic_mode, ['theta_step_'  num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],2);
                                     obj.addVariable(theta_step,...

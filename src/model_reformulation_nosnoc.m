@@ -674,12 +674,12 @@ else
 end
 lambda_0 = [];
 lambda_1 = [];
-upsilon  = [];
+
 
 alpha_all  = {};
 lambda_0_all = {};
 lambda_1_all = {};
-upsilon_all = {};
+theta_step_all = {};
 
 n_alpha = 0;
 e_alpha = [];
@@ -775,91 +775,57 @@ switch pss_mode
                     end
                 end
             end
-            upsilon_all{ii} = upsilon_temp;
+            theta_step_all{ii} = upsilon_temp;
         end
     end
 
     %% prepare for time freezing lifting and co,
     if settings.time_freezing_inelastic
         % theta_step are the lifting variables that enter the ODE r.h.s.
-        % linearly, they have the role as theta in Stewart's representation
-        if pss_lift_step_functions
             if ~friction_is_present
-                switch n_unilateral
+                switch n_contacts
                   case 1
                     theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',2);
-                    g_lift_theta_step = [theta_step(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                                    theta_step(2)-(1-alpha(1))*(1-alpha(2))];
-                    upsilon_all{1} = theta_step;
-                    g_lift_theta_step_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
+                    theta_step_expr = [(alpha(1)+(1-alpha(1))*alpha(2));...
                                         (1-alpha(1))*(1-alpha(2))];
-                    g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha},{g_lift_theta_step_fun});
+                    g_lift_theta_step = [theta_step-theta_step_expr];
+                    g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha},{theta_step_expr});
                   case 2
                     theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',4);
                     beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
                     % alpha1 ~ f_c1, alpha2  ~ f_c2, alpha3 ~ n1^top v,alpha4 ~ n1^top v
-                    g_lift_beta = [beta(1)-(1-alpha(1))*(1-alpha(2));...
-                                   beta(2)-(alpha(1))*(1-alpha(2));...
-                                   beta(3)-(1-alpha(1))*(alpha(2));...
-                                   beta(4)-(1-alpha(3))*(1-alpha(4));...
-                                   beta(5)-(alpha(3))*(alpha(4))];
-                    g_lift_theta_step = [theta_step(1)-(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
-                                    theta_step(2)-(1-alpha(1))*(1-alpha(3));...
-                                    theta_step(3)-(1-alpha(2))*(1-alpha(4));...
-                                    theta_step(4)-(beta(1)*beta(3))];
-
-                    upsilon_all{1} = theta_step;
-                    g_lift_beta_fun = [(1-alpha(1))*(1-alpha(2));...
+                    beta_lift_expr =[(1-alpha(1))*(1-alpha(2));...
                                        (alpha(1))*(1-alpha(2));...
                                        (1-alpha(1))*(alpha(2));...
                                        (1-alpha(3))*(1-alpha(4));...
                                        (alpha(3))*(alpha(4))];
-                    g_lift_theta_step_fun = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
+                    theta_step_expr = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
                                         (1-alpha(1))*(1-alpha(3));...
                                         (1-alpha(2))*(1-alpha(4));...
                                         (beta(1)*beta(3))];
+                    g_lift_beta = [beta-beta_lift_expr];
+                    g_lift_theta_step = [theta_step-theta_step_expr];
+                    theta_step_all{1} = theta_step;
 
-                    g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{g_lift_theta_step_fun});
-                    g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
+                    g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{beta_lift_expr});
+                    g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{theta_step_expr });
                 end
             else
                 beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
                 theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',3);
-                % lifting functions and indicators
-                g_lift_beta = [beta-(1-alpha(1))*(1-alpha(2))];
-                g_lift_theta_step = [theta_step(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                                theta_step(2)-beta*(1-alpha(3));...
-                                theta_step(3)-beta*alpha(3);...
-                               ];
-                upsilon_all{1} = theta_step;
-                % create casadi expressions for proper initialization
-                g_lift_beta_fun = (1-alpha(1))*(1-alpha(2));
-                g_lift_theta_step_fun = [alpha(1)+(1-alpha(1))*alpha(2);...
+                beta_lift_expr = (1-alpha(1))*(1-alpha(2));
+                theta_step_expr = [alpha(1)+(1-alpha(1))*alpha(2);...
                                     beta*(1-alpha(2))*(1-alpha(3));...
                                     beta*(1-alpha(2))*alpha(3)];
-                % casadi functions
-                g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
-                g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{g_lift_theta_step_fun});
+                % lifting functions and indicators
+                
             end
-        else
-            if ~friction_is_present
-                upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                  (1-alpha(1))*(1-alpha(2))];
-            else
-                switch n_dim_contact
-                  case 2
-                    upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                      (1-alpha(1))*(1-alpha(2))*(1-alpha(3));...
-                                      (1-alpha(1))*(1-alpha(2))*(alpha(3))];
-                  case 3
-                    upsilon_all{1} = [alpha(1)+(1-alpha(1))*alpha(2);...
-                                      (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(1-alpha(4));...
-                                      (1-alpha(1))*(1-alpha(2))*(1-alpha(3))*(alpha(4));...
-                                      (1-alpha(1))*(1-alpha(2))*(alpha(3))*(1-alpha(4));...
-                                      (1-alpha(1))*(1-alpha(2))*(alpha(3))*(alpha(4))];
-                end
-            end
-        end
+                g_lift_beta = [beta-beta_lift_expr];
+                g_lift_theta_step = [theta_step-theta_step_expr];               
+                theta_step_all{1} = theta_step;
+                % create casadi expressions for proper initialization
+                g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{beta_lift_expr});
+                g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{theta_step_expr});
     end
     n_beta = length(beta);
     n_theta_step = length(theta_step);
@@ -939,7 +905,7 @@ if ~isfield(model, 'f_x')
           case 'Stewart'
             f_x = f_x + F{ii}*theta_all{ii};
           case 'Step'
-            f_x = f_x + F{ii}*upsilon_all{ii};
+            f_x = f_x + F{ii}*theta_step_all{ii};
         end
     end
 end
