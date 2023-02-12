@@ -195,7 +195,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
                 if n_beta >0
                     beta_opt_extended = [alg_states_extended(3*n_alpha+1:3*n_alpha+n_beta,:)];
                 end
-                if n_gamma >0
+                if n_theta_step >0
                     gamma_opt_extended = [alg_states_extended(3*n_alpha+n_beta+1:end,:)];
                 end
             end

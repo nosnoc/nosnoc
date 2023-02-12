@@ -42,7 +42,7 @@ classdef ControlStage < NosnocFormulationObject
         ind_nu_lift
         ind_elastic
         ind_beta
-        ind_gamma
+        ind_theta_step
         ind_z
         ind_u
         ind_sot
@@ -167,7 +167,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_lambda_n = [obj.ind_lambda_n; transpose(flatten_sys(increment_indices(fe.ind_lambda_n, w_len)))];
             obj.ind_lambda_p = [obj.ind_lambda_p; transpose(flatten_sys(increment_indices(fe.ind_lambda_p, w_len)))];
             obj.ind_beta = [obj.ind_beta; transpose(flatten_sys(increment_indices(fe.ind_beta, w_len)))];
-            obj.ind_gamma = [obj.ind_gamma; transpose(flatten_sys(increment_indices(fe.ind_gamma, w_len)))];
+            obj.ind_theta_step = [obj.ind_theta_step; transpose(flatten_sys(increment_indices(fe.ind_theta_step, w_len)))];
             obj.ind_z = [obj.ind_z; transpose(flatten_sys(increment_indices(fe.ind_z, w_len)))];
             obj.ind_nu_lift = [obj.ind_nu_lift, {fe.ind_nu_lift+w_len}];
         end

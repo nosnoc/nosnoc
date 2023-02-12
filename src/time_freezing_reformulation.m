@@ -9,12 +9,12 @@ if time_freezing
     % check is the model partially filled
     if exist('S')
         if exist('F')
-            fprintf('Info on Time-Freezing: model.F and model.S already exist, the automated model reformulation will be not performed. \n')
+            fprintf('nosnoc: model.F and model.S already exist, the automated model reformulation will be not performed. \n')
             time_freezing_model_exists = 1;
         end
     else
         if exist('F')
-            fprintf('Info on Time-Freezing: model.F provided, model.S missing, the automated model reformulation will be not performed. \n')
+            fprintf('nosnoc: model.F provided, model.S missing, the automated model reformulation will be not performed. \n')
             time_freezing_model_exists = 1;
         else
             time_freezing_model_exists = 0;

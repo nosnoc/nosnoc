@@ -40,12 +40,14 @@ filename = 'discs_switch_position.gif';
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
-settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
+settings.mpcc_mode = MpccMode.Scholtes_ineq; 
 settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 5;
+settings.N_homotopy = 7;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
 settings.use_fesd = 1;
+% settings.g_path_at_fe = 1;
+% settings.g_path_at_stg = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';

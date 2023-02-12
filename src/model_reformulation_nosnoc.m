@@ -684,11 +684,11 @@ upsilon_all = {};
 n_alpha = 0;
 e_alpha = [];
 n_beta = 0;
-n_gamma = 0;
+n_theta_step = 0;
 n_lambda_0 = 0;
 n_lambda_1 = 0;
 g_lift_beta = [];
-g_lift_gamma  =[];
+g_lift_theta_step  =[];
 switch pss_mode
   case 'Stewart'
     % dimensions
@@ -750,10 +750,10 @@ switch pss_mode
     % Define already here lifting variables and functions
     % TODO allow for custom beta lifting
     beta = [];
-    gamma = [];
+    theta_step = [];
 
     % Upsilon collects the vector for dotx = F(x)Upsilon, it is either multiaffine
-    % terms or gamma from lifting;
+    % terms or theta_step from lifting;
     if ~settings.general_inclusion
         for ii = 1:n_sys
             upsilon_temp = [];
@@ -781,21 +781,21 @@ switch pss_mode
 
     %% prepare for time freezing lifting and co,
     if settings.time_freezing_inelastic
-        % gamma are the lifting variables that enter the ODE r.h.s.
+        % theta_step are the lifting variables that enter the ODE r.h.s.
         % linearly, they have the role as theta in Stewart's representation
         if pss_lift_step_functions
             if ~friction_is_present
                 switch n_unilateral
                   case 1
-                    gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',2);
-                    g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                                    gamma(2)-(1-alpha(1))*(1-alpha(2))];
-                    upsilon_all{1} = gamma;
-                    g_lift_gamma_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
+                    theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',2);
+                    g_lift_theta_step = [theta_step(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
+                                    theta_step(2)-(1-alpha(1))*(1-alpha(2))];
+                    upsilon_all{1} = theta_step;
+                    g_lift_theta_step_fun = [(alpha(1)+(1-alpha(1))*alpha(2));...
                                         (1-alpha(1))*(1-alpha(2))];
-                    g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha},{g_lift_gamma_fun});
+                    g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha},{g_lift_theta_step_fun});
                   case 2
-                    gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',4);
+                    theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',4);
                     beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',5);
                     % alpha1 ~ f_c1, alpha2  ~ f_c2, alpha3 ~ n1^top v,alpha4 ~ n1^top v
                     g_lift_beta = [beta(1)-(1-alpha(1))*(1-alpha(2));...
@@ -803,43 +803,43 @@ switch pss_mode
                                    beta(3)-(1-alpha(1))*(alpha(2));...
                                    beta(4)-(1-alpha(3))*(1-alpha(4));...
                                    beta(5)-(alpha(3))*(alpha(4))];
-                    g_lift_gamma = [gamma(1)-(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
-                                    gamma(2)-(1-alpha(1))*(1-alpha(3));...
-                                    gamma(3)-(1-alpha(2))*(1-alpha(4));...
-                                    gamma(4)-(beta(1)*beta(3))];
+                    g_lift_theta_step = [theta_step(1)-(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
+                                    theta_step(2)-(1-alpha(1))*(1-alpha(3));...
+                                    theta_step(3)-(1-alpha(2))*(1-alpha(4));...
+                                    theta_step(4)-(beta(1)*beta(3))];
 
-                    upsilon_all{1} = gamma;
+                    upsilon_all{1} = theta_step;
                     g_lift_beta_fun = [(1-alpha(1))*(1-alpha(2));...
                                        (alpha(1))*(1-alpha(2));...
                                        (1-alpha(1))*(alpha(2));...
                                        (1-alpha(3))*(1-alpha(4));...
                                        (alpha(3))*(alpha(4))];
-                    g_lift_gamma_fun = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
+                    g_lift_theta_step_fun = [(alpha(1)*alpha(2)+beta(2)*alpha(4)+beta(3)*alpha(3)+beta(1)*beta(5));...
                                         (1-alpha(1))*(1-alpha(3));...
                                         (1-alpha(2))*(1-alpha(4));...
                                         (beta(1)*beta(3))];
 
-                    g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
+                    g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{g_lift_theta_step_fun});
                     g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
                 end
             else
                 beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',1);
-                gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',3);
+                theta_step = define_casadi_symbolic(casadi_symbolic_mode,'theta_step',3);
                 % lifting functions and indicators
                 g_lift_beta = [beta-(1-alpha(1))*(1-alpha(2))];
-                g_lift_gamma = [gamma(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
-                                gamma(2)-beta*(1-alpha(3));...
-                                gamma(3)-beta*alpha(3);...
+                g_lift_theta_step = [theta_step(1)-(alpha(1)+(1-alpha(1))*alpha(2));...
+                                theta_step(2)-beta*(1-alpha(3));...
+                                theta_step(3)-beta*alpha(3);...
                                ];
-                upsilon_all{1} = gamma;
+                upsilon_all{1} = theta_step;
                 % create casadi expressions for proper initialization
                 g_lift_beta_fun = (1-alpha(1))*(1-alpha(2));
-                g_lift_gamma_fun = [alpha(1)+(1-alpha(1))*alpha(2);...
+                g_lift_theta_step_fun = [alpha(1)+(1-alpha(1))*alpha(2);...
                                     beta*(1-alpha(2))*(1-alpha(3));...
                                     beta*(1-alpha(2))*alpha(3)];
                 % casadi functions
                 g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{g_lift_beta_fun});
-                g_lift_gamma_fun  = Function('g_lift_gamma_fun',{alpha,beta},{g_lift_gamma_fun});
+                g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{g_lift_theta_step_fun});
             end
         else
             if ~friction_is_present
@@ -862,10 +862,10 @@ switch pss_mode
         end
     end
     n_beta = length(beta);
-    n_gamma = length(gamma);
-    n_z_all = n_z_all + n_beta+n_gamma;
+    n_theta_step = length(theta_step);
+    n_z_all = n_z_all + n_beta+n_theta_step;
 end
-g_lift = [g_lift_beta; g_lift_gamma];
+g_lift = [g_lift_beta; g_lift_theta_step];
 
 %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS
 switch pss_mode
@@ -886,36 +886,36 @@ switch pss_mode
     z0_all = [theta_guess;lambda_guess;mu_guess];
     n_lift_eq = n_sys;
   case 'Step'
-    z_all = [alpha;lambda_0;lambda_1;beta;gamma];
+    z_all = [alpha;lambda_0;lambda_1;beta;theta_step];
     z_switching = [lambda_0;lambda_1];
-    lbz_all = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_gamma,1)];
-    ubz_all = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_gamma,1)];
+    lbz_all = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_theta_step,1)];
+    ubz_all = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_theta_step,1)];
 
     alpha_guess = initial_alpha*ones(n_alpha,1);
     lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
     lambda_1_guess = initial_lambda_1*ones(n_alpha,1);
     %         beta_guess = initial_beta*ones(n_beta,1);
-    %         gamma_guess = initial_gamma*ones(n_gamma,1);
+    %         theta_step_guess = initial_theta_step*ones(n_theta_step,1);
     % TODO beta guess should exist once custom lifting is implemented
     if pss_lift_step_functions && ~settings.general_inclusion
         if friction_is_present
             beta_guess = full(g_lift_beta_fun(alpha_guess));
-            gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess));
+            theta_step_guess = full(g_lift_theta_step_fun(alpha_guess,beta_guess));
         else
             beta_guess = [];
             if n_beta >0
                 beta_guess = full(g_lift_beta_fun(alpha_guess));
-                gamma_guess = full(g_lift_gamma_fun(alpha_guess,beta_guess ));
+                theta_step_guess = full(g_lift_theta_step_fun(alpha_guess,beta_guess ));
             else
-                gamma_guess = full(g_lift_gamma_fun(alpha_guess));
+                theta_step_guess = full(g_lift_theta_step_fun(alpha_guess));
             end
         end
     else
         beta_guess = [];
-        gamma_guess = [];
+        theta_step_guess = [];
     end
-    % eval functios for gamma and beta?
-    z0_all = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;gamma_guess];
+    % eval functios for theta_step and beta?
+    z0_all = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;theta_step_guess];
     n_lift_eq =length(g_lift);
 end
 
@@ -1088,8 +1088,8 @@ if terminal_constraint
     model.g_terminal_fun = g_terminal_fun;
 end
 
-if exist('g_lift_gamma_fun')
-    model.g_lift_gamma_fun = g_lift_gamma_fun;
+if exist('g_lift_theta_step_fun')
+    model.g_lift_theta_step_fun = g_lift_theta_step_fun;
 end
 if exist('g_lift_beta_fun')
     model.g_lift_beta_fun = g_lift_beta_fun;
@@ -1130,7 +1130,7 @@ model.n_lift_eq  = n_lift_eq;
 model.n_c_sys = n_c_sys;
 model.n_alpha = n_alpha;
 model.n_beta = n_beta;
-model.n_gamma = n_gamma;
+model.n_theta_step = n_theta_step;
 model.n_lambda_0 = n_lambda_0;
 model.n_lambda_1 = n_lambda_1;
 
@@ -1171,7 +1171,7 @@ dimensions.m_ind_vec = m_ind_vec;
 dimensions.n_c_sys = n_c_sys;
 dimensions.n_alpha = n_alpha;
 dimensions.n_beta = n_beta;
-dimensions.n_gamma = n_gamma;
+dimensions.n_theta_step = n_theta_step;
 dimensions.n_lambda_0 = n_lambda_0;
 dimensions.n_lambda_1 = n_lambda_1;
 dimensions.n_f_sys = n_f_sys;

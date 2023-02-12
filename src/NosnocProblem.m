@@ -37,7 +37,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_alpha
         ind_lambda_n
         ind_lambda_p
-        ind_gamma
+        ind_theta_step
         ind_beta
         ind_z
         ind_nu_lift
@@ -127,7 +127,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_lambda_n = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_lambda_p = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_beta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_gamma = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_theta_step = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_z = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_nu_lift = {};
             obj.ind_h = {};
@@ -557,7 +557,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_lambda_n(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lambda_n, w_len);
             obj.ind_lambda_p(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lambda_p, w_len);
             obj.ind_beta(stage.ctrl_idx, :, :) = increment_indices(stage.ind_beta, w_len);
-            obj.ind_gamma(stage.ctrl_idx, :, :) = increment_indices(stage.ind_gamma, w_len);
+            obj.ind_theta_step(stage.ctrl_idx, :, :) = increment_indices(stage.ind_theta_step, w_len);
             obj.ind_z(stage.ctrl_idx, :, :) = increment_indices(stage.ind_z, w_len);
             obj.ind_nu_lift = [obj.ind_nu_lift, increment_indices(stage.ind_nu_lift, w_len)];
 
@@ -627,7 +627,7 @@ classdef NosnocProblem < NosnocFormulationObject
                          flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
                          flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
                          flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_gamma(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_theta_step(:,:,1:obj.dims.n_s))
                          flatten_ind(obj.ind_z(:,:,1:obj.dims.n_s))];
             ind_z_all = sort(ind_z_all);
         end
