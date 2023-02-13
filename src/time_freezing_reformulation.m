@@ -18,7 +18,7 @@ end
 
 %% Experimental options
 inv_M_once = 0;
-nonsmooth_switching_fun = 1;
+nonsmooth_switching_fun = 0;
 %% Auxiliary functions
 sigma = SX.sym('sigma',1);
 a = SX.sym('a',1);
@@ -193,22 +193,17 @@ if ~time_freezing_model_exists
         else
             v_tangent = J_tangent'*v;
             v_tangent = reshape(v_tangent,2,n_contacts); % 2 x n_c , the columns are the tangential velocities of the contact points
-            v_tangent_norms = [];
+           
+        end
+         v_tangent_norms = [];
             for ii = 1:n_contacts
                 v_tangent_norms = [v_tangent_norms;norm(v_tangent(:,ii))];
             end
-        end
     else
         v_tangent  = [];
     end
 
-    % joint switching function
-    if nonsmooth_switching_fun
-        c = [max_smooth_fun(f_c,v_normal,0);v_tangent];
-        %         c = max_smooth_fun(f_c,v_normal,sigma0);
-    else
-        c = [f_c;v_normal;v_tangent];        
-    end
+  
 
     % parameter for auxiliary dynamics
     if ~isfield(model,'a_n')
@@ -219,6 +214,13 @@ if ~time_freezing_model_exists
         % Basic settings
         settings.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
         settings.pss_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
+          %% switching function
+        if nonsmooth_switching_fun  
+            c = [max_smooth_fun(f_c,v_normal,0);v_tangent];
+        %         c = max_smooth_fun(f_c,v_normal,sigma0);
+        else
+            c = [f_c;v_normal;v_tangent];        
+        end
         %% unconstrained dynamcis with clock state
         inv_M = inv(M);
         f_ode = [v;...
@@ -262,7 +264,13 @@ if ~time_freezing_model_exists
             f_aux = f_aux_normal;
         end
         F = [f_ode (inv_M_ext*f_aux)];
-        time_freezing_model_exists = 1;
+        S = ones(size(F,2),length(c)); % dummy value to pass error checks
+        % number of auxiliary dynamicsm modes
+        if friction_exists
+            n_aux = 2*n_contacts;
+        else
+            n_aux = n_contacts;
+        end
     else
         % elastic
         if ~exist('k_aux')
@@ -274,23 +282,18 @@ if ~time_freezing_model_exists
         temp1 =2*abs(log(e));
         temp2 = k_aux/(pi^2+log(e)^2);
         c_aux = temp1/sqrt(temp2);
-        %                 c_aux = 0.211989;
-        %             f_aux_n = [0;v(2);0;-k_aux*q(2)-c_aux*v(2);0];
         K = [0 1;-k_aux -c_aux];
         N  = [J_normal zeros(n_q,1);...
             zeros(n_q,1) invM*J_normal];
         f_aux_n1 = N*K*N'*[q;v];
         f_aux_n1 = [f_aux_n1;zeros(n_quad+1,1)];
-        f = [v;f;1];
+        f = [v;f_v;1];
         % updated with clock state
-        model.f = f;
-        model.F = [f, f_aux_n1];
-        model.S = [1; -1];
-        time_freezing_model_exists = 1;
+        F = [f, f_aux_n1];
+        S = [1; -1];
     end
+        time_freezing_model_exists = 1; % mark that model was created
 end
-
-% fprintf('nosnoc: No action was done. Consider setting settings.time_freezing = 1, if calling this function.\n')
 
 %% Settings updates
 settings.time_freezing_model_exists = time_freezing_model_exists;
@@ -299,6 +302,7 @@ settings.nonsmooth_switching_fun = nonsmooth_switching_fun;
 %% Model updates
 model.n_quad = n_quad;
 model.n_q = n_q;
+model.n_aux = n_aux;
 model.q = q;
 model.v = v;
 model.x = x;
@@ -309,7 +313,5 @@ model.mu = mu;
 model.J_normal = J_normal;
 model.F = F;
 model.c = c;
-% dummy value to pass error checks
-model.S = ones(size(F,2),length(c));
-
+model.S = S;
 end
