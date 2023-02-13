@@ -76,7 +76,7 @@ classdef NosnocFormulationObject < handle
             end
             
             n = size(symbolic, 1);
-            n_w = length(obj.w);
+            n_w = size(obj.w, 1);
 
             obj.w = vertcat(obj.w, symbolic);
             obj.lbw = [obj.lbw; lb];

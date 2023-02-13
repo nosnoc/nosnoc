@@ -99,7 +99,7 @@ classdef ControlStage < NosnocFormulationObject
                 fe.forwardSimulation(obj.ocp, obj.Uk, s_sot, p_stage);
 
                 % 2) Complementarity Constraints
-                fe.createComplementarityConstraints(sigma_p, s_elastic);
+                fe.createComplementarityConstraints(sigma_p, s_elastic, p_stage);
 
                 % 3) Step Equilibration
                 fe.stepEquilibration(sigma_p, rho_h_p);

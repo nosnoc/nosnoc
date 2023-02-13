@@ -590,12 +590,12 @@ classdef FiniteElement < NosnocFormulationObject
             % TODO: do this cleaner
             if (settings.g_path_constraint &&...
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
-                obj.addConstraint(model.g_path_fun(obj.prev_fe.x{end},Uk), model.g_path_lb, model.g_path_ub);
+                obj.addConstraint(model.g_path_fun(obj.prev_fe.x{end},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if settings.g_path_constraint && settings.g_path_at_stg
-                    obj.addConstraint(model.g_path_fun(X_ki{j},Uk), model.g_path_lb, model.g_path_ub);
+                    obj.addConstraint(model.g_path_fun(X_ki{j},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
                 end
             end
 
@@ -624,12 +624,12 @@ classdef FiniteElement < NosnocFormulationObject
             % TODO: do this cleaner
             if (settings.g_comp_path_constraint &&...
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
-                g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, model.v_global));
+                g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global));
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if settings.g_comp_path_constraint && settings.g_path_at_stg
-                    g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u, model.v_global));
+                    g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global));
                 end
             end
 
