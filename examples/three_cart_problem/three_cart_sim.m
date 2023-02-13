@@ -51,13 +51,14 @@ model.a_n = 100;
 model.x0 = x0; 
 % fixed control
 u = [-1;10;0];
-model.f = [1/m1*(u(1)-c_damping*v(1)-k1*q(1));...
+model.f_v = [1/m1*(u(1)-c_damping*v(1)-k1*q(1));...
            1/m2*(u(2)-c_damping*v(2)+k2*(q(1)-q(2)));...
            1/m3*(u(3)-c_damping*v(3)+k3*q(2))];
 
-model.c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
+model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
+model.n_dim_contact = 2;
 %% Simulation setings
 N_FE = 2;
 T_sim = 3;

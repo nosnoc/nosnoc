@@ -22,14 +22,14 @@ vertical_force = 0;
 q = SX.sym('q',2); v = SX.sym('v',2); 
 model.x = [q;v]; 
 model.e = 0;
-model.mu = 0.0;
+model.mu = 0;
+model.n_dim_contact = 2;
 model.a_n = g;
 model.x0 = [0.8;0.5;-1.5;-1]; 
-% model.x0 = [0.5;0.5;-2;-2]; 
-model.f = [0;-g];
+model.f_v = [0;-g];
 model.f_c = [q(1);q(2)];
 %% Simulation setings
-N_FE = 2;
+N_FE = 3;
 T_sim = 1.5;
 N_sim = 40;
 model.T_sim = T_sim;

@@ -79,23 +79,23 @@ if constant_inertia_matrix
     q_lin = [0;0.4;pi/2;-pi/4];
     M = full(M_fun([q_lin;v0]));
 end
-model.f = (h_forces+[0;0;u]);
-model.gravity = h_forces;
+model.f_v = (h_forces+[0;0;u]);
 model.invM = inv(M);
 model.M = M;
 %% normal and tangents
 f_c =  p_foot(2);
 c_tan = p_foot(1);
-nabla_q_f_c = f_c.jacobian(q)';
-tangent1 = c_tan.jacobian(q)';
+J_normal = f_c.jacobian(q)';
+J_tangent = c_tan.jacobian(q)';
 use_unit_vectors = 1;
 if use_unit_vectors
-    tangent1 = tangent1/norm(tangent1);
-    nabla_q_f_c = nabla_q_f_c/norm(nabla_q_f_c);
+    J_tangent = J_tangent/norm(J_tangent);
+    J_normal = J_normal/norm(J_normal);
 end
 model.f_c = f_c;
-model.tangent1 = tangent1 ;
-model.nabla_q_f_c = nabla_q_f_c;
+model.J_tangent = J_tangent;
+model.J_normal= J_normal;
+model.n_dim_contact = 2;
 %% OCP
 % Objective and constraints
 model.f_q = u'*u;

@@ -49,7 +49,6 @@ settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complem
 settings.N_homotopy = 6;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
-
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
@@ -97,14 +96,15 @@ model.a_n = 10;
 model.x0 = x0; 
 
 model.M = diag([m1;m2;m3]); % inertia/mass matrix;
-model.f = [-c_damping*v(1);...
+model.f_v = [-c_damping*v(1);...
            u-c_damping*v(2);...
            -c_damping*v(3)];
 
 % gap functions
-model.c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
+model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
+model.n_dim_contact = 2;
 % box constraints on controls and states
 model.lbu = u_min;
 model.ubu = u_max;

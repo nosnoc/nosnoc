@@ -24,7 +24,7 @@ model.x = [q;v];
 model.e = 0;
 model.mu = 0.3;
 model.a_n = g;
-model.a_n = 50;
+model.a_n = 20;
 model.x0 = [0;1;3;0]; 
 model.f_v = [0;-g+vertical_force*g*q(1)];
 model.f_c = q(2);
@@ -32,9 +32,9 @@ model.J_tangent = [1; 0];
 model.n_dim_contact = 2;
 
 %% Simulation setings
-N_FE = 2;
+N_FE = 5;
 T_sim = 1.5;
-N_sim = 30;
+N_sim = 20;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

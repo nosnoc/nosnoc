@@ -7,15 +7,12 @@ import casadi.*
 plot_results = 1;
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
-settings.use_fesd  = 1;
 settings.n_s = 1;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.print_level = 2;
 settings.N_homotopy = 8;
 settings.use_fesd = 1;
 settings.time_freezing = 1;
-settings.time_freezing_reduced_model = 0;
-settings.use_speed_of_time_variables = 0;
 settings.stagewise_clock_constraint = 0;
 settings.impose_terminal_phyisical_time = 0;
 settings.pss_lift_step_functions = 0;
