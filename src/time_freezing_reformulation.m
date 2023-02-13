@@ -18,12 +18,12 @@ end
 
 %% Experimental options
 inv_M_once = 0;
-nonsmooth_switching_fun = 0;
 %% Auxiliary functions
 sigma = SX.sym('sigma',1);
 a = SX.sym('a',1);
 b = SX.sym('b',1);
 f_natural_residual = 0.5*(b+a+sqrt((b-a+sigma)^2));
+% f_natural_residual = max(a,b);
 max_smooth_fun = Function('max_smooth_fun',{a,b,sigma},{f_natural_residual});
 %% Chek is the provided user data valid and complete
 % Check is there a gap gunctions
@@ -215,7 +215,7 @@ if ~time_freezing_model_exists
         settings.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
         settings.pss_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
           %% switching function
-        if nonsmooth_switching_fun  
+        if settings.nonsmooth_switching_fun  
             c = [max_smooth_fun(f_c,v_normal,0);v_tangent];
         %         c = max_smooth_fun(f_c,v_normal,sigma0);
         else
@@ -273,13 +273,14 @@ if ~time_freezing_model_exists
         end
     else
         % elastic
-        if ~exist('k_aux')
+        pss_mode = 'Step';
+        if ~isfield(model,'k_aux')
             k_aux = 10;
             if settings.print_level > 1
                 fprintf('nosnoc: Setting default value for k_aux = 10.\n')
             end
         end
-        temp1 =2*abs(log(e));
+        temp1 = 2*abs(log(e));
         temp2 = k_aux/(pi^2+log(e)^2);
         c_aux = temp1/sqrt(temp2);
         K = [0 1;-k_aux -c_aux];
@@ -287,10 +288,12 @@ if ~time_freezing_model_exists
             zeros(n_q,1) invM*J_normal];
         f_aux_n1 = N*K*N'*[q;v];
         f_aux_n1 = [f_aux_n1;zeros(n_quad+1,1)];
-        f = [v;f_v;1];
+        f_ode = [v;invM*f_v;1];
         % updated with clock state
-        F = [f, f_aux_n1];
+        F = [f_ode, f_aux_n1];
         S = [1; -1];
+        n_aux = 1;
+        c = f_c;
     end
         time_freezing_model_exists = 1; % mark that model was created
 end
@@ -298,7 +301,7 @@ end
 %% Settings updates
 settings.time_freezing_model_exists = time_freezing_model_exists;
 settings.friction_exists  = friction_exists;
-settings.nonsmooth_switching_fun = nonsmooth_switching_fun;
+
 %% Model updates
 model.n_quad = n_quad;
 model.n_q = n_q;
