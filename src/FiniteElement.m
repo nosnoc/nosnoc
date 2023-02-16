@@ -60,7 +60,6 @@ classdef FiniteElement < NosnocFormulationObject
     properties(Dependent, SetAccess=private, Hidden)
         x
         v
-        theta
         lam
         mu
         alpha
@@ -70,15 +69,13 @@ classdef FiniteElement < NosnocFormulationObject
         h
 
         elastic
-
-        lambda
-
+        
         nu_vector
     end
 
-    properties(Access=private)
-        lambda_
-        theta_
+    properties(SetAccess=private)
+        lambda
+        theta
     end
 
     methods
@@ -119,11 +116,6 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_h = [];
             obj.ind_elastic = [];
             obj.ind_boundary = [];
-
-            % Set up cacheing variables
-            % warning: this might mess us up in the future if we update problems on the fly
-            obj.lambda_ = [];
-            obj.theta_ = [];
 
             obj.ctrl_idx = ctrl_idx;
             obj.fe_idx = fe_idx;
@@ -395,24 +387,12 @@ classdef FiniteElement < NosnocFormulationObject
                     -inf,...
                     inf);
             end
-        end
 
-        function lambda = get.lambda(obj)
-            if isempty(obj.lambda_)
-                grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
-
-                obj.lambda_ = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
-            end
-            lambda = obj.lambda_;
-        end
-
-        function theta = get.theta(obj)
-            if isempty(obj.theta_)
-                grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a));
-
-                obj.theta_ = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
-            end
-            theta = obj.theta_;
+            % calculate lambda and theta
+            grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
+            obj.lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
+            grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a));
+            obj.theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
         end
 
         function h = get.h(obj)
