@@ -76,6 +76,11 @@ classdef FiniteElement < NosnocFormulationObject
         nu_vector
     end
 
+    properties(Access=private)
+        lambda_
+        theta_
+    end
+
     methods
         function obj = FiniteElement(prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin)
             import casadi.*
@@ -114,6 +119,11 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_h = [];
             obj.ind_elastic = [];
             obj.ind_boundary = [];
+
+            % Set up cacheing variables
+            % warning: this might mess us up in the future if we update problems on the fly
+            obj.lambda_ = [];
+            obj.theta_ = [];
 
             obj.ctrl_idx = ctrl_idx;
             obj.fe_idx = fe_idx;
@@ -388,15 +398,21 @@ classdef FiniteElement < NosnocFormulationObject
         end
 
         function lambda = get.lambda(obj)
-            grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
+            if isempty(obj.lambda_)
+                grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
 
-            lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
+                obj.lambda_ = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
+            end
+            lambda = obj.lambda_;
         end
 
         function theta = get.theta(obj)
-            grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a));
+            if isempty(obj.theta_)
+                grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a));
 
-            theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
+                obj.theta_ = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
+            end
+            theta = obj.theta_;
         end
 
         function h = get.h(obj)
