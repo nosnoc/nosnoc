@@ -27,7 +27,7 @@ initial_alpha = 1;
 initial_lambda_0 = 1;
 initial_lambda_1 = 1;
 initial_beta = 1;
-initial_gamma = 1;
+initial_theta_step = 1;
 
 pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
 n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc), depth is number of multilinar terms to wich a lifting variables is equated to.
