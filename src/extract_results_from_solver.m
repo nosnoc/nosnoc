@@ -44,9 +44,9 @@ switch pss_mode
         lambda_opt_extended = [z_opt_extended(n_theta+1:2*n_theta,:)];
         mu_opt_extended = [z_opt_extended(end-n_sys+1:end,:)];
         %
-        theta_opt= theta_opt_extended(:,1:n_s+1:end);
-        lambda_opt= lambda_opt_extended(:,1:n_s+1:end);
-        mu_opt= mu_opt_extended(:,1:n_s+1:end);
+        theta_opt= theta_opt_extended(:,n_s:n_s:end);
+        lambda_opt= lambda_opt_extended(:,n_s:n_s:end);
+        mu_opt= mu_opt_extended(:,n_s:n_s:end);
     case 'Step'
         z_opt_extended = reshape(algebraic_states,n_z_all,length(algebraic_states)/n_z_all);
         z_opt  = z_opt_extended(:,1:n_s:end);
@@ -54,9 +54,9 @@ switch pss_mode
         lambda_0_opt_extended = [z_opt_extended(n_alpha+1:2*n_alpha,:)];
         lambda_1_opt_extended = [z_opt_extended(2*n_alpha+1:3*n_alpha,:)];
         %
-        alpha_opt= alpha_opt_extended(:,1:n_s+1:end);
-        lambda_0_opt= lambda_0_opt_extended(:,1:n_s+1:end);
-        lambda_1_opt= lambda_1_opt_extended(:,1:n_s+1:end);
+        alpha_opt= alpha_opt_extended(:,n_s:n_s:end);
+        lambda_0_opt= lambda_0_opt_extended(:,n_s:n_s:end);
+        lambda_1_opt= lambda_1_opt_extended(:,n_s:n_s:end);
 end
 t_grid = cumsum([0;h_opt]);
 
@@ -133,8 +133,8 @@ switch pss_mode
         alpha_i_opt_flat{i} = reshape(transpose(alpha_i_opt{i}), prod(size(alpha_i_opt{i})), 1);
     end
 
-    lambda_n_i_opt = cell(n_lambda, 1);
-    lambda_n_i_opt_flat = cell(n_lambda, 1);
+    lambda_n_i_opt = cell(n_alpha, 1);
+    lambda_n_i_opt_flat = cell(n_alpha, 1);
     % lambdas
     for i = 1:n_lambda/2
         lambda_n_i_opt{i} = cellfun(@(l) l(i), lambda_n_opt_s);
@@ -142,7 +142,7 @@ switch pss_mode
     end
 
     lambda_p_i_opt = cell(n_lambda, 1);
-    lambda_p_i_opt_flat = cell(n_lambda, 1);
+    lambda_p_i_opt_flat = cell(n_alpha, 1);
     % lambdas
     for i = 1:n_lambda/2
         lambda_p_i_opt{i} = cellfun(@(l) l(i), lambda_p_opt_s);
