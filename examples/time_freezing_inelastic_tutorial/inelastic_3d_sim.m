@@ -6,37 +6,36 @@ import casadi.*
 [settings] = default_settings_nosnoc();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
-settings.mpcc_mode = 'elastic_ineq';
-settings.opts_ipopt.ipopt.max_iter = 3e2;
+settings.mpcc_mode = MpccMode.Scholtes_ineq;
 settings.print_level = 2;
-settings.N_homotopy = 10;
-settings.initial_lambda_0 = 0; settings.initial_lambda_1 = 0; settings.initial_alpha = 0;
+settings.N_homotopy = 6;
 settings.use_fesd = 1;
-settings.cross_comp_mode = 3;
 settings.time_freezing = 1;
 settings.pss_lift_step_functions= 1;
 settings.impose_terminal_phyisical_time  = 0;
 settings.stagewise_clock_constraint = 0;
+settings.nonsmooth_switching_fun = 0;
+settings.pss_lift_step_functions = 0;
 %%
 g = 10;
+% Symbolic variables and bounds
+q = SX.sym('q',3); 
+v = SX.sym('v',3); 
 model.e = 0;
 model.mu = 0.2;
-% Symbolic variables and bounds
-q = SX.sym('q',3); v = SX.sym('v',3); 
+model.n_dim_contact = 3;
 model.x = [q;v]; 
 model.a_n = g;
 model.x0 = [0;0;1;2;1;0]; 
 F_ext = [1;1]*0;
 % norm(F_ext)
-model.f = [F_ext;-g];
-
+model.f_v = [F_ext;-g];
 model.f_c = q(3);
-model.tangent1 = [1;0;0];
-model.tangent2 = [0;1;0];
+model.J_tangent = [1 0;0 1; 0 0];
 %% Simulation setings
-N_finite_elements = 2;
+N_finite_elements = 3;
 T_sim = 3;
-N_sim = 50;
+N_sim = 20;
 model.T_sim = T_sim;
 model.N_FE = N_finite_elements;
 model.N_sim = N_sim;
@@ -93,7 +92,7 @@ theta5  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(alpha(4,:));
 theta = [theta1;theta2;theta3;theta4;theta5];
 end
 
-n_f = model.n_gamma;
+n_f = model.n_theta_step;
 t_grid(1) = [];
 figure
 for ii = 1:n_f 

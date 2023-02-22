@@ -37,7 +37,6 @@ close all;
 clc;
 import casadi.*
 
-
 filename = 'hopper_long.gif';
 delete hopper_long.gif
 
@@ -45,23 +44,16 @@ delete hopper_long.gif
 [settings] = default_settings_nosnoc();
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;  % number of stages in IRK methods
-
-settings.use_fesd = 1;
-
-settings.N_homotopy = 6;
+settings.N_homotopy = 5;
 settings.cross_comp_mode = 1;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.opts_ipopt.ipopt.tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_iter = 3;
-
-% settings.print_level = 2;
-settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
-% settings.s_sot_max = 2;
 settings.s_sot_min = 1;
 settings.equidistant_control_grid = 1;
-settings.pss_lift_step_functions = 1;
+settings.pss_lift_step_functions = 0;
 settings.stagewise_clock_constraint = 1;
 settings.g_path_at_fe = 1; % evaluate path constraint on every integration step
 settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
@@ -99,16 +91,16 @@ B = [0, -sin(q(3));...
     0, 1];
 
 % constraint normal
-f_c_normal = [0; 1; q(4)*sin(q(3)); -cos(q(3))];
+J_normal = [0; 1; q(4)*sin(q(3)); -cos(q(3))];
 % constraint tangent;
-f_c_tangent = [1; 0; q(4)*cos(q(3)); sin(q(3))];
+J_tangent = [1; 0; q(4)*cos(q(3)); sin(q(3))];
 
 % tangential and normal velocity of the contact point
-v_tangent = f_c_tangent'*v;
-v_normal = f_c_normal'*v;
+v_tangent = J_tangent'*v;
+v_normal = J_normal'*v;
 
 % All forces
-f = -C + B*u(1:2);
+f_v = -C + B*u(1:2);
 
 % Gap function
 f_c = q(2) - q(4)*cos(q(3));
@@ -122,7 +114,7 @@ g_comp_path = 0.01*[v_tangent*u(3);f_c*u(3)];
 x0 = [0.1; 0.5; 0; 0.5; 0; 0; 0; 0];
 ubx = [2; 1.5; pi; 0.5; 10; 10; 5; 5];
 lbx =  [0; 0; -pi; 0.1; -10; -10; -5; -5];
-        
+
 
 Q = diag([50; 50; 20; 50; 0.1; 0.1; 0.1; 0.1]);
 Q_terminal =diag([300; 300; 300; 300; 0.1; 0.1; 0.1; 0.1]);
@@ -131,14 +123,14 @@ u_ref = [0; 0; 0];
 R = diag([0.001; 0.001;1e-5]);
 
 %% interpolate refernece
-    x_mid1 = [0.4; 0.65; 0; 0.2; 0; 0; 0; 0];
-    x_mid2 = [0.6; 0.5; 0; 0.5; 0; 0; 0; 0];
-    x_mid3 = [0.9; 0.65; 0; 0.2; 0; 0; 0; 0];
-    x_end  = [1.3; 0.5; 0; 0.5; 0; 0; 0; 0];
+x_mid1 = [0.4; 0.65; 0; 0.2; 0; 0; 0; 0];
+x_mid2 = [0.6; 0.5; 0; 0.5; 0; 0; 0; 0];
+x_mid3 = [0.9; 0.65; 0; 0.2; 0; 0; 0; 0];
+x_end  = [1.3; 0.5; 0; 0.5; 0; 0; 0; 0];
 
-    x_ref1 = interp1([0 0.5 1],[x0,x_mid1,x_mid2]',linspace(0,1,floor(N_stg/2)),'spline')'; %spline
-    x_ref2 = interp1([0 0.5 1],[x_mid2,x_mid3,x_end]',linspace(0,1,ceil(N_stg/2)),'spline')'; %spline
-    x_ref = [x_ref1,x_ref2];
+x_ref1 = interp1([0 0.5 1],[x0,x_mid1,x_mid2]',linspace(0,1,floor(N_stg/2)),'spline')'; %spline
+x_ref2 = interp1([0 0.5 1],[x_mid2,x_mid3,x_end]',linspace(0,1,ceil(N_stg/2)),'spline')'; %spline
+x_ref = [x_ref1,x_ref2];
 
 %% Fill in model
 model.T = T;
@@ -149,15 +141,14 @@ model.u = u;
 model.e = 0;
 model.mu = mu;
 model.a_n = 25;
-% model.a_n = 1e2;
 model.x0 = x0;
 
 model.M = M;
-model.f = f;
-% gap functions
+model.f_v = f_v;
 model.f_c = f_c;
-model.tangent1 = f_c_tangent;
-model.nabla_q_f_c = f_c_normal;
+model.J_tangent = J_tangent;
+model.J_normal = J_normal;
+model.n_dim_contact = 2;
 
 % box constraints on controls and states
 model.lbu = lbu;
@@ -166,7 +157,7 @@ model.lbx = lbx;
 model.ubx = ubx;
 % constraint on drift velocity
 model.g_comp_path = g_comp_path;
-
+% Least squares objetive
 model.lsq_x = {x,x_ref,Q};
 model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
@@ -194,25 +185,25 @@ fig_num = 4;
 plotHopperSwitchingFun(t_opt,c_eval,fig_num);
 %%
 if 0
-figure
-% slip complement
-u_normalized = [u_opt(3,:),nan];
-slip_cc1 = u_normalized .*c_eval(1,1:N_FE:end);
-slip_cc2 = u_normalized .*c_eval(3,1:N_FE:end);
-subplot(211)
-plot(c_eval(1,1:N_FE:end));
-hold on 
-plot(u_normalized)
-xlabel('$t$','interpreter','latex');
-ylabel('Slip comelementarity','interpreter','latex');
-legend({'Slack Gap','Gap'},'Interpreter','latex','Location','best')
-subplot(212)
-plot(slip_cc1)
-hold on
-plot(slip_cc2)
-xlabel('$t$','interpreter','latex');
-ylabel('Slip comelementarity','interpreter','latex');
-legend({'Comp - slack vs gap','Comp - slack vs. v tan'},'Interpreter','latex','Location','best')
+    figure
+    % slip complement
+    u_normalized = [u_opt(3,:),nan];
+    slip_cc1 = u_normalized .*c_eval(1,1:N_FE:end);
+    slip_cc2 = u_normalized .*c_eval(3,1:N_FE:end);
+    subplot(211)
+    plot(c_eval(1,1:N_FE:end));
+    hold on
+    plot(u_normalized)
+    xlabel('$t$','interpreter','latex');
+    ylabel('Slip comelementarity','interpreter','latex');
+    legend({'Slack Gap','Gap'},'Interpreter','latex','Location','best')
+    subplot(212)
+    plot(slip_cc1)
+    hold on
+    plot(slip_cc2)
+    xlabel('$t$','interpreter','latex');
+    ylabel('Slip comelementarity','interpreter','latex');
+    legend({'Comp - slack vs gap','Comp - slack vs. v tan'},'Interpreter','latex','Location','best')
 end
 %% animation
 

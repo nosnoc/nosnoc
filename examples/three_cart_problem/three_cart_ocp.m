@@ -109,13 +109,14 @@ model.x0 = x0;
 % dot{v} r.h.s.
 
 model.M = diag([m1;m2;m3]); % inertia/mass matrix;
-model.f = [(u(1)-c_damping*v(1)-k1*q(1));...
+model.f_v = [(u(1)-c_damping*v(1)-k1*q(1));...
            (u(2)-c_damping*v(2)+k2*(q(1)-q(2)));...
            (u(3)-c_damping*v(3)+k3*q(2))];
 
 % gap functions
-model.c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
+model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
+model.n_dim_contact = 2;
 
 
 % box constraints on controls and states

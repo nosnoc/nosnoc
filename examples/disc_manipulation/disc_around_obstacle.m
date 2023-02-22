@@ -42,8 +42,6 @@ settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
 
 settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
-
-%settings.homotopy_update_rule = 'superlinear';
 settings.use_fesd = 1;
 settings.N_homotopy = 7;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
@@ -107,14 +105,15 @@ model.e = 0;
 model.mu = 0.0;
 model.a_n = 10;
 model.x0 = x0;
+model.n_dim_contact = 2;
 
 cv = 2;
 eps = 1e-1;
 f_drag = cv*[v1/norm(v1+eps);v2/norm(v2+eps)];
 
 model.M = diag([m1;m1;m2;m2]); % inertia/mass matrix;
-model.f = [u;...
-    zeros(2,1)]-f_drag;
+model.f_v = [u;...
+             zeros(2,1)]-f_drag;
 
 %% gap functions
 model.f_c = [norm(q1-q2)^2-(r1+r2)^2];

@@ -31,7 +31,7 @@ scenario.width_vec = [0.5 0.5 0.5];
 settings.print_level = 3;
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;
-
+settings.pss_lift_step_functions = 0;
 %% homotopy settings
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 2500;

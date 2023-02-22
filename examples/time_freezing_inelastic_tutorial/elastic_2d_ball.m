@@ -26,8 +26,9 @@ model.x = [q;v];
 model.e = 0.9;
 model.k_aux = 50;
 model.x0 = [1;0]; 
-model.f = -g;
-model.c = q;
+model.f_v = -g;
+model.f_c = q;
+model.n_dim_contact = 1;
 %% Simulation setings
 N_FE = 3;
 T_sim = 3;

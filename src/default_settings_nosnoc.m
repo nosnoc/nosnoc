@@ -27,7 +27,7 @@ initial_alpha = 1;
 initial_lambda_0 = 1;
 initial_lambda_1 = 1;
 initial_beta = 1;
-initial_gamma = 1;
+initial_theta_step = 1;
 
 pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
 n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc), depth is number of multilinar terms to wich a lifting variables is equated to.
@@ -124,7 +124,9 @@ time_freezing_nonlinear_friction_cone = 1; % 1 - use nonlienar friction cone, 0 
 time_freezing_quadrature_state = 0; % make a nonsmooth quadrature state to integrate only if physical time is running
 time_freezing_lift_forces = 0; % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0; 
 
-friction_is_present = 0;
+friction_exists = 0;
+% exerimentla expert otpions
+nonsmooth_switching_fun = 0; % experimental: use c = max(c1,c2) insetad of c = [c1;c2]  
 
 %% Verbose
 print_level = 3;

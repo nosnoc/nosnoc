@@ -42,11 +42,10 @@ filename = 'discs_manipulation.gif';
 [settings] = default_settings_nosnoc();
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
-settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
+settings.mpcc_mode = MpccMode.elastic_ineq;
 settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 7;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
-settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
@@ -63,10 +62,6 @@ m2 = 1;
 r1 = 0.3;
 r2 = 0.2;
 
-
-ubx = [10; 10;10; 10; 5; 5; 5; 5];
-lbx = -ubx;
-
 q10 = [-1; -2];
 q20 = [-1;-1];
 v10 = [0;0];
@@ -76,6 +71,10 @@ q_target1 = [-1; 1];
 q_target2 = [0; 0];
 
 x0 = [q10;q20;v10;v20];
+ubx = [10; 10;10; 10; 5; 5; 5; 5];
+lbx = -ubx;
+u_max = [20;20];
+u_min = -u_max;
 
 u_ref = [0;0];
 x_ref = [q_target1;q_target2;zeros(4,1)];
@@ -83,10 +82,6 @@ x_ref = [q_target1;q_target2;zeros(4,1)];
 Q = diag([5;5;10;10;0*ones(4,1)]);
 R = diag([0.1 0.1]);
 Q_terminal = 100*Q;
-
-u_max = [20;20];
-u_min = -u_max;
-
 %% Symbolic variables and bounds
 q = SX.sym('q',4);
 v = SX.sym('v',4);
@@ -108,12 +103,12 @@ model.x0 = x0;
 
 
 model.M = diag([m1;m1;m2;m2]); % inertia/mass matrix;
-model.f = [u;...
+model.f_v = [u;...
     zeros(2,1)];
 
 % gap functions
-model.c = [norm(q1-q2)^2-(r1+r2)^2];
-
+model.f_c = [norm(q1-q2)^2-(r1+r2)^2];
+model.n_dim_contact = 2;
 
 % box constraints on controls and states
 model.lbu = u_min;

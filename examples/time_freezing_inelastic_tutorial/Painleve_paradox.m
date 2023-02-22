@@ -21,6 +21,7 @@ settings.time_freezing = 1;
 %%
 model.e = 0;
 model.mu = 1;
+model.n_dim_contact = 2;
 %% the dynamics
 model.n_q = 3;
 model.g = -9.81*1;
@@ -45,9 +46,9 @@ model.M = M;
 % contact points of the rod
 yc = qy-l/2*cos(qtheta);
 xc = qx-l/2*sin(qtheta);
-model.f = [0;-g;0];
+model.f_v = [0;-g;0];
 model.f_c = yc;
-model.tangent = xc.jacobian(q)';
+model.J_tangent = xc.jacobian(q)';
 % tangent
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];

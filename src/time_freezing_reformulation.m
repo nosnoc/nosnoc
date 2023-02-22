@@ -4,384 +4,323 @@ import casadi.*
 unfold_struct(model,'caller');
 time_freezing = settings.time_freezing;
 time_freezing_model_exists = 0;
-if time_freezing
-    % sanity heck
-    % check is the model partially filled
-    if exist('S')
-        if exist('F')
-            fprintf('Info on Time-Freezing: model.F and model.S already exist, the automated model reformulation will be not performed. \n')
-            time_freezing_model_exists = 1;
+%% TODOS
+% %shift all model updates to the end of the file
+% add to all functions model. prefix to get rid of unfold_struct
+% refactor time_freezing_quadrature_state = true
+% check is the model partially filled
+if isfield(model,'F')
+    fprintf('nosnoc: model.F provided, the automated model reformulation will be not performed. \n')
+    time_freezing_model_exists = 1;
+else
+    time_freezing_model_exists = 0;
+end
+
+%% Experimental options
+inv_M_once = 0;
+%% Auxiliary functions
+sigma = SX.sym('sigma',1);
+a = SX.sym('a',1);
+b = SX.sym('b',1);
+f_natural_residual = 0.5*(b+a+sqrt((b-a+sigma)^2));
+% f_natural_residual = max(a,b);
+max_smooth_fun = Function('max_smooth_fun',{a,b,sigma},{f_natural_residual});
+%% Chek is the provided user data valid and complete
+% Check is there a gap gunctions
+if ~isfield(model,'f_c')
+    error('nosnoc: Please provide the gap functions model.f_c.')
+end
+n_contacts = length(f_c);
+% check dimensions of contacts
+if ~isfield(model,'n_dim_contact')
+    warrning('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
+    n_dim_contact = 2;
+end
+
+if ~time_freezing_model_exists
+    % coefficent of restiution
+    if ~isfield(model,'e')
+        error('nosnoc:  Please provide a coefficient of restitution via model.e')
+    end
+
+    if abs(1-e)>1 || e<0
+        error('nosnoc: the coefficient of restitution e should be in [0,1].')
+    end
+
+    % coefficient of friction
+    if ~isfield(model,'mu')
+        mu = 0;
+        fprintf('nosnoc: Coefficients of friction mu not provided, setting it to zero for all contacts. \n')
+    end
+
+    if length(mu(:)) ~= 1 && length(mu(:)) ~= n_contacts
+        errro('nosnoc: Vector mu has to have length 1 or n_c.')
+    end
+
+    if any(mu<0)
+        error('nosnoc: The coefficients of friction mu should be nonnegative.')
+    end
+
+    if any(mu)>0
+        friction_exists = 1;
+        if length(mu(:)) == 1
+            mu = ones(n_contacts,1)*mu;
         end
     else
-        if exist('F')
-            fprintf('Info on Time-Freezing: model.F provided, model.S missing, the automated model reformulation will be not performed. \n')
-            time_freezing_model_exists = 1;
-        else
-            time_freezing_model_exists = 0;
-        end
+        friction_exists = 0;
     end
 
-    %% Check is there a switching function
-    if ~exist('f_c')
-        if ~exist('c')
-            error('Please provide a scalar constraint function model.f_c.')
-        else
-            f_c = c;
-            model.f_c = f_c;
-        end
-    end
-    n_unilateral = length(f_c);
-
-    if n_unilateral > 2
-        error('Time-Freezing is currently implemented for only up to two unilateral constraints.')
-    end
-    %     if n_unilateral > 1
-    %         error('Time-Freezing is currently supported only for a single scalar constraint.')
-    %     end
-
-    % check dimensions of contacts
-    if ~exist('n_dim_contact')
-        if  exist('tangent1') && exist('tangent2')
-            n_dim_contact = 3;
-            fprintf('Info on Time-Freezing: dimension of contact not specified, setting default value n_dim_contact = 3 (since two tangents are provided). \n')
-            n_c = 1;
-        else
-            n_dim_contact = 2;
-            fprintf('Info on Time-Freezing: dimension of contact not specified, setting default value n_dim_contact = 2. \n')
-        end
+    % dimensions and state space split
+    casadi_symbolic_mode = model.x(1).type_name();
+    if mod(size(x,1),2)
+        n_x = size(x,1);
+        n_q = (n_x-1)/2;
+    else
+        n_x = size(x,1);
+        n_q = n_x/2;
     end
 
-    %% Model Checks
-    % Check does coeffiecnt of restituion and friction exist and do they have appropiate values, check if f and M exist.
-    if ~time_freezing_model_exists
-        if exist('e')
-            coefficient_of_restitution = e;
-        end
+    if ~isfield(model,'q') && ~isfield(model,'v')
+        q = x(1:n_q);
+        v = x(n_q+1:2*n_q);
+    end
 
-        if ~exist('coefficient_of_restitution')
-            error('Time-Freezing: Please provide a coefficient of restitution via model.e or model.coefficient_of_restitution. \n')
-        end
+    % check model function
+    if ~isfield(model,'f_v')
+        error('nosnoc: the function f_v (collecting all generalized forces), in dv/dt =  f_v(q,v,u) + ... is not provided in model.');
+    end
 
-        if coefficient_of_restitution < 0
-            error('Time-Freezing: Please provide a nonnegative model.coefficient_of_restitution or model.e.')
-        end
+    % Check intertia matrix
+    if ~isfield(model,'M')
+        fprintf('nosnoc: Inertia matrix M is not provided, set to default value: M = eye(n_q). \n')
+        M = eye(n_q);
+        invM = inv(M);
+    else
+        invM = inv(M);
+    end
 
-        if abs(1-e)>1 || e<0
-            error('The coefficient of restitution e should be in [0,1].')
-        end
 
-        if ~exist('mu')
-            mu = 0;
-        end
+    %  Normal Contact Jacobian
+    if isfield(model,'J_normal')
+        J_normal = model.J_normal;
+        J_normal_exists = 1;
+    else
+        J_normal_exists = 0;
+    end
 
-        if mu<0
-            error('The coefficient of friction mu should be nonnegative.')
+    if J_normal_exists
+        if size(J_normal,1)~=n_q && size(J_normal,2)~=n_contacts
+            fprintf('nosnoc: J_normal should be %d x %d matrix.\n',n_q,n_contacts);
+            error('nosnoc: J_normal has the wrong size.')
         end
+        J_normal_exists = 1;
+    else
+        J_normal = f_c.jacobian(q)';
+        fprintf('nosnoc: normal contact Jacobian not provided, but it is computed from the gap functions.\n');
+        J_normal_exists = 1;
+    end
 
-        if mu > 0
-            friction_is_present = 1;
+    if is_zero(J_normal)
+        error('nosnoc: The normal vector should have at least one non-zero entry.')
+    end
+
+    % Tangent Contact Jacobian
+    if friction_exists
+        if isfield(model,'J_tangent')
+            J_tangent = model.J_tangent;
+            J_tangent_exists = 1;
         else
-            friction_is_present = 0;
-        end
-        % parameter for auxiliary dynamics
-        if ~exist('model.a_n') && ~exist('a_n')
-            a_n  = 100;
-        end
-        % no friction for one dimensional models
-        if n_dim_contact < 2
-            mu = 0;
-            friction_is_present  = 0;
-            % no friction for a point as there is no tangentional direction
+            J_tangent_exists = 0;
         end
 
-        % dimensions and state space split
-        casadi_symbolic_mode = model.x(1).type_name();
-        if mod(size(x,1),2)
-            n_x = size(x,1);
-            n_q = (n_x-1)/2;
+        if J_tangent_exists
+            if size(J_tangent,1)~=n_q && size(J_tangent,2)~=n_contacts*(n_dim_contact-1)
+                fprintf('nosnoc: J_tangent should be %d x %d matrix.\n',n_q,n_contacts*(n_dim_contact-1));
+                error('nosnoc: J_tangent has the wrong size.')
+            end
+            J_tangent_exists = 1;
         else
-            n_x = size(x,1);
-            n_q = n_x/2;
+            error('nosnoc: tangent Jacobian model.J_tangent not provided.\n');
         end
-        if ~exist('q','var') && ~exist('v','var')
-            q = x(1:n_q);
-            v = x(n_q+1:2*n_q);
+    else
+        J_tangent_exists = 0;
+    end
+
+    % qudrature state
+    n_quad  = 0;
+    if settings.time_freezing_quadrature_state
+        % define quadrature state
+        L = define_casadi_symbolic(casadi_symbolic_mode,'L',1);
+        if isfield(model,'lbx')
+            model.lbx = [model.lbx;-inf];
         end
-        % update model with this data
-        model.n_q = n_q; model.q = q; model.v = v;
-
-
-        % check model function
-        if ~exist('f','var')
-            error('The function model.f, in dv/dt =  f(q,v) + ... is not provided to the model.');
+        if isfield(model,'ubx')
+            model.ubx = [model.ubx;inf];
         end
+        x = [x;L];
+        model.x = x;
+        model.x0 = [model.x0;0];
+        f = [f;f_q];
+        model.f = f;
+        model.f_q = 0;
+        if isfield(model,'f_q_T')
+            model.f_q_T  = model.f_q_T + L;
+        else
+            model.f_q_T  = L;
+        end
+        n_quad = 1;
+    end
+    % Clock state and dimensions
+    if ~mod(n_x,2)
+        % uneven number of states = it is assumed that the clock state is defined.
+        t = define_casadi_symbolic(casadi_symbolic_mode,'t',1);
+        % update lower and upper bounds of lbx and ubx
+        if isfield(model,'lbx')
+            model.lbx = [model.lbx;-inf];
+        end
+        if isfield(model,'ubx')
+            model.ubx = [model.ubx;inf];
+        end
+        x = [x;t];
+        x0 = [x0;0];
+    end
 
+    % normal and tangential velocities
+    eps_t = 1e-7;
+    v_normal = J_normal'*v;
+    if friction_exists
+        if n_dim_contact == 2
+            v_tangent = (J_tangent'*v)';
+        else
+            v_tangent = J_tangent'*v;
+            v_tangent = reshape(v_tangent,2,n_contacts); % 2 x n_c , the columns are the tangential velocities of the contact points
+           
+        end
+         v_tangent_norms = [];
+            for ii = 1:n_contacts
+                v_tangent_norms = [v_tangent_norms;norm(v_tangent(:,ii))];
+            end
+    else
+        v_tangent  = [];
+    end
 
-        if ~exist('f_gravity','var')
-            if ~exist('gravity','var')
-                f_gravity = zeros(n_q,1);
+  
+
+    % parameter for auxiliary dynamics
+    if ~isfield(model,'a_n')
+        a_n  = 100;
+    end
+    %% Time-freezing reformulation
+    if e == 0
+        % Basic settings
+        settings.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
+        settings.pss_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
+          %% switching function
+        if settings.nonsmooth_switching_fun  
+            c = [max_smooth_fun(f_c,v_normal,0);v_tangent'];
+        %         c = max_smooth_fun(f_c,v_normal,sigma0);
+        else
+            if n_dim_contact == 2
+                c = [f_c;v_normal;v_tangent'];        
             else
-                f_gravity = gravity;
+                c = [f_c;v_normal;v_tangent_norms-eps_t];        
             end
-
         end
-
-        % Check intertia matrix
-        if ~exist('M','var')
-            fprintf('Info on Time-Freezing: Inertia matrix M is not provided, set to default value: M = eye(n_q). \n')
-            M = eye(n_q);
-            invM = inv(M);
-            model.M = M;
+        %% unconstrained dynamcis with clock state
+        inv_M = inv(M);
+        f_ode = [v;...
+            inv_M*f_v;
+            1];
+        
+        %% Auxiliary dynamics
+        % where to use invM, in every aux dyn or only at the end
+        if inv_M_once
+            inv_M_aux = eye(n_q);
+            inv_M_ext = blkdiag(zeros(n_q),inv_M,0);
         else
-            invM = inv(M);
+            inv_M_aux = inv_M;
+            inv_M_ext = eye(n_x+1);
         end
-
-        %         % is the inertia matrix inverted and treated directly or lifted
-        if settings.time_freezing_lift_forces
-            invM = eye(n_q); % inverse not used when lifting.
+        f_aux_pos = []; % matrix wit all aux tan dyn
+        f_aux_neg = [];
+        % time freezing dynamics
+        f_aux_normal = [zeros(n_q,n_contacts);inv_M_aux*J_normal*a_n;zeros(1,n_contacts)];
+        for ii = 1:n_contacts
+            if friction_exists && mu(ii)>0
+                % auxiliary tangent;
+                if n_dim_contact == 2
+                    v_tangent_ii = J_tangent(:,ii)'*v;
+                    f_aux_pos_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)-J_tangent(:,ii)*(mu(ii)))*a_n;0]; % for v>0
+                    f_aux_neg_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)+J_tangent(:,ii)*(mu(ii)))*a_n;0]; % for v<0
+                else
+                    v_tangent_ii = v_tangent(:,ii);
+                    f_aux_pos_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)*a_n-J_tangent(:,ii*2-1:ii*2)*mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
+                    f_aux_neg_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)*a_n+J_tangent(:,ii*2-1:ii*2)*mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
+                end
+                f_aux_pos = [f_aux_pos,f_aux_pos_ii];
+                f_aux_neg= [f_aux_neg,f_aux_neg_ii];
+            end
+        end
+        % f_aux_normal = inv_M_aux*J_normal*a_n;
+        % f_aux_tangent = inv_M_aux*J_tangent*mu(ii)*a_n;
+        if friction_exists
+            f_aux = [f_aux_pos,f_aux_neg];
         else
-            f = invM*f; % update model by mutpliting it with the inverse
-            model.f = model.f;
+            f_aux = f_aux_normal;
         end
-
-        n_quad  = 0;
-        if settings.time_freezing_quadrature_state
-            % define quadrature state
-            L = define_casadi_symbolic(casadi_symbolic_mode,'L',1);
-            % update lower and upper bounds of lbx and ubx
-            if exist('lbx')
-                model.lbx = [model.lbx;-inf];
-            end
-            if exist('ubx')
-                model.ubx = [model.ubx;inf];
-            end
-            x = [x;L];
-            model.x = x;
-            model.x0 = [model.x0;0];
-            f = [f;f_q];
-            model.f = f;
-            model.f_q = 0;
-            if exist('f_q_T','var')
-                model.f_q_T  = model.f_q_T + L;
-            else
-                model.f_q_T  = L;
-            end
-            n_quad = 1;
-        end
-        model.n_quad = n_quad;
-
-
-
-        % multiple impacts
-        if n_unilateral > 2
-            friction_is_present = 0;
-            n_dim_contact = 1;
-            % remark: friction is currently only if a single constraint is present.
-            % remark : multiple contact are only for planar contacts avilable
-        end
-
-        %% Clock state and dimensions
-        if mod(n_x,2)
-            
-            % uneven number of states = it is assumed that the clock state
-            % is defined.
+        F = [f_ode (inv_M_ext*f_aux)];
+        S = ones(size(F,2),length(c)); % dummy value to pass error checks
+        % number of auxiliary dynamicsm modes
+        if friction_exists
+            n_aux = 2*n_contacts;
         else
-            t = define_casadi_symbolic(casadi_symbolic_mode,'t',1);
-            % update lower and upper bounds of lbx and ubx
-            if exist('lbx')
-                model.lbx = [model.lbx;-inf];
-            end
-            if exist('ubx')
-                model.ubx = [model.ubx;inf];
-            end
-            x = [x;t];
-            model.x = x;
-            model.x0 = [model.x0;0];
+            n_aux = n_contacts;
         end
-        % compute normal vector
-        if ~exist('nabla_q_f_c','var')
-            nabla_q_f_c = f_c.jacobian(q)';
+    else
+        % elastic
+        pss_mode = 'Step';
+        if ~isfield(model,'k_aux')
+            k_aux = 10;
+            if settings.print_level > 1
+                fprintf('nosnoc: Setting default value for k_aux = 10.\n')
+            end
         end
-
-        if is_zero(nabla_q_f_c)
-            error('The normal vector should have at least one non-zero entry.')
-        end
-        F = {}; c = {};  S = {};
-
-        %% Time-Freezing for mechanical impacts
-        if coefficient_of_restitution == 0
-            settings.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
-            settings.pss_mode = 'Step'; % currently only with step mode supported
-            % unconstrained ODE
-            f_ode = [v;f;1];
-
-            % auxiliary dynamics for normal velocity jumps;
-            % create auxiliary dynamics
-            switch n_unilateral
-                case 1
-                    f_aux_n1 = [zeros(n_q,1);invM*nabla_q_f_c*a_n;zeros(n_quad+1,1)];
-                case 2
-                    if n_dim_contact >2
-                        error('Multiple contacts currently only for planar models avilable.')
-                    end
-                    f_aux_n1 = [zeros(n_q,1);invM*nabla_q_f_c(:,1)*a_n;zeros(n_quad+1,1)];
-                    f_aux_n2 = [zeros(n_q,1);invM*nabla_q_f_c(:,2)*a_n;zeros(n_quad+1,1)];
-                otherwise
-                    error('Currently only up to two unilateral constraint in the planar case suported.')
-            end
-
-            % compute tangents and frictional auxiliary dynamics
-            if friction_is_present
-                switch n_dim_contact
-                    case 2
-                        switch n_unilateral
-                            case 1
-                                if exist('tangent1','var') || exist('tangent','var')
-                                    fprintf('Time-freezing: tangents provided by the user. \n');
-                                    if exist('tangent','var')
-                                        tangent1 = tangent;
-                                    end
-                                else
-                                    fprintf('Time-freezing: user did not provide tangent vectors at contact, generating them automatically...\n');
-                                    t1 = 1; t2 = 1;
-                                    if is_zero(nabla_q_f_c(1))
-                                        t2 = 0;
-                                    elseif is_zero(nabla_q_f_c(2))
-                                        t1 = 0;
-                                    else
-                                        t2 = -nabla_q_f_c(1)*t1/nabla_q_f_c(2);
-                                    end
-                                    tangent1 = [t1;t2];
-                                end
-                            case 2
-                                if ~exist('tangent1','var') || ~exist('tangent2','var')
-                                    error('Time-freezing: user did not provide tangent vectors at contact points. Please specify model.tangent1 and model.tangent2.');
-                                end
-
-                        end
-                    case 3
-                        if exist('tangent1') && exist('tangent2')
-                            fprintf('Time-freezing: tangents provided by the user. \n');
-                        else
-                            % tangent 1
-                            %                             fprintf('Time-freezing: user did not provide tangent vectors at contact, generating them automatically...\n');
-                            fprintf('Time-freezing: user did not provide tangent vectors at contact, settings mu = 0. \n');
-                            mu = 0;
-                            t1 = 1; t2 = 1; t3 = 1;
-                            ind_tangent1 = 1;
-                            if ~is_zero(nabla_q_f_c(1))
-                                t1 = -(t2*nabla_q_f_c(2)+t3*nabla_q_f_c(3))/nabla_q_f_c(1);
-                                ind_tangent1 = 1;
-                            elseif ~is_zero(nabla_q_f_c(2))
-                                t2 = -(t1*nabla_q_f_c(1)+t3*nabla_q_f_c(3))/nabla_q_f_c(2);
-                                ind_tangent1 = 2;
-                            else
-                                t3 = -(t1*nabla_q_f_c(1)+t2*nabla_q_f_c(2))/nabla_q_f_c(3);
-                                ind_tangent1 = 3;
-                            end
-                        end
-                end
-
-                % create auxiliary dynamics
-                a_t = mu*a_n;
-                switch n_dim_contact
-                    case 2
-%                         switch n_u_virtual
-%                             case 1
-                                f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-                                f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-%                             case 2
-%                                 f_aux_t1 = [zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-%                                 f_aux_t2 = -[zeros(n_q,1);invM*tangent1*a_t;zeros(n_quad+1,1)];
-%                                 f_aux_t3 = [zeros(n_q,1);invM*tangent2*a_t;zeros(n_quad+1,1)];
-%                                 f_aux_t4 = -[zeros(n_q,1);invM*tangent2*a_t;zeros(n_quad+1,1)];
-%                         end
-                        
-                    case 3
-                        eps_tangential = 1e-8;
-                        T_q = [tangent1 tangent2]; % spans tangent space
-                        v_tan = T_q'*v;
-                        v_tan_norm = norm(v_tan+1e-16); % avoid dividing by zero at initalisation.
-                        % auxiliary dynamics pushing towards origin
-                        f_aux_t1 = [zeros(n_q,1);-invM*T_q*(a_t*v_tan/(v_tan_norm));zeros(n_quad+1,1)];
-                        % relaxed pushing toward relaxed circle around origin
-                        f_aux_t2 = [zeros(n_q,1);invM*T_q*v_tan;zeros(n_quad+1,1)];
-                end
-            end
-            % switching functions
-            c1 = f_c;
-            c2 = nabla_q_f_c'*v;
-            if friction_is_present
-                switch n_dim_contact
-                    case 2
-                        c3 = tangent1'*v;
-                    case 3
-                        c3 = eps_tangential-v_tan_norm;
-                end
-            else
-                c3 = [];
-            end
-
-            if ~friction_is_present
-                switch n_unilateral
-                    case 1
-                        F{1} = [f_ode f_aux_n1];
-                        S{1} = [1 0;-1 1;-1 -1];
-                    case 2
-                        F{1} = [f_ode f_aux_n1 f_aux_n2 f_aux_n1+f_aux_n2];
-                        S{1} = eye(4);
-                    otherwise
-                        error('not implemented.')
-                end
-            else
-                switch n_unilateral
-                    case 1
-                        F{1} = [f_ode,f_aux_n1+f_aux_t1,f_aux_n1+f_aux_t2];
-                        S{1} = [1 0 0;-1 -1 -1;-1 -1 1];
-                    case 2
-                        F{1} = [f_ode f_aux_n1 f_aux_n2 f_aux_n1+f_aux_n];
-                        S{1} = eye(4);
-                        F{1} = [f_ode,f_aux_n1+f_aux_t1,f_aux_n1+f_aux_t2,f_aux_n2+f_aux_t3,f_aux_n2+f_aux_t4, f_aux_n1+f_aux_n2];
-                        
-                end
-                
-            end
-
-            c{1} = [c1;c2;c3];
-            % store results and flag that model is created
-            model.F = F; model.c = c;  model.S = S;
-            time_freezing_model_exists = 1;
-        else
-            % elastic
-            if ~exist('k_aux')
-                k_aux = 10;
-                if settings.print_level > 1
-                    fprintf('Info on Time-Freezing: Setting default value for k_aux = 10.\n')
-                end
-            end
-            temp1 =2*abs(log(coefficient_of_restitution));
-            temp2 = k_aux/(pi^2+log(coefficient_of_restitution)^2);
-            c_aux = temp1/sqrt(temp2);
-            %                 c_aux = 0.211989;
-            %             f_aux_n = [0;v(2);0;-k_aux*q(2)-c_aux*v(2);0];
-            K = [0 1;-k_aux -c_aux];
-            N  = [nabla_q_f_c zeros(n_q,1);...
-                zeros(n_q,1) invM*nabla_q_f_c];
-            f_aux_n1 = N*K*N'*[q;v];
-            f_aux_n1 = [f_aux_n1;zeros(n_quad+1,1)];
-            f = [v;f;1];
-            % updated with clock state
-            model.f = f;
-            model.F = [f, f_aux_n1];
-            model.S = [1; -1];
-            time_freezing_model_exists = 1;
-        end
+        temp1 = 2*abs(log(e));
+        temp2 = k_aux/(pi^2+log(e)^2);
+        c_aux = temp1/sqrt(temp2);
+        K = [0 1;-k_aux -c_aux];
+        N  = [J_normal zeros(n_q,1);...
+            zeros(n_q,1) invM*J_normal];
+        f_aux_n1 = N*K*N'*[q;v];
+        f_aux_n1 = [f_aux_n1;zeros(n_quad+1,1)];
+        f_ode = [v;invM*f_v;1];
+        % updated with clock state
+        F = [f_ode, f_aux_n1];
+        S = [1; -1];
+        n_aux = 1;
+        c = f_c;
     end
-else
-    fprintf('Info on Time-Freezing: No action was done. Consider setting settings.time_freezing = 1, if calling this function.\n')
+        time_freezing_model_exists = 1; % mark that model was created
 end
+
+%% Settings updates
 settings.time_freezing_model_exists = time_freezing_model_exists;
-settings.friction_is_present  = friction_is_present;
-model.n_dim_contact = n_dim_contact;
-model.n_unilateral = n_unilateral;
+settings.friction_exists  = friction_exists;
+
+%% Model updates
+model.n_quad = n_quad;
+model.n_q = n_q;
+model.n_aux = n_aux;
+model.q = q;
+model.v = v;
+model.x = x;
+model.x0 = x0;
+model.M = M;
+model.n_contacts = n_contacts;
+model.mu = mu;
+model.J_normal = J_normal;
+model.F = F;
+model.c = c;
+model.S = S;
+model.n_dim_contact = 2;
 end

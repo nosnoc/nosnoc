@@ -64,6 +64,7 @@ settings.pss_lift_step_functions = 1;
 settings.stagewise_clock_constraint = 1;
 settings.g_path_at_fe = 1; % evaluate path constraint on every integration step
 settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
+settings.nonsmooth_switching_fun = 0;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
@@ -110,7 +111,7 @@ v_tangent = f_c_tangent'*v;
 v_normal = f_c_normal'*v;
 
 % All forces
-f = -C + B*u(1:2);
+f_v = -C + B*u(1:2);
 
 % Gap function
 f_c = q(2) - q(4)*cos(q(3));
@@ -141,7 +142,7 @@ g_comp_path = [v_tangent*u(3);f_c*u(3)];
 %% interpolate refernece
 x_ref = interp1([0 0.5 1],[x0,x_mid,x_end]',linspace(0,1,N_stg),'spline')'; %spline
 
-%% Fill in model
+%% Populate model
 model.T = T;
 model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
@@ -154,11 +155,11 @@ model.a_n = 1e2;
 model.x0 = x0;
 
 model.M = M;
-model.f = f;
+model.f_v = f_v;
 % gap functions
 model.f_c = f_c;
-model.tangent1 = f_c_tangent;
-model.nabla_q_f_c = f_c_normal;
+model.J_tangent = f_c_tangent;
+model.n_dim_contact = 2;
 
 % box constraints on controls and states
 model.lbu = lbu;

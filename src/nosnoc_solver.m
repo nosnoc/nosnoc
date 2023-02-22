@@ -97,20 +97,20 @@ end
 % fprintf('Complementarity residual (1-norm): %2.2e.\n',complementarity_iter_ell_1);
 % fprintf('Complementarity residual (inf-norm): %2.2e.\n',complementarity_iter_ell_inf);
 %%
-fprintf('---------------------------------------------- Stats summary----------------------------------------------------------\n');
+fprintf('---------------------------------------------- Stats summary--------------------------\n');
 if sum(stats.cpu_time) < 60
-    fprintf('H. iters\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\t Comp. res. (ell_1) \tComp. res. (ell_inf)\n');
-    fprintf('%d\t\t\t\t%2.2f\t\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t%2.2e\t\t\t\t%2.2e\n',stats.homotopy_iterations,sum(stats.cpu_time),max(stats.cpu_time),min(stats.cpu_time),complementarity_iter_ell_1,complementarity_iter_ell_inf);
+    fprintf('H. iters\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter \tComp. res.\n');
+    fprintf('%d\t\t\t\t%2.2f\t\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t%2.2e\t\t\t\t%2.2e\n',stats.homotopy_iterations,sum(stats.cpu_time),max(stats.cpu_time),min(stats.cpu_time),complementarity_iter_ell_inf);
 else
-    fprintf('H. iters\t CPU Time (m)\t Max. CPU (m)/iter\tMin. CPU (m)/iter\t Comp. res. (ell_1) \tComp. res. (ell_inf)\n');
-    fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e\n',stats.homotopy_iterations,sum(stats.cpu_time)/60,max(stats.cpu_time)/60,min(stats.cpu_time)/60,complementarity_iter_ell_1,complementarity_iter_ell_inf);
+    fprintf('H. iters\t CPU Time (m)\t Max. CPU (m)/iter\tMin. CPU (m)/iter \tComp. res.\n');
+    fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e \n',stats.homotopy_iterations,sum(stats.cpu_time)/60,max(stats.cpu_time)/60,min(stats.cpu_time)/60,complementarity_iter_ell_inf);
 end
-fprintf('----------------------------------------------------------------------------------------------------------------------\n');
+fprintf('\n--------------------------------------------------------------------------------------\n');
 %%
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
     fprintf('Time optimal problem solved with T_opt: %2.4f.\n',T_opt);
-    fprintf('----------------------------------------------------------------------------------------------------------------------\n');
+    fprintf('\n--------------------------------------------------------------------------------------\n');
 end
 
 %% Output

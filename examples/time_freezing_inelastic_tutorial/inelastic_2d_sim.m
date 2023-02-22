@@ -10,10 +10,11 @@ settings.print_level = 2;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 8;
 settings.time_freezing = 1;
-settings.pss_lift_step_functions = 1;
 settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
+settings.mpcc_mode = MpccMode.Scholtes_ineq;
+settings.pss_lift_step_functions = 0;
 %%
 g = 10;
 vertical_force = 0;
@@ -23,15 +24,15 @@ model.x = [q;v];
 model.e = 0;
 model.mu = 0.3;
 model.a_n = g;
-model.a_n = 200;
+model.a_n = 20;
 model.x0 = [0;1;3;0]; 
-model.f = [0;-g+vertical_force*g*q(1)];
-model.c = q(2);
-model.tangent1 = [1; 0];
+model.f_v = [0;-g+vertical_force*g*q(1)];
+model.f_c = q(2);
+model.J_tangent = [1; 0];
+model.n_dim_contact = 2;
 
-settings.rho_sot = 0;
 %% Simulation setings
-N_FE = 2;
+N_FE = 5;
 T_sim = 1.5;
 N_sim = 20;
 model.T_sim = T_sim;

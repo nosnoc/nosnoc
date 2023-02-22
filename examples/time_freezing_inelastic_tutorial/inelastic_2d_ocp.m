@@ -14,7 +14,8 @@ settings.time_freezing = 1;
 settings.s_sot_max = 10;
 settings.s_sot_min = 0.99;
 settings.homotopy_update_rule = 'superlinear';
-
+settings.nonsmooth_switching_fun = 0;
+settings.pss_lift_step_functions = 0; 
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 %%
@@ -36,9 +37,11 @@ model.e = 0;
 model.mu = 0.6;
 model.a_n = g;
 model.x0 = [0;1.5;0;0]; 
-model.f = [0+u;-g];
-model.c = q(2);
+model.f_v = [0+u;-g];
+model.f_c = q(2);
+model.n_dim_contact = 2;
 model.g_terminal = [x-[3;0;0;0]];
+model.J_tangent = [1;0];
 model.lbu = -u_max;
 model.ubu = u_max;
 model.f_q = u'*u;
