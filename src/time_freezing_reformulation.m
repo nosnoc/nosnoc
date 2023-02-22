@@ -33,7 +33,8 @@ end
 n_contacts = length(f_c);
 % check dimensions of contacts
 if ~isfield(model,'n_dim_contact')
-    error('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
+    warrning('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
+    n_dim_contact = 2;
 end
 
 if ~time_freezing_model_exists
@@ -321,4 +322,5 @@ model.J_normal = J_normal;
 model.F = F;
 model.c = c;
 model.S = S;
+model.n_dim_contact = 2;
 end
