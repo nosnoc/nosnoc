@@ -122,7 +122,7 @@ if 1
     % directly via generic stage and terminal costs
     model.f_q = (x-x_ref)'*Q*(x-x_ref)+ (u-u_ref)'*R*(u-u_ref);
     % terminal cost
-    model.f_terminal = (x-x_ref)'*Q_terminal*(x-x_ref);
+    model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
     % model.g_terminal = x-x_target;
 else
     % via least squares cost interace (makes time variable reference possible)
