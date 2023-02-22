@@ -752,11 +752,11 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         beta = [];
         theta_step = [];
 
-        % Upsilon collects the vector for dotx = F(x)Upsilon, it is either multiaffine
+        % Theta  collects the vector for dotx = F(x)Theta ,
         % terms or theta_step from lifting;
         if ~settings.general_inclusion
             for ii = 1:n_sys
-                upsilon_temp = [];
+                theta_temp = [];
                 ii_str = num2str(ii);
                 S_temp = S{ii};
                 if pss_lift_step_functions
@@ -764,18 +764,18 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
                 else
                     if ~settings.time_freezing_inelastic
                         for j = 1:size(S_temp,1)
-                            upsilon_ij = 1;
+                            alpha_ij = 1;
                             for k = 1:size(S_temp,2)
                                 % create multiafine term
                                 if S_temp(j,k) ~=0
-                                    upsilon_ij = upsilon_ij * (0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_all{ii}(k) ) ;
+                                    alpha_ij = alpha_ij * (0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_all{ii}(k) ) ;
                                 end
                             end
-                            upsilon_temp = [upsilon_temp;upsilon_ij];
+                            theta_temp = [theta_temp;alpha_ij];
                         end
                     end
                 end
-                theta_step_all{ii} = upsilon_temp;
+                theta_step_all{ii} = theta_temp;
             end
         end
 
