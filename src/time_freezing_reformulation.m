@@ -189,7 +189,7 @@ if ~time_freezing_model_exists
     v_normal = J_normal'*v;
     if friction_exists
         if n_dim_contact == 2
-            v_tangent = J_tangent'*v;
+            v_tangent = (J_tangent'*v)';
         else
             v_tangent = J_tangent'*v;
             v_tangent = reshape(v_tangent,2,n_contacts); % 2 x n_c , the columns are the tangential velocities of the contact points
@@ -216,10 +216,14 @@ if ~time_freezing_model_exists
         settings.pss_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
           %% switching function
         if settings.nonsmooth_switching_fun  
-            c = [max_smooth_fun(f_c,v_normal,0);v_tangent];
+            c = [max_smooth_fun(f_c,v_normal,0);v_tangent'];
         %         c = max_smooth_fun(f_c,v_normal,sigma0);
         else
-            c = [f_c;v_normal;v_tangent];        
+            if n_dim_contact == 2
+                c = [f_c;v_normal;v_tangent'];        
+            else
+                c = [f_c;v_normal;v_tangent_norms-eps_t];        
+            end
         end
         %% unconstrained dynamcis with clock state
         inv_M = inv(M);
