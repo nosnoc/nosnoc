@@ -3,37 +3,35 @@ clear all;
 clc;
 import casadi.*
 close all
-%%
+%% discretization
 h = 0.05;
 T_sim = 1;
 N_sim = T_sim/h;
 N_finite_elements = 3;
-nonsmooth_switching_fun = 0;
+% animation settings
 run_animation = 1;
 video_speed_up = 0.25;
-%%
+%% nosnoc settings
 [settings] = default_settings_nosnoc();
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
 settings.print_level = 2;
 settings.N_homotopy = 5;
-settings.cross_comp_mode = 3;
 settings.time_freezing = 1;
 settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 settings.mpcc_mode = MpccMode.Scholtes_ineq;
 settings.pss_lift_step_functions = 0;
-settings.nonsmooth_switching_fun = 0;
 %% integrator setings
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 model.N_finite_elements = N_finite_elements;
 settings.use_previous_solution_as_initial_guess = 1;
-settings.nonsmooth_switching_fun = nonsmooth_switching_fun;
+
 %% model
 % dimensoon
-model.a_n = 50;
+model.a_n = 100;
 model.n_dim_contact = 2;
 n_balls = 4;
 n_q = n_balls*2; % number of positions
@@ -120,8 +118,12 @@ delete impacting_balls
 filename = 'impacting_balls';
 figure('Renderer', 'painters', 'Position', [10 10 900 600])
 pos = get(gcf, 'Position');
+% for 4k
 width = pos(3)*1.5;
 height = pos(4)*1.5;
+% normal
+width = pos(3);
+height = pos(4);
 frames_gif = zeros(height, width, 1, N_sim, 'uint8');
 frames_video = { };
 N_frames = length(q);
