@@ -60,7 +60,6 @@ classdef FiniteElement < NosnocFormulationObject
     properties(Dependent, SetAccess=private, Hidden)
         x
         v
-        theta
         lam
         mu
         alpha
@@ -70,10 +69,13 @@ classdef FiniteElement < NosnocFormulationObject
         h
 
         elastic
-
-        lambda
-
+        
         nu_vector
+    end
+
+    properties(SetAccess=private)
+        lambda
+        theta
     end
 
     methods
@@ -385,18 +387,12 @@ classdef FiniteElement < NosnocFormulationObject
                     -inf,...
                     inf);
             end
-        end
 
-        function lambda = get.lambda(obj)
+            % calculate lambda and theta
             grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
-
-            lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
-        end
-
-        function theta = get.theta(obj)
+            obj.lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
             grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a));
-
-            theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
+            obj.theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
         end
 
         function h = get.h(obj)
