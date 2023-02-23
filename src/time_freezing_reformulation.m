@@ -26,18 +26,18 @@ f_natural_residual = 0.5*(b+a+sqrt((b-a+sigma)^2));
 % f_natural_residual = max(a,b);
 max_smooth_fun = Function('max_smooth_fun',{a,b,sigma},{f_natural_residual});
 %% Chek is the provided user data valid and complete
-% Check is there a gap gunctions
-if ~isfield(model,'f_c')
-    error('nosnoc: Please provide the gap functions model.f_c.')
-end
-n_contacts = length(f_c);
-% check dimensions of contacts
-if ~isfield(model,'n_dim_contact')
-    warrning('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
-    n_dim_contact = 2;
-end
-
 if ~time_freezing_model_exists
+    % Check is there a gap gunctions
+    if ~isfield(model,'f_c')
+        error('nosnoc: Please provide the gap functions model.f_c.')
+    end
+    n_contacts = length(f_c);
+    % check dimensions of contacts
+    if ~isfield(model,'n_dim_contact')
+        warrning('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
+        n_dim_contact = 2;
+    end
+
     % coefficent of restiution
     if ~isfield(model,'e')
         error('nosnoc:  Please provide a coefficient of restitution via model.e')
@@ -194,17 +194,17 @@ if ~time_freezing_model_exists
         else
             v_tangent = J_tangent'*v;
             v_tangent = reshape(v_tangent,2,n_contacts); % 2 x n_c , the columns are the tangential velocities of the contact points
-           
+
         end
-         v_tangent_norms = [];
-            for ii = 1:n_contacts
-                v_tangent_norms = [v_tangent_norms;norm(v_tangent(:,ii))];
-            end
+        v_tangent_norms = [];
+        for ii = 1:n_contacts
+            v_tangent_norms = [v_tangent_norms;norm(v_tangent(:,ii))];
+        end
     else
         v_tangent  = [];
     end
 
-  
+
 
     % parameter for auxiliary dynamics
     if ~isfield(model,'a_n')
@@ -215,15 +215,15 @@ if ~time_freezing_model_exists
         % Basic settings
         settings.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
         settings.pss_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
-          %% switching function
-        if settings.nonsmooth_switching_fun  
+        %% switching function
+        if settings.nonsmooth_switching_fun
             c = [max_smooth_fun(f_c,v_normal,0);v_tangent'];
-        %         c = max_smooth_fun(f_c,v_normal,sigma0);
+            %         c = max_smooth_fun(f_c,v_normal,sigma0);
         else
             if n_dim_contact == 2
-                c = [f_c;v_normal;v_tangent'];        
+                c = [f_c;v_normal;v_tangent'];
             else
-                c = [f_c;v_normal;v_tangent_norms-eps_t];        
+                c = [f_c;v_normal;v_tangent_norms-eps_t];
             end
         end
         %% unconstrained dynamcis with clock state
@@ -231,7 +231,7 @@ if ~time_freezing_model_exists
         f_ode = [v;...
             inv_M*f_v;
             1];
-        
+
         %% Auxiliary dynamics
         % where to use invM, in every aux dyn or only at the end
         if inv_M_once
@@ -300,27 +300,26 @@ if ~time_freezing_model_exists
         n_aux = 1;
         c = f_c;
     end
-        time_freezing_model_exists = 1; % mark that model was created
+    time_freezing_model_exists = 1; % mark that model was created
+
+    %% Settings updates
+    settings.time_freezing_model_exists = time_freezing_model_exists;
+    settings.friction_exists  = friction_exists;
+    %% Model updates
+    model.n_quad = n_quad;
+    model.n_q = n_q;
+    model.n_aux = n_aux;
+    model.q = q;
+    model.v = v;
+    model.x = x;
+    model.x0 = x0;
+    model.M = M;
+    model.n_contacts = n_contacts;
+    model.mu = mu;
+    model.J_normal = J_normal;
+    model.F = F;
+    model.c = c;
+    model.S = S;
+    model.n_dim_contact = 2;
 end
-
-%% Settings updates
-settings.time_freezing_model_exists = time_freezing_model_exists;
-settings.friction_exists  = friction_exists;
-
-%% Model updates
-model.n_quad = n_quad;
-model.n_q = n_q;
-model.n_aux = n_aux;
-model.q = q;
-model.v = v;
-model.x = x;
-model.x0 = x0;
-model.M = M;
-model.n_contacts = n_contacts;
-model.mu = mu;
-model.J_normal = J_normal;
-model.F = F;
-model.c = c;
-model.S = S;
-model.n_dim_contact = 2;
 end
