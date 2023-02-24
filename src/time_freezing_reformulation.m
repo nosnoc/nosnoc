@@ -4,6 +4,7 @@ import casadi.*
 unfold_struct(model,'caller');
 time_freezing = settings.time_freezing;
 time_freezing_model_exists = 0;
+
 %% TODOS
 % %shift all model updates to the end of the file
 % add to all functions model. prefix to get rid of unfold_struct
@@ -244,18 +245,27 @@ if ~time_freezing_model_exists
         f_aux_pos = []; % matrix wit all aux tan dyn
         f_aux_neg = [];
         % time freezing dynamics
-        f_aux_normal = [zeros(n_q,n_contacts);inv_M_aux*J_normal*a_n;zeros(1,n_contacts)];
+        f_q_dynamics = zeros(n_q,1);
+        if settings.stabilizing_q_dynamics
+            f_aux_normal = [-settings.kappa_stabilizing_q_dynamics*J_normal.*(f_c);inv_M_aux*J_normal*a_n;zeros(1,n_contacts)];
+        else
+            f_aux_normal = [f_q_dynamics;J_normal*a_n;zeros(1,n_contacts)];
+        end
+
         for ii = 1:n_contacts
+            if settings.stabilizing_q_dynamics
+                f_q_dynamics = -settings.kappa_stabilizing_q_dynamics*J_normal(:,ii)*f_c(ii);
+            end
             if friction_exists && mu(ii)>0
                 % auxiliary tangent;
                 if n_dim_contact == 2
                     v_tangent_ii = J_tangent(:,ii)'*v;
-                    f_aux_pos_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)-J_tangent(:,ii)*(mu(ii)))*a_n;0]; % for v>0
-                    f_aux_neg_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)+J_tangent(:,ii)*(mu(ii)))*a_n;0]; % for v<0
+                    f_aux_pos_ii = [f_q_dynamics ;inv_M_aux*(J_normal(:,ii)-J_tangent(:,ii)*(mu(ii)))*a_n;0]; % for v>0
+                    f_aux_neg_ii = [f_q_dynamics ;inv_M_aux*(J_normal(:,ii)+J_tangent(:,ii)*(mu(ii)))*a_n;0]; % for v<0
                 else
                     v_tangent_ii = v_tangent(:,ii);
-                    f_aux_pos_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)*a_n-J_tangent(:,ii*2-1:ii*2)*mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
-                    f_aux_neg_ii = [zeros(n_q,1);inv_M_aux*(J_normal(:,ii)*a_n+J_tangent(:,ii*2-1:ii*2)*mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
+                    f_aux_pos_ii = [f_q_dynamics;inv_M_aux*(J_normal(:,ii)*a_n-J_tangent(:,ii*2-1:ii*2)*mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
+                    f_aux_neg_ii = [f_q_dynamics;inv_M_aux*(J_normal(:,ii)*a_n+J_tangent(:,ii*2-1:ii*2)*mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
                 end
                 f_aux_pos = [f_aux_pos,f_aux_pos_ii];
                 f_aux_neg= [f_aux_neg,f_aux_neg_ii];
