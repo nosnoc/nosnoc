@@ -46,7 +46,7 @@ settings.use_fesd = 1;
 settings.N_homotopy = 7;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
-
+settings.stabilizing_q_dynamics = 1;
 % enforce inequality at finite elements.
 settings.g_path_at_fe = 1;
 

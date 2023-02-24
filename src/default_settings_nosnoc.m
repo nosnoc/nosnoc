@@ -29,7 +29,7 @@ initial_lambda_1 = 1;
 initial_beta = 1;
 initial_theta_step = 1;
 
-pss_lift_step_functions = 1; % lift the multilinear terms in the step functions;
+pss_lift_step_functions = 0; % lift the multilinear terms in the step functions;
 n_depth_step_lifting = 2; % it is not recomended to change this (increase nonlinearity and harms convergenc), depth is number of multilinar terms to wich a lifting variables is equated to.
 
 list_of_all_rk_schemes = {'radau','legendre','Radau-IIA','Gauss-Legendre','Radau-I','Radau-IA',...
@@ -128,6 +128,9 @@ friction_exists = 0;
 % exerimentla expert otpions
 nonsmooth_switching_fun = 0; % experimental: use c = max(c1,c2) insetad of c = [c1;c2]  
 
+% expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
+stabilizing_q_dynamics = 0;
+kappa_stabilizing_q_dynamics = 1e-5;
 %% Verbose
 print_level = 3;
 
