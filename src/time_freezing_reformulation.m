@@ -245,12 +245,12 @@ if ~time_freezing_model_exists
         f_aux_pos = []; % matrix wit all aux tan dyn
         f_aux_neg = [];
         % time freezing dynamics
-        f_q_dynamics = zeros(n_q,1);
         if settings.stabilizing_q_dynamics
-            f_aux_normal = [-settings.kappa_stabilizing_q_dynamics*J_normal.*(f_c);inv_M_aux*J_normal*a_n;zeros(1,n_contacts)];
+            f_q_dynamics = -settings.kappa_stabilizing_q_dynamics*J_normal.*(f_c);
         else
-            f_aux_normal = [f_q_dynamics;J_normal*a_n;zeros(1,n_contacts)];
+            f_q_dynamics = zeros(n_q,1);
         end
+        f_aux_normal = [f_q_dynamics;inv_M_aux*J_normal*a_n;zeros(1,n_contacts)];
 
         for ii = 1:n_contacts
             if settings.stabilizing_q_dynamics
