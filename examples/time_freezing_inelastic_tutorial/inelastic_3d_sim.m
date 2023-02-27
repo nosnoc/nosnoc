@@ -12,9 +12,9 @@ settings.N_homotopy = 6;
 settings.use_fesd = 1;
 settings.time_freezing = 1;
 settings.pss_lift_step_functions= 1;
-settings.impose_terminal_phyisical_time  = 0;
+settings.impose_terminal_phyisical_time  = 1;
 settings.stagewise_clock_constraint = 0;
-settings.nonsmooth_switching_fun = 0;
+settings.nonsmooth_switching_fun = 1;
 settings.pss_lift_step_functions = 0;
 %%
 g = 10;

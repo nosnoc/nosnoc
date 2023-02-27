@@ -48,7 +48,7 @@ tgrid_z = linspace(0, T, N_stages);
 
 diff_states = w_opt(ind_x);
 controls = w_opt([ind_u{:}]);
-alg_states = w_opt(ind_z);
+alg_states = w_opt(ind_z_all);
 
 x_opt_s = cellfun(@(x) w_opt(x), problem.ind_x, 'uni', 0);
 theta_opt_s = cellfun(@(theta) w_opt(theta), problem.ind_theta, 'uni', 0);
@@ -62,7 +62,7 @@ for i = 1:n_x
     x_opt{i} = cellfun(@(x) x(i), x_opt_s);
     x_opt_flat{i} = reshape(x_opt{i}, prod(size(x_opt{i})), 1);
 end
-
+n_z = n_z_all;
 % convex multiplers
 for i = 1:n_theta
     eval( ['theta' num2str(i) '_opt = alg_states(' num2str(i) ':n_z+n_z*(d-1):end);']);

@@ -50,8 +50,8 @@ v = SX.sym('v',2);
 u = SX.sym('u',2);
 model.x0 = [0;0.5;0;0];
 model.x = [q;v]; model.u = u; model.e = e ;
-model.c = q(2);
-model.f = [u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)]; 
+model.f_c = q(2);
+model.f_v = [u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)]; 
 % Objective and constraints
 model.f_q = u'*u; model.f_q_T = 100*v'*v;
 model.g_path = u'*u-u_max^2;
