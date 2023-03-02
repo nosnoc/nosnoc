@@ -21,18 +21,18 @@ if any(strcmp(list_of_all_rk_schemes(5:end),irk_scheme))
     settings.irk_representation = irk_representation;
 end
 
-%% corrections for pss_mode
-if isequal(settings.pss_mode,'stewart')  || isequal(settings.pss_mode,'stwrt') || isequal(settings.pss_mode,'indicator')
-    settings.pss_mode = 'Stewart';
+%% corrections for dcs_mode
+if isequal(settings.dcs_mode,'stewart')  || isequal(settings.pss_mode,'stwrt') || isequal(settings.pss_mode,'indicator')
+    settings.dcs_mode = 'Stewart';
 end
 
-if isequal(settings.pss_mode,'step')  || isequal(settings.pss_mode,'stp') || isequal(settings.pss_mode,'Heaviside') ...
-        || isequal(settings.pss_mode,'heaviside') || isequal(settings.pss_mode,'AP')
-    settings.pss_mode = 'Step';
+if isequal(settings.dcs_mode,'step')  || isequal(settings.pss_mode,'stp') || isequal(settings.pss_mode,'Heaviside') ...
+        || isequal(settings.dcs_mode,'heaviside') || isequal(settings.pss_mode,'AP')
+    settings.dcs_mode = 'Step';
 end
 
-if ~isequal(settings.pss_mode,'Stewart') && ~isequal(settings.pss_mode,'Step')
-    error('Please use for settings.pss_mode either ''Stewart''  or  ''Step''.' );
+if ~isequal(settings.dcs_mode,'Stewart') && ~isequal(settings.pss_mode,'Step')
+    error('Please use for settings.dcs_mode either ''Stewart''  or  ''Step''.' );
 end
 
 if settings.n_depth_step_lifting   < 2

@@ -48,7 +48,7 @@ settings.use_fesd = 1;
 settings.irk_scheme = 'Radau-IIA';
 settings.print_level = 1;
 settings.n_s = 2;
-settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
+settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 settings.mpcc_mode = MpccMode.Scholtes_ineq; %MpccMode.elastic_ineq;
 settings.homotopy_update_rule = 'superlinear';
 

@@ -87,7 +87,7 @@ classdef FiniteElementZero < NosnocFormulationObject
 
             % lambda00
             % TODO Use define_casadi_symbolic
-            if settings.pss_mode == PssMode.Stewart
+            if settings.dcs_mode == DcsMode.Stewart
                 for ij=1:dims.n_sys
                     lam0 = define_casadi_symbolic(settings.casadi_symbolic_mode, ['lambda00_' num2str(ij)], dims.n_f_sys(ij));
                     obj.addVariable(lam0,...
@@ -98,7 +98,7 @@ classdef FiniteElementZero < NosnocFormulationObject
                                     1,...
                                     ij);
                 end
-            elseif settings.pss_mode == PssMode.Step
+            elseif settings.dcs_mode == DcsMode.Step
                 for ij=1:dims.n_sys
                     lambda_n0 = define_casadi_symbolic(settings.casadi_symbolic_mode, ['lambda00_n_' num2str(ij)], dims.n_c_sys(ij));
                     lambda_p0 = define_casadi_symbolic(settings.casadi_symbolic_mode, ['lambda00_p_' num2str(ij)], dims.n_c_sys(ij));

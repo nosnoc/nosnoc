@@ -3,7 +3,7 @@ clear all
 import casadi.*
 [settings] = default_settings_nosnoc();
 settings.n_s = 2;
-settings.pss_mode = 'Step';
+settings.dcs_mode = 'Step';
 settings.mpcc_mode = MpccMode.Scholtes_eq;
 settings.print_level = 5;
 x1 = SX.sym('x1');

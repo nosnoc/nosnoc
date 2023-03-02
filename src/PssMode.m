@@ -24,7 +24,7 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef PssMode
+classdef DcsMode
     enumeration
         Stewart
         Step

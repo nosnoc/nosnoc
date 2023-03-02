@@ -496,7 +496,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     end
 
     %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
-    pss_mode = settings.pss_mode;
+    dcs_mode = settings.pss_mode;
     % Stewart's representation of the sets R_i and discirimant functions g_i
     g_Stewart = {};
     g_ind_vec = [];
@@ -533,7 +533,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         if ~settings.general_inclusion
             % if the matrix S is not provided, maybe the g_ind are available
             % directly?
-            if isequal(pss_mode,'Stewart')
+            if isequal(dcs_mode,'Stewart')
                 if exist('g_ind')
                     if ~iscell(g_ind)
                         g_ind = {g_ind};
@@ -550,7 +550,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
                            'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
                 end
             else
-                error(['The user uses settings.pss_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
+                error(['The user uses settings.dcs_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
             end
         else
             if ~exist('c')
@@ -591,7 +591,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         end
 
         % check are the matrices dense
-        if isequal(pss_mode,'Stewart')
+        if isequal(dcs_mode,'Stewart')
             for ii = 1:n_sys
                 if any(sum(abs(S{ii}),2)<size(S{ii},2))
                     if n_sys == 1
@@ -609,7 +609,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
             end
 
             % discrimnant functions
-            switch pss_mode
+            switch dcs_mode
               case 'Stewart'
                 % Create Stewart's indicator functions g_ind_ii
                 g_Stewart{ii} = -S{ii}*c{ii};
@@ -627,7 +627,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
 
     % index sets and dimensions for ubsystems
     m_ind_vec = 1;
-    if isequal(pss_mode,'Step')
+    if isequal(dcs_mode,'Step')
         % double the size of the vectors, since alpha,1-alpha treated at same
         % time;
         m_vec = sum(n_c_sys)*2;
@@ -642,7 +642,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         n_c_sys = 0;
     end
 
-    if max(n_c_sys) < 2 && isequal(pss_mode,'Step')
+    if max(n_c_sys) < 2 && isequal(dcs_mode,'Step')
         pss_lift_step_functions = 0;
         if print_level >=1
             fprintf('Info: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
@@ -689,7 +689,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     n_lambda_1 = 0;
     g_lift_beta = [];
     g_lift_theta_step  =[];
-    switch pss_mode
+    switch dcs_mode
       case 'Stewart'
         % dimensions
         n_theta = sum(m_vec); % number of modes
@@ -934,7 +934,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     g_lift = [g_lift_theta_step;g_lift_beta];
 
     %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS
-    switch pss_mode
+    switch dcs_mode
       case 'Stewart'
         % symbolic variables z = [theta;lambda;mu];
         z_all = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
@@ -989,7 +989,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         % rhs of ODE;
 
         for ii = 1:n_sys
-            switch pss_mode
+            switch dcs_mode
               case 'Stewart'
                 f_x = f_x + F{ii}*theta_all{ii};
               case 'Step'
@@ -1003,7 +1003,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
     lambda00_expr =[];
     for ii = 1:n_sys
-        switch pss_mode
+        switch dcs_mode
           case 'Stewart'
             % basic algebraic equations and complementarity condtions of the DCS
             % (Note that the cross complementarities are later defined when the discrete

@@ -214,7 +214,7 @@ if ~time_freezing_model_exists
     if e == 0
         % Basic settings
         settings.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
-        settings.pss_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
+        settings.dcs_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
         %% switching function
         if settings.nonsmooth_switching_fun
             c = [max_smooth_fun(f_c,v_normal,0);v_tangent];
@@ -284,7 +284,7 @@ if ~time_freezing_model_exists
         end
     else
         % elastic
-        pss_mode = 'Step';
+        dcs_mode = 'Step';
         if ~isfield(model,'k_aux')
             k_aux = 10;
             if settings.print_level > 1

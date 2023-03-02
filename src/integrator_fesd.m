@@ -175,7 +175,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
 
-    switch pss_mode
+    switch dcs_mode
         case 'Stewart'
             alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
             theta_opt_extended = [alg_states_extended(1:n_theta,:)];
@@ -232,7 +232,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 
     % algebraic
-    switch pss_mode
+    switch dcs_mode
       case 'Stewart'
         theta_res = [theta_res, theta_opt];
         lambda_res = [lambda_res, lambda_opt];
@@ -312,7 +312,7 @@ fprintf('-----------------------------------------------------------------------
 results.x_res  = x_res;
 % Output all stage values as well.
 results.x_res_extended  = x_res_extended;
-switch pss_mode
+switch dcs_mode
     case 'Stewart'
         results.theta_res = theta_res;
         results.lambda_res = lambda_res;

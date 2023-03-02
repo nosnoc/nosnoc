@@ -40,7 +40,7 @@ settings.irk_scheme = 'Gauss-Legendre';
 settings.irk_scheme = 'Radau-IIA';
 settings.irk_representation= 'differential';
 settings.irk_representation= 'integral';
-settings.pss_mode = 'Step';
+settings.dcs_mode = 'Step';
 settings.lift_irk_differential = 1;
 
 % discretization parameters

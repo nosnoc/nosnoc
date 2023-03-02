@@ -47,7 +47,7 @@ settings.use_fesd = 1;       % switch detection method on/off
 settings.irk_scheme = 'Gauss-Legendre'; %'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 4;
-settings.pss_mode = 'Step'; % 'Step;
+settings.dcs_mode = 'Step'; % 'Step;
 settings.mpcc_mode = 'Scholtes_ineq';  % Scholtes regularization
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-9;

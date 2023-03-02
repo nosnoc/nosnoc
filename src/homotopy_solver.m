@@ -54,9 +54,9 @@ sigma_k = sigma_0;
 x0 = solver_initialization.w0(1:model.dimensions.n_x);
 
 % lambda00 initialization
-if strcmp(settings.pss_mode, 'Stewart')
+if strcmp(settings.dcs_mode, 'Stewart')
     lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-elseif strcmp(settings.pss_mode, 'Step')
+elseif strcmp(settings.dcs_mode, 'Step')
 %     c_x = full(model.c_fun(x0));
 %     lambda00 = [ max(c_x, 0); min(c_x, 0)];
     lambda00 = full(model.lambda00_fun(x0, model.p_global_val));

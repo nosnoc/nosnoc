@@ -24,8 +24,8 @@ end
 
 
 %% alert
-if isequal(settings.pss_mode,'Stewart');
-    error('Polishing mode is currently avilable for settings.pss_mode = ''Step''.');
+if isequal(settings.dcs_mode,'Stewart');
+    error('Polishing mode is currently avilable for settings.dcs_mode = ''Step''.');
 end
 %% unfold
 import casadi.*

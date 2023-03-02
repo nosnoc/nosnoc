@@ -182,7 +182,7 @@ classdef FiniteElement < NosnocFormulationObject
                         ii);
                 end
                 % algebraic variables
-                if settings.pss_mode == PssMode.Stewart
+                if settings.dcs_mode == DcsMode.Stewart
                     % add thetas
                     for ij = 1:dims.n_sys
                         theta = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -222,7 +222,7 @@ classdef FiniteElement < NosnocFormulationObject
                             ii,...
                             ij);
                     end
-                elseif settings.pss_mode == PssMode.Step
+                elseif settings.dcs_mode == DcsMode.Step
                     % add alpha
                     for ij = 1:dims.n_sys
                         alpha = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -296,7 +296,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
             % Add right boundary points if needed
             if ~settings.right_boundary_point_explicit
-                if settings.pss_mode == PssMode.Stewart
+                if settings.dcs_mode == DcsMode.Stewart
                     % add lambdas
                     for ij = 1:dims.n_sys
                         lam = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -325,7 +325,7 @@ classdef FiniteElement < NosnocFormulationObject
                             ij);
                     end
 
-                elseif settings.pss_mode == PssMode.Step
+                elseif settings.dcs_mode == DcsMode.Step
                     % add lambda_n
                     for ij = 1:dims.n_sys
                         lambda_n = define_casadi_symbolic(settings.casadi_symbolic_mode,...

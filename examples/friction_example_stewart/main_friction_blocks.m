@@ -63,8 +63,8 @@ T_sim = 12;
 % T_sim = 4;
 N_sim = 85;
 
-settings.pss_mode = 'Stewart';
-% settings.pss_mode = 'Step';
+settings.dcs_mode = 'Stewart';
+% settings.dcs_mode = 'Step';
 
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;

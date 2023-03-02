@@ -50,7 +50,7 @@ settings.irk_scheme = 'Radau-IIA';
 settings.mpcc_mode = MpccMode.elastic_ineq;
 settings.print_level = 2;
 settings.n_s = 2;
-settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
+settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 settings.comp_tol = 1e-5;
 settings.homotopy_update_rule = 'superlinear';
 

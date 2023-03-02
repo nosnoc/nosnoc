@@ -59,7 +59,7 @@ settings.homotopy_parameter_rule = 'superlinear';
 settings.use_speed_of_time_variables = 1;
 settings.local_speed_of_time_variable = 1;
 settings.equidistant_control_grid = 1;
-% settings.pss_mode = 'Step';
+% settings.dcs_mode = 'Step';
 % settings.polishing_step = 1;
 
 %% Time settings

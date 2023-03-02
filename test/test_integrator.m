@@ -1,4 +1,4 @@
-function [results,stats,model,settings] = test_integrator(use_fesd, irk_representation, irk_scheme, pss_mode)
+function [results,stats,model,settings] = test_integrator(use_fesd, irk_representation, irk_scheme, dcs_mode)
 import casadi.*
 % discretization settings
 N_finite_elements = 2;
@@ -7,8 +7,8 @@ N_sim  = 29;
 R_osc  = 1;
 
 
-fprintf('use_fesd\tirk_representation\tirk_scheme\tpss_mode\n')
-fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, irk_representation, irk_scheme, pss_mode);
+fprintf('use_fesd\tirk_representation\tirk_scheme\tdcs_mode\n')
+fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, irk_representation, irk_scheme, dcs_mode);
 settings = default_settings_nosnoc();
 settings.use_fesd = use_fesd;
 settings.irk_representation = irk_representation;
@@ -16,7 +16,7 @@ settings.irk_scheme = irk_scheme;
 settings.real_time_plot = 0;
 settings.print_level = 2;
 settings.n_s = 4;
-settings.pss_mode = pss_mode;
+settings.dcs_mode = pss_mode;
 % 'Stewart'; % 'Step;
 settings.comp_tol = 1e-9;
 settings.cross_comp_mode  = 3;
