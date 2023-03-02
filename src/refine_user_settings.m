@@ -22,16 +22,16 @@ if any(strcmp(list_of_all_rk_schemes(5:end),irk_scheme))
 end
 
 %% corrections for dcs_mode
-if isequal(settings.dcs_mode,'stewart')  || isequal(settings.pss_mode,'stwrt') || isequal(settings.pss_mode,'indicator')
+if isequal(settings.dcs_mode,'stewart')  || isequal(settings.dcs_mode,'stwrt') || isequal(settings.pss_mode,'indicator')
     settings.dcs_mode = 'Stewart';
 end
 
-if isequal(settings.dcs_mode,'step')  || isequal(settings.pss_mode,'stp') || isequal(settings.pss_mode,'Heaviside') ...
-        || isequal(settings.dcs_mode,'heaviside') || isequal(settings.pss_mode,'AP')
+if isequal(settings.dcs_mode,'step')  || isequal(settings.dcs_mode,'stp') || isequal(settings.pss_mode,'Heaviside') ...
+        || isequal(settings.dcs_mode,'heaviside') || isequal(settings.dcs_mode,'AP')
     settings.dcs_mode = 'Step';
 end
 
-if ~isequal(settings.dcs_mode,'Stewart') && ~isequal(settings.pss_mode,'Step')
+if ~isequal(settings.dcs_mode,'Stewart') && ~isequal(settings.dcs_mode,'Step')
     error('Please use for settings.dcs_mode either ''Stewart''  or  ''Step''.' );
 end
 

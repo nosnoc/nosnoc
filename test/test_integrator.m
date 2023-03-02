@@ -16,7 +16,7 @@ settings.irk_scheme = irk_scheme;
 settings.real_time_plot = 0;
 settings.print_level = 2;
 settings.n_s = 4;
-settings.dcs_mode = pss_mode;
+settings.dcs_mode = dcs_mode;
 % 'Stewart'; % 'Step;
 settings.comp_tol = 1e-9;
 settings.cross_comp_mode  = 3;

@@ -496,7 +496,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     end
 
     %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
-    dcs_mode = settings.pss_mode;
+    dcs_mode = settings.dcs_mode;
     % Stewart's representation of the sets R_i and discirimant functions g_i
     g_Stewart = {};
     g_ind_vec = [];
