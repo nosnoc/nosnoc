@@ -38,7 +38,7 @@ terminal_constraint = 1;
 linear_control = 1;
 
 %% NOS-NOC settings
-[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
+[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 
 settings.n_s = 2;
 N_finite_elements = 6;

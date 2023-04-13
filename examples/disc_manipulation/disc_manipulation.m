@@ -39,7 +39,7 @@ import casadi.*
 %%
 filename = 'discs_manipulation.gif';
 %%
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;  % number of stages in IRK methods
 settings.mpcc_mode = MpccMode.elastic_ineq;

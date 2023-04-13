@@ -1,6 +1,6 @@
 clear all
 import casadi.*
-[settings] = default_settings_nosnoc();  
+[settings] = NosnocOptions();  
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = 'Radau-IIA';
 % settings.cross_comp_mode = 1;

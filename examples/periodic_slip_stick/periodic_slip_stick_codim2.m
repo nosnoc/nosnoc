@@ -42,7 +42,7 @@ T_sim = 20;
 N_sim  = 100;
 
 %% settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.use_fesd = 1;
 settings.irk_scheme = 'Radau-IIA'; %'Gauss-Legendre';
 settings.print_level = 2;

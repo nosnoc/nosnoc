@@ -41,7 +41,7 @@ filename = 'hopper_long.gif';
 delete hopper_long.gif
 
 %%
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;  % number of stages in IRK methods
 settings.N_homotopy = 5;

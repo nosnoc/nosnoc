@@ -2,7 +2,7 @@ function [results,stats,model,settings] = test_fesd_and_time_options(use_fesd, t
 %TEST_SIMPLE_CAR_MODEL Test the simple car model accross cross
 %complementarity and mpcc modes
 import casadi.*
-[settings] = default_settings_nosnoc();  
+[settings] = NosnocOptions();  
 settings.print_level = 3;
 settings.irk_scheme = 'Radau-IIA';
 

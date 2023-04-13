@@ -5,7 +5,7 @@ import casadi.*
 
 %%
 plot_results = 1;
-[settings] = default_settings_nosnoc();  
+[settings] = NosnocOptions();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
 settings.opts_ipopt.ipopt.max_iter = 1e3;

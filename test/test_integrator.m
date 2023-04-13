@@ -9,7 +9,7 @@ R_osc  = 1;
 
 fprintf('use_fesd\tirk_representation\tirk_scheme\tdcs_mode\n')
 fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, irk_representation, irk_scheme, dcs_mode);
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.use_fesd = use_fesd;
 settings.irk_representation = irk_representation;
 settings.irk_scheme = irk_scheme;

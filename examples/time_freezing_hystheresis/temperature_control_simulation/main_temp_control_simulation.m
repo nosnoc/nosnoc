@@ -33,7 +33,7 @@ import casadi.*
 
 %% settings
 % collocation settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.n_s = 2;                            % Degree of interpolating polynomial
 settings.print_level = 2;
 %% Generate Model

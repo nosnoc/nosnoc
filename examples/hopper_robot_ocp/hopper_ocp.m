@@ -42,7 +42,7 @@ import casadi.*
 delete hopper_simple.gif
 
 %%
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 2;  % number of stages in IRK methods
 

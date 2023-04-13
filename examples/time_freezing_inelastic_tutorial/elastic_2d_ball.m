@@ -4,7 +4,7 @@ clc;
 import casadi.*
 close all
 %%
-[settings] = default_settings_nosnoc();  
+[settings] = NosnocOptions();  
 settings.irk_scheme = 'Gauss-Legendre';
 settings.n_s = 3;
 settings.print_level = 2;

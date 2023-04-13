@@ -39,7 +39,7 @@ import casadi.*
 % generalization of the FESD scheme presented in the NOSNOC software parep
 %% settings
 % collocation settings
-[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
+[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;                            
 settings.irk_scheme = 'Radau-IIA';     
 settings.irk_representation = 'differential';

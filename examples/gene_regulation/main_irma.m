@@ -44,7 +44,7 @@ T_sim = 1000;
 N_sim = 200;
 
 %% Settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.use_fesd = 1;
 settings.irk_scheme = 'Radau-IIA';
 settings.mpcc_mode = MpccMode.elastic_ineq;

@@ -24,7 +24,7 @@ lbx = [-15; -15; -10; -5; -5; -5];
 x0 = [-3; 0; 3; 0; 0; 0];
 
 %%
-[settings] = default_settings_nosnoc();  
+[settings] = NosnocOptions();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';

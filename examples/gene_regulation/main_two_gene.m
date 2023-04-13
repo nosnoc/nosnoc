@@ -43,7 +43,7 @@ T_sim = 1;
 N_sim = 20;
 
 %% Settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.use_fesd = 1;
 settings.irk_scheme = 'Radau-IIA';
 settings.print_level = 1;

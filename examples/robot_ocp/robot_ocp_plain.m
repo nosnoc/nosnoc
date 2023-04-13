@@ -20,7 +20,7 @@ scenario.height_vec = [];
 scenario.width_vec = [];
 
 %% Default settings NOSNOC
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 settings.use_fesd = 1;
 settings.print_level = 4;
 settings.irk_scheme = 'Radau-IIA';

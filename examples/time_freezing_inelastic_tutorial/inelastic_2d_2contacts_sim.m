@@ -4,7 +4,7 @@ clc;
 import casadi.*
 
 %%
-[settings] = default_settings_nosnoc();  
+[settings] = NosnocOptions();  
 settings.irk_scheme = 'Radau-IIA';
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';

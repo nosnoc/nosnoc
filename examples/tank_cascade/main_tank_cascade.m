@@ -7,7 +7,7 @@ close all
 % Baumrucker, Brian T., and Lorenz T. Biegler. "MPEC strategies for optimization of a class of hybrid dynamic systems." Journal of Process Control 19.8 (2009): 1248-1256.
 
 %% settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.irk_scheme = 'Gauss-Legendre';   
 settings.n_s = 1;                
 % settings.N_homotopy = 8;
