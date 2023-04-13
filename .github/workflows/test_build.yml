@@ -16,8 +16,8 @@ jobs:
     - name: Install MATLAB
       uses: matlab-actions/setup-matlab@v1
       with:
-        # TODO: what version do we want to use, this is the earliest one available.
-        release: R2020a
+        # NOTE: no longer earliest version to support more property validation functions
+        release: R2020b
 
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
