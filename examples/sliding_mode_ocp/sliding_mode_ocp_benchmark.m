@@ -62,7 +62,7 @@ settings.heuristic_step_equilibration = 0;
 %% Basic
 mpcc_mode_fesd = [5 5 5 3 3];
 mpcc_mode_std = [3 3 3 3 3];
-irk_schemes = {IRKSchemes.RADAU_IIA,'Lobatto-IIIA','Lobatto-IIIC','Gauss-Legendre','Explicit-RK'};
+irk_schemes = {IRKSchemes.RADAU_IIA,'Lobatto-IIIA','Lobatto-IIIC',IRKSchemes.GAUSS_LEGENDRE,'Explicit-RK'};
 n_s_vec = {[1:4],[2:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
 N_finite_elements_vec = 2:2:12;
@@ -71,7 +71,7 @@ N_experiments = 1:5;
 %%
 mpcc_mode_fesd = [5 5 3 3];
 mpcc_mode_std = [3 3 3 3];
-irk_schemes = {IRKSchemes.RADAU_IIA,'Lobatto-IIIC','Gauss-Legendre','Explicit-RK'};
+irk_schemes = {IRKSchemes.RADAU_IIA,'Lobatto-IIIC',IRKSchemes.GAUSS_LEGENDRE,'Explicit-RK'};
 n_s_vec = {[1:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
 % N_finite_elements_vec = 2:2:12;

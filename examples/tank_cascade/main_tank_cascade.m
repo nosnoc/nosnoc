@@ -8,7 +8,7 @@ close all
 
 %% settings
 settings = NosnocOptions();
-settings.irk_scheme = 'Gauss-Legendre';   
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;   
 settings.n_s = 1;                
 % settings.N_homotopy = 8;
 settings.homotopy_update_rule = 'superlinear';

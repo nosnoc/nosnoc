@@ -44,7 +44,7 @@ R_osc  = 1;
 % collocation settings
 settings = NosnocOptions();
 settings.use_fesd = 1;       % switch detection method on/off
-settings.irk_scheme = 'Gauss-Legendre'; %'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE; %'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 4;
 settings.dcs_mode = 'Step'; % 'Step;

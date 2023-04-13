@@ -44,7 +44,7 @@ N_sim  = 100;
 %% settings
 settings = NosnocOptions();
 settings.use_fesd = 1;
-settings.irk_scheme = IRKSchemes.RADAU_IIA; %'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
 settings.print_level = 2;
 settings.n_s = 4;
 settings.dcs_mode = 'Stewart'; % 'Step;

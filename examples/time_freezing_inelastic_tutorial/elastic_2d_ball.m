@@ -5,7 +5,7 @@ import casadi.*
 close all
 %%
 [settings] = NosnocOptions();  
-settings.irk_scheme = 'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 3;
 settings.print_level = 2;
 settings.use_fesd = 1;

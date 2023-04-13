@@ -44,7 +44,7 @@ legend_str = {'Midpoint Rule','Gauss-Legendre 4','Gauss-Legendre 6','Gauss-Legen
 settings.use_fesd = 1;
 settings.print_level = 0;
 
-settings.irk_scheme = 'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.irk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
@@ -263,7 +263,7 @@ settings.scenario_name = 'irk_radau_iia_std_integral';
  
 legend_str = {'Midpoint Rule','Gauss-Legendre 4','Gauss-Legendre 6','Gauss-Legendre 8','Gauss-Legendre 10','Gauss-Legendre 12','Gauss-Legendre 14','Gauss-Legendre 16','Gauss-Legendre 18'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.irk_representation = 'integral';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
