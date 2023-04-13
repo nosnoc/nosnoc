@@ -5,7 +5,7 @@ import casadi.*
 close all
 %%
 [settings] = NosnocOptions();  
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 2;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 8;

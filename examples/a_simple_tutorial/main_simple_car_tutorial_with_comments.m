@@ -38,7 +38,7 @@ clear all; clc; close all;
 import casadi.*
 [settings] = NosnocOptions();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
 %% Choosing the Runge - Kutta Method and number of stages
-settings.irk_scheme = 'Radau-IIA'; % Lobatto-III
+settings.irk_scheme = IRKSchemes.RADAU_IIA; % Lobatto-III
 settings.print_level = 3;
 settings.n_s = 2;
 settings.mpcc_mode = 'scholtes_ineq';

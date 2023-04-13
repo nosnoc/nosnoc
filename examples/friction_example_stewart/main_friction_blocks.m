@@ -41,7 +41,7 @@ import casadi.*
 % collocation settings
 [settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;                            
-settings.irk_scheme = 'Radau-IIA';     
+settings.irk_scheme = IRKSchemes.RADAU_IIA;     
 settings.irk_representation = 'differential';
 settings.lift_irk_differential = 1;
 settings.print_level = 2;

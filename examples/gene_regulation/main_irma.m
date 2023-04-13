@@ -46,7 +46,7 @@ N_sim = 200;
 %% Settings
 settings = NosnocOptions();
 settings.use_fesd = 1;
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.mpcc_mode = MpccMode.elastic_ineq;
 settings.print_level = 2;
 settings.n_s = 2;

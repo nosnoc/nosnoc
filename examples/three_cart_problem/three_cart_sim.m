@@ -25,7 +25,7 @@ x0 = [-3; 0; 3; 0; 0; 0];
 
 %%
 [settings] = NosnocOptions();  
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';
 settings.opts_ipopt.ipopt.max_iter = 5e2;

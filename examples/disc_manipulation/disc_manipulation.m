@@ -40,7 +40,7 @@ import casadi.*
 filename = 'discs_manipulation.gif';
 %%
 [settings] = NosnocOptions();
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;  % number of stages in IRK methods
 settings.mpcc_mode = MpccMode.elastic_ineq;
 settings.homotopy_update_rule = 'superlinear';

@@ -38,7 +38,7 @@ import casadi.*
 filename = 'discs_switch_position.gif';
 %%
 [settings] = NosnocOptions();  
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;  
 settings.mpcc_mode = MpccMode.Scholtes_ineq; 
 settings.N_homotopy = 5;

@@ -9,7 +9,7 @@ J = 1/32; % frictional impulse apperas
 above_ground = 0.1;
 %%
 [settings] = NosnocOptions();  
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.dcs_mode = 'Step';
 settings.pss_lift_step_functions= 1;

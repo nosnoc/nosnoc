@@ -43,7 +43,7 @@ delete hopper_simple.gif
 
 %%
 [settings] = NosnocOptions();
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;  % number of stages in IRK methods
 
 settings.use_fesd = 1;

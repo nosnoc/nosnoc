@@ -13,7 +13,7 @@ run_animation = 1;
 video_speed_up = 0.25;
 %% nosnoc settings
 [settings] = NosnocOptions();
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.print_level = 2;
 settings.N_homotopy = 5;

@@ -45,7 +45,7 @@ N_sim = 20;
 %% Settings
 settings = NosnocOptions();
 settings.use_fesd = 1;
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 1;
 settings.n_s = 2;
 settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.

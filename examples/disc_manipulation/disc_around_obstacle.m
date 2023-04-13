@@ -38,7 +38,7 @@ import casadi.*
 filename = 'discs_switch_position_obstacle.gif';
 %%
 [settings] = NosnocOptions();
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;  % number of stages in IRK methods
 
 settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints

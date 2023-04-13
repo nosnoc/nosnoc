@@ -43,7 +43,7 @@ switching_case = 'sliding_mode';
 settings.n_s = 2;
 settings.homotopy_update_slope = 0.1;
 settings.irk_scheme = 'Gauss-Legendre';
-% settings.irk_scheme = 'Radau-IIA';
+% settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.irk_representation= 'differential';
 settings.print_level = 2;
 % discretization parameters

@@ -5,7 +5,7 @@ import casadi.*
 
 %%
 [settings] = NosnocOptions();  
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';
 settings.opts_ipopt.ipopt.max_iter = 1e3;
