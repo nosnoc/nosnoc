@@ -1,20 +1,46 @@
+% BSD 2-Clause License
+
+% Copyright (c) 2023, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
+
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are met:
+
+% 1. Redistributions of source code must retain the above copyright notice, this
+%    list of conditions and the following disclaimer.
+
+% 2. Redistributions in binary form must reproduce the above copyright notice,
+%    this list of conditions and the following disclaimer in the documentation
+%    and/or other materials provided with the distribution.
+
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+% AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+% IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+% DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+% FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+% DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+% SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+% CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+% OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+% OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+% This file is part of NOSNOC.
 classdef NosnocOptions < handle
 % TODO clean up much of the work here.
     properties
         % General
         solver_name {mustBeTextScalar} = 'nosnoc_solver'
         use_fesd(1,1) logical = 1
-        casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'SX', 'MX'})} = 'SX' % TODO enum
+        casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
 
         % Interface settings
         real_time_plot(1,1) logical = 0
 
         % IRK and FESD Settings
-        n_s(1,1) {mustBeInteger, mustBePositive} = 2
-        irk_scheme = 'radau' % TODO enum
-        lift_irk_differential(1,1) logical = 1
+        n_s(1,1) {mustBeInteger, mustBeInRange(n_s, 1, 9)} = 2
+        irk_scheme(1,1) IRKSchemes = IRKSchemes.RADAU_IIA
+        irk_representation IrkRepresentation = IrkRepresentation.integral;
         cross_comp_mode {mustBeInRange(cross_comp_mode, 1, 12)}= 3 
-        gamma_h = 1
+        gamma_h(1,1) double {mustBeReal, mustBeInRange(gamma_h, 0, 1)} = 1
         dcs_mode DcsMode = DcsMode.Stewart
 
         % Initialization - Stewart
@@ -32,10 +58,10 @@ classdef NosnocOptions < handle
 
         % Step theta lifting
         pss_lift_step_functions(1,1) logical = 0
-        n_depth_step_lifting(1,1) {mustBeInteger} = 2
+        n_depth_step_lifting(1,1) {mustBeInteger, mustBeGreaterThanOrEqual(n_depth_step_lifting, 2)} = 2
 
         % TODO: make this static
-        list_of_all_rk_schemes = {'radau','legendre','Radau-IIA','Gauss-Legendre','Radau-I','Radau-IA',...
+        list_of_all_rk_schemes = {'RADAU_IIA','Gauss-Legendre','Radau-I','Radau-IA',...
                                   'Lobatto-III','Lobatto-IIIA','Lobatto-IIIB','Lobatto-IIIC',...
                                   'Explicit-RK'}
         %General NLP/OCP Settings
@@ -107,7 +133,6 @@ classdef NosnocOptions < handle
         % Time-Setting & Time-Freezing
         time_freezing(1,1) logical  = 0
         time_freezing_inelastic(1,1) logical = 0
-        time_rescaling(1,1) logical = 0
         % for time optimal problems and equidistant control grids in physical time
         use_speed_of_time_variables(1,1) logical = 1
         local_speed_of_time_variable(1,1) logical = 0
@@ -143,7 +168,7 @@ classdef NosnocOptions < handle
         opts_ipopt
 
         % Relaxation of terminal constraint
-        relax_terminal_constraint(1,1) logical = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf
+        relax_terminal_constraint(1,1) {mustBeInteger, mustBeInRange(relax_terminal_constraint, 0, 3)} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
         relax_terminal_constraint_from_above(1,1) logical = 0 
         rho_terminal(1,1) double {mustBeReal, mustBePositive} = 1e2
         relax_terminal_constraint_homotopy(1,1) logical = 0 % terminal penalty is governed by homotopy parameter
@@ -152,7 +177,8 @@ classdef NosnocOptions < handle
         use_previous_solution_as_initial_guess(1,1) logical = 0
         simulation_problem(1,1) logical = 0
 
-        % Misc
+        % Misc TODO these should probably live in model
+        general_inclusion(1,1) logical = 0
         there_exist_free_x0(1,1) logical = 0
         time_freezing_model_exists(1,1) logical = 0
 
@@ -171,6 +197,10 @@ classdef NosnocOptions < handle
         right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
     end
 
+    properties(Dependent)
+        time_rescaling
+    end
+
     methods
         function obj = NosnocOptions()
             
@@ -179,7 +209,6 @@ classdef NosnocOptions < handle
             obj.opts_ipopt.ipopt.sb = 'yes';
             obj.opts_ipopt.verbose = false;
             obj.opts_ipopt.ipopt.max_iter = 500;
-            % opts_ipopt.ipopt.print_level = 5
             obj.opts_ipopt.ipopt.bound_relax_factor = 0;
             obj.opts_ipopt.ipopt.tol = 1e-16;
             obj.opts_ipopt.ipopt.dual_inf_tol = 1e-16;
@@ -188,12 +217,12 @@ classdef NosnocOptions < handle
             obj.opts_ipopt.ipopt.mu_strategy = 'adaptive';
             obj.opts_ipopt.ipopt.mu_oracle = 'quality-function';
 
-            obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val]
+            obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
         end
 
         function [] = create_butcher_tableu(obj, model)
             switch obj.irk_representation
-              case 'integral'
+              case IrkRepresentation.integral
                 [B, C, D, tau_root] = generate_butcher_tableu_integral(model.dimensions.n_s, obj.irk_scheme);
                 if tau_root(end) == 1
                     right_boundary_point_explicit  = 1;
@@ -203,7 +232,7 @@ classdef NosnocOptions < handle
                 obj.B_irk = B;
                 obj.C_irk = C;
                 obj.D_irk = D;
-              case {'differential', 'differential_lift_x'}
+              case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
                 [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dimensions.n_s,obj.irk_scheme);
                 if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
                     right_boundary_point_explicit  = 1;
@@ -212,12 +241,144 @@ classdef NosnocOptions < handle
                 end
                 obj.A_irk = A_irk;
                 obj.b_irk = b_irk;
-              otherwise
-                error('Choose irk_representation either: ''integral'' or ''differential''')
             end
             obj.right_boundary_point_explicit = right_boundary_point_explicit;
         end
-        
+
+        function obj = set.print_level(obj, val)
+            if val <4
+                obj.opts_ipopt.ipopt.print_level=0;
+                obj.opts_ipopt.print_time=0;
+                obj.opts_ipopt.ipopt.sb= 'yes';
+            elseif val == 4
+                obj.opts_ipopt.ipopt.print_level=0;
+                obj.opts_ipopt.print_time=1;
+                obj.opts_ipopt.ipopt.sb= 'no';
+            else
+                obj.opts_ipopt.ipopt.print_level = 5;
+            end
+            obj.print_level = val;
+        end
+
+        function obj = set.irk_scheme(obj, val)
+            if ismember(val, IRKSchemes.differential_only)
+                if obj.print_level >=1
+                    fprintf(['Info: The user provided RK scheme: ' char(val) ' is only available in the differential representation.\n']);
+                end
+                obj.irk_representation = 'differential';
+            end
+            obj.irk_scheme = val;
+        end
+
+        function obj = set.irk_representation(obj, val)
+            if strcmp(val,'integral') && ismember(obj.irk_scheme, IRKSchemes.differential_only)
+                error([obj.irk_scheme ' is only available with a differential representation!']);
+            end
+
+            obj.irk_representation = val;
+        end
+
+        function obj = set.time_freezing(obj, val)
+            if val
+                obj.local_speed_of_time_variable = 1;
+                if obj.print_level >= 1
+                    fprintf('Info: Setting local speed of time variables to true as they are necessary for time freezing\n')
+                end
+            end
+            obj.time_freezing = val;
+        end
+
+        function obj = set.h_fixed_change_sigma(obj, val)
+            if val == 0
+                if obj.print_level >= 1
+                    fprintf('Info: Setting fixed max iterations to true in the case that the sigma change is not fixed. \n')
+                end
+                obj.h_fixed_max_iter = 1;
+            end
+            obj.h_fixed_max_iter = val;
+        end
+
+        function obj = set.mpcc_mode(obj, val)
+            if val == MpccMode.direct
+                % TODO maybe need to check later if people try to set sigmas/n_homotopy as for now we just let them break the
+                %      assumptions. 
+                if obj.print_level >= 1
+                    fprintf('Info: Setting N_homotopy to 1 and sigma_0,sigma_N to constants in direct mode.\n')
+                end
+                obj.N_homotopy = 1;
+                obj.sigma_0 = 1e-12;
+                obj.sigma_N = 1e-12;
+                val = MpccMode.Scholtes_ineq;
+            end
+            if val == MpccMode.ell_1_penalty
+                if obj.print_level >= 1
+                    fprintf('Info: Setting cross_comp_mode to 12 in ell_1_penalty mode.\n')
+                end
+                obj.cross_comp_mode = 12;
+            end
+            
+            obj.mpcc_mode = val;
+        end
+
+        function obj = set.s_elastic_0(obj, val)
+            arguments
+                obj
+                val {mustBeBetweenMinMax(val, obj, 's_elastic_min', 's_elastic_max')}
+            end
+            obj.s_elastic_0 = val;
+        end
+
+        function obj = set.rho_0(obj, val)
+            arguments
+                obj
+                val {mustBeBetweenMinMax(val, obj, 'rho_min', 'rho_max')}
+            end
+            obj.rho_0 = val;
+        end
+
+        function time_rescaling = get.time_rescaling(obj)
+            time_rescaling = (obj.time_freezing && obj.impose_terminal_phyisical_time) || obj.time_optimal_problem;
+        end
+
+        function use_speed_of_time_variables = get.use_speed_of_time_variables(obj)
+            if ~obj.time_rescaling
+                if obj.print_level >= 1 && obj.use_speed_of_time_variables
+                    warning("use_speed_of_time_variables erroneously set to true even though we are not rescaling time, this likely means your settings are somehow faulty. Using use_speed_of_time_variables = false")
+                end
+                use_speed_of_time_variables = 0;
+            else
+                use_speed_of_time_variables = obj.use_speed_of_time_variables;
+            end
+        end
+
+        function local_speed_of_time_variable = get.local_speed_of_time_variable(obj)
+            if ~obj.use_speed_of_time_variables
+                if obj.print_level >= 1 && obj.local_speed_of_time_variable
+                    warning("local_speed_of_time_variable erroneously set to true even though we are not using speed of time variales, this likely means your settings are somehow faulty. Using local_speed_of_time_variable = false")
+                end
+                local_speed_of_time_variable = 0;
+            else
+                local_speed_of_time_variable = obj.local_speed_of_time_variable;
+            end
+        end
+
+        function x_box_at_stg = get.x_box_at_stg(obj)
+            if obj.irk_scheme == IrkRepresentation.differential
+                if obj.print_level >= 1 && obj.x_box_at_stg
+                    warning('x_box_at_stg is set but the irk representation is differential. This is impossible therefore we are useing x_box_at_stg = false')
+                end
+                x_box_at_stg = 0;
+            else
+                x_box_at_stg = obj.x_box_at_stg;
+            end
+        end
+
+        function convex_sigma_rho_constraint = get.convex_sigma_rho_constraint(obj)
+            if obj.nonlinear_sigma_rho_constraint
+                convex_sigma_rho_constraint = 1;
+            else
+                convex_sigma_rho_constraint = obj.convex_sigma_rho_constraint
+            end
+        end
     end
-    
 end

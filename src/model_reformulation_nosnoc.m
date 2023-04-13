@@ -112,6 +112,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     model.h_k = h_k;
     model.N_finite_elements = N_finite_elements;
     %% Determine is the SX or MX mode in CasADi used.
+    class(model.x(1))
     casadi_symbolic_mode = class(model.x(1));
     settings.casadi_symbolic_mode  = casadi_symbolic_mode;
 

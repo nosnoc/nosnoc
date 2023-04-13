@@ -1,7 +1,7 @@
 close all
 clear all
 import casadi.*
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 settings.n_s = 2;
 settings.dcs_mode = 'Step';
 settings.mpcc_mode = MpccMode.Scholtes_eq;

@@ -1,6 +1,6 @@
 % BSD 2-Clause License
 
-% Copyright (c) 2022, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
+% Copyright (c) 2023, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
 
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions are met:
@@ -24,18 +24,18 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-
-function [settings] = refine_settings(settings)
-
-%% Unfold user structure
-unfold_struct(settings,'caller')
-
-
-
-%% Save data for output into struct
-% settings = [];
-names = who;
-for ii = 1:length(names)
-    eval([ 'settings.' names{ii} '=' names{ii} ';'])
-end
+function mustBeBetweenMinMax(val, obj, min, max)
+% This is a hack to be able to use object members in setter methods, very fun!
+    min = obj.(min);
+    max = obj.(max);
+    if val < min
+        eid = 'Bounds:tooSmall';
+        msg = 'value is smaller than corresponding min value';
+        throwAsCaller(MException(eid,msg))
+    end
+    if val > max
+        eid = 'Bounds:tooLarge';
+        msg = 'value is bigger than corresponding max value';
+        throwAsCaller(MException(eid,msg))
+    end
 end

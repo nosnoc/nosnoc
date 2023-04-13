@@ -1,5 +1,5 @@
 
-c% BSD 2-Clause License
+% BSD 2-Clause License
 
 % Copyright (c) 2023, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
 
@@ -27,7 +27,18 @@ c% BSD 2-Clause License
 % This file is part of NOSNOC.
 classdef IRKSchemes
     enumeration
+        RADAU_I
+        RADAU_IA
         RADAU_IIA
         GAUSS_LEGENDRE
+        LOBATTO_III
+        LOBATTO_IIIA
+        LOBATTO_IIIB
+        LOBATTO_IIIC
+        EXPLICIT_RK
+    end
+
+    properties(Constant)
+        differential_only = ["LOBATTO_III" "LOBATTO_IIIA" "LOBATTO_IIIB" "LOBATTO_IIIC" "EXPLICIT_RK"]
     end
 end
