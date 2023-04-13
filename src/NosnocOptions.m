@@ -61,8 +61,6 @@ classdef NosnocOptions < handle
         n_depth_step_lifting(1,1) {mustBeInteger, mustBeGreaterThanOrEqual(n_depth_step_lifting, 2)} = 2
 
         %General NLP/OCP Settings
-        g_path_constraint(1,1) logical = 0 % is nonlinear path constraint present (by default evaluated only on control grid points)
-        g_comp_path_constraint(1,1) logical = 0
         g_path_at_fe(1,1) logical = 0 % evaluate nonlinear path constraint at every finte element boundary
         g_path_at_stg(1,1) logical = 0 % evaluate nonlinear path constraint at every stage 
 
@@ -275,6 +273,7 @@ classdef NosnocOptions < handle
 
         function obj = set.time_freezing(obj, val)
             if val
+                obj.use_speed_of_time_variables = 1;
                 obj.local_speed_of_time_variable = 1;
                 if obj.print_level >= 1
                     fprintf('Info: Setting local speed of time variables to true as they are necessary for time freezing\n')
