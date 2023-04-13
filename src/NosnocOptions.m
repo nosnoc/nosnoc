@@ -131,10 +131,10 @@ classdef NosnocOptions < handle
         equidistant_control_grid(1,1) logical = 1
 	
         % Time-Setting & Time-Freezing
-        time_freezing(1,1) logical  = 0
+        time_freezing(1,1) logical = 0
         time_freezing_inelastic(1,1) logical = 0
         % for time optimal problems and equidistant control grids in physical time
-        use_speed_of_time_variables(1,1) logical = 1
+        use_speed_of_time_variables(1,1) logical = 0
         local_speed_of_time_variable(1,1) logical = 0
         stagewise_clock_constraint(1,1) logical = 1
         impose_terminal_phyisical_time(1,1) logical = 1

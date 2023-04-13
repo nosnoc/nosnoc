@@ -287,9 +287,9 @@ total_time = sum(time_per_iter);
 fprintf('\n');
 fprintf('----------------------------------------------------------------------------------------------------------------------\n');
 if use_fesd
-    fprintf( ['Simulation with the FESD ' irk_scheme ' with %d-RK stages completed.\n'],n_s);
+    fprintf( ['Simulation with the FESD ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 else
-    fprintf( ['Simulation with the standard ' irk_scheme ' with %d-RK stages completed.\n'],n_s);
+    fprintf( ['Simulation with the standard ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 end
 fprintf( ['RK representation: ' char(irk_representation) '.\n']);
 % fprintf('Total integration steps: %d, nominal step-size h = %2.3f.\n',N_sim,h_sim);
