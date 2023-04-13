@@ -60,10 +60,6 @@ classdef NosnocOptions < handle
         pss_lift_step_functions(1,1) logical = 0
         n_depth_step_lifting(1,1) {mustBeInteger, mustBeGreaterThanOrEqual(n_depth_step_lifting, 2)} = 2
 
-        % TODO: make this static
-        list_of_all_rk_schemes = {'RADAU_IIA','Gauss-Legendre','Radau-I','Radau-IA',...
-                                  'Lobatto-III','Lobatto-IIIA','Lobatto-IIIB','Lobatto-IIIC',...
-                                  'Explicit-RK'}
         %General NLP/OCP Settings
         g_path_constraint(1,1) logical = 0 % is nonlinear path constraint present (by default evaluated only on control grid points)
         g_comp_path_constraint(1,1) logical = 0
