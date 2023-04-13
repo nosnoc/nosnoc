@@ -69,7 +69,6 @@ classdef NosnocOptions < handle
         x_box_at_fe(1,1) logical = 1 % evaluate box constraint for diff states at every finite element boundary point
         x_box_at_stg(1,1) logical = 1 % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
 
-        terminal_constraint(1,1) logical = 0
         time_optimal_problem(1,1) = 0
         simple_v0_guess(1,1) = 0 % TODO what is this
 
