@@ -4,7 +4,7 @@ function [results,stats,model,settings] = test_fesd_and_time_options(use_fesd, t
 import casadi.*
 [settings] = NosnocOptions();  
 settings.print_level = 3;
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 
 % set the cross complimentarity mode that 
 settings.cross_comp_mode = 3;

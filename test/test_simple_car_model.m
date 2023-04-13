@@ -3,7 +3,7 @@ function [results,stats,model,settings] = test_simple_car_model(cross_comp, mpcc
 %complementarity and mpcc modes
 import casadi.*
 [settings] = NosnocOptions();  
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 % set the cross complimentarity mode that 
 settings.cross_comp_mode = cross_comp;
 settings.mpcc_mode = mpcc_mode;
