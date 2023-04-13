@@ -339,7 +339,7 @@ classdef NosnocOptions < handle
         function use_speed_of_time_variables = get.use_speed_of_time_variables(obj)
             if ~obj.time_rescaling
                 if obj.print_level >= 1 && obj.use_speed_of_time_variables
-                    warning("use_speed_of_time_variables erroneously set to true even though we are not rescaling time, this likely means your settings are somehow faulty. Using use_speed_of_time_variables = false")
+                    warning('nosnoc:NosnocOptions:erroneous_use_speed_of_time_variables', "use_speed_of_time_variables erroneously set to true even though we are not rescaling time, this likely means your settings are somehow faulty. Using use_speed_of_time_variables = false")
                 end
                 use_speed_of_time_variables = 0;
             else
@@ -350,22 +350,11 @@ classdef NosnocOptions < handle
         function local_speed_of_time_variable = get.local_speed_of_time_variable(obj)
             if ~obj.use_speed_of_time_variables
                 if obj.print_level >= 1 && obj.local_speed_of_time_variable
-                    warning("local_speed_of_time_variable erroneously set to true even though we are not using speed of time variales, this likely means your settings are somehow faulty. Using local_speed_of_time_variable = false")
+                    warning('nosnoc:NosnocOptions:erroneous_local_speed_of_time_variable',"local_speed_of_time_variable erroneously set to true even though we are not using speed of time variales, this likely means your settings are somehow faulty. Using local_speed_of_time_variable = false")
                 end
                 local_speed_of_time_variable = 0;
             else
                 local_speed_of_time_variable = obj.local_speed_of_time_variable;
-            end
-        end
-
-        function x_box_at_stg = get.x_box_at_stg(obj)
-            if obj.irk_scheme == IrkRepresentation.differential
-                if obj.print_level >= 1 && obj.x_box_at_stg
-                    warning('x_box_at_stg is set but the irk representation is differential. This is impossible therefore we are useing x_box_at_stg = false')
-                end
-                x_box_at_stg = 0;
-            else
-                x_box_at_stg = obj.x_box_at_stg;
             end
         end
 

@@ -273,7 +273,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
 
             % Process terminal constraint.
-            if settings.terminal_constraint
+            if model.terminal_constraint
                 if settings.relax_terminal_constraint_homotopy
                     rho_terminal_p = 1/sigma_p;
                 end

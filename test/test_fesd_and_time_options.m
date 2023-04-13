@@ -9,7 +9,7 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 % set the cross complimentarity mode that 
 settings.cross_comp_mode = 3;
 settings.n_s = 2;
-settings.homotopy_parameter_rule = 'superlinear';
+settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 8;
 
 fprintf('use_fesd\ttime opt\teqdist. grid\t use sot\tlocal sot\n')

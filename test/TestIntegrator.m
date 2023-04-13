@@ -4,7 +4,7 @@ classdef TestIntegrator < matlab.unittest.TestCase
     properties (TestParameter)
         use_fesd = {0,1};
         irk_representation = {'differential','integral'};
-        irk_scheme = {IRKSchemes.RADAU_IIA,IrkSchemes.GAUSS_LEGENDRE};
+        irk_scheme = {IRKSchemes.RADAU_IIA,IRKSchemes.GAUSS_LEGENDRE};
         dcs_mode = {'Step','Stewart'};
     end
     

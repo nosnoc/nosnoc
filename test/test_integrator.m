@@ -20,7 +20,6 @@ settings.dcs_mode = dcs_mode;
 % 'Stewart'; % 'Step;
 settings.comp_tol = 1e-9;
 settings.cross_comp_mode  = 3;
-settings.heuristic_step_equilibration = 1;
 settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 7;
 % Model
@@ -54,5 +53,5 @@ model.F = F;
 % numerical error
 x_fesd = results.x_res(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-fprintf(['Numerical error with h = %2.3f and ' settings.irk_scheme ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
+fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
 end
