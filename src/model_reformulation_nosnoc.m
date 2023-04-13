@@ -1135,10 +1135,10 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         model.g_comp_path_fun = g_comp_path_fun;
     end
 
+    model.terminal_constraint = terminal_constraint;
     if terminal_constraint
         model.g_terminal_lb = g_terminal_lb;
         model.g_terminal_ub = g_terminal_ub;
-        model.terminal_constraint = terminal_constraint;
         model.g_terminal_fun = g_terminal_fun;
     end
 
