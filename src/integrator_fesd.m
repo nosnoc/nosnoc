@@ -69,7 +69,6 @@ end
 
 %% Settings of integration
 [model] = refine_model_integrator(model,settings);
-[settings] = refine_settings_integrator(settings);
 
 %% Create solver functions for integrator step
 if ~solver_exists
