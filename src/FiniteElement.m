@@ -43,6 +43,10 @@ classdef FiniteElement < NosnocFormulationObject
         ind_theta_step
         ind_z
 
+        ind_eq
+        ind_ineq
+        ind_comp
+
         ctrl_idx
         fe_idx
 
@@ -600,6 +604,34 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             end
 
+            % Generate all complementarity pairs
+            cross_comp_pairs = cell(dims.n_s, dims.n_s+1, dims.n_sys);
+            theta = obj.theta;
+            lambda = obj.lambda;
+            % Complement within FE
+            for j=1:dims.n_s
+                for jj = 1:dims.n_s
+                    for r=1:dims.n_sys
+                        cross_comp_pairs{j, jj+1, r} = horzcat(theta{j,r},lambda{jj,r});
+                    end
+                end
+            end
+
+            for j=1:dims.n_s
+                for r=1:dims.n_sys
+                    cross_comp_pairs{j,1,r} = horzcat(theta{j,r}, obj.prev_fe.lambda{end,r});
+                end
+            end
+            cross_comp_expr = [];
+            for j=1:dims.n_s
+                for jj = 1:dims.n_s+1
+                    for r=1:dims.n_sys
+                        cross_comp_expr = vertcat(cross_comp_expr, apply_psi(cross_comp_pairs{j, jj, r}, @(x, y, sigma) x*y - sigma, sigma_p));
+                    end
+                end
+            end
+            print_casadi_vector(cross_comp_expr);
+            
             g_cross_comp = [];
             % TODO Implement other modes
             if ~settings.use_fesd
@@ -693,7 +725,6 @@ classdef FiniteElement < NosnocFormulationObject
                 % do nothing in this case
                 return
             end
-
             g_comp = vertcat(g_cross_comp, g_path_comp);
 
             n_cross_comp = length(g_cross_comp);

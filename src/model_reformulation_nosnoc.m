@@ -443,26 +443,12 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     g_comp_path_constraint  = 0;
     if exist('g_comp_path')
         g_comp_path_constraint  = 1;
-        n_g_comp_path = length(g_comp_path);
-        if exist('g_comp_path_lb')
-            if length(g_comp_path_lb)~=n_g_comp_path
-                error('The user provided vector g_comp_path_lb has the wrong size.')
-            end
-        else
-            g_comp_path_lb = -inf*ones(n_g_comp_path,1);
-        end
-
-        if exist('g_comp_path_ub')
-            if length(g_comp_path_ub)~=n_g_comp_path
-                error('The user provided vector g_comp_path_ub has the wrong size.')
-            end
-        else
-            g_comp_path_ub =  0*ones(n_g_comp_path,1);
+        if size(g_comp_path, 2)
+            error('g_comp_path must be of size (m, 2)')
         end
         g_comp_path_fun  = Function('g_comp_path_fun',{x,u,p,v_global},{g_comp_path});
     else
-        n_g_comp_path = 0;
-        g_comp_path_constraint  = 0;
+        g_comp_path_constraint = 0;
         if print_level >=1
             fprintf('Info: No path complementarity constraints are provided. \n')
         end
@@ -1130,8 +1116,6 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
 
     model.g_comp_path_constraint = g_comp_path_constraint;
     if g_comp_path_constraint
-        model.g_comp_path_lb = g_comp_path_lb;
-        model.g_comp_path_ub = g_comp_path_ub;
         model.g_comp_path_fun = g_comp_path_fun;
     end
 

@@ -36,6 +36,9 @@ classdef NosnocFormulationObject < handle
         g
         lbg
         ubg
+
+        complementarities
+        
         % Cost
         cost
         % Objective
