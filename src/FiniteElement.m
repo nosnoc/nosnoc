@@ -590,7 +590,7 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
-            psi_fun = @(x, y, sigma) x*y - sigma; % TODO should be generated in model from settings
+            psi_fun = settings.psi_fun;
 
             % TODO chose s_elastic or sigma_p as sigma parameter
             if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)

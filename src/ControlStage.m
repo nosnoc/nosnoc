@@ -195,6 +195,8 @@ classdef ControlStage < NosnocFormulationObject
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
+
+            psi_fun = settings.psi_fun;
             
             g_cross_comp = [];
             if ~settings.use_fesd || settings.cross_comp_mode < 9 || settings.cross_comp_mode > 10

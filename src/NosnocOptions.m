@@ -187,6 +187,9 @@ classdef NosnocOptions < handle
         C_irk double
         D_irk double
 
+        % psi func
+        psi_fun
+
         right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
     end
 
@@ -211,6 +214,9 @@ classdef NosnocOptions < handle
             obj.opts_ipopt.ipopt.mu_oracle = 'quality-function';
 
             obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
+
+            % TODO make this correct
+            psi_fun = @(x, y, sigma) x*y - sigma;
         end
 
         function [] = create_butcher_tableu(obj, model)
