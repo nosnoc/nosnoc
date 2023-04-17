@@ -639,6 +639,7 @@ classdef FiniteElement < NosnocFormulationObject
                     cross_comp_pairs{j,1,r} = horzcat(theta{j,r}, obj.prev_fe.lambda{end,r});
                 end
             end
+            obj.cross_comp_list = cross_comp_pairs;
 
             % apply psi
             g_cross_comp = [];
@@ -717,7 +718,8 @@ classdef FiniteElement < NosnocFormulationObject
             
             g_comp = vertcat(g_cross_comp, g_path_comp);
 
-            [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, setting);
+            settings.relaxation_method = 'INEQ';
+            [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
             
             n_cross_comp = length(g_cross_comp);
             n_path_comp = length(g_path_comp);

@@ -47,13 +47,13 @@ N_sim = 1;
 settings = NosnocOptions();
 settings.use_fesd = 1;
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.mpcc_mode = MpccMode.elastic_ineq;
+settings.mpcc_mode = MpccMode.Scholtes_ineq;
 settings.print_level = 2;
 settings.n_s = 2;
 settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 settings.comp_tol = 1e-5;
 settings.homotopy_update_rule = 'superlinear';
-settings.cross_comp_mode = 8;
+settings.cross_comp_mode = 9;
 
 % Generate model
 model = irma_model(switch_on, lifting);

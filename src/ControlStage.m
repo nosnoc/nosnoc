@@ -69,6 +69,8 @@ classdef ControlStage < NosnocFormulationObject
             obj.dims = dims;
 
             obj.ctrl_idx = ctrl_idx;
+
+            obj.cross_comp_list = cell(dims.N_finite_elements(ctrl_idx), dims.n_s, dims.n_s+1, dims.n_sys);
             
             obj.Uk = define_casadi_symbolic(settings.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
             obj.addVariable(obj.Uk, 'u', obj.model.lbu, obj.model.ubu,...
@@ -170,6 +172,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_theta_step = [obj.ind_theta_step; transpose(flatten_sys(increment_indices(fe.ind_theta_step, w_len)))];
             obj.ind_z = [obj.ind_z; transpose(flatten_sys(increment_indices(fe.ind_z, w_len)))];
             obj.ind_nu_lift = [obj.ind_nu_lift, {fe.ind_nu_lift+w_len}];
+            obj.cross_comp_list(fe.fe_idx, :,:,:) = fe.cross_comp_list;
         end
 
         function addPrimalVector(obj, symbolic, lb, ub, initial)
@@ -201,16 +204,25 @@ classdef ControlStage < NosnocFormulationObject
             elseif settings.cross_comp_mode == 9
                 for r=1:dims.n_sys
                     g_r = 0;
+                    sumlen = 0;
                     for fe=obj.stage
-                        g_r = g_r + diag(fe.sumTheta(r))*fe.sumLambda(r);
+                        pairs = fe.cross_comp_list(:, :, r);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/((dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
+                        exprs = sum2([expr_cell{:}]);
+                        g_r = g_r + expr;
+                        sum_len = sum_len + size(pairs, 1);
                     end
+                    sum_len
                     g_cross_comp = vertcat(g_cross_comp, g_r);
                 end
             elseif settings.cross_comp_mode == 10
                 for r=1:dims.n_sys
                     g_r = 0;
                     for fe=obj.stage
-                        g_r = g_r + dot(fe.sumTheta(r),fe.sumLambda(r));
+                        pairs = cross_comp_pairs(:, :, r);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/((dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
+                        exprs = sum1(sum2([expr_cell{:}]));
+                        g_r = g_r + expr;
                     end
                     g_cross_comp = vertcat(g_cross_comp, g_r);
                 end
