@@ -41,7 +41,7 @@ lifting = true;
 %% Discretization
 N_finite_elements = 3;
 T_sim = 1000;
-N_sim = 200;
+N_sim = 1;
 
 %% Settings
 settings = NosnocOptions();
@@ -53,6 +53,7 @@ settings.n_s = 2;
 settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 settings.comp_tol = 1e-5;
 settings.homotopy_update_rule = 'superlinear';
+settings.cross_comp_mode = 8;
 
 % Generate model
 model = irma_model(switch_on, lifting);

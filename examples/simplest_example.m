@@ -5,7 +5,7 @@ import casadi.*
 settings.n_s = 2;
 settings.dcs_mode = 'Step';
 settings.mpcc_mode = MpccMode.Scholtes_eq;
-settings.print_level = 5;
+settings.print_level = 1;
 x1 = SX.sym('x1');
 model.p_time_var = SX.sym('t_var',1)
 model.x = x1;

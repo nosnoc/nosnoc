@@ -37,7 +37,7 @@ classdef NosnocFormulationObject < handle
         lbg
         ubg
 
-        complementarities
+        cross_comp_list
         
         % Cost
         cost

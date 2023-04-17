@@ -590,17 +590,35 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
+            psi_fun = @(x, y, sigma) x*y - sigma; % TODO should be generated in model from settings
+
+            % TODO chose s_elastic or sigma_p as sigma parameter
+            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
+                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                    ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)],...
+                    n_comp);
+                obj.addVariable(s_elastic,...
+                    'elastic',...
+                    settings.s_elastic_min*ones(n_comp,1),...
+                    settings.s_elastic_max*ones(n_comp,1),...
+                    settings.s_elastic_0*ones(n_comp,1));
+            end
+            
             g_path_comp = [];
             % path complementarities
             % TODO: do this cleaner
             if (model.g_comp_path_constraint &&...
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
-                g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global));
+                pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global);
+                expr = apply_psi(pairs, psi_fun, sigma_p);
+                g_path_comp = vertcat(g_path_comp, expr);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if model.g_comp_path_constraint && settings.g_path_at_stg
-                    g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global));
+                    pairs = model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global);
+                    expr = apply_psi(pairs, psi_fun, sigma_p);
+                    g_path_comp = vertcat(g_path_comp, expr);
                 end
             end
 
@@ -616,133 +634,94 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                 end
             end
-
             for j=1:dims.n_s
                 for r=1:dims.n_sys
                     cross_comp_pairs{j,1,r} = horzcat(theta{j,r}, obj.prev_fe.lambda{end,r});
                 end
             end
-            cross_comp_expr = [];
-            for j=1:dims.n_s
-                for jj = 1:dims.n_s+1
-                    for r=1:dims.n_sys
-                        cross_comp_expr = vertcat(cross_comp_expr, apply_psi(cross_comp_pairs{j, jj, r}, @(x, y, sigma) x*y - sigma, sigma_p));
-                    end
-                end
-            end
-            print_casadi_vector(cross_comp_expr);
-            
+
+            % apply psi
             g_cross_comp = [];
-            % TODO Implement other modes
-            if ~settings.use_fesd
-                % TODO vectorize?
+            if settings.cross_comp_mode == 1
                 for j=1:dims.n_s
-                    theta = vertcat(obj.theta{j,:});
-                    lambda = vertcat(obj.lambda{j,:});
-                    g_cross_comp = vertcat(g_cross_comp, diag(theta)*lambda);
-                end
-            elseif settings.cross_comp_mode == 1
-                % TODO vectorize?
-                theta = obj.theta;
-                lambda = obj.lambda;
-                % Complement within FE
-                for j=1:dims.n_s
-                    for jj = 1:dims.n_s
+                    for jj = 1:dims.n_s+1
                         for r=1:dims.n_sys
-                            g_cross_comp = vertcat(g_cross_comp, diag(theta{j,r})*lambda{jj,r});
+                            pairs = cross_comp_pairs{j, jj, r};
+                            g_cross_comp = vertcat(g_cross_comp, apply_psi(pairs, psi_fun, sigma_p));
                         end
-                    end
-                end
-                for j=1:dims.n_s
-                    for r=1:dims.n_sys
-                        g_cross_comp = vertcat(g_cross_comp, diag(theta{j,r})*obj.prev_fe.lambda{end,r});
                     end
                 end
             elseif settings.cross_comp_mode == 2
-                theta = obj.theta;
-                lambda = obj.lambda;
-                for r=1:dims.n_sys
-                    for j=1:dims.n_s
-                        for jj=1:dims.n_s
-                            g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r},lambda{jj,r}));
+                for j=1:dims.n_s
+                    for jj = 1:dims.n_s+1
+                        for r=1:dims.n_sys
+                            pairs = cross_comp_pairs{j, jj, r};
+                            g_cross_comp = vertcat(g_cross_comp, sum(apply_psi(pairs, psi_fun, sigma_p/size(pairs, 1))));
                         end
                     end
                 end
-                for r=1:dims.n_sys
-                    for j=1:dims.n_sys
-                        g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, obj.prev_fe.lambda{end,r}));
-                    end
-                end
             elseif settings.cross_comp_mode == 3
-                % TODO vectorize?
-                theta = obj.theta;
                 for j=1:dims.n_s
-                    for r=1:dims.n_sys
-                        sum_lambda = obj.sumLambda(r);
-                        g_cross_comp = vertcat(g_cross_comp, diag(theta{j,r})*sum_lambda);
+                    for r=r:dims.n_sys
+                        pairs = cross_comp_pairs(j, :, r);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/(dims.n_s+1)), pairs, 'uni', false);
+                        exprs = sum2([expr_cell{:}]);
+                        g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
                 end
             elseif settings.cross_comp_mode == 4
-                lambda = obj.lambda;
-                for r=1:dims.n_sys
-                    sum_theta = obj.sumTheta(r);
-                    for j=1:dims.n_s
-                        g_cross_comp = vertcat(g_cross_comp, diag(sum_theta)*lambda{j,r});
+                for jj=1:dims.n_s+1
+                    for r=r:dims.n_sys
+                        pairs = cross_comp_pairs(:, jj, r);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/(dims.n_s)), pairs, 'uni', false);
+                        exprs = sum2([expr_cell{:}]);
+                        g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
-                    g_cross_comp = vertcat(g_cross_comp, diag(sum_theta)*obj.prev_fe.lambda{end,r});
                 end
-
             elseif settings.cross_comp_mode == 5
-                theta = obj.theta;
                 for j=1:dims.n_s
-                    for r=1:dims.n_sys
-                        sum_lambda = obj.sumLambda(r);
-                        g_cross_comp = vertcat(g_cross_comp, dot(theta{j,r}, sum_lambda));
+                    for r=r:dims.n_sys
+                        pairs = cross_comp_pairs(j, :, r);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/((dims.n_s+1)*dims.n_theta)), pairs, 'uni', false);
+                        exprs = sum1(sum2([expr_cell{:}]));
+                        g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
                 end
             elseif settings.cross_comp_mode == 6
-                for r=1:dims.n_sys
-                    sum_theta = obj.sumTheta(r);
-                    for j=1:dims.n_s
-                        g_cross_comp = vertcat(g_cross_comp, dot(sum_theta,lambda{j, r}));
+                for jj=1:dims.n_s+1
+                    for r=r:dims.n_sys
+                        pairs = cross_comp_pairs(:, jj, r);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/(dims.n_s*dims.n_theta)), pairs, 'uni', false);
+                        exprs = sum1(sum2([expr_cell{:}]));
+                        g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
-                    g_cross_comp = vertcat(g_cross_comp, dot(sum_theta,obj.prev_fe.lambda{end,r}));
                 end
             elseif settings.cross_comp_mode == 7
-                for r=1:dims.n_sys
-                    sum_theta = obj.sumTheta(r);
-                    sum_lambda = obj.sumLambda(r)
-                    g_cross_comp = vertcat(g_cross_comp, diag(sum_theta)*sum_lambda);
+                for r=r:dims.n_sys
+                    pairs = cross_comp_pairs(:, :, r);
+                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/((dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
+                    exprs = sum2([expr_cell{:}]);
+                    g_cross_comp = vertcat(g_cross_comp, exprs);
                 end
-
             elseif settings.cross_comp_mode == 8
-                for r=1:dims.n_sys
-                    sum_theta = obj.sumTheta(r);
-                    sum_lambda = obj.sumLambda(r);
-                    g_cross_comp = vertcat(g_cross_comp, dot(sum_theta, sum_lambda));
+                for r=r:dims.n_sys
+                    pairs = cross_comp_pairs(:, :, r);
+                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/((dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
+                    exprs = sum1(sum2([expr_cell{:}]));
+                    g_cross_comp = vertcat(g_cross_comp, exprs);
                 end
             elseif settings.cross_comp_mode > 8
-                % do nothing in this case
                 return
             end
+            
+            
             g_comp = vertcat(g_cross_comp, g_path_comp);
 
+            [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, setting);
+            
             n_cross_comp = length(g_cross_comp);
             n_path_comp = length(g_path_comp);
             n_comp = n_cross_comp + n_path_comp;
-            %
-            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                    ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)],...
-                    n_comp);
-                obj.addVariable(s_elastic,...
-                    'elastic',...
-                    settings.s_elastic_min*ones(n_comp,1),...
-                    settings.s_elastic_max*ones(n_comp,1),...
-                    settings.s_elastic_0*ones(n_comp,1));
-            end
-
-            [g_comp, g_comp_lb, g_comp_ub, cost] = reformulate_complementarities(g_comp, settings.mpcc_mode, sigma_p, s_elastic);
 
             % Add reformulated constraints
             obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
