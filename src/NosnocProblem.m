@@ -482,6 +482,14 @@ classdef NosnocProblem < NosnocFormulationObject
 
             sigma_p = obj.sigma_p;
             s_elastic = obj.s_elastic;
+
+            psi_fun = settings.psi_fun;
+
+            if settings.elasticity_mode == ElasticityMode.NONE
+                sigma = sigma_p;
+            else
+                sigma = s_elastic;
+            end
             
             g_cross_comp = SX([]);
             % TODO Implement other modes
@@ -493,7 +501,10 @@ classdef NosnocProblem < NosnocFormulationObject
                     g_r = 0;
                     for stage=obj.stages
                         for fe=stage.stage
-                            g_r = g_r + diag(fe.sumTheta(r))*fe.sumLambda(r);
+                            pairs = fe.cross_comp_pairs(:, :, r);
+                            expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.N_finite_elements*(dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
+                            exprs = sum2([expr_cell{:}]);
+                            g_r = g_r + exprs;
                         end
                     end
                     g_cross_comp = vertcat(g_cross_comp, g_r);
@@ -503,7 +514,10 @@ classdef NosnocProblem < NosnocFormulationObject
                     g_r = 0;
                     for stage=obj.stages
                         for fe=stage.stage
-                            g_r = g_r + dot(fe.sumTheta(r),fe.sumLambda(r));
+                           pairs = fe.cross_comp_pairs(:, :, r);
+                           expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.N_stages*dims.N_finite_elements*(dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
+                           expr = sum1(sum2([expr_cell{:}]));
+                           g_r = g_r + expr;
                         end
                     end
                     g_cross_comp = vertcat(g_cross_comp, g_r);
@@ -512,23 +526,13 @@ classdef NosnocProblem < NosnocFormulationObject
 
             g_comp = g_cross_comp;
             n_comp = length(g_cross_comp);
-            
-            %
-            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                s_elastic = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)], n_comp);
-                obj.addVariable(s_elastic,...
-                                'elastic',...
-                                settings.s_elastic_min*ones(n_comp,1),...
-                                settings.s_elastic_max*ones(n_comp,1),...
-                                settings.s_elastic_0*ones(n_comp,1));
-            end
-            
-            % Do MPCC formulation
-            [g_comp, g_comp_lb, g_comp_ub, cost] = reformulate_complementarities(g_comp, settings.mpcc_mode, sigma_p, s_elastic);
+
+            [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
 
             % Add reformulated constraints
             obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
 
+            % TODO handle cost correctly
             % If We need to add a cost from the reformulation do that as needed;
             if settings.mpcc_mode == MpccMode.ell_1_penalty
                 if settings.objective_scaling_direct

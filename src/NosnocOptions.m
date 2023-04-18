@@ -188,7 +188,10 @@ classdef NosnocOptions < handle
         D_irk double
 
         % psi func
+        psi_fun_type CFunctionType = CFunctionType.BILINEAR
         psi_fun
+        relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
+        elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
 
         right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
     end
@@ -215,8 +218,8 @@ classdef NosnocOptions < handle
 
             obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
 
-            % TODO make this correct
-            psi_fun = @(x, y, sigma) x*y - sigma;
+            % TODO is it fine to mix casadi functions 
+            obj.psi_fun = @(x, y, sigma) x*y - sigma;
         end
 
         function [] = create_butcher_tableu(obj, model)
@@ -242,6 +245,57 @@ classdef NosnocOptions < handle
                 obj.b_irk = b_irk;
             end
             obj.right_boundary_point_explicit = right_boundary_point_explicit;
+        end
+
+        function obj = set.psi_fun_type(obj, val)         
+            import casadi.*
+            a = define_casadi_symbolic(obj.casadi_symbolic_mode,'a',1);
+            b = define_casadi_symbolic(obj.casadi_symbolic_mode,'b',1);
+            sigma = define_casadi_symbolic(obj.casadi_symbolic_mode,'sigma',1);
+
+            switch val
+              case CFunctionType.BILINEAR
+                psi_mpcc = a*b-sigma;
+                
+              case CFunctionType.FISCHER_BURMEISTER
+                psi_mpcc = a+b-sqrt(a^2+b^2+sigma^2);
+                
+              case CFunctionType.NATURAL_RESIDUAL
+                psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+sigma^2));
+                
+              case CFunctionType.CHEN_CHEN_KANZOW
+                alpha = 0.5;
+                psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+sigma^2))+(1-alpha)*(a*b-sigma);
+                
+              case CFunctionType.STEFFENSON_ULBRICH
+                x = a-b;
+                z = x/sigma;
+                y_sin = sigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
+                psi_mpcc = a+b-if_else(abs(x)>=sigma,abs(x),y_sin);
+                
+              case  CFunctionType.STEFFENSON_ULBRICH_POLY
+                x = a-b;
+                z = x/sigma;
+                y_pol = sigma*(1/8*(-z^4+6*z^2+3));
+                psi_mpcc  =a+b- if_else(abs(x)>=sigma,abs(x),y_pol);
+                
+              case CFunctionType.KANZOW_SCHWARTZ
+                a1 = a-sigma;
+                b1 = b-sigma;
+                psi_mpcc  = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
+                
+              case CFunctionType.LIN_FUKUSHIMA
+                psi_mpcc1 = [a*b-sigma];
+                psi_mpcc2 = [-((a-sigma)*(b-sigma)-sigma^2)];
+                psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
+                
+              case CFunctionType.KADRANI
+                psi_mpcc = (a-sigma)*(b-sigma);
+                
+            end
+
+            obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
+            obj.psi_fun_type = val;
         end
 
         function obj = set.print_level(obj, val)
@@ -316,7 +370,41 @@ classdef NosnocOptions < handle
                 end
                 obj.cross_comp_mode = 12;
             end
-            
+
+            switch val
+              case MpccMode.Scholtes_ineq
+                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.relaxation_method = RelaxationMode.INEQ;
+                obj.elasticity_mode = ElasticityMode.NONE;
+              case MpccMode.Scholtes_eq
+                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.relaxation_method = RelaxationMode.EQ;
+                obj.elasticity_mode = ElasticityMode.NONE;
+              case MpccMode.elastic_ineq
+                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.relaxation_method = RelaxationMode.INEQ;
+                obj.elasticity_mode = ElasticityMode.ELL_INF;
+              case MpccMode.elastic_eq
+                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.relaxation_method = RelaxationMode.EQ;
+                obj.elasticity_mode = ElasticityMode.ELL_INF;
+              case MpccMode.elastic_two_sided
+                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.relaxation_method = RelaxationMode.TWO_SIDED;
+                obj.elasticity_mode = ElasticityMode.ELL_INF;
+              case MpccMode.elastic_ell_1_ineq
+                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.relaxation_method = RelaxationMode.INEQ;
+                obj.elasticity_mode = ElasticityMode.ELL_1;
+              case MpccMode.elastic_ell_1_eq
+                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.relaxation_method = RelaxationMode.EQ;
+                obj.elasticity_mode = ElasticityMode.ELL_1;
+              case MpccMode.elastic_ell_1_two_sided
+                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.relaxation_method = RelaxationMode.TWO_SIDED;
+                obj.elasticity_mode = ElasticityMode.ELL_1;
+            end
             obj.mpcc_mode = val;
         end
 

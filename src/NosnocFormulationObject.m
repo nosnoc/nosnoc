@@ -36,8 +36,6 @@ classdef NosnocFormulationObject < handle
         g
         lbg
         ubg
-
-        cross_comp_list
         
         % Cost
         cost

@@ -47,6 +47,8 @@ classdef FiniteElement < NosnocFormulationObject
         ind_ineq
         ind_comp
 
+        cross_comp_pairs
+
         ctrl_idx
         fe_idx
 
@@ -592,8 +594,8 @@ classdef FiniteElement < NosnocFormulationObject
 
             psi_fun = settings.psi_fun;
 
-            % TODO chose s_elastic or sigma_p as sigma parameter
-            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
+            % TODO This needs n_comp. that can be calculated apriori so lets do that
+            if settings.elasticity_mode == ElasticityMode.ELL_1
                 s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode,...
                     ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)],...
                     n_comp);
@@ -603,10 +605,16 @@ classdef FiniteElement < NosnocFormulationObject
                     settings.s_elastic_max*ones(n_comp,1),...
                     settings.s_elastic_0*ones(n_comp,1));
             end
+
+            if settings.elasticity_mode == ElasticityMode.NONE
+                sigma = sigma_p;
+            else
+                sigma = s_elastic;
+            end
+            
             
             g_path_comp = [];
             % path complementarities
-            % TODO: do this cleaner
             if (model.g_comp_path_constraint &&...
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global);
@@ -639,7 +647,7 @@ classdef FiniteElement < NosnocFormulationObject
                     cross_comp_pairs{j,1,r} = horzcat(theta{j,r}, obj.prev_fe.lambda{end,r});
                 end
             end
-            obj.cross_comp_list = cross_comp_pairs;
+            obj.cross_comp_pairs = cross_comp_pairs;
 
             % apply psi
             g_cross_comp = [];
@@ -648,7 +656,7 @@ classdef FiniteElement < NosnocFormulationObject
                     for jj = 1:dims.n_s+1
                         for r=1:dims.n_sys
                             pairs = cross_comp_pairs{j, jj, r};
-                            g_cross_comp = vertcat(g_cross_comp, apply_psi(pairs, psi_fun, sigma_p));
+                            g_cross_comp = vertcat(g_cross_comp, apply_psi(pairs, psi_fun, sigma));
                         end
                     end
                 end
@@ -657,7 +665,7 @@ classdef FiniteElement < NosnocFormulationObject
                     for jj = 1:dims.n_s+1
                         for r=1:dims.n_sys
                             pairs = cross_comp_pairs{j, jj, r};
-                            g_cross_comp = vertcat(g_cross_comp, sum(apply_psi(pairs, psi_fun, sigma_p/size(pairs, 1))));
+                            g_cross_comp = vertcat(g_cross_comp, sum(apply_psi(pairs, psi_fun, sigma/size(pairs, 1))));
                         end
                     end
                 end
@@ -665,7 +673,7 @@ classdef FiniteElement < NosnocFormulationObject
                 for j=1:dims.n_s
                     for r=r:dims.n_sys
                         pairs = cross_comp_pairs(j, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/(dims.n_s+1)), pairs, 'uni', false);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s+1)), pairs, 'uni', false);
                         exprs = sum2([expr_cell{:}]);
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
@@ -674,7 +682,7 @@ classdef FiniteElement < NosnocFormulationObject
                 for jj=1:dims.n_s+1
                     for r=r:dims.n_sys
                         pairs = cross_comp_pairs(:, jj, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/(dims.n_s)), pairs, 'uni', false);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s)), pairs, 'uni', false);
                         exprs = sum2([expr_cell{:}]);
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
@@ -683,7 +691,7 @@ classdef FiniteElement < NosnocFormulationObject
                 for j=1:dims.n_s
                     for r=r:dims.n_sys
                         pairs = cross_comp_pairs(j, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/((dims.n_s+1)*dims.n_theta)), pairs, 'uni', false);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_theta)), pairs, 'uni', false);
                         exprs = sum1(sum2([expr_cell{:}]));
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
@@ -692,7 +700,7 @@ classdef FiniteElement < NosnocFormulationObject
                 for jj=1:dims.n_s+1
                     for r=r:dims.n_sys
                         pairs = cross_comp_pairs(:, jj, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/(dims.n_s*dims.n_theta)), pairs, 'uni', false);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s*dims.n_theta)), pairs, 'uni', false);
                         exprs = sum1(sum2([expr_cell{:}]));
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
@@ -700,14 +708,14 @@ classdef FiniteElement < NosnocFormulationObject
             elseif settings.cross_comp_mode == 7
                 for r=r:dims.n_sys
                     pairs = cross_comp_pairs(:, :, r);
-                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/((dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
+                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
                     exprs = sum2([expr_cell{:}]);
                     g_cross_comp = vertcat(g_cross_comp, exprs);
                 end
             elseif settings.cross_comp_mode == 8
                 for r=r:dims.n_sys
                     pairs = cross_comp_pairs(:, :, r);
-                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma_p/((dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
+                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
                     exprs = sum1(sum2([expr_cell{:}]));
                     g_cross_comp = vertcat(g_cross_comp, exprs);
                 end
@@ -718,7 +726,6 @@ classdef FiniteElement < NosnocFormulationObject
             
             g_comp = vertcat(g_cross_comp, g_path_comp);
 
-            settings.relaxation_method = 'INEQ';
             [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
             
             n_cross_comp = length(g_cross_comp);
