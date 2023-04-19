@@ -4,26 +4,33 @@ clc;
 import casadi.*
 close all
 %%
-settings = NosnocOptions();  
+settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 2;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
-settings.dcs_mode = DcsMode.CLS;
-settings.time_freezing = 0; %% we will need to exlude the coexistence of these two
+% settings.dcs_mode = DcsMode.CLS;
+settings.time_freezing = 1; %% we will need to exlude the coexistence of these two
+
+if settings.time_freezing
+    settings.impose_terminal_phyisical_time = 1;
+    settings.local_speed_of_time_variable = 1;
+    settings.stagewise_clock_constraint = 0;
+    settings.pss_lift_step_functions = 0;
+end
 %%
 g = 10;
 % Symbolic variables and bounds
-q = SX.sym('q',2); 
-v = SX.sym('v',2); 
-model.x = [q;v]; 
+q = SX.sym('q',2);
+v = SX.sym('v',2);
+model.x = [q;v];
 model.e = 0;
 model.mu = 0.3;
 model.a_n = 20;
-model.x0 = [0;1;3;0]; 
-model.f_v = [0;-g+vertical_force*g*q(1)];
+model.x0 = [0;1;3;0];
+model.f_v = [0;-g];
 model.f_c = q(2);
-model.J_t = [1; 0]; % TODO: remove J_tangent to J_t everywhere % TODO: if not D_t avilable but J_t there make D_t = [J_t, -J_t];
+model.J_tangent = [1; 0]; % TODO: remove J_tangent to J_t everywhere % TODO: if not D_t avilable but J_t there make D_t = [J_t, -J_t];
 model.n_dim_contact = 2; % TODO: can be checkt via tangets and contact dimeion also for tf
 %% Simulation setings
 N_FE = 5;
@@ -104,15 +111,15 @@ xlabel('simulation step','interpreter','latex');
 ylabel('$s$','interpreter','latex');
 
 %% complementarity residuals
-if 0 
-lambda0 = lambda_0_res;
-lambda1 = lambda_1_res;
-alpha = alpha_res;
-comp1 = alpha.*lambda0;
-comp2 = lambda1.*(ones(size(alpha))-alpha);
-figure
-subplot(121)
-plot(comp1')
-subplot(122)
-plot(comp2')
+if 0
+    lambda0 = lambda_0_res;
+    lambda1 = lambda_1_res;
+    alpha = alpha_res;
+    comp1 = alpha.*lambda0;
+    comp2 = lambda1.*(ones(size(alpha))-alpha);
+    figure
+    subplot(121)
+    plot(comp1')
+    subplot(122)
+    plot(comp2')
 end

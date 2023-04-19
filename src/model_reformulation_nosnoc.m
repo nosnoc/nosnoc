@@ -96,7 +96,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     if length(N_finite_elements) > N_stages
         N_finite_elements = N_finite_elements(1:N_stages);
         if print_level >=1
-            fprintf('Info: Provided N_finite_elements had more entries then N_stages, the surplus of entries was removed. \n')
+            fprintf('nosnoc: Provided N_finite_elements had more entries then N_stages, the surplus of entries was removed. \n')
         end
     end
     if length(N_finite_elements) == 1
@@ -115,19 +115,19 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     settings.casadi_symbolic_mode  = casadi_symbolic_mode;
 
     %% Check is x provided
-    if exist('x')
+    if isfield(model,'x')
         n_x = length(x);
         % check  lbx
-        if exist('lbx')
-            if length(lbx) ~= n_x
+        if isfield(model,'lbx')
+            if length(model.lbx) ~= n_x
                 error('The vector lbx, for the lower bounds of x has the wrong size.')
             end
         else
             lbx = -inf*ones(n_x,1);
         end
         % check ubx
-        if exist('ubx')
-            if length(ubx) ~= n_x
+        if isfield(model,'ubx')
+            if length(model.ubx) ~= n_x
                 error('The vector ubx, for the upper bounds of x has the wrong size.')
             end
         else
@@ -137,19 +137,19 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         error('Please provide the state vector x, a CasADi symbolic variable.')
     end
     %% Check is u provided
-    if exist('u')
-        n_u = length(u);
+    if isfield(model,'u')
+        n_u = length(model.u);
         % check  lbu
-        if exist('lbu')
-            if length(lbu) ~= n_u
+        if isfield(model,'lbu')
+            if length(model.lbu) ~= n_u
                 error('The vector lbu, for the lower bounds of u has the wrong size.')
             end
         else
             lbu = -inf*ones(n_u,1);
         end
         % check ubu
-        if exist('ubu')
-            if length(ubu) ~= n_u
+        if isfield(model,'ubu')
+            if length(model.ubu) ~= n_u
                 error('The vector ubu, for the upper bounds of u has the wrong size.')
             end
         else
@@ -168,33 +168,33 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         u0 = [];
         n_u = 0;
         if print_level >=1
-            fprintf('Info: No control vector u is provided. \n')
+            fprintf('nosnoc: No control vector u is provided. \n')
         end
         lbu = [];
         ubu = [];
     end
     %% Check if z is provided
-    if exist('z')
+    if isfield(model,'z')
         n_z = length(z);
 
-        if exist('z0')
-            if length(z0) ~= n_z
+        if isfield(model,'z0')
+            if length(model.z0) ~= n_z
                 error('The vector z0, for the initial guess of z has the wrong size.')
             end
         else
             z0 = zeros(n_z, 1);
         end
 
-        if exist('lbz')
-            if length(lbz) ~= n_z
+        if isfield(model,'lbz')
+            if length(model.lbz) ~= n_z
                 error('The vector lbz, for the lower bound of z has the wrong size.')
             end
         else
             lbz = -inf*ones(n_z, 1);
         end
 
-        if exist('ubz')
-            if length(ubz) ~= n_z
+        if isfield(model,'ubz')
+            if length(model.ubz) ~= n_z
                 error('The vector ubz, for the lower bound of z has the wrong size.')
             end
         else
@@ -208,26 +208,26 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         z = define_casadi_symbolic(casadi_symbolic_mode,'',0);
     end
     %% Global vars (i.e., variables that do not change with time)
-    if exist('v_global')
-        n_v_global = length(v_global);
-        if exist('v0_global')
-            if length(v0_global) ~= n_v_global
+    if isfield(model,'v_global')
+        n_v_global = length(model.v_global);
+        if isfield(model,'v0_global')
+            if length(model.v0_global) ~= n_v_global
                 error('The vector v0_global, for the initial guess of v_global has the wrong size.')
             end
         else
             z0 = zeros(n_z, 1);
         end
 
-        if exist('lbv_global')
-            if length(lbv_global) ~= n_v_global
+        if isfield(model,'lbv_global')
+            if length(model.lbv_global) ~= n_v_global
                 error('The vector lbv_global, for the lower bound of v_global has the wrong size.')
             end
         else
             lbz = -inf*ones(n_z, 1);
         end
 
-        if exist('ubv_global')
-            if length(ubv_global) ~= n_v_global
+        if isfield(model,'ubv_global')
+            if length(model.ubv_global) ~= n_v_global
                 error('The vector ubv_global, for the upper bound of v_global has the wrong size.')
             end
         else
@@ -242,10 +242,10 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     end
 
     %% Parameters (time variable and that do not change with time)
-    if exist('p_global')
-        n_p_global = size(p_global,1);
-        if exist('p_global_val')
-            if size(p_global_val,1) ~= n_p_global
+    if isfield(model,'p_global')
+        n_p_global = size(model.p_global,1);
+        if isfield(model,'p_global_val')
+            if size(model.p_global_val,1) ~= n_p_global
                 error('User provided p_global_val has the wrong size.')
             end
         else
@@ -256,14 +256,14 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         p_global = define_casadi_symbolic(casadi_symbolic_mode,'',0);
         p_global_val = [];
         if print_level >= 1
-            fprintf('Info: No global parameters given. \n')
+            fprintf('nosnoc: No global parameters given. \n')
         end
     end
 
-    if exist('p_time_var')
-        n_p_time_var = size(p_time_var, 1);
-        if exist('p_time_var_val')
-            if size(p_time_var_val) ~= [n_p_time_var, N_stages]
+    if isfield(model,'p_time_var')
+        n_p_time_var = size(model.p_time_var, 1);
+        if isfield(model,'p_time_var_val')
+            if size(model.p_time_var_val) ~= [n_p_time_var, N_stages]
                 error('User provided p_global_val has the wrong size.')
             end
         else
@@ -281,7 +281,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         p_time_var_stages = define_casadi_symbolic(casadi_symbolic_mode,'', [0, N_stages]);
         p_time_var_val = double.empty(0,N_stages);
         if print_level >= 1
-            fprintf('Info: No time varying parameters given. \n')
+            fprintf('nosnoc: No time varying parameters given. \n')
         end
     end
 
@@ -298,7 +298,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     %% Stage and terminal costs check
     if ~exist('f_q')
         if print_level >=1
-            fprintf('Info: No stage cost is provided. \n')
+            fprintf('nosnoc: No stage cost is provided. \n')
         end
         %     eval(['f_q = ', casadi_symbolic_mode, '.zeros(1);'])
         f_q = 0;
@@ -308,7 +308,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         terminal_cost = 1;
     else
         if print_level >=1
-            fprintf('Info: No terminal cost is provided. \n')
+            fprintf('nosnoc: No terminal cost is provided. \n')
         end
         %     eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1);'])
         f_q_T = 0;
@@ -328,10 +328,10 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         n_x_ref_rows = size(lsq_x{2},1);
         n_x_ref_cols = size(lsq_x{2},2);
         if n_x_ref_cols == N_stages
-            fprintf('Info: the provided reference for the differential states is time variable. \n');
+            fprintf('nosnoc: the provided reference for the differential states is time variable. \n');
         elseif n_x_ref_cols == 1
             % replaciate
-            fprintf('Info: the provided reference for the differential states is constant over time. \n');
+            fprintf('nosnoc: the provided reference for the differential states is constant over time. \n');
             lsq_x{2} = repmat(lsq_x{2},1,N_stages);
         else
             fprintf('The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,N_stages)
@@ -360,10 +360,10 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         n_u_ref_rows = size(lsq_u{2},1);
         n_u_ref_cols = size(lsq_u{2},2);
         if n_u_ref_cols == N_stages
-            fprintf('Info: the provided reference for the control inputs is time variable. \n');
+            fprintf('nosnoc: the provided reference for the control inputs is time variable. \n');
         elseif n_u_ref_cols == 1
             % replaciate
-            fprintf('Info: the provided reference for the control inputs is constant over time. \n');
+            fprintf('nosnoc: the provided reference for the control inputs is constant over time. \n');
             lsq_u{2} = repmat(lsq_u{2},1,N_stages);
         else
             fprintf('The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,N_stages)
@@ -396,7 +396,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         n_x_T_rows = size(lsq_T{2},1);
         n_x_T_cols = size(lsq_T{2},2);
         if n_x_T_cols == 1
-            fprintf('Info: the provided reference for the terminal cost is ok. \n');
+            fprintf('nosnoc: the provided reference for the terminal cost is ok. \n');
         else
             fprintf('The reference in lsq_T has to be a vector of length %d. \n',length(lsq_T{1}));
             error('Please provide a reference vector in lsq_T{2} with an appropaite size.')
@@ -434,7 +434,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         n_g_path = 0;
         g_path_constraint  = 0;
         if print_level >=1
-            fprintf('Info: No path constraints are provided. \n')
+            fprintf('nosnoc: No path constraints are provided. \n')
         end
     end
 
@@ -449,7 +449,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     else
         g_comp_path_constraint = 0;
         if print_level >=1
-            fprintf('Info: No path complementarity constraints are provided. \n')
+            fprintf('nosnoc: No path complementarity constraints are provided. \n')
         end
     end
     %% Terminal constraints
@@ -476,7 +476,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         terminal_constraint = 0;
         n_g_terminal = 0;
         if print_level >=1
-            fprintf('Info: No terminal constraints are provided. \n')
+            fprintf('nosnoc: No terminal constraints are provided. \n')
         end
     end
 
@@ -630,7 +630,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     if max(n_c_sys) < 2 && isequal(dcs_mode,'Step')
         pss_lift_step_functions = 0;
         if print_level >=1
-            fprintf('Info: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
+            fprintf('nosnoc: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
         end
     end
 
