@@ -204,8 +204,6 @@ if ~time_freezing_model_exists
         v_tangent  = [];
     end
 
-
-
     % parameter for auxiliary dynamics
     if ~isfield(model,'a_n')
         a_n  = 100;
@@ -218,7 +216,6 @@ if ~time_freezing_model_exists
         %% switching function
         if settings.nonsmooth_switching_fun
             c = [max_smooth_fun(f_c,v_normal,0);v_tangent];
-            %         c = max_smooth_fun(f_c,v_normal,sigma0);
         else
             if n_dim_contact == 2
                 c = [f_c;v_normal;v_tangent'];

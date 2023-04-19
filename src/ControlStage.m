@@ -28,23 +28,32 @@ classdef ControlStage < NosnocFormulationObject
     properties
         stage
         Uk
-
         % Index vectors
         ind_x
         ind_v
+        ind_z
+        ind_u
+        % Specific to Stewarts representation
         ind_theta
         ind_lam
         ind_mu
+        % Specific to Step representation
         ind_alpha
         ind_lambda_n
         ind_lambda_p
+        ind_beta
+        ind_theta_step
+        % Speficif to CLS representation
+        ind_lambda_normal
+        ind_lambda_tangent
+        ind_Lambda_normal
+        ind_Lambda_tangent
+
         ind_h
         ind_nu_lift
         ind_elastic
-        ind_beta
-        ind_theta_step
-        ind_z
-        ind_u
+        
+        
         ind_sot
 
         % Index of this control stage.

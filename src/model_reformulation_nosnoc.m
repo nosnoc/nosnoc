@@ -479,15 +479,14 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         end
     end
 
-    %% Transforming a Piecewise smooth system into a DCS via Stewart's or the Step function approach
+    %% Check the inputs specific to a DCS mode 
     dcs_mode = settings.dcs_mode;
-    % Stewart's representation of the sets R_i and discirimant functions g_i
     g_Stewart = {};
     g_ind_vec = [];
     c_all = [];
     m_vec = [];
     n_c_sys = [];
-
+    if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
     if ~exist('F')
         % Don't need F
         if ~settings.general_inclusion
@@ -638,6 +637,21 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     else
         n_f_sys = [size(f_x,1)];
     end
+    end
+
+    if isequal(dcs_mode,'CLS')
+        % Check existence of relevant functions (
+        % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
+        % e
+        % mu
+        % M 
+        % f_v
+        % f_c
+        % J_tangent
+        % J_normal 
+        
+
+    end
     %% Algebraic variables defintion
     % Dummy variables for Stewart representation'
     theta = [];
@@ -736,7 +750,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         beta = [];
         theta_step = [];
 
-        % Theta  collects the vector for dotx = F(x)Theta ,
+        % Theta collects the vector for dot_x = F(x)Theta ,
         % terms or theta_step from lifting;
         if ~settings.general_inclusion
             for ii = 1:n_sys
@@ -813,7 +827,6 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
             beta = [beta_bilinear_ode;
                     beta_bilinear_aux;
                     beta_prod];
-            
             % expresions for theta's and lifting
             %% Filippov multipliers
             alpha_ode = 1; % initalized product for free flight multiplier
