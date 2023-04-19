@@ -366,7 +366,7 @@ if isfield(model,'lsq_u')
         fprintf('nosnoc: the provided reference for the control inputs is constant over time. \n');
         lsq_u{2} = repmat(lsq_u{2},1,N_stages);
     else
-        fprintf('The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,N_stages)
+        fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,N_stages)
         error('nosnoc: Please provide u_ref in lsq_u{2} with an appropaite size.')
     end
     u_ref_val = lsq_u{2};
@@ -397,7 +397,7 @@ if isfield(model,'lsq_T')
     if n_x_T_cols == 1
         fprintf('nosnoc: the provided reference for the terminal cost is ok. \n');
     else
-        fprintf('The reference in lsq_T has to be a vector of length %d. \n',length(lsq_T{1}));
+        fprintf('nosnoc: The reference in lsq_T has to be a vector of length %d. \n',length(lsq_T{1}));
         error('nosnoc: Please provide a reference vector in lsq_T{2} with an appropaite size.')
     end
     x_ref_end_val = lsq_T{2};
