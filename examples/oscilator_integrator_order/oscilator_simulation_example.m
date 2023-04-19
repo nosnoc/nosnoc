@@ -90,7 +90,7 @@ model.F = F;
 %% numerical error
 x_fesd = results.x_res(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-fprintf(['Numerical error with h = %2.3f and ' settings.irk_scheme ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
+fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
 %% plot_solution_trajectory
 t_star = R_osc; % eact switching time
 x_res = results.x_res;
