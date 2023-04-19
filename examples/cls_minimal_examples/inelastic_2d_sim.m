@@ -9,7 +9,7 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 2;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
-settings.dcs_mode = "CLS";
+settings.dcs_mode = DcsMode.CLS;
 settings.time_freezing = 0; %% we will need to exlude the coexistence of these two
 %%
 g = 10;

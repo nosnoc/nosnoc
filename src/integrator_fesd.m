@@ -72,7 +72,6 @@ end
 if ~solver_exists
     tic
     [solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
-    %     [solver,solver_initialization, model,settings] = create_nlp_nosnoc_rv(model,settings);
     solver_generating_time = toc;
     if print_level >=2
         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);

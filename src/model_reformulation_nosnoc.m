@@ -79,7 +79,6 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         model.N_ctrl = N_ctrl;
     end
 
-
     if exist('N_FE','var')
         N_finite_elements = N_FE;
         model.N_finite_elements  = N_finite_elements;
@@ -208,7 +207,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         ubz = [];
         z = define_casadi_symbolic(casadi_symbolic_mode,'',0);
     end
-    %% Global vars
+    %% Global vars (i.e., variables that do not change with time)
     if exist('v_global')
         n_v_global = length(v_global);
         if exist('v0_global')
@@ -242,7 +241,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         ubv_global = [];
     end
 
-    %% Parameters
+    %% Parameters (time variable and that do not change with time)
     if exist('p_global')
         n_p_global = size(p_global,1);
         if exist('p_global_val')
@@ -911,15 +910,13 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
             g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{[beta_bilinear_ode_expr;beta_bilinear_aux_expr;beta_prod_expr_guess]});          
             theta_step_all{1} = theta_step;
         end
-        
-        
         n_beta = length(beta);
         n_theta_step = length(theta_step);
         n_z_all = n_z_all + n_beta+n_theta_step;
     end
     g_lift = [g_lift_theta_step;g_lift_beta];
 
-    %% Define algerbraic variables which arise from Stewart's reformulation of a PSS into a DCS
+    %% Collect algebaric varaibles for the specific DCS mode
     switch dcs_mode
       case 'Stewart'
         % symbolic variables z = [theta;lambda;mu];
@@ -957,6 +954,8 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         % eval functios for theta_step and beta?
         z0_all = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;theta_step_guess];
         n_lift_eq =length(g_lift);
+        case 'CLS'
+
     end
 
     %% Add user provided algebraic
@@ -966,20 +965,21 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     ubz_all = [ubz_all;ubz];
     n_z_all = n_z_all + n_z;
 
-    %% Reformulate the Filippov ODE into a DCS
+    %% Model functions of the DCS mode
 
     % if f_x doesnt exist we generate it from F
     % if it does we are in expert mode. TODO name.
     if ~isfield(model, 'f_x')
         f_x = zeros(n_x,1);
         % rhs of ODE;
-
         for ii = 1:n_sys
             switch dcs_mode
               case 'Stewart'
                 f_x = f_x + F{ii}*theta_all{ii};
               case 'Step'
                 f_x = f_x + F{ii}*theta_step_all{ii};
+              case 'DCS'
+
             end
         end
     end
@@ -1014,11 +1014,14 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
             f_comp_residual = f_comp_residual + lambda_0_all{ii}'*alpha_all{ii}+lambda_1_all{ii}'*(ones(n_c_sys(ii),1)-alpha_all{ii});
             %             lambda00_expr = [lambda00_expr; max(c{ii},0); -min(c{ii}, 0)];
             lambda00_expr = [lambda00_expr; -min(c{ii}, 0); max(c{ii},0)];
+          case 'DCS'
+
         end
     end
 
-    %% Lifting of forces in time-freezing
-    % the r.h.s of M(q)ddot{q} = f(q,dor{q},u) into  M{q}z-f(q,dor{q},u)= 0; \ddot{q} = z
+    %% Lifting of forces in rigid bodies (either with time freezing or the dcs system)
+    % the r.h.s of M(q)\ddot{q} = F(q,\dot{q},u) into  M{q}z_v-f(q,dor{q},u)=0; \ddot{q} = z_v
+    % TODO: rename time_freezing_lift_forces into lift_velocity_state
     g_lift_forces = [];
     if time_freezing && time_freezing_lift_forces % TODO Is this broken with parameters/v_global
         f_v = f_x(n_q+1:2*n_q);
@@ -1039,6 +1042,8 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
                                             % new simple dynamics after lifting
         f_x = [f_x(1:n_q); z_forces; f_x(end-n_quad:end)];
     end
+    if lift_velocity_state
+    end
 
     %%  collect all algebraic equations
     g_lp = [g_switching;g_convex;g_lift];
@@ -1050,8 +1055,6 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     % TODO should this be a function of v_global as well (could be interesting for formulation)
     g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
     c_fun = Function('c_fun',{x,p},{c_all});
-
-    % end
     dot_c = c_all.jacobian(x)*f_x;
 
     f_x_fun = Function('f_x_fun',{x,z_all,u,p,v_global},{f_x,f_q});
@@ -1084,16 +1087,13 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     end
 
     %% Collect Outputs
-    %
     model.lbx = lbx;
     model.ubx = ubx;
-
     model.lbu = lbu;
     model.ubu = ubu;
     if n_u > 0
         model.u0 = u0;
     end
-
     model.z0_all = z0_all;
     model.lbz_all = lbz_all;
     model.ubz_all = ubz_all;
