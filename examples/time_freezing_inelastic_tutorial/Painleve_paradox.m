@@ -16,7 +16,8 @@ settings.pss_lift_step_functions= 1;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
 settings.print_level = 2;
 settings.N_homotopy = 10;
-settings.cross_comp_mode = 3;
+settings.cross_comp_mode = 1;
+settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 settings.time_freezing = 1;
 %%
 model.e = 0;
@@ -63,6 +64,8 @@ settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 [model,settings] = time_freezing_reformulation(model,settings);
 settings.time_freezing = 0;
+settings.use_speed_of_time_variables = 0;
+settings.local_speed_of_time_variable = 0;
 [results,stats,model] = integrator_fesd(model,settings);
 %%
 qx = results.x_res(1,:);

@@ -44,14 +44,16 @@ R_osc  = 1;
 % collocation settings
 settings = NosnocOptions();
 settings.use_fesd = 1;       % switch detection method on/off
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE; %'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.RADAU_IIA; %'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 4;
 settings.dcs_mode = 'Step'; % 'Step;
-settings.mpcc_mode = 'Scholtes_ineq';  % Scholtes regularization
+settings.mpcc_mode = MpccMode.Scholtes_ineq;  % Scholtes regularization
+
+settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-9;
-settings.cross_comp_mode  = 3;
+settings.cross_comp_mode = 1;
 
 %% Time settings
 x_star = [exp(1);0];

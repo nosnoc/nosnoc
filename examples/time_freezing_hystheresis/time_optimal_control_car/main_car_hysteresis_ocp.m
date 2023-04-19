@@ -39,21 +39,24 @@ settings.time_freezing_hysteresis  = 1;
 settings.time_optimal_problem = 1;
 % Time-freezing scaling / speed of time
 settings.s_sot_max = 10;
-settings.s_sot_min = 1;
+settings.s_sot_min = 0.9;
 settings.rho_sot = 1e-1;
 settings.use_speed_of_time_variables = 1; 
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 1;
 % solver settings
 settings.comp_tol = 1e-8;
-settings.cross_comp_mode = 3;
+settings.cross_comp_mode = 1;
 % settings.homotopy_update_slope = 0.2;
 settings.homotopy_update_rule = 'superlinear';
-settings.mpcc_mode = 'Scholtes_eq';
+settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
+%settings.elasticity_mode = ElasticityMode.ELL_INF;
+settings.opts_ipopt.ipopt.max_iter = 1e4;
+settings.sigma_0 = 100;
 
 %% Model Settings
 model.fuel_cost_on = 0;
-model.N_finite_elements = 3;
+model.N_finite_elements = 5;
 model.N_stages = 10;
 model.T = 1;
 %% solve OCP

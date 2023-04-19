@@ -53,7 +53,7 @@ settings.n_s = 2;
 settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 settings.comp_tol = 1e-5;
 settings.homotopy_update_rule = 'superlinear';
-settings.cross_comp_mode = 9;
+settings.cross_comp_mode = 12;
 
 % Generate model
 model = irma_model(switch_on, lifting);

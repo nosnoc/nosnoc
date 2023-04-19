@@ -54,6 +54,7 @@ settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_iter = 3;
 
 settings.cross_comp_mode = 1;
+settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 settings.opts_ipopt.ipopt.max_iter = 1e3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 1;

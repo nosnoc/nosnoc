@@ -41,30 +41,32 @@ linear_control = 1;
 [settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 
 settings.n_s = 2;
-N_finite_elements = 6;
+N_finite_elements = 3;
 
-settings.irk_representation = 'differential';
+settings.irk_representation = 'integral';
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
+settings.cross_comp_mode = 1;
 
 settings.print_level = 3;
 settings.use_fesd = 1;
 settings.comp_tol = 1e-6;
 settings.equidistant_control_grid = 1;
 
-settings.step_equilibration = 'l2_relaxed_scaled';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
+settings.step_equilibration = 'heuristic_mean';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
 settings.rho_h = 1e2;
 
 %% model equations
 % Variable defintion
-x1 = MX.sym('x1');
-x2 = MX.sym('x2');
+x1 = SX.sym('x1');
+x2 = SX.sym('x2');
 
-v1 = MX.sym('v1');
-v2 = MX.sym('v2');
+v1 = SX.sym('v1');
+v2 = SX.sym('v2');
 
 % Control
-u1 = MX.sym('u1');
-u2 = MX.sym('u2');
+u1 = SX.sym('u1');
+u2 = SX.sym('u2');
 model.u = [u1;u2];
 
 if linear_control
