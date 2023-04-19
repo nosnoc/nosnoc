@@ -36,7 +36,7 @@ x_opt = reshape(transpose(x_opt_s(:,:,end)), prod(size(x_opt_s(:,:,end))), 1);
 x_opt = [x_opt_extended(:,1), x_opt{:}];
 
 
-switch pss_mode
+switch dcs_mode
     case 'Stewart'
         z_opt_extended = reshape(algebraic_states,n_z_all,length(algebraic_states)/n_z_all);
         z_opt  = z_opt_extended(:,1:n_s:end);
@@ -82,7 +82,7 @@ end
 ind_t_grid_u = cumsum([1; N_finite_elements]);
 
 %% Get structured output (These do not contain x0)
-switch pss_mode
+switch dcs_mode
   case 'Stewart'
     theta_opt_s = cellfun(@(theta) w_opt(theta), problem.ind_theta(:,:,end-(~settings.right_boundary_point_explicit)), 'uni', 0);
     lambda_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lam(:,:,end), 'uni', 0);
@@ -99,7 +99,7 @@ for i = 1:n_x
     x_i_opt_flat{i} = [x_opt_extended(i,1);reshape(transpose(x_i_opt{i}), prod(size(x_i_opt{i})), 1)];
 end
 
-switch pss_mode
+switch dcs_mode
   case 'Stewart'
     theta_i_opt = cell(n_theta, 1);
     theta_i_opt_flat = cell(n_theta, 1);
@@ -155,7 +155,7 @@ end
 st = struct();
 st.x_i_opt = x_i_opt;
 st.x_i_opt = x_i_opt_flat;
-switch pss_mode
+switch dcs_mode
   case 'Stewart'
     st.theta_i_opt = theta_i_opt;
     st.lambda_i_opt = lambda_i_opt;
@@ -183,7 +183,7 @@ results.z_opt_extended = z_opt_extended;
 results.t_grid = t_grid;
 results.t_grid_u = t_grid(ind_t_grid_u);
 
-switch pss_mode
+switch dcs_mode
   case 'Stewart'
     results.theta_opt = theta_opt;
     results.lambda_opt = lambda_opt;

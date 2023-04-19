@@ -34,7 +34,7 @@ import casadi.*
 %% model parameters
 e = 0.9; u_max = 9; beta = 0.0; 
 %% NOSNOC settings
-[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
+[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 settings.time_freezing = 1; 
 settings.n_s = 3; 
 settings.mpcc_mode = 'Scholtes_ineq';

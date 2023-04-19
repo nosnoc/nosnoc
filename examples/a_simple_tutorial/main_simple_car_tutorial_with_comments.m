@@ -36,9 +36,9 @@
 %% settings
 clear all; clc; close all; 
 import casadi.*
-[settings] = default_settings_nosnoc();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
+[settings] = NosnocOptions();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
 %% Choosing the Runge - Kutta Method and number of stages
-settings.irk_scheme = 'Radau-IIA'; % Lobatto-III
+settings.irk_scheme = IRKSchemes.RADAU_IIA; % Lobatto-III
 settings.print_level = 3;
 settings.n_s = 2;
 settings.mpcc_mode = 'scholtes_ineq';
@@ -59,7 +59,7 @@ settings.homotopy_parameter_rule = 'superlinear';
 settings.use_speed_of_time_variables = 1;
 settings.local_speed_of_time_variable = 1;
 settings.equidistant_control_grid = 1;
-% settings.pss_mode = 'Step';
+% settings.dcs_mode = 'Step';
 % settings.polishing_step = 1;
 
 %% Time settings

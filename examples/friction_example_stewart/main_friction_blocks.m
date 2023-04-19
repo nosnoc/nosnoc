@@ -39,9 +39,9 @@ import casadi.*
 % generalization of the FESD scheme presented in the NOSNOC software parep
 %% settings
 % collocation settings
-[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
+[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;                            
-settings.irk_scheme = 'Radau-IIA';     
+settings.irk_scheme = IRKSchemes.RADAU_IIA;     
 settings.irk_representation = 'differential';
 settings.lift_irk_differential = 1;
 settings.print_level = 2;
@@ -63,8 +63,8 @@ T_sim = 12;
 % T_sim = 4;
 N_sim = 85;
 
-settings.pss_mode = 'Stewart';
-% settings.pss_mode = 'Step';
+settings.dcs_mode = 'Stewart';
+% settings.dcs_mode = 'Step';
 
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;

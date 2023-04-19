@@ -2,7 +2,7 @@ clc; close all; clear all;
 import casadi.*
 %% settings
 % collocation settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.n_s = 2;
 settings.time_freezing_time_rescaling = 1;
 settings.use_speed_of_time_variables =  1; 

@@ -27,9 +27,9 @@ scenario.height_vec = [0.1 0.1 0.1];
 scenario.width_vec = [0.5 0.5 0.5];
 
 %% Default settings NOSNOC
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 settings.print_level = 3;
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.pss_lift_step_functions = 0;
 %% homotopy settings

@@ -44,12 +44,12 @@ T_sim = 40;
 N_sim  = 100;
 
 %% settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.use_fesd = 1;
-settings.irk_scheme = 'Radau-IIA'; %'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
 settings.print_level = 2;
 settings.n_s = 2;
-settings.pss_mode = 'Stewart'; % 'Step;
+settings.dcs_mode = 'Stewart'; % 'Step;
 settings.comp_tol = 1e-9;
 settings.cross_comp_mode  = 3;
 settings.homotopy_update_rule = 'superlinear';
@@ -84,7 +84,7 @@ model.F = F;
 x1 = results.x_res(1,:);
 x2 = results.x_res(2,:);
 
-if isequal(settings.pss_mode,'Stewart')
+if isequal(settings.dcs_mode,'Stewart')
     theta = results.theta_res;
 else
     alpha = results.alpha_res;
@@ -111,7 +111,7 @@ grid on
 
 %%
 figure
-if isequal(settings.pss_mode,'Stewart')
+if isequal(settings.dcs_mode,'Stewart')
     plot(t_grid,[[nan;nan],theta])
     xlabel('$t$','Interpreter','latex');
     ylabel('$\theta(t)$','Interpreter','latex');

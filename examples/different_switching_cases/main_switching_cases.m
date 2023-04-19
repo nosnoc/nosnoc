@@ -39,11 +39,11 @@ import casadi.*
 switching_case = 'sliding_mode'; 
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
 %% NOSNOC settings
-[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
+[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;
 settings.homotopy_update_slope = 0.1;
-settings.irk_scheme = 'Gauss-Legendre';
-% settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+% settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.irk_representation= 'differential';
 settings.print_level = 2;
 % discretization parameters

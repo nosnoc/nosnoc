@@ -2,14 +2,14 @@ function [results,stats,model,settings] = test_fesd_and_time_options(use_fesd, t
 %TEST_SIMPLE_CAR_MODEL Test the simple car model accross cross
 %complementarity and mpcc modes
 import casadi.*
-[settings] = default_settings_nosnoc();  
+[settings] = NosnocOptions();  
 settings.print_level = 3;
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 
 % set the cross complimentarity mode that 
 settings.cross_comp_mode = 3;
 settings.n_s = 2;
-settings.homotopy_parameter_rule = 'superlinear';
+settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 8;
 
 fprintf('use_fesd\ttime opt\teqdist. grid\t use sot\tlocal sot\n')

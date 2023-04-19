@@ -8,10 +8,10 @@ J = 1; % no frictioinal impulse
 J = 1/32; % frictional impulse apperas
 above_ground = 0.1;
 %%
-[settings] = default_settings_nosnoc();  
-settings.irk_scheme = 'Radau-IIA';
+[settings] = NosnocOptions();  
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
-settings.pss_mode = 'Step';
+settings.dcs_mode = 'Step';
 settings.pss_lift_step_functions= 1;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
 settings.print_level = 2;

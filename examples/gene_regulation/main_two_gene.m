@@ -43,12 +43,12 @@ T_sim = 1;
 N_sim = 20;
 
 %% Settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.use_fesd = 1;
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 1;
 settings.n_s = 2;
-settings.pss_mode = 'Step'; % General inclusions only possible in step mode.
+settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 settings.mpcc_mode = MpccMode.Scholtes_ineq; %MpccMode.elastic_ineq;
 settings.homotopy_update_rule = 'superlinear';
 

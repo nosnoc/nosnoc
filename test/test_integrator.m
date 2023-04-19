@@ -1,4 +1,4 @@
-function [results,stats,model,settings] = test_integrator(use_fesd, irk_representation, irk_scheme, pss_mode)
+function [results,stats,model,settings] = test_integrator(use_fesd, irk_representation, irk_scheme, dcs_mode)
 import casadi.*
 % discretization settings
 N_finite_elements = 2;
@@ -7,20 +7,19 @@ N_sim  = 29;
 R_osc  = 1;
 
 
-fprintf('use_fesd\tirk_representation\tirk_scheme\tpss_mode\n')
-fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, irk_representation, irk_scheme, pss_mode);
-settings = default_settings_nosnoc();
+fprintf('use_fesd\tirk_representation\tirk_scheme\tdcs_mode\n')
+fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, irk_representation, irk_scheme, dcs_mode);
+settings = NosnocOptions();
 settings.use_fesd = use_fesd;
 settings.irk_representation = irk_representation;
 settings.irk_scheme = irk_scheme;
 settings.real_time_plot = 0;
 settings.print_level = 2;
 settings.n_s = 4;
-settings.pss_mode = pss_mode;
+settings.dcs_mode = dcs_mode;
 % 'Stewart'; % 'Step;
 settings.comp_tol = 1e-9;
 settings.cross_comp_mode  = 3;
-settings.heuristic_step_equilibration = 1;
 settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 7;
 % Model
@@ -54,5 +53,5 @@ model.F = F;
 % numerical error
 x_fesd = results.x_res(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-fprintf(['Numerical error with h = %2.3f and ' settings.irk_scheme ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
+fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
 end

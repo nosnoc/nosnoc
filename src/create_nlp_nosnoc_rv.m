@@ -387,7 +387,7 @@ for k=0:N_stages-1
         w0 = [w0; repmat(z0,n_s,1)];
 
         % collection of all lambda and theta for current finite element, they are used for cross complementarites and step equilibration
-        switch pss_mode
+        switch dcs_mode
             case 'Stewart'
                 Theta_ki = Z_ki(1:n_theta,:);
                 Lambda_ki = Z_ki(n_theta+1:2*n_theta,:);
@@ -406,14 +406,14 @@ for k=0:N_stages-1
         %% Additional boundary points if c_{n_s} \neq 1. (cf. FESD paper)
         if use_fesd && (k<N_stages-1 || i< N_finite_elements(k+1)-1)
             if right_boundary_point_explicit
-                switch pss_mode
+                switch dcs_mode
                     case 'Stewart'
                         Lambda_ki_end = Z_ki(n_theta+1:2*n_theta,n_s);
                     case 'Step'
                         Lambda_ki_end = Z_ki(n_alpha+1:3*n_alpha,n_s);
                 end
             else
-                switch pss_mode
+                switch dcs_mode
                     case 'Stewart'
                         % n_s + 1 -th variable within current finite element
                         Lambda_ki_end = define_casadi_symbolic(casadi_symbolic_mode,['Lambda_' num2str(k) '_' num2str(i) '_end'],n_theta);
@@ -651,7 +651,7 @@ for k=0:N_stages-1
 
         %% g_z_all constraint for boundary point and continuity of algebraic variables.
         if ~right_boundary_point_explicit && use_fesd && (k< N_stages-1 || i< N_finite_elements(k+1)-1)
-            switch pss_mode
+            switch dcs_mode
                 case 'Stewart'
                     Z_kd_end = [zeros(n_theta,1);Lambda_ki_end;Mu_ki_end];
                 case 'Step'

@@ -69,7 +69,6 @@ end
 
 %% Settings of integration
 [model] = refine_model_integrator(model,settings);
-[settings] = refine_settings_integrator(settings);
 
 %% Create solver functions for integrator step
 if ~solver_exists
@@ -175,7 +174,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
 
 
-    switch pss_mode
+    switch dcs_mode
         case 'Stewart'
             alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
             theta_opt_extended = [alg_states_extended(1:n_theta,:)];
@@ -232,7 +231,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 
     % algebraic
-    switch pss_mode
+    switch dcs_mode
       case 'Stewart'
         theta_res = [theta_res, theta_opt];
         lambda_res = [lambda_res, lambda_opt];
@@ -287,9 +286,9 @@ total_time = sum(time_per_iter);
 fprintf('\n');
 fprintf('----------------------------------------------------------------------------------------------------------------------\n');
 if use_fesd
-    fprintf( ['Simulation with the FESD ' irk_scheme ' with %d-RK stages completed.\n'],n_s);
+    fprintf( ['Simulation with the FESD ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 else
-    fprintf( ['Simulation with the standard ' irk_scheme ' with %d-RK stages completed.\n'],n_s);
+    fprintf( ['Simulation with the standard ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 end
 fprintf( ['RK representation: ' char(irk_representation) '.\n']);
 % fprintf('Total integration steps: %d, nominal step-size h = %2.3f.\n',N_sim,h_sim);
@@ -312,7 +311,7 @@ fprintf('-----------------------------------------------------------------------
 results.x_res  = x_res;
 % Output all stage values as well.
 results.x_res_extended  = x_res_extended;
-switch pss_mode
+switch dcs_mode
     case 'Stewart'
         results.theta_res = theta_res;
         results.lambda_res = lambda_res;

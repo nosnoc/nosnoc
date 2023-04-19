@@ -40,39 +40,9 @@ import casadi.*
 model = varargin{1};
 settings = varargin{2};
 %% Reformulation of the PSS into a DCS
-[settings] = refine_user_settings(settings);
 [model,settings] = model_reformulation_nosnoc(model,settings);
 
-%% Fillin missing settings with default settings
-[settings] = fill_in_missing_settings(settings,model);
-
-%%  Butcher Tableu
-% TODO clean this up.
-switch settings.irk_representation
-  case 'integral'
-    [B,C,D,tau_root] = generate_butcher_tableu_integral(model.dimensions.n_s,settings.irk_scheme);
-    if tau_root(end) == 1
-        right_boundary_point_explicit  = 1;
-    else
-        right_boundary_point_explicit  = 0;
-    end
-    settings.B_irk = B;
-    settings.C_irk = C;
-    settings.D_irk = D;
-  case {'differential', 'differential_lift_x'}
-    [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dimensions.n_s,settings.irk_scheme);
-    if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
-        right_boundary_point_explicit  = 1;
-    else
-        right_boundary_point_explicit  = 0;
-    end
-    settings.A_irk = A_irk;
-    settings.b_irk = b_irk;
-  otherwise
-    error('Choose irk_representation either: ''integral'' or ''differential''')
-end
-settings.right_boundary_point_explicit = right_boundary_point_explicit;
-
+settings.create_butcher_tableu(model);
 
 %% Formulate the NLP / Main Discretization loop
 % TODO cleanup steps:

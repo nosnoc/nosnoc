@@ -34,7 +34,7 @@
 %% settings
 clear all; clc; close all; 
 import casadi.*
-[settings] = default_settings_nosnoc();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
+[settings] = NosnocOptions();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
 %% Choosing the Runge - Kutta Method and number of stages
 settings.print_level = 3;
 settings.n_s = 2;

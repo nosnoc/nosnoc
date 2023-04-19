@@ -19,7 +19,7 @@ ylabel('$v(t)$','interpreter','latex');
 legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex');
 grid on
 
-switch pss_mode
+switch dcs_mode
     case 'Stewart'
         figure
         subplot(311)
@@ -68,7 +68,7 @@ end
 
 %%
 figure
-switch pss_mode
+switch dcs_mode
     case 'Stewart'
         subplot(311)
         plot(t_grid,[lambda_res(1,:),nan])

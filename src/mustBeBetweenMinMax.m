@@ -1,6 +1,6 @@
 % BSD 2-Clause License
 
-% Copyright (c) 2022, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
+% Copyright (c) 2023, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
 
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions are met:
@@ -24,48 +24,18 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-
-clear all
-clc
-close all
-import casadi.*
-%%
-switching_case = 'sliding_mode';
-%  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode',
-%% NOSNOC settings
-[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
-settings.n_s = 1;
-settings.homotopy_update_slope = 0.1;
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.irk_representation= 'differential';
-settings.irk_representation= 'integral';
-settings.dcs_mode = 'Step';
-settings.lift_irk_differential = 1;
-
-% discretization parameters
-N_sim = 1;
-T_sim = 0.75;
-
-model.N_sim = N_sim;
-model.N_finite_elements = 2;
-model.T_sim = T_sim;
-
-model.x0 = -0.50;
-x = SX.sym('x',1);
-model.x = x;
-model.c = x;
-model.S = [-1; 1];
-f_1 = [1]; f_2 = [-1];
-model.F = [f_1 f_2];
-[results,stats,model] = integrator_fesd(model,settings);
-%
-figure
-plot(results.t_grid,results.x_res)
-grid on
-xlabel('$t$','Interpreter','latex')
-ylabel('$x(t)$','Interpreter','latex')
-grid on
-
-
-
+function mustBeBetweenMinMax(val, obj, min, max)
+% This is a hack to be able to use object members in setter methods, very fun!
+    min = obj.(min);
+    max = obj.(max);
+    if val < min
+        eid = 'Bounds:tooSmall';
+        msg = 'value is smaller than corresponding min value';
+        throwAsCaller(MException(eid,msg))
+    end
+    if val > max
+        eid = 'Bounds:tooLarge';
+        msg = 'value is bigger than corresponding max value';
+        throwAsCaller(MException(eid,msg))
+    end
+end

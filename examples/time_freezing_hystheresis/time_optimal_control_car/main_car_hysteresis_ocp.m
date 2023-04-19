@@ -31,7 +31,7 @@ close all
 import casadi.*
 
 %% Settings
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 settings.n_s = 2;                       
 %% Time settings
 settings.time_freezing = 1;

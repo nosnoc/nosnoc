@@ -40,9 +40,9 @@ import casadi.*
 delete cart_pole_with_friction.gif
 %% Build problem
 import casadi.*
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 % Choosing the Runge - Kutta Method and number of stages
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.N_homotopy = 8;
 settings.homotopy_update_rule = 'superlinear';

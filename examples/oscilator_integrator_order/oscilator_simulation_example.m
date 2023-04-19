@@ -42,12 +42,12 @@ R_osc  = 1;
 
 %% settings
 % collocation settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.use_fesd = 1;       % switch detection method on/off
-settings.irk_scheme = 'Gauss-Legendre'; %'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE; %'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 4;
-settings.pss_mode = 'Step'; % 'Step;
+settings.dcs_mode = 'Step'; % 'Step;
 settings.mpcc_mode = 'Scholtes_ineq';  % Scholtes regularization
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-9;
@@ -90,7 +90,7 @@ model.F = F;
 %% numerical error
 x_fesd = results.x_res(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-fprintf(['Numerical error with h = %2.3f and ' settings.irk_scheme ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
+fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
 %% plot_solution_trajectory
 t_star = R_osc; % eact switching time
 x_res = results.x_res;

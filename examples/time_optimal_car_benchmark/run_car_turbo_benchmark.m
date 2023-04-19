@@ -9,7 +9,7 @@ run_fesd = 0; run_std = 0;
 run_gurobi = 0; run_bonmin = 1;
 run_experiments = [run_fesd run_std run_gurobi run_bonmin];
 %% NOSNOC settings
-[settings] = default_settings_nosnoc();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
+[settings] = NosnocOptions();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
 settings.N_trails = N_trails;
 settings.sigma_0 = 10;
 % settings.N_homotopy = 20;

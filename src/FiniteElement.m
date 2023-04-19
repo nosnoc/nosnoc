@@ -182,7 +182,7 @@ classdef FiniteElement < NosnocFormulationObject
                         ii);
                 end
                 % algebraic variables
-                if settings.pss_mode == PssMode.Stewart
+                if settings.dcs_mode == DcsMode.Stewart
                     % add thetas
                     for ij = 1:dims.n_sys
                         theta = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -222,7 +222,7 @@ classdef FiniteElement < NosnocFormulationObject
                             ii,...
                             ij);
                     end
-                elseif settings.pss_mode == PssMode.Step
+                elseif settings.dcs_mode == DcsMode.Step
                     % add alpha
                     for ij = 1:dims.n_sys
                         alpha = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -296,7 +296,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
             % Add right boundary points if needed
             if ~settings.right_boundary_point_explicit
-                if settings.pss_mode == PssMode.Stewart
+                if settings.dcs_mode == DcsMode.Stewart
                     % add lambdas
                     for ij = 1:dims.n_sys
                         lam = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -325,7 +325,7 @@ classdef FiniteElement < NosnocFormulationObject
                             ij);
                     end
 
-                elseif settings.pss_mode == PssMode.Step
+                elseif settings.dcs_mode == DcsMode.Step
                     % add lambda_n
                     for ij = 1:dims.n_sys
                         lambda_n = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -375,7 +375,7 @@ classdef FiniteElement < NosnocFormulationObject
                     lbx,...
                     ubx,...
                     model.x0,...
-                    ii+1);
+                    dims.n_s+rbp_allowance);
             end
             if strcmpi(settings.step_equilibration, 'direct_homotopy_lift')
                 nu_lift = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -555,13 +555,13 @@ classdef FiniteElement < NosnocFormulationObject
 
             % nonlinear inequality.
             % TODO: do this cleaner
-            if (settings.g_path_constraint &&...
+            if (model.g_path_constraint &&...
                     (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 obj.addConstraint(model.g_path_fun(obj.prev_fe.x{end},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
-                if settings.g_path_constraint && settings.g_path_at_stg
+                if model.g_path_constraint && settings.g_path_at_stg
                     obj.addConstraint(model.g_path_fun(X_ki{j},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
                 end
             end
@@ -589,13 +589,13 @@ classdef FiniteElement < NosnocFormulationObject
             g_path_comp = [];
             % path complementarities
             % TODO: do this cleaner
-            if (settings.g_comp_path_constraint &&...
+            if (model.g_comp_path_constraint &&...
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global));
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
-                if settings.g_comp_path_constraint && settings.g_path_at_stg
+                if model.g_comp_path_constraint && settings.g_path_at_stg
                     g_path_comp = vertcat(g_path_comp, model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global));
                 end
             end

@@ -68,7 +68,7 @@ settings = settings_bkp; % TODO: figure out why unfold settings breaks things.
 unfold_struct(model,'caller');
 results = extract_results_from_solver(model,settings,results);
 complementarity_iter_ell_inf = full(comp_res(results.w_opt,[model.p_val;x0;full(model.lambda00_fun(x0,model.p_global_val))]));
-switch pss_mode
+switch dcs_mode
     case 'Step'
     temp = [results.alpha_opt_extended.*results.lambda_0_opt_extended,(1-results.alpha_opt_extended).*results.lambda_1_opt_extended];
     complementarity_iter_ell_1 = sum(temp(:));
@@ -85,7 +85,7 @@ fprintf('-----------------------------------------------------------------------
 if use_fesd
     fprintf( ['OCP with the FESD ' char(irk_scheme) ' in ' char(irk_representation) ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 else
-    fprintf( ['OCP with the Std ' irk_scheme ' in ' irk_representation ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
+    fprintf( ['OCP with the Std ' char(irk_scheme) ' in ' char(irk_representation) ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 end
 % fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
 % if sum(stats.cpu_time) <60

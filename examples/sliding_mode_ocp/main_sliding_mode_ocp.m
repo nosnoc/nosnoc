@@ -38,13 +38,13 @@ terminal_constraint = 1;
 linear_control = 1;
 
 %% NOS-NOC settings
-[settings] = default_settings_nosnoc();  %% Optionally call this function to have an overview of all options.
+[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 
 settings.n_s = 2;
 N_finite_elements = 6;
 
 settings.irk_representation = 'differential';
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 
 settings.print_level = 3;
 settings.use_fesd = 1;
@@ -161,7 +161,7 @@ if 0
     model.g_terminal_lb = [];
     model.g_terminal_ub = [];
     settings.mpcc_mode = 5;
-    settings.irk_scheme = 'Radau-IIA';
+    settings.irk_scheme = IRKSchemes.RADAU_IIA;
     settings.n_s = 3;
     settings.use_fesd = 1;
     settings.print_level = 2;

@@ -3,7 +3,7 @@ clc
 close all
 import casadi.*
 % settings
-settings = default_settings_nosnoc();
+settings = NosnocOptions();
 settings.n_s = 1;     
 % Generate Model
 model.T_sim = 0.2;

@@ -15,7 +15,7 @@ lift_irk_differential = 1; % if differential mode is used, introduce new variabl
 cross_comp_mode = 3;
 gamma_h = 1;
 
-pss_mode = 'Stewart'; % possible options: Stewart and Step
+dcs_mode = 'Stewart'; % possible options: Stewart and Step
 
 % initialization - Stewart
 lp_initialization = 0;

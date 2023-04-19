@@ -39,6 +39,7 @@ classdef MpccMode
 % 'elastic_ell_1_two_sided' - \ell_1, elastic mode but penalize ell_1 norm of complementarities
 
     enumeration
+        direct
         Scholtes_ineq
         Scholtes_eq
         ell_1_penalty

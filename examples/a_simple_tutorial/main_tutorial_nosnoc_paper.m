@@ -1,7 +1,7 @@
 clear all
 import casadi.*
 %%
-[settings] = default_settings_nosnoc();  
+[settings] = NosnocOptions();  
 settings.time_optimal_problem = 1;
 settings.n_s = 2; 
 settings.mpcc_mode = 'elastic_ineq';

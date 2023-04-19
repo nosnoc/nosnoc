@@ -20,10 +20,10 @@ scenario.height_vec = [];
 scenario.width_vec = [];
 
 %% Default settings NOSNOC
-[settings] = default_settings_nosnoc();
+[settings] = NosnocOptions();
 settings.use_fesd = 1;
 settings.print_level = 4;
-settings.irk_scheme = 'Radau-IIA';
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 %% homotopy settings
 settings.cross_comp_mode = 3;
 settings.opts_ipopt.ipopt.max_iter = 1500;

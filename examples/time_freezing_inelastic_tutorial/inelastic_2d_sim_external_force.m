@@ -4,8 +4,8 @@ clc;
 import casadi.*
 close all
 %%
-[settings] = default_settings_nosnoc();  
-settings.irk_scheme = 'Radau-IIA';
+[settings] = NosnocOptions();  
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.print_level = 2;
 settings.N_homotopy = 6;
