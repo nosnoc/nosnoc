@@ -9,14 +9,16 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 2;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
-% settings.dcs_mode = DcsMode.CLS;
+settings.dcs_mode = DcsMode.CLS;
 settings.time_freezing = 1; %% we will need to exlude the coexistence of these two
 
-if settings.time_freezing
+if settings.time_freezing && settings.dcs_mode~=DcsMode.CLS
     settings.impose_terminal_phyisical_time = 1;
     settings.local_speed_of_time_variable = 1;
     settings.stagewise_clock_constraint = 0;
     settings.pss_lift_step_functions = 0;
+else
+    settings.time_freezing = 0;
 end
 %%
 g = 10;

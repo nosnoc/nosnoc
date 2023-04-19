@@ -472,13 +472,161 @@ else
     end
 end
 
-%% Check the inputs specific to a DCS mode
+%% Check are the inputs specific to a DCS mode correct and make some modifications
 dcs_mode = settings.dcs_mode;
 g_Stewart = {};
 g_ind_vec = [];
 c_all = [];
 m_vec = [];
 n_c_sys = [];
+
+if isequal(dcs_mode,'CLS')
+    % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
+    % Check existence of relevant functions ( 
+    % e
+    % mu
+    % M
+    % f_v
+    % J_tangent
+    % J_normal
+    
+
+    % Check are there gap functions
+    if ~isfield(model,'f_c')
+        error('nosnoc: Please provide the gap functions model.f_c.')
+    end
+    n_contacts = length(model.f_c);
+
+    % coefficient of friction checks
+    if isfield(model,'mu')
+        if length(model.mu) ~= 1 || length(model.mu) ~= n_contacts 
+            error('The length of model.mu has to be one or match the length of model.f_c')
+        end
+        if length(model.mu) == 1 
+            model.mu = model.mu*ones(n_contacts,1);
+        end
+
+        if any(model.mu > 0)
+            friction_exists = 1;
+        else
+        friction_exists = 0;
+        end
+    else
+        model.mu = zeros(n_contacts,1);
+        fprintf('nosnoc: Coefficients of friction mu not provided, setting it to zero for all contacts. \n')
+    end
+    if any(mu<0)
+        error('nosnoc: The coefficients of friction mu should be nonnegative.')
+    end
+
+    % coefficent of restiution check
+    if ~isfield(model,'e')
+        error('nosnoc:  Please provide a coefficient of restitution via model.e')
+    else
+        if length(model.e) ~= 1 || length(model.e) ~= n_contacts 
+            error('The length of model.e has to be one or match the length of model.f_c')
+        end
+        if length(model.e) == 1 
+            model.e = model.e*ones(n_contacts,1);
+        end
+    end
+    if any(abs(1-e)>1) || any(e<0)
+        error('nosnoc: the coefficient of restitution e should be in [0,1].')
+    end
+
+   
+    % dimensions and state space split
+    casadi_symbolic_mode = model.x(1).type_name();
+    if mod(size(x,1),2)
+        n_x = size(x,1);
+        n_q = (n_x-1)/2;
+    else
+        n_x = size(x,1);
+        n_q = n_x/2;
+    end
+    if ~isfield(model,'q') && ~isfield(model,'v')
+        q = x(1:n_q);
+        v = x(n_q+1:2*n_q);
+    end
+
+    if ~isfield(model,'f_v')
+        error('nosnoc: the function f_v (collecting all generalized forces), in M(q) = dv/dt =  f_v(q,v,u) + J_n\lambda_n +J_t\lambda_t ~ is not provided in model.');
+    end
+
+    % Check intertia matrix
+    if ~isfield(model,'M')
+        fprintf('nosnoc: Inertia matrix M is not provided, set to default value: M = eye(n_q). \n')
+        M = eye(n_q);
+        invM = inv(M);
+    else
+        invM = inv(M);
+    end
+
+    %  Normal Contact Jacobian
+    if isfield(model,'J_normal')
+        J_normal = model.J_normal;
+        J_normal_exists = 1;
+    else
+        J_normal_exists = 0;
+    end
+
+    if J_normal_exists
+        if size(J_normal,1)~=n_q && size(J_normal,2)~=n_contacts
+            fprintf('nosnoc: J_normal should be %d x %d matrix.\n',n_q,n_contacts);
+            error('nosnoc: J_normal has the wrong size.')
+        end
+        J_normal_exists = 1;
+    else
+        J_normal = f_c.jacobian(q)';
+        fprintf('nosnoc: normal contact Jacobian not provided, but it is computed from the gap functions.\n');
+        J_normal_exists = 1;
+    end
+
+    if is_zero(J_normal)
+        error('nosnoc: The normal vector should have at least one non-zero entry.')
+    end
+
+    % Tangent Contact Jacobian
+    if friction_exists
+       if isequal(friction_model,'Conic')
+          if isfield(model,'J_tangent')
+            J_tangent = model.J_tangent;
+            if size(J_tangent,1)~=n_q 
+                error('nosnoc: J_tangent has the wrong size.')
+            end
+         else
+            error('nosnoc: please provide the tangent Jacobian in model.J_tangent.')
+         end
+       end
+
+       if isequal(friction_model,'Polyhedral')
+           if isfield(model,'J_tangent') && ~isfield(model,'D_tangent')
+                D_tangent = [model.J_tangent,-model.J_tangent];
+                model.D_tangent = D_tangent;
+                fprintf('nosnoc: tangent Jacobian for polyhedral friction cone generated: D_tangent = [J_tangent, -J_tanget].\n');
+           elseif ~isfield(model,'D_tangent')
+               error('nosnoc: please provide the polyhedral tangent Jacobian in model.D_tangent or conic tangent Jacobian model.J_tangent ')
+           end
+       end
+    end
+    % Dimension of tangens
+    if friction_exists
+        if isequal(friction_model,'Polyhedral')
+            n_t =  length(D_tangent)/n_contacts; % number of tanget multipliers for a single contactl
+        elseif isequal(friction_model,'Conic')
+            n_t =  size(J_tangent,2)/n_contacts; % number of tanget multipliers for a single contactl
+        else
+            % TODO: @Anton, is this check needed at all, since we have the options class now.
+            error('Pick friction_model Conic or Polyhedral')% position in symbolic vector z
+        end
+        n_tangents = n_t*n_contacts; % number tangent forces for all multpliers
+    else
+        n_tangents = 0;
+    end
+end
+% TODO: the time freezing reformulation could be carried out at this point
+% insetad at the begining and then go through the step/stewart checks.
+
 if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
     if ~exist('F')
         % Don't need F
@@ -632,137 +780,7 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
     end
 end
 
-if isequal(dcs_mode,'CLS')
-    % Check existence of relevant functions (
-    % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
-    % e
-    % mu
-    % M
-    % f_v
-    % f_c
-    % J_tangent
-    % J_normal
-    % Check is there a gap gunctions
-    if ~isfield(model,'f_c')
-        error('nosnoc: Please provide the gap functions model.f_c.')
-    end
-    n_contacts = length(f_c);
-    % check dimensions of contacts
-    if ~isfield(model,'n_dim_contact')
-        warning('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
-        n_dim_contact = 2;
-    end
 
-    % coefficent of restiution
-    if ~isfield(model,'e')
-        error('nosnoc:  Please provide a coefficient of restitution via model.e')
-    end
-
-    if abs(1-e)>1 || e<0
-        error('nosnoc: the coefficient of restitution e should be in [0,1].')
-    end
-
-    % coefficient of friction
-    if ~isfield(model,'mu')
-        mu = 0;
-        fprintf('nosnoc: Coefficients of friction mu not provided, setting it to zero for all contacts. \n')
-    end
-
-    if length(mu(:)) ~= 1 && length(mu(:)) ~= n_contacts
-        errro('nosnoc: Vector mu has to have length 1 or n_c.')
-    end
-
-    if any(mu<0)
-        error('nosnoc: The coefficients of friction mu should be nonnegative.')
-    end
-
-    if any(mu)>0
-        friction_exists = 1;
-        if length(mu(:)) == 1
-            mu = ones(n_contacts,1)*mu;
-        end
-    else
-        friction_exists = 0;
-    end
-
-    % dimensions and state space split
-    casadi_symbolic_mode = model.x(1).type_name();
-    if mod(size(x,1),2)
-        n_x = size(x,1);
-        n_q = (n_x-1)/2;
-    else
-        n_x = size(x,1);
-        n_q = n_x/2;
-    end
-
-    if ~isfield(model,'q') && ~isfield(model,'v')
-        q = x(1:n_q);
-        v = x(n_q+1:2*n_q);
-    end
-
-    % check model function
-    if ~isfield(model,'f_v')
-        error('nosnoc: the function f_v (collecting all generalized forces), in dv/dt =  f_v(q,v,u) + ... is not provided in model.');
-    end
-
-    % Check intertia matrix
-    if ~isfield(model,'M')
-        fprintf('nosnoc: Inertia matrix M is not provided, set to default value: M = eye(n_q). \n')
-        M = eye(n_q);
-        invM = inv(M);
-    else
-        invM = inv(M);
-    end
-
-
-    %  Normal Contact Jacobian
-    if isfield(model,'J_normal')
-        J_normal = model.J_normal;
-        J_normal_exists = 1;
-    else
-        J_normal_exists = 0;
-    end
-
-    if J_normal_exists
-        if size(J_normal,1)~=n_q && size(J_normal,2)~=n_contacts
-            fprintf('nosnoc: J_normal should be %d x %d matrix.\n',n_q,n_contacts);
-            error('nosnoc: J_normal has the wrong size.')
-        end
-        J_normal_exists = 1;
-    else
-        J_normal = f_c.jacobian(q)';
-        fprintf('nosnoc: normal contact Jacobian not provided, but it is computed from the gap functions.\n');
-        J_normal_exists = 1;
-    end
-
-    if is_zero(J_normal)
-        error('nosnoc: The normal vector should have at least one non-zero entry.')
-    end
-
-    % Tangent Contact Jacobian
-    if friction_exists
-        if isfield(model,'J_tangent')
-            J_tangent = model.J_tangent;
-            J_tangent_exists = 1;
-        else
-            J_tangent_exists = 0;
-        end
-
-        if J_tangent_exists
-            if size(J_tangent,1)~=n_q && size(J_tangent,2)~=n_contacts*(n_dim_contact-1)
-                fprintf('nosnoc: J_tangent should be %d x %d matrix.\n',n_q,n_contacts*(n_dim_contact-1));
-                error('nosnoc: J_tangent has the wrong size.')
-            end
-            J_tangent_exists = 1;
-        else
-            error('nosnoc: tangent Jacobian model.J_tangent not provided.\n');
-        end
-    else
-        J_tangent_exists = 0;
-    end
-
-
-end
 %% Algebraic variables defintion
 % Dummy variables for Stewart representation'
 theta = [];

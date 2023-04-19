@@ -154,6 +154,7 @@ classdef NosnocOptions < handle
         kappa_stabilizing_q_dynamics(1,1) double {mustBeReal, mustBePositive} = 1e-5
         % Verbose
         print_level = 3
+        
         % Settings specific to CLS
         friction_model (1,1) FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
         conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
