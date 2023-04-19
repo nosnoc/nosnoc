@@ -289,14 +289,14 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
 
     %% g_z: stage algebraic constraints
     % TODO  long term: split up model_reformulation to allow f_alg to use the rest of stage Z
-    if exist('g_z')
-        n_g_z = length(g_z);
+    if isfield(model,'g_z')
+        n_g_z = length(model.g_z);
     else
         g_z = [];
         n_g_z = 0;
     end
     %% Stage and terminal costs check
-    if ~exist('f_q')
+    if ~isfield(model,'f_q')
         if print_level >=1
             fprintf('nosnoc: No stage cost is provided. \n')
         end
@@ -304,7 +304,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         f_q = 0;
     end
 
-    if exist('f_q_T')
+    if isfield(model,'f_q_T')
         terminal_cost = 1;
     else
         if print_level >=1
@@ -314,7 +314,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         f_q_T = 0;
     end
     %% Least squares objective terms with variables references
-    if exist('lsq_x')
+    if isfield(model,'lsq_x')
         if length(lsq_x)<3
             error('In lsq_x either the least squares function, the reference of the weight matrix are missing.')
         end
@@ -347,18 +347,18 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     end
 
     % least square terms for control inputs
-    if exist('lsq_u')
-        if length(lsq_u)<3
+    if isfield(model,'lsq_u')
+        if length(model.lsq_u)<3
             error('In lsq_u either the least squares function, the reference of the weight matrix are missing.')
         end
-        if size(lsq_u{2},1)~=size(lsq_u{1})
+        if size(model.lsq_u{2},1)~=size(model.lsq_u{1})
             error('The dimensions of the least squares error term and weighting matrix for the control input do not match.')
         end
-        if size(lsq_u{1},1)~=size(lsq_u{3})
+        if size(model.lsq_u{1},1)~=size(model.lsq_u{3})
             error('The dimensions of the least squares error term and reference for the control input do not match.')
         end
-        n_u_ref_rows = size(lsq_u{2},1);
-        n_u_ref_cols = size(lsq_u{2},2);
+        n_u_ref_rows = size(model.lsq_u{2},1);
+        n_u_ref_cols = size(model.lsq_u{2},2);
         if n_u_ref_cols == N_stages
             fprintf('nosnoc: the provided reference for the control inputs is time variable. \n');
         elseif n_u_ref_cols == 1
@@ -380,16 +380,15 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
 
 
     % least square terms for control inputs
-    if exist('lsq_T')
-
+    if isfield(model,'lsq_T')
         % sanity chkecs on the input
-        if length(lsq_T)<3
+        if length(model.lsq_T)<3
             error('In lsq_u either the least squares function, the reference of the weight matrix are missing.')
         end
-        if size(lsq_T{2},1)~=size(lsq_T{1})
+        if size(model.lsq_T{2},1)~=size(model.lsq_T{1})
             error('The dimensions of the least squares error term and weighting matrix for the terminal cost do not match.')
         end
-        if size(lsq_T{1},1)~=size(lsq_T{3})
+        if size(model.lsq_T{1},1)~=size(model.lsq_T{3})
             error('The dimensions of the least squares error term and reference for the terminal cost do not match.')
         end
 
@@ -411,20 +410,20 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
     end
 
     %% Inequality constraints check
-    if exist('g_path')
+    if isfield(model,'g_path')
         g_path_constraint  = 1;
-        n_g_path = length(g_path);
-        if exist('g_path_lb')
-            if length(g_path_lb)~=n_g_path;
-                error('The user provided vector g_path_lb has the wrong size.')
+        n_g_path = length(model.g_path);
+        if isfield(model,'g_path_lb')
+            if length(model.g_path_lb)~=n_g_path
+                error('The provided vector g_path_lb has the wrong size.');
             end
         else
             g_path_lb = -inf*ones(n_g_path,1);
         end
 
-        if exist('g_path_ub')
-            if length(g_path_ub)~=n_g_path;
-                error('The user provided vector g_path_ub has the wrong size.')
+        if isfield(model,'g_path_ub')
+            if length(model.g_path_ub)~=n_g_path
+                error('The provided vector g_path_ub has the wrong size.')
             end
         else
             g_path_ub =  0*ones(n_g_path,1);
@@ -440,7 +439,7 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
 
     %% Check path complementarity constraints
     g_comp_path_constraint  = 0;
-    if exist('g_comp_path')
+    if isfield(model,'g_comp_path')
         g_comp_path_constraint  = 1;
         if size(g_comp_path, 2)
             error('g_comp_path must be of size (m, 2)')
@@ -453,20 +452,20 @@ function [model,settings] = model_reformulation_nosnoc(model,settings)
         end
     end
     %% Terminal constraints
-    if exist('g_terminal')
+    if isfield(model,'g_terminal')
         terminal_constraint = 1;
-        n_g_terminal = length(g_terminal);
+        n_g_terminal = length(model.g_terminal);
         if exist('g_terminal_lb')
-            if length(g_terminal_lb)~=n_g_terminal;
-                error('The user provided vector g_terminal_lb has the wrong size.')
+            if length(g_terminal_lb)~=n_g_terminal
+                error('The provided vector g_terminal_lb has the wrong size.')
             end
         else
             g_terminal_lb = 0*ones(n_g_terminal,1);
         end
 
-        if exist('g_terminal_ub')
-            if length(g_terminal_ub)~=n_g_terminal;
-                error('The user provided vector g_terminal_ub has the wrong size.')
+        if isfield(model,'g_terminal_ub')
+            if length(g_terminal_ub)~=n_g_terminal
+                error('The provided vector g_terminal_ub has the wrong size.')
             end
         else
             g_terminal_ub =  0*ones(n_g_terminal,1);
