@@ -62,8 +62,6 @@ stats = [];
 
 %% generate time-freezing model before turning off time-related settings
 if settings.time_freezing && ~solver_exists
-    settings.virtual_forces = 0;
-    settings.integrator_forward_sweep = 0; % this is not done inside a simulator
     [model,settings] = time_freezing_reformulation(model,settings);
 end
 

@@ -149,12 +149,16 @@ classdef NosnocOptions < handle
         friction_exists(1,1) logical = 0
         % exerimentla expert otpions
         nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]  
-
         % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
         stabilizing_q_dynamics(1,1) logical = 0
         kappa_stabilizing_q_dynamics(1,1) double {mustBeReal, mustBePositive} = 1e-5
         % Verbose
         print_level = 3
+        % Settings specific to CLS
+        friction_model (1,1) FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
+        conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
+        kappa_friction_reg (1,1) double {mustBeReal, mustBeNonnegative} = 0; % reg. term in friction equations to avoid large multipliers if no contact happens.
+        lift_velocity_state(1,1) logical = 0; % define auxliary algebraic vairable, dot{v} = z_v, to avoid symbolic inversion of the inerti matrix;
 
         % IPOPT Settings
         tol_ipopt(1,1) double {mustBeReal, mustBePositive} = 1e-16

@@ -28,5 +28,6 @@ classdef DcsMode
     enumeration
         Stewart
         Step
+        CLS
     end
 end
