@@ -1,14 +1,14 @@
 # NOSNOC
-**NOSNOC** is an open source software package for NOnSmooth Numerical Optimal Control.
+**NOSNOC** is an open-source software package for NOnSmooth Numerical Optimal Control.
 
 You can use **NOSNOC**  from `MATLAB` or `python`.
 
 ## General
 It is a modular tool for numerically solving nonsmooth optimal control problems with Piecewise Smooth/Filippov Systems (PSS). It supports:
-1. Automatic discretization via the FESD method - high accuracy and correct sensitivities. (Note that standard time-stepping methods have only first order accuracy and wrong sensitivities even when they appear to be differentiable!)
+1. Automatic discretization via the FESD method - high accuracy and correct sensitivities. (Note that standard time-stepping methods have only first-order accuracy and wrong sensitivities even when they appear to be differentiable!)
 
 2. Automatic reformulations of systems with state jumps (e.g. contact problems) via time-freezing into Filippov systems/PSS.
-(enables high accuracy even for system with state jumps)
+(enables high accuracy even for systems with state jumps)
 
 3. Solving the nonsmooth nonlinear programs via homotopy methods. Enables the use of off-the-shelf solvers like IPOPT.
 
@@ -38,13 +38,13 @@ The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/ma
      ```
 	 
 
-Note that `IPOPT` is shipped with `CasADi`, but more information including a detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
+Note that `IPOPT` is shipped with `CasADi`, but more information including detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
 
 ### Installation for python
 
-Checkout the [nosnoc_py](https://github.com/FreyJo/nosnoc_py) repository and clone it.
+Go to the [nosnoc_py](https://github.com/FreyJo/nosnoc_py) repository and clone it.
 
-Afterwards,
+Afterward,
 
 1. Setup virtual environment:
 ```
@@ -66,7 +66,7 @@ pip install -e .
 The interface of **NOSNOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
 User inputs should be given as `CasADi` expressions.
 
-To get started we recommend you to check out our example library in 
+To get started we recommend you to check our example library in 
 [MATLAB](https://github.com/nurkanovic/nosnoc/tree/main/examples/matlab) or [python](https://github.com/FreyJo/nosnoc_py/tree/main/examples).  
 
 In case you need help, feel free to contact us! 
@@ -82,6 +82,16 @@ More details can be found in the [user manual](https://github.com/nurkanovic/nos
 A.Nurkanović, M. Sperl, S. Albrecht, M. Diehl \
 arXiv preprint 2022
 
+```
+@article{Nurkanovic2022,
+  title={Finite elements with switch detection for direct optimal control of nonsmooth systems},
+  author={Nurkanovi{\'c}, Armin and Sperl, Mario and Albrecht, Sebastian and Diehl, Moritz},
+  journal={arXiv preprint arXiv:2205.05337},
+  year={2022}
+}
+```
+
+
 ### Time - Freezing
 [A Time-Freezing Approach for Numerical Optimal Control of Nonsmooth Differential Equations with State Jumps](https://cdn.syscop.de/publications/Nurkanovic2021.pdf) \
 A. Nurkanović, T. Sartor, S. Albrecht, M. Diehl \
@@ -96,13 +106,25 @@ A.Nurkanović , M. Diehl \
 IEEE Control Systems Letters 2022
 
 
-## Literature - software
+## Literature - Software
 
 ### NOSNOC
 
 [NOSNOC: A Software Package for Numerical Optimal Control of Nonsmooth Systems](https://cdn.syscop.de/publications/Nurkanovic2022b.pdf) \
 A.Nurkanović , M. Diehl \
 IEEE Control Systems Letters 2022
+
+```
+@article{Nurkanovic2022,
+  title={NOSNOC: A software package for numerical optimal control of nonsmooth systems},
+  author={Nurkanovi{\'c}, Armin and Diehl, Moritz},
+  journal={IEEE Control Systems Letters},
+  volume={6},
+  pages={3110--3115},
+  year={2022},
+  publisher={IEEE}
+}
+```
 
 
 
@@ -120,8 +142,8 @@ Mathematical programming, 2006
 
 ## Contact
 
-Feel free to contact on of the main developer directly: Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
+Feel free to contact one of the main developers directly: Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
 Jonathan Frey [jonathan.frey@imtek.uni-freiburg.de](mailto:jonathan.frey@imtek.uni-freiburg.de)
-If you have got questions, remarks or comments, you are strongly encouraged to report them by creating a new issue on this github page.
+If you have got questions, remarks, or comments, you are strongly encouraged to report them by creating a new issue on this github page.
 Success stories and source code contributions are very welcome.
 
