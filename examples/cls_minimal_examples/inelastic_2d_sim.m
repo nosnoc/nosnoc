@@ -11,6 +11,8 @@ settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.time_freezing = 1; %% we will need to exlude the coexistence of these two
+settings.friction_model = "Conic";
+settings.conic_model_switch_handling = "Plain";
 
 if settings.time_freezing && settings.dcs_mode~=DcsMode.CLS
     settings.impose_terminal_phyisical_time = 1;
@@ -25,6 +27,7 @@ g = 10;
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2);
+model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
 model.mu = 0.3;
@@ -32,8 +35,8 @@ model.a_n = 20;
 model.x0 = [0;1;3;0];
 model.f_v = [0;-g];
 model.f_c = q(2);
-model.J_tangent = [1; 0]; % TODO: remove J_tangent to J_t everywhere % TODO: if not D_t avilable but J_t there make D_t = [J_t, -J_t];
-model.n_dim_contact = 2; % TODO: can be checkt via tangets and contact dimeion also for tf
+model.J_tangent = [1; 0]; 
+model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
 N_FE = 5;
 T_sim = 1.5;

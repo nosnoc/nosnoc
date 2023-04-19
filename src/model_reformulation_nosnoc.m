@@ -482,16 +482,8 @@ n_c_sys = [];
 
 if isequal(dcs_mode,'CLS')
     % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
-    % Check existence of relevant functions ( 
-    % e
-    % mu
-    % M
-    % f_v
-    % J_tangent
-    % J_normal
-    
-
-    % Check are there gap functions
+    % Check existence of relevant functions 
+    n_sys = 1; % always one subystem in CLS 
     if ~isfield(model,'f_c')
         error('nosnoc: Please provide the gap functions model.f_c.')
     end
@@ -499,17 +491,17 @@ if isequal(dcs_mode,'CLS')
 
     % coefficient of friction checks
     if isfield(model,'mu')
-        if length(model.mu) ~= 1 || length(model.mu) ~= n_contacts 
+        if length(model.mu) ~= 1 || length(model.mu) ~= n_contacts
             error('The length of model.mu has to be one or match the length of model.f_c')
         end
-        if length(model.mu) == 1 
+        if length(model.mu) == 1
             model.mu = model.mu*ones(n_contacts,1);
         end
 
         if any(model.mu > 0)
             friction_exists = 1;
         else
-        friction_exists = 0;
+            friction_exists = 0;
         end
     else
         model.mu = zeros(n_contacts,1);
@@ -523,10 +515,10 @@ if isequal(dcs_mode,'CLS')
     if ~isfield(model,'e')
         error('nosnoc:  Please provide a coefficient of restitution via model.e')
     else
-        if length(model.e) ~= 1 || length(model.e) ~= n_contacts 
+        if length(model.e) ~= 1 || length(model.e) ~= n_contacts
             error('The length of model.e has to be one or match the length of model.f_c')
         end
-        if length(model.e) == 1 
+        if length(model.e) == 1
             model.e = model.e*ones(n_contacts,1);
         end
     end
@@ -534,7 +526,7 @@ if isequal(dcs_mode,'CLS')
         error('nosnoc: the coefficient of restitution e should be in [0,1].')
     end
 
-   
+
     % dimensions and state space split
     casadi_symbolic_mode = model.x(1).type_name();
     if mod(size(x,1),2)
@@ -588,26 +580,26 @@ if isequal(dcs_mode,'CLS')
 
     % Tangent Contact Jacobian
     if friction_exists
-       if isequal(friction_model,'Conic')
-          if isfield(model,'J_tangent')
-            J_tangent = model.J_tangent;
-            if size(J_tangent,1)~=n_q 
-                error('nosnoc: J_tangent has the wrong size.')
+        if isequal(friction_model,'Conic')
+            if isfield(model,'J_tangent')
+                J_tangent = model.J_tangent;
+                if size(J_tangent,1)~=n_q
+                    error('nosnoc: J_tangent has the wrong size.')
+                end
+            else
+                error('nosnoc: please provide the tangent Jacobian in model.J_tangent.')
             end
-         else
-            error('nosnoc: please provide the tangent Jacobian in model.J_tangent.')
-         end
-       end
+        end
 
-       if isequal(friction_model,'Polyhedral')
-           if isfield(model,'J_tangent') && ~isfield(model,'D_tangent')
+        if isequal(friction_model,'Polyhedral')
+            if isfield(model,'J_tangent') && ~isfield(model,'D_tangent')
                 D_tangent = [model.J_tangent,-model.J_tangent];
                 model.D_tangent = D_tangent;
                 fprintf('nosnoc: tangent Jacobian for polyhedral friction cone generated: D_tangent = [J_tangent, -J_tanget].\n');
-           elseif ~isfield(model,'D_tangent')
-               error('nosnoc: please provide the polyhedral tangent Jacobian in model.D_tangent or conic tangent Jacobian model.J_tangent ')
-           end
-       end
+            elseif ~isfield(model,'D_tangent')
+                error('nosnoc: please provide the polyhedral tangent Jacobian in model.D_tangent or conic tangent Jacobian model.J_tangent ')
+            end
+        end
     end
     % Dimension of tangens
     if friction_exists
@@ -626,7 +618,6 @@ if isequal(dcs_mode,'CLS')
 end
 % TODO: the time freezing reformulation could be carried out at this point
 % insetad at the begining and then go through the step/stewart checks.
-
 if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
     if ~exist('F')
         % Don't need F
@@ -748,7 +739,6 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
         end
 
     end
-
     % index sets and dimensions for ubsystems
     m_ind_vec = 1;
     if isequal(dcs_mode,'Step')
@@ -782,7 +772,7 @@ end
 
 
 %% Algebraic variables defintion
-% Dummy variables for Stewart representation'
+% Dummy variables for Stewart's representation
 theta = [];
 mu = [];
 lambda = [];
@@ -801,13 +791,31 @@ else
 end
 lambda_0 = [];
 lambda_1 = [];
-
-
 alpha_all  = {};
 lambda_0_all = {};
 lambda_1_all = {};
 theta_step_all = {};
 
+% dummy values for CLS representation
+lambda_normal = [];  % normal contact force 
+lambda_tangent = []; 
+gamma_d = [];
+gamma = [];
+beta = [];
+p_vn = [];
+n_vn = [];
+p_vt = [];
+n_vt = [];
+alpha_vt = [];
+n_gamma_d = 0;
+n_gamma = 0;
+
+% TODO
+% TODO
+% TODO
+
+
+% dimensions
 n_alpha = 0;
 e_alpha = [];
 n_beta = 0;
@@ -873,12 +881,10 @@ switch dcs_mode
         end
         % define appropiate vector of ones % for the kkt conditions of the LP
         e_alpha = ones(n_alpha,1);
-
         % Define already here lifting variables and functions
         % TODO allow for custom beta lifting
         beta = [];
         theta_step = [];
-
         % Theta collects the vector for dot_x = F(x)Theta ,
         % terms or theta_step from lifting;
         if ~settings.general_inclusion
@@ -1054,6 +1060,72 @@ switch dcs_mode
         n_beta = length(beta);
         n_theta_step = length(theta_step);
         n_z_all = n_z_all + n_beta+n_theta_step;
+    case 'CLS'
+        % TODO add defintions;
+%         lambda_n = SX.sym('lambda_normal',n_contacts);
+%         lbz = [0*ones(n_contacts,1)];
+%         ubz = [inf*ones(n_contacts,1)];
+%         z0 = [ones(n_contacts,1)];
+%         z = lambda_n;
+%         ind_lambda_n_var = 1:n_contacts;
+%         if friction_exists
+%             % tangetial contact froce (firction force)
+%             lambda_t = SX.sym('lambda_tangetial',n_tangents); % maybe a matrix would be more suitable?
+%             ind_lambda_t_var = ind_lambda_n_var(end)+1:ind_lambda_n_var(end)+n_tangents;
+%             z = [z;lambda_t];
+% 
+%             z0 = [z0; ones(n_tangents,1)];
+%             % friction aux multipliers
+%             if isequal(friction_model,'polyhedral')
+%                 lbz = [lbz;0*ones(n_tangents,1)];
+%                 ubz = [ubz;inf*ones(n_tangents,1)];
+% 
+%                 gamma_d = SX.sym('gamma_d',n_contacts);
+%                 z = [z;gamma_d];
+%                 lbz = [lbz;0*ones(n_contacts,1)];
+%                 ubz = [ubz;inf*ones(n_contacts,1)];
+%                 z0 = [z0;ones(n_contacts,1)];
+%                 % position in symbolic vector z
+%                 ind_gamma_d_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
+%             end
+%             if isequal(friction_model,'conic')
+%                 lbz = [lbz;-inf*ones(n_tangents,1)];
+%                 ubz = [ubz;inf*ones(n_tangents,1)];
+% 
+%                 gamma = SX.sym('gamma',n_contacts); % Lagrange multiplier
+%                 beta = SX.sym('beta',n_contacts); % lifting variable for friction
+%                 lbz = [lbz;0*ones(n_contacts,1);0*ones(n_contacts,1)];
+%                 ubz = [ubz;inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
+%                 z0 = [z0; ones(n_contacts,1);ones(n_contacts,1)];
+%                 ind_gamma_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
+%                 ind_beta_var = ind_gamma_var(end)+1:ind_gamma_var(end)+n_contacts;
+%                 z = [z;gamma;beta];
+%                 switch conic_friction_switch_detection_mode
+%                     case 'none'
+%                         % no extra constraints
+%                     case 'abs'
+%                         p_vt = SX.sym('p_vt',n_tangents); % positive parts of tangential velocities
+%                         n_vt = SX.sym('n_vt',n_tangents); % negative parts of tangential velocities
+%                         z = [z;p_vt;n_vt];
+%                         lbz = [lbz;0*ones(2*n_tangents,1)];
+%                         ubz = [ubz;inf*ones(2*n_tangents,1)];
+%                         z0 = [z0; 1*ones(2*n_tangents,1)];
+%                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
+%                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
+%                     case 'lp'
+%                         p_vt = SX.sym('p_vt',n_tangents); % positive parts of tangential velocities
+%                         n_vt = SX.sym('n_vt',n_tangents); % negative parts of tangential velocities
+%                         alpha_vt = SX.sym('alpha_vt',n_tangents); % step function of tangential velocities
+%                         z = [z;p_vt;n_vt;alpha_vt ];
+%                         lbz = [lbz;0*ones(3*n_tangents,1)];
+%                         ubz = [ubz;inf*ones(2*n_tangents,1);1*ones(n_tangents,1)];
+%                         z0 = [z0; 1*ones(2*n_tangents,1);0.5*ones(n_tangents,1)];
+%                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
+%                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
+%                         ind_alpha_vt_var = ind_n_vt_var(end)+1:ind_n_vt_var(end)+n_tangents;
+%                 end
+%             end
+%         end
 end
 g_lift = [g_lift_theta_step;g_lift_beta];
 
