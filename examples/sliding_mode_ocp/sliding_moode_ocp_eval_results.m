@@ -3,7 +3,7 @@ if 0
 N_stages = 6;
 mpcc_mode_fesd = [5 5 3 3];
 mpcc_mode_std = [3 3 3 3];
-irk_schemes = {IRKSchemes.RADAU_IIA,'Lobatto-IIIC',IRKSchemes.GAUSS_LEGENDRE,'Explicit-RK'};
+irk_schemes = {IRKSchemes.RADAU_IIA,IRKSchemes.LOBATTO_IIIC,IRKSchemes.GAUSS_LEGENDRE,IRKSchemes.EXPLICIT_RK};
 n_s_vec = {[1:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
 load(['results\results_benchmark_full.mat'])
