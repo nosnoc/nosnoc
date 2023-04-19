@@ -671,7 +671,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             elseif settings.cross_comp_mode == 3
                 for j=1:dims.n_s
-                    for r=r:dims.n_sys
+                    for r=1:dims.n_sys
                         pairs = cross_comp_pairs(j, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s+1)), pairs, 'uni', false);
                         exprs = sum2([expr_cell{:}]);
@@ -680,7 +680,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             elseif settings.cross_comp_mode == 4
                 for jj=1:dims.n_s+1
-                    for r=r:dims.n_sys
+                    for r=1:dims.n_sys
                         pairs = cross_comp_pairs(:, jj, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s)), pairs, 'uni', false);
                         exprs = sum2([expr_cell{:}]);
@@ -689,7 +689,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             elseif settings.cross_comp_mode == 5
                 for j=1:dims.n_s
-                    for r=r:dims.n_sys
+                    for r=1:dims.n_sys
                         pairs = cross_comp_pairs(j, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_theta)), pairs, 'uni', false);
                         exprs = sum1(sum2([expr_cell{:}]));
@@ -698,7 +698,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             elseif settings.cross_comp_mode == 6
                 for jj=1:dims.n_s+1
-                    for r=r:dims.n_sys
+                    for r=1:dims.n_sys
                         pairs = cross_comp_pairs(:, jj, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s*dims.n_theta)), pairs, 'uni', false);
                         exprs = sum1(sum2([expr_cell{:}]));
@@ -706,14 +706,14 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                 end
             elseif settings.cross_comp_mode == 7
-                for r=r:dims.n_sys
+                for r=1:dims.n_sys
                     pairs = cross_comp_pairs(:, :, r);
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
                     exprs = sum2([expr_cell{:}]);
                     g_cross_comp = vertcat(g_cross_comp, exprs);
                 end
             elseif settings.cross_comp_mode == 8
-                for r=r:dims.n_sys
+                for r=1:dims.n_sys
                     pairs = cross_comp_pairs(:, :, r);
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
                     exprs = sum1(sum2([expr_cell{:}]));

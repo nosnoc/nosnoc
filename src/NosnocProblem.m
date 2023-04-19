@@ -329,9 +329,9 @@ classdef NosnocProblem < NosnocFormulationObject
                     obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
                   case 4 % l_inf, relaxed
                     % TODO: ask armin if this is correct.
-                    if ismember(settings.mpcc_mode, MpccMode.elastic)
+                    if settings.elasticity_mode == ElasticityMode.ELL_INF
                         elastic = s_elastic*ones(n_terminal,1);
-                    elseif ismemeber(settings.mpcc_mode, MpccMode.elastic_ell_1)
+                    elseif settings.elasticity_mode == ElasticityMode.ELL_1 
                         elastic = last_fe.elastic{end};
                     else
                         error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
@@ -354,14 +354,14 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
             
             % Process elastic costs
-            if ismember(settings.mpcc_mode, MpccMode.elastic)
+            if settings.elasticity_mode == ElasticityMode.ELL_INF
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*obj.s_elastic;
                 else
                     obj.cost = sigma_p*obj.cost + obj.s_elastic;
                 end
             end
-            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
+            if settings.elasticity_mode == ElasticityMode.ELL_1
                 sum_s_elastic = 0;
                 for k=1:dims.N_stages
                     stage=obj.stages(k);
@@ -454,7 +454,7 @@ classdef NosnocProblem < NosnocFormulationObject
                 end
             end
 
-            if ismember(obj.settings.mpcc_mode, MpccMode.elastic)
+            if obj.settings.elasticity_mode == ElasticityMode.ELL_INF
                 s_elastic = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_elastic',1);
                 obj.s_elastic = s_elastic;
                 obj.addVariable(s_elastic, 'elastic', obj.settings.s_elastic_min, obj.settings.s_elastic_max, obj.settings.s_elastic_0);
