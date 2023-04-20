@@ -43,6 +43,7 @@ classdef FiniteElement < NosnocFormulationObject
         % CLS
         ind_lambda_normal
         ind_lambda_tangent
+        ind_y_gap
         % friction multipliers and lifting
         % conic
         ind_gamma

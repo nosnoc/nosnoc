@@ -46,10 +46,15 @@ classdef ControlStage < NosnocFormulationObject
         % Speficif to CLS representation
         ind_lambda_normal
         ind_lambda_tangent
+        ind_y_gap
         % friction multipliers and lifting
+        % conic
         ind_gamma
+        ind_beta_conic
+        % poly
         ind_gamma_d
-        ind_beta
+        ind_beta_d
+        ind_delta_d
         % variables related to conic
         ind_p_vt
         ind_n_vt
@@ -59,11 +64,13 @@ classdef ControlStage < NosnocFormulationObject
         ind_Lambda_tangent
         ind_Gamma
         ind_Gamma_d
-        ind_Beta
+        ind_Beta_conic
+        ind_Delta_d
         ind_P_vn
         ind_N_vn
         ind_P_vt
         ind_N_vt
+        ind_Alpha_vt
         % misc
         ind_h
         ind_nu_lift

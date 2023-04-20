@@ -45,6 +45,7 @@ classdef NosnocProblem < NosnocFormulationObject
      % Speficif to CLS representation
             ind_lambda_normal
             ind_lambda_tangent
+            ind_y_gap
             % friction multipliers and lifting
             % conic
             ind_gamma

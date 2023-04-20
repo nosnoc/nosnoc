@@ -1380,17 +1380,17 @@ for ii = 1:n_sys
             % Lifting parts
             g_impulse = [g_impulse;Y_gap-f_c];
 %             invM = inv(M);
-%             M_fun = Function('M_fun', {x}, {M});
-%             invM_fun = Function('invM_fun', {x}, {invM});
-%             f_c_fun = Function('f_c_fun', {x}, {f_c});
-%             J_normal_fun = Function('J_normal_fun', {x}, {J_normal});
-%             if friction_exists
-%                 if isequal(friction_model,'Conic')
-%                     J_tangent_fun = Function('J_tangent_fun', {x}, {J_tangent});
-%                 else
-%                     D_tangent_fun = Function('D_tangent_fun', {x}, {D_tangent});
-%                 end
-%             end
+            M_fun = Function('M_fun', {x}, {M});
+            invM_fun = Function('invM_fun', {x}, {invM});
+            f_c_fun = Function('f_c_fun', {x}, {f_c});
+            J_normal_fun = Function('J_normal_fun', {x}, {J_normal});
+            if friction_exists
+                if isequal(friction_model,'Conic')
+                    J_tangent_fun = Function('J_tangent_fun', {x}, {J_tangent});
+                else
+                    D_tangent_fun = Function('D_tangent_fun', {x}, {D_tangent});
+                end
+            end
     end
 end
 
@@ -1524,7 +1524,13 @@ if ~isequal(dcs_mode,'CLS')
     model.dot_c_fun = dot_c_fun;
     model.g_Stewart_fun = g_Stewart_fun;
 else
-        model.g_impulse_fun = g_impulse_fun;
+    model.g_impulse_fun = g_impulse_fun;
+    model.f_c_fun = f_c_fun;
+    model.M_fun = M_fun;
+    model.invM_fun = invM_fun;
+    model.J_normal_fun= J_normal_fun;
+    model.J_tangent_fun = J_tangent_fun;
+    model.D_tangent_fun = D_tangent_fun;
 end
 model.f_q_T_fun = f_q_T_fun;
 model.J_cc_fun = J_cc_fun;
@@ -1602,6 +1608,7 @@ dimensions.n_p_global = n_p_global;
 dimensions.n_p_time_var = n_p_time_var;
 dimensions.n_contacts = n_contacts;
 dimensions.n_tangents = n_tangents;
+dimensions.n_t = n_t;
 model.dimensions = dimensions;
 
 end
