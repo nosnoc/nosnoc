@@ -287,6 +287,10 @@ classdef FiniteElement < NosnocFormulationObject
                                 ii);
                         end
                     end
+                elseif settings.dcs_mode == DcsMode.CLS
+                    error('TODO ADD variable defintion') 
+                    % BOUNDARY POINTS??
+
                 end
 
                 % add user variables

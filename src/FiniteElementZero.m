@@ -117,7 +117,11 @@ classdef FiniteElementZero < NosnocFormulationObject
                                     1,...
                                     ij);
                 end
+
+            elseif settings.dcs_mode == DcsMode.CLS
+                error('Initlaize first sum and so on')
             end
+
         end
 
         function lambda = get.lambda(obj)

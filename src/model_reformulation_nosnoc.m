@@ -592,12 +592,8 @@ if isequal(dcs_mode,'CLS')
         end
 
         if isequal(friction_model,'Polyhedral')
-            if isfield(model,'J_tangent') && ~isfield(model,'D_tangent')
-                D_tangent = [model.J_tangent,-model.J_tangent];
-                model.D_tangent = D_tangent;
-                fprintf('nosnoc: tangent Jacobian for polyhedral friction cone generated: D_tangent = [J_tangent, -J_tanget].\n');
-            elseif ~isfield(model,'D_tangent')
-                error('nosnoc: please provide the polyhedral tangent Jacobian in model.D_tangent or conic tangent Jacobian model.J_tangent ')
+            if ~isfield(model,'D_tangent')
+                error('nosnoc: please provide the polyhedral tangent Jacobian in model.D_tangent, e.g., using the conic tangent Jacobian model.J_tangent: D_tangent = [J_tangent(q_0),-J_tangent(q_0)].')
             end
         end
     end
@@ -770,6 +766,11 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
     end
 end
 
+%% TODO %%%%%%%%%%%%%%
+
+%%%%%% HERE ENDS FIRST FUNCTION THAT JUST CHECKS THE CORECTNESS OF THE MODEL INPUT
+
+%% TODO %%%%%%%%%%%%%%
 
 %% Algebraic variables defintion
 % Dummy variables for Stewart's representation
@@ -809,10 +810,6 @@ n_vt = [];
 alpha_vt = [];
 n_gamma_d = 0;
 n_gamma = 0;
-
-% TODO
-% TODO
-% TODO
 
 
 % dimensions
@@ -1061,75 +1058,72 @@ switch dcs_mode
         n_theta_step = length(theta_step);
         n_z_all = n_z_all + n_beta+n_theta_step;
     case 'CLS'
-        % TODO add defintions;
-%         lambda_n = SX.sym('lambda_normal',n_contacts);
+        n_z_all = n_contacts+n_tangents; 
+        lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,['lambda_normal'],n_contacts);
 %         lbz = [0*ones(n_contacts,1)];
 %         ubz = [inf*ones(n_contacts,1)];
 %         z0 = [ones(n_contacts,1)];
-%         z = lambda_n;
-%         ind_lambda_n_var = 1:n_contacts;
-%         if friction_exists
-%             % tangetial contact froce (firction force)
-%             lambda_t = SX.sym('lambda_tangetial',n_tangents); % maybe a matrix would be more suitable?
+        z_all = lambda_normal;
+        if friction_exists
+            % tangetial contact froce (firction force)
+            lambda_tangetial = define_casadi_symbolic(casadi_symbolic_mode,['lambda_tangetial'],n_tangents);
 %             ind_lambda_t_var = ind_lambda_n_var(end)+1:ind_lambda_n_var(end)+n_tangents;
-%             z = [z;lambda_t];
-% 
+%             z_all = [z;lambda_tangetial];
 %             z0 = [z0; ones(n_tangents,1)];
-%             % friction aux multipliers
-%             if isequal(friction_model,'polyhedral')
+            % friction aux multipliers
+            if isequal(friction_model,'polyhedral')
 %                 lbz = [lbz;0*ones(n_tangents,1)];
 %                 ubz = [ubz;inf*ones(n_tangents,1)];
-% 
-%                 gamma_d = SX.sym('gamma_d',n_contacts);
-%                 z = [z;gamma_d];
+                gamma_d = define_casadi_symbolic(casadi_symbolic_mode,['gamma_d'],n_contacts);
+%                 z_all = [z_all;gamma_d];
 %                 lbz = [lbz;0*ones(n_contacts,1)];
 %                 ubz = [ubz;inf*ones(n_contacts,1)];
 %                 z0 = [z0;ones(n_contacts,1)];
-%                 % position in symbolic vector z
+                % position in symbolic vector z
 %                 ind_gamma_d_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
-%             end
-%             if isequal(friction_model,'conic')
+            end
+            if isequal(friction_model,'conic')
 %                 lbz = [lbz;-inf*ones(n_tangents,1)];
 %                 ubz = [ubz;inf*ones(n_tangents,1)];
-% 
-%                 gamma = SX.sym('gamma',n_contacts); % Lagrange multiplier
-%                 beta = SX.sym('beta',n_contacts); % lifting variable for friction
+                gamma = define_casadi_symbolic(casadi_symbolic_mode,['gamma'],n_contacts);
+                beta = define_casadi_symbolic(casadi_symbolic_mode,['beta'],n_contacts);
 %                 lbz = [lbz;0*ones(n_contacts,1);0*ones(n_contacts,1)];
 %                 ubz = [ubz;inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
 %                 z0 = [z0; ones(n_contacts,1);ones(n_contacts,1)];
 %                 ind_gamma_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
 %                 ind_beta_var = ind_gamma_var(end)+1:ind_gamma_var(end)+n_contacts;
-%                 z = [z;gamma;beta];
-%                 switch conic_friction_switch_detection_mode
-%                     case 'none'
-%                         % no extra constraints
-%                     case 'abs'
-%                         p_vt = SX.sym('p_vt',n_tangents); % positive parts of tangential velocities
-%                         n_vt = SX.sym('n_vt',n_tangents); % negative parts of tangential velocities
-%                         z = [z;p_vt;n_vt];
+%                 z_all = [z_all;gamma;beta];
+                switch conic_friction_switch_detection_mode
+                    case 'none'
+                        % no extra constraints
+                    case 'abs'
+                        p_vt = define_casadi_symbolic(casadi_symbolic_mode,['p_vt'],n_tangents); % positive parts of tagnetial velocity (for switch detection)
+                        n_vt = define_casadi_symbolic(casadi_symbolic_mode,['n_vt'],n_tangents); % negative parts of tagnetial velocity (for switch detection)
+                        z_all = [z_all;p_vt;n_vt];
 %                         lbz = [lbz;0*ones(2*n_tangents,1)];
 %                         ubz = [ubz;inf*ones(2*n_tangents,1)];
 %                         z0 = [z0; 1*ones(2*n_tangents,1)];
 %                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
 %                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
-%                     case 'lp'
-%                         p_vt = SX.sym('p_vt',n_tangents); % positive parts of tangential velocities
-%                         n_vt = SX.sym('n_vt',n_tangents); % negative parts of tangential velocities
-%                         alpha_vt = SX.sym('alpha_vt',n_tangents); % step function of tangential velocities
-%                         z = [z;p_vt;n_vt;alpha_vt ];
+                    case 'lp'
+                        p_vt = define_casadi_symbolic(casadi_symbolic_mode,['p_vt'],n_tangents); % positive parts of tagnetial velocity (for switch detection)
+                        n_vt = define_casadi_symbolic(casadi_symbolic_mode,['n_vt'],n_tangents); % negative parts of tagnetial velocity (for switch detection)
+                        alpha_vt = define_casadi_symbolic(casadi_symbolic_mode,['alpha_vt '],n_tangents); % step function of tangential velocities
+%                         z_all = [z_all;p_vt;n_vt;alpha_vt ];
 %                         lbz = [lbz;0*ones(3*n_tangents,1)];
 %                         ubz = [ubz;inf*ones(2*n_tangents,1);1*ones(n_tangents,1)];
 %                         z0 = [z0; 1*ones(2*n_tangents,1);0.5*ones(n_tangents,1)];
 %                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
 %                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
 %                         ind_alpha_vt_var = ind_n_vt_var(end)+1:ind_n_vt_var(end)+n_tangents;
-%                 end
-%             end
-%         end
+                end
+            end
+        end
 end
 g_lift = [g_lift_theta_step;g_lift_beta];
 
-%% Collect algebaric varaibles for the specific DCS mode
+%% Collect algebaric varaibles for the specific DCS mode, define initial guess and bounds
+% TODO: @Anton: Do the bounds and guess specification already while defining the varaibles?
 switch dcs_mode
     case 'Stewart'
         % symbolic variables z = [theta;lambda;mu];
@@ -1168,6 +1162,9 @@ switch dcs_mode
         z0_all = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;theta_step_guess];
         n_lift_eq =length(g_lift);
     case 'CLS'
+        z_all = [lambda_normal]
+        if friction_exists
+        end
 
 end
 
@@ -1178,8 +1175,17 @@ lbz_all = [lbz_all;lbz];
 ubz_all = [ubz_all;ubz];
 n_z_all = n_z_all + n_z;
 
-%% Model functions of the DCS mode
+%% TODO %%%%%%%%%%%%%%
 
+%%%%%% HERE ENDS SECOND FUNCTION THAT DEFINES THE MODEL VARIABLES. THE USER
+%%%%%% MIGHT USE THEM IN THE CONSTRAINTS (BUT DO WE GO THROUGH ANOTHER CHECK OF G_INEQ AND CO?
+
+% ----> THE NEXT PART IS THE THIRD AND LAST FUNCTION THAT DEFINES THE CASADI FUNCTIONS AND DIFFERENTIAL EQUATIONS 
+
+%% TODO %%%%%%%%%%%%%%
+
+
+%% Model functions of the DCS mode
 % if f_x doesnt exist we generate it from F
 % if it does we are in expert mode. TODO name.
 if ~isfield(model, 'f_x')
@@ -1192,6 +1198,8 @@ if ~isfield(model, 'f_x')
             case 'Step'
                 f_x = f_x + F{ii}*theta_step_all{ii};
             case 'DCS'
+                f_x = [];
+
 
         end
     end
@@ -1255,7 +1263,9 @@ if time_freezing && time_freezing_lift_forces % TODO Is this broken with paramet
     % new simple dynamics after lifting
     f_x = [f_x(1:n_q); z_forces; f_x(end-n_quad:end)];
 end
+
 if lift_velocity_state
+
 end
 
 %%  collect all algebraic equations
@@ -1265,7 +1275,7 @@ n_algebraic_constraints = length(g_z_all);
 
 %% CasADi functions for indicator and region constraint functions
 % model equations
-% TODO should this be a function of v_global as well (could be interesting for formulation)
+% TODO: @ Anton make this to be a function of v_global as well (and test on telescop arm example)
 g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
 c_fun = Function('c_fun',{x,p},{c_all});
 dot_c = c_all.jacobian(x)*f_x;
@@ -1298,7 +1308,6 @@ if isequal(irk_representation,'differential')
     end
     model.v0 = v0;
 end
-
 %% Collect Outputs
 model.lbx = lbx;
 model.ubx = ubx;
