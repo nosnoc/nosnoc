@@ -482,8 +482,8 @@ n_c_sys = [];
 
 if isequal(dcs_mode,'CLS')
     % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
-    % Check existence of relevant functions 
-    n_sys = 1; % always one subystem in CLS 
+    % Check existence of relevant functions
+    n_sys = 1; % always one subystem in CLS
     if ~isfield(model,'f_c')
         error('nosnoc: Please provide the gap functions model.f_c.')
     end
@@ -798,8 +798,8 @@ lambda_1_all = {};
 theta_step_all = {};
 
 % dummy values for CLS representation
-lambda_normal = [];  % normal contact force 
-lambda_tangent = []; 
+lambda_normal = [];  % normal contact force
+lambda_tangent = [];
 gamma_d = [];
 gamma = [];
 beta = [];
@@ -810,7 +810,10 @@ n_vt = [];
 alpha_vt = [];
 n_gamma_d = 0;
 n_gamma = 0;
-
+% TODO: Add different flags to steer lifting
+g_lift_gap = []; % lift gap functions f_c(q) = y;
+g_lift_friction1 = []; % lift friction expression: Conic: beta = (mu \lambda_n)^2 - |\ \lambda_t \|_2^2 / Polyhedral: beta_d = mu \lambda_n - e^top \lambda_t
+g_lift_friction2 = []; % lift stationarity condition in Polyhedral: detla_d = D_t(q)^\top v + \gamma_d e (becasue D(q) is nonlinear)
 
 % dimensions
 n_alpha = 0;
@@ -1058,69 +1061,45 @@ switch dcs_mode
         n_theta_step = length(theta_step);
         n_z_all = n_z_all + n_beta+n_theta_step;
     case 'CLS'
-        n_z_all = n_contacts+n_tangents; 
-        lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,['lambda_normal'],n_contacts);
-%         lbz = [0*ones(n_contacts,1)];
-%         ubz = [inf*ones(n_contacts,1)];
-%         z0 = [ones(n_contacts,1)];
-        z_all = lambda_normal;
+        n_z_all = n_contacts+n_tangents;
+        lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,'lambda_normal',n_contacts);
+        y_gap = define_casadi_symbolic(casadi_symbolic_mode,'y_gap',n_contacts);
+        g_lift_gap = f_c-y_gap; % lift gap functions f_c(q) = y;
         if friction_exists
             % tangetial contact froce (firction force)
-            lambda_tangetial = define_casadi_symbolic(casadi_symbolic_mode,['lambda_tangetial'],n_tangents);
-%             ind_lambda_t_var = ind_lambda_n_var(end)+1:ind_lambda_n_var(end)+n_tangents;
-%             z_all = [z;lambda_tangetial];
-%             z0 = [z0; ones(n_tangents,1)];
-            % friction aux multipliers
+            lambda_tangetial = define_casadi_symbolic(casadi_symbolic_mode,'lambda_tangetial',n_tangents);
             if isequal(friction_model,'polyhedral')
-%                 lbz = [lbz;0*ones(n_tangents,1)];
-%                 ubz = [ubz;inf*ones(n_tangents,1)];
                 gamma_d = define_casadi_symbolic(casadi_symbolic_mode,['gamma_d'],n_contacts);
-%                 z_all = [z_all;gamma_d];
-%                 lbz = [lbz;0*ones(n_contacts,1)];
-%                 ubz = [ubz;inf*ones(n_contacts,1)];
-%                 z0 = [z0;ones(n_contacts,1)];
-                % position in symbolic vector z
-%                 ind_gamma_d_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
+                beta_d = define_casadi_symbolic(casadi_symbolic_mode,['beta_d'],n_contacts); % lift friction cone bound
+                delta_d = define_casadi_symbolic(casadi_symbolic_mode,['delta_d'],n_tangents); % lift lagrangian
+                for ii = 1:n_contacts
+                    ind_temp = n_t*ii-(n_t-1):n_t*ii;
+                    g_lift_friction1 = [g_lift_friction1; beta_d(ii)-(mu(ii)*lambda_normal(ii)- sum(lambda_tangent(ind_temp)))];
+                    g_lift_friction2 = [g_lift_friction2; delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v+gamma_d(ii))];
+                end
             end
             if isequal(friction_model,'conic')
-%                 lbz = [lbz;-inf*ones(n_tangents,1)];
-%                 ubz = [ubz;inf*ones(n_tangents,1)];
                 gamma = define_casadi_symbolic(casadi_symbolic_mode,['gamma'],n_contacts);
                 beta = define_casadi_symbolic(casadi_symbolic_mode,['beta'],n_contacts);
-%                 lbz = [lbz;0*ones(n_contacts,1);0*ones(n_contacts,1)];
-%                 ubz = [ubz;inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
-%                 z0 = [z0; ones(n_contacts,1);ones(n_contacts,1)];
-%                 ind_gamma_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
-%                 ind_beta_var = ind_gamma_var(end)+1:ind_gamma_var(end)+n_contacts;
-%                 z_all = [z_all;gamma;beta];
+                for ii = 1:n_contacts
+                    ind_temp = n_t*ii-(n_t-1):n_t*ii;
+                    g_lift_friction1 = [g_lift_friction1; beta(ii)-((mu(ii)*lambda_normal(ii))^2- norm(lambda_tangent(ind_temp))^2)];
+                end
                 switch conic_friction_switch_detection_mode
                     case 'none'
                         % no extra constraints
                     case 'abs'
                         p_vt = define_casadi_symbolic(casadi_symbolic_mode,['p_vt'],n_tangents); % positive parts of tagnetial velocity (for switch detection)
                         n_vt = define_casadi_symbolic(casadi_symbolic_mode,['n_vt'],n_tangents); % negative parts of tagnetial velocity (for switch detection)
-                        z_all = [z_all;p_vt;n_vt];
-%                         lbz = [lbz;0*ones(2*n_tangents,1)];
-%                         ubz = [ubz;inf*ones(2*n_tangents,1)];
-%                         z0 = [z0; 1*ones(2*n_tangents,1)];
-%                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
-%                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
                     case 'lp'
                         p_vt = define_casadi_symbolic(casadi_symbolic_mode,['p_vt'],n_tangents); % positive parts of tagnetial velocity (for switch detection)
                         n_vt = define_casadi_symbolic(casadi_symbolic_mode,['n_vt'],n_tangents); % negative parts of tagnetial velocity (for switch detection)
                         alpha_vt = define_casadi_symbolic(casadi_symbolic_mode,['alpha_vt '],n_tangents); % step function of tangential velocities
-%                         z_all = [z_all;p_vt;n_vt;alpha_vt ];
-%                         lbz = [lbz;0*ones(3*n_tangents,1)];
-%                         ubz = [ubz;inf*ones(2*n_tangents,1);1*ones(n_tangents,1)];
-%                         z0 = [z0; 1*ones(2*n_tangents,1);0.5*ones(n_tangents,1)];
-%                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
-%                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
-%                         ind_alpha_vt_var = ind_n_vt_var(end)+1:ind_n_vt_var(end)+n_tangents;
                 end
             end
         end
 end
-g_lift = [g_lift_theta_step;g_lift_beta];
+g_lift = [g_lift_theta_step;g_lift_beta;g_lift_gap;g_lift_friction1;g_lift_friction2];
 
 %% Collect algebaric varaibles for the specific DCS mode, define initial guess and bounds
 % TODO: @Anton: Do the bounds and guess specification already while defining the varaibles?
@@ -1162,10 +1141,60 @@ switch dcs_mode
         z0_all = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;theta_step_guess];
         n_lift_eq =length(g_lift);
     case 'CLS'
-        z_all = [lambda_normal]
+        z_all = [lambda_normal;y_gap];
+        lbz_all = [0*ones(n_contacts,1);0*ones(n_contacts,1)];
+        ubz_all = [inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
+        z0_all = [ones(n_contacts,1);ones(n_contacts,1)];
         if friction_exists
+            % tangetial contact froce (firction force)
+            %             ind_lambda_t_var = ind_lambda_n_var(end)+1:ind_lambda_n_var(end)+n_tangents;
+            z_all = [z_all;lambda_tangetial];
+            z0_all = [z0_all; ones(n_tangents,1)];
+            % friction aux multipliers
+            if isequal(friction_model,'polyhedral')
+                % bounds on friction force
+                lbz_all = [lbz_all;0*ones(n_tangents,1)];
+                ubz_all = [ubz_all;inf*ones(n_tangents,1)];
+                % polyhedral friction model algebaric variables
+                z_all = [z_all;gamma_d;beta_d;delta_d];
+                lbz_all = [lbz_all;0*ones(n_contacts,1);0*ones(n_contacts,1);0*ones(n_tangents,1)];
+                ubz_all = [ubz_all;inf*ones(n_contacts,1);inf*ones(n_contacts,1);inf*ones(n_tangents,1)];
+                z0_all = [z0_all;ones(n_contacts,1);ones(n_contacts,1);ones(n_tangents,1)];
+                %                  ind_gamma_d_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
+            end
+            if isequal(friction_model,'conic')
+                % bounds for friction froce
+                lbz_all = [lbz;-inf*ones(n_tangents,1)];
+                ubz_all = [ubz;inf*ones(n_tangents,1)];
+                % conic friction model algebaric variables
+                z_all = [z_all;gamma;beta];
+                lbz_all = [lbz_all;0*ones(n_contacts,1);0*ones(n_contacts,1)];
+                ubz_all = [ubz_all;inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
+                z0_all = [z0_all; ones(n_contacts,1);ones(n_contacts,1)];
+                %                 ind_gamma_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
+                %                 ind_beta_var = ind_gamma_var(end)+1:ind_gamma_var(end)+n_contacts;
+                switch conic_friction_switch_detection_mode
+                    case 'none'
+                        % no extra constraints
+                    case 'abs'
+                        z_all = [z_all;p_vt;n_vt];
+                        lbz_all = [lbz_all;0*ones(2*n_tangents,1)];
+                        ubz_all = [ubz;inf_all*ones(2*n_tangents,1)];
+                        z0_all = [z0_all; 1*ones(2*n_tangents,1)];
+                        %                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
+                        %                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
+                    case 'lp'
+                        z_all = [z_all;p_vt;n_vt;alpha_vt ];
+                        lbz_all = [lbz_all;0*ones(3*n_tangents,1)];
+                        ubz_all = [ubz_all;inf*ones(2*n_tangents,1);1*ones(n_tangents,1)];
+                        z0_all = [z0_all; 1*ones(2*n_tangents,1);0.5*ones(n_tangents,1)];
+                        %                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
+                        %                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
+                        %                         ind_alpha_vt_var = ind_n_vt_var(end)+1:ind_n_vt_var(end)+n_tangents;
+                end
+            end
         end
-
+        n_z_all = length(z_all);
 end
 
 %% Add user provided algebraic
@@ -1180,7 +1209,7 @@ n_z_all = n_z_all + n_z;
 %%%%%% HERE ENDS SECOND FUNCTION THAT DEFINES THE MODEL VARIABLES. THE USER
 %%%%%% MIGHT USE THEM IN THE CONSTRAINTS (BUT DO WE GO THROUGH ANOTHER CHECK OF G_INEQ AND CO?
 
-% ----> THE NEXT PART IS THE THIRD AND LAST FUNCTION THAT DEFINES THE CASADI FUNCTIONS AND DIFFERENTIAL EQUATIONS 
+% ----> THE NEXT PART IS THE THIRD AND LAST FUNCTION THAT DEFINES THE CASADI FUNCTIONS AND DIFFERENTIAL EQUATIONS
 
 %% TODO %%%%%%%%%%%%%%
 
