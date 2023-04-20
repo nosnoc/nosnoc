@@ -78,7 +78,7 @@ classdef NosnocProblem < NosnocFormulationObject
         stages % control stages
 
         % complementarity residual functions
-        comp_res
+        comp_res 
         comp_std
         comp_fesd
 
@@ -110,7 +110,7 @@ classdef NosnocProblem < NosnocFormulationObject
             import casadi.*
             obj@NosnocFormulationObject();
 
-            if settings.right_boundary_point_explicit
+            if settings.right_boundary_point_explicit || settings.dcs_mode == DcsMode.CLS
                 rbp_allowance = 0;
             else
                 rbp_allowance = 1;

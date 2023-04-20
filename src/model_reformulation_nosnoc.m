@@ -65,18 +65,9 @@ else
 end
 
 %% If different names are used...
-if exist('N_ctrl','var')
-    N_stg = N_ctrl;
-end
-if exist('N_control','var')
-    N_stg = N_control;
-end
-
 if exist('N_stg','var')
     N_stages = N_stg;
-    N_ctrl = N_stages;
     model.N_stages = N_stages;
-    model.N_ctrl = N_ctrl;
 end
 
 if exist('N_FE','var')
@@ -84,10 +75,6 @@ if exist('N_FE','var')
     model.N_finite_elements  = N_finite_elements;
 end
 
-if exist('N_fe','var')
-    N_finite_elements = N_fe;
-    model.N_finite_elements = N_fe;
-end
 
 %% Step-size
 h = T/N_stages;
@@ -483,7 +470,7 @@ n_c_sys = [];
 if isequal(dcs_mode,'CLS')
     % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
     % Check existence of relevant functions
-    n_sys = 1; % always one subystem in CLS
+    n_sys = 1; % always one subystem in CLS (only loops over n_contacts later)
     if ~isfield(model,'f_c')
         error('nosnoc: Please provide the gap functions model.f_c.')
     end
@@ -525,7 +512,6 @@ if isequal(dcs_mode,'CLS')
     if any(abs(1-e)>1) || any(e<0)
         error('nosnoc: the coefficient of restitution e should be in [0,1].')
     end
-
 
     % dimensions and state space split
     casadi_symbolic_mode = model.x(1).type_name();
@@ -767,9 +753,7 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
 end
 
 %% TODO %%%%%%%%%%%%%%
-
 %%%%%% HERE ENDS FIRST FUNCTION THAT JUST CHECKS THE CORECTNESS OF THE MODEL INPUT
-
 %% TODO %%%%%%%%%%%%%%
 
 %% Algebraic variables defintion
@@ -783,15 +767,14 @@ lambda_all = {};
 mu_all = {};
 e_ones_all = {};
 
-
 % dummy values for Step representation
 if ~settings.general_inclusion
     alpha = [];
 else
     alpha = vertcat(model.alpha{:});
 end
-lambda_0 = [];
-lambda_1 = [];
+lambda_n = [];
+lambda_p = [];
 alpha_all  = {};
 lambda_0_all = {};
 lambda_1_all = {};
@@ -820,8 +803,8 @@ n_alpha = 0;
 e_alpha = [];
 n_beta = 0;
 n_theta_step = 0;
-n_lambda_0 = 0;
-n_lambda_1 = 0;
+n_lambda_n = 0;
+n_lambda_p = 0;
 g_lift_beta = [];
 g_lift_theta_step  =[];
 switch dcs_mode
@@ -852,13 +835,13 @@ switch dcs_mode
     case 'Step'
         n_alpha = sum(n_c_sys);
         n_f = sum(m_vec);
-        n_lambda_0 = sum(n_c_sys);
-        n_lambda_1 = sum(n_c_sys);
+        n_lambda_n = sum(n_c_sys);
+        n_lambda_p = sum(n_c_sys);
         % for creae_nlp_fesd
         n_theta = 2*n_alpha;
-        n_lambda = n_lambda_0+n_lambda_1;
+        n_lambda = n_lambda_n+n_lambda_p;
         % algebraic varaibles so far
-        n_z_all = n_alpha+n_lambda_0+n_lambda_1;
+        n_z_all = n_alpha+n_lambda_n+n_lambda_p;
         for ii = 1:n_sys
             ii_str = num2str(ii);
             % define alpha (selection of a set valued step function)
@@ -872,11 +855,11 @@ switch dcs_mode
             end
             % define lambda_0_i (Lagrange multipler of alpha >= 0;)
             lambda_0_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_0_' ii_str],n_c_sys(ii));
-            lambda_0 = [lambda_0;lambda_0_temp];
+            lambda_n = [lambda_n;lambda_0_temp];
             lambda_0_all{ii} = lambda_0_temp;
             % define lambda_1_i (Lagrange multipler of alpha <= 1;)
             lambda_1_temp = define_casadi_symbolic(casadi_symbolic_mode,['lambda_1_' ii_str],n_c_sys(ii));
-            lambda_1 = [lambda_1;lambda_1_temp];
+            lambda_p = [lambda_p;lambda_1_temp];
             lambda_1_all{ii} = lambda_1_temp;
         end
         % define appropiate vector of ones % for the kkt conditions of the LP
@@ -1121,8 +1104,8 @@ switch dcs_mode
         z0_all = [theta_guess;lambda_guess;mu_guess];
         n_lift_eq = n_sys;
     case 'Step'
-        z_all = [alpha;lambda_0;lambda_1;beta;theta_step];
-        z_switching = [lambda_0;lambda_1];
+        z_all = [alpha;lambda_n;lambda_p;beta;theta_step];
+        z_switching = [lambda_n;lambda_p];
         lbz_all = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_theta_step,1)];
         ubz_all = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_theta_step,1)];
 
@@ -1203,20 +1186,15 @@ z0_all = [z0_all;z0];
 lbz_all = [lbz_all;lbz];
 ubz_all = [ubz_all;ubz];
 n_z_all = n_z_all + n_z;
-
 %% TODO %%%%%%%%%%%%%%
-
 %%%%%% HERE ENDS SECOND FUNCTION THAT DEFINES THE MODEL VARIABLES. THE USER
 %%%%%% MIGHT USE THEM IN THE CONSTRAINTS (BUT DO WE GO THROUGH ANOTHER CHECK OF G_INEQ AND CO?
-
 % ----> THE NEXT PART IS THE THIRD AND LAST FUNCTION THAT DEFINES THE CASADI FUNCTIONS AND DIFFERENTIAL EQUATIONS
-
-%% TODO %%%%%%%%%%%%%%
-
 
 %% Model functions of the DCS mode
 % if f_x doesnt exist we generate it from F
 % if it does we are in expert mode. TODO name.
+% Define differential equations
 if ~isfield(model, 'f_x')
     f_x = zeros(n_x,1);
     % rhs of ODE;
@@ -1227,12 +1205,105 @@ if ~isfield(model, 'f_x')
             case 'Step'
                 f_x = f_x + F{ii}*theta_step_all{ii};
             case 'DCS'
-                f_x = [];
-
-
+                %                 if friction_exists
+                %                     if isequal(friction_model,'conic')
+                %                         F_v = inv(M)*(f_v+J_n*lambda_n+J_t*lambda_t);
+                %                     elseif isequal(friction_model,'polyhedral')
+                %                         F_v = inv(M)*(f_v+J_n*lambda_n+D_t*lambda_t);
+                %                     else
+                %                         error('pick friction_model conic or polyhedral')% position in symbolic vector z
+                %                     end
+                %                 else
+                %                     F_v = inv(M)*(f_v+J_n*lambda_n);
+                %                 end
+                %
+                %                 g_z =  [f_c];
+                %
+                %                 if lift_velocity_state
+                %                     z_v = SX.sym('z_v',n_q);
+                %                     ind_z_v_var = length(z)+1:length(z)+n_q;
+                %                     z = [z;z_v];
+                %                     lbz = [lbz;-inf*ones(n_q,1)];
+                %                     ubz = [ubz;inf*ones(n_q,1)];
+                %                     z0 = [z0;x0(n_q+1:end)];
+                %                     f_x = [v;...
+                %                         z_v];
+                %                     if friction_exists
+                %                         if isequal(friction_model,'conic')
+                %                             g_lift_v= M*z_v -(f_v+J_n*lambda_n+J_t*lambda_t);
+                %                         elseif isequal(friction_model,'polyhedral')
+                %                             g_lift_v =  M*z_v -(f_v+J_n*lambda_n+D_t*lambda_t);
+                %                         else
+                %                             error('pick friction_model conic or polyhedral')% position in symbolic vector z
+                %                         end
+                %                     else
+                %                         g_lift_v =  M*z_v -(f_v+J_n*lambda_n);
+                %                     end
+                %                     g_z = [g_z;g_lift_v];
+                %                 else
+                %                     f_x = [v;...
+                %                         F_v];
+                %                 end
+                %
+                %                 g_z_comp1 = [];
+                %                 g_z_comp2 = [];
+                %                 if friction_exists
+                %                     if isequal(friction_model,'polyhedral')
+                %                         for ii = 1:n_contacts
+                %                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
+                %                             g_z_comp1 = [lambda_t(ind_temp);gamma_d(ii)];
+                %                             g_z_comp2 = [D_t(:,ind_temp)'*v-gamma_d(ii);mu(ii)*lambda_n(ii)-sum(lambda_t(ind_temp))];
+                %                         end
+                %                     end
+                %                     if isequal(friction_model,'conic')
+                %                         for ii = 1:n_contacts
+                %                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
+                %                             g_z = [g_z;...
+                %                                 beta(ii)-( (mu(ii)*lambda_n(ii))^2-norm(lambda_t(ind_temp))^2);
+                %                                 -J_t(:,ind_temp)'*v-2*gamma(ii)*(lambda_t(ind_temp)+kappa_reg_tan*f_c(ii))];
+                %                             g_z_comp1 = [g_z_comp1;gamma(ii)];
+                %                             g_z_comp2 = [g_z_comp2;beta(ii)];
+                %
+                %                             if isequal(conic_friction_switch_detection_mode,'abs')|| isequal(conic_friction_switch_detection_mode,'lp')
+                %                                 % The equality constraint is the same in both variantes
+                %                                 g_z = [g_z;J_t(:,(ind_temp))'*v-(p_vt(ind_temp)-n_vt(ind_temp))];
+                %                             end
+                %                         end
+                %                     end
+                %                 end
+                %                 lbg_z = zeros(length(g_z),1);
+                %                 ubg_z = zeros(length(g_z),1);
+                %                 ubg_z(1:n_contacts) = inf;
+                %
+                %                 % ODE functions
+                %                 if n_u > 0
+                %                     f_x_fun = Function('f_x_fun', {x, z  u}, {f_x, f_q});
+                %                     g_z_fun = Function('f_c_fun', {x, z}, {g_z});
+                %                     f_terminal_fun = Function('f_terminal_fun', {x}, {f_terminal});
+                %                 else
+                %                     f_x_fun = Function('f_x_fun', {x, z}, {f_x, f_q});
+                %                     g_z_fun = Function('g_z_fun', {x,z}, {g_z});
+                %                     f_terminal_fun = Function('f_terminal_fun', {x}, {f_terminal});
+                %                 end
+                %                 % contact normal
+                %                 invM = inv(M);
+                %                 M_fun = Function('M_fun', {x}, {M});
+                %                 invM_fun = Function('invM_fun', {x}, {invM});
+                %
+                %                 f_c_fun = Function('f_c_fun', {x}, {f_c});
+                %                 J_n_fun = Function('J_n_fun', {x}, {J_n});
+                %                 if friction_exists
+                %                     if isequal(friction_model,'conic')
+                %                         J_t_fun = Function('J_t_fun', {x}, {J_t});
+                %                     else
+                %                         D_t_fun = Function('D_t_fun', {x}, {D_t});
+                %                     end
+                %                 end
         end
     end
 end
+
+% Define algebraic equations
 
 g_switching = []; % collects switching function algebraic equations 0 = g_i(x) - \lambda_i - e \mu_i
 g_convex = []; % equation for the convex multiplers 1 = e' \theta
@@ -1420,8 +1491,8 @@ model.n_c_sys = n_c_sys;
 model.n_alpha = n_alpha;
 model.n_beta = n_beta;
 model.n_theta_step = n_theta_step;
-model.n_lambda_0 = n_lambda_0;
-model.n_lambda_1 = n_lambda_1;
+model.n_lambda_0 = n_lambda_n;
+model.n_lambda_1 = n_lambda_p;
 
 % least square functions and references
 model.f_lsq_x_fun = f_lsq_x_fun;
@@ -1461,8 +1532,8 @@ dimensions.n_c_sys = n_c_sys;
 dimensions.n_alpha = n_alpha;
 dimensions.n_beta = n_beta;
 dimensions.n_theta_step = n_theta_step;
-dimensions.n_lambda_0 = n_lambda_0;
-dimensions.n_lambda_1 = n_lambda_1;
+dimensions.n_lambda_0 = n_lambda_n;
+dimensions.n_lambda_1 = n_lambda_p;
 dimensions.n_f_sys = n_f_sys;
 dimensions.n_p_global = n_p_global;
 dimensions.n_p_time_var = n_p_time_var;
