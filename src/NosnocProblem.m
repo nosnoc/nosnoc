@@ -458,8 +458,8 @@ classdef NosnocProblem < NosnocFormulationObject
             import casadi.*
             fe0 = FiniteElementZero(obj.settings, obj.dims, obj.model);
             obj.fe0 = fe0;
-
-            obj.p = vertcat(obj.p, fe0.x0, fe0.lambda{1,:});
+            
+            obj.p = vertcat(obj.p, fe0.x0, fe0.lambda{1,:},fe0.y_gap{1,:},fe0.gamma{1,:},fe0.gamma_d{1,:},fe0.delta_d{1,:},fe0.p_vt{1,:},fe0.n_vt{1,:});
 
             X0 = fe0.x{1};
             obj.addVariable(X0,...

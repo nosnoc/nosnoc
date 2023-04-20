@@ -1610,7 +1610,8 @@ dimensions.n_contacts = n_contacts;
 dimensions.n_tangents = n_tangents;
 dimensions.n_t = n_t;
 model.dimensions = dimensions;
-
+%%
+model.friction_exists = friction_exists;
 end
 
 

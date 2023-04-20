@@ -69,11 +69,12 @@ classdef FiniteElementZero < NosnocFormulationObject
         p_vt
         n_vt
         % variables only at element boundary
-        Gamma
-        Gamma_d
-        Delta_d
-        P_vn
-        N_vn
+        % TODO: for impulse at 0th 
+%         Gamma
+%         Gamma_d
+%         Delta_d
+%         P_vn
+%         N_vn
     end
 
     methods
@@ -106,7 +107,6 @@ classdef FiniteElementZero < NosnocFormulationObject
                     x0_ub,...
                     model.x0,...
                     1);
-
             else
                 for i=1:dims.n_x
                     obj.addConstraint(X0(i) - obj.x0(i),0,0);
@@ -155,33 +155,32 @@ classdef FiniteElementZero < NosnocFormulationObject
             elseif settings.dcs_mode == DcsMode.CLS
                 % TODO: implement impulse equations for the zeroth element
                 y_gap0 = define_casadi_symbolic(settings.casadi_symbolic_mode,'y_gap0', dims.n_contacts);
-%                 f_c_fun(x0);
                 obj.addVariable(y_gap0,...
                         'y_gap',...
                         zeros(dims.n_contacts,1),...
                         inf * ones(dims.n_contacts,1),...
                         ones(dims.n_contacts,1),...
                         1);                
-                if friction_exists
-                    if isequal(friction_model,'Polyhedral')
-                        v0 = x0(n_q+1:end);
-                        v_t = D_tangent_fun(x0)'*v0;
-                        gamma_d0 = define_casadi_symbolic(settings.casadi_symbolic_mode,'gamma_d0', dims.n_tangents);
+                if model.friction_exists
+                    if isequal(settings.friction_model,'Polyhedral')
+                       
+                        gamma_d0 = define_casadi_symbolic(settings.casadi_symbolic_mode,'gamma_d0', dims.n_contacts);
                         obj.addVariable(gamma_d0 ,...
                         'gamma_d',...
+                        zeros(dims.n_contacts,1),...
+                        inf * ones(dims.n_contacts,1),...
+                        ones(dims.n_contacts,1),...
+                        1);                
+                        delta_d0 = define_casadi_symbolic(settings.casadi_symbolic_mode,'delta_d0', dims.n_tangents);
+                        obj.addVariable(gamma_d0 ,...
+                        'delta_d',...
                         zeros(dims.n_tangents,1),...
                         inf * ones(dims.n_tangents,1),...
                         ones(dims.n_tangents,1),...
-                        1);                
-%                         gamma_d_0 = [];
-%                         for ii = 1:dims.n_contacts
-%                             ind_temp = dims.n_t*ii-(n_t-1):dims.n_t*ii;
-%                             gamma_d_0 = [gamma_d_0;norm(v_t(ind_temp))/n_t*1];
-%                         end
+                        1); 
+%                     
                     end
                     if isequal(friction_model,'Conic')
-                        v0 = x0(n_q+1:end);
-                        v_t = J_tangent_fun(x0)'*v0;
                         gamma_0 = define_casadi_symbolic(settings.casadi_symbolic_mode,'gamma_0', dims.n_tangents);
                         obj.addVariable(gamma_d0 ,...
                         'gamma',...
@@ -203,16 +202,7 @@ classdef FiniteElementZero < NosnocFormulationObject
                         inf * ones(dims.n_tangents,1),...
                         ones(dims.n_tangents,1),...
                         1);       
-%                         gamma_0 = [];
-%                         p_vt_0 = [];
-%                         n_vt_0  = [];
-%                         for ii = 1:n_contacts
-%                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
-%                             v_ti = v_t(ind_temp);
-%                             gamma_0 = [gamma_0;norm(v_ti)];
-%                             p_vt_0 = [p_vt_0;max(v_ti,0)];
-%                             n_vt_0 = [n_vt_0;max(-v_ti,0)];
-%                         end
+
                     end
                 end
             end
@@ -228,6 +218,26 @@ classdef FiniteElementZero < NosnocFormulationObject
 
         function x = get.x(obj)
             x= cellfun(@(x) obj.w(x), obj.ind_x, 'UniformOutput', false);
+        end
+
+        function gamma = get.gamma(obj)
+            gamma= cellfun(@(gamma) obj.w(gamma), obj.ind_gamma, 'UniformOutput', false);
+        end
+
+        function gamma_d = get.gamma_d(obj)
+            gamma_d = cellfun(@(gamma_d) obj.w(gamma_d), obj.ind_gamma_d, 'UniformOutput', false);
+        end
+
+        function delta_d = get.delta_d(obj)
+            delta_d = cellfun(@(delta_d) obj.w(delta_d), obj.ind_delta_d, 'UniformOutput', false);
+        end
+ 
+        function p_vt = get.p_vt(obj)
+            p_vt = cellfun(@(p_vt) obj.w(p_vt), obj.ind_p_vt, 'UniformOutput', false);
+        end
+
+        function n_vt = get.n_vt(obj)
+            n_vt = cellfun(@(n_vt) obj.w(n_vt), obj.ind_n_vt, 'UniformOutput', false);
         end
     end
 end

@@ -54,14 +54,45 @@ sigma_k = sigma_0;
 x0 = solver_initialization.w0(1:model.dimensions.n_x);
 
 % lambda00 initialization
-if strcmp(settings.dcs_mode, 'Stewart')
-    lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-elseif strcmp(settings.dcs_mode, 'Step')
-%     c_x = full(model.c_fun(x0));
-%     lambda00 = [ max(c_x, 0); min(c_x, 0)];
-    lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+lambda00 = [];
+gamma_00 = [];
+p_vt_00 = [];
+n_vt_00  = [];
+gamma_d00 = [];
+delta_d00 = [];
+switch settings.dcs_mode
+    case 'Stewart'
+        lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+    case 'Step'
+        lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+    case 'CLS'
+        % TODO: reconsider this if 0th element has an impulse
+        y_gap00 = f_c_fun(x0);
+        if model.friction_exists
+            switch settings.friction_model
+                case 'Polyhedral'
+                    v0 = x0(n_q+1:end);
+                    D_tangent_0 = D_tangent_fun(x0);
+                    v_t0 = D_tangent_0'*v0;
+                    for ii = 1:model.dims.n_contacts
+                        ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                        gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dims.n_t];
+                        delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v_t0+gamma_d00(ii)];
+                    end
+                case 'Conic'
+                    v0 = x0(n_q+1:end);
+                    v_t0 = J_tangent_fun(x0)'*v0;
+                    for ii = 1:n_contacts
+                        ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                        v_ti0 = v_0(ind_temp);
+                        gamma_00 = [gamma_00;norm(v_ti0)];
+                        p_vt_00 = [p_vt_00;max(v_ti0,0)];
+                        n_vt_00 = [n_vt_00;max(-v_ti0,0)];
+                    end
+            end
+        end
 end
-p_val = [model.p_val(:);x0(:); lambda00(:)];
+p_val = [model.p_val(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);p_vt_00(:);n_vt_00(:)];
 
 complementarity_stats = [full(comp_res(w0, p_val))];
 
@@ -93,7 +124,7 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
             sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent));
         else
             error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
-        end  
+        end
     end
     p_val(1) = sigma_k;
     if h_fixed_to_free_homotopy
