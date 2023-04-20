@@ -31,15 +31,45 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_x0
         ind_u
         ind_v
+        ind_z
+        % Stewart
         ind_theta
         ind_lam
         ind_mu
+        % Step
         ind_alpha
         ind_lambda_n
         ind_lambda_p
         ind_theta_step
         ind_beta
-        ind_z
+     % Speficif to CLS representation
+            ind_lambda_normal
+            ind_lambda_tangent
+            % friction multipliers and lifting
+            % conic
+            ind_gamma
+            ind_beta_conic
+            % poly
+            ind_gamma_d
+            ind_beta_d
+            ind_delta_d
+            % variables related to conic
+            ind_p_vt
+            ind_n_vt
+            ind_alpha_vt
+            % variables only at element boundary
+            ind_Lambda_normal
+            ind_Lambda_tangent
+            ind_Gamma
+            ind_Gamma_d
+            ind_Beta_conic
+            ind_Delta_d
+            ind_P_vn
+            ind_N_vn
+            ind_P_vt
+            ind_N_vt
+            ind_Alpha_vt
+        % misc
         ind_nu_lift
         ind_h
         ind_elastic

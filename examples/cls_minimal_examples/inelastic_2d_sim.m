@@ -12,8 +12,12 @@ settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.time_freezing = 1; %% we will need to exlude the coexistence of these two
 settings.friction_model = "Conic";
-settings.conic_model_switch_handling = "Plain";
-
+settings.friction_model = "Polyhedral";
+% settings.conic_model_switch_handling = "Plain";
+% settings.conic_model_switch_handling = "Abs";
+% settings.conic_model_switch_handling = "Lp";
+settings.local_speed_of_time_variable = 0;
+settings.use_speed_of_time_variables = 0;
 if settings.time_freezing && settings.dcs_mode~=DcsMode.CLS
     settings.impose_terminal_phyisical_time = 1;
     settings.local_speed_of_time_variable = 1;
@@ -36,6 +40,7 @@ model.x0 = [0;1;3;0];
 model.f_v = [0;-g];
 model.f_c = q(2);
 model.J_tangent = [1; 0]; 
+model.D_tangent = [1,-1;0,0];
 model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
 N_FE = 5;
