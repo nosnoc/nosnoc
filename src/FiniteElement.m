@@ -165,13 +165,17 @@ classdef FiniteElement < NosnocFormulationObject
             addOptional(p, 'T_final',[]);
             parse(p, prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin{:});
 
-            if settings.right_boundary_point_explicit
+            if settings.right_boundary_point_explicit || settings.dcs_mode == 'CLS'
                 rbp_allowance = 0;
             else
                 rbp_allowance = 1;
             end
 
-            obj.ind_x = cell(dims.n_s+rbp_allowance, 1);
+            if settings.dcs_mode == "CLS"
+                obj.ind_x = cell(dims.n_s+1, 1);
+            else
+                obj.ind_x = cell(dims.n_s+rbp_allowance, 1);
+            end
             obj.ind_v = cell(dims.n_s, 1);
             obj.ind_z = cell(dims.n_s+rbp_allowance, 1);
             % Stewart
@@ -242,6 +246,18 @@ classdef FiniteElement < NosnocFormulationObject
             end
             obj.T_final = p.Results.T_final;
 
+            % Left boundary point needed for dcs_mode = cls (corresponding to t^+ (post impacts))
+            if settings.dcs_modee == "CLS"
+                x = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                    ['X_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_0'],...
+                    dims.n_x);
+                obj.addVariable(x,...
+                    'x',...
+                    lbx,...
+                    ubx,...
+                    model.x0,...
+                    ii);
+            end
             % RK stage stuff
             for ii = 1:dims.n_s
                 % state / state derivative variables
@@ -529,304 +545,446 @@ classdef FiniteElement < NosnocFormulationObject
                             end
                         end
                     end
-
-
-                    % add user variables
-                    z = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                        ['z_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
-                        dims.n_z);
-                    obj.addVariable(z,...
-                        'z',...
-                        model.lbz,...
-                        model.ubz,...
-                        model.z0,...
-                        ii);
                 end
-                % TODO: define impulse algebraic variables (left boundary point)
-                %             z_impulse from model reformulations and all its parts
-
-
-
-                % Add right boundary points if needed
-                if ~settings.right_boundary_point_explicit
-                    if settings.dcs_mode == DcsMode.Stewart
-                        % add lambdas
-                        for ij = 1:dims.n_sys
-                            lam = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                                ['lambda_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_end_' num2str(ij)],...
-                                dims.n_f_sys(ij));
-                            obj.addVariable(lam,...
-                                'lam',...
-                                zeros(dims.n_f_sys(ij), 1),...
-                                inf * ones(dims.n_f_sys(ij), 1),...
-                                settings.initial_lambda * ones(dims.n_f_sys(ij), 1),...
-                                dims.n_s+1,...
-                                ij);
-                        end
-
-                        % add mu
-                        for ij = 1:dims.n_sys
-                            mu = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                                ['mu_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_end_' num2str(ij)],...
-                                1);
-                            obj.addVariable(mu,...
-                                'mu',...
-                                -inf * ones(1),...
-                                inf * ones(1),...
-                                settings.initial_mu * ones(1),...
-                                dims.n_s+1,...
-                                ij);
-                        end
-
-                    elseif settings.dcs_mode == DcsMode.Step
-                        % add lambda_n
-                        for ij = 1:dims.n_sys
-                            lambda_n = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                                ['lambda_n_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_end_' num2str(ij)],...
-                                dims.n_c_sys(ij));
-                            obj.addVariable(lambda_n,...
-                                'lambda_n',...
-                                zeros(dims.n_c_sys(ij), 1),...
-                                inf * ones(dims.n_c_sys(ij), 1),...
-                                settings.initial_lambda_0 * ones(dims.n_c_sys(ij), 1),...
-                                dims.n_s+1,...
-                                ij);
-                        end
-
-                        % add lambda_p
-                        for ij = 1:dims.n_sys
-                            lambda_p = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                                ['lambda_p_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_end_' num2str(ij)],...
-                                dims.n_c_sys(ij));
-                            obj.addVariable(lambda_p,...
-                                'lambda_p',...
-                                zeros(dims.n_c_sys(ij), 1),...
-                                inf * ones(dims.n_c_sys(ij), 1),...
-                                settings.initial_lambda_1 * ones(dims.n_c_sys(ij), 1),...
-                                dims.n_s+1,...
-                                ij);
-                        end
-                    end
-                end
-
-                if (~settings.right_boundary_point_explicit ||...
-                        settings.irk_representation == IrkRepresentation.differential)
-                    if settings.x_box_at_stg || settings.x_box_at_fe || fe_idx == dims.N_finite_elements(ctrl_idx)
-                        lbx = model.lbx;
-                        ubx = model.ubx;
-                    else
-                        lbx = -inf * ones(dims.n_x);
-                        ubx = inf * ones(dims.n_x);
-                    end
-
-                    % add final X variables
-                    x = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                        ['X_end_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)],...
-                        dims.n_x);
-                    obj.addVariable(x,...
-                        'x',...
-                        lbx,...
-                        ubx,...
-                        model.x0,...
-                        dims.n_s+rbp_allowance);
-                end
-                if strcmpi(settings.step_equilibration, 'direct_homotopy_lift')
-                    nu_lift = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                        ['nu_lift_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)],...
-                        1);
-                    obj.addVariable(nu_lift,...
-                        'nu_lift',...
-                        1,...
-                        -inf,...
-                        inf);
-                end
-
-                % calculate lambda and theta
-                grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
-                obj.lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
-                grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a));
-                obj.theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
+                % add user variables
+                z = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                    ['z_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
+                    dims.n_z);
+                obj.addVariable(z,...
+                    'z',...
+                    model.lbz,...
+                    model.ubz,...
+                    model.z0,...
+                    ii);
             end
 
-            function h = get.h(obj)
-                if obj.settings.use_fesd
-                    h = obj.w(obj.ind_h);
-                elseif obj.settings.time_optimal_problem && ~obj.settings.use_speed_of_time_variables
-                    h = obj.T_final/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
+            if settings.dcs_mode == DcsMode.CLS
+                %  IMPULSE VARIABLES
+                Lambda_normal = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                    ['Lambda_normal_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)],...
+                    dims.n_contacts);
+                obj.addVariable(Lambda_normal,...
+                    'Lambda_normal',...
+                    zeros(dims.n_contacts,1),...
+                    inf * ones(dims.n_contacts, 1),...
+                    ones(dims.n_contacts, 1));
+                P_vn = define_casadi_symbolic(casadi_symbolic_mode,...
+                    ['P_vn' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                    dims.n_contacts);
+                obj.addVariable(P_vn,...
+                    'P_vn',...
+                    zeros(dims.n_contacts,1),...
+                    inf * ones(dims.n_contacts, 1),...
+                    ones(dims.n_contacts, 1));
+                N_vn = define_casadi_symbolic(casadi_symbolic_mode,...
+                    ['N_vn' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                    dims.n_contacts);
+                obj.addVariable(N_vn,...
+                    'N_vn',...
+                    zeros(dims.n_contacts,1),...
+                    inf * ones(dims.n_contacts, 1),...
+                    ones(dims.n_contacts, 1));
+
+                Y_gap = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                    ['Y_gap_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                    dims.n_contacts);
+                obj.addVariable(Y_gap,...
+                    'Y_gap',...
+                    zeros(dims.n_contacts,1),...
+                    inf * ones(dims.n_contacts, 1),...
+                    ones(dims.n_contacts, 1));
+                if model.friction_exists
+                    Lambda_tangent = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                        ['Lambda_tangent' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                        dims.n_tangents);
+
+                    if isequal(friction_model,'Polyhedral')
+                        obj.addVariable(Lambda_tangent,...
+                            'Lambda_tangent',...
+                            -inf *ones(dims.n_tangents,1),...
+                            inf * ones(dims.n_tangents, 1),...
+                            ones(dims.n_tangents, 1));
+
+                        Gamma_d = define_casadi_symbolic(casadi_symbolic_mode,...
+                            ['Gamma_d' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                            dims.n_contacts);
+                        obj.addVariable(Gamma_d,...
+                            'Gamma_d',...
+                            zeros(dims.n_contacts,1),...
+                            inf * ones(dims.n_contacts, 1),...
+                            ones(dims.n_contacts, 1));
+
+                        Beta_d = define_casadi_symbolic(casadi_symbolic_mode,...
+                            ['Beta_d' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                            dims.n_contacts);
+                        obj.addVariable(Beta_d,...
+                            'Beta_d',...
+                            zeros(dims.n_contacts,1),...
+                            inf * ones(dims.n_contacts, 1),...
+                            ones(dims.n_contacts, 1));
+
+                        Delta_d = define_casadi_symbolic(casadi_symbolic_mode,...
+                            ['Delta_d' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                            dims.n_tangents);
+
+                        obj.addVariable(Delta_d,...
+                            'Delta_d',...
+                            zeros(dims.n_tangents,1),...
+                            inf * ones(dims.n_tangents, 1),...
+                            ones(dims.n_tangents, 1));
+                    end
+                    if isequal(friction_model,'Conic')
+                        obj.addVariable(Lambda_tangent,...
+                            'Lambda_tangent',...
+                            zeros(dims.n_tangents,1),...
+                            inf * ones(dims.n_tangents, 1),...
+                            ones(dims.n_tangents, 1));
+
+                        Gamma = define_casadi_symbolic(casadi_symbolic_mode,...
+                            ['Gamma' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                            dims.n_contacts);
+
+                        obj.addVariable(Gamma,...
+                            'Gamma',...
+                            zeros(dims.n_contacts,1),...
+                            inf * ones(dims.n_contacts, 1),...
+                            ones(dims.n_contacts, 1));
+
+                        Beta = define_casadi_symbolic(casadi_symbolic_mode,...
+                            ['Beta' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                            dims.n_contacts);
+
+                        obj.addVariable(Beta,...
+                            'Beta',...
+                            zeros(dims.n_contacts,1),...
+                            inf * ones(dims.n_contacts, 1),...
+                            ones(dims.n_contacts, 1));
+
+                        switch conic_model_switch_handling
+                            case 'Plain'
+                                % no extra vars
+                            case 'Abs'
+                                P_vt = define_casadi_symbolic(casadi_symbolic_mode,...
+                                    ['P_vt' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                                    dims.n_tangents);
+                                obj.addVariable(P_vt,...
+                                    'P_vt',...
+                                    zeros(dims.n_tangents,1),...
+                                    inf * ones(dims.n_tangents, 1),...
+                                    ones(dims.n_tangents, 1));
+                                N_vt = define_casadi_symbolic(casadi_symbolic_mode,...
+                                    ['N_vt' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                                    dims.n_tangents);
+                                obj.addVariable(N_vt,...
+                                    'N_vt',...
+                                    zeros(dims.n_tangents,1),...
+                                    inf * ones(dims.n_tangents, 1),...
+                                    ones(dims.n_tangents, 1));
+                            case 'Lp'
+                                P_vt = define_casadi_symbolic(casadi_symbolic_mode,...
+                                    ['P_vt' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                                    dims.n_tangents);
+                                obj.addVariable(P_vt,...
+                                    'P_vt',...
+                                    zeros(dims.n_tangents,1),...
+                                    inf * ones(dims.n_tangents, 1),...
+                                    ones(dims.n_tangents, 1));
+                                N_vt = define_casadi_symbolic(casadi_symbolic_mode,...
+                                    ['N_vt' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                                    dims.n_tangents);
+                                obj.addVariable(N_vt,...
+                                    'N_vt',...
+                                    zeros(dims.n_tangents,1),...
+                                    inf * ones(dims.n_tangents, 1),...
+                                    ones(dims.n_tangents, 1));
+                                Alpha_vt = define_casadi_symbolic(casadi_symbolic_mode,...
+                                    ['Alpha_vt' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
+                                    dims.n_tangents);
+                                obj.addVariable(Alpha_vt,...
+                                    'Alpha_vt',...
+                                    zeros(dims.n_tangents,1),...
+                                    inf * ones(dims.n_tangents, 1),...
+                                    ones(dims.n_tangents, 1));
+                        end
+                    end
+                end
+
+            end
+
+
+
+
+            % Add right boundary points if needed
+            if ~settings.right_boundary_point_explicit
+                if settings.dcs_mode == DcsMode.Stewart
+                    % add lambdas
+                    for ij = 1:dims.n_sys
+                        lam = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                            ['lambda_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_end_' num2str(ij)],...
+                            dims.n_f_sys(ij));
+                        obj.addVariable(lam,...
+                            'lam',...
+                            zeros(dims.n_f_sys(ij), 1),...
+                            inf * ones(dims.n_f_sys(ij), 1),...
+                            settings.initial_lambda * ones(dims.n_f_sys(ij), 1),...
+                            dims.n_s+1,...
+                            ij);
+                    end
+
+                    % add mu
+                    for ij = 1:dims.n_sys
+                        mu = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                            ['mu_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_end_' num2str(ij)],...
+                            1);
+                        obj.addVariable(mu,...
+                            'mu',...
+                            -inf * ones(1),...
+                            inf * ones(1),...
+                            settings.initial_mu * ones(1),...
+                            dims.n_s+1,...
+                            ij);
+                    end
+
+                elseif settings.dcs_mode == DcsMode.Step
+                    % add lambda_n
+                    for ij = 1:dims.n_sys
+                        lambda_n = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                            ['lambda_n_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_end_' num2str(ij)],...
+                            dims.n_c_sys(ij));
+                        obj.addVariable(lambda_n,...
+                            'lambda_n',...
+                            zeros(dims.n_c_sys(ij), 1),...
+                            inf * ones(dims.n_c_sys(ij), 1),...
+                            settings.initial_lambda_0 * ones(dims.n_c_sys(ij), 1),...
+                            dims.n_s+1,...
+                            ij);
+                    end
+
+                    % add lambda_p
+                    for ij = 1:dims.n_sys
+                        lambda_p = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                            ['lambda_p_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_end_' num2str(ij)],...
+                            dims.n_c_sys(ij));
+                        obj.addVariable(lambda_p,...
+                            'lambda_p',...
+                            zeros(dims.n_c_sys(ij), 1),...
+                            inf * ones(dims.n_c_sys(ij), 1),...
+                            settings.initial_lambda_1 * ones(dims.n_c_sys(ij), 1),...
+                            dims.n_s+1,...
+                            ij);
+                    end
+                end
+            end
+
+            if (~settings.right_boundary_point_explicit ||...
+                    settings.irk_representation == IrkRepresentation.differential)
+                if settings.x_box_at_stg || settings.x_box_at_fe || fe_idx == dims.N_finite_elements(ctrl_idx)
+                    lbx = model.lbx;
+                    ubx = model.ubx;
                 else
-                    h = obj.model.T/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
-                end
-            end
-
-            function x = get.x(obj)
-                x = cellfun(@(x) obj.w(x), obj.ind_x, 'UniformOutput', false);
-            end
-
-            function v = get.v(obj)
-                v = cellfun(@(v) obj.w(v), obj.ind_v, 'UniformOutput', false);
-            end
-
-            function elastic = get.elastic(obj)
-                elastic = obj.w(obj.ind_elastic);
-            end
-
-            function nu_lift = get.nu_lift(obj)
-                nu_lift = obj.w(obj.ind_nu_lift);
-            end
-
-            function nu_vector = get.nu_vector(obj)
-                import casadi.*
-                if obj.settings.use_fesd && obj.fe_idx > 1
-                    eta_k = obj.prev_fe.sumLambda().*obj.sumLambda() + obj.prev_fe.sumTheta().*obj.sumTheta();
-                    nu_vector = 1;
-                    for jjj=1:length(eta_k)
-                        nu_vector = nu_vector * eta_k(jjj);
-                    end
-                else
-                    nu_vector = [];
-                end
-            end
-
-            function sum_lambda = sumLambda(obj, varargin)
-                import casadi.*
-                p = inputParser();
-                p.FunctionName = 'sumLambda';
-
-                % TODO: add checks.
-                addRequired(p, 'obj');
-                addOptional(p, 'sys',[]);
-                parse(p, obj, varargin{:});
-
-                if ismember('sys', p.UsingDefaults)
-                    lambda = obj.lambda;
-                    lambdas = arrayfun(@(row) vertcat(lambda{row, :}), 1:size(lambda,1), 'UniformOutput', false);
-                    lambdas = [lambdas, {vertcat(obj.prev_fe.lambda{end,:})}];
-                else
-                    lambdas = obj.lambda(:,p.Results.sys).';
-                    lambdas = [lambdas, obj.prev_fe.lambda(end,p.Results.sys)];
-                end
-                sum_lambda = sum([lambdas{:}], 2);
-            end
-
-            function sum_theta = sumTheta(obj, varargin)
-                p = inputParser();
-                p.FunctionName = 'sumTheta';
-
-                % TODO: add checks.
-                addRequired(p, 'obj');
-                addOptional(p, 'sys',[]);
-                parse(p, obj, varargin{:});
-                %obj.theta
-                if ismember('sys', p.UsingDefaults)
-                    theta = obj.theta;
-                    thetas = arrayfun(@(row) vertcat(theta{row, :}), 1:size(theta,1), 'UniformOutput', false);
-                else
-                    thetas = obj.theta(:,p.Results.sys).';
-                end
-                sum_theta = sum([thetas{:}], 2);
-            end
-
-            function sum_elastic = sumElastic(obj)
-                elastic = obj.elastic;
-                sum_elastic = sum(elastic);
-            end
-
-            function z = rkStageZ(obj, stage)
-                import casadi.*
-
-                % TODO: theta_step/beta
-                idx = [[obj.ind_theta{stage, :}],...
-                    [obj.ind_lam{stage, :}],...
-                    [obj.ind_mu{stage, :}],...
-                    [obj.ind_alpha{stage, :}],...
-                    [obj.ind_lambda_n{stage, :}],...
-                    [obj.ind_lambda_p{stage, :}],...
-                    [obj.ind_beta{stage}],...
-                    [obj.ind_theta_step{stage}],...
-                    [obj.ind_z{stage}]];
-
-                z = obj.w(idx);
-            end
-
-            function forwardSimulation(obj, ocp, Uk, s_sot, p_stage)
-                model = obj.model;
-                settings = obj.settings;
-                dims = obj.dims;
-
-                obj.u = Uk;
-
-                if settings.irk_representation == IrkRepresentation.integral
-                    X_ki = obj.x;
-                    Xk_end = settings.D_irk(1) * obj.prev_fe.x{end};
-                elseif settings.irk_representation == IrkRepresentation.differential
-                    X_ki = {};
-                    for j = 1:dims.n_s
-                        x_temp = obj.prev_fe.x{end};
-                        for r = 1:dims.n_s
-                            x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
-                        end
-                        X_ki = [X_ki {x_temp}];
-                    end
-                    X_ki = [X_ki, {obj.x{end}}];
-                    Xk_end = obj.prev_fe.x{end};
-                elseif settings.irk_representation == IrkRepresentation.differential_lift_x
-                    X_ki = obj.x;
-                    Xk_end = obj.prev_fe.x{end};
-                    for j = 1:dims.n_s
-                        x_temp = obj.prev_fe.x{end};
-                        for r = 1:dims.n_s
-                            x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
-                        end
-                        obj.addConstraint(obj.x{j}-x_temp);
-                    end
+                    lbx = -inf * ones(dims.n_x);
+                    ubx = inf * ones(dims.n_x);
                 end
 
+                % add final X variables
+                x = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                    ['X_end_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)],...
+                    dims.n_x);
+                obj.addVariable(x,...
+                    'x',...
+                    lbx,...
+                    ubx,...
+                    model.x0,...
+                    dims.n_s+rbp_allowance);
+            end
+            if strcmpi(settings.step_equilibration, 'direct_homotopy_lift')
+                nu_lift = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                    ['nu_lift_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)],...
+                    1);
+                obj.addVariable(nu_lift,...
+                    'nu_lift',...
+                    1,...
+                    -inf,...
+                    inf);
+            end
+
+            % calculate lambda and theta
+            grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
+            obj.lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
+            grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a));
+            obj.theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
+        end
+
+        function h = get.h(obj)
+            if obj.settings.use_fesd
+                h = obj.w(obj.ind_h);
+            elseif obj.settings.time_optimal_problem && ~obj.settings.use_speed_of_time_variables
+                h = obj.T_final/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
+            else
+                h = obj.model.T/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
+            end
+        end
+
+        function x = get.x(obj)
+            x = cellfun(@(x) obj.w(x), obj.ind_x, 'UniformOutput', false);
+        end
+
+        function v = get.v(obj)
+            v = cellfun(@(v) obj.w(v), obj.ind_v, 'UniformOutput', false);
+        end
+
+        function elastic = get.elastic(obj)
+            elastic = obj.w(obj.ind_elastic);
+        end
+
+        function nu_lift = get.nu_lift(obj)
+            nu_lift = obj.w(obj.ind_nu_lift);
+        end
+
+        function nu_vector = get.nu_vector(obj)
+            import casadi.*
+            if obj.settings.use_fesd && obj.fe_idx > 1
+                eta_k = obj.prev_fe.sumLambda().*obj.sumLambda() + obj.prev_fe.sumTheta().*obj.sumTheta();
+                nu_vector = 1;
+                for jjj=1:length(eta_k)
+                    nu_vector = nu_vector * eta_k(jjj);
+                end
+            else
+                nu_vector = [];
+            end
+        end
+
+        function sum_lambda = sumLambda(obj, varargin)
+            import casadi.*
+            p = inputParser();
+            p.FunctionName = 'sumLambda';
+
+            % TODO: add checks.
+            addRequired(p, 'obj');
+            addOptional(p, 'sys',[]);
+            parse(p, obj, varargin{:});
+
+            if ismember('sys', p.UsingDefaults)
+                lambda = obj.lambda;
+                lambdas = arrayfun(@(row) vertcat(lambda{row, :}), 1:size(lambda,1), 'UniformOutput', false);
+                lambdas = [lambdas, {vertcat(obj.prev_fe.lambda{end,:})}];
+            else
+                lambdas = obj.lambda(:,p.Results.sys).';
+                lambdas = [lambdas, obj.prev_fe.lambda(end,p.Results.sys)];
+            end
+            sum_lambda = sum([lambdas{:}], 2);
+        end
+
+        function sum_theta = sumTheta(obj, varargin)
+            p = inputParser();
+            p.FunctionName = 'sumTheta';
+
+            % TODO: add checks.
+            addRequired(p, 'obj');
+            addOptional(p, 'sys',[]);
+            parse(p, obj, varargin{:});
+            %obj.theta
+            if ismember('sys', p.UsingDefaults)
+                theta = obj.theta;
+                thetas = arrayfun(@(row) vertcat(theta{row, :}), 1:size(theta,1), 'UniformOutput', false);
+            else
+                thetas = obj.theta(:,p.Results.sys).';
+            end
+            sum_theta = sum([thetas{:}], 2);
+        end
+
+        function sum_elastic = sumElastic(obj)
+            elastic = obj.elastic;
+            sum_elastic = sum(elastic);
+        end
+
+        function z = rkStageZ(obj, stage)
+            import casadi.*
+
+            % TODO: theta_step/beta
+            idx = [[obj.ind_theta{stage, :}],...
+                [obj.ind_lam{stage, :}],...
+                [obj.ind_mu{stage, :}],...
+                [obj.ind_alpha{stage, :}],...
+                [obj.ind_lambda_n{stage, :}],...
+                [obj.ind_lambda_p{stage, :}],...
+                [obj.ind_beta{stage}],...
+                [obj.ind_theta_step{stage}],...
+                [obj.ind_z{stage}]];
+
+            z = obj.w(idx);
+        end
+
+        function forwardSimulation(obj, ocp, Uk, s_sot, p_stage)
+            model = obj.model;
+            settings = obj.settings;
+            dims = obj.dims;
+
+            obj.u = Uk;
+
+            if settings.irk_representation == IrkRepresentation.integral
+                X_ki = obj.x;
+                Xk_end = settings.D_irk(1) * obj.prev_fe.x{end};
+            elseif settings.irk_representation == IrkRepresentation.differential
+                X_ki = {};
                 for j = 1:dims.n_s
-                    % Multiply by s_sot_k which is 1 if not using speed of time variable
-                    [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage, model.v_global);
-                    fj = s_sot*fj;
-                    qj = s_sot*qj;
-                    gj = model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage, model.v_global);
-
-                    obj.addConstraint(gj);
-                    if settings.irk_representation == IrkRepresentation.integral
-                        xj = settings.C_irk(1, j+1) * obj.prev_fe.x{end};
-                        for r = 1:dims.n_s
-                            xj = xj + settings.C_irk(r+1, j+1) * X_ki{r};
-                        end
-                        Xk_end = Xk_end + settings.D_irk(j+1) * X_ki{j};
-                        obj.addConstraint(obj.h * fj - xj);
-                        obj.cost = obj.cost + settings.B_irk(j+1) * obj.h * qj;
-                        obj.objective = obj.objective + settings.B_irk(j+1) * obj.h * qj;
-                    else
-                        Xk_end = Xk_end + obj.h * settings.b_irk(j) * obj.v{j};
-                        obj.addConstraint(fj - obj.v{j});
-                        obj.cost = obj.cost + settings.b_irk(j) * obj.h * qj;
-                        obj.objective = obj.objective + settings.b_irk(j) * obj.h * qj;
+                    x_temp = obj.prev_fe.x{end};
+                    for r = 1:dims.n_s
+                        x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
                     end
+                    X_ki = [X_ki {x_temp}];
                 end
-
-                % nonlinear inequality.
-                % TODO: do this cleaner
-                if (model.g_path_constraint &&...
-                        (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
-                    obj.addConstraint(model.g_path_fun(obj.prev_fe.x{end},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
-                end
-                for j=1:dims.n_s-settings.right_boundary_point_explicit
-                    % TODO: there has to be a better way to do this.
-                    if model.g_path_constraint && settings.g_path_at_stg
-                        obj.addConstraint(model.g_path_fun(X_ki{j},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
+                X_ki = [X_ki, {obj.x{end}}];
+                Xk_end = obj.prev_fe.x{end};
+            elseif settings.irk_representation == IrkRepresentation.differential_lift_x
+                X_ki = obj.x;
+                Xk_end = obj.prev_fe.x{end};
+                for j = 1:dims.n_s
+                    x_temp = obj.prev_fe.x{end};
+                    for r = 1:dims.n_s
+                        x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
                     end
+                    obj.addConstraint(obj.x{j}-x_temp);
                 end
+            end
 
-                % end constraints
-                if (~settings.right_boundary_point_explicit ||...
-                        settings.irk_representation == IrkRepresentation.differential)
-                    obj.addConstraint(Xk_end - obj.x{end});
+            for j = 1:dims.n_s
+                % Multiply by s_sot_k which is 1 if not using speed of time variable
+                [fj, qj] = model.f_x_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage, model.v_global);
+                fj = s_sot*fj;
+                qj = s_sot*qj;
+                gj = model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage, model.v_global);
+
+                obj.addConstraint(gj);
+                if settings.irk_representation == IrkRepresentation.integral
+                    xj = settings.C_irk(1, j+1) * obj.prev_fe.x{end};
+                    for r = 1:dims.n_s
+                        xj = xj + settings.C_irk(r+1, j+1) * X_ki{r};
+                    end
+                    Xk_end = Xk_end + settings.D_irk(j+1) * X_ki{j};
+                    obj.addConstraint(obj.h * fj - xj);
+                    obj.cost = obj.cost + settings.B_irk(j+1) * obj.h * qj;
+                    obj.objective = obj.objective + settings.B_irk(j+1) * obj.h * qj;
+                else
+                    Xk_end = Xk_end + obj.h * settings.b_irk(j) * obj.v{j};
+                    obj.addConstraint(fj - obj.v{j});
+                    obj.cost = obj.cost + settings.b_irk(j) * obj.h * qj;
+                    obj.objective = obj.objective + settings.b_irk(j) * obj.h * qj;
                 end
-                if (~settings.right_boundary_point_explicit &&...
-                        settings.use_fesd &&...
-                        obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx))
+            end
+
+            % nonlinear inequality.
+            % TODO: do this cleaner
+            if (model.g_path_constraint &&...
+                    (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
+                obj.addConstraint(model.g_path_fun(obj.prev_fe.x{end},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
+            end
+            for j=1:dims.n_s-settings.right_boundary_point_explicit
+                % TODO: there has to be a better way to do this.
+                if model.g_path_constraint && settings.g_path_at_stg
+                    obj.addConstraint(model.g_path_fun(X_ki{j},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
+                end
+            end
 
             % end constraints
             if (~settings.right_boundary_point_explicit ||...
@@ -988,53 +1146,55 @@ classdef FiniteElement < NosnocFormulationObject
             n_path_comp = length(g_path_comp);
             n_comp = n_cross_comp + n_path_comp;
 
-                % Add reformulated constraints
-                obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
+            [g_comp, g_comp_lb, g_comp_ub, cost] = reformulate_complementarities(g_comp, settings.mpcc_mode, sigma_p, s_elastic);
 
-                % If We need to add a cost from the reformulation do that as needed;
-                if settings.mpcc_mode == MpccMode.ell_1_penalty
-                    if settings.objective_scaling_direct
-                        obj.cost = obj.cost + (1/sigma_p)*cost;
-                    else
-                        obj.cost = sigma_p*obj.cost + cost;
-                    end
+            % Add reformulated constraints
+            obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
+
+            % If We need to add a cost from the reformulation do that as needed;
+            if settings.mpcc_mode == MpccMode.ell_1_penalty
+                if settings.objective_scaling_direct
+                    obj.cost = obj.cost + (1/sigma_p)*cost;
+                else
+                    obj.cost = sigma_p*obj.cost + cost;
                 end
             end
+        end
 
-            function stepEquilibration(obj, sigma_p, rho_h_p)
-                import casadi.*
-                model = obj.model;
-                settings = obj.settings;
-                dims = obj.dims;
+        function stepEquilibration(obj, sigma_p, rho_h_p)
+            import casadi.*
+            model = obj.model;
+            settings = obj.settings;
+            dims = obj.dims;
 
-                % TODO implement other modes!
-                if settings.use_fesd && obj.fe_idx > 1
-                    nu = obj.nu_vector;
-                    delta_h_ki = obj.h - obj.prev_fe.h;
-                    if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
-                        h_fe = model.T / (sum(dims.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
-                        obj.cost = obj.cost + rho_h_p * (obj.h - h_fe).^2;
-                    elseif settings.step_equilibration ==  StepEquilibrationMode.heuristic_diff
-                        obj.cost = obj.cost + rho_h_p * delta_h_ki.^2;
-                    elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
-                        obj.cost = obj.cost + rho_h_p * tanh(nu/settings.step_equilibration_sigma) * delta_h_ki.^2;
-                    elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
-                        obj.cost = obj.cost + rho_h_p * nu * delta_h_ki.^2
-                    elseif settings.step_equilibration == StepEquilibrationMode.direct
-                        obj.addConstraint(nu*delta_h_ki, 0, 0);
-                    elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy
-                        obj.addConstraint([nu*delta_h_ki-sigma_p;-nu*delta_h_ki-sigma_p],...
-                            [-inf;-inf],...
-                            [0;0]);
-                    elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy_lift
-                        obj.addConstraint([obj.nu_lift-nu;obj.nu_lift*delta_h_ki-sigma_p;-obj.nu_lift*delta_h_ki-sigma_p],...
-                            [0;-inf;-inf],...
-                            [0;0;0]);
-                    else
-                        error("Step equilibration mode not implemented");
-                    end
+            % TODO implement other modes!
+            if settings.use_fesd && obj.fe_idx > 1
+                nu = obj.nu_vector;
+                delta_h_ki = obj.h - obj.prev_fe.h;
+                if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
+                    h_fe = model.T / (sum(dims.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
+                    obj.cost = obj.cost + rho_h_p * (obj.h - h_fe).^2;
+                elseif settings.step_equilibration ==  StepEquilibrationMode.heuristic_diff
+                    obj.cost = obj.cost + rho_h_p * delta_h_ki.^2;
+                elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
+                    obj.cost = obj.cost + rho_h_p * tanh(nu/settings.step_equilibration_sigma) * delta_h_ki.^2;
+                elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
+                    obj.cost = obj.cost + rho_h_p * nu * delta_h_ki.^2
+                elseif settings.step_equilibration == StepEquilibrationMode.direct
+                    obj.addConstraint(nu*delta_h_ki, 0, 0);
+                elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy
+                    obj.addConstraint([nu*delta_h_ki-sigma_p;-nu*delta_h_ki-sigma_p],...
+                        [-inf;-inf],...
+                        [0;0]);
+                elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy_lift
+                    obj.addConstraint([obj.nu_lift-nu;obj.nu_lift*delta_h_ki-sigma_p;-obj.nu_lift*delta_h_ki-sigma_p],...
+                        [0;-inf;-inf],...
+                        [0;0;0]);
+                else
+                    error("Step equilibration mode not implemented");
                 end
             end
         end
     end
+end
 
