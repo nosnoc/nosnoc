@@ -44,6 +44,7 @@ settings.rho_sot = 1e-1;
 settings.use_speed_of_time_variables = 1; 
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 1;
+settings.relax_terminal_constraint = 1;
 % solver settings
 settings.comp_tol = 1e-8;
 settings.cross_comp_mode = 1;
