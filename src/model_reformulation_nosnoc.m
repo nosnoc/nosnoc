@@ -1048,13 +1048,24 @@ switch dcs_mode
         lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,'lambda_normal',n_contacts);
         y_gap = define_casadi_symbolic(casadi_symbolic_mode,'y_gap',n_contacts);
         g_lift_gap = f_c-y_gap; % lift gap functions f_c(q) = y;
+        % Variables for impulse equations
+        Lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,'Lambda_normal',n_contacts);
+        Y_gap = define_casadi_symbolic(casadi_symbolic_mode,'Y_gap',n_contacts);
+        P_vn = define_casadi_symbolic(casadi_symbolic_mode,'P_vn',n_contacts); % pos part of state jump law
+        N_vn = define_casadi_symbolic(casadi_symbolic_mode,'N_vn',n_contacts); % neg part of state jump law
         if friction_exists
             % tangetial contact froce (firction force)
-            lambda_tangetial = define_casadi_symbolic(casadi_symbolic_mode,'lambda_tangetial',n_tangents);
+            lambda_tangent = define_casadi_symbolic(casadi_symbolic_mode,'lambda_tangent',n_tangents);
+            % Impulse varaibles
+            Lambda_tangent = define_casadi_symbolic(casadi_symbolic_mode,'Lambda_tangent',n_tangents);
             if isequal(friction_model,'polyhedral')
-                gamma_d = define_casadi_symbolic(casadi_symbolic_mode,['gamma_d'],n_contacts);
-                beta_d = define_casadi_symbolic(casadi_symbolic_mode,['beta_d'],n_contacts); % lift friction cone bound
-                delta_d = define_casadi_symbolic(casadi_symbolic_mode,['delta_d'],n_tangents); % lift lagrangian
+                gamma_d = define_casadi_symbolic(casadi_symbolic_mode,'gamma_d',n_contacts);
+                beta_d = define_casadi_symbolic(casadi_symbolic_mode,'beta_d',n_contacts); % lift friction cone bound
+                delta_d = define_casadi_symbolic(casadi_symbolic_mode,'delta_d',n_tangents); % lift lagrangian
+                % Impulse varaibles
+                Gamma_d = define_casadi_symbolic(casadi_symbolic_mode,'Gamma_d',n_contacts);
+                Beta_d = define_casadi_symbolic(casadi_symbolic_mode,'Beta_d',n_contacts); % lift friction cone bound
+                Delta_d = define_casadi_symbolic(casadi_symbolic_mode,'Delta_d',n_tangents); % lift lagrangian
                 for ii = 1:n_contacts
                     ind_temp = n_t*ii-(n_t-1):n_t*ii;
                     g_lift_friction1 = [g_lift_friction1; beta_d(ii)-(mu(ii)*lambda_normal(ii)- sum(lambda_tangent(ind_temp)))];
@@ -1062,8 +1073,11 @@ switch dcs_mode
                 end
             end
             if isequal(friction_model,'conic')
-                gamma = define_casadi_symbolic(casadi_symbolic_mode,['gamma'],n_contacts);
-                beta = define_casadi_symbolic(casadi_symbolic_mode,['beta'],n_contacts);
+                gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',n_contacts);
+                beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',n_contacts);
+                % Impulse variables;
+                Gamma = define_casadi_symbolic(casadi_symbolic_mode,'Gamma',n_contacts);
+                Beta = define_casadi_symbolic(casadi_symbolic_mode,'Beta',n_contacts);
                 for ii = 1:n_contacts
                     ind_temp = n_t*ii-(n_t-1):n_t*ii;
                     g_lift_friction1 = [g_lift_friction1; beta(ii)-((mu(ii)*lambda_normal(ii))^2- norm(lambda_tangent(ind_temp))^2)];
@@ -1072,12 +1086,19 @@ switch dcs_mode
                     case 'none'
                         % no extra constraints
                     case 'abs'
-                        p_vt = define_casadi_symbolic(casadi_symbolic_mode,['p_vt'],n_tangents); % positive parts of tagnetial velocity (for switch detection)
-                        n_vt = define_casadi_symbolic(casadi_symbolic_mode,['n_vt'],n_tangents); % negative parts of tagnetial velocity (for switch detection)
+                        p_vt = define_casadi_symbolic(casadi_symbolic_mode,'p_vt',n_tangents); % positive parts of tagnetial velocity (for switch detection)
+                        n_vt = define_casadi_symbolic(casadi_symbolic_mode,'n_vt',n_tangents); % negative parts of tagnetial velocity (for switch detection)
+                        % Impulse
+                        P_vt = define_casadi_symbolic(casadi_symbolic_mode,'P_vt',n_tangents); 
+                        N_vt = define_casadi_symbolic(casadi_symbolic_mode,'N_vt',n_tangents); 
                     case 'lp'
-                        p_vt = define_casadi_symbolic(casadi_symbolic_mode,['p_vt'],n_tangents); % positive parts of tagnetial velocity (for switch detection)
-                        n_vt = define_casadi_symbolic(casadi_symbolic_mode,['n_vt'],n_tangents); % negative parts of tagnetial velocity (for switch detection)
-                        alpha_vt = define_casadi_symbolic(casadi_symbolic_mode,['alpha_vt '],n_tangents); % step function of tangential velocities
+                        p_vt = define_casadi_symbolic(casadi_symbolic_mode,'p_vt',n_tangents); % positive parts of tagnetial velocity (for switch detection)
+                        n_vt = define_casadi_symbolic(casadi_symbolic_mode,'n_vt',n_tangents); % negative parts of tagnetial velocity (for switch detection)
+                        alpha_vt = define_casadi_symbolic(casadi_symbolic_mode,'alpha_vt ',n_tangents); % step function of tangential velocities
+                        % impulse
+                        P_vt = define_casadi_symbolic(casadi_symbolic_mode,'P_vt',n_tangents); 
+                        N_vt = define_casadi_symbolic(casadi_symbolic_mode,'N_vt',n_tangents); 
+                        Alpha_vt = define_casadi_symbolic(casadi_symbolic_mode,'Alpha_vt ',n_tangents); 
                 end
             end
         end
@@ -1086,6 +1107,11 @@ g_lift = [g_lift_theta_step;g_lift_beta;g_lift_gap;g_lift_friction1;g_lift_frict
 
 %% Collect algebaric varaibles for the specific DCS mode, define initial guess and bounds
 % TODO: @Anton: Do the bounds and guess specification already while defining the varaibles?
+
+z_impulse = []; % only for dcs_mode = cls, note that they are evaluated only at left boundary point of at FE
+lbz_impulse = [];
+ubz_impulse = [];
+z_impulse0 = [];
 switch dcs_mode
     case 'Stewart'
         % symbolic variables z = [theta;lambda;mu];
@@ -1128,52 +1154,78 @@ switch dcs_mode
         lbz_all = [0*ones(n_contacts,1);0*ones(n_contacts,1)];
         ubz_all = [inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
         z0_all = [ones(n_contacts,1);ones(n_contacts,1)];
+        % Impulse
+        z_impulse = [Lambda_normal;Y_gap;P_vn;N_vn]; 
+        lbz_impulse = [0*ones(n_contacts,1);0*ones(n_contacts,1);0*ones(n_contacts,1);0*ones(n_contacts,1)];
+        ubz_impulse = [inf*ones(n_contacts,1);inf*ones(n_contacts,1);inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
+        z_impulse0 = [ones(n_contacts,1);ones(n_contacts,1);ones(n_contacts,1);ones(n_contacts,1)];
         if friction_exists
             % tangetial contact froce (firction force)
-            %             ind_lambda_t_var = ind_lambda_n_var(end)+1:ind_lambda_n_var(end)+n_tangents;
-            z_all = [z_all;lambda_tangetial];
+            z_all = [z_all;lambda_tangent];
             z0_all = [z0_all; ones(n_tangents,1)];
+            % Impulse
+            z_impulse = [z_impulse;Lambda_tangent]; % only for dcs_mode = cls, note that they are evaluated only at left boundary point of at FE
+            z_impulse0 = [z_impulse0; ones(n_tangents,1)];
             % friction aux multipliers
             if isequal(friction_model,'polyhedral')
                 % bounds on friction force
                 lbz_all = [lbz_all;0*ones(n_tangents,1)];
                 ubz_all = [ubz_all;inf*ones(n_tangents,1)];
+                % Impulse
+                lbz_impulse = [lbz_impulse;0*ones(n_tangents,1)];
+                ubz_impulse = [ubz_impulse; inf*ones(n_tangents,1)];
+
                 % polyhedral friction model algebaric variables
                 z_all = [z_all;gamma_d;beta_d;delta_d];
                 lbz_all = [lbz_all;0*ones(n_contacts,1);0*ones(n_contacts,1);0*ones(n_tangents,1)];
                 ubz_all = [ubz_all;inf*ones(n_contacts,1);inf*ones(n_contacts,1);inf*ones(n_tangents,1)];
                 z0_all = [z0_all;ones(n_contacts,1);ones(n_contacts,1);ones(n_tangents,1)];
-                %                  ind_gamma_d_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
+                % Polyhedral friction - collect impulse variables
+                z_impulse = [z_impulse;Gamma_d;Beta_d;Delta_d]; 
+                lbz_impulse = [lbz_impulse;0*ones(n_contacts,1);0*ones(n_contacts,1);0*ones(n_tangents,1)];
+                ubz_impulse = [ubz_impulse ;inf*ones(n_contacts,1);inf*ones(n_contacts,1);inf*ones(n_tangents,1)];
+                z_impulse0 = [z_impulse0;ones(n_contacts,1);ones(n_contacts,1);ones(n_tangents,1)];
             end
             if isequal(friction_model,'conic')
                 % bounds for friction froce
                 lbz_all = [lbz;-inf*ones(n_tangents,1)];
                 ubz_all = [ubz;inf*ones(n_tangents,1)];
+                % Impulse
+                lbz_impulse = [lbz_impulse;-inf*ones(n_tangents,1)];
+                ubz_impulse = [ubz_impulse; inf*ones(n_tangents,1)];
                 % conic friction model algebaric variables
                 z_all = [z_all;gamma;beta];
                 lbz_all = [lbz_all;0*ones(n_contacts,1);0*ones(n_contacts,1)];
                 ubz_all = [ubz_all;inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
                 z0_all = [z0_all; ones(n_contacts,1);ones(n_contacts,1)];
-                %                 ind_gamma_var = ind_lambda_t_var(end)+1:ind_lambda_t_var(end)+n_contacts;
-                %                 ind_beta_var = ind_gamma_var(end)+1:ind_gamma_var(end)+n_contacts;
+                % Conic impulse
+                z_impulse = [z_impulse;Gamma;Beta]; 
+                lbz_impulse = [lbz_impulse;0*ones(n_contacts,1);0*ones(n_contacts,1)];
+                ubz_impulse = [ubz_impulse;inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
+                z_impulse0 = [z_impulse0;ones(n_contacts,1);ones(n_contacts,1)];
                 switch conic_friction_switch_detection_mode
                     case 'none'
                         % no extra constraints
                     case 'abs'
                         z_all = [z_all;p_vt;n_vt];
                         lbz_all = [lbz_all;0*ones(2*n_tangents,1)];
-                        ubz_all = [ubz;inf_all*ones(2*n_tangents,1)];
-                        z0_all = [z0_all; 1*ones(2*n_tangents,1)];
-                        %                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
-                        %                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
+                        ubz_all = [ubz_all;inf*ones(2*n_tangents,1)];
+                        z0_all = [z0_all; ones(2*n_tangents,1)];
+                        % Impulse
+                        z_impulse = [z_impulse;P_vt;N_vt]; 
+                        lbz_impulse = [lbz_impulse;0*ones(2*n_tangents,1)];
+                        ubz_impulse = [ubz_impulse;inf*ones(2*n_tangents,1)];
+                        z_impulse0 = [z_impulse0; ones(2*n_tangents,1)];
                     case 'lp'
-                        z_all = [z_all;p_vt;n_vt;alpha_vt ];
+                        z_all = [z_all;p_vt;n_vt;alpha_vt];
                         lbz_all = [lbz_all;0*ones(3*n_tangents,1)];
                         ubz_all = [ubz_all;inf*ones(2*n_tangents,1);1*ones(n_tangents,1)];
                         z0_all = [z0_all; 1*ones(2*n_tangents,1);0.5*ones(n_tangents,1)];
-                        %                         ind_p_vt_var = ind_beta_var(end)+1:ind_beta_var(end)+n_tangents;
-                        %                         ind_n_vt_var = ind_p_vt_var(end)+1:ind_p_vt_var(end)+n_tangents;
-                        %                         ind_alpha_vt_var = ind_n_vt_var(end)+1:ind_n_vt_var(end)+n_tangents;
+                        % Impulse
+                        z_impulse = [z_impulse;P_vt;N_vt;Alpha_vt]; 
+                        lbz_impulse = [lbz_impulse;0*ones(3*n_tangents,1)];
+                        ubz_impulse = [ubz_impulse;inf*ones(2*n_tangents,1);*ones(n_tangents,1)];
+                        z_impulse0 = [z_impulse0; 1*ones(2*n_tangents,1);0.5*ones(n_tangents,1)];
                 end
             end
         end
@@ -1205,100 +1257,40 @@ if ~isfield(model, 'f_x')
             case 'Step'
                 f_x = f_x + F{ii}*theta_step_all{ii};
             case 'DCS'
-                %                 if friction_exists
-                %                     if isequal(friction_model,'conic')
-                %                         F_v = inv(M)*(f_v+J_n*lambda_n+J_t*lambda_t);
-                %                     elseif isequal(friction_model,'polyhedral')
-                %                         F_v = inv(M)*(f_v+J_n*lambda_n+D_t*lambda_t);
-                %                     else
-                %                         error('pick friction_model conic or polyhedral')% position in symbolic vector z
-                %                     end
-                %                 else
-                %                     F_v = inv(M)*(f_v+J_n*lambda_n);
-                %                 end
-                %
-                %                 g_z =  [f_c];
-                %
-                %                 if lift_velocity_state
-                %                     z_v = SX.sym('z_v',n_q);
-                %                     ind_z_v_var = length(z)+1:length(z)+n_q;
-                %                     z = [z;z_v];
-                %                     lbz = [lbz;-inf*ones(n_q,1)];
-                %                     ubz = [ubz;inf*ones(n_q,1)];
-                %                     z0 = [z0;x0(n_q+1:end)];
-                %                     f_x = [v;...
-                %                         z_v];
-                %                     if friction_exists
-                %                         if isequal(friction_model,'conic')
-                %                             g_lift_v= M*z_v -(f_v+J_n*lambda_n+J_t*lambda_t);
-                %                         elseif isequal(friction_model,'polyhedral')
-                %                             g_lift_v =  M*z_v -(f_v+J_n*lambda_n+D_t*lambda_t);
-                %                         else
-                %                             error('pick friction_model conic or polyhedral')% position in symbolic vector z
-                %                         end
-                %                     else
-                %                         g_lift_v =  M*z_v -(f_v+J_n*lambda_n);
-                %                     end
-                %                     g_z = [g_z;g_lift_v];
-                %                 else
-                %                     f_x = [v;...
-                %                         F_v];
-                %                 end
-                %
-                %                 g_z_comp1 = [];
-                %                 g_z_comp2 = [];
-                %                 if friction_exists
-                %                     if isequal(friction_model,'polyhedral')
-                %                         for ii = 1:n_contacts
-                %                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
-                %                             g_z_comp1 = [lambda_t(ind_temp);gamma_d(ii)];
-                %                             g_z_comp2 = [D_t(:,ind_temp)'*v-gamma_d(ii);mu(ii)*lambda_n(ii)-sum(lambda_t(ind_temp))];
-                %                         end
-                %                     end
-                %                     if isequal(friction_model,'conic')
-                %                         for ii = 1:n_contacts
-                %                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
-                %                             g_z = [g_z;...
-                %                                 beta(ii)-( (mu(ii)*lambda_n(ii))^2-norm(lambda_t(ind_temp))^2);
-                %                                 -J_t(:,ind_temp)'*v-2*gamma(ii)*(lambda_t(ind_temp)+kappa_reg_tan*f_c(ii))];
-                %                             g_z_comp1 = [g_z_comp1;gamma(ii)];
-                %                             g_z_comp2 = [g_z_comp2;beta(ii)];
-                %
-                %                             if isequal(conic_friction_switch_detection_mode,'abs')|| isequal(conic_friction_switch_detection_mode,'lp')
-                %                                 % The equality constraint is the same in both variantes
-                %                                 g_z = [g_z;J_t(:,(ind_temp))'*v-(p_vt(ind_temp)-n_vt(ind_temp))];
-                %                             end
-                %                         end
-                %                     end
-                %                 end
-                %                 lbg_z = zeros(length(g_z),1);
-                %                 ubg_z = zeros(length(g_z),1);
-                %                 ubg_z(1:n_contacts) = inf;
-                %
-                %                 % ODE functions
-                %                 if n_u > 0
-                %                     f_x_fun = Function('f_x_fun', {x, z  u}, {f_x, f_q});
-                %                     g_z_fun = Function('f_c_fun', {x, z}, {g_z});
-                %                     f_terminal_fun = Function('f_terminal_fun', {x}, {f_terminal});
-                %                 else
-                %                     f_x_fun = Function('f_x_fun', {x, z}, {f_x, f_q});
-                %                     g_z_fun = Function('g_z_fun', {x,z}, {g_z});
-                %                     f_terminal_fun = Function('f_terminal_fun', {x}, {f_terminal});
-                %                 end
-                %                 % contact normal
-                %                 invM = inv(M);
-                %                 M_fun = Function('M_fun', {x}, {M});
-                %                 invM_fun = Function('invM_fun', {x}, {invM});
-                %
-                %                 f_c_fun = Function('f_c_fun', {x}, {f_c});
-                %                 J_n_fun = Function('J_n_fun', {x}, {J_n});
-                %                 if friction_exists
-                %                     if isequal(friction_model,'conic')
-                %                         J_t_fun = Function('J_t_fun', {x}, {J_t});
-                %                     else
-                %                         D_t_fun = Function('D_t_fun', {x}, {D_t});
-                %                     end
-                %                 end
+                if ~lift_velocity_state
+                    if friction_exists
+                        switch friction_model
+                            case 'Conic'
+                                    F_v = inv(M)*(f_v+J_normal*lambda_normal+J_tangent*lambda_tangent);
+                            case 'Polyhedral'
+                                F_v = inv(M)*(f_v+J_normal*lambda_normal + D_tangent*lambda_tangent);
+                        end
+                    else
+                        F_v = inv(M)*(f_v+J_normal*lambda_n);
+                    end
+                     f_x = [v;F_v];
+                else
+                    z_v = define_casadi_symbolic(casadi_symbolic_mode,['z_v'],n_q);
+                    z_all = [z_all;z_v];
+                    n_z_all = n_z_all+n_q;
+                    lbz_all = [lbz_all;-inf*ones(n_q,1)];
+                    ubz_all = [ubzz_all;inf*ones(n_q,1)];
+                    z0_all = [z0_all;x0(n_q+1:end)];
+
+                    f_x = [v;z_v];
+                    if friction_exists
+                        switch friction_model
+                            case 'Conic'
+                                g_lift_v = M*z_v -(f_v +J_normal*lambda_normal + J_tangent*lambda_tangent);
+                            case 'Polyhedral'
+                                g_lift_v =  M*z_v -(f_v + J_normal*lambda_normal + D_tangent*lambda_tangent);
+                        end
+                                                
+                    else
+                        g_lift_v =  M*z_v -(f_v+J_normal*lambda_n);
+                    end
+                    g_lift = [g_lift;g_lift_v];
+                end
         end
     end
 end
@@ -1336,6 +1328,49 @@ for ii = 1:n_sys
             %             lambda00_expr = [lambda00_expr; max(c{ii},0); -min(c{ii}, 0)];
             lambda00_expr = [lambda00_expr; -min(c{ii}, 0); max(c{ii},0)];
         case 'DCS'
+            % Algebraic equations
+%                 g_z_comp1 = [];
+%                 g_z_comp2 = [];
+%                 if friction_exists
+%                     if isequal(friction_model,'Polyhedral')
+%                         for ii = 1:n_contacts
+%                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
+%                             g_z_comp1 = [lambda_t(ind_temp);gamma_d(ii)];
+%                             g_z_comp2 = [D_t(:,ind_temp)'*v-gamma_d(ii);mu(ii)*lambda_n(ii)-sum(lambda_t(ind_temp))];
+%                         end
+%                     end
+%                     if isequal(friction_model,'Conic')
+%                         for ii = 1:n_contacts
+%                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
+%                             g_z = [g_z;...
+%                                 beta(ii)-( (mu(ii)*lambda_n(ii))^2-norm(lambda_t(ind_temp))^2);
+%                                 -J_t(:,ind_temp)'*v-2*gamma(ii)*(lambda_t(ind_temp)+kappa_reg_tan*f_c(ii))];
+%                             g_z_comp1 = [g_z_comp1;gamma(ii)];
+%                             g_z_comp2 = [g_z_comp2;beta(ii)];
+% 
+%                             if isequal(conic_friction_switch_detection_mode,'abs')|| isequal(conic_friction_switch_detection_mode,'lp')
+%                                 % The equality constraint is the same in both variantes
+%                                 g_z = [g_z;J_t(:,(ind_temp))'*v-(p_vt(ind_temp)-n_vt(ind_temp))];
+%                             end
+%                         end
+%                     end
+%                 end
+%                 lbg_z = zeros(length(g_z),1);
+%                 ubg_z = zeros(length(g_z),1);
+%                 ubg_z(1:n_contacts) = inf;
+ % contact normal
+%                 invM = inv(M);
+%                 M_fun = Function('M_fun', {x}, {M});
+%                 invM_fun = Function('invM_fun', {x}, {invM});
+%                 f_c_fun = Function('f_c_fun', {x}, {f_c});
+%                 J_n_fun = Function('J_n_fun', {x}, {J_n});
+%                 if friction_exists
+%                     if isequal(friction_model,'Conic')
+%                         J_t_fun = Function('J_t_fun', {x}, {J_t});
+%                     else
+%                         D_t_fun = Function('D_t_fun', {x}, {D_t});
+%                     end
+%                 end
 
     end
 end
