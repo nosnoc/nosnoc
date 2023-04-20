@@ -185,33 +185,33 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_theta_step = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_beta = cell(dims.n_s+rbp_allowance, 1);
             % CLS
-            obj.ind_lambda_normal = cell(dims.n_s, dims.n_contacts);
-            obj.ind_lambda_tangent = cell(dims.n_s, dims.n_tangents);
-            obj.ind_y_gap = cell(dims.n_s, dims.n_contacts);
+            obj.ind_lambda_normal = cell(dims.n_s);
+            obj.ind_lambda_tangent = cell(dims.n_s);
+            obj.ind_y_gap = cell(dims.n_s);
             % friction multipliers and lifting
             % conic
-            obj.ind_gamma = cell(dims.n_s, dims.n_contacts);
-            obj.ind_beta_conic = cell(dims.n_s, dims.n_contacts);
+            obj.ind_gamma = cell(dims.n_s);
+            obj.ind_beta_conic = cell(dims.n_s);
             % poly
-            obj.ind_gamma_d = cell(dims.n_s, dims.n_contacts);
-            obj.ind_beta_d = cell(dims.n_s, dims.n_contacts);
-            obj.ind_delta_d = cell(dims.n_s, dims.n_tangents);
+            obj.ind_gamma_d = cell(dims.n_s);
+            obj.ind_beta_d = cell(dims.n_s);
+            obj.ind_delta_d = cell(dims.n_s);
             % variables related to conic
-            obj.ind_p_vt = cell(dims.n_s, dims.n_tangents);
-            obj.ind_n_vt = cell(dims.n_s, dims.n_tangents);
-            obj.ind_alpha_vt = cell(dims.n_s, dims.n_tangents);
+            obj.ind_p_vt = cell(dims.n_s);
+            obj.ind_n_vt = cell(dims.n_s);
+            obj.ind_alpha_vt = cell(dims.n_s);
             % variables only at element boundary
-            obj.ind_Lambda_normal = cell(dims.n_contacts);
-            obj.ind_Lambda_tangent = cell(dims.n_tangents);
-            obj.ind_Gamma = cell(dims.n_contacts);
-            obj.ind_Gamma_d = cell(dims.n_contacts);
-            obj.ind_Beta_conic = cell(dims.n_contacts);
-            obj.ind_Delta_d = cell(dims.n_tangents);
-            obj.ind_P_vn = cell(dims.n_contacts);
-            obj.ind_N_vn = cell(dims.n_contacts);
-            obj.ind_P_vt = cell(dims.n_tangents);
-            obj.ind_N_vt = cell(dims.n_tangents);
-            obj.ind_Alpha_vt = cell(dims.n_tangents);
+            obj.ind_Lambda_normal = cell(1);
+            obj.ind_Lambda_tangent = cell(1);
+            obj.ind_Gamma = cell(1);
+            obj.ind_Gamma_d = cell(1);
+            obj.ind_Beta_conic = cell(1);
+            obj.ind_Delta_d = cell(1);
+            obj.ind_P_vn = cell(1);
+            obj.ind_N_vn = cell(1);
+            obj.ind_P_vt = cell(1);
+            obj.ind_N_vt = cell(1);
+            obj.ind_Alpha_vt = cell(1);
 
             % misc
             obj.ind_h = [];
