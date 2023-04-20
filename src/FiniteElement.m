@@ -708,10 +708,7 @@ classdef FiniteElement < NosnocFormulationObject
                         end
                     end
                 end
-
             end
-
-
 
 
             % Add right boundary points if needed
