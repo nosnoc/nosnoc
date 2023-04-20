@@ -18,12 +18,12 @@ It is a modular tool for numerically solving nonsmooth optimal control problems 
 It enables the treatment of a broad class of nonsmooth systems in a unified way. 
 The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
 
-NOSNOC offers several ways to treat swited systems, piecewise smooth systems, Filippov systems, rigid bodies with impacts and friction in simulation and optimal control.
+NOSNOC offers several ways to treat switched systems, piecewise smooth systems, Filippov systems, rigid bodies with impacts and friction in simulation, and optimal control.
 It discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting mathematical program with complementarity constraints in a homotopy loop.
 The user may directly provide a DCS or define the different modes of a Filippov system and the reformulation is automated.
 
-With NOSNOC you simulate and solve optimal control problems different kind of systems, by decalring the `dcs_mode`: 
-1. `settings.dcs_mode = 'Stewart'` - for treating Filippov systems via Stewart's reformulation (as in the inital FESD paper)
+With NOSNOC one can simulate and solve optimal control problems subject to different kinds of nonsmooth systems, by declaring the `dcs_mode`: 
+1. `settings.dcs_mode = 'Stewart'` - for treating Filippov systems via Stewart's reformulation (as in the initial FESD paper)
 2. `settings.dcs_mode = 'Step'` - for treating nonsmooth systems via set valued step functions (covers also all Filippov systems that are treated with Stewart's).
 3. `settings.dcs_mode = 'CLS'` - for rigid bodies with friction and impact (also called complementarity Lagrangian systems (CLS)), use FESD tailored to CLS.
 4. `settings.time_freezing = 1` - and using for the `dcs_mode` either `Step` or `Stewart`, the CLS is reformulated into an equivalent Filippov system and treated with FESD.
