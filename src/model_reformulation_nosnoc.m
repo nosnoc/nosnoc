@@ -1559,8 +1559,11 @@ model.n_lambda_0 = n_lambda_n;
 model.n_lambda_1 = n_lambda_p;
 
 % CLS 
-model.n_contacts = n_contacts;
-model.n_tangents = n_tangents;
+if isequal(dcs_mode,'CLS')
+    model.n_contacts = n_contacts;
+    model.n_tangents = n_tangents;
+    model.n_t = n_t;
+end
 
 % least square functions and references
 model.f_lsq_x_fun = f_lsq_x_fun;
@@ -1606,9 +1609,11 @@ dimensions.n_lambda_1 = n_lambda_p;
 dimensions.n_f_sys = n_f_sys;
 dimensions.n_p_global = n_p_global;
 dimensions.n_p_time_var = n_p_time_var;
-dimensions.n_contacts = n_contacts;
-dimensions.n_tangents = n_tangents;
-dimensions.n_t = n_t;
+if isequal(dcs_mode,'CLS')
+    dimensions.n_contacts = n_contacts;
+    dimensions.n_tangents = n_tangents;
+    dimensions.n_t = n_t;
+end
 model.dimensions = dimensions;
 %%
 model.friction_exists = friction_exists;

@@ -53,13 +53,14 @@ s_elastic_iter = 1;
 sigma_k = sigma_0;
 x0 = solver_initialization.w0(1:model.dimensions.n_x);
 
-% lambda00 initialization
+% cont algebraics initialization
 lambda00 = [];
 gamma_00 = [];
 p_vt_00 = [];
 n_vt_00  = [];
 gamma_d00 = [];
 delta_d00 = [];
+y_gap00 = [];
 switch settings.dcs_mode
     case 'Stewart'
         lambda00 = full(model.lambda00_fun(x0, model.p_global_val));

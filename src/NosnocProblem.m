@@ -42,34 +42,34 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_lambda_p
         ind_theta_step
         ind_beta
-     % Speficif to CLS representation
-            ind_lambda_normal
-            ind_lambda_tangent
-            ind_y_gap
-            % friction multipliers and lifting
-            % conic
-            ind_gamma
-            ind_beta_conic
-            % poly
-            ind_gamma_d
-            ind_beta_d
-            ind_delta_d
-            % variables related to conic
-            ind_p_vt
-            ind_n_vt
-            ind_alpha_vt
-            % variables only at element boundary
-            ind_Lambda_normal
-            ind_Lambda_tangent
-            ind_Gamma
-            ind_Gamma_d
-            ind_Beta_conic
-            ind_Delta_d
-            ind_P_vn
-            ind_N_vn
-            ind_P_vt
-            ind_N_vt
-            ind_Alpha_vt
+        % Speficif to CLS representation
+        ind_lambda_normal
+        ind_lambda_tangent
+        ind_y_gap
+        % friction multipliers and lifting
+        % conic
+        ind_gamma
+        ind_beta_conic
+        % poly
+        ind_gamma_d
+        ind_beta_d
+        ind_delta_d
+        % variables related to conic
+        ind_p_vt
+        ind_n_vt
+        ind_alpha_vt
+        % variables only at element boundary
+        ind_Lambda_normal
+        ind_Lambda_tangent
+        ind_Gamma
+        ind_Gamma_d
+        ind_Beta_conic
+        ind_Delta_d
+        ind_P_vn
+        ind_N_vn
+        ind_P_vt
+        ind_N_vt
+        ind_Alpha_vt
         % misc
         ind_nu_lift
         ind_h
@@ -78,7 +78,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
         ind_v_global
         ind_s_terminal
-        
+
 
         % Parameter index variables
         ind_p_x0
@@ -109,7 +109,7 @@ classdef NosnocProblem < NosnocFormulationObject
         stages % control stages
 
         % complementarity residual functions
-        comp_res 
+        comp_res
         comp_std
         comp_fesd
 
@@ -121,7 +121,7 @@ classdef NosnocProblem < NosnocFormulationObject
     end
     % remaining list of TODOs
     % TODO: cleanup/add properties (in all components)
-    % TODO: Create solver object, which will interact with setting parameters. 
+    % TODO: Create solver object, which will interact with setting parameters.
 
     properties(Dependent, SetAccess=private, Hidden)
         % Properties generated on the fly.
@@ -135,7 +135,7 @@ classdef NosnocProblem < NosnocFormulationObject
         % Indices for all algebraic vars in the problem
         ind_z_all
     end
-    
+
     methods
         function obj = NosnocProblem(settings, dims, model)
             import casadi.*
@@ -146,7 +146,7 @@ classdef NosnocProblem < NosnocFormulationObject
             else
                 rbp_allowance = 1;
             end
-            
+
             obj.ind_u = [];
             obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_x0 = [];
@@ -204,19 +204,19 @@ classdef NosnocProblem < NosnocFormulationObject
 
             % Add global vars
             obj.addVariable(model.v_global,...
-                            'v_global',...
-                            model.lbv_global,...
-                            model.ubv_global,...
-                            model.v0_global)
-            
+                'v_global',...
+                model.lbv_global,...
+                model.ubv_global,...
+                model.v0_global)
+
             % TODO Rename
             obj.createPrimalVariables();
 
             obj.createComplementarityConstraints();
-            
+
             last_stage = obj.stages(end);
             last_fe = last_stage.stage(end);
-            
+
             %  -- Constraint for the terminal numerical and physical time (if no equidistant grids are required) --
             % If the control grid is not equidistant, the constraint on sum of h happen only at the end.
             % The constraints are splited to those which are related to numerical and physical time, to make it easier to read.
@@ -318,72 +318,72 @@ classdef NosnocProblem < NosnocFormulationObject
                     end
                 end
                 switch settings.relax_terminal_constraint % TODO name these.
-                  case 0 % hard constraint
-                    if settings.relax_terminal_constraint_from_above
-                        obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1));
-                    else
-                        obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub);
-                    end
-                  case 1 % l_1
-                    s_terminal_ell_1 = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
-                    obj.addVariable(s_terminal_ell_1,...
-                                    's_terminal',...
-                                    1e3*ones(n_terminal,1),...
-                                    -inf*ones(n_terminal,1),...
-                                    inf*ones(n_terminal,1));
+                    case 0 % hard constraint
+                        if settings.relax_terminal_constraint_from_above
+                            obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1));
+                        else
+                            obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub);
+                        end
+                    case 1 % l_1
+                        s_terminal_ell_1 = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
+                        obj.addVariable(s_terminal_ell_1,...
+                            's_terminal',...
+                            1e3*ones(n_terminal,1),...
+                            -inf*ones(n_terminal,1),...
+                            inf*ones(n_terminal,1));
 
-                    obj.addConstraint(g_terminal-model.g_terminal_lb-s_terminal_ell_1,...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-                    obj.addConstraint(-(g_terminal-model.g_terminal_lb)-s_terminal_ell_1,...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
+                        obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_1,...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1));
+                        obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_1,...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1));
 
-                    obj.cost = obj.cost + rho_terminal_p*sum(s_terminal_ell_1);
-                  case 2 % l_2
-                    obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-model.g_terminal_lb);
-                  case 3 % l_inf
-                    s_terminal_ell_inf = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
-                    obj.addVariable(s_terminal_ell_inf,...
-                                    's_terminal',...
-                                    1e3,...
-                                    -inf,...
-                                    inf);
+                        obj.cost = obj.cost + rho_terminal_p*sum(s_terminal_ell_1);
+                    case 2 % l_2
+                        obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-g_terminal_lb);
+                    case 3 % l_inf
+                        s_terminal_ell_inf = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
+                        obj.addVariable(s_terminal_ell_inf,...
+                            's_terminal',...
+                            1e3,...
+                            -inf,...
+                            inf);
 
-                    obj.addConstraint(g_terminal-model.terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-                    obj.addConstraint(-(g_terminal-model.g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
+                        obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1));
+                        obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1));
 
-                    obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
-                  case 4 % l_inf, relaxed
-                    % TODO: ask armin if this is correct.
-                    if settings.elasticity_mode == ElasticityMode.ELL_INF
-                        elastic = s_elastic*ones(n_terminal,1);
-                    elseif settings.elasticity_mode == ElasticityMode.ELL_1 
-                        elastic = last_fe.elastic{end};
-                    else
-                        error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
-                    end
-                    obj.addConstraint(g_terminal-model.g_terminal_lb-elastic,...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
-                    obj.addConstraint(-(g_terminal-model.g_terminal_lb)-elastic,...
-                                      -inf*ones(n_terminal,1),...
-                                      zeros(n_terminal,1));
+                        obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
+                    case 4 % l_inf, relaxed
+                        % TODO: ask armin if this is correct.
+                        if ismember(settings.mpcc_mode, MpccMode.elastic)
+                            elastic = s_elastic*ones(n_terminal,1);
+                        elseif ismemeber(settings.mpcc_mode, MpccMode.elastic_ell_1)
+                            elastic = last_fe.elastic{end};
+                        else
+                            error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
+                        end
+                        obj.addConstraint(g_terminal-g_terminal_lb-elastic,...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1));
+                        obj.addConstraint(-(g_terminal-g_terminal_lb)-elastic,...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1));
                 end
             end
 
             % terminal least squares
             obj.cost = obj.cost + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
             obj.objective = obj.objective + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
-            
+
             % Process terminal costs
             obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
             obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
-            
+
             % Process elastic costs
             if settings.elasticity_mode == ElasticityMode.ELL_INF
                 if settings.objective_scaling_direct
@@ -425,8 +425,8 @@ classdef NosnocProblem < NosnocFormulationObject
                     end
                 end
             end
-            
-            
+
+
             % Scalar-valued complementairity residual
             if settings.use_fesd
                 J_comp_fesd = max(obj.cc_vector);
@@ -441,13 +441,13 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
             obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
-            
+
             obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
 
             if dims.n_p_global > 0;
                 obj.p0 = [obj.p0; model.p_global_val];
             end
-            
+
             if dims.n_p_time_var > 0;
                 obj.p0 = [obj.p0; model.p_time_var_val];
             end
@@ -458,15 +458,16 @@ classdef NosnocProblem < NosnocFormulationObject
             import casadi.*
             fe0 = FiniteElementZero(obj.settings, obj.dims, obj.model);
             obj.fe0 = fe0;
-            
-            obj.p = vertcat(obj.p, fe0.x0, fe0.lambda{1,:},fe0.y_gap{1,:},fe0.gamma{1,:},fe0.gamma_d{1,:},fe0.delta_d{1,:},fe0.p_vt{1,:},fe0.n_vt{1,:});
+
+            %             obj.p = vertcat(obj.p, fe0.x0, fe0.lambda{1,:},fe0.y_gap{1,:},fe0.gamma{1,:},fe0.gamma_d{1,:},fe0.delta_d{1,:},fe0.p_vt{1,:},fe0.n_vt{1,:});
+            obj.p = vertcat(obj.p, fe0.x0, fe0.cross_comp_cont_0{1,:},fe0.cross_comp_cont_1{1,:},fe0.cross_comp_cont_2{1,:});
 
             X0 = fe0.x{1};
             obj.addVariable(X0,...
-                            'x0',...
-                            fe0.lbw(fe0.ind_x{1}),...
-                            fe0.ubw(fe0.ind_x{1}),...
-                            fe0.w0(fe0.ind_x{1}));
+                'x0',...
+                fe0.lbw(fe0.ind_x{1}),...
+                fe0.ubw(fe0.ind_x{1}),...
+                fe0.w0(fe0.ind_x{1}));
             obj.addConstraint(fe0.g, fe0.lbg, fe0.ubg);
             prev_fe = fe0;
 
@@ -475,10 +476,10 @@ classdef NosnocProblem < NosnocFormulationObject
                 if ~obj.settings.local_speed_of_time_variable
                     s_sot = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_sot', 1);
                     obj.addVariable(s_sot,...
-                                    'sot',...
-                                    obj.settings.s_sot_min,...
-                                    obj.settings.s_sot_max,...
-                                    obj.settings.s_sot0);
+                        'sot',...
+                        obj.settings.s_sot_min,...
+                        obj.settings.s_sot_max,...
+                        obj.settings.s_sot0);
                     if obj.settings.time_freezing
                         obj.cost = obj.cost + obj.rho_sot_p*(s_sot-1)^2;
                     end
@@ -492,7 +493,7 @@ classdef NosnocProblem < NosnocFormulationObject
             else
                 s_elastic = [];
             end
-                
+
             for ii=1:obj.dims.N_stages
                 % TODO: maybe this should be a function
                 stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.sigma_p, obj.rho_h_p, obj.rho_sot_p, s_elastic);
@@ -506,7 +507,7 @@ classdef NosnocProblem < NosnocFormulationObject
         end
 
         function createComplementarityConstraints(obj)
-            import casadi.*           
+            import casadi.*
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
@@ -573,7 +574,7 @@ classdef NosnocProblem < NosnocFormulationObject
                 end
             end
         end
-        
+
         % TODO this should be private
         function addControlStage(obj, stage)
             w_len = length(obj.w);
@@ -619,18 +620,18 @@ classdef NosnocProblem < NosnocFormulationObject
 
             for stage=obj.stages
                 for fe=stage.stage
-                    theta = fe.theta;
-                    lambda = fe.lambda;
+                    cross_comp_discont_0 = fe.cross_comp_discont_0;
+                    cross_comp_cont_0 = fe.cross_comp_cont_0;
                     for j=1:obj.dims.n_s
                         for jj = j:obj.dims.n_s
-                            for r=1:obj.dims.n_sys 
-                                cc_vector = vertcat(cc_vector, diag(theta{j,r})*lambda{jj,r});
+                            for r=1:obj.dims.n_sys
+                                cc_vector = vertcat(cc_vector, diag(cross_comp_discont_0{j,r})*cross_comp_cont_0{jj,r});
                             end
                         end
                     end
                     for j=1:obj.dims.n_s
                         for r=1:obj.dims.n_sys
-                            cc_vector = vertcat(cc_vector, diag(theta{j,r})*fe.prev_fe.lambda{end,r});
+                            cc_vector = vertcat(cc_vector, diag(cross_comp_discont_0{j,r})*fe.prev_fe.cross_comp_cont_0{end,r});
                         end
                     end
                 end
@@ -639,7 +640,7 @@ classdef NosnocProblem < NosnocFormulationObject
         function u = get.u(obj)
             u = cellfun(@(u) obj.w(u), obj.ind_u, 'UniformOutput', false);
         end
-        
+
         function sot = get.sot(obj)
             sot = cellfun(@(sot) obj.w(sot), obj.ind_sot, 'UniformOutput', false);
         end
@@ -656,17 +657,17 @@ classdef NosnocProblem < NosnocFormulationObject
 
         function ind_z_all = get.ind_z_all(obj)
             ind_z_all = [flatten_ind(obj.ind_theta(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_theta_step(:,:,1:obj.dims.n_s))
-                         flatten_ind(obj.ind_z(:,:,1:obj.dims.n_s))];
+                flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
+                flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
+                flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
+                flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
+                flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
+                flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
+                flatten_ind(obj.ind_theta_step(:,:,1:obj.dims.n_s))
+                flatten_ind(obj.ind_z(:,:,1:obj.dims.n_s))];
             ind_z_all = sort(ind_z_all);
         end
-        
+
         function print(obj,filename)
             if exist('filename')
                 delete(filename);

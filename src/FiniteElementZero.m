@@ -57,7 +57,10 @@ classdef FiniteElementZero < NosnocFormulationObject
     properties(Dependent, SetAccess=private, Hidden)
         % Casadi symbolics for FE variables
         x
-        lambda
+        cross_comp_cont_0
+        cross_comp_cont_1
+        cross_comp_cont_2
+%         lambda
         % CLS
         y_gap
         % conic
@@ -68,13 +71,13 @@ classdef FiniteElementZero < NosnocFormulationObject
         % variables related to conic
         p_vt
         n_vt
-        % variables only at element boundary
-        % TODO: for impulse at 0th 
-%         Gamma
-%         Gamma_d
-%         Delta_d
-%         P_vn
-%         N_vn
+%         variables only at element boundary
+%         TODO: for impulse at 0th 
+        Gamma
+        Gamma_d
+        Delta_d
+        P_vn
+        N_vn
     end
 
     methods
@@ -86,6 +89,13 @@ classdef FiniteElementZero < NosnocFormulationObject
             obj.ind_lam = cell(1,dims.n_sys);
             obj.ind_lambda_n = cell(1,dims.n_sys);
             obj.ind_lambda_p = cell(1,dims.n_sys);
+
+            obj.ind_y_gap = cell(1);
+            obj.ind_gamma = cell(1);
+            obj.ind_gamma_d= cell(1);
+            obj.ind_delta_d = cell(1);
+            obj.ind_p_vt = cell(1);
+            obj.ind_n_vt = cell(1);
 
             X0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'X0', dims.n_x); % variable
             obj.x0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'x0', dims.n_x); % Param
@@ -209,15 +219,35 @@ classdef FiniteElementZero < NosnocFormulationObject
 
         end
 
-        function lambda = get.lambda(obj)
+        function cross_comp_cont_0 = get.cross_comp_cont_0(obj)
             import casadi.*
-            grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
-
-            lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
+%             grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
+%             lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
+            grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(pvt), obj.w(nvt), obj.w(gd), obj.w(dd));
+            cross_comp_cont_0 = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p,...
+                obj.ind_y_gap, obj.ind_gamma, obj.ind_p_vt, obj.ind_n_vt, obj.ind_gamma_d, obj.ind_delta_d, 'UniformOutput', false);
         end
+
+          function cross_comp_cont_1 = get.cross_comp_cont_1(obj)
+            import casadi.*
+            grab = @(pvt) vertcat(obj.w(pvt));
+            cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
+          end
+
+            function cross_comp_cont_2 = get.cross_comp_cont_2(obj)
+            import casadi.*
+            grab = @(nvt) vertcat(obj.w(nvt));
+            cross_comp_cont_2 = cellfun(grab, obj.ind_n_vt, 'UniformOutput', false);
+        end
+
+
 
         function x = get.x(obj)
             x= cellfun(@(x) obj.w(x), obj.ind_x, 'UniformOutput', false);
+        end
+
+        function y_gap = get.y_gap(obj)
+            y_gap = cellfun(@(y_gap) obj.w(y_gap), obj.ind_y_gap, 'UniformOutput', false);
         end
 
         function gamma = get.gamma(obj)
