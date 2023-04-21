@@ -41,6 +41,7 @@ classdef FiniteElement < NosnocFormulationObject
         ind_beta
         ind_theta_step
         % CLS
+        ind_x_left_bp
         ind_lambda_normal
         ind_lambda_tangent
         ind_y_gap
@@ -60,10 +61,14 @@ classdef FiniteElement < NosnocFormulationObject
         ind_Y_gap
         ind_Lambda_normal
         ind_Lambda_tangent
+        %
         ind_Gamma
-        ind_Gamma_d
         ind_Beta_conic
+        %
+        ind_Gamma_d
+        ind_Beta_d
         ind_Delta_d
+        %
         ind_P_vn
         ind_N_vn
         ind_P_vt
@@ -256,7 +261,7 @@ classdef FiniteElement < NosnocFormulationObject
                     ['X_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_0'],...
                     dims.n_x);
                 obj.addVariable(x,...
-                    'x',...
+                    'x_left_bp',...
                     model.lbx,...
                     model.ubx,...
                     model.x0,...
@@ -810,18 +815,33 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             % calculate lambda and theta
-            grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(pvt), obj.w(nvt), obj.w(gd), obj.w(dd));
-            obj.cross_comp_cont_0 = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p,...
-                obj.ind_y_gap, obj.ind_gamma, obj.ind_p_vt, obj.ind_n_vt, obj.ind_gamma_d, obj.ind_delta_d, 'UniformOutput', false);
 
-            grab = @(t, a, ln, b, avt, bd, lt) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a), obj.w(ln), obj.w(b), ones(size(avt))' - obj.w(avt), obj.w(avt), obj.w(bd), obj.w(lt));
-            obj.cross_comp_discont_0 = cellfun(grab, obj.ind_theta, obj.ind_alpha,...
-                obj.ind_lambda_normal, obj.ind_beta_conic, obj.ind_alpha_vt, obj.ind_beta_d, obj.ind_lambda_tangent, 'UniformOutput', false);
 
-            grab = @(pvt) vertcat(obj.w(pvt));
-            obj.cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
-            grab = @(nvt) vertcat(obj.w(nvt));
-            obj.cross_comp_cont_2 = cellfun(grab,  obj.ind_n_vt, 'UniformOutput', false);
+            if model.friction_exists && settings.friction_model == 'Conic' && settings.conic_model_switch_handling == 'Abs'
+
+                grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(gd), obj.w(dd));
+                obj.cross_comp_cont_0 = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p,...
+                    obj.ind_y_gap, obj.ind_gamma, obj.ind_p_vt, obj.ind_n_vt, obj.ind_gamma_d, obj.ind_delta_d, 'UniformOutput', false);
+
+                grab = @(t, a, ln, b, avt, bd, lt) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a), obj.w(ln), obj.w(b), obj.w(bd), obj.w(lt));
+                obj.cross_comp_discont_0 = cellfun(grab, obj.ind_theta, obj.ind_alpha,...
+                    obj.ind_lambda_normal, obj.ind_beta_conic, obj.ind_alpha_vt, obj.ind_beta_d, obj.ind_lambda_tangent, 'UniformOutput', false);
+
+
+                grab = @(pvt) vertcat(obj.w(pvt));
+                obj.cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
+                grab = @(nvt) vertcat(obj.w(nvt));
+                obj.cross_comp_cont_2 = cellfun(grab,  obj.ind_n_vt, 'UniformOutput', false);
+            else
+                % ??
+                grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(pvt), obj.w(nvt), obj.w(gd), obj.w(dd));
+                obj.cross_comp_cont_0 = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p,...
+                    obj.ind_y_gap, obj.ind_gamma, obj.ind_p_vt, obj.ind_n_vt, obj.ind_gamma_d, obj.ind_delta_d, 'UniformOutput', false);
+
+                grab = @(t, a, ln, b, avt, bd, lt) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a), obj.w(ln), obj.w(b), ones(size(avt))' - obj.w(avt), obj.w(avt), obj.w(bd), obj.w(lt));
+                obj.cross_comp_discont_0 = cellfun(grab, obj.ind_theta, obj.ind_alpha,...
+                    obj.ind_lambda_normal, obj.ind_beta_conic, obj.ind_alpha_vt, obj.ind_beta_d, obj.ind_lambda_tangent, 'UniformOutput', false);
+            end
 
 
         end
@@ -992,26 +1012,58 @@ classdef FiniteElement < NosnocFormulationObject
             dims = obj.dims;
 
             obj.u = Uk;
+            % left bondary point
+            if settings.dcs_mode == "CLS"
+                % do continuity on x and impulse equtions
+                X_k0 = obj.w(ind_x_left_bp{1}); % corresponds to post impact t^+
+                X_k = obj.prev_fe.x{end}; % corresponds to pre impact t^-
+                Q_k0  = X_k0(1:n_q);
+                V_k0  = X_k0(n_q+1:end);
+                Q_k  = X_k(1:n_q);
+                V_k  = X_k(n_q+1:end);
+                % junction equations
+                obj.addConstraint(Q_k0-Q_k);
+                
+                Z_impulse_k = [obj.w(ind_Lambda_normal{1}), obj.w(ind_Y_gap{1}),obj.w(ind_P_vn{1}),obj.w(ind_N_vn{1});...
+                               obj.w(ind_Lambda_tangent{1}), obj.w(ind_Gamma_d{1}), obj.w(ind_Beta_d{1}), obj.w(ind_Delta_d{1}), ...
+                               obj.w(ind_Gamma{1}), obj.w(ind_Beta{1}), obj.w(ind_P_vt{1}), obj.w(ind_N_vt{1}), obj.w(ind_Alpha_vt{1})];
+                obj.addConstraint(g_impulse_fun(V_k0,V_k,Z_impulse_k));
+
+                % comp condts 
+                % Y_gap comp. to Lambda_Normal+P_vn+N_vn;..
+                % P_vn comp.to N_vn;
+                %  if conic:
+                % Gamma comp. to Beta
+                    % if abs: P_vt comp.to N_vt;
+                    % if lp:  P_vt comp.to e - Alpha_vt, N_vt comp.to Alpha_vt
+                %  if polyhedral
+                   % Delta comp. to Lambda_tangent
+                   % Gamma comp. to Beta;
+
+
+            else
+                X_k0 = obj.prev_fe.x{end};
+            end
 
             if settings.irk_representation == IrkRepresentation.integral
                 X_ki = obj.x;
-                Xk_end = settings.D_irk(1) * obj.prev_fe.x{end};
+                Xk_end = settings.D_irk(1) * X_k0;
             elseif settings.irk_representation == IrkRepresentation.differential
                 X_ki = {};
                 for j = 1:dims.n_s
-                    x_temp = obj.prev_fe.x{end};
+                    x_temp = X_k0;
                     for r = 1:dims.n_s
                         x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
                     end
                     X_ki = [X_ki {x_temp}];
                 end
                 X_ki = [X_ki, {obj.x{end}}];
-                Xk_end = obj.prev_fe.x{end};
+                Xk_end = X_k0;
             elseif settings.irk_representation == IrkRepresentation.differential_lift_x
                 X_ki = obj.x;
-                Xk_end = obj.prev_fe.x{end};
+                Xk_end = X_k0;
                 for j = 1:dims.n_s
-                    x_temp = obj.prev_fe.x{end};
+                    x_temp = X_k0;
                     for r = 1:dims.n_s
                         x_temp = x_temp + obj.h*settings.A_irk(j,r)*obj.v{r};
                     end
@@ -1028,7 +1080,7 @@ classdef FiniteElement < NosnocFormulationObject
 
                 obj.addConstraint(gj);
                 if settings.irk_representation == IrkRepresentation.integral
-                    xj = settings.C_irk(1, j+1) * obj.prev_fe.x{end};
+                    xj = settings.C_irk(1, j+1) * X_k0;
                     for r = 1:dims.n_s
                         xj = xj + settings.C_irk(r+1, j+1) * X_ki{r};
                     end
@@ -1048,7 +1100,7 @@ classdef FiniteElement < NosnocFormulationObject
             % TODO: do this cleaner
             if (model.g_path_constraint &&...
                     (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
-                obj.addConstraint(model.g_path_fun(obj.prev_fe.x{end},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
+                obj.addConstraint(model.g_path_fun(X_k0,Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
