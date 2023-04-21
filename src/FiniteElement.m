@@ -143,8 +143,10 @@ classdef FiniteElement < NosnocFormulationObject
 
     properties(SetAccess=private)
         % TODO: rename into cross_comp_cont cross_comp_discont?
-        lambda
-        theta
+        cross_comp_cont_0 % cross comp variables that are cont (requite conecetion to prev. element, e.g. lambda in stewart)
+        cross_comp_discont_0 % cross comp variables that are discont (e.g. theta in stewart)
+        cross_comp_cont_1 % cross comp variables that are cont and get complemented with cross_comp_cont_2 that are cont as well
+        cross_comp_cont_2
     end
 
     methods
@@ -806,10 +808,20 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             % calculate lambda and theta
-            grab = @(l, ln, lp) vertcat(obj.w(l), obj.w(ln), obj.w(lp));
-            obj.lambda = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p, 'UniformOutput', false);
-            grab = @(t, a) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a));
-            obj.theta = cellfun(grab, obj.ind_theta, obj.ind_alpha, 'UniformOutput', false);
+            grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(pvt), obj.w(nvt), obj.w(gd), obj.w(dd));
+            obj.cross_comp_cont_0 = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p,...
+                obj.ind_y_gap, obj.ind_gamma, obj.ind_p_vt, obj.ind_n_vt, obj.ind_gamma_d, obj.ind_delta_d, 'UniformOutput', false);
+
+            grab = @(t, a, ln, b, avt, bd, lt) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a), obj.w(ln), obj.w(b), ones(size(avt))' - obj.w(avt), obj.w(avt), obj.w(bd), obj.w(lt));
+            obj.cross_comp_discont_0 = cellfun(grab, obj.ind_theta, obj.ind_alpha,...
+                obj.ind_lambda_normal, obj.ind_beta, obj.ind_alpha_vt, obj.ind_beta_d, obj.ind_lambda_tangent, 'UniformOutput', false);
+
+            grab = @(pvt) vertcat(obj.w(pvt));
+            obj.cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
+            grab = @(nvt) vertcat(obj.w(nvt));
+            obj.cross_comp_cont_2 = cellfun(grab,  obj.ind_n_vt, 'UniformOutput', false);
+
+
         end
 
         function h = get.h(obj)
@@ -841,7 +853,7 @@ classdef FiniteElement < NosnocFormulationObject
         function nu_vector = get.nu_vector(obj)
             import casadi.*
             if obj.settings.use_fesd && obj.fe_idx > 1
-                eta_k = obj.prev_fe.sumLambda().*obj.sumLambda() + obj.prev_fe.sumTheta().*obj.sumTheta();
+                eta_k = obj.prev_fe.sumCrossCompCont0().*obj.sumCrossCompCont0() + obj.prev_fe.sumCrossCompDiscont0().*obj.sumCrossCompDiscont0();
                 nu_vector = 1;
                 for jjj=1:length(eta_k)
                     nu_vector = nu_vector * eta_k(jjj);
@@ -851,10 +863,10 @@ classdef FiniteElement < NosnocFormulationObject
             end
         end
 
-        function sum_lambda = sumLambda(obj, varargin)
+        function sum_cross_comp_cont_0 = sumCrossCompCont0(obj, varargin)
             import casadi.*
             p = inputParser();
-            p.FunctionName = 'sumLambda';
+            p.FunctionName = 'sumCrossCompCont0';
 
             % TODO: add checks.
             addRequired(p, 'obj');
@@ -862,19 +874,21 @@ classdef FiniteElement < NosnocFormulationObject
             parse(p, obj, varargin{:});
 
             if ismember('sys', p.UsingDefaults)
-                lambda = obj.lambda;
-                lambdas = arrayfun(@(row) vertcat(lambda{row, :}), 1:size(lambda,1), 'UniformOutput', false);
-                lambdas = [lambdas, {vertcat(obj.prev_fe.lambda{end,:})}];
+                cross_comp_cont_0 = obj.cross_comp_cont_0;
+                cross_comp_cont_0_vec = arrayfun(@(row) vertcat(cross_comp_cont_0{row, :}), 1:size(cross_comp_cont_0,1), 'UniformOutput', false);
+                cross_comp_cont_0_vec = [cross_comp_cont_0_vec, {vertcat(obj.prev_fe.cross_comp_cont_0{end,:})}];
             else
-                lambdas = obj.lambda(:,p.Results.sys).';
-                lambdas = [lambdas, obj.prev_fe.lambda(end,p.Results.sys)];
+                cross_comp_cont_0_vec = obj.cross_comp_cont_0(:,p.Results.sys).';
+                cross_comp_cont_0_vec = [cross_comp_cont_0_vec, obj.prev_fe.cross_comp_cont_0(end,p.Results.sys)];
             end
-            sum_lambda = sum([lambdas{:}], 2);
+            sum_cross_comp_cont_0 = sum([cross_comp_cont_0_vec{:}], 2);
         end
 
-        function sum_theta = sumTheta(obj, varargin)
+
+
+        function sum_cross_comp_discont_0 = sumCrossCompDiscont0(obj, varargin)
             p = inputParser();
-            p.FunctionName = 'sumTheta';
+            p.FunctionName = 'sumCrossCompDiscont0';
 
             % TODO: add checks.
             addRequired(p, 'obj');
@@ -882,13 +896,59 @@ classdef FiniteElement < NosnocFormulationObject
             parse(p, obj, varargin{:});
             %obj.theta
             if ismember('sys', p.UsingDefaults)
-                theta = obj.theta;
-                thetas = arrayfun(@(row) vertcat(theta{row, :}), 1:size(theta,1), 'UniformOutput', false);
+                cross_comp_discont_0 = obj.cross_comp_discont_0;
+                cross_comp_discont_0_vec = arrayfun(@(row) vertcat(cross_comp_discont_0{row, :}), 1:size(cross_comp_discont_0,1), 'UniformOutput', false);
             else
-                thetas = obj.theta(:,p.Results.sys).';
+                cross_comp_discont_0_vec = obj.cross_comp_discont_0(:,p.Results.sys).';
             end
-            sum_theta = sum([thetas{:}], 2);
+            sum_cross_comp_discont_0 = sum([cross_comp_discont_0_vec{:}], 2);
         end
+
+        function sum_cross_comp_cont_1 = sumCrossCompCont1(obj, varargin)
+            % TODO!!! : DO appropiate cross comp functions
+            import casadi.*
+            p = inputParser();
+            p.FunctionName = 'sumCrossCompCont1';
+
+            % TODO: add checks.
+            addRequired(p, 'obj');
+            addOptional(p, 'sys',[]);
+            parse(p, obj, varargin{:});
+
+            if ismember('sys', p.UsingDefaults)
+                cross_comp_cont_1 = obj.cross_comp_cont_1;
+                cross_comp_cont_1_vec = arrayfun(@(row) vertcat(cross_comp_cont_1{row, :}), 1:size(cross_comp_cont_1,1), 'UniformOutput', false);
+                cross_comp_cont_1_vec = [cross_comp_cont_1_vec, {vertcat(obj.prev_fe.cross_comp_cont_1{end,:})}];
+            else
+                cross_comp_cont_1_vec = obj.cross_comp_cont_1(:,p.Results.sys).';
+                cross_comp_cont_1_vec = [cross_comp_cont_1_vec, obj.prev_fe.cross_comp_cont_1(end,p.Results.sys)];
+            end
+            sum_cross_comp_cont_1 = sum([cross_comp_cont_1_vec{:}], 2);
+        end
+
+
+        function sum_cross_comp_cont_2 = sumCrossCompCont2(obj, varargin)
+            % TODO!!! : DO appropiate cross comp functions
+            import casadi.*
+            p = inputParser();
+            p.FunctionName = 'sumCrossCompCont2';
+
+            % TODO: add checks.
+            addRequired(p, 'obj');
+            addOptional(p, 'sys',[]);
+            parse(p, obj, varargin{:});
+
+            if ismember('sys', p.UsingDefaults)
+                cross_comp_cont_2 = obj.cross_comp_cont_2;
+                cross_comp_cont_2_vec = arrayfun(@(row) vertcat(cross_comp_cont_2{row, :}), 1:size(cross_comp_cont_2,1), 'UniformOutput', false);
+                cross_comp_cont_2_vec = [cross_comp_cont_2_vec, {vertcat(obj.prev_fe.cross_comp_cont_2{end,:})}];
+            else
+                cross_comp_cont_2_vec = obj.cross_comp_cont_2(:,p.Results.sys).';
+                cross_comp_cont_2_vec = [cross_comp_cont_2_vec, obj.prev_fe.cross_comp_cont_2(end,p.Results.sys)];
+            end
+            sum_cross_comp_cont_2 = sum([cross_comp_cont_2_vec{:}], 2);
+        end
+
 
         function sum_elastic = sumElastic(obj)
             elastic = obj.elastic;
