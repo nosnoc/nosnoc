@@ -328,6 +328,16 @@ classdef NosnocOptions < handle
             obj.irk_scheme = val;
         end
 
+        function obj = set.dcs_mode(obj, val)
+            if val == DcsMode.CLS && obj.time_freezing == 1
+                if obj.print_level >=1
+                    fprintf(['nosnoc: User uses dcs_mode.CLS and time_freezing = true at the same time .\n']);
+                end
+                obj.time_freezing = 0;
+            end
+            obj.dcs_mode = val;
+        end
+
         function obj = set.irk_representation(obj, val)
             if strcmp(val,'integral') && ismember(obj.irk_scheme, IRKSchemes.differential_only)
                 error([obj.irk_scheme ' is only available with a differential representation!']);
@@ -337,11 +347,16 @@ classdef NosnocOptions < handle
         end
 
         function obj = set.time_freezing(obj, val)
-            if val
-                obj.use_speed_of_time_variables = 1;
-                obj.local_speed_of_time_variable = 1;
-                if obj.print_level >= 1
-                    fprintf('Info: Setting local speed of time variables to true as they are necessary for time freezing\n')
+            if val 
+                if obj.dcs_mode == "CLS" 
+                    val = 0;
+                    fprintf(['nosnoc: User uses dcs_mode.CLS and time_freezing = true at the same time, setting time_freezing to false.\n']);
+                else
+                    obj.use_speed_of_time_variables = 1;
+                    obj.local_speed_of_time_variable = 1;
+                    if obj.print_level >= 1
+                        fprintf('nosnoc: Setting local speed of time variables to true as they are necessary for time freezing\n')
+                    end
                 end
             end
             obj.time_freezing = val;
@@ -459,7 +474,7 @@ classdef NosnocOptions < handle
             if obj.nonlinear_sigma_rho_constraint
                 convex_sigma_rho_constraint = 1;
             else
-                convex_sigma_rho_constraint = obj.convex_sigma_rho_constraint
+                convex_sigma_rho_constraint = obj.convex_sigma_rho_constraint;
             end
         end
     end

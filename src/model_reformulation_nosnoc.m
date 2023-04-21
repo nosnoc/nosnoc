@@ -1529,8 +1529,11 @@ else
     model.M_fun = M_fun;
     model.invM_fun = invM_fun;
     model.J_normal_fun= J_normal_fun;
-    model.J_tangent_fun = J_tangent_fun;
-    model.D_tangent_fun = D_tangent_fun;
+    if friction_model == 'Polyhedral'
+        model.D_tangent_fun = D_tangent_fun;
+    else
+         model.J_tangent_fun = J_tangent_fun;
+    end
 end
 model.f_q_T_fun = f_q_T_fun;
 model.J_cc_fun = J_cc_fun;
