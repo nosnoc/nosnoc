@@ -1596,6 +1596,7 @@ dimensions.N_finite_elements = N_finite_elements;
 dimensions.n_x = n_x;
 dimensions.n_f = n_f;
 dimensions.n_u = n_u;
+dimensions.n_q = n_q;
 dimensions.n_z_all = n_z_all;
 dimensions.n_z = n_z;
 dimensions.n_s = n_s;

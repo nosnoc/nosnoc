@@ -181,7 +181,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             if settings.dcs_mode == "CLS"
-                obj.ind_x = cell(dims.n_s+1, 1);
+                obj.ind_x = cell(dims.n_s, 1);
             else
                 obj.ind_x = cell(dims.n_s+rbp_allowance, 1);
             end
@@ -217,6 +217,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_Lambda_normal = cell(1,1);
             obj.ind_Lambda_tangent = cell(1,1);
             obj.ind_Gamma = cell(1,1);
+            obj.ind_Beta_d = cell(1,1);
             obj.ind_Gamma_d = cell(1,1);
             obj.ind_Beta_conic = cell(1,1);
             obj.ind_Delta_d = cell(1,1);
@@ -607,7 +608,7 @@ classdef FiniteElement < NosnocFormulationObject
                         ['Lambda_tangent' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
                         dims.n_tangents);
 
-                    if isequal(settings.friction_model,'Polyhedral')
+                    if settings.friction_model == FrictionModel.Polyhedral
                         obj.addVariable(Lambda_tangent,...
                             'Lambda_tangent',...
                             -inf *ones(dims.n_tangents,1),...
@@ -642,7 +643,7 @@ classdef FiniteElement < NosnocFormulationObject
                             inf * ones(dims.n_tangents, 1),...
                             ones(dims.n_tangents, 1),1);
                     end
-                    if isequal(settings.friction_model,'Conic')
+                    if settings.friction_model == FrictionModel.Conic
                         obj.addVariable(Lambda_tangent,...
                             'Lambda_tangent',...
                             zeros(dims.n_tangents,1),...
@@ -1015,32 +1016,19 @@ classdef FiniteElement < NosnocFormulationObject
             % left bondary point
             if settings.dcs_mode == "CLS"
                 % do continuity on x and impulse equtions
-                X_k0 = obj.w(ind_x_left_bp{1}); % corresponds to post impact t^+
+                X_k0 = obj.w(obj.ind_x_left_bp{1}); % corresponds to post impact t^+
                 X_k = obj.prev_fe.x{end}; % corresponds to pre impact t^-
-                Q_k0  = X_k0(1:n_q);
-                V_k0  = X_k0(n_q+1:end);
-                Q_k  = X_k(1:n_q);
-                V_k  = X_k(n_q+1:end);
+                Q_k0  = X_k0(1:dims.n_q);
+                V_k0  = X_k0(dims.n_q+1:end);
+                Q_k  = X_k(1:dims.n_q);
+                V_k  = X_k(dims.n_q+1:end);
                 % junction equations
                 obj.addConstraint(Q_k0-Q_k);
                 
-                Z_impulse_k = [obj.w(ind_Lambda_normal{1}), obj.w(ind_Y_gap{1}),obj.w(ind_P_vn{1}),obj.w(ind_N_vn{1});...
-                               obj.w(ind_Lambda_tangent{1}), obj.w(ind_Gamma_d{1}), obj.w(ind_Beta_d{1}), obj.w(ind_Delta_d{1}), ...
-                               obj.w(ind_Gamma{1}), obj.w(ind_Beta{1}), obj.w(ind_P_vt{1}), obj.w(ind_N_vt{1}), obj.w(ind_Alpha_vt{1})];
-                obj.addConstraint(g_impulse_fun(V_k0,V_k,Z_impulse_k));
-
-                % comp condts 
-                % Y_gap comp. to Lambda_Normal+P_vn+N_vn;..
-                % P_vn comp.to N_vn;
-                %  if conic:
-                % Gamma comp. to Beta
-                    % if abs: P_vt comp.to N_vt;
-                    % if lp:  P_vt comp.to e - Alpha_vt, N_vt comp.to Alpha_vt
-                %  if polyhedral
-                   % Delta comp. to Lambda_tangent
-                   % Gamma comp. to Beta;
-
-
+                Z_impulse_k = [obj.w(obj.ind_Lambda_normal{1}), obj.w(obj.ind_Y_gap{1}),obj.w(obj.ind_P_vn{1}),obj.w(obj.ind_N_vn{1}),...
+                               obj.w(obj.ind_Lambda_tangent{1}), obj.w(obj.ind_Gamma_d{1}), obj.w(obj.ind_Beta_d{1}), obj.w(obj.ind_Delta_d{1}), ...
+                               obj.w(obj.ind_Gamma{1}), obj.w(obj.ind_Beta_conic{1}), obj.w(obj.ind_P_vt{1}), obj.w(obj.ind_N_vt{1}), obj.w(obj.ind_Alpha_vt{1})];
+                obj.addConstraint(model.g_impulse_fun(V_k0,V_k,Z_impulse_k));
             else
                 X_k0 = obj.prev_fe.x{end};
             end
@@ -1167,21 +1155,73 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             end
 
+            g_impulse_comp = [];
+            impulse_pairs = [];
+            if settings.dcs_mode == DcsMode.CLS
+                 % comp condts 
+                % Y_gap comp. to Lambda_Normal+P_vn+N_vn;..
+                % P_vn comp.to N_vn;
+                %  if conic:
+                    % Gamma comp. to Beta
+                    % if abs: P_vt comp.to N_vt;
+                    % if lp:  P_vt comp.to e - Alpha_vt, N_vt comp.to Alpha_vt
+                %  if polyhedral
+                   % Delta comp. to Lambda_tangent
+                   % Gamma comp. to Beta;
+                
+                Y_gap = obj.w(obj.ind_Y_gap{1});
+                Lambda_normal = obj.w(obj.ind_Lambda_normal{1});
+                P_vn = obj.w(obj.ind_P_vn{1});
+                N_vn = obj.w(obj.ind_N_vn{1});
+                P_vt = obj.w(obj.ind_P_vt{1});
+                N_vt = obj.w(obj.ind_N_vt{1});
+                Gamma = obj.w(obj.ind_Gamma{1});
+                Beta_conic = obj.w(obj.ind_Beta_conic{1});
+                Lambda_tangent = obj.w(obj.ind_Lambda_tangent{1});
+                Beta_d = obj.w(obj.ind_Beta_d{1});
+                Alpha_vt = obj.w(obj.ind_Alpha_vt{1});
+                Delta_d = obj.w(obj.ind_Delta_d{1});
+                Gamma_d = obj.w(obj.ind_Gamma_d{1});
+                
+                impulse_pairs = vertcat(impulse_pairs, [Y_gap, (Lambda_normal+P_vn+N_vn)]);
+                impulse_pairs = vertcat(impulse_pairs, [P_vn, N_vn]);
+                if model.friction_exists
+                    if settings.friction_model == FrictionModel.Conic
+                        g_impulse_comp = vertcat(g_impulse_comp, Gamma*Beta_conic);
+                        switch settings.conic_model_switch_handling
+                          case ConicModelSwitchHandling.Plain
+                            % no extra comps
+                          case ConicModelSwitchHandling.Abs
+                            impulse_pairs = vertcat(impulse_pairs, [P_vt,N_vt]);
+                          case ConicModelSwitchHandling.Lp
+                            impulse_pairs = vertcat(impulse_pairs, [P_vt,1-Alpha_vt]);
+                            impulse_pairs = vertcat(impulse_pairs, [Alpha_vt,N_vt]);
+                        end
+                    elseif settings.friction_model == FrictionModel.Polyhedral
+                        impulse_pairs = vertcat(impulse_pairs, [Delta_d,Lambda_tangent]);
+                        impulse_pairs = vertcat(impulse_pairs, [Gamma_d,Beta_d]);
+                    end
+                end
+                expr = apply_psi(impulse_pairs, psi_fun, sigma_p);
+                g_impulse_comp = expr
+            end
+
+
             % Generate all complementarity pairs
             cross_comp_pairs = cell(dims.n_s, dims.n_s+1, dims.n_sys);
-            theta = obj.theta;
-            lambda = obj.lambda;
+            cross_comp_discont_0 = obj.cross_comp_discont_0;
+            cross_comp_cont_0 = obj.cross_comp_cont_0;
             % Complement within FE
             for j=1:dims.n_s
                 for jj = 1:dims.n_s
                     for r=1:dims.n_sys
-                        cross_comp_pairs{j, jj+1, r} = horzcat(theta{j,r},lambda{jj,r});
+                        cross_comp_pairs{j, jj+1, r} = horzcat(cross_comp_discont_0{j,r},cross_comp_cont_0{jj,r});
                     end
                 end
             end
             for j=1:dims.n_s
                 for r=1:dims.n_sys
-                    cross_comp_pairs{j,1,r} = horzcat(theta{j,r}, obj.prev_fe.lambda{end,r});
+                    cross_comp_pairs{j,1,r} = horzcat(cross_comp_discont_0{j,r}, obj.prev_fe.cross_comp_cont_0{end,r});
                 end
             end
             obj.cross_comp_pairs = cross_comp_pairs;
@@ -1259,9 +1299,8 @@ classdef FiniteElement < NosnocFormulationObject
             elseif settings.cross_comp_mode > 8
                 return
             end
-            
-            
-            g_comp = vertcat(g_cross_comp, g_path_comp);
+
+            g_comp = vertcat(g_cross_comp, g_path_comp, g_impulse_comp);
 
             [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
             
