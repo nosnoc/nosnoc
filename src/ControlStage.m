@@ -199,6 +199,18 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_beta = [obj.ind_beta; transpose(flatten_sys(increment_indices(fe.ind_beta, w_len)))];
             obj.ind_theta_step = [obj.ind_theta_step; transpose(flatten_sys(increment_indices(fe.ind_theta_step, w_len)))];
             obj.ind_z = [obj.ind_z; transpose(flatten_sys(increment_indices(fe.ind_z, w_len)))];
+            obj.ind_lambda_normal = [obj.ind_lambda_normal; transpose(flatten_sys(increment_indices(fe.ind_lambda_normal, w_len)))];
+            obj.ind_lambda_tangent = [obj.ind_lambda_tangent; transpose(flatten_sys(increment_indices(fe.ind_lambda_tangent, w_len)))];
+            obj.ind_y_gap = [obj.ind_y_gap; transpose(flatten_sys(increment_indices(fe.ind_y_gap, w_len)))];
+            obj.ind_gamma = [obj.ind_gamma; transpose(flatten_sys(increment_indices(fe.ind_gamma, w_len)))];
+            obj.ind_beta_conic = [obj.ind_beta_conic; transpose(flatten_sys(increment_indices(fe.ind_beta_conic, w_len)))];
+            obj.ind_gamma_d = [obj.ind_gamma_d; transpose(flatten_sys(increment_indices(fe.ind_gamma_d, w_len)))];
+            obj.ind_beta_d = [obj.ind_beta_d; transpose(flatten_sys(increment_indices(fe.ind_beta_d, w_len)))];
+            obj.ind_delta_d = [obj.ind_delta_d; transpose(flatten_sys(increment_indices(fe.ind_delta_d, w_len)))];
+            obj.ind_p_vt = [obj.ind_p_vt; transpose(flatten_sys(increment_indices(fe.ind_p_vt, w_len)))];
+            obj.ind_n_vt = [obj.ind_n_vt; transpose(flatten_sys(increment_indices(fe.ind_n_vt, w_len)))];
+            obj.ind_alpha_vt = [obj.ind_alpha_vt; transpose(flatten_sys(increment_indices(fe.ind_alpha_vt, w_len)))];
+            
             obj.ind_nu_lift = [obj.ind_nu_lift, {fe.ind_nu_lift+w_len}];
         end
 

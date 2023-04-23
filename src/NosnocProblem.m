@@ -148,18 +148,38 @@ classdef NosnocProblem < NosnocFormulationObject
             end
 
             obj.ind_u = [];
-            obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_x0 = [];
+            obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_v = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
+            obj.ind_z = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            % Stewart
             obj.ind_theta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_lam = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_mu = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            % Step
             obj.ind_alpha = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_lambda_n = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_lambda_p = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_beta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_theta_step = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_z = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            % CLS
+            obj.ind_lambda_normal = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_tangent = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_y_gap = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            % friction multipliers and lifting
+            % conic
+            obj.ind_gamma =  cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta_conic = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            % poly
+            obj.ind_gamma_d = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta_d = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_delta_d = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            % variables related to conic
+            obj.ind_p_vt = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_n_vt = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_alpha_vt = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+
+            % misc
             obj.ind_nu_lift = {};
             obj.ind_h = {};
             obj.ind_sot = {};
@@ -597,6 +617,18 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_z(stage.ctrl_idx, :, :) = increment_indices(stage.ind_z, w_len);
             obj.ind_nu_lift = [obj.ind_nu_lift, increment_indices(stage.ind_nu_lift, w_len)];
 
+            obj.ind_lambda_normal(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lambda_normal, w_len);
+            obj.ind_lambda_tangent(stage.ctrl_idx, :, :) = increment_indices(stage.ind_lambda_tangent, w_len);
+            obj.ind_y_gap(stage.ctrl_idx, :, :) = increment_indices(stage.ind_y_gap, w_len);
+            obj.ind_gamma(stage.ctrl_idx, :, :) = increment_indices(stage.ind_gamma, w_len);
+            obj.ind_beta_conic(stage.ctrl_idx, :, :) = increment_indices(stage.ind_beta_conic, w_len);
+            obj.ind_gamma_d(stage.ctrl_idx, :, :) = increment_indices(stage.ind_gamma_d, w_len);
+            obj.ind_beta_d(stage.ctrl_idx, :, :) = increment_indices(stage.ind_beta_d, w_len);
+            obj.ind_delta_d(stage.ctrl_idx, :, :) = increment_indices(stage.ind_delta_d, w_len);
+            obj.ind_p_vt(stage.ctrl_idx, :, :) = increment_indices(stage.ind_p_vt, w_len);
+            obj.ind_n_vt(stage.ctrl_idx, :, :) = increment_indices(stage.ind_n_vt, w_len);
+            obj.ind_alpha_vt(stage.ctrl_idx, :, :) = increment_indices(stage.ind_alpha_vt, w_len);
+
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
         end
 
@@ -657,14 +689,25 @@ classdef NosnocProblem < NosnocFormulationObject
 
         function ind_z_all = get.ind_z_all(obj)
             ind_z_all = [flatten_ind(obj.ind_theta(:,:,1:obj.dims.n_s))
-                flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
-                flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
-                flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
-                flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
-                flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
-                flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
-                flatten_ind(obj.ind_theta_step(:,:,1:obj.dims.n_s))
-                flatten_ind(obj.ind_z(:,:,1:obj.dims.n_s))];
+                         flatten_ind(obj.ind_lam(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_mu(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_alpha(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lambda_n(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lambda_p(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_beta(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_theta_step(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_z(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lambda_normal(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_lambda_tangent(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_y_gap(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_gamma(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_beta_conic(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_gamma_d(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_beta_d(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_delta_d(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_p_vt(:,:,1:obj.dims.n_s))
+                         flatten_ind(obj.ind_p_vt(:,:,1:obj.dims.n_s))
+                        ];
             ind_z_all = sort(ind_z_all);
         end
 

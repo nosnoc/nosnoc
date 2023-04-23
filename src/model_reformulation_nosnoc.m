@@ -584,6 +584,7 @@ if isequal(dcs_mode,'CLS')
         end
     end
     % Dimension of tangens
+    n_t = 0;
     if friction_exists
         if isequal(friction_model,'Polyhedral')
             n_t =  length(D_tangent)/n_contacts; % number of tanget multipliers for a single contactl
@@ -1052,7 +1053,7 @@ switch dcs_mode
         n_z_all = n_contacts+n_tangents;
         lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,'lambda_normal',n_contacts);
         y_gap = define_casadi_symbolic(casadi_symbolic_mode,'y_gap',n_contacts);
-        g_lift_gap = f_c-y_gap; % lift gap functions f_c(q) = y;
+        g_lift_gap = y_gap - f_c; % lift gap functions f_c(q) = y;
         % Variables for impulse equations
         Lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,'Lambda_normal',n_contacts);
         Y_gap = define_casadi_symbolic(casadi_symbolic_mode,'Y_gap',n_contacts);
@@ -1271,7 +1272,7 @@ if ~isfield(model, 'f_x')
                                 F_v = inv(M)*(f_v+J_normal*lambda_normal + D_tangent*lambda_tangent);
                         end
                     else
-                        F_v = inv(M)*(f_v+J_normal*lambda_n);
+                        F_v = inv(M)*(f_v+J_normal*lambda_normal);
                     end
                     f_x = [v;F_v];
                 else
@@ -1430,7 +1431,7 @@ n_algebraic_constraints = length(g_z_all);
 f_x_fun = Function('f_x_fun',{x,z_all,u,p,v_global},{f_x,f_q});
 g_z_all_fun = Function('g_z_all_fun',{x,z_all,u,p,v_global},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
 if isequal(dcs_mode,'CLS')
-    g_impulse_fun = Function('g_impulse_fun',{v_post_impact,v_pre_impact,z_impulse},{g_impulse});
+    g_impulse_fun = Function('g_impulse_fun',{q,v_post_impact,v_pre_impact,z_impulse},{g_impulse});
 end
 g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
 if ~isequal(dcs_mode,'CLS')
@@ -1529,10 +1530,12 @@ else
     model.M_fun = M_fun;
     model.invM_fun = invM_fun;
     model.J_normal_fun= J_normal_fun;
-    if friction_model == 'Polyhedral'
-        model.D_tangent_fun = D_tangent_fun;
-    else
-         model.J_tangent_fun = J_tangent_fun;
+    if friction_exists
+        if friction_model == 'Polyhedral'
+            model.D_tangent_fun = D_tangent_fun;
+        else
+            model.J_tangent_fun = J_tangent_fun;
+        end
     end
 end
 model.f_q_T_fun = f_q_T_fun;

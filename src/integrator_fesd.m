@@ -123,6 +123,7 @@ complementarity_stats  = [];
 homotopy_iteration_stats = [];
 time_per_iter = [];
 simulation_time_pased = 0;
+W = [];
 %% Main simulation loop
 for ii = 1:N_sim+additional_residual_ingeration_step
     if ii == N_sim+additional_residual_ingeration_step && additional_residual_ingeration_step
@@ -148,6 +149,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     end
     % Store differential states
     w_opt = full(sol.x);
+    W = [W, w_opt];
     diff_states = w_opt(ind_x);
     alg_states = w_opt(ind_z_all);
 
@@ -335,6 +337,7 @@ results.t_grid = cumsum([0;h_vec])';
 % full diff and alg variables (e.g. for initalizing a solver)
 results.diff_res = diff_res;
 results.alg_res = alg_res;
+results.W = W;
 
 varargout{1} = results;
 varargout{2} = stats;
