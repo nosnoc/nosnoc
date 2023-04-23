@@ -59,11 +59,14 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_n_vt
         ind_alpha_vt
         % variables only at element boundary
+        ind_x_left_bp
+        ind_Y_gap
         ind_Lambda_normal
         ind_Lambda_tangent
         ind_Gamma
         ind_Gamma_d
         ind_Beta_conic
+        ind_Beta_d
         ind_Delta_d
         ind_P_vn
         ind_N_vn
@@ -179,6 +182,23 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_n_vt = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_alpha_vt = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
 
+            % Impulse
+            obj.ind_x_left_bp = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Y_gap = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Lambda_normal = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Lambda_tangent = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Gamma = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Beta_conic = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Gamma_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Beta_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Delta_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_P_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_N_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_P_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_N_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_Alpha_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
+
+            
             % misc
             obj.ind_nu_lift = {};
             obj.ind_h = {};
@@ -628,6 +648,21 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_p_vt(stage.ctrl_idx, :, :) = increment_indices(stage.ind_p_vt, w_len);
             obj.ind_n_vt(stage.ctrl_idx, :, :) = increment_indices(stage.ind_n_vt, w_len);
             obj.ind_alpha_vt(stage.ctrl_idx, :, :) = increment_indices(stage.ind_alpha_vt, w_len);
+
+            obj.ind_x_left_bp(stage.ctrl_idx, :) = increment_indices(stage.ind_x_left_bp, w_len);
+            obj.ind_Y_gap(stage.ctrl_idx, :) = increment_indices(stage.ind_Y_gap, w_len);
+            obj.ind_Lambda_normal(stage.ctrl_idx, :) = increment_indices(stage.ind_Lambda_normal, w_len);
+            obj.ind_Lambda_tangent(stage.ctrl_idx, :) = increment_indices(stage.ind_Lambda_tangent, w_len);
+            obj.ind_Gamma(stage.ctrl_idx, :) = increment_indices(stage.ind_Gamma, w_len);
+            obj.ind_Beta_conic(stage.ctrl_idx, :) = increment_indices(stage.ind_Beta_conic, w_len);
+            obj.ind_Gamma_d(stage.ctrl_idx, :) = increment_indices(stage.ind_Gamma_d, w_len);
+            obj.ind_Beta_d(stage.ctrl_idx, :) = increment_indices(stage.ind_Beta_d, w_len);
+            obj.ind_Delta_d(stage.ctrl_idx, :) = increment_indices(stage.ind_Delta_d, w_len);
+            obj.ind_P_vn(stage.ctrl_idx, :) = increment_indices(stage.ind_P_vn, w_len);
+            obj.ind_N_vn(stage.ctrl_idx, :) = increment_indices(stage.ind_N_vn, w_len);
+            obj.ind_P_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_P_vt, w_len);
+            obj.ind_N_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_N_vt, w_len);
+            obj.ind_Alpha_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_Alpha_vt, w_len);
 
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
         end

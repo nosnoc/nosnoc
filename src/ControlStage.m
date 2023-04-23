@@ -60,11 +60,14 @@ classdef ControlStage < NosnocFormulationObject
         ind_n_vt
         ind_alpha_vt
         % variables only at element boundary
+        ind_x_left_bp
+        ind_Y_gap
         ind_Lambda_normal
         ind_Lambda_tangent
         ind_Gamma
         ind_Gamma_d
         ind_Beta_conic
+        ind_Beta_d
         ind_Delta_d
         ind_P_vn
         ind_N_vn
@@ -210,6 +213,21 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_p_vt = [obj.ind_p_vt; transpose(flatten_sys(increment_indices(fe.ind_p_vt, w_len)))];
             obj.ind_n_vt = [obj.ind_n_vt; transpose(flatten_sys(increment_indices(fe.ind_n_vt, w_len)))];
             obj.ind_alpha_vt = [obj.ind_alpha_vt; transpose(flatten_sys(increment_indices(fe.ind_alpha_vt, w_len)))];
+
+            obj.ind_x_left_bp = [obj.ind_x_left_bp; transpose(flatten_sys(increment_indices(fe.ind_x_left_bp, w_len)))];
+            obj.ind_Y_gap = [obj.ind_Y_gap; transpose(flatten_sys(increment_indices(fe.ind_Y_gap, w_len)))];
+            obj.ind_Lambda_normal = [obj.ind_Lambda_normal; transpose(flatten_sys(increment_indices(fe.ind_Lambda_normal, w_len)))];
+            obj.ind_Lambda_tangent = [obj.ind_Lambda_tangent; transpose(flatten_sys(increment_indices(fe.ind_Lambda_tangent, w_len)))];
+            obj.ind_Gamma = [obj.ind_Gamma; transpose(flatten_sys(increment_indices(fe.ind_Gamma, w_len)))];
+            obj.ind_Beta_conic = [obj.ind_Beta_conic; transpose(flatten_sys(increment_indices(fe.ind_Beta_conic, w_len)))];
+            obj.ind_Gamma_d = [obj.ind_Gamma_d; transpose(flatten_sys(increment_indices(fe.ind_Gamma_d, w_len)))];
+            obj.ind_Beta_d = [obj.ind_Beta_d; transpose(flatten_sys(increment_indices(fe.ind_Beta_d, w_len)))];
+            obj.ind_Delta_d = [obj.ind_Delta_d; transpose(flatten_sys(increment_indices(fe.ind_Delta_d, w_len)))];
+            obj.ind_P_vn = [obj.ind_P_vn; transpose(flatten_sys(increment_indices(fe.ind_P_vn, w_len)))];
+            obj.ind_N_vn = [obj.ind_N_vn; transpose(flatten_sys(increment_indices(fe.ind_N_vn, w_len)))];
+            obj.ind_P_vt = [obj.ind_P_vt; transpose(flatten_sys(increment_indices(fe.ind_P_vt, w_len)))];
+            obj.ind_N_vt = [obj.ind_N_vt; transpose(flatten_sys(increment_indices(fe.ind_N_vt, w_len)))];
+            obj.ind_Alpha_vt = [obj.ind_Alpha_vt; transpose(flatten_sys(increment_indices(fe.ind_Alpha_vt, w_len)))];
             
             obj.ind_nu_lift = [obj.ind_nu_lift, {fe.ind_nu_lift+w_len}];
         end
