@@ -94,6 +94,12 @@ switch dcs_mode
     alpha_opt_s = cellfun(@(alpha) w_opt(alpha), problem.ind_alpha(:,:,end-(~settings.right_boundary_point_explicit)), 'uni', 0);
     lambda_n_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lambda_n(:,:,end), 'uni', 0);
     lambda_p_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lambda_p(:,:,end), 'uni', 0);
+  case 'CLS'
+    lambda_normal_opt_s = cellfun(@(ln) w_opt(ln), problem.ind_lambda_normal(:,:,end), 'uni', 0);
+    lambda_tangent_opt_s = cellfun(@(ln) w_opt(ln), problem.ind_lambda_tangent(:,:,end), 'uni', 0);
+    y_gap_opt_s = cellfun(@(ln) w_opt(ln), problem.ind_y_gap(:,:,end), 'uni', 0);
+    %gamma_opt_s = cellfun(@(ln) w_opt(ln), problem.ind_gamma(:,:,end), 'uni', 0);
+    %beta_conic_opt_s = cellfun(@(ln) w_opt(ln), problem.ind_beta_conic(:,:,end), 'uni', 0);
 end
 x_i_opt = cell(n_x, 1);
 x_i_opt_flat = cell(n_x, 1);
@@ -151,6 +157,55 @@ switch dcs_mode
         lambda_p_i_opt{i} = cellfun(@(l) l(i), lambda_p_opt_s);
         lambda_p_i_opt_flat{i} = reshape(transpose(lambda_p_i_opt{i}), prod(size(lambda_p_i_opt{i})), 1);
     end
+  case 'CLS'
+    lambda_normal_i_opt = cell(n_contacts, 1);
+    lambda_normal_i_opt_flat = cell(n_contacts, 1);
+    % convex multiplers
+    for i = 1:n_contacts
+        lambda_normal_i_opt{i} = cellfun(@(t) t(i), lambda_normal_opt_s);
+        lambda_normal_i_opt_flat{i} = reshape(transpose(lambda_normal_i_opt{i}), prod(size(lambda_normal_i_opt{i})), 1);
+    end
+
+    lambda_tangent_i_opt = cell(n_theta, 1);
+    lambda_tangent_i_opt_flat = cell(n_theta, 1);
+    % lambda_tangents
+    for i = 1:n_tangents
+        lambda_tangent_i_opt{i} = cellfun(@(l) l(i), lambda_tangent_opt_s);
+        lambda_tangent_i_opt_flat{i} = reshape(transpose(lambda_tangent_i_opt{i}), prod(size(lambda_tangent_i_opt{i})), 1);
+    end
+
+    y_gap_i_opt = cell(n_sys, 1);
+    y_gap_i_opt_flat = cell(n_sys, 1);
+    % y_gap
+    for i = 1:n_sys
+        y_gap_i_opt{i} = cellfun(@(l) l(i), y_gap_opt_s);
+        y_gap_i_opt_flat{i} = reshape(transpose(y_gap_i_opt{i}), prod(size(y_gap_i_opt{i})), 1);
+    end
+
+    % gamma_i_opt = cell(n_sys, 1);
+    % gamma_i_opt_flat = cell(n_sys, 1);
+    % % gamma
+    % for i = 1:n_sys
+    %     gamma_i_opt{i} = cellfun(@(l) l(i), gamma_opt_s);
+    %     gamma_i_opt_flat{i} = reshape(transpose(gamma_i_opt{i}), prod(size(gamma_i_opt{i})), 1);
+    % end
+
+    % beta_conic_i_opt = cell(n_sys, 1);
+    % beta_conic_i_opt_flat = cell(n_sys, 1);
+    % % beta_conic
+    % for i = 1:n_sys
+    %     beta_conic_i_opt{i} = cellfun(@(l) l(i), beta_conic_opt_s);
+    %     beta_conic_i_op
+    %     t_flat{i} = reshape(transpose(beta_conic_i_opt{i}), prod(size(beta_conic_i_opt{i})), 1);
+    % end
+
+    % mu_i_opt = cell(n_sys, 1);
+    % mu_i_opt_flat = cell(n_sys, 1);
+    % % mu
+    % for i = 1:n_sys
+    %     mu_i_opt{i} = cellfun(@(l) l(i), mu_opt_s);
+    %     mu_i_opt_flat{i} = reshape(transpose(mu_i_opt{i}), prod(size(mu_i_opt{i})), 1);
+    % end
 end
 
 %% Populate output
@@ -173,6 +228,17 @@ switch dcs_mode
     st.alpha_i_opt_flat = alpha_i_opt_flat;
     st.lambda_n_i_opt_flat = lambda_n_i_opt_flat;
     st.lambda_p_i_opt_flat = lambda_p_i_opt_flat;
+  case 'CLS'
+    st.lambda_normal_i_opt = lambda_normal_i_opt;
+    st.lambda_tangent_i_opt = lambda_tangent_i_opt;
+    st.y_gap_i_opt = y_gap_i_opt;
+    %st.gamma_i_opt = gamma_i_opt;
+    %st.beta_conic_i_opt = beta_conic_i_opt;
+    st.lambda_normal_i_opt_flat = lambda_normal_i_opt_flat;
+    st.lambda_tangent_i_opt_flat = lambda_tangent_i_opt_flat;
+    st.y_gap_i_opt_flat = y_gap_i_opt_flat;
+    %st.gamma_i_opt_flat = gamma_i_opt_flat;
+    %st.beta_conic_i_opt_flat = beta_conic_i_opt_flat;
 end
 results.st = st;
 

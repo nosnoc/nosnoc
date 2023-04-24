@@ -1043,9 +1043,9 @@ classdef FiniteElement < NosnocFormulationObject
                 % junction equations
                 obj.addConstraint(Q_k0-Q_k);
                 
-                Z_impulse_k = [obj.w(obj.ind_Lambda_normal{1}), obj.w(obj.ind_Y_gap{1}),obj.w(obj.ind_P_vn{1}),obj.w(obj.ind_N_vn{1}),...
-                               obj.w(obj.ind_Lambda_tangent{1}), obj.w(obj.ind_Gamma_d{1}), obj.w(obj.ind_Beta_d{1}), obj.w(obj.ind_Delta_d{1}), ...
-                               obj.w(obj.ind_Gamma{1}), obj.w(obj.ind_Beta_conic{1}), obj.w(obj.ind_P_vt{1}), obj.w(obj.ind_N_vt{1}), obj.w(obj.ind_Alpha_vt{1})];
+                Z_impulse_k = [obj.w(obj.ind_Lambda_normal{1}); obj.w(obj.ind_Y_gap{1});obj.w(obj.ind_P_vn{1});obj.w(obj.ind_N_vn{1});...
+                               obj.w(obj.ind_Lambda_tangent{1}); obj.w(obj.ind_Gamma_d{1}); obj.w(obj.ind_Beta_d{1}); obj.w(obj.ind_Delta_d{1}); ...
+                               obj.w(obj.ind_Gamma{1}); obj.w(obj.ind_Beta_conic{1}); obj.w(obj.ind_P_vt{1}); obj.w(obj.ind_N_vt{1}); obj.w(obj.ind_Alpha_vt{1})];
                 obj.addConstraint(model.g_impulse_fun(Q_k0,V_k0,V_k,Z_impulse_k));
             else
                 X_k0 = obj.prev_fe.x{end};
@@ -1204,7 +1204,7 @@ classdef FiniteElement < NosnocFormulationObject
                 impulse_pairs = vertcat(impulse_pairs, [Lambda_normal, (Y_gap+P_vn+N_vn)]);
                 impulse_pairs = vertcat(impulse_pairs, [P_vn, N_vn]);
                 impulse_pairs = vertcat(impulse_pairs, [Gamma, Beta_conic]);
-                if model.friction_exists
+
                     if settings.friction_model == FrictionModel.Conic
                         %g_impulse_comp = vertcat(g_impulse_comp, Gamma*Beta_conic);
                         switch settings.conic_model_switch_handling

@@ -124,6 +124,7 @@ homotopy_iteration_stats = [];
 time_per_iter = [];
 simulation_time_pased = 0;
 W = [];
+all_res = [];
 %% Main simulation loop
 for ii = 1:N_sim+additional_residual_ingeration_step
     if ii == N_sim+additional_residual_ingeration_step && additional_residual_ingeration_step
@@ -138,6 +139,7 @@ for ii = 1:N_sim+additional_residual_ingeration_step
 
     [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
     res = extract_results_from_solver(model, settings, sol);
+    all_res = [all_res,res];
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
     if stats.complementarity_stats(end) > 1e-3
@@ -311,20 +313,21 @@ results.x_res  = x_res;
 % Output all stage values as well.
 results.x_res_extended  = x_res_extended;
 switch dcs_mode
-    case 'Stewart'
-        results.theta_res = theta_res;
-        results.lambda_res = lambda_res;
-        results.mu_res = mu_res;
-        results.theta_res_extended  = theta_res_extended;
-        results.lambda_res_extended  = lambda_res_extended;
-        results.mu_res_extended  = mu_res_extended;
-    case 'Step'
-        results.alpha_res = alpha_res;
-        results.lambda_0_res = lambda_0_res;
-        results.lambda_1_res = lambda_1_res;
-        results.alpha_res_extended = alpha_res_extended;
-        results.lambda_0_res_extended = lambda_0_res_extended;
-        results.lambda_1_res_extended = lambda_1_res_extended;
+  case 'Stewart'
+    results.theta_res = theta_res;
+    results.lambda_res = lambda_res;
+    results.mu_res = mu_res;
+    results.theta_res_extended  = theta_res_extended;
+    results.lambda_res_extended  = lambda_res_extended;
+    results.mu_res_extended  = mu_res_extended;
+  case 'Step'
+    results.alpha_res = alpha_res;
+    results.lambda_0_res = lambda_0_res;
+    results.lambda_1_res = lambda_1_res;
+    results.alpha_res_extended = alpha_res_extended;
+    results.lambda_0_res_extended = lambda_0_res_extended;
+    results.lambda_1_res_extended = lambda_1_res_extended;
+  case 'CLS'
 end
 stats.complementarity_stats   = complementarity_stats;
 stats.time_per_iter = time_per_iter;
@@ -338,6 +341,8 @@ results.t_grid = cumsum([0;h_vec])';
 results.diff_res = diff_res;
 results.alg_res = alg_res;
 results.W = W;
+
+results.all_res = all_res;
 
 varargout{1} = results;
 varargout{2} = stats;

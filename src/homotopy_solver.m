@@ -99,7 +99,7 @@ switch settings.dcs_mode
             end
         end
 end
-p_val = [model.p_val(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);p_vt_00(:);n_vt_00(:)];
+p_val = [model.p_val(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
 
 complementarity_stats = [full(comp_res(w0, p_val))];
 
