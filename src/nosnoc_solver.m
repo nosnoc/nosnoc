@@ -74,7 +74,7 @@ switch dcs_mode
     complementarity_iter_ell_1 = sum(temp(:));
     case 'Stewart'
         % TODO: considert cross comps as well in the inf norm
-     temp = [results.theta_opt_extended.*results.lambda_opt_extended];
+     temp = [results.theta_opt_extended.*results.lam_opt_extended];
     complementarity_iter_ell_1 = sum(temp(:));
 end
 

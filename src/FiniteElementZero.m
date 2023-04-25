@@ -94,12 +94,12 @@ classdef FiniteElementZero < NosnocFormulationObject
             obj.ind_lambda_n = cell(1,dims.n_sys);
             obj.ind_lambda_p = cell(1,dims.n_sys);
 
-            obj.ind_y_gap = cell(1);
-            obj.ind_gamma = cell(1);
-            obj.ind_gamma_d= cell(1);
-            obj.ind_delta_d = cell(1);
-            obj.ind_p_vt = cell(1);
-            obj.ind_n_vt = cell(1);
+            obj.ind_y_gap = cell(1,dims.n_sys);
+            obj.ind_gamma = cell(1,dims.n_sys);
+            obj.ind_gamma_d= cell(1,dims.n_sys);
+            obj.ind_delta_d = cell(1,dims.n_sys);
+            obj.ind_p_vt = cell(1,dims.n_sys);
+            obj.ind_n_vt = cell(1,dims.n_sys);
 
             X0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'X0', dims.n_x); % variable
             obj.x0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'x0', dims.n_x); % Param
@@ -195,12 +195,12 @@ classdef FiniteElementZero < NosnocFormulationObject
                         %
                     end
                     if isequal(settings.friction_model,'Conic')
-                        gamma_0 = define_casadi_symbolic(settings.casadi_symbolic_mode,'gamma_0', dims.n_tangents);
+                        gamma_0 = define_casadi_symbolic(settings.casadi_symbolic_mode,'gamma_0', dims.n_contacts);
                         obj.addVariable(gamma_0 ,...
                                         'gamma',...
-                                        zeros(dims.n_tangents,1),...
-                                        inf * ones(dims.n_tangents,1),...
-                                        ones(dims.n_tangents,1),...
+                                        zeros(dims.n_contacts,1),...
+                                        inf * ones(dims.n_contacts,1),...
+                                        ones(dims.n_contacts,1),...
                                         1);
                         switch settings.conic_model_switch_handling
                           case 'Plain'

@@ -78,7 +78,7 @@ switch settings.dcs_mode
                     for ii = 1:model.dimensions.n_contacts
                         ind_temp = model.dimensions.n_t*ii-(model.dimensions.n_t-1):model.dimensions.n_t*ii;
                         gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dimensions.n_t];
-                        delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v_t0+gamma_d00(ii)];
+                        delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v0+gamma_d00(ii)];
                     end
                 case 'Conic'
                     v0 = x0(model.dimensions.n_q+1:end);

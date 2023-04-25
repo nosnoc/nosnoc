@@ -466,6 +466,7 @@ g_ind_vec = [];
 c_all = [];
 m_vec = [];
 n_c_sys = [];
+n_q = [];
 
 if isequal(dcs_mode,'CLS')
     % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
@@ -587,18 +588,71 @@ if isequal(dcs_mode,'CLS')
     n_t = 0;
     if friction_exists
         if isequal(friction_model,'Polyhedral')
-            n_t =  length(D_tangent)/n_contacts; % number of tanget multipliers for a single contactl
+            n_t = size(D_tangent,2)/n_contacts; % number of tanget multipliers for a single contactl
         elseif isequal(friction_model,'Conic')
-            n_t =  size(J_tangent,2)/n_contacts; % number of tanget multipliers for a single contactl
-        else
-            % TODO: @Anton, is this check needed at all, since we have the options class now.
-            error('Pick friction_model Conic or Polyhedral')% position in symbolic vector z
+            n_t = size(J_tangent,2)/n_contacts; % number of tanget multipliers for a single contactl
         end
         n_tangents = n_t*n_contacts; % number tangent forces for all multpliers
     else
         n_tangents = 0;
     end
 end
+%% Algebraic variables defintion
+% Dummy variables for Stewart's representation
+theta = [];
+mu_Stewart = [];
+m_ind_vec = [];
+lambda = [];
+n_theta = [];
+n_lambda = [];
+n_f = [];
+n_f_sys = [];
+% structs storing all vectors of every subsystem (they might have different dimensions)
+theta_all = {};
+lambda_all = {};
+mu_all = {};
+e_ones_all = {};
+
+% dummy values for Step representation
+if ~settings.general_inclusion
+    alpha = [];
+else
+    alpha = vertcat(model.alpha{:});
+end
+lambda_n = [];
+lambda_p = [];
+alpha_all  = {};
+lambda_0_all = {};
+lambda_1_all = {};
+theta_step_all = {};
+
+% dummy values for CLS representation
+lambda_normal = [];  % normal contact force
+lambda_tangent = [];
+gamma_d = [];
+gamma = [];
+beta = [];
+p_vn = [];
+n_vn = [];
+p_vt = [];
+n_vt = [];
+alpha_vt = [];
+n_gamma_d = 0;
+n_gamma = 0;
+% TODO: Add different flags to steer lifting
+g_lift_gap = []; % lift gap functions f_c(q) = y;
+g_lift_friction1 = []; % lift friction expression: Conic: beta = (mu \lambda_n)^2 - |\ \lambda_t \|_2^2 / Polyhedral: beta_d = mu \lambda_n - e^top \lambda_t
+g_lift_friction2 = []; % lift stationarity condition in Polyhedral: detla_d = D_t(q)^\top v + \gamma_d e (becasue D(q) is nonlinear)
+
+% dimensions
+n_alpha = 0;
+e_alpha = [];
+n_beta = 0;
+n_theta_step = 0;
+n_lambda_n = 0;
+n_lambda_p = 0;
+g_lift_beta = [];
+g_lift_theta_step  =[];
 % TODO: the time freezing reformulation could be carried out at this point
 % insetad at the begining and then go through the step/stewart checks.
 if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
@@ -756,63 +810,6 @@ end
 %% TODO %%%%%%%%%%%%%%
 %%%%%% HERE ENDS FIRST FUNCTION THAT JUST CHECKS THE CORECTNESS OF THE MODEL INPUT
 %% TODO %%%%%%%%%%%%%%
-
-%% Algebraic variables defintion
-% Dummy variables for Stewart's representation
-theta = [];
-mu_Stewart = [];
-m_ind_vec = [];
-lambda = [];
-n_theta = [];
-n_lambda = [];
-n_f = [];
-n_f_sys = [];
-% structs storing all vectors of every subsystem (they might have different dimensions)
-theta_all = {};
-lambda_all = {};
-mu_all = {};
-e_ones_all = {};
-
-% dummy values for Step representation
-if ~settings.general_inclusion
-    alpha = [];
-else
-    alpha = vertcat(model.alpha{:});
-end
-lambda_n = [];
-lambda_p = [];
-alpha_all  = {};
-lambda_0_all = {};
-lambda_1_all = {};
-theta_step_all = {};
-
-% dummy values for CLS representation
-lambda_normal = [];  % normal contact force
-lambda_tangent = [];
-gamma_d = [];
-gamma = [];
-beta = [];
-p_vn = [];
-n_vn = [];
-p_vt = [];
-n_vt = [];
-alpha_vt = [];
-n_gamma_d = 0;
-n_gamma = 0;
-% TODO: Add different flags to steer lifting
-g_lift_gap = []; % lift gap functions f_c(q) = y;
-g_lift_friction1 = []; % lift friction expression: Conic: beta = (mu \lambda_n)^2 - |\ \lambda_t \|_2^2 / Polyhedral: beta_d = mu \lambda_n - e^top \lambda_t
-g_lift_friction2 = []; % lift stationarity condition in Polyhedral: detla_d = D_t(q)^\top v + \gamma_d e (becasue D(q) is nonlinear)
-
-% dimensions
-n_alpha = 0;
-e_alpha = [];
-n_beta = 0;
-n_theta_step = 0;
-n_lambda_n = 0;
-n_lambda_p = 0;
-g_lift_beta = [];
-g_lift_theta_step  =[];
 switch dcs_mode
     case 'Stewart'
         % dimensions
@@ -1073,7 +1070,7 @@ switch dcs_mode
                 Beta_d = define_casadi_symbolic(casadi_symbolic_mode,'Beta_d',n_contacts); % lift friction cone bound
                 Delta_d = define_casadi_symbolic(casadi_symbolic_mode,'Delta_d',n_tangents); % lift lagrangian
                 for ii = 1:n_contacts
-                    ind_temp = n_t*ii-(n_t-1):n_t*ii;
+                    ind_temp = n_t*ii-(n_t-1):n_t*ii
                     g_lift_friction1 = [g_lift_friction1; beta_d(ii)-(mu(ii)*lambda_normal(ii)- sum(lambda_tangent(ind_temp)))];
                     g_lift_friction2 = [g_lift_friction2; delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v+gamma_d(ii))];
                 end

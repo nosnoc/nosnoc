@@ -198,23 +198,24 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_theta_step = cell(dims.n_s+rbp_allowance, 1);
             obj.ind_beta = cell(dims.n_s+rbp_allowance, 1);
             % CLS
-            obj.ind_lambda_normal = cell(dims.n_s,1);
-            obj.ind_lambda_tangent = cell(dims.n_s,1);
-            obj.ind_y_gap = cell(dims.n_s,1);
+            obj.ind_lambda_normal = cell(dims.n_s+rbp_allowance,dims.n_sys);
+            obj.ind_lambda_tangent = cell(dims.n_s+rbp_allowance,dims.n_sys);
+            obj.ind_y_gap = cell(dims.n_s+rbp_allowance,dims.n_sys);
             % friction multipliers and lifting
             % conic
-            obj.ind_gamma = cell(dims.n_s,1);
-            obj.ind_beta_conic = cell(dims.n_s,1);
+            obj.ind_gamma = cell(dims.n_s+rbp_allowance,dims.n_sys);
+            obj.ind_beta_conic = cell(dims.n_s+rbp_allowance,dims.n_sys);
             % poly
-            obj.ind_gamma_d = cell(dims.n_s,1);
-            obj.ind_beta_d = cell(dims.n_s,1);
-            obj.ind_delta_d = cell(dims.n_s,1);
+            obj.ind_gamma_d = cell(dims.n_s+rbp_allowance,dims.n_sys);
+            obj.ind_beta_d = cell(dims.n_s+rbp_allowance,dims.n_sys);
+            obj.ind_delta_d = cell(dims.n_s+rbp_allowance,dims.n_sys);
             % variables related to conic
-            obj.ind_p_vt = cell(dims.n_s,1);
-            obj.ind_n_vt = cell(dims.n_s,1);
-            obj.ind_alpha_vt = cell(dims.n_s,1);
+            obj.ind_p_vt = cell(dims.n_s+rbp_allowance,dims.n_sys);
+            obj.ind_n_vt = cell(dims.n_s+rbp_allowance,dims.n_sys);
+            obj.ind_alpha_vt = cell(dims.n_s+rbp_allowance,dims.n_sys);
             % variables only at element boundary
             obj.ind_Lambda_normal = cell(1,1);
+            obj.ind_Y_gap = cell(1,1);
             obj.ind_Lambda_tangent = cell(1,1);
             obj.ind_Gamma = cell(1,1);
             obj.ind_Beta_d = cell(1,1);
@@ -226,6 +227,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_P_vt = cell(1,1);
             obj.ind_N_vt = cell(1,1);
             obj.ind_Alpha_vt = cell(1,1);
+            obj.ind_x_left_bp = cell(1,1);
 
             % misc
             obj.ind_h = [];
@@ -459,7 +461,6 @@ classdef FiniteElement < NosnocFormulationObject
                                 inf * ones(dims.n_contacts, 1),...
                                 ones(dims.n_contacts, 1),...
                                 ii,1);
-
 
                             delta_d = define_casadi_symbolic(settings.casadi_symbolic_mode,...
                                 ['delta_d' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
@@ -1203,9 +1204,9 @@ classdef FiniteElement < NosnocFormulationObject
                 
                 impulse_pairs = vertcat(impulse_pairs, [Lambda_normal, (Y_gap+P_vn+N_vn)]);
                 impulse_pairs = vertcat(impulse_pairs, [P_vn, N_vn]);
-                impulse_pairs = vertcat(impulse_pairs, [Gamma, Beta_conic]);
-
+                if model.friction_exists
                     if settings.friction_model == FrictionModel.Conic
+                        impulse_pairs = vertcat(impulse_pairs, [Gamma,Beta_conic]);
                         %g_impulse_comp = vertcat(g_impulse_comp, Gamma*Beta_conic);
                         switch settings.conic_model_switch_handling
                           case ConicModelSwitchHandling.Plain

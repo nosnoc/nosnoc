@@ -6,26 +6,27 @@ close all
 %%
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.print_level = 2;
+settings.print_level = 3;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 1;
-% settings.dcs_mode = DcsMode.CLS;
-settings.time_freezing = 1; %% we will need to exlude the coexistence of these two
-% settings.friction_model = "Conic";
-% settings.friction_model = "Polyhedral";
+settings.dcs_mode = DcsMode.CLS;
+settings.time_freezing = 0; %% we will need to exlude the coexistence of these two
+                            %settings.friction_model = "Conic";
+settings.friction_model = "Polyhedral";
 % settings.conic_model_switch_handling = "Plain";
-% settings.conic_model_switch_handling = "Abs";
+%settings.conic_model_switch_handling = "Abs";
 % settings.conic_model_switch_handling = "Lp";
-% settings.local_speed_of_time_variable = 0;
-% settings.use_speed_of_time_variables = 0;
+settings.local_speed_of_time_variable = 0;
+settings.use_speed_of_time_variables = 0;
 % if settings.time_freezing && settings.dcs_mode~=DcsMode.CLS
-settings.impose_terminal_phyisical_time = 1;
-settings.local_speed_of_time_variable = 1;
-settings.stagewise_clock_constraint = 0;
+% settings.impose_terminal_phyisical_time = 1;
+% settings.local_speed_of_time_variable = 1;
+%settings.stagewise_clock_constraint = 0;
 settings.pss_lift_step_functions = 0;
 % else
 %     settings.time_freezing = 0;
 % end
+%settings.step_equilibration = StepEquilibrationMode.heuristic_mean;
 %%
 g = 10;
 % Symbolic variables and bounds
@@ -34,31 +35,32 @@ v = SX.sym('v',2);
 model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
-model.mu = 0.3;
+model.mu = 0.0;
 model.a_n = 20;
-model.x0 = [0;1;3;0];
+model.x0 = [0;0.1;3;-1];
 model.f_v = [0;-g];
 model.f_c = q(2);
 model.J_tangent = [1; 0]; 
 model.D_tangent = [1,-1;0,0];
 model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
-N_FE = 5;
-T_sim = 1.5;
-N_sim = 20;
+N_FE = 2;
+T_sim = 0.2;
+N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,model,settings,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = x_res(1,:);
 qy = x_res(2,:);
 vx = x_res(3,:);
 vy = x_res(4,:);
-t_opt = x_res(5,:);
+%t_opt = x_res(5,:);
+t_opt = t_grid;
 figure
 subplot(121)
 plot(qx,qy);
