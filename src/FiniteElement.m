@@ -80,6 +80,9 @@ classdef FiniteElement < NosnocFormulationObject
         ind_elastic
         ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
 
+        n_cont
+        n_discont
+        n_indep
 
         ind_eq
         ind_ineq
@@ -866,6 +869,110 @@ classdef FiniteElement < NosnocFormulationObject
 
         end
 
+        function cross_comp_pairs = getCrossCompPairs(obj)
+            model = obj.model;
+            settings = obj.settings;
+            dims = obj.dims;
+            prev_fe = obj.prev_fe;
+            
+            switch settings.dcs_mode
+                case DcsMode.Stewart
+                    n_cont = dims.n_s+1;
+                    n_discont = dims.n_s;
+                    n_indep = dims.n_sys;
+                    cross_comp_pairs = cell(n_cont, n_discont, n_indep);
+                    for j=2:n_cont
+                        for jj=1:n_discont
+                            for r=1:n_indep
+                                cross_comp_pairs{j,jj,r} = [obj.w(obj.ind_lam{j-1,r}), obj.w(obj.ind_theta{jj,r})];
+                            end
+                        end
+                    end
+
+                    for jj=1:n_discont
+                        for r=1:n_indep
+                            cross_comp_pairs{1,jj,r} = [prev_fe.w(prev_fe.ind_lam{end,r}), obj.w(obj.ind_theta{jj,r})];
+                        end
+                    end
+                case DcsMode.Step
+                    n_cont = dims.n_s+1;
+                    n_discont = dims.n_s;
+                    n_indep = dims.n_sys;
+                    cross_comp_pairs = cell(n_cont, n_discont, n_indep);
+                    for j=2:n_cont
+                        for jj=1:n_discont
+                            for r=1:n_indep
+                                cross_comp_pairs{j,jj,r} = [vertcat(obj.w(obj.ind_lambda_n{j-1,r}),obj.w(obj.ind_lambda_n{j-1,r})),...
+                                    vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
+                            end
+                        end
+                    end
+
+                    for jj=1:n_discont
+                        for r=1:n_indep
+                            cross_comp_pairs{1,jj,r} = [vertcat(prev_fe.w(prev_fe.ind_lambda_n{end,r}),prev_fe.w(prev_fe.ind_lambda_n{end,r})),...
+                                    vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
+                        end
+                    end
+                case DcsMode.CLS
+                    n_cont = dims.n_s+2;
+                    n_discont = dims.n_s+2;
+                    n_indep = 1;
+                    cross_comp_pairs = cell(n_cont, n_discont, n_indep);
+                    for j=3:n_cont
+                        for jj=3:n_discont
+                            pairs = [];
+
+                            pairs = vertcat(pairs, [obj.w(obj.ind_y_gap{j-2,1}), obj.w(obj.ind_lambda_normal{jj-2,1})]);
+                            if settings.friction_exists
+                                if settings.friction_model == FrictionModel.Conic
+                                    pairs = vertcat(pairs, [obj.w(obj.ind_gamma{j-2,1}), obj.w(obj.ind_beta_conic{jj-2,1})]);
+                                    switch settings.conic_model_switch_handling
+                                        case 'Plain'
+                                            % no extra expr
+                                        case 'Abs'
+                                            pairs = vertcat(pairs, [obj.w(obj.ind_p_vt{j-2,1}), obj.w(obj.ind_n_vt{jj-2,1})]);
+                                        case 'Lp'
+                                            pairs = vertcat(pairs, [obj.w(obj.ind_p_vt{j-2,1}), obj.w(obj.ind_alpha_vt{jj-2,1})]);
+                                            pairs = vertcat(pairs, [obj.w(obj.ind_n_vt{j-2,1}), ones(dims.n_tangents,1)-obj.w(obj.ind_alpha_vt{jj-2,1})]);
+                                    end
+                                elseif settings.friction_model == FrictionModel.Polyhedral
+                                    pairs = vertcat(pairs, [obj.w(obj.ind_delta_d{j-2,1}), obj.w(obj.ind_lambda_tangent{jj-2,1})]);
+                                    pairs = vertcat(pairs, [obj.w(obj.ind_gamma_d{j-2,1}), obj.w(obj.ind_beta_d{jj-2,1})]);
+                                end
+                            end
+                            cross_comp_pairs{j,jj,1} = pairs;
+                        end
+                    end
+
+                    for jj=1:n_discont-2
+                        cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
+                        cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
+                        if settings.friction_exists
+                            if settings.friction_model == FrictionModel.Conic
+                                cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma{end,1}), obj.w(obj.ind_beta_conic{jj,1})]);
+                                switch settings.conic_model_switch_handling
+                                    case 'Plain'
+                                        % no extra expr
+                                    case 'Abs'
+                                        cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_p_vt{end,1}), obj.w(obj.ind_n_vt{jj,1})]);
+                                    case 'Lp'
+                                        cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_p_vt{end,1}), obj.w(obj.ind_alpha_vt{jj,1})]);
+                                        cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_n_vt{end,1}), ones(dims.n_tangents,1)-obj.w(obj.ind_alpha_vt{jj,1})]);
+                                end
+                            elseif settings.friction_model == FrictionModel.Polyhedral
+                                cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_delta_d{end,1}), obj.w(obj.ind_lambda_tangent{jj,1})]);
+                                cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma_d{end,1}), obj.w(obj.ind_beta_d{jj,1})]);
+                            end
+                        end
+                    end
+            end
+            obj.n_cont = n_cont;
+            obj.n_discont = n_discont;
+            obj.n_indep = n_indep;
+            obj.cross_comp_pairs = cross_comp_pairs;
+        end
+
         function h = get.h(obj)
             if obj.settings.use_fesd
                 h = obj.w(obj.ind_h);
@@ -1227,94 +1334,98 @@ classdef FiniteElement < NosnocFormulationObject
                 g_impulse_comp = expr
             end
 
+            cross_comp_pairs = obj.getCrossCompPairs();
 
-            % Generate all complementarity pairs
-            cross_comp_pairs = cell(dims.n_s, dims.n_s+1, dims.n_sys);
-            cross_comp_discont_0 = obj.cross_comp_discont_0;
-            cross_comp_cont_0 = obj.cross_comp_cont_0;
-            % Complement within FE
-            for j=1:dims.n_s
-                for jj = 1:dims.n_s
-                    for r=1:dims.n_sys
-                        cross_comp_pairs{j, jj+1, r} = horzcat(cross_comp_discont_0{j,r},cross_comp_cont_0{jj,r});
-                    end
-                end
-            end
-            for j=1:dims.n_s
-                for r=1:dims.n_sys
-                    cross_comp_pairs{j,1,r} = horzcat(cross_comp_discont_0{j,r}, obj.prev_fe.cross_comp_cont_0{end,r});
-                end
-            end
-            obj.cross_comp_pairs = cross_comp_pairs;
-
+            sigma_scale = 1;
+            
             % apply psi
             g_cross_comp = [];
             if settings.cross_comp_mode == 1
-                for j=1:dims.n_s
-                    for jj = 1:dims.n_s+1
-                        for r=1:dims.n_sys
+                for j=1:obj.n_cont
+                    for jj=1:obj.n_discont
+                        for r=1:obj.n_indep
                             pairs = cross_comp_pairs{j, jj, r};
                             g_cross_comp = vertcat(g_cross_comp, apply_psi(pairs, psi_fun, sigma));
                         end
                     end
                 end
             elseif settings.cross_comp_mode == 2
-                for j=1:dims.n_s
-                    for jj = 1:dims.n_s+1
-                        for r=1:dims.n_sys
+                for j=1:obj.n_cont
+                    for jj=obj.n_discont
+                        for r=1:obj.n_indep
                             pairs = cross_comp_pairs{j, jj, r};
-                            g_cross_comp = vertcat(g_cross_comp, sum(apply_psi(pairs, psi_fun, sigma/size(pairs, 1))));
+                            g_cross_comp = vertcat(g_cross_comp, sum(apply_psi(pairs, psi_fun, sigma/sigma_scale)));
                         end
                     end
                 end
             elseif settings.cross_comp_mode == 3
-                for j=1:dims.n_s
-                    for r=1:dims.n_sys
+                for j=1:obj.n_cont
+                    for r=1:obj.n_indep
                         pairs = cross_comp_pairs(j, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s+1)), pairs, 'uni', false);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         exprs = sum2([expr_cell{:}]);
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
                 end
             elseif settings.cross_comp_mode == 4
-                for jj=1:dims.n_s+1
-                    for r=1:dims.n_sys
+                for jj=1:obj.n_discont
+                    for r=1:obj.n_indep
                         pairs = cross_comp_pairs(:, jj, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s)), pairs, 'uni', false);
-                        exprs = sum2([expr_cell{:}]);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                        if size([expr_cell{:}], 1) == 0
+                            exprs= [];
+                        else
+                            exprs = sum2([expr_cell{:}]);
+                        end
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
                 end
             elseif settings.cross_comp_mode == 5
-                for j=1:dims.n_s
-                    for r=1:dims.n_sys
+                for j=1:obj.n_cont
+                    for r=1:obj.n_indep
                         pairs = cross_comp_pairs(j, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_theta)), pairs, 'uni', false);
-                        exprs = sum1(sum2([expr_cell{:}]));
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                        if size([expr_cell{:}], 1) == 0
+                            exprs= [];
+                        else
+                            exprs = sum1(sum2([expr_cell{:}]));
+                        end
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
                 end
             elseif settings.cross_comp_mode == 6
-                for jj=1:dims.n_s+1
-                    for r=1:dims.n_sys
+                for jj=1:obj.n_discont
+                    for r=1:obj.n_indep
                         pairs = cross_comp_pairs(:, jj, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.n_s*dims.n_theta)), pairs, 'uni', false);
-                        exprs = sum1(sum2([expr_cell{:}]));
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                        if size([expr_cell{:}], 1) == 0
+                            exprs= [];
+                        else
+                            exprs = sum1(sum2([expr_cell{:}]));
+                        end
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
                 end
             elseif settings.cross_comp_mode == 7
-                for r=1:dims.n_sys
+                for r=1:obj.n_indep
                     pairs = cross_comp_pairs(:, :, r);
-                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
-                    exprs = sum2([expr_cell{:}]);
+                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                    if size([expr_cell{:}], 1) == 0
+                        exprs= [];
+                    else
+                        exprs = sum2([expr_cell{:}]);
+                    end
                     g_cross_comp = vertcat(g_cross_comp, exprs);
                 end
             elseif settings.cross_comp_mode == 8
-                for r=1:dims.n_sys
+                for r=1:obj.n_indep
                     pairs = cross_comp_pairs(:, :, r);
-                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/((dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
-                    exprs = sum1(sum2([expr_cell{:}]));
+                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                    if size([expr_cell{:}], 1) == 0
+                        exprs= [];
+                    else
+                        exprs = sum1(sum2([expr_cell{:}]));
+                    end
                     g_cross_comp = vertcat(g_cross_comp, exprs);
                 end
             elseif settings.cross_comp_mode > 8
@@ -1328,8 +1439,6 @@ classdef FiniteElement < NosnocFormulationObject
             n_cross_comp = length(g_cross_comp);
             n_path_comp = length(g_path_comp);
             n_comp = n_cross_comp + n_path_comp;
-
-            [g_comp, g_comp_lb, g_comp_ub, cost] = reformulate_complementarities(g_comp, settings.mpcc_mode, sigma_p, s_elastic);
 
             % Add reformulated constraints
             obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);

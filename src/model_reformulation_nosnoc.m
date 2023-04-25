@@ -397,36 +397,43 @@ else
 end
 
 %% Inequality constraints check
-if isfield(model,'g_path')
+if exist('g_path')
     g_path_constraint  = 1;
-    n_g_path = length(model.g_path);
-    if isfield(model,'g_path_lb')
-        if length(model.g_path_lb)~=n_g_path
-            error('nosnoc: The provided vector g_path_lb has the wrong size.');
+    n_g_path = length(g_path);
+    if exist('g_path_lb')
+        if length(g_path_lb)~=n_g_path;
+            error('The user provided vector g_path_lb has the wrong size.')
         end
     else
         g_path_lb = -inf*ones(n_g_path,1);
     end
 
-    %% Check path complementarity constraints
-    g_comp_path_constraint  = 0;
-    if isfield(model,'g_comp_path')
-        g_comp_path_constraint  = 1;
-        if size(g_comp_path, 2)
-            error('g_comp_path must be of size (m, 2)')
+    if exist('g_path_ub')
+        if length(g_path_ub)~=n_g_path;
+            error('The user provided vector g_path_ub has the wrong size.')
         end
     else
-        g_comp_path_constraint = 0;
-        if print_level >=1
-            fprintf('nosnoc: No path complementarity constraints are provided. \n')
-        end
-    else
-        g_comp_path_ub =  0*ones(n_g_comp_path,1);
+        g_path_ub =  0*ones(n_g_path,1);
+    end
+    g_path_fun  = Function('g_path_fun',{x,u,p,v_global},{g_path});
+else
+    n_g_path = 0;
+    g_path_constraint  = 0;
+    if print_level >=1
+        fprintf('Info: No path constraints are provided. \n')
+    end
+end
+
+%% Check path complementarity constraints
+g_comp_path_constraint  = 0;
+if isfield(model,'g_comp_path')
+    g_comp_path_constraint  = 1;
+    if size(g_comp_path, 2) ~= 2
+        error('g_comp_path must be of size (m, 2)')
     end
     g_comp_path_fun  = Function('g_comp_path_fun',{x,u,p,v_global},{g_comp_path});
 else
-    n_g_comp_path = 0;
-    g_comp_path_constraint  = 0;
+    g_comp_path_constraint = 0;
     if print_level >=1
         fprintf('nosnoc: No path complementarity constraints are provided. \n')
     end
