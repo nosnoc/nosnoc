@@ -42,7 +42,7 @@ model.a_n = 20;
 model.x0 = [0;0.1;3;-1];
 model.f_v = [0;-g];
 model.f_c = q(2);
-model.J_tangent = [1; 0]; 
+model.J_tangent = [1; 0];
 model.D_tangent = [1,-1;0,0];
 model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings

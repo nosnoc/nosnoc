@@ -94,7 +94,6 @@ switch settings.dcs_mode
                             p_vt_00 = [p_vt_00;max(v_ti0,0)];
                             n_vt_00 = [n_vt_00;max(-v_ti0,0)];
                         end
-                        
                     end
             end
         end

@@ -24,6 +24,17 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
+
+
+% TODO cleanup steps:
+%      - Create primal variables all at once.
+%      - Separate sections into separate functions operating on the `problem` struct/class
+%      - time variables should probably not just be lumped into the state, for readability.
+%      - remove index in symbolic variable defintions and add instructive
+%        names, e.g., Uk -> U,  h_ki -> h_fe, X_ki_stages ->  X_rk_stages
+%      - provide instructive names for terminal constraint relaxations
+%      - provide more instructive names for cross_comp (match python)
+
 classdef NosnocProblem < NosnocFormulationObject
     properties
         % Index vectors

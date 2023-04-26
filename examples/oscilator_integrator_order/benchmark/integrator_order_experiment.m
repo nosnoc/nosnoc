@@ -44,16 +44,7 @@ N_sim_vec = round(N_sim_vec);
 % make all number odd
 % N_sim_vec(mod(N_sim_vec,2)==0) = N_sim_vec(mod(N_sim_vec,2)==0)+1;
 % % vector with nonminal step sizes of "outer ingeration steps"
-h_sim_vec = T_sim./N_sim_vec;
-% % length of fintie elements
-% h_i = h_sim_vec/(N_finite_elements*N_stages);
-% % number of finite elements until switching point
-% Ns = ts./h_i;
-% % sanity check
-% if any(abs(Ns - round(Ns)) == 0)
-%     error('exact switch detection just by chance');
-% end
-% 
+
 legend_str = [legend_str(n_s_vec)];
 
 %% settings

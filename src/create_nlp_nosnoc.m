@@ -28,11 +28,13 @@
 %
 %
 % function [solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings)
-function [varargout] = create_nlp_nosnoc(varargin)
+function [solver, solver_initialization, model, settings] = create_nlp_nosnoc(varargin)
 % This functions creates the solver instance for the OCP discretized with FESD (or time-stepping IRK scheme).
 % The discretization results in an MPCC which can be solved by various
 % reformulations, see below.
 % -------------------
+
+% TODO: split problem and solver creation!
 
 %% Import CasADi in the workspace of this function
 import casadi.*
@@ -45,14 +47,6 @@ settings = varargin{2};
 settings.create_butcher_tableu(model);
 
 %% Formulate the NLP / Main Discretization loop
-% TODO cleanup steps:
-%      - Create primal variables all at once.
-%      - Separate sections into separate functions operating on the `problem` struct/class
-%      - time variables should probably not just be lumped into the state, for readability.
-%      - remove index in symbolic variable defintions and add instructive
-%        names, e.g., Uk -> U,  h_ki -> h_fe, X_ki_stages ->  X_rk_stages
-%      - provide instructive names for terminal constraint relaxations
-%      - provide more instructive names for cross_comp (match python)
 problem = NosnocProblem(settings, model.dimensions, model);
 %% CasADi Functions for objective complementarity residual
 w = problem.w; % vectorize all variables, TODO: again, further cleanup necessary
@@ -74,9 +68,9 @@ nu_fun = Function('nu_fun', {w,p},{problem.nu_vector});
 model.prob = prob;
 model.problem = problem;
 model.solver = solver;
-model.g =  g;
-model.w =  w;
-model.p =  p;
+model.g = g;
+model.w = w;
+model.p = p;
 model.J = problem.cost;
 model.J_fun = J_fun;
 model.comp_res = comp_res;
@@ -113,9 +107,4 @@ solver_initialization.ubw = problem.ubw;
 solver_initialization.lbg = problem.lbg;
 solver_initialization.ubg = problem.ubg;
 
-%% Output
-varargout{1} = solver;
-varargout{2} = solver_initialization;
-varargout{3} = model;
-varargout{4} = settings;
 end
