@@ -902,7 +902,7 @@ classdef FiniteElement < NosnocFormulationObject
                     for j=2:n_cont
                         for jj=1:n_discont
                             for r=1:n_indep
-                                cross_comp_pairs{j,jj,r} = [vertcat(obj.w(obj.ind_lambda_n{j-1,r}),obj.w(obj.ind_lambda_n{j-1,r})),...
+                                cross_comp_pairs{j,jj,r} = [vertcat(obj.w(obj.ind_lambda_n{j-1,r}),obj.w(obj.ind_lambda_p{j-1,r})),...
                                     vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
                             end
                         end
@@ -910,7 +910,7 @@ classdef FiniteElement < NosnocFormulationObject
 
                     for jj=1:n_discont
                         for r=1:n_indep
-                            cross_comp_pairs{1,jj,r} = [vertcat(prev_fe.w(prev_fe.ind_lambda_n{end,r}),prev_fe.w(prev_fe.ind_lambda_n{end,r})),...
+                            cross_comp_pairs{1,jj,r} = [vertcat(prev_fe.w(prev_fe.ind_lambda_n{end,r}),prev_fe.w(prev_fe.ind_lambda_p{end,r})),...
                                     vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
                         end
                     end
@@ -1315,7 +1315,6 @@ classdef FiniteElement < NosnocFormulationObject
                 if model.friction_exists
                     if settings.friction_model == FrictionModel.Conic
                         impulse_pairs = vertcat(impulse_pairs, [Gamma,Beta_conic]);
-                        %g_impulse_comp = vertcat(g_impulse_comp, Gamma*Beta_conic);
                         switch settings.conic_model_switch_handling
                           case ConicModelSwitchHandling.Plain
                             % no extra comps
@@ -1331,7 +1330,7 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                 end
                 expr = apply_psi(impulse_pairs, psi_fun, sigma_p);
-                g_impulse_comp = expr
+                g_impulse_comp = expr;
             end
 
             cross_comp_pairs = obj.getCrossCompPairs();

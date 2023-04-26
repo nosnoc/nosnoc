@@ -6,16 +6,18 @@ close all
 %%
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
+%settings.psi_fun_type = CFunctionType.;
 settings.print_level = 3;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 settings.time_freezing = 0; %% we will need to exlude the coexistence of these two
-                            %settings.friction_model = "Conic";
-settings.friction_model = "Polyhedral";
+
+settings.friction_model = "Conic";
+%settings.friction_model = "Polyhedral";
 % settings.conic_model_switch_handling = "Plain";
 %settings.conic_model_switch_handling = "Abs";
-% settings.conic_model_switch_handling = "Lp";
+settings.conic_model_switch_handling = "Lp";
 settings.local_speed_of_time_variable = 0;
 settings.use_speed_of_time_variables = 0;
 % if settings.time_freezing && settings.dcs_mode~=DcsMode.CLS
@@ -35,7 +37,7 @@ v = SX.sym('v',2);
 model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
-model.mu = 0.0;
+model.mu = 0.3;
 model.a_n = 20;
 model.x0 = [0;0.1;3;-1];
 model.f_v = [0;-g];

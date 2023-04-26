@@ -245,14 +245,24 @@ classdef FiniteElementZero < NosnocFormulationObject
 
         function cross_comp_cont_1 = get.cross_comp_cont_1(obj)
             import casadi.*
-            grab = @(pvt) vertcat(obj.w(pvt));
-            cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
+            if obj.model.friction_exists && obj.settings.friction_model == 'Conic' && obj.settings.conic_model_switch_handling == 'Abs'
+                grab = @(pvt) vertcat(obj.w(pvt));
+                cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
+            else
+                grab = @(pvt) [];
+                cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
+            end 
         end
 
         function cross_comp_cont_2 = get.cross_comp_cont_2(obj)
             import casadi.*
-            grab = @(nvt) vertcat(obj.w(nvt));
-            cross_comp_cont_2 = cellfun(grab, obj.ind_n_vt, 'UniformOutput', false);
+            if obj.model.friction_exists && obj.settings.friction_model == 'Conic' && obj.settings.conic_model_switch_handling == 'Abs'
+                grab = @(nvt) vertcat(obj.w(nvt));
+                cross_comp_cont_2 = cellfun(grab, obj.ind_n_vt, 'UniformOutput', false);
+            else
+                grab = @(nvt) [];
+                cross_comp_cont_2 = cellfun(grab,  obj.ind_n_vt, 'UniformOutput', false);
+            end
         end
 
 
