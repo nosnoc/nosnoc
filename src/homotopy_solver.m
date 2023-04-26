@@ -139,6 +139,7 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
 
     % solve problem with fixed step size
     if h_fixed_iterations && use_fesd  && ii < h_fixed_max_iter
+        % TODO remove this
         tic
         results = solver('x0', w0, 'lbx', lbw_h, 'ubx', ubw_h,'lbg', lbg, 'ubg', ubg,'p',p_val);
         cpu_time_iter = toc ;
@@ -146,12 +147,18 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
         if ~h_fixed_change_sigma
             ii = -1; h_fixed_iterations  = 0;
         end
+    else if iscell(solver)
+        tic
+        results = solver{ii+1}('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',p_val);
+        cpu_time_iter = toc ;
+        stats = solver{ii+1}.stats;
     else
         tic
         results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',p_val);
         cpu_time_iter = toc ;
+        stats = solver.stats;
     end
-    if isequal(solver.stats.return_status,'Infeasible_Problem_Detected')
+    if isequal(stats.return_status,'Infeasible_Problem_Detected')
         warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
     end
 
@@ -171,7 +178,7 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
     % Verbose
     if print_level >= 3
         fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, objective,...
-            cpu_time_iter, solver.stats.iter_count, solver.stats.return_status);
+            cpu_time_iter, stats.iter_count, stats.return_status);
     end
     %
     %     if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy

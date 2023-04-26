@@ -180,6 +180,8 @@ classdef NosnocOptions < handle
         there_exist_free_x0(1,1) logical = 0
         time_freezing_model_exists(1,1) logical = 0
 
+        % TODO: make proper multiple solver class.
+        multiple_solvers(1,1) logical = 0
 
         % All NLP parameters
         T_val(1,1) double {mustBeReal, mustBePositive} = 1
