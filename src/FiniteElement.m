@@ -89,6 +89,7 @@ classdef FiniteElement < NosnocFormulationObject
         ind_comp
 
         cross_comp_pairs
+        all_comp_pairs
 
         ctrl_idx
         fe_idx
@@ -865,8 +866,6 @@ classdef FiniteElement < NosnocFormulationObject
                 grab = @(nvt) [];
                 obj.cross_comp_cont_2 = cellfun(grab,  obj.ind_n_vt, 'UniformOutput', false);
             end
-
-
         end
 
         function cross_comp_pairs = getCrossCompPairs(obj)
@@ -1266,10 +1265,12 @@ classdef FiniteElement < NosnocFormulationObject
             
             
             g_path_comp = [];
+            g_path_comp_pairs = [];
             % path complementarities
             if (model.g_comp_path_constraint &&...
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global);
+                g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
                 expr = apply_psi(pairs, psi_fun, sigma_p);
                 g_path_comp = vertcat(g_path_comp, expr);
             end
@@ -1277,6 +1278,7 @@ classdef FiniteElement < NosnocFormulationObject
                 % TODO: there has to be a better way to do this.
                 if model.g_comp_path_constraint && settings.g_path_at_stg
                     pairs = model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global);
+                    g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
                     expr = apply_psi(pairs, psi_fun, sigma_p);
                     g_path_comp = vertcat(g_path_comp, expr);
                 end
@@ -1335,7 +1337,9 @@ classdef FiniteElement < NosnocFormulationObject
 
             cross_comp_pairs = obj.getCrossCompPairs();
 
-            sigma_scale = 1;
+            obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_pairs{:});
+            
+            sigma_scale = 1; % TODO scale properly
             
             % apply psi
             g_cross_comp = [];

@@ -466,6 +466,18 @@ classdef NosnocProblem < NosnocFormulationObject
                 end
             end
 
+            % calculate complementarity residual via vector of all complementarities
+            all_pairs = [];
+            all_products = [];
+            for k=1:dims.N_stages
+                stage = obj.stages(k);
+                for fe=stage.stage
+                    all_pairs = [all_pairs;fe.all_comp_pairs];
+                end
+            end
+            all_products = apply_psi(all_pairs, @(x,y,t) x*y, 0);
+
+            obj.comp_res = Function('comp_res', {obj.w, obj.p}, {max(all_products)});
 
             % Scalar-valued complementairity residual
             if settings.use_fesd
@@ -476,7 +488,8 @@ classdef NosnocProblem < NosnocFormulationObject
                 J_comp = J_comp_std;
             end
 
-            obj.comp_res = Function('comp_res', {obj.w, obj.p}, {J_comp});
+            % TODO Figure out if any of these are needed and cleanup how they are calculated
+            %obj.comp_res = Function('comp_res', {obj.w, obj.p}, {J_comp});
             obj.comp_std = Function('comp_std', {obj.w, obj.p}, {J_comp_std});
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
             obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
