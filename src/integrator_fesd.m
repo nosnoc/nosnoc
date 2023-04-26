@@ -27,6 +27,7 @@
 
 %
 %
+% TODO: remove varargout / varargin and make API clear!
 % Examples of calling the function
 % [results] = integrator_fesd(model,settings);
 % [results,stats] = integrator_fesd(model,settings);
@@ -36,6 +37,7 @@
 function [varargout] = integrator_fesd(varargin)
 import casadi.*
 
+
 model = varargin{1};
 settings = varargin{2};
 solver_exists  = 0;
@@ -43,7 +45,6 @@ control_exists = 0;
 if nargin>2
     u_sim = varargin{3};
     control_exists = 1;
-
 end
 if nargin>3
     solver = varargin{4};
@@ -71,7 +72,7 @@ end
 %% Create solver functions for integrator step
 if ~solver_exists
     tic
-    [solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
+    [solver, solver_initialization, model, settings] = create_nlp_nosnoc(model,settings);
     solver_generating_time = toc;
     if print_level >=2
         fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
@@ -84,7 +85,7 @@ unfold_struct(model,'caller')
 unfold_struct(solver_initialization,'caller')
 settings = settings_bkp;
 
-%% chekc does the provided u_sim has correct dimensions
+%% check does the provided u_sim has correct dimensions
 if exist('u_sim','var')
     [n_rows,n_cols] = size(u_sim);
     if n_rows~=n_u || n_cols~=N_sim
@@ -126,15 +127,10 @@ simulation_time_pased = 0;
 W = [];
 all_res = [];
 %% Main simulation loop
-for ii = 1:N_sim+additional_residual_ingeration_step
-    if ii == N_sim+additional_residual_ingeration_step && additional_residual_ingeration_step
-        model.T = T_residual;
-        [solver,~, model,settings] = create_nlp_nosnoc(model,settings);
-    end
-
+for ii = 1:N_sim
     if control_exists
         solver_initialization.lbw([ind_u{:}]) = repmat(u_sim(:,ii),N_stages,1);
-        solver_initialization.ubw([ind_u{:}])  = repmat(u_sim(:,ii),N_stages,1);
+        solver_initialization.ubw([ind_u{:}]) = repmat(u_sim(:,ii),N_stages,1);
     end
 
     [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
@@ -145,9 +141,9 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     if stats.complementarity_stats(end) > 1e-3
         %         error('NLP Solver did not converge for the current FESD problem. \n')
     end
-    simulation_time_pased  =  simulation_time_pased + model.T;
+    simulation_time_pased = simulation_time_pased + model.T;
     if print_level >=2
-        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',ii,N_sim+additional_residual_ingeration_step,simulation_time_pased,T_sim,time_per_iter(end));
+        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',ii, N_sim,simulation_time_pased,T_sim,time_per_iter(end));
     end
     % Store differential states
     w_opt = full(sol.x);
@@ -210,7 +206,6 @@ for ii = 1:N_sim+additional_residual_ingeration_step
     %     update clock state
     if impose_terminal_phyisical_time
         model.p_val(end) = model.p_val(end)+model.T;
-
     end
     solver_initialization.w0(1:n_x) = x0;
 
@@ -280,7 +275,6 @@ for ii = 1:N_sim+additional_residual_ingeration_step
             hold on
         end
     end
-
 end
 total_time = sum(time_per_iter);
 %% Verbose
@@ -292,10 +286,6 @@ else
     fprintf( ['Simulation with the standard ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 end
 fprintf( ['RK representation: ' char(irk_representation) '.\n']);
-% fprintf('Total integration steps: %d, nominal step-size h = %2.3f.\n',N_sim,h_sim);
-if additional_residual_ingeration_step
-    fprintf('--> + additional residual step to reach T_sim with  T_residual =  %2.3f.\n',T_residual);
-end
 %%
 % fprintf('---------------------------- Stats ---------------------------------------------------------\n');
 % fprintf('Total CPU time: %2.3f s.\nN_stg = %d, N_FE = %d.\n',sum(time_per_iter),N_stages,N_finite_elements(1));
@@ -328,6 +318,7 @@ switch dcs_mode
     results.lambda_0_res_extended = lambda_0_res_extended;
     results.lambda_1_res_extended = lambda_1_res_extended;
   case 'CLS'
+    % TODO
 end
 stats.complementarity_stats   = complementarity_stats;
 stats.time_per_iter = time_per_iter;

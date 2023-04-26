@@ -82,28 +82,14 @@ if N_finite_elements == 1 && N_stages == 1 && settings.use_fesd == 1
     N_finite_elements = 2;
 end
 
-
-
-additional_residual_ingeration_step = 0;
 if exist("N_sim")
     T = T_sim/N_sim;
     h_sim = T_sim/(N_sim*N_stages*N_finite_elements);
     if settings.print_level >= 2 && exist("h_sim")
         fprintf('Info: N_sim is given, so the h_sim provided by the user is overwritten.\n')
     end
-elseif exist("h_sim")
-    N_sim_fractional = T_sim/(h_sim*N_finite_elements*N_stages);
-    N_sim = floor(N_sim_fractional);
-    T = h_sim*N_finite_elements*N_stages;
-    if N_sim_fractional  - N_sim > 1e-16
-        additional_residual_ingeration_step = 1;
-        T_residual = T_sim-N_sim*h_sim*N_finite_elements*N_stages;
-        if settings.print_level >= 2
-            fprintf('Info: N_sim = T_sim/h_sim is not an integerd, adding a smaller integration step at the end to reach T_sim.\n')
-        end
-    end
 else
-    error('Provide either h_sim or N_sim for the integration.')
+    error('Provide N_sim for the integration.')
 end
 
 if N_stages > 3 || N_finite_elements > 3

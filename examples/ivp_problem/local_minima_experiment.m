@@ -38,7 +38,7 @@ unfold_struct(scenario,'caller');
 L_numeric = [];
 complementarity_stats = [];
 
-[solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
+[solver, solver_initialization, model, settings] = create_nlp_nosnoc(model,settings);
 unfold_struct(model,'caller');
 unfold_struct(settings,'caller');
 unfold_struct(solver_initialization,'caller');
