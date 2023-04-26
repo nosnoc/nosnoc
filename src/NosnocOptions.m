@@ -145,8 +145,7 @@ classdef NosnocOptions < handle
 
         time_freezing_quadrature_state(1,1) logical = 0 % make a nonsmooth quadrature state to integrate only if physical time is running
         time_freezing_lift_forces(1,1) logical = 0 % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0
-
-        friction_exists(1,1) logical = 0
+        
         % exerimentla expert otpions
         nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
         % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
