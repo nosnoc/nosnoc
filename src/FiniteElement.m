@@ -923,7 +923,7 @@ classdef FiniteElement < NosnocFormulationObject
                             pairs = [];
 
                             pairs = vertcat(pairs, [obj.w(obj.ind_y_gap{j-2,1}), obj.w(obj.ind_lambda_normal{jj-2,1})]);
-                            if settings.friction_exists
+                            if model.friction_exists
                                 if settings.friction_model == FrictionModel.Conic
                                     pairs = vertcat(pairs, [obj.w(obj.ind_gamma{j-2,1}), obj.w(obj.ind_beta_conic{jj-2,1})]);
                                     switch settings.conic_model_switch_handling
@@ -947,7 +947,7 @@ classdef FiniteElement < NosnocFormulationObject
                     for jj=1:n_discont-2
                         cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
                         cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
-                        if settings.friction_exists
+                        if model.friction_exists
                             if settings.friction_model == FrictionModel.Conic
                                 cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma{end,1}), obj.w(obj.ind_beta_conic{jj,1})]);
                                 switch settings.conic_model_switch_handling
