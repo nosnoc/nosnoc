@@ -1502,32 +1502,40 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
-            % TODO implement other modes!
-            if settings.use_fesd && obj.fe_idx > 1
-                nu = obj.nu_vector;
-                delta_h_ki = obj.h - obj.prev_fe.h;
-                if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
-                    h_fe = model.T / (sum(dims.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
-                    obj.cost = obj.cost + rho_h_p * (obj.h - h_fe).^2;
-                elseif settings.step_equilibration ==  StepEquilibrationMode.heuristic_diff
-                    obj.cost = obj.cost + rho_h_p * delta_h_ki.^2;
-                elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
-                    obj.cost = obj.cost + rho_h_p * tanh(nu/settings.step_equilibration_sigma) * delta_h_ki.^2;
-                elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
-                    obj.cost = obj.cost + rho_h_p * nu * delta_h_ki.^2
-                elseif settings.step_equilibration == StepEquilibrationMode.direct
-                    obj.addConstraint(nu*delta_h_ki, 0, 0);
-                elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy
-                    obj.addConstraint([nu*delta_h_ki-sigma_p;-nu*delta_h_ki-sigma_p],...
-                        [-inf;-inf],...
-                        [0;0]);
-                elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy_lift
-                    obj.addConstraint([obj.nu_lift-nu;obj.nu_lift*delta_h_ki-sigma_p;-obj.nu_lift*delta_h_ki-sigma_p],...
-                        [0;-inf;-inf],...
-                        [0;0;0]);
-                else
-                    error("Step equilibration mode not implemented");
-                end
+            if ~settings.use_fesd
+                return;
+            end
+
+            % only heuristic mean is done for first finite element
+            if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
+                h_fe = model.T / (sum(dims.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
+                obj.cost = obj.cost + rho_h_p * (obj.h - h_fe).^2;
+                return;
+            elseif obj.fe_idx <= 1
+                return;
+            end
+
+            % step equilibration modes that depend on previous FE.
+            nu = obj.nu_vector;
+            delta_h_ki = obj.h - obj.prev_fe.h;
+            if settings.step_equilibration ==  StepEquilibrationMode.heuristic_diff
+                obj.cost = obj.cost + rho_h_p * delta_h_ki.^2;
+            elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
+                obj.cost = obj.cost + rho_h_p * tanh(nu/settings.step_equilibration_sigma) * delta_h_ki.^2;
+            elseif settings.step_equilibration == StepEquilibrationMode.l2_relaxed
+                obj.cost = obj.cost + rho_h_p * nu * delta_h_ki.^2
+            elseif settings.step_equilibration == StepEquilibrationMode.direct
+                obj.addConstraint(nu*delta_h_ki, 0, 0);
+            elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy
+                obj.addConstraint([nu*delta_h_ki-sigma_p;-nu*delta_h_ki-sigma_p],...
+                    [-inf;-inf],...
+                    [0;0]);
+            elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy_lift
+                obj.addConstraint([obj.nu_lift-nu;obj.nu_lift*delta_h_ki-sigma_p;-obj.nu_lift*delta_h_ki-sigma_p],...
+                    [0;-inf;-inf],...
+                    [0;0;0]);
+            else
+                error("Step equilibration mode not implemented");
             end
         end
     end
