@@ -420,7 +420,7 @@ else
     n_g_path = 0;
     g_path_constraint  = 0;
     if print_level >=1
-        fprintf('Info: No path constraints are provided. \n')
+        fprintf('nosnoc: No path constraints are provided. \n')
     end
 end
 
@@ -706,11 +706,11 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
                         c_all = [c_all; zeros(1,casadi_symbolic_mode)];
                     end
                 else
-                    error(['Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
+                    error(['nosnoc: Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
                         'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
                 end
             else
-                error(['The user uses settings.dcs_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
+                error(['nosnoc: The user uses settings.dcs_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
             end
         else
             if ~exist('c')

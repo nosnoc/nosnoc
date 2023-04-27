@@ -10,20 +10,21 @@ above_ground = 0.1;
 %%
 [settings] = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;
+settings.n_s = 3;
 settings.dcs_mode = 'CLS';
 settings.friction_model = "Polyhedral";
 settings.conic_model_switch_handling = "Abs";
 settings.pss_lift_step_functions= 0;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
-settings.print_level = 2;
-settings.N_homotopy = 10;
+settings.print_level = 3;
+settings.N_homotopy = 5;
 settings.cross_comp_mode = 1;
 settings.time_freezing = 0;
 settings.impose_terminal_phyisical_time = 1;
+settings.mpcc_mode = "elastic_ineq";
 %%
-model.e = [0];
-model.mu = [0];
+model.e = 0;
+model.mu = 0;
 model.n_dim_contact = 2;
 %% the dynamics
 model.n_q = 3;
@@ -61,12 +62,12 @@ model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];
 
 above_ground = 0.18;
-theta0 = pi/6;
+theta0 = 0.75*pi/2;
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            0;0;0];
 
 %% Simulation setings
-N_finite_elements = 10;
+N_finite_elements = 50;
 T_sim = 0.8;
 N_sim = 1;
 model.T_sim = T_sim;
