@@ -487,11 +487,12 @@ if isequal(dcs_mode,'CLS')
 
     % coefficient of friction checks
     if isfield(model,'mu')
-        if length(model.mu) ~= 1 || length(model.mu) ~= n_contacts
+        if length(model.mu) ~= 1 && length(model.mu) ~= n_contacts
             error('The length of model.mu has to be one or match the length of model.f_c')
         end
         if length(model.mu) == 1
-            model.mu = model.mu*ones(n_contacts,1);
+            mu = mu*ones(n_contacts,1);
+            model.mu = mu;
         end
 
         if any(model.mu > 0)
@@ -511,11 +512,12 @@ if isequal(dcs_mode,'CLS')
     if ~isfield(model,'e')
         error('nosnoc:  Please provide a coefficient of restitution via model.e')
     else
-        if length(model.e) ~= 1 || length(model.e) ~= n_contacts
+        if length(model.e) ~= 1 && length(model.e) ~= n_contacts
             error('The length of model.e has to be one or match the length of model.f_c')
         end
         if length(model.e) == 1
-            model.e = model.e*ones(n_contacts,1);
+            e = e*ones(n_contacts,1);
+            model.e = e;
         end
     end
     if any(abs(1-e)>1) || any(e<0)

@@ -10,7 +10,7 @@ above_ground = 0.1;
 %%
 [settings] = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;
+settings.n_s = 2;
 settings.dcs_mode = 'CLS';
 settings.friction_model = "Polyhedral";
 settings.conic_model_switch_handling = "Abs";
@@ -22,8 +22,8 @@ settings.cross_comp_mode = 1;
 settings.time_freezing = 0;
 settings.impose_terminal_phyisical_time = 1;
 %%
-model.e = 0;
-model.mu = 1;
+model.e = [0];
+model.mu = [0];
 model.n_dim_contact = 2;
 %% the dynamics
 model.n_q = 3;
@@ -47,21 +47,28 @@ g = 9.81;
 M = diag([m,m,J]);
 model.M = M;
 % contact points of the rod
-yc = qy-l/2*cos(qtheta);
-xc = qx-l/2*sin(qtheta);
+yc_left = qy-l/2*cos(qtheta);
+xc_left = qx-l/2*sin(qtheta);
+yc_right = qy+l/2*cos(qtheta);
+xc_right = qx+l/2*sin(qtheta);
 model.f_v = [0;-g;0];
-model.f_c = yc;
-model.J_tangent = xc.jacobian(q)';
-model.D_tangent = [xc.jacobian(q)',-xc.jacobian(q)'];
-model.J_tangent
-model.D_tangent
+model.f_c = [yc_left;yc_right];
+model.J_tangent = xc_left.jacobian(q)';
+model.D_tangent = [xc_left.jacobian(q)',-xc_left.jacobian(q)'];
+
 % tangent
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];
+
+above_ground = 0.18;
+theta0 = pi/6;
+model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
+           0;0;0];
+
 %% Simulation setings
-N_finite_elements = 3;
-T_sim = 0.6;
-N_sim = 40;
+N_finite_elements = 10;
+T_sim = 0.8;
+N_sim = 1;
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
@@ -79,7 +86,12 @@ qtheta = results.x_res(3,:);
 vx = results.x_res(4,:);
 vy = results.x_res(5,:);
 omega = results.x_res(6,:);
-t = results.x_res(7,:);
+if settings.time_freezing
+    t = results.x_res(7,:);
+else
+    t = results.t_grid;
+end
+
 xc_res  = [];
 yc_res  = [];
 for ii = 1:length(qx)
