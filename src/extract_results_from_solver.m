@@ -15,8 +15,10 @@ switch settings.dcs_mode
   case "Step"
     names = [names, "alpha", "lambda_n", "lambda_p"];
   case "CLS"
+%     names = [names, "lambda_normal", "lambda_tangent", "y_gap", "gamma", "beta_conic", "gamma_d", "beta_d", "delta_d", "p_vt", "n_vt", "alpha_vt", "x_left_bp",...
+%              "Y_gap", "Lambda_normal", "Lambda_tangent", "Gamma", "Gamma_d", "Beta_conic", "Beta_d", "Delta_d", "P_vn", "N_vn", "P_vt", "N_vt", "Alpha_vt"];
     names = [names, "lambda_normal", "lambda_tangent", "y_gap", "gamma", "beta_conic", "gamma_d", "beta_d", "delta_d", "p_vt", "n_vt", "alpha_vt", "x_left_bp",...
-             "Y_gap", "Lambda_normal", "Lambda_tangent", "Gamma", "Gamma_d", "Beta_conic", "Beta_d", "Delta_d", "P_vn", "N_vn", "P_vt", "N_vt", "Alpha_vt"];
+             "Y_gap", "Lambda_normal", "Lambda_tangent", "Gamma", "Gamma_d", "Beta_conic", "Beta_d", "Delta_d", "L_vn", "N_vt", "Alpha_vt"];
 end
 
 for name=names

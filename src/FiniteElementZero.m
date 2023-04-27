@@ -49,8 +49,9 @@ classdef FiniteElementZero < NosnocFormulationObject
         ind_Gamma
         ind_Gamma_d
         ind_Delta_d
-        ind_P_vn
-        ind_N_vn
+%         ind_P_vn
+%         ind_N_vn
+        ind_L_vn
 
         % Parameter for initial conditions
         x0

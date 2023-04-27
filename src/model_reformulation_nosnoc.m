@@ -1061,8 +1061,9 @@ switch dcs_mode
         % Variables for impulse equations
         Lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,'Lambda_normal',n_contacts);
         Y_gap = define_casadi_symbolic(casadi_symbolic_mode,'Y_gap',n_contacts);
-        P_vn = define_casadi_symbolic(casadi_symbolic_mode,'P_vn',n_contacts); % pos part of state jump law
-        N_vn = define_casadi_symbolic(casadi_symbolic_mode,'N_vn',n_contacts); % neg part of state jump law
+%         P_vn = define_casadi_symbolic(casadi_symbolic_mode,'P_vn',n_contacts); % pos part of state jump law
+%         N_vn = define_casadi_symbolic(casadi_symbolic_mode,'N_vn',n_contacts); % neg part of state jump law
+        L_vn = define_casadi_symbolic(casadi_symbolic_mode,'L_vn',n_contacts); % lifting variable for state jump law
         if friction_exists
             % tangetial contact froce (firction force)
             lambda_tangent = define_casadi_symbolic(casadi_symbolic_mode,'lambda_tangent',n_tangents);
@@ -1155,7 +1156,8 @@ switch dcs_mode
         ubz_all = [inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
         z0_all = [ones(n_contacts,1);ones(n_contacts,1)];
         % Impulse
-        z_impulse = [Lambda_normal;Y_gap;P_vn;N_vn];
+%         z_impulse = [Lambda_normal;Y_gap;P_vn;N_vn];
+        z_impulse = [Lambda_normal;Y_gap;L_vn];
         lbz_impulse = [0*ones(n_contacts,1);0*ones(n_contacts,1);0*ones(n_contacts,1);0*ones(n_contacts,1)];
         ubz_impulse = [inf*ones(n_contacts,1);inf*ones(n_contacts,1);inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
         z_impulse0 = [ones(n_contacts,1);ones(n_contacts,1);ones(n_contacts,1);ones(n_contacts,1)];
@@ -1338,7 +1340,8 @@ for ii = 1:n_sys
             g_impulse = [g_impulse;Y_gap-f_c];
             % add state jump for every contact
             for ii = 1:n_contacts
-                g_impulse = [g_impulse; P_vn(ii)-N_vn(ii) - J_normal(:,ii)'*(v_post_impact+e(ii)*v_pre_impact)];
+%                 g_impulse = [g_impulse; P_vn(ii)-N_vn(ii) - J_normal(:,ii)'*(v_post_impact+e(ii)*v_pre_impact)];
+                g_impulse = [g_impulse; L_vn(ii) - J_normal(:,ii)'*(v_post_impact+e(ii)*v_pre_impact)];
             end
             if friction_exists
                 switch friction_model

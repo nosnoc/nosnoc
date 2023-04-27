@@ -43,7 +43,7 @@ model.D_tangent = [1,-1;0,0];
 %% Simulation setings
 N_FE = 2;
 T_sim = 0.5;
-N_sim = 1;
+N_sim = 10;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

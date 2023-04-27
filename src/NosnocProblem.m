@@ -79,10 +79,12 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_Beta_conic
         ind_Beta_d
         ind_Delta_d
-        ind_P_vn
-        ind_N_vn
+%         ind_P_vn
+%         ind_N_vn
+        ind_L_vn
         ind_P_vt
         ind_N_vt
+ 
         ind_Alpha_vt
         % misc
         ind_nu_lift
@@ -208,8 +210,9 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_Gamma_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
             obj.ind_Beta_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
             obj.ind_Delta_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_P_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_N_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
+%             obj.ind_P_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
+%             obj.ind_N_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_L_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
             obj.ind_P_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
             obj.ind_N_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
             obj.ind_Alpha_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
@@ -687,8 +690,9 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.ind_Gamma_d(stage.ctrl_idx, :) = increment_indices(stage.ind_Gamma_d, w_len);
             obj.ind_Beta_d(stage.ctrl_idx, :) = increment_indices(stage.ind_Beta_d, w_len);
             obj.ind_Delta_d(stage.ctrl_idx, :) = increment_indices(stage.ind_Delta_d, w_len);
-            obj.ind_P_vn(stage.ctrl_idx, :) = increment_indices(stage.ind_P_vn, w_len);
-            obj.ind_N_vn(stage.ctrl_idx, :) = increment_indices(stage.ind_N_vn, w_len);
+%             obj.ind_P_vn(stage.ctrl_idx, :) = increment_indices(stage.ind_P_vn, w_len);
+%             obj.ind_N_vn(stage.ctrl_idx, :) = increment_indices(stage.ind_N_vn, w_len);
+            obj.ind_L_vn(stage.ctrl_idx, :) = increment_indices(stage.ind_L_vn, w_len);
             obj.ind_P_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_P_vt, w_len);
             obj.ind_N_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_N_vt, w_len);
             obj.ind_Alpha_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_Alpha_vt, w_len);
