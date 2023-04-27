@@ -6,7 +6,7 @@ close all
 %%
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-% settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;
 % settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 settings.print_level = 3;
@@ -36,7 +36,7 @@ model.x = [q;v];
 model.e = 0;
 model.mu = 0.2*1;
 model.a_n = 20;
-model.x0 = [0;0.3;4;0];
+model.x0 = [0;0.2;4;0];
 model.x0 = [0;0.0;-0.6;0];
 model.f_v = [3;-g];
 model.f_c = q(2);
@@ -45,7 +45,7 @@ model.D_tangent = [1,-1;0,0];
 model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
 N_FE = 2;
-T_sim = 0.35*2;
+T_sim = 0.7;
 N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
