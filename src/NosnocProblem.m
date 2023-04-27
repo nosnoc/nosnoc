@@ -785,15 +785,15 @@ classdef NosnocProblem < NosnocFormulationObject
             fprintf(fileID, "i\tlbg\t\t ubg\t\t g_expr\n");
             for i = 1:length(obj.lbg)
                 expr_str = formattedDisplayText(obj.g(i));
-                fprintf(fileID, "%d\t%.6f\t%.6f\t%s\n", i, obj.lbg(i), obj.ubg(i), expr_str);
+                fprintf(fileID, "%d\t%.2e\t%.2e\t%s\n", i, obj.lbg(i), obj.ubg(i), expr_str);
             end
 
             fprintf(fileID, "\nw\t\t\tw0\t\tlbw\t\tubw\n");
             for i = 1:length(obj.lbw)
                 % keyboard
                 expr_str = pad(formattedDisplayText(obj.w(i)), 20);
-                lb_str = pad(sprintf('%.6f', obj.lbw(i)), 10);
-                fprintf(fileID, "%s\t%.6f\t%s\t%.6f\t\n", expr_str, obj.w0(i), lb_str, obj.ubw(i));
+                lb_str = pad(sprintf('%.2e', obj.lbw(i)), 10);
+                fprintf(fileID, "%s\t%.2e\t%s\t%.2e\t\n", expr_str, obj.w0(i), lb_str, obj.ubw(i));
             end
 
             fprintf(fileID, '\nobjective\n');
