@@ -36,14 +36,13 @@ model.e = 0;
 model.mu = 0;
 model.a_n = 20;
 model.x0 = [0.2;0];
-model.f_v = [-g];
+model.f_v = -g;
 model.f_c = q;
-model.J_tangent = [1; 0]; 
-model.D_tangent = [1,-1;0,0];
+
 %% Simulation setings
 N_FE = 2;
 T_sim = 0.5;
-N_sim = 10;
+N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
