@@ -189,6 +189,7 @@ classdef FiniteElement < NosnocFormulationObject
                 rbp_x_only = 1;
                 obj.ind_x = cell(dims.n_s+1, 1);
             else
+                rbp_x_only = 0;
                 obj.ind_x = cell(dims.n_s+rbp_allowance, 1);
             end
             obj.ind_v = cell(dims.n_s, 1);
@@ -882,17 +883,25 @@ classdef FiniteElement < NosnocFormulationObject
                     n_discont = dims.n_s;
                     n_indep = dims.n_sys;
                     cross_comp_pairs = cell(n_cont, n_discont, n_indep);
-                    for j=2:n_cont
-                        for jj=1:n_discont
-                            for r=1:n_indep
-                                cross_comp_pairs{j,jj,r} = [obj.w(obj.ind_lam{j-1,r}), obj.w(obj.ind_theta{jj,r})];
+                    if settings.use_fesd
+                        for j=2:n_cont
+                            for jj=1:n_discont
+                                for r=1:n_indep
+                                    cross_comp_pairs{j,jj,r} = [obj.w(obj.ind_lam{j-1,r}), obj.w(obj.ind_theta{jj,r})];
+                                end
                             end
                         end
-                    end
 
-                    for jj=1:n_discont
-                        for r=1:n_indep
-                            cross_comp_pairs{1,jj,r} = [prev_fe.w(prev_fe.ind_lam{end,r}), obj.w(obj.ind_theta{jj,r})];
+                        for jj=1:n_discont
+                            for r=1:n_indep
+                                cross_comp_pairs{1,jj,r} = [prev_fe.w(prev_fe.ind_lam{end,r}), obj.w(obj.ind_theta{jj,r})];
+                            end
+                        end
+                    else
+                        for j=1:n_discont
+                            for r=1:n_indep
+                                cross_comp_pairs{j,j,r} = [obj.w(obj.ind_lam{j,r}), obj.w(obj.ind_theta{j,r})];
+                            end
                         end
                     end
                 case DcsMode.Step
@@ -900,19 +909,28 @@ classdef FiniteElement < NosnocFormulationObject
                     n_discont = dims.n_s;
                     n_indep = dims.n_sys;
                     cross_comp_pairs = cell(n_cont, n_discont, n_indep);
-                    for j=2:n_cont
+                    if settings.use_fesd
+                        for j=2:n_cont
+                            for jj=1:n_discont
+                                for r=1:n_indep
+                                    cross_comp_pairs{j,jj,r} = [vertcat(obj.w(obj.ind_lambda_n{j-1,r}),obj.w(obj.ind_lambda_p{j-1,r})),...
+                                        vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
+                                end
+                            end
+                        end
+
                         for jj=1:n_discont
                             for r=1:n_indep
-                                cross_comp_pairs{j,jj,r} = [vertcat(obj.w(obj.ind_lambda_n{j-1,r}),obj.w(obj.ind_lambda_p{j-1,r})),...
+                                cross_comp_pairs{1,jj,r} = [vertcat(prev_fe.w(prev_fe.ind_lambda_n{end,r}),prev_fe.w(prev_fe.ind_lambda_p{end,r})),...
                                     vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
                             end
                         end
-                    end
-
-                    for jj=1:n_discont
-                        for r=1:n_indep
-                            cross_comp_pairs{1,jj,r} = [vertcat(prev_fe.w(prev_fe.ind_lambda_n{end,r}),prev_fe.w(prev_fe.ind_lambda_p{end,r})),...
-                                    vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
+                    else 
+                        for j=1:n_discont
+                            for r=1:n_indep
+                                cross_comp_pairs{j,j,r} = [vertcat(obj.w(obj.ind_lambda_n{j,r}),obj.w(obj.ind_lambda_p{j,r})),...
+                                    vertcat(obj.w(obj.ind_alpha{j,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{j,r}))];
+                            end
                         end
                     end
                 case DcsMode.CLS
@@ -1033,8 +1051,6 @@ classdef FiniteElement < NosnocFormulationObject
             end
             sum_cross_comp_cont_0 = sum([cross_comp_cont_0_vec{:}], 2);
         end
-
-
 
         function sum_cross_comp_discont_0 = sumCrossCompDiscont0(obj, varargin)
             p = inputParser();
@@ -1337,12 +1353,12 @@ classdef FiniteElement < NosnocFormulationObject
                 g_impulse_comp = expr;
             end
 
+
             cross_comp_pairs = obj.getCrossCompPairs();
 
             obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_pairs{:});
             
             sigma_scale = 1; % TODO scale properly
-            
             % apply psi
             g_cross_comp = [];
             if settings.cross_comp_mode == 1
@@ -1368,7 +1384,11 @@ classdef FiniteElement < NosnocFormulationObject
                     for r=1:obj.n_indep
                         pairs = cross_comp_pairs(j, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
-                        exprs = sum2([expr_cell{:}]);
+                        if size([expr_cell{:}], 1) == 0
+                            exprs= [];
+                        else
+                            exprs = sum2([expr_cell{:}]);
+                        end
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
                 end
