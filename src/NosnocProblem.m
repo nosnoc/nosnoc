@@ -161,9 +161,14 @@ classdef NosnocProblem < NosnocFormulationObject
                 rbp_allowance = 1;
             end
 
+            if settings.dcs_mode == "CLS" && ~settings.right_boundary_point_explicit
+                rbp_x_only = 1;
+            else
+                rbp_x_only = 0;
+            end
             obj.ind_u = [];
             obj.ind_x0 = [];
-            obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance+rbp_x_only);
             obj.ind_v = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
             obj.ind_z = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
             % Stewart
