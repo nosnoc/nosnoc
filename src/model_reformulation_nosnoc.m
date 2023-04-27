@@ -1262,7 +1262,7 @@ if ~isfield(model, 'f_x')
                             case 'Conic'
                                 F_v = inv(M)*(f_v+J_normal*lambda_normal+J_tangent*lambda_tangent);
                             case 'Polyhedral'
-                                F_v = inv(M)*(f_v+J_normal*lambda_normal + D_tangent*lambda_tangent);
+                                F_v = inv(M)*(f_v+J_normal*lambda_normal+D_tangent*lambda_tangent);
                         end
                     else
                         F_v = inv(M)*(f_v+J_normal*lambda_normal);
@@ -1366,7 +1366,7 @@ for ii = 1:n_sys
                             g_alg_cls  = [g_alg_cls;beta_d(ii)-(mu(ii)*lambda_normal(ii) - sum(lambda_tangent(ind_temp)));...
                                                     delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v + gamma_d(ii))];
                             g_impulse = [g_impulse;Beta_d - (mu(ii)*Lambda_normal(ii)-sum(Lambda_tangent(ind_temp)));...
-                                                   Delta_d(ind_temp)- (D_tangent(:,ind_temp))'*v_post_impact + Gamma_d(ii)];
+                                                   Delta_d(ind_temp)- (D_tangent(:,ind_temp)'*v_post_impact + Gamma_d(ii))];
                         end
                 end
             end
