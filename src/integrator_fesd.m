@@ -37,7 +37,6 @@
 function [varargout] = integrator_fesd(varargin)
 import casadi.*
 
-
 model = varargin{1};
 settings = varargin{2};
 solver_exists  = 0;
@@ -53,7 +52,6 @@ if nargin>3
     model.p_val(end) = model.T;
 end
 %%  unfold data
-% use_previous_solution_as_initial_guess = 1;
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 
@@ -286,13 +284,6 @@ else
     fprintf( ['Simulation with the standard ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 end
 fprintf( ['RK representation: ' char(irk_representation) '.\n']);
-%%
-% fprintf('---------------------------- Stats ---------------------------------------------------------\n');
-% fprintf('Total CPU time: %2.3f s.\nN_stg = %d, N_FE = %d.\n',sum(time_per_iter),N_stages,N_finite_elements(1));
-% fprintf('Max iteration time: %2.3f s.\nMin iteration time: %2.3f s.\n',max(time_per_iter),min(time_per_iter));
-% fprintf('Max complementarity residual: %2.3e.\nMin complementarity residual: %2.3e.\n',max(complementarity_stats),min(complementarity_stats));
-% fprintf('-----------------------------------------------------------------------------------------------\n\n');
-%%
 fprintf('---------------------------------------------- Stats summary----------------------------------------------------------\n');
 fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
 fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n',N_sim,h_sim,N_stages,N_finite_elements(1),total_time,max(time_per_iter),min(time_per_iter),max(complementarity_stats),min(complementarity_stats));
@@ -332,7 +323,7 @@ results.t_grid = cumsum([0;h_vec])';
 results.diff_res = diff_res;
 results.alg_res = alg_res;
 results.W = W;
-
+results.sol = sol;
 results.all_res = all_res;
 
 varargout{1} = results;
