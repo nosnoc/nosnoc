@@ -1354,7 +1354,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             elseif settings.cross_comp_mode == 2
                 for j=1:obj.n_cont
-                    for jj=obj.n_discont
+                    for jj=1:obj.n_discont
                         for r=1:obj.n_indep
                             pairs = cross_comp_pairs{j, jj, r};
                             g_cross_comp = vertcat(g_cross_comp, sum(apply_psi(pairs, psi_fun, sigma/sigma_scale)));
