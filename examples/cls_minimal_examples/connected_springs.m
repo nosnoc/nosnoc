@@ -6,62 +6,71 @@ close all
 %%
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-% settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.n_s = 2;
-% settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 settings.print_level = 3;
-settings.N_homotopy = 6;
-settings.cross_comp_mode = 3;
+settings.n_s = 3;
+settings.N_homotopy = 5;
+settings.cross_comp_mode = 5;
 settings.dcs_mode = DcsMode.CLS;
 settings.time_freezing = 0; %% we will need to exlude the coexistence of these two
-settings.friction_model = "Conic"; % "Polyhedral"
-settings.conic_model_switch_handling = "Lp";  % Plain % Lp
-settings.local_speed_of_time_variable = 0;
-settings.use_speed_of_time_variables = 0;
-% if settings.time_freezing && settings.dcs_mode~=DcsMode.CLS
-% settings.impose_terminal_phyisical_time = 1;
-% settings.local_speed_of_time_variable = 1;
-% settings.stagewise_clock_constraint = 0;
-% settings.pss_lift_step_functions = 0;
-% else
-%     settings.time_freezing = 1;
-% end
+settings.friction_model = "Conic";
+% settings.friction_model = "Polyhedral";
+settings.conic_model_switch_handling = "Plain";
+settings.conic_model_switch_handling = "Abs";
+% settings.conic_model_switch_handling = "Lp";
+% settings.local_speed_of_time_variable = 0;
+% settings.use_speed_of_time_variables = 0;
+if settings.time_freezing
+%     settings.dcs_mode = 'Step';
+    settings.impose_terminal_phyisical_time = 1;
+    settings.local_speed_of_time_variable = 1;
+    settings.stagewise_clock_constraint = 0;
+    settings.pss_lift_step_functions = 1;
+    settings.sigma_0 = 1;
+%     settings.step_equilibration = "heuristic_diff";
+else
+    settings.time_freezing = 0;
+end
+settings.mpcc_mode = "Scholtes_ineq";
+settings.sigma_0  = 1e-2;
+
 %%
 g = 10;
+
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2);
 model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
-model.mu = 0.2*1;
-model.a_n = 20;
-model.x0 = [0;0.3;4;0];
-model.x0 = [0;0.0;-0.6;0];
-model.f_v = [3;-g];
+model.mu = 0.3;
+model.x0 = [0;0.3;2;-1];
+model.f_v = [0;-g];
 model.f_c = q(2);
 model.J_tangent = [1; 0]; 
 model.D_tangent = [1,-1;0,0];
 model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
-N_FE = 2;
-T_sim = 0.35*2;
-N_sim = 1;
+N_FE = 4;
+T_sim = 1.5;
+N_sim = 6;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 1;
+settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,model,settings,solver] = integrator_fesd(model,settings);
+[results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = x_res(1,:);
 qy = x_res(2,:);
 vx = x_res(3,:);
 vy = x_res(4,:);
-%t_opt = x_res(5,:);
-t_opt = t_grid;
-figure(1)
+if settings.time_freezing
+t_opt = x_res(5,:);
+else
+    t_opt = results.t_grid;
+end
+figure
 subplot(121)
 plot(qx,qy);
 axis equal
@@ -81,7 +90,7 @@ ylabel('$v$','interpreter','latex');
 % [qx(end),qy(end),t_opt(end)]
 
 %%
-if settings.time_freezing 
+if settings.time_freezing
 alpha1 = alpha_res(1,:);
 alpha2 = alpha_res(2,:);
 alpha3 = alpha_res(3,:);
@@ -108,7 +117,8 @@ xlabel('$\tau$','interpreter','latex');
 ylabel(['$\theta_3$'],'interpreter','latex');
 grid on
 ylim([-0.1 1.1]);
-% speed of time
+
+%% speed of time
 figure
 subplot(121)
 plot(t_grid,t_opt)
@@ -123,5 +133,3 @@ grid on
 xlabel('simulation step','interpreter','latex');
 ylabel('$s$','interpreter','latex');
 end
-
-% print_casadi_vector(model.g)
