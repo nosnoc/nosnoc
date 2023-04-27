@@ -25,8 +25,6 @@
 
 % This file is part of NOSNOC.
 
-%
-%
 function [varargout] = homotopy_solver(varargin)
 % homotopy_solver(solver,model,settings,solver_initialization)
 solver = varargin{1};
@@ -99,7 +97,6 @@ switch settings.dcs_mode
         end
 end
 p_val = [model.p_val(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
-
 complementarity_stats = [full(comp_res(w0, p_val))];
 
 cpu_time = [];
@@ -163,21 +160,14 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
     % complementarity
     complementarity_iter = full(comp_res(w_opt, p_val));
     complementarity_stats = [complementarity_stats;complementarity_iter];
-
     objective = full(model.problem.objective_fun(w_opt, p_val));
     % update counter
     ii = ii+1;
-
     % Verbose
     if print_level >= 3
         fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, objective,...
             cpu_time_iter, solver.stats.iter_count, solver.stats.return_status);
     end
-    %
-    %     if complementarity_iter> 1e1 && ii >= ratio_for_homotopy_stop*N_homotopy
-    %         error('The homotopy loop is diverging. Try chaning parameters of the homotopy loop or check is the OCP well posed.')
-    %         break;
-    %     end
 end
 
 %% polish homotopy solution with fixed active set.
