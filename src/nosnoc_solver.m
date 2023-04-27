@@ -67,7 +67,51 @@ unfold_struct(settings,'caller');
 settings = settings_bkp; % TODO: figure out why unfold settings breaks things.
 unfold_struct(model,'caller');
 results = extract_results_from_solver(model,settings,results);
-complementarity_iter_ell_inf = full(comp_res(results.w_opt,[model.p_val;x0;full(model.lambda00_fun(x0,model.p_global_val))]));
+
+% get 00 values
+lambda_00 = [];
+gamma_00 = [];
+p_vt_00 = [];
+n_vt_00  = [];
+gamma_d00 = [];
+delta_d00 = [];
+y_gap00 = [];
+if settings.dcs_mode == 'CLS'
+    % TODO: reconsider this if 0th element has an impulse
+    y_gap00 = model.f_c_fun(x0);
+    if model.friction_exists
+        switch settings.friction_model
+          case 'Polyhedral'
+            v0 = x0(model.dimensions.n_q+1:end);
+            D_tangent_0 = model.D_tangent_fun(x0);
+            v_t0 = D_tangent_0'*v0;
+            for ii = 1:model.dimensions.n_contacts
+                ind_temp = model.dimensions.n_t*ii-(model.dimensions.n_t-1):model.dimensions.n_t*ii;
+                gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dimensions.n_t];
+                delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v0+gamma_d00(ii)];
+            end
+          case 'Conic'
+            v0 = x0(model.dimensions.n_q+1:end);
+            v_t0 = model.J_tangent_fun(x0)'*v0;
+            for ii = 1:model.dimensions.n_contacts
+                ind_temp = model.dimensions.n_t*ii-(model.dimensions.n_t-1):model.dimensions.n_t*ii;
+                v_ti0 = v0(ind_temp);
+                gamma_00 = [gamma_00;norm(v_ti0)];
+                switch settings.conic_model_switch_handling
+                  case 'Plain'
+                    % no extra vars
+                  case {'Abs','Lp'}
+                    p_vt_00 = [p_vt_00;max(v_ti0,0)];
+                    n_vt_00 = [n_vt_00;max(-v_ti0,0)];
+                end
+            end
+        end
+    end
+else
+    lambda_00 = full(model.lambda00_fun(x0,model.p_global_val));
+end
+p_comp = [model.p_val;x0;lambda_00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
+complementarity_iter_ell_inf = full(comp_res(results.w_opt,p_comp));
 switch dcs_mode
     case 'Step'
     temp = [results.alpha_opt_extended.*results.lambda_n_opt_extended,(1-results.alpha_opt_extended).*results.lambda_p_opt_extended];
