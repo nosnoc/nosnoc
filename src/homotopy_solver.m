@@ -66,7 +66,7 @@ switch settings.dcs_mode
         lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
     case 'CLS'
         % TODO: reconsider this if 0th element has an impulse
-        y_gap00 = model.f_c_fun(x0)*0;
+        y_gap00 = model.f_c_fun(x0);
         if model.friction_exists
             switch settings.friction_model
                 case 'Polyhedral'
