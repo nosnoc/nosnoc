@@ -6,7 +6,7 @@ close all
 %%
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+% settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;
 % settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 settings.print_level = 3;
@@ -14,7 +14,8 @@ settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.time_freezing = 0; %% we will need to exlude the coexistence of these two
-settings.friction_model = "Conic"; % "Polyhedral"
+settings.friction_model = "Polyhedral"; % "Conic"
+% settings.friction_model = "Conic"; % "Conic"
 settings.conic_model_switch_handling = "Lp";  % Plain % Lp
 settings.local_speed_of_time_variable = 0;
 settings.use_speed_of_time_variables = 0;
@@ -38,9 +39,10 @@ model.mu = 0.2*1;
 model.a_n = 20;
 model.x0 = [0;0.2;4;0];
 model.x0 = [0;0.0;-0.6;0];
-model.f_v = [3;-g];
+model.x0 = [0;0.0;+0.6;0];
+model.f_v = [3*0;-g];
 model.f_c = q(2);
-model.J_tangent = [1; 0]; 
+model.J_tangent = [1; 0];
 model.D_tangent = [1,-1;0,0];
 model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
@@ -81,47 +83,48 @@ ylabel('$v$','interpreter','latex');
 % [qx(end),qy(end),t_opt(end)]
 
 %%
-if settings.time_freezing 
-alpha1 = alpha_res(1,:);
-alpha2 = alpha_res(2,:);
-alpha3 = alpha_res(3,:);
-theta1 = alpha1+(1-alpha1).*(alpha2);
-alpha_aux = (1-alpha1).*(1-alpha2);
-theta2 = alpha_aux.*(1-alpha3);
-theta3 = alpha_aux.*(alpha3);
-figure;
-subplot(131)
-plot(t_grid,[theta1,nan])
-xlabel('$\tau$','interpreter','latex');
-ylabel(['$\theta_1$'],'interpreter','latex');
-grid on
-ylim([-0.1 1.1]);
-subplot(132)
-plot(t_grid,[theta2,nan])
-xlabel('$\tau$','interpreter','latex');
-ylabel(['$\theta_2$'],'interpreter','latex');
-grid on
-ylim([-0.1 1.1]);
-subplot(133)
-plot(t_grid,[theta3,nan])
-xlabel('$\tau$','interpreter','latex');
-ylabel(['$\theta_3$'],'interpreter','latex');
-grid on
-ylim([-0.1 1.1]);
-% speed of time
-figure
-subplot(121)
-plot(t_grid,t_opt)
-hold on
-plot(t_grid,t_grid,'k--')
-grid on
-xlabel('$\tau$','interpreter','latex');
-ylabel('$t$','interpreter','latex');
-subplot(122)
-stairs(s_sot_res)
-grid on
-xlabel('simulation step','interpreter','latex');
-ylabel('$s$','interpreter','latex');
+if settings.time_freezing
+    alpha1 = alpha_res(1,:);
+    alpha2 = alpha_res(2,:);
+    alpha3 = alpha_res(3,:);
+    theta1 = alpha1+(1-alpha1).*(alpha2);
+    alpha_aux = (1-alpha1).*(1-alpha2);
+    theta2 = alpha_aux.*(1-alpha3);
+    theta3 = alpha_aux.*(alpha3);
+    figure;
+    subplot(131)
+    plot(t_grid,[theta1,nan])
+    xlabel('$\tau$','interpreter','latex');
+    ylabel(['$\theta_1$'],'interpreter','latex');
+    grid on
+    ylim([-0.1 1.1]);
+    subplot(132)
+    plot(t_grid,[theta2,nan])
+    xlabel('$\tau$','interpreter','latex');
+    ylabel(['$\theta_2$'],'interpreter','latex');
+    grid on
+    ylim([-0.1 1.1]);
+    subplot(133)
+    plot(t_grid,[theta3,nan])
+    xlabel('$\tau$','interpreter','latex');
+    ylabel(['$\theta_3$'],'interpreter','latex');
+    grid on
+    ylim([-0.1 1.1]);
+    % speed of time
+    figure
+    subplot(121)
+    plot(t_grid,t_opt)
+    hold on
+    plot(t_grid,t_grid,'k--')
+    grid on
+    xlabel('$\tau$','interpreter','latex');
+    ylabel('$t$','interpreter','latex');
+    subplot(122)
+    stairs(s_sot_res)
+    grid on
+    xlabel('simulation step','interpreter','latex');
+    ylabel('$s$','interpreter','latex');
 end
 
 % print_casadi_vector(model.g)
+

@@ -648,7 +648,7 @@ alpha_vt = [];
 n_gamma_d = 0;
 n_gamma = 0;
 % TODO: Add different flags to steer lifting
-g_lift_gap = []; % lift gap functions f_c(q) = y;
+
 
 % dimensions
 n_alpha = 0;
@@ -1056,7 +1056,6 @@ switch dcs_mode
         n_z_all = n_contacts+n_tangents;
         lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,'lambda_normal',n_contacts);
         y_gap = define_casadi_symbolic(casadi_symbolic_mode,'y_gap',n_contacts);
-        g_lift_gap = y_gap - f_c; % lift gap functions f_c(q) = y;
         % Variables for impulse equations
         Lambda_normal = define_casadi_symbolic(casadi_symbolic_mode,'Lambda_normal',n_contacts);
         Y_gap = define_casadi_symbolic(casadi_symbolic_mode,'Y_gap',n_contacts);
@@ -1075,11 +1074,6 @@ switch dcs_mode
                 Gamma_d = define_casadi_symbolic(casadi_symbolic_mode,'Gamma_d',n_contacts);
                 Beta_d = define_casadi_symbolic(casadi_symbolic_mode,'Beta_d',n_contacts); % lift friction cone bound
                 Delta_d = define_casadi_symbolic(casadi_symbolic_mode,'Delta_d',n_tangents); % lift lagrangian
-%                 for ii = 1:n_contacts
-%                     ind_temp = n_t*ii-(n_t-1):n_t*ii;
-% %                     g_lift_friction1 = [g_lift_friction1; beta_d(ii)-(mu(ii)*lambda_normal(ii)- sum(lambda_tangent(ind_temp)))];
-% %                     g_lift_friction2 = [g_lift_friction2; delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v-gamma_d(ii))];
-%                 end
             end
             if isequal(friction_model,'Conic')
                 gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',n_contacts);
@@ -1087,10 +1081,6 @@ switch dcs_mode
                 % Impulse variables;
                 Gamma = define_casadi_symbolic(casadi_symbolic_mode,'Gamma',n_contacts);
                 Beta = define_casadi_symbolic(casadi_symbolic_mode,'Beta',n_contacts);
-%                 for ii = 1:n_contacts
-%                     ind_temp = n_t*ii-(n_t-1):n_t*ii;
-%                     g_lift_friction1 = [g_lift_friction1; beta(ii)-((mu(ii)*lambda_normal(ii))^2-norm(lambda_tangent(ind_temp))^2)];
-%                 end
                 switch conic_model_switch_handling
                     case 'Plain'
                         % no extra constraints
@@ -1303,7 +1293,7 @@ if ~isfield(model, 'f_x')
     end
 end
 
-% Define algebraic equations
+%% Define algebraic equations
 
 g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i, 0 = c(x)-lambda_p+lambda_n
 g_convex = []; % equation for the convex multiplers 1 = e' \theta
@@ -1343,29 +1333,28 @@ for ii = 1:n_sys
             v_pre_impact = define_casadi_symbolic(casadi_symbolic_mode,'v_pre_impact',n_q);
             g_alg_cls = [g_alg_cls; y_gap - f_c];
             g_impulse = [g_impulse; M*(v_post_impact-v_pre_impact)-J_normal*Lambda_normal];
-            % add state jump for every contacts
+            g_impulse = [g_impulse;Y_gap-f_c];
+            % add state jump for every contact
             for ii = 1:n_contacts
                 g_impulse = [g_impulse; P_vn(ii)-N_vn(ii) - J_normal(:,ii)'*(v_post_impact+e(ii)*v_pre_impact)];
             end
             if friction_exists
                 switch friction_model
-                    % add frictional impulse
                     case 'Conic'
                         g_impulse(1:n_q) =  M*(v_post_impact-v_pre_impact)-J_normal*Lambda_normal-J_tangent*Lambda_tangent;
                         % algebraic and friction equations
                         for ii = 1:n_contacts
                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
+                            g_alg_cls  = [g_alg_cls;-J_tangent(:,ind_temp)'*v - 2*gamma(ii)*lambda_tangent(ind_temp);...
+                                                   beta(ii)-((mu(ii)*lambda_normal(ii))^2-norm(lambda_tangent(ind_temp))^2)];
                             g_impulse = [g_impulse;
                                 -J_tangent(:,ind_temp)'*v_post_impact - 2*Gamma(ii)*Lambda_tangent(ind_temp);...
                                  Beta - ((mu(ii)*Lambda_normal(ii))^2- norm(Lambda_tangent(ind_temp))^2)];
-                            % standard algebraic equations
-                            g_alg_cls  = [g_alg_cls;-J_tangent(:,ind_temp)'*v- 2*gamma(ii)*lambda_tangent(ind_temp);...
-                                                   beta(ii)-((mu(ii)*lambda_normal(ii))^2-norm(lambda_tangent(ind_temp))^2)];
 
                             if ~isequal(conic_model_switch_handling,'Plain')
                                 % equality constraints for pos and neg parts of the tangetial velocity
-                                g_impulse = [g_impulse;J_tangent(:,ind_temp)'*v_post_impact - (P_vt(ind_temp)-N_vt(ind_temp))];
                                 g_alg_cls  = [g_alg_cls;J_tangent(:,ind_temp)'*v-(p_vt(ind_temp)-n_vt(ind_temp))];
+                                g_impulse = [g_impulse;J_tangent(:,ind_temp)'*v_post_impact - (P_vt(ind_temp)-N_vt(ind_temp))];
                             end
                             
                         end
@@ -1375,14 +1364,13 @@ for ii = 1:n_sys
                         for ii = 1:n_contacts
                             ind_temp = n_t*ii-(n_t-1):n_t*ii;
                             g_alg_cls  = [g_alg_cls;beta_d(ii)-(mu(ii)*lambda_normal(ii) - sum(lambda_tangent(ind_temp)));...
-                                delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v - gamma_d(ii))];
-                            g_impulse = [g_impulse;Beta_d - (Lambda_normal(ii)-sum(Lambda_tangent(ind_temp)));...
-                                        Delta_d(ind_temp)-(D_tangent(:,ind_temp))'*v_post_impact - Gamma_d(ii)];
+                                                    delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v + gamma_d(ii))];
+                            g_impulse = [g_impulse;Beta_d - (mu(ii)*Lambda_normal(ii)-sum(Lambda_tangent(ind_temp)));...
+                                                   Delta_d(ind_temp)- (D_tangent(:,ind_temp))'*v_post_impact + Gamma_d(ii)];
                         end
                 end
             end
-            % Lifting parts
-            g_impulse = [g_impulse;Y_gap-f_c];
+            % some CLS functions
             M_fun = Function('M_fun', {x}, {M});
             invM_fun = Function('invM_fun', {x}, {invM});
             f_c_fun = Function('f_c_fun', {x}, {f_c});
