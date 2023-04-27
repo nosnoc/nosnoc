@@ -243,16 +243,15 @@ for ii = 1:N_sim
         lambda_0_res_extended = [lambda_0_res_extended, lambda_0_opt_extended];
         lambda_1_res_extended = [lambda_1_res_extended, lambda_1_opt_extended];
     end
-
     %stats
     complementarity_stats  = [complementarity_stats; stats.complementarity_stats(end)];
     homotopy_iteration_stats = [homotopy_iteration_stats;stats.homotopy_iterations];
-    %% plot during execution
+
+    % plot during execution
     if real_time_plot
         if time_freezing
             figure(100)
             clf
-            %         t_temp = [0,cumsum(h_vec)'];
             plot(x_res(end,:),x_res(1:end-1,:));
             xlabel('$t$ [phyisical time]','Interpreter','latex');
             ylabel('$x(t)$','Interpreter','latex');
@@ -323,7 +322,8 @@ results.t_grid = cumsum([0;h_vec])';
 results.diff_res = diff_res;
 results.alg_res = alg_res;
 results.W = W;
-results.sol = sol;
+results.solver_ouput = sol;
+results.solver_initialization = solver_initialization;
 results.all_res = all_res;
 
 varargout{1} = results;

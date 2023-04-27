@@ -8,7 +8,7 @@ settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 % settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
-settings.print_level = 2;
+settings.print_level = 3;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
@@ -22,7 +22,7 @@ q = SX.sym('q',1);
 v = SX.sym('v',1);
 model.M = 1;
 model.x = [q;v];
-model.e = 1;
+model.e = 0;
 model.mu = 0;
 model.a_n = 20;
 model.x0 = [0.2;0];
@@ -30,13 +30,13 @@ model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
-N_FE = 20;
-T_sim = 0.45;
+N_FE = 2;
+T_sim = 0.35;
 N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 1;
+settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
 [results,stats,model,settings,solver] = integrator_fesd(model,settings);
 %% read and plot results
@@ -82,6 +82,12 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 
 %%
-model.problem.print
-print_casadi_matrix([model.g])
-
+% results.all_res.Lambda_normal_opt
+% model.problem.print
+%%
+if 1 
+fprintf('g\t lbg\t ubg\t g_sym \n')
+print_casadi_matrix([results.solver_ouput.g,results.solver_initialization.lbg,results.solver_initialization.ubg,model.g])
+fprintf('w\t lbw\t ubw\t w_sym \n')
+print_casadi_matrix([results.solver_ouput.x,results.solver_initialization.lbw,results.solver_initialization.ubw,model.w])
+end
