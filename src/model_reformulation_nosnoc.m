@@ -474,6 +474,7 @@ c_all = [];
 m_vec = [];
 n_c_sys = [];
 n_q = [];
+friction_exists = 0;
 
 if isequal(dcs_mode,'CLS')
     % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
