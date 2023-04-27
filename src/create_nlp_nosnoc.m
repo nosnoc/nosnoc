@@ -59,7 +59,29 @@ comp_res_std = problem.comp_std;
 
 %% NLP Solver
 prob = struct('f', problem.cost, 'x', w, 'g', g,'p',p);
-solver = nlpsol(settings.solver_name, 'ipopt', prob, settings.opts_ipopt);
+
+if ~settings.multiple_solvers
+    solver = nlpsol(settings.solver_name, 'ipopt', prob, settings.opts_ipopt);
+else
+    solver = {};
+
+    sigma_k = settings.sigma_0;
+    for k = 1:settings.N_homotopy
+        ipopt_opts = settings.opts_ipopt;
+        ipopt_opts.ipopt.mu_init = sigma_k * 1e-1;
+        ipopt_opts.ipopt.mu_target = sigma_k * 1e-1;
+        ipopt_opts.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
+        ipopt_opts.ipopt.mu_strategy = 'monotone';
+        if k == 1
+            ipopt_opts.ipopt.warm_start_init_point = 'yes';
+            ipopt_opts.ipopt.warm_start_bound_push = 1e-4 * sigma_k;
+            ipopt_opts.ipopt.warm_start_mult_bound_push = 1e-4 * sigma_k;
+        end
+        solver{k} = nlpsol(settings.solver_name, 'ipopt', prob, ipopt_opts);
+        % TODO: make homotopy update function and reuse here.
+        sigma_k = settings.homotopy_update_slope*sigma_k;
+    end
+end
 
 %% Define CasADi function for the switch indicator function.
 nu_fun = Function('nu_fun', {w,p},{problem.nu_vector});
