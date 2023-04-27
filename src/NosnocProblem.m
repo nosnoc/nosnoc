@@ -782,24 +782,21 @@ classdef NosnocProblem < NosnocFormulationObject
             else
                 fileID = 1;
             end
-            fprintf(fileID, "g\n");
-            fprintf(fileID, strcat(formattedDisplayText(length(obj.g)), "\n"));
-            print_casadi_vector(obj.g, fileID);
-            fprintf(fileID, 'lbg, ubg\n');
-            fprintf(fileID, strcat(formattedDisplayText([length(obj.lbg), length(obj.ubg)]), "\n"));
-            fprintf(fileID, strcat(formattedDisplayText([obj.lbg, obj.ubg]), '\n'));
+            fprintf(fileID, "i\tlbg\t\t ubg\t\t g_expr\n");
+            for i = 1:length(obj.lbg)
+                expr_str = formattedDisplayText(obj.g(i));
+                fprintf(fileID, "%d\t%.6f\t%.6f\t%s\n", i, obj.lbg(i), obj.ubg(i), expr_str);
+            end
 
-            fprintf(fileID, "w\n");
-            fprintf(fileID, strcat(formattedDisplayText(length(obj.w)), '\n'));
-            print_casadi_vector(obj.w, fileID);
-            fprintf(fileID, 'lbw, ubw\n');
-            fprintf(fileID, strcat(formattedDisplayText([length(obj.lbw), length(obj.ubw)]), "\n"));
-            fprintf(fileID, strcat(formattedDisplayText([obj.lbw, obj.ubw]), '\n'));
-            fprintf(fileID, 'w0\n');
-            fprintf(fileID, strcat(formattedDisplayText(length(obj.w0)), '\n'));
-            fprintf(fileID, strcat(formattedDisplayText(obj.w0), '\n'));
+            fprintf(fileID, "\nw\t\t\tw0\t\tlbw\t\tubw\n");
+            for i = 1:length(obj.lbw)
+                % keyboard
+                expr_str = pad(formattedDisplayText(obj.w(i)), 20);
+                lb_str = pad(sprintf('%.6f', obj.lbw(i)), 10);
+                fprintf(fileID, "%s\t%.6f\t%s\t%.6f\t\n", expr_str, obj.w0(i), lb_str, obj.ubw(i));
+            end
 
-            fprintf(fileID, 'objective');
+            fprintf(fileID, '\nobjective\n');
             fprintf(fileID, strcat(formattedDisplayText(obj.cost), '\n'));
         end
     end
