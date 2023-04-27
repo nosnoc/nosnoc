@@ -195,7 +195,6 @@ classdef NosnocOptions < handle
 
         % psi func
         psi_fun_type CFunctionType = CFunctionType.BILINEAR
-        psi_fun
         relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
         elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
 
@@ -204,6 +203,7 @@ classdef NosnocOptions < handle
 
     properties(Dependent)
         time_rescaling
+        psi_fun
     end
 
     methods
@@ -223,9 +223,6 @@ classdef NosnocOptions < handle
             obj.opts_ipopt.ipopt.mu_oracle = 'quality-function';
 
             obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
-
-            % TODO is it fine to mix casadi functions
-            obj.psi_fun = @(x, y, sigma) x*y - sigma;
         end
 
         function [] = create_butcher_tableu(obj, model)
@@ -253,16 +250,19 @@ classdef NosnocOptions < handle
             obj.right_boundary_point_explicit = right_boundary_point_explicit;
         end
 
-        function obj = set.psi_fun_type(obj, val)
+        function psi_fun = get.psi_fun(obj)
             import casadi.*
             a = define_casadi_symbolic(obj.casadi_symbolic_mode,'a',1);
             b = define_casadi_symbolic(obj.casadi_symbolic_mode,'b',1);
             sigma = define_casadi_symbolic(obj.casadi_symbolic_mode,'sigma',1);
 
-            switch val
+            switch obj.psi_fun_type
               case CFunctionType.BILINEAR
                 psi_mpcc = a*b-sigma;
-
+                
+              case CFunctionType.BILINEAR_TWO_SIDED
+                psi_mpcc = [a*b-sigma,a*b+sigma];
+                
               case CFunctionType.FISCHER_BURMEISTER
                 psi_mpcc = a+b-sqrt(a^2+b^2+sigma^2);
 
@@ -300,8 +300,7 @@ classdef NosnocOptions < handle
 
             end
 
-            obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
-            obj.psi_fun_type = val;
+            psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
         end
 
         function obj = set.print_level(obj, val)
@@ -410,7 +409,7 @@ classdef NosnocOptions < handle
                 obj.relaxation_method = RelaxationMode.EQ;
                 obj.elasticity_mode = ElasticityMode.ELL_INF;
               case MpccMode.elastic_two_sided
-                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
                 obj.relaxation_method = RelaxationMode.TWO_SIDED;
                 obj.elasticity_mode = ElasticityMode.ELL_INF;
               case MpccMode.elastic_ell_1_ineq
@@ -422,7 +421,7 @@ classdef NosnocOptions < handle
                 obj.relaxation_method = RelaxationMode.EQ;
                 obj.elasticity_mode = ElasticityMode.ELL_1;
               case MpccMode.elastic_ell_1_two_sided
-                obj.psi_fun_type = CFunctionType.BILINEAR;
+                obj.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
                 obj.relaxation_method = RelaxationMode.TWO_SIDED;
                 obj.elasticity_mode = ElasticityMode.ELL_1;
             end

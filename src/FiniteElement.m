@@ -1296,6 +1296,8 @@ classdef FiniteElement < NosnocFormulationObject
             
             
             g_path_comp = [];
+            lbg_path_comp = [];
+            ubg_path_comp = [];
             g_path_comp_pairs = [];
             % path complementarities
             if (model.g_comp_path_constraint &&...
@@ -1316,6 +1318,8 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             g_impulse_comp = [];
+            lbg_impulse_comp = [];
+            ubg_impulse_comp = [];
             impulse_pairs = [];
             if settings.dcs_mode == DcsMode.CLS
                  % comp condts 
@@ -1379,12 +1383,20 @@ classdef FiniteElement < NosnocFormulationObject
             sigma_scale = 1; % TODO scale properly
             % apply psi
             g_cross_comp = [];
+            lbg_cross_comp = [];
+            ubg_cross_comp = [];
             if settings.cross_comp_mode == 1
                 for j=1:obj.n_cont
                     for jj=1:obj.n_discont
                         for r=1:obj.n_indep
                             pairs = cross_comp_pairs{j, jj, r};
-                            g_cross_comp = vertcat(g_cross_comp, apply_psi(pairs, psi_fun, sigma));
+                            % TODO This is ugly but I don't have a better idea at the moment
+                            exprs = apply_psi(pairs, psi_fun, sigma);
+                            if settings.relaxation_method == RelaxationMode.TWO_SIDED
+                                exprs = exprs';
+                                exprs = exprs(:);
+                            end
+                            g_cross_comp = vertcat(g_cross_comp, exprs);
                         end
                     end
                 end
@@ -1393,7 +1405,14 @@ classdef FiniteElement < NosnocFormulationObject
                     for jj=1:obj.n_discont
                         for r=1:obj.n_indep
                             pairs = cross_comp_pairs{j, jj, r};
-                            g_cross_comp = vertcat(g_cross_comp, sum(apply_psi(pairs, psi_fun, sigma/sigma_scale)));
+                            exprs = apply_psi(pairs, psi_fun, sigma/sigma_scale);
+                            if settings.relaxation_method == RelaxationMode.TWO_SIDED
+                                exprs = sum(exprs);
+                                exprs = exprs(:);
+                            else
+                                exprs = sum(exprs);
+                            end
+                            g_cross_comp = vertcat(g_cross_comp, exprs);
                         end
                     end
                 end
@@ -1404,9 +1423,16 @@ classdef FiniteElement < NosnocFormulationObject
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
+                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
+                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
+                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                            exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
+                            exprs = exprs(:);
                         else
-                            exprs = sum2([expr_cell{:}]);
+                            sum2([expr_cell{:}]);
                         end
+                        exprs = sum(vertcat(expr_cell{:}));
+                        exprs = exprs(:);
                         g_cross_comp = vertcat(g_cross_comp, exprs);
                     end
                 end
@@ -1417,6 +1443,11 @@ classdef FiniteElement < NosnocFormulationObject
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
+                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
+                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
+                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                            exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
+                            exprs = exprs(:);
                         else
                             exprs = sum2([expr_cell{:}]);
                         end
@@ -1430,6 +1461,11 @@ classdef FiniteElement < NosnocFormulationObject
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
+                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
+                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
+                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                            exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
+                            exprs = exprs(:);
                         else
                             exprs = sum1(sum2([expr_cell{:}]));
                         end
@@ -1443,6 +1479,11 @@ classdef FiniteElement < NosnocFormulationObject
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
+                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
+                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
+                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                            exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
+                            exprs = exprs(:);
                         else
                             exprs = sum1(sum2([expr_cell{:}]));
                         end
@@ -1455,6 +1496,11 @@ classdef FiniteElement < NosnocFormulationObject
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                     if size([expr_cell{:}], 1) == 0
                         exprs= [];
+                    elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
+                        exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
+                        exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                        exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
+                        exprs = exprs(:);
                     else
                         exprs = sum2([expr_cell{:}]);
                     end
@@ -1466,6 +1512,11 @@ classdef FiniteElement < NosnocFormulationObject
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                     if size([expr_cell{:}], 1) == 0
                         exprs= [];
+                    elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
+                        exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
+                        exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                        exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
+                        exprs = exprs(:);
                     else
                         exprs = sum1(sum2([expr_cell{:}]));
                     end
@@ -1482,18 +1533,9 @@ classdef FiniteElement < NosnocFormulationObject
             n_cross_comp = length(g_cross_comp);
             n_path_comp = length(g_path_comp);
             n_comp = n_cross_comp + n_path_comp;
-
+            
             % Add reformulated constraints
             obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
-
-            % If We need to add a cost from the reformulation do that as needed;
-            if settings.mpcc_mode == MpccMode.ell_1_penalty
-                if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*cost;
-                else
-                    obj.cost = sigma_p*obj.cost + cost;
-                end
-            end
         end
 
         function stepEquilibration(obj, sigma_p, rho_h_p)

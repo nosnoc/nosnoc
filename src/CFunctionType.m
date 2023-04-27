@@ -27,6 +27,7 @@
 classdef CFunctionType
     enumeration
         BILINEAR
+        BILINEAR_TWO_SIDED
         FISCHER_BURMEISTER
         NATURAL_RESIDUAL
         CHEN_CHEN_KANZOW

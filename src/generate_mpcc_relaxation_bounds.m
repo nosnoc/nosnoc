@@ -8,6 +8,10 @@ function [lb,ub,g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings)
         lb = -inf*ones(n_comp, 1);
         ub = zeros(n_comp, 1);
       case 'TWO_SIDED' % TODO this only makes sense in some cases
-        error('Not Implemented');
+        n_comp = n_comp/2;
+        lb = [-inf*ones(n_comp, 1), zeros(n_comp, 1)]';
+        lb = lb(:);
+        ub = [zeros(n_comp, 1), inf*ones(n_comp, 1)]';
+        ub = ub(:);
     end
 end

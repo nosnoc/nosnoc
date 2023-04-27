@@ -607,7 +607,16 @@ classdef NosnocProblem < NosnocFormulationObject
                         for fe=stage.stage
                             pairs = fe.cross_comp_pairs(:, :, r);
                             expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.N_finite_elements*(dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
-                            exprs = sum2([expr_cell{:}]);
+                            if size([expr_cell{:}], 1) == 0
+                                exprs= [];
+                            elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
+                                exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
+                                exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                                exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
+                                exprs = exprs(:);
+                            else
+                                exprs = sum2([expr_cell{:}]);
+                            end
                             g_r = g_r + exprs;
                         end
                     end
@@ -620,30 +629,50 @@ classdef NosnocProblem < NosnocFormulationObject
                         for fe=stage.stage
                            pairs = fe.cross_comp_pairs(:, :, r);
                            expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.N_stages*dims.N_finite_elements*(dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
-                           expr = sum1(sum2([expr_cell{:}]));
-                           g_r = g_r + expr;
+                           if size([expr_cell{:}], 1) == 0
+                               exprs= [];
+                           elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
+                               exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
+                               exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                               exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
+                               exprs = exprs(:);
+                           else
+                               exprs = sum1(sum2([expr_cell{:}]));
+                           end
+                           g_r = g_r + exprs;
                         end
                     end
                     g_cross_comp = vertcat(g_cross_comp, g_r);
                 end
             end
 
-            g_comp = g_cross_comp;
-            n_comp = length(g_cross_comp);
-
-            [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
-
-            % Add reformulated constraints
-            obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
-
-            % TODO handle cost correctly
             % If We need to add a cost from the reformulation do that as needed;
-            if settings.mpcc_mode == MpccMode.ell_1_penalty
+            if settings.mpcc_mode == MpccMode.ell_1_penalty % this implies bilinear
+                cost = 0;
+                for r=1:dims.n_sys
+                    for stage=obj.stages
+                        for fe=stage.stage
+                            pairs = fe.cross_comp_pairs(:, :, r);
+                            expr_cell = cellfun(@(pair) apply_psi(pair, @(a,b,t) a*b, 0), pairs, 'uni', false);
+                            expr = sum1(sum2([expr_cell{:}]));
+                            cost = cost + expr;
+                        end
+                    end
+                end
                 if settings.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*cost;
                 else
                     obj.cost = sigma_p*obj.cost + cost;
                 end
+            else
+                g_comp = g_cross_comp;
+                n_comp = length(g_cross_comp);
+
+                [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
+
+                % Add reformulated constraints
+                obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
+
             end
         end
 
