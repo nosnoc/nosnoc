@@ -1077,9 +1077,9 @@ switch dcs_mode
                 Beta_d = define_casadi_symbolic(casadi_symbolic_mode,'Beta_d',n_contacts); % lift friction cone bound
                 Delta_d = define_casadi_symbolic(casadi_symbolic_mode,'Delta_d',n_tangents); % lift lagrangian
                 for ii = 1:n_contacts
-                    ind_temp = n_t*ii-(n_t-1):n_t*ii
+                    ind_temp = n_t*ii-(n_t-1):n_t*ii;
                     g_lift_friction1 = [g_lift_friction1; beta_d(ii)-(mu(ii)*lambda_normal(ii)- sum(lambda_tangent(ind_temp)))];
-                    g_lift_friction2 = [g_lift_friction2; delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v+gamma_d(ii))];
+                    g_lift_friction2 = [g_lift_friction2; delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v-gamma_d(ii))];
                 end
             end
             if isequal(friction_model,'Conic')
