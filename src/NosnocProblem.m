@@ -511,7 +511,7 @@ classdef NosnocProblem < NosnocFormulationObject
             %obj.comp_res = Function('comp_res', {obj.w, obj.p}, {J_comp});
             obj.comp_std = Function('comp_std', {obj.w, obj.p}, {J_comp_std});
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
-            obj.cost_fun = Function('cost_fun', {obj.w}, {obj.cost});
+            obj.cost_fun = Function('cost_fun', {obj.w, obj.p}, {obj.cost});
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
 
             obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
@@ -607,7 +607,7 @@ classdef NosnocProblem < NosnocFormulationObject
                         for fe=stage.stage
                             pairs = fe.cross_comp_pairs(:, :, r);
                             expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.N_finite_elements*(dims.n_s+1)*dims.n_s)), pairs, 'uni', false);
-                            if size([expr_cell{:}], 1) == 0
+                            if size(vertcat(expr_cell{:}), 1) == 0
                                 exprs= [];
                             elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                                 exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -629,7 +629,7 @@ classdef NosnocProblem < NosnocFormulationObject
                         for fe=stage.stage
                            pairs = fe.cross_comp_pairs(:, :, r);
                            expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/(dims.N_stages*dims.N_finite_elements*(dims.n_s+1)*dims.n_s*dims.n_theta)), pairs, 'uni', false);
-                           if size([expr_cell{:}], 1) == 0
+                           if size(vertcat(expr_cell{:}), 1) == 0
                                exprs= [];
                            elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                                exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);

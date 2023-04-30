@@ -172,8 +172,13 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
     ii = ii+1;
     % Verbose
     if print_level >= 3
-        fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, objective,...
-            cpu_time_iter, stats.iter_count, stats.return_status);
+        if strcmp(settings.nlpsol, 'ipopt')
+            fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, objective,...
+                cpu_time_iter, stats.iter_count, stats.return_status);
+        elseif strcmp(settings.nlpsol, 'snopt')
+            fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t\t%s\t%s\n',ii, sigma_k, complementarity_iter, objective,...
+                cpu_time_iter, stats.return_status, stats.secondary_return_status);
+        end
     end
 end
 

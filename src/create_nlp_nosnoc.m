@@ -59,9 +59,16 @@ comp_res_std = problem.comp_std;
 
 %% NLP Solver
 prob = struct('f', problem.cost, 'x', w, 'g', g,'p',p);
+if strcmp(settings.nlpsol, 'ipopt')
+    plugin_options = settings.opts_ipopt;
+elseif strcmp(settings.nlpsol, 'snopt')
+    plugin_options = settings.opts_snopt;
+else
+    error('nosnoc: only ipopt or snopt supported')
+end
 
 if ~settings.multiple_solvers
-    solver = nlpsol(settings.solver_name, 'ipopt', prob, settings.opts_ipopt);
+    solver = nlpsol(settings.solver_name, settings.nlpsol, prob, plugin_options);
 else
     solver = {};
 

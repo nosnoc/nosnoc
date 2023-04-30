@@ -29,6 +29,7 @@ classdef NosnocOptions < handle
     properties
         % General
         solver_name {mustBeTextScalar} = 'nosnoc_solver'
+        nlpsol = 'ipopt'
         use_fesd(1,1) logical = 1
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
 
@@ -163,6 +164,7 @@ classdef NosnocOptions < handle
         % IPOPT Settings
         tol_ipopt(1,1) double {mustBeReal, mustBePositive} = 1e-16
         opts_ipopt
+        opts_snopt(1,1) struct
 
         % Relaxation of terminal constraint
         relax_terminal_constraint(1,1) {mustBeInteger, mustBeInRange(relax_terminal_constraint, 0, 3)} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
@@ -221,6 +223,8 @@ classdef NosnocOptions < handle
             obj.opts_ipopt.ipopt.compl_inf_tol = 1e-16;
             obj.opts_ipopt.ipopt.mu_strategy = 'adaptive';
             obj.opts_ipopt.ipopt.mu_oracle = 'quality-function';
+
+            obj.opts_snopt.snopt.('Major_iterations_limit') = 100000;
 
             obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
         end
