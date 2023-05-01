@@ -7,22 +7,22 @@ close all
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 % settings.irk_scheme = IRKSchemes.LOBATTO_IIIA;
-settings.n_s = 2;
-% settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
+settings.irk_representation ="differential";
+settings.n_s = 3;
+settings.psi_fun_type = CFunctionType.FISCHER_BURMEISTER;
 settings.print_level = 2;
-settings.N_homotopy = 10;
-settings.cross_comp_mode = 1;
+settings.N_homotopy = 6;
+settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
-% settings.friction_model = "Conic"; % "Polyhedral"
-% settings.conic_model_switch_handling = "Abs";  % Plain % Lp
-settings.multiple_solvers = 1;
-settings.sigma_0 = 5;
-settings.gamma_h = 0.0;
+settings.multiple_solvers = 0;
+settings.sigma_0 = 1e-6;
+settings.gamma_h = 0.5;
 settings.mpcc_mode = "Scholtes_ineq";
 
 % some new verbose options for debuging
 settings.print_details_if_infeasible = 1;
 settings.pause_homotopy_solver_if_infeasible = 1;
+settings.real_time_plot = 1;
 %%
 g = 9.81;
 % Symbolic variables and bounds
@@ -33,8 +33,9 @@ model.x = [q;v];
 model.e = 0;
 model.mu = 0;
 model.a_n = 20;
-model.x0 = [0.5;0];
-% model.x0 = [0;-5];
+x0 = [0.5;0];
+% x0 = [0;-5];
+model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 
@@ -55,11 +56,11 @@ qx = x_res(1,:);
 vx = x_res(2,:);
 
 
-t_s = sqrt(2*model.x0(1)/g);
+t_s = sqrt(2*x0(1)/g);
 tt1 = linspace(0,t_s,100);
 tt2 = linspace(t_s,T_sim,100);
-v1 = model.x0(2)-g*tt1;
-q1 = model.x0(1)+model.x0(2)*tt1-g*tt1.^2/2;
+v1 = x0(2)-g*tt1;
+q1 = x0(1)+x0(2)*tt1-g*tt1.^2/2;
 if model.e == 0
     v2 = 0*(tt2-t_s);
     q2 = 0*(tt2-t_s);
@@ -92,7 +93,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 
 %%
-results.all_res.Lambda_normal_opt
+% results.all_res.Lambda_normal_opt
 % model.problem.print
 %%
 if 0 
