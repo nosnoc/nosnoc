@@ -15,9 +15,14 @@ settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 % settings.friction_model = "Conic"; % "Polyhedral"
 % settings.conic_model_switch_handling = "Abs";  % Plain % Lp
-settings.multiple_solvers = 0;
+settings.multiple_solvers = 1;
+settings.sigma_0 = 5;
 settings.gamma_h = 0.0;
 settings.mpcc_mode = "Scholtes_ineq";
+
+% some new verbose options for debuging
+settings.print_details_if_infeasible = 1;
+settings.pause_homotopy_solver_if_infeasible = 1;
 %%
 g = 9.81;
 % Symbolic variables and bounds
@@ -36,7 +41,7 @@ model.f_c = q;
 %% Simulation setings
 N_FE = 2;
 T_sim = 0.5;
-N_sim = 15;
+N_sim = 20;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

@@ -154,6 +154,8 @@ classdef NosnocOptions < handle
         kappa_stabilizing_q_dynamics(1,1) double {mustBeReal, mustBePositive} = 1e-5
         % Verbose
         print_level = 3
+        print_details_if_infeasible = 0;
+        pause_homotopy_solver_if_infeasible = 0;
 
         % Settings specific to CLS
         friction_model (1,1) FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
