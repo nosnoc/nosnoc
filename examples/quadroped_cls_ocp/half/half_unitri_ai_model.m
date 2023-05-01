@@ -70,7 +70,7 @@ model.lbu = -33.5*ones(4,1);
 
 u_expanded = [u(1:2);0;0;u(3:4);0;0];
 
-model.ubx =  [inf; inf; 1*pi; 1*pi*ones(4, 1);50*ones(7, 1)];  
+model.ubx =  [inf; 3; 1*pi; 1*pi*ones(4, 1);50*ones(7, 1)];  
 model.lbx = [-1; 0.0; -1*pi; -1*pi*ones(4, 1);-50*ones(7, 1)]; 
 
 % World parameters
