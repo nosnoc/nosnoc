@@ -25,22 +25,22 @@ q = SX.sym('q',1);
 v = SX.sym('v',1);
 model.M = 1;
 model.x = [q;v];
-model.e = 1;
+model.e = 0;
 model.mu = 0;
 model.a_n = 20;
 model.x0 = [0.5;0];
-model.x0 = [0;-5];
+% model.x0 = [0;-5];
 model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
 N_FE = 2;
 T_sim = 0.5;
-N_sim = 20;
+N_sim = 15;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
+settings.use_previous_solution_as_initial_guess = 1;
 
 %% Call nosnoc Integrator
 [results,stats,model,settings,solver] = integrator_fesd(model,settings);
