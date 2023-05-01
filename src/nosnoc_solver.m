@@ -42,8 +42,7 @@ end
 import casadi.*
 %% Create NLP element and solve OCP with homotopy
 tic
-% [solver,solver_initialization,model,settings] = create_nlp_nosnoc_rv(model_unedited,settings_unedited);
-    [solver,solver_initialization,model,settings] = create_nlp_nosnoc(model_unedited,settings_unedited);
+[solver,solver_initialization,model,settings] = create_nlp_nosnoc(model_unedited,settings_unedited);
 solver_generating_time = toc;
 if settings.print_level >=2
     fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
@@ -69,6 +68,7 @@ unfold_struct(model,'caller');
 results = extract_results_from_solver(model,settings,results);
 
 % get 00 values
+% TODO: Make function for parameters 00
 lambda_00 = [];
 gamma_00 = [];
 p_vt_00 = [];
@@ -120,6 +120,8 @@ switch dcs_mode
         % TODO: considert cross comps as well in the inf norm
      temp = [results.theta_opt_extended.*results.lam_opt_extended];
     complementarity_iter_ell_1 = sum(temp(:));
+    case 'CLS'
+%         TODO?
 end
 
 %% Verbose
@@ -131,16 +133,7 @@ if use_fesd
 else
     fprintf( ['OCP with the Std ' char(irk_scheme) ' in ' char(irk_representation) ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],n_s,N_finite_elements(1),N_stages);
 end
-% fprintf('Total homotopy iterations: %d.\n',stats.homotopy_iterations);
-% if sum(stats.cpu_time) <60
-%     fprintf('Total homotopy solver time: %2.3f seconds. \n',sum(stats.cpu_time));
-% else
-%     fprintf('Total homotopy solver time: %2.3f seconds /  %2.3f minutes. \n',sum(stats.cpu_time),sum(stats.cpu_time)/60);
-% end
-% fprintf('Max homotopy iteration time: %2.3f seconds. \nMin homotopy iteration time: %2.3f seconds.\n',max(stats.cpu_time),min(stats.cpu_time));
-% fprintf('Complementarity residual (1-norm): %2.2e.\n',complementarity_iter_ell_1);
-% fprintf('Complementarity residual (inf-norm): %2.2e.\n',complementarity_iter_ell_inf);
-%%
+
 fprintf('---------------------------------------------- Stats summary--------------------------\n');
 if sum(stats.cpu_time) < 60
     fprintf('H. iters\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter \tComp. res.\n');
@@ -150,7 +143,6 @@ else
     fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e \n',stats.homotopy_iterations,sum(stats.cpu_time)/60,max(stats.cpu_time)/60,min(stats.cpu_time)/60,complementarity_iter_ell_inf);
 end
 fprintf('\n--------------------------------------------------------------------------------------\n');
-%%
 if time_optimal_problem
     T_opt = results.w_opt(model.ind_t_final);
     fprintf('Time optimal problem solved with T_opt: %2.4f.\n',T_opt);

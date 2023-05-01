@@ -108,9 +108,9 @@ classdef NosnocOptions < handle
         ratio_for_homotopy_stop(1,1) double {mustBeReal, mustBePositive} = 0.75
 
         % Homotopy preprocess and polishing steps
-        h_fixed_iterations(1,1) logical = 0
-        h_fixed_max_iter(1,1) logical = 1 % number of iterations that are done with fixed h in the homotopy loop
-        h_fixed_change_sigma(1,1) logical = 1 % if this is on, do not update sigma and just solve on nlp with fixed h.
+%         h_fixed_iterations(1,1) logical = 0
+%         h_fixed_max_iter(1,1) logical = 1 % number of iterations that are done with fixed h in the homotopy loop
+%         h_fixed_change_sigma(1,1) logical = 1 % if this is on, do not update sigma and just solve on nlp with fixed h.
         polishing_step(1,1) logical = 0 % heuristic for fixing active set, yet exerimental, not recommended to use.
         polishing_derivative_test(1,1) logical = 0 % check in sliding mode also the derivative of switching functions
         h_fixed_to_free_homotopy(1,1) logical = 0 % start with large penaly for equidistant grid, end with variable equilibrated grid.
@@ -364,15 +364,15 @@ classdef NosnocOptions < handle
             obj.time_freezing = val;
         end
 
-        function obj = set.h_fixed_change_sigma(obj, val)
-            if val == 0
-                if obj.print_level >= 1
-                    fprintf('Info: Setting fixed max iterations to true in the case that the sigma change is not fixed. \n')
-                end
-                obj.h_fixed_max_iter = 1;
-            end
-            obj.h_fixed_max_iter = val;
-        end
+%         function obj = set.h_fixed_change_sigma(obj, val)
+%             if val == 0
+%                 if obj.print_level >= 1
+%                     fprintf('Info: Setting fixed max iterations to true in the case that the sigma change is not fixed. \n')
+%                 end
+%                 obj.h_fixed_max_iter = 1;
+%             end
+%             obj.h_fixed_max_iter = val;
+%         end
 
         function obj = set.mpcc_mode(obj, val)
             if val == MpccMode.direct
