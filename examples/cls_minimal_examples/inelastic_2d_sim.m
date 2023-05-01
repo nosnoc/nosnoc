@@ -7,6 +7,7 @@ close all
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 3;
+settings.sigma_0 = 1e-2;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
@@ -15,6 +16,9 @@ settings.friction_model = "Conic";
 settings.conic_model_switch_handling = "Lp";
 settings.local_speed_of_time_variable = 0;
 settings.use_speed_of_time_variables = 0;
+settings.nlpsol = 'snopt';
+settings.psi_fun_type = CFunctionType.KANZOW_SCHWARTZ;
+
 
 %%
 g = 10;
@@ -24,8 +28,8 @@ v = SX.sym('v',2);
 model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
-model.mu = 0.2;
-model.x0 = [0;0.1;3;-0.5];
+model.mu = 0.0;
+model.x0 = [0;1.0;3;0];
 model.f_v = [0;-g];
 model.f_c = q(2);
 model.J_tangent = [1; 0];
@@ -37,7 +41,7 @@ N_sim = 10;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
+settings.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
 [results,stats,model,settings,solver] = integrator_fesd(model,settings);
 %% read and plot results

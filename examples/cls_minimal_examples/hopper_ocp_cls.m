@@ -47,17 +47,21 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 % settings.irk_representation = 'differential';
 settings.n_s = 2;  % number of stages in IRK methods
 settings.use_fesd = 1;
-settings.N_homotopy = 6;
+settings.N_homotopy = 7;
+settings.homotopy_update_slope = 0.1;
+settings.sigma_0 = 1e2;
 settings.opts_ipopt.ipopt.tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
 settings.opts_ipopt.ipopt.acceptable_iter = 3;
 settings.cross_comp_mode = 1;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.opts_ipopt.ipopt.max_iter = 5e3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 0;
 % settings.s_sot_max = 2;
 % settings.s_sot_min = 1;
 settings.equidistant_control_grid = 0;
+%settings.use_speed_of_time_variables = 1;
+%settings.local_speed_of_time_variable = 1;
 settings.pss_lift_step_functions = 0;
 settings.stagewise_clock_constraint = 0;
 settings.dcs_mode = "CLS";
@@ -66,14 +70,21 @@ settings.conic_model_switch_handling = 'Lp';
 settings.g_path_at_fe = 0; % evaluate path constraint on every integration step
 settings.g_path_at_stg = 0; % evaluate path constraint on every stage point
 settings.nonsmooth_switching_fun = 0;
+%settings.mpcc_mode = MpccMode.elastic_ineq;
+%settings.nlpsol = 'ipopt';
+settings.nlpsol = 'snopt';
+settings.opts_snopt.snopt.Major_feasibility_tolerance = 1e-3;
+settings.opts_snopt.snopt.Minor_feasibility_tolerance = 1e-3;
+obj.opts_snopt.snopt.Major_iterations_limit = 1000;
+obj.opts_snopt.snopt.Iterations_limit = 100000;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_ipopt.ipopt.linear_solver = 'ma57';
 
 %% discretization
 T = 1; % prediction horizon
-N_stg = 10; % control intervals
-N_FE = 2;  % integration steps per control intevral
+N_stg = 20; % control intervals
+N_FE = 3;  % integration steps per control intevral
 
 v_slip_bound = 0.001;
 full_comp = 1;
@@ -129,10 +140,10 @@ x_mid = [(x_goal-0.1)/2+0.1; 0.8; 0; 0.1; 0; 0; 0; 0];
 x_end = [x_goal; 0.5; 0; 0.5; 0; 0; 0; 0];
 
 Q = diag([50; 50; 20; 50; 0.1; 0.1; 0.1; 0.1]);
-Q_terminal =diag([50; 50; 50; 50; 0.1; 0.1; 0.1; 0.1]);
+Q_terminal =diag([500; 500; 500; 500; 0.1; 0.1; 0.1; 0.1]);
 
 Q = diag([50; 50; 20; 50; 0.1; 0.1; 0.1; 0.1]);
-Q_terminal =diag([300; 300; 300; 300; 0.1; 0.1; 0.1; 0.1]);
+Q_terminal =diag([1000; 1000; 1000; 1000; 0.1; 0.1; 0.1; 0.1]);
 
 u_ref = [0; 0; 0];
 R = diag([0.01; 0.01; 1e-5]);
@@ -192,10 +203,10 @@ end
 end
 %%  plots
 fig_num = 2;
-plotHopperStatesControls(x_opt,u_opt,fig_num);
+plotHopperStatesControls(x_opt,u_opt,x_end,fig_num,settings,results);
 fig_num = 4;
 % tagnetinal and normal velocity
-plotHopperSwitchingFun(t_opt,c_eval,fig_num);
+%plotHopperSwitchingFun(t_opt,c_eval,fig_num);
 
 %%
 if 0 

@@ -224,8 +224,6 @@ classdef NosnocOptions < handle
             obj.opts_ipopt.ipopt.mu_strategy = 'adaptive';
             obj.opts_ipopt.ipopt.mu_oracle = 'quality-function';
 
-            obj.opts_snopt.snopt.('Major_iterations_limit') = 100000;
-
             obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
         end
 

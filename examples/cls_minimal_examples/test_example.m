@@ -13,11 +13,14 @@ settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.time_freezing = 0; %% we will need to exlude the coexistence of these two
-settings.friction_model = "Polyhedral"; % "Conic"
-settings.friction_model = "Conic"; % "Conic"
-settings.conic_model_switch_handling = "Lp";  % Plain % Lp
+settings.friction_model = "Polyhedral";
+%settings.friction_model = "Conic"; % "Conic"
+settings.conic_model_switch_handling = "Lp";
 settings.local_speed_of_time_variable = 0;
 settings.use_speed_of_time_variables = 0;
+settings.mpcc_mode = MpccMode.elastic_ineq;
+settings.nlpsol = 'snopt';
+settings.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
 %%
 g = 10;
 % Symbolic variables and bounds
