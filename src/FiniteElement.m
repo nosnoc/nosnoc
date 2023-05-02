@@ -1179,7 +1179,6 @@ classdef FiniteElement < NosnocFormulationObject
                 V_k  = X_k(dims.n_q+1:end);
                 % junction equations
                 obj.addConstraint(Q_k0-Q_k);
-                
 %                 Z_impulse_k = [obj.w(obj.ind_Lambda_normal{1}); obj.w(obj.ind_Y_gap{1});obj.w(obj.ind_P_vn{1});obj.w(obj.ind_N_vn{1});...
 %                                obj.w(obj.ind_Lambda_tangent{1}); obj.w(obj.ind_Gamma_d{1}); obj.w(obj.ind_Beta_d{1}); obj.w(obj.ind_Delta_d{1}); ...
 %                                obj.w(obj.ind_Gamma{1}); obj.w(obj.ind_Beta_conic{1}); obj.w(obj.ind_P_vt{1}); obj.w(obj.ind_N_vt{1}); obj.w(obj.ind_Alpha_vt{1})];

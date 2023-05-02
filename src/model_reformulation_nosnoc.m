@@ -1240,7 +1240,7 @@ z0_all = [z0_all;z0];
 lbz_all = [lbz_all;lbz];
 ubz_all = [ubz_all;ubz];
 n_z_all = n_z_all + n_z;
-g_impulse = [];
+
 %% TODO %%%%%%%%%%%%%%
 %%%%%% HERE ENDS SECOND FUNCTION THAT DEFINES THE MODEL VARIABLES. THE USER
 %%%%%% MIGHT USE THEM IN THE CONSTRAINTS (BUT DO WE GO THROUGH ANOTHER CHECK OF G_INEQ AND CO?
@@ -1336,8 +1336,8 @@ for ii = 1:n_sys
             v_post_impact = define_casadi_symbolic(casadi_symbolic_mode,'v_post_impact',n_q);
             v_pre_impact = define_casadi_symbolic(casadi_symbolic_mode,'v_pre_impact',n_q);
             g_alg_cls = [g_alg_cls; y_gap - f_c];
-            g_impulse = [g_impulse; M*(v_post_impact-v_pre_impact)-J_normal*Lambda_normal];
-            g_impulse = [g_impulse;Y_gap-f_c];
+            g_impulse = [g_impulse; M*(v_post_impact-v_pre_impact)-J_normal*Lambda_normal]; % TODO: can this be relaxed? velocity junction
+            g_impulse = [g_impulse; Y_gap-f_c];
             % add state jump for every contact
             for ii = 1:n_contacts
 %                 g_impulse = [g_impulse; P_vn(ii)-N_vn(ii) - J_normal(:,ii)'*(v_post_impact+e(ii)*v_pre_impact)];
@@ -1361,7 +1361,6 @@ for ii = 1:n_sys
                                 g_alg_cls  = [g_alg_cls;J_tangent(:,ind_temp)'*v-(p_vt(ind_temp)-n_vt(ind_temp))];
                                 g_impulse = [g_impulse;J_tangent(:,ind_temp)'*v_post_impact - (P_vt(ind_temp)-N_vt(ind_temp))];
                             end
-                            
                         end
                     case 'Polyhedral'
                         g_impulse(1:n_q) = M*(v_post_impact-v_pre_impact)-J_normal*Lambda_normal-D_tangent*Lambda_tangent;
@@ -1559,7 +1558,7 @@ model.n_theta_step = n_theta_step;
 model.n_lambda_0 = n_lambda_n;
 model.n_lambda_1 = n_lambda_p;
 
-% CLS 
+% CLS
 if isequal(dcs_mode,'CLS')
     model.n_contacts = n_contacts;
     model.n_tangents = n_tangents;

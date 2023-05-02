@@ -104,7 +104,7 @@ classdef NosnocFormulationObject < handle
             addOptional(p, 'ub', []);
             addOptional(p, 'type', []);
             parse(p, obj, symbolic, varargin{:});
-            
+
             n = length(symbolic);
             n_g = length(obj.g);
 

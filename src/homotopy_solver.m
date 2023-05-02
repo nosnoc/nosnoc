@@ -147,7 +147,7 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
     if isequal(stats.return_status,'Infeasible_Problem_Detected')
         warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
         if settings.print_details_if_infeasible
-                print_problem_details(results,model,solver_initialization,[]);
+            print_problem_details(results,model,solver_initialization,[]);
         end
         if settings.pause_homotopy_solver_if_infeasible
 %             error('nosnoc: infeasible problem encounterd - stopping for debugging.')
