@@ -186,6 +186,9 @@ classdef NosnocOptions < handle
         % TODO: make proper multiple solver class.
         multiple_solvers(1,1) logical = 0
 
+        % Experimental:
+        no_initial_impacts(1,1) logical = 0
+
         % All NLP parameters
         T_val(1,1) double {mustBeReal, mustBePositive} = 1
         p_val

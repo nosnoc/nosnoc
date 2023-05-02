@@ -427,7 +427,7 @@ classdef FiniteElement < NosnocFormulationObject
                         'lambda_normal',...
                         zeros(dims.n_contacts,1),...
                         inf * ones(dims.n_contacts, 1),...
-                        ones(dims.n_contacts, 1),...
+                        0*ones(dims.n_contacts, 1),...
                         ii,1);
                     y_gap = define_casadi_symbolic(settings.casadi_symbolic_mode,...
                         ['y_gap_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
@@ -578,7 +578,7 @@ classdef FiniteElement < NosnocFormulationObject
                     ii);
             end
 
-            if settings.dcs_mode == DcsMode.CLS
+            if settings.dcs_mode == DcsMode.CLS && (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
                 %  IMPULSE VARIABLES
                 Lambda_normal = define_casadi_symbolic(settings.casadi_symbolic_mode,...
                     ['Lambda_normal_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)],...
@@ -587,7 +587,7 @@ classdef FiniteElement < NosnocFormulationObject
                     'Lambda_normal',...
                     zeros(dims.n_contacts,1),...
                     inf * ones(dims.n_contacts, 1),...
-                    ones(dims.n_contacts, 1),1);
+                    0*ones(dims.n_contacts, 1),1);
 %                 P_vn = define_casadi_symbolic(settings.casadi_symbolic_mode,...
 %                     ['P_vn' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
 %                     dims.n_contacts);
@@ -976,7 +976,9 @@ classdef FiniteElement < NosnocFormulationObject
 
                     for jj=1:n_discont-2
                         cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
-                        cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
+                        if (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
+                            cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
+                        end
                         if model.friction_exists
                             if settings.friction_model == FrictionModel.Conic
                                 cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma{end,1}), obj.w(obj.ind_beta_conic{jj,1})]);
@@ -1183,8 +1185,12 @@ classdef FiniteElement < NosnocFormulationObject
 %                                obj.w(obj.ind_Gamma{1}); obj.w(obj.ind_Beta_conic{1}); obj.w(obj.ind_P_vt{1}); obj.w(obj.ind_N_vt{1}); obj.w(obj.ind_Alpha_vt{1})];
                 Z_impulse_k = [obj.w(obj.ind_Lambda_normal{1}); obj.w(obj.ind_Y_gap{1});obj.w(obj.ind_L_vn{1});...
                                obj.w(obj.ind_Lambda_tangent{1}); obj.w(obj.ind_Gamma_d{1}); obj.w(obj.ind_Beta_d{1}); obj.w(obj.ind_Delta_d{1}); ...
-                               obj.w(obj.ind_Gamma{1}); obj.w(obj.ind_Beta_conic{1}); obj.w(obj.ind_P_vt{1}); obj.w(obj.ind_N_vt{1}); obj.w(obj.ind_Alpha_vt{1})];
-                obj.addConstraint(model.g_impulse_fun(Q_k0,V_k0,V_k,Z_impulse_k));
+                    obj.w(obj.ind_Gamma{1}); obj.w(obj.ind_Beta_conic{1}); obj.w(obj.ind_P_vt{1}); obj.w(obj.ind_N_vt{1}); obj.w(obj.ind_Alpha_vt{1})];
+                if (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
+                    obj.addConstraint(model.g_impulse_fun(Q_k0,V_k0,V_k,Z_impulse_k));
+                else
+                    obj.addConstraint(V_k0-V_k);
+                end
             else
                 X_k0 = obj.prev_fe.x{end};
             end
@@ -1321,7 +1327,7 @@ classdef FiniteElement < NosnocFormulationObject
             lbg_impulse_comp = [];
             ubg_impulse_comp = [];
             impulse_pairs = [];
-            if settings.dcs_mode == DcsMode.CLS
+            if settings.dcs_mode == DcsMode.CLS && (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
                  % comp condts 
                 % Y_gap comp. to Lambda_Normal+P_vn+N_vn;..
                 % P_vn comp.to N_vn;
