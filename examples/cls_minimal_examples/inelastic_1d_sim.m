@@ -9,7 +9,6 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 % settings.irk_scheme = IRKSchemes.LOBATTO_IIIA;
 settings.irk_representation ="differential";
 settings.n_s = 3;
-settings.psi_fun_type = CFunctionType.FISCHER_BURMEISTER;
 settings.print_level = 3;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
