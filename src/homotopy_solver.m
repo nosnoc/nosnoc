@@ -179,8 +179,11 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
             % TODO: Findout snopt prim du inf log!
             inf_pr = nan;
             inf_du = nan;
-            fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t\t%s\t%s\n',ii, sigma_k, complementarity_iter, objective,...
-                cpu_time_iter, stats.return_status, stats.secondary_return_status);
+%             fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t\t%s\t%s\n',ii, sigma_k, complementarity_iter, objective,...
+%                 cpu_time_iter, stats.return_status, stats.secondary_return_status);
+             fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %d \t\t %s \n',ii, sigma_k, complementarity_iter, objective,inf_pr,inf_du, ...
+                cpu_time_iter, stats.secondary_return_status, stats.return_status);
+             error('todo: add missing log information')
         end
     end
 end
