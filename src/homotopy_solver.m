@@ -149,7 +149,7 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
         end
         if settings.pause_homotopy_solver_if_infeasible
 %             error('nosnoc: infeasible problem encounterd - stopping for debugging.')
-            dbstop;
+            keyboard
         end
     end
 
