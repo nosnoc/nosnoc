@@ -48,11 +48,10 @@ model.f_v = [0;-g];
 model.f_c = q(2);
 model.J_tangent = [1; 0]; 
 model.D_tangent = [1,-1;0,0];
-model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
-N_FE = 4;
-T_sim = 1.5;
-N_sim = 6;
+N_FE = 10;
+T_sim = 0.9;
+N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

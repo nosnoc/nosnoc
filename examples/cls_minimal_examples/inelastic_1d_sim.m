@@ -15,10 +15,10 @@ settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
-settings.sigma_0 = 1e-6;
-settings.gamma_h = 0.5;
+settings.sigma_0 = 1e-1;
+settings.gamma_h = 0.0;
 settings.mpcc_mode = "Scholtes_ineq";
-
+% settings.nlpsol = 'snopt';
 % some new verbose options for debuging
 settings.print_details_if_infeasible = 0;
 settings.pause_homotopy_solver_if_infeasible = 0;
@@ -42,7 +42,7 @@ model.f_c = q;
 %% Simulation setings
 N_FE = 2;
 T_sim = 0.5;
-N_sim = 20;
+N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

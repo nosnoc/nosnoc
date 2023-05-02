@@ -17,19 +17,17 @@ settings.conic_model_switch_handling = "Abs";
 settings.pss_lift_step_functions= 0;
 settings.opts_ipopt.ipopt.max_iter = 3e2;
 settings.print_level = 3;
-settings.N_homotopy = 5;
+settings.N_homotopy = 6;
 settings.cross_comp_mode = 1;
-settings.time_freezing = 0;
-settings.impose_terminal_phyisical_time = 1;
-settings.mpcc_mode = "elastic_ineq";
+settings.sigma_0 = 1e2;
+settings.print_details_if_infeasible = 1;
+% settings.mpcc_mode = "elastic_ineq";
 %%
 model.e = 0;
-model.mu = 0;
-model.n_dim_contact = 2;
+model.mu = 0.5;
 %% the dynamics
 model.n_q = 3;
-model.g = -9.81*1;
-model.a_n = 100;
+model.g = -9.81;
 qx = SX.sym('qx',1);
 qy = SX.sym('qy',1);
 qtheta = SX.sym('qtheta',1);
@@ -42,7 +40,8 @@ model.x = [q;v];
 model.q = q;
 model.v = v;
 % constraint
-m = 1; l = 1;
+m = 1; 
+l = 1;
 theta0 = pi/6;
 g = 9.81;
 M = diag([m,m,J]);
@@ -61,13 +60,13 @@ model.D_tangent = [xc_left.jacobian(q)',-xc_left.jacobian(q)'];
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];
 
-above_ground = 0.18;
-theta0 = 0.75*pi/2;
+% above_ground = 0.18;
+% theta0 = 0.75*pi/2;
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            0;0;0];
 
 %% Simulation setings
-N_finite_elements = 50;
+N_finite_elements = 20;
 T_sim = 0.8;
 N_sim = 1;
 model.T_sim = T_sim;
@@ -116,10 +115,19 @@ for ii = 1:length(qx)
 end
 %%
 figure
+subplot(311)
 plot(t,vx)
-hold on
-plot(t,vy)
-plot(t,omega)
-xlabel('$t$','Interpreter','latex')
-ylabel('$v$','Interpreter','latex')
 grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$v_x$','Interpreter','latex')
+subplot(312)
+plot(t,vy)
+grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$v_y$','Interpreter','latex')
+subplot(313)
+plot(t,omega)
+grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$\omega$','Interpreter','latex')
+

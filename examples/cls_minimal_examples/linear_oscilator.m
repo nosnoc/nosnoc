@@ -52,9 +52,9 @@ model.f_c = q;
 % model.D_tangent = [1,-1;0,0];
 
 %% Simulation setings
-N_FE = 3;
-T_sim = 6;
-N_sim = 100;
+N_FE = 5;
+T_sim = 1;
+N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

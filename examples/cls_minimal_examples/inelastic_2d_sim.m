@@ -16,7 +16,7 @@ settings.friction_model = "Conic";
 settings.conic_model_switch_handling = "Lp";
 settings.local_speed_of_time_variable = 0;
 settings.use_speed_of_time_variables = 0;
-settings.nlpsol = 'snopt';
+% settings.nlpsol = 'snopt';
 settings.psi_fun_type = CFunctionType.KANZOW_SCHWARTZ;
 
 
@@ -35,9 +35,9 @@ model.f_c = q(2);
 model.J_tangent = [1; 0];
 model.D_tangent = [1,-1;0,0];
 %% Simulation setings
-N_FE = 2;
+N_FE = 3;
 T_sim = 0.7;
-N_sim = 10;
+N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

@@ -19,8 +19,8 @@ settings.conic_model_switch_handling = "Lp";
 settings.local_speed_of_time_variable = 0;
 settings.use_speed_of_time_variables = 0;
 settings.mpcc_mode = MpccMode.elastic_ineq;
-settings.nlpsol = 'snopt';
-settings.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
+% settings.nlpsol = 'snopt';
+% settings.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
 %%
 g = 10;
 % Symbolic variables and bounds
@@ -82,17 +82,16 @@ ylabel('$v$','interpreter','latex');
 subplot(312)
 plot(t_grid,[nan*ones(model.n_contacts,1),results.all_res.lambda_normal_opt])
 hold on
-plot(t_grid,[nan,results.all_res.lambda_tangent_opt])
+plot(t_grid,[nan*ones(model.n_tangents,1),results.all_res.lambda_tangent_opt])
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\lambda$','interpreter','latex');
 subplot(313)
 stem(t_grid,[results.all_res.Lambda_normal_opt,nan*ones(model.n_contacts,1)])
 hold on
-stem(t_grid,[results.all_res.Lambda_tangent_opt,nan*ones(model.n_tangents,1)])
+stem(t_grid,[results.all_res.Lambda_tangent_opt,nan*ones(model.n_tangents,1)]')
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda$','interpreter','latex');
 xlim([0 T_sim])
-% print_casadi_vector(model.g)
 
