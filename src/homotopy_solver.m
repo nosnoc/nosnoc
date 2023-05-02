@@ -113,7 +113,8 @@ complementarity_iter = 1;
 ii = 0;
 
 if print_level >= 3
-    fprintf('\niter\t\tsigma\t\tcompl_res\tobjective\tCPU time\tNLP iters\tstatus\n')
+%     fprintf('\niter\t\tsigma\t\tcompl_res\tobjective\tCPU time\tNLP iters\tstatus \t inf_pr \t inf_du \n')
+    fprintf('\niter \t\t sigma \t\t compl_res \t\t objective \t\t inf_pr \t\t inf_du \t\t CPU time \t\t NLP iters \t\t status \n')
 end
 
 while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N || ii == 0)
@@ -141,7 +142,8 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
         cpu_time_iter = toc ;
         stats = solver.stats;
     end
-
+    
+    
     if isequal(stats.return_status,'Infeasible_Problem_Detected')
         warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
         if settings.print_details_if_infeasible
@@ -167,9 +169,16 @@ while (complementarity_iter) > comp_tol && ii < N_homotopy && (sigma_k > sigma_N
     % Verbose
     if print_level >= 3
         if strcmp(settings.nlpsol, 'ipopt')
-            fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t%d\t\t%s\n',ii, sigma_k, complementarity_iter, objective,...
+            inf_pr = solver.stats.iterations.inf_pr(end);
+            inf_du = solver.stats.iterations.inf_du(end);
+%             fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t%d\t\t%s\t\t%6.2e \t\t%6.2e\n',ii, sigma_k, complementarity_iter, objective,...
+%                 cpu_time_iter, stats.iter_count, stats.return_status,inf_pr,inf_du);
+            fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %d \t\t %s \n',ii, sigma_k, complementarity_iter, objective,inf_pr,inf_du, ...
                 cpu_time_iter, stats.iter_count, stats.return_status);
         elseif strcmp(settings.nlpsol, 'snopt')
+            % TODO: Findout snopt prim du inf log!
+            inf_pr = nan;
+            inf_du = nan;
             fprintf('%d\t\t%2.2e\t%2.2e\t%.3f\t\t%.3f\t\t\t%s\t%s\n',ii, sigma_k, complementarity_iter, objective,...
                 cpu_time_iter, stats.return_status, stats.secondary_return_status);
         end

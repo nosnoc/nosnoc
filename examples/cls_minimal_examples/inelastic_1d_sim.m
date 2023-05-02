@@ -10,7 +10,7 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.irk_representation ="differential";
 settings.n_s = 3;
 settings.psi_fun_type = CFunctionType.FISCHER_BURMEISTER;
-settings.print_level = 2;
+settings.print_level = 3;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
@@ -20,9 +20,9 @@ settings.gamma_h = 0.5;
 settings.mpcc_mode = "Scholtes_ineq";
 
 % some new verbose options for debuging
-settings.print_details_if_infeasible = 1;
-settings.pause_homotopy_solver_if_infeasible = 1;
-settings.real_time_plot = 1;
+settings.print_details_if_infeasible = 0;
+settings.pause_homotopy_solver_if_infeasible = 0;
+settings.real_time_plot = 0;
 %%
 g = 9.81;
 % Symbolic variables and bounds
