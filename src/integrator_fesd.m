@@ -185,15 +185,6 @@ for ii = 1:N_sim
             lambda_0_opt_extended = [alg_states_extended(n_alpha+1:2*n_alpha,:)];
             lambda_1_opt_extended = [alg_states_extended(2*n_alpha+1:3*n_alpha,:)];
 
-            if pss_lift_step_functions
-                if n_beta >0
-                    beta_opt_extended = [alg_states_extended(3*n_alpha+1:3*n_alpha+n_beta,:)];
-                end
-                if n_theta_step >0
-                    gamma_opt_extended = [alg_states_extended(3*n_alpha+n_beta+1:end,:)];
-                end
-            end
-
             alpha_opt= alpha_opt_extended(:,1:n_s:end);
             lambda_0_opt= lambda_0_opt_extended(:,1:n_s:end);
             lambda_1_opt= lambda_1_opt_extended(:,1:n_s:end);

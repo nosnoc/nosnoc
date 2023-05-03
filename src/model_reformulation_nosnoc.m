@@ -1125,7 +1125,6 @@ switch dcs_mode
             mu_guess = initial_mu*ones(n_sys,1);
         end
         z0_all = [theta_guess;lambda_guess;mu_guess];
-        n_lift_eq = n_sys;
     case 'Step'
         z_all = [alpha;lambda_n;lambda_p;beta;theta_step];
         z_switching = [lambda_n;lambda_p];
@@ -1210,7 +1209,6 @@ switch dcs_mode
         end
         n_z_all = length(z_all);
 end
-n_lift_eq =length(g_lift);
 %% Add user provided algebraic
 z_all = vertcat(z_all,z);
 z0_all = [z0_all;z0];
@@ -1517,11 +1515,9 @@ model.m_ind_vec = m_ind_vec;
 model.n_theta = n_theta;
 model.n_lambda = n_lambda;
 model.n_algebraic_constraints = n_algebraic_constraints;
-model.n_lift_eq  = n_lift_eq;
 
 model.n_c_sys = n_c_sys;
 model.n_alpha = n_alpha;
-model.n_beta = n_beta;
 model.n_theta_step = n_theta_step;
 
 % CLS
