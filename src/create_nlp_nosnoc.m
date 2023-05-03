@@ -47,7 +47,7 @@ settings = varargin{2};
 settings.create_butcher_tableu(model);
 
 %% Formulate the NLP / Main Discretization loop
-problem = NosnocProblem(settings, model.dimensions, model);
+problem = NosnocProblem(settings, model.dims, model);
 %% CasADi Functions for objective complementarity residual
 w = problem.w; % vectorize all variables, TODO: again, further cleanup necessary
 g = problem.g; % vectorize all constraint functions
@@ -118,7 +118,7 @@ if settings.print_level > 5
     problem.print();
 end
 
-%% Model update: all index sets and dimensions
+%% Model update: all index sets and dims
 % TODO: Maybe just return the problem, currently trying not to break compatibility for now.
 model.ind_x = [problem.ind_x0.'; flatten_ind(problem.ind_x)];
 model.ind_v = sort(flatten_ind(problem.ind_v));

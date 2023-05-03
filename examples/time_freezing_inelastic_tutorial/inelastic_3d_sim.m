@@ -92,7 +92,8 @@ theta5  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(alpha(4,:));
 theta = [theta1;theta2;theta3;theta4;theta5];
 end
 
-n_f = model.n_theta_step;
+dims = model.dims
+n_f = dims.n_theta_step;
 t_grid(1) = [];
 figure
 for ii = 1:n_f 

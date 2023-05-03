@@ -50,6 +50,8 @@ model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call FESD Integrator
 [results,stats,model] = integrator_fesd(model,settings);
+
+dims = model.dims;
 %%
 qx = results.x_res(1,:);
 qy = results.x_res(2,:);
@@ -100,7 +102,7 @@ theta5  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(alpha(4,:));
 theta = [theta1;theta2;theta3;theta4;theta5];
 end
 
-n_f = model.n_theta_step;
+n_f = dims.n_theta_step;
 t_grid(1) = [];
 figure
 for ii = 1:n_f 

@@ -31,8 +31,8 @@ function [results_cross_comp] = create_complementarity_constraints(varargin)
 
 % A function for formulating the complementarity and cross complementarity (orthogonaliy constaints)
 % Examples of calling this function
-% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions,current_index);
-% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dimensions);
+% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dims,current_index);
+% [J_comp,g_cross_comp_j] = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_current_fe,dims);
 import casadi.*
 %%
 g_cross_comp_j = [];
@@ -46,9 +46,9 @@ use_fesd = varargin{1};
 cross_comp_mode = varargin{2};
 comp_var_current_fe = varargin{3};
 unfold_struct(comp_var_current_fe,'caller')
-% Dimensions
-dimensions = varargin{4};
-unfold_struct(dimensions,'caller')
+% dims
+dims = varargin{4};
+unfold_struct(dims,'caller')
 % Indices
 if nargin == 4
     cross_comp_mode = 10;

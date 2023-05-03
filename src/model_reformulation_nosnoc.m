@@ -370,7 +370,7 @@ end
 if isfield(model,'lsq_T')
     % sanity chkecs on the input
     if length(model.lsq_T)<3
-        error('nosnoc: In lsq_u either the least squares function, the reference of the weight matrix are missing.')
+        error('nosnoc: In lsq_u either the least squares function, the reference or the weight matrix are missing.')
     end
     if size(model.lsq_T{2},1)~=size(model.lsq_T{1})
         error('nosnoc: The dimensions of the least squares error term and weighting matrix for the terminal cost do not match.')
@@ -1554,34 +1554,34 @@ model.p_time_var_val = p_time_var_val;
 model.p_dyn = [p_global, p_time_var_stages];
 %% collect all dimensions in one sperate struct as it is needed by several other functions later
 
-dimensions.N_stages = N_stages;
-dimensions.N_finite_elements = N_finite_elements;
-dimensions.n_x = n_x;
-dimensions.n_f = n_f;
-dimensions.n_u = n_u;
-dimensions.n_q = n_q;
-dimensions.n_z_all = n_z_all;
-dimensions.n_z = n_z;
-dimensions.n_s = n_s;
-dimensions.n_theta = n_theta;
-dimensions.n_sys = n_sys;
-dimensions.m_vec = m_vec;
-dimensions.m_ind_vec = m_ind_vec;
-dimensions.n_c_sys = n_c_sys;
-dimensions.n_alpha = n_alpha;
-dimensions.n_beta = n_beta;
-dimensions.n_theta_step = n_theta_step;
-dimensions.n_lambda_0 = n_lambda_n;
-dimensions.n_lambda_1 = n_lambda_p;
-dimensions.n_f_sys = n_f_sys;
-dimensions.n_p_global = n_p_global;
-dimensions.n_p_time_var = n_p_time_var;
+dims.N_stages = N_stages;
+dims.N_finite_elements = N_finite_elements;
+dims.n_x = n_x;
+dims.n_f = n_f;
+dims.n_u = n_u;
+dims.n_q = n_q;
+dims.n_z_all = n_z_all;
+dims.n_z = n_z;
+dims.n_s = n_s;
+dims.n_theta = n_theta;
+dims.n_sys = n_sys;
+dims.m_vec = m_vec;
+dims.m_ind_vec = m_ind_vec;
+dims.n_c_sys = n_c_sys;
+dims.n_alpha = n_alpha;
+dims.n_beta = n_beta;
+dims.n_theta_step = n_theta_step;
+dims.n_lambda_0 = n_lambda_n;
+dims.n_lambda_1 = n_lambda_p;
+dims.n_f_sys = n_f_sys;
+dims.n_p_global = n_p_global;
+dims.n_p_time_var = n_p_time_var;
 if isequal(dcs_mode,'CLS')
-    dimensions.n_contacts = n_contacts;
-    dimensions.n_tangents = n_tangents;
-    dimensions.n_t = n_t;
+    dims.n_contacts = n_contacts;
+    dims.n_tangents = n_tangents;
+    dims.n_t = n_t;
 end
-model.dimensions = dimensions;
+model.dims = dims;
 %%
 model.friction_exists = friction_exists;
 end

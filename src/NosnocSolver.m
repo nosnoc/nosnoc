@@ -23,8 +23,8 @@ classdef NosnocSolver < handle
 
                 if iscell(val)
                     % TODO do automatic fallback on smaller dimension cell arrays
-                    if ndims(val) == 2 && size(val, 1) == obj.model.dimensions.N_stages && size(val,2) == 1
-                        for ii=1:obj.model.dimensions.N_stages
+                    if ndims(val) == 2 && size(val, 1) == obj.model.dims.N_stages && size(val,2) == 1
+                        for ii=1:obj.model.dims.N_stages
                             for v=ind(ii,:,:)
                                 if ~isempty(v) && length(v{1}) == length(val{ii})
                                     obj.solver_initialization.w0(v{1}) = val{ii}; 

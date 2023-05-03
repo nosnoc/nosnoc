@@ -1,6 +1,6 @@
 function [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(varargin)
 % treatment of the bilinear constraint that arise from complementarity or orthogonality conditions
-%   [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_this_fe,dimensions,current_index);
+%   [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_this_fe,dims,current_index);
 % Sanity check of the input
 % List of mpcc_modes
 % 'direct'
@@ -28,10 +28,10 @@ mpcc_mode = varargin{2};
 % Complementarity variables
 mpcc_var_this_fe = varargin{3};
 unfold_struct(mpcc_var_this_fe,'caller')
+dims = varargin{4};
+unfold_struct(dims,'caller')
 
-% Dimensions
-dimensions = varargin{4};
-unfold_struct(dimensions,'caller')
+% TODO: no vargin here!
 
 % Indices
 if nargin == 4

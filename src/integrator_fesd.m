@@ -83,7 +83,7 @@ unfold_struct(model,'caller')
 unfold_struct(solver_initialization,'caller')
 settings = settings_bkp;
 
-%% check does the provided u_sim has correct dimensions
+%% check does the provided u_sim has correct dims
 if exist('u_sim','var')
     [n_rows,n_cols] = size(u_sim);
     if n_rows~=n_u || n_cols~=N_sim

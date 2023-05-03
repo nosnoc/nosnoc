@@ -1,5 +1,4 @@
 clear all;
-clear all;
 clc;
 import casadi.*
 close all

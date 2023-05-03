@@ -548,7 +548,7 @@ for k=0:N_stages-1
             current_index.k = k;  current_index.i = i; current_index.j = j;
             % Create cross comp constraints
             if ~new_mpcc_treatment
-                results_cross_comp = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_k,dimensions,current_index);
+                results_cross_comp = create_complementarity_constraints(use_fesd,cross_comp_mode,comp_var_k,dims,current_index);
                 g_cross_comp_j  = results_cross_comp.g_cross_comp_j;
                 % Store updatet sums
                 if i == N_finite_elements(k+1)-1 && j == n_s
@@ -558,7 +558,7 @@ for k=0:N_stages-1
                     comp_var_k.cross_comp_k = results_cross_comp.cross_comp_k;
                 end
                 comp_var_k.cross_comp_all = results_cross_comp.cross_comp_all;
-                % Dimensions of cross/std complementarities
+                % dims of cross/std complementarities
                 n_cross_comp_j = length(g_cross_comp_j);
                 n_cross_comp_i = n_cross_comp_i+n_cross_comp_j;
                 n_cross_comp(i+1,k+1) = n_cross_comp_i;
@@ -572,7 +572,7 @@ for k=0:N_stages-1
                 mpcc_var_k.J = J;
                 mpcc_var_k.g_all_comp_j = g_all_comp_j;
                 mpcc_var_k.s_elastic = S_elastic;
-                [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_k,dimensions,current_index);
+                [J,g_comp,g_comp_lb,g_comp_ub] = reformulate_mpcc_constraints(objective_scaling_direct,mpcc_mode,mpcc_var_k,dims,current_index);
                 g = [g;  g_comp];
                 lbg = [lbg; g_comp_lb];
                 ubg = [ubg; g_comp_ub];
@@ -589,7 +589,7 @@ for k=0:N_stages-1
         end
         % New function for conmplementarity constraints (no loops and sums)
         if new_mpcc_treatment
-            [results_cross_comp] = create_complementarity_constraints_rv(use_fesd,cross_comp_mode,comp_var_k,dimensions,Psi_mpcc_fun,sigma_p,current_index);
+            [results_cross_comp] = create_complementarity_constraints_rv(use_fesd,cross_comp_mode,comp_var_k,dims,Psi_mpcc_fun,sigma_p,current_index);
             unfold_struct(results_cross_comp,'caller');
                  if i == N_finite_elements(k+1)-1 
                     comp_var_k.g_cross_comp_k = zeros(n_theta,1);
@@ -1023,7 +1023,7 @@ if step_equilibration
     model.nu_fun = nu_fun;
 end
 
-%% Model update: all index sets and dimensions
+%% Model update: all index sets and dims
 model.ind_x = ind_x;
 model.ind_elastic = ind_elastic;
 model.ind_v = ind_v;
