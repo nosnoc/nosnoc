@@ -654,7 +654,6 @@ n_gamma = 0;
 
 % dimensions
 n_alpha = 0;
-e_alpha = [];
 n_beta = 0;
 n_theta_step = 0;
 n_lambda_n = 0;
@@ -873,8 +872,6 @@ switch dcs_mode
             lambda_p = [lambda_p;lambda_1_temp];
             lambda_1_all{ii} = lambda_1_temp;
         end
-        % define appropiate vector of ones % for the kkt conditions of the LP
-        e_alpha = ones(n_alpha,1);
         % Define already here lifting variables and functions
         % TODO allow for custom beta lifting
         beta = [];
@@ -1509,12 +1506,11 @@ model.J_cc_fun = J_cc_fun;
 
 %
 % % Model Dimensions;
+% TODO: remove dims from model -> only in dims!
 model.n_x = n_x;
 model.n_z_all = n_z_all;
 model.n_u = n_u;
 model.n_sys = n_sys;
-
-model.e_alpha = e_alpha;
 
 model.m_vec = m_vec;
 model.m_ind_vec = m_ind_vec;
@@ -1527,8 +1523,6 @@ model.n_c_sys = n_c_sys;
 model.n_alpha = n_alpha;
 model.n_beta = n_beta;
 model.n_theta_step = n_theta_step;
-model.n_lambda_0 = n_lambda_n;
-model.n_lambda_1 = n_lambda_p;
 
 % CLS
 if isequal(dcs_mode,'CLS')
