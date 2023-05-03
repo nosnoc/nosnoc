@@ -6,12 +6,10 @@ close all
 %%
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-% settings.irk_scheme = IRKSchemes.LOBATTO_IIIA;
-settings.irk_representation ="differential";
 settings.n_s = 2;
 settings.print_level = 3;
 settings.N_homotopy = 6;
-settings.cross_comp_mode = 3;
+settings.cross_comp_mode = 4;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 settings.sigma_0 = 1;
@@ -32,15 +30,14 @@ model.M = 1;
 model.x = [q;v];
 model.e = 0;
 model.mu = 0;
-model.a_n = 20;
-x0 = [0.6;0];
-x0 = [0;-2];
+x0 = [1;0];
+% x0 = [0;-2];
 model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
-N_FE = 2;
+N_FE = 3;
 T_sim = 1;
 N_sim = 1;
 model.T_sim = T_sim;
@@ -70,6 +67,8 @@ else
 end
 % exact impulse value
 Lambda_star = v2(1)-v1(end);
+
+
 %%
 figure
 subplot(311)
@@ -100,8 +99,10 @@ stem(t_grid,[results.all_res.Lambda_normal_opt,nan])
 hold on
 yline(Lambda_star,'k--')
 xlim([-0.01 t_grid(end)])
-ylim([-0.1 Lambda_star+1])
+ylim([-0.1 max([results.all_res.Lambda_normal_opt,Lambda_star])+1])
 grid on
 legend({'$\Lambda$ - numerical','$\Lambda$ - anlyitic'},'interpreter','latex');
 xlabel('$t$','interpreter','latex');
-ylabel('$\lambda$','interpreter','latex');
+ylabel('$\Lambda$','interpreter','latex');
+
+fprintf('Impulse error %2.2e \n',abs(max(results.all_res.Lambda_normal_opt))-Lambda_star)

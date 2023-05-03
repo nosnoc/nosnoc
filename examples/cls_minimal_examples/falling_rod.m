@@ -10,21 +10,19 @@ above_ground = 0.1;
 %%
 [settings] = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 3;
+settings.n_s = 2;
 settings.dcs_mode = 'CLS';
 settings.friction_model = "Polyhedral";
-settings.conic_model_switch_handling = "Abs";
-settings.pss_lift_step_functions= 0;
-settings.opts_ipopt.ipopt.max_iter = 3e2;
+settings.friction_model = "Conic";
+settings.conic_model_switch_handling = "Lp";
 settings.print_level = 3;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 1;
 settings.sigma_0 = 1e2;
-settings.print_details_if_infeasible = 1;
-% settings.mpcc_mode = "elastic_ineq";
+settings.print_details_if_infeasible = 0;
 %%
 model.e = 0;
-model.mu = 0.5;
+model.mu = 0.7;
 %% the dynamics
 model.n_q = 3;
 model.g = -9.81;
@@ -60,15 +58,17 @@ model.D_tangent = [xc_left.jacobian(q)',-xc_left.jacobian(q)'];
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];
 
-% above_ground = 0.18;
-% theta0 = 0.75*pi/2;
-model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
-           0;0;0];
+above_ground = 0.18*0;
+theta0 = 0.75*pi/2*0;
+% theta0 = pi/2;
+model.x0 = [0;l/2*cos(theta0)+above_ground;theta0;...
+           2;0;0];
 
 %% Simulation setings
 N_finite_elements = 20;
-T_sim = 0.8;
+T_sim = 1;
 N_sim = 1;
+
 model.T_sim = T_sim;
 model.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;

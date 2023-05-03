@@ -6,23 +6,19 @@ close all
 %%
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-% settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;
 settings.print_level = 3;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
-settings.time_freezing = 0; %% we will need to exlude the coexistence of these two
 settings.friction_model = "Polyhedral";
-%settings.friction_model = "Conic"; % "Conic"
-settings.conic_model_switch_handling = "Lp";
-settings.local_speed_of_time_variable = 0;
-settings.use_speed_of_time_variables = 0;
-settings.mpcc_mode = MpccMode.elastic_ineq;
+% settings.friction_model = "Conic"; % "Conic"
+settings.conic_model_switch_handling = "Abs";
+% settings.mpcc_mode = MpccMode.elastic_ineq;
 % settings.nlpsol = 'snopt';
 % settings.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
 %%
-g = 10;
+g = 9.81;
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2);
@@ -30,9 +26,8 @@ model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
 model.mu = 0.4;
-model.a_n = 20;
-model.x0 = [0;0.2;4;0];
-% % model.x0 = [0;0.0;-0.6;0];
+model.x0 = [0;0.5;4;0];
+% model.x0 = [0;0.0;-0.6;0];
 % model.x0 = [0;0.0;+0.6;0];
 model.f_v = [3*1;-g];
 model.f_c = q(2);
