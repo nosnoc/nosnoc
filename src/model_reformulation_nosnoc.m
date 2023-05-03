@@ -1119,8 +1119,6 @@ switch dcs_mode
         % symbolic variables z = [theta;lambda;mu_Stewart];
         z_all = [vertcat(theta_all{:});vertcat(lambda_all{:});vertcat(mu_all{:})];
         z_switching = [vertcat(lambda_all{:});vertcat(mu_all{:})];
-        lbz_all = [0*ones(n_theta,1);0*ones(n_theta,1);-inf*ones(n_sys,1)];
-        ubz_all = [inf*ones(n_theta,1);inf*ones(n_theta,1);inf*ones(n_sys,1)];
         % initial guess for z; % solve LP for guess;
         if lp_initialization
             [theta_guess,lambda_guess,mu_guess] = create_lp_based_guess(model);
@@ -1134,8 +1132,6 @@ switch dcs_mode
     case 'Step'
         z_all = [alpha;lambda_n;lambda_p;beta;theta_step];
         z_switching = [lambda_n;lambda_p];
-        lbz_all = [0*ones(n_alpha,1);0*ones(n_alpha,1);0*ones(n_alpha,1);-inf*ones(n_beta,1);-inf*ones(n_theta_step,1)];
-        ubz_all = [ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_alpha,1);inf*ones(n_beta,1);inf*ones(n_theta_step,1)];
 
         alpha_guess = initial_alpha*ones(n_alpha,1);
         lambda_0_guess = initial_lambda_0*ones(n_alpha,1);
@@ -1152,8 +1148,6 @@ switch dcs_mode
         z0_all = [alpha_guess;lambda_0_guess;lambda_1_guess;beta_guess;theta_step_guess];
     case 'CLS'
         z_all = [lambda_normal;y_gap];
-        lbz_all = [0*ones(n_contacts,1);0*ones(n_contacts,1)];
-        ubz_all = [inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
         z0_all = [ones(n_contacts,1);ones(n_contacts,1)];
         % Impulse
 %         z_impulse = [Lambda_normal;Y_gap;P_vn;N_vn];
@@ -1170,17 +1164,12 @@ switch dcs_mode
             z_impulse0 = [z_impulse0; ones(n_tangents,1)];
             % friction aux multipliers
             if isequal(friction_model,'Polyhedral')
-                % bounds on friction force
-                lbz_all = [lbz_all;0*ones(n_tangents,1)];
-                ubz_all = [ubz_all;inf*ones(n_tangents,1)];
                 % Impulse
                 lbz_impulse = [lbz_impulse;0*ones(n_tangents,1)];
                 ubz_impulse = [ubz_impulse; inf*ones(n_tangents,1)];
 
                 % polyhedral friction model algebaric variables
                 z_all = [z_all;gamma_d;beta_d;delta_d];
-                lbz_all = [lbz_all;0*ones(n_contacts,1);0*ones(n_contacts,1);0*ones(n_tangents,1)];
-                ubz_all = [ubz_all;inf*ones(n_contacts,1);inf*ones(n_contacts,1);inf*ones(n_tangents,1)];
                 z0_all = [z0_all;ones(n_contacts,1);ones(n_contacts,1);ones(n_tangents,1)];
                 % Polyhedral friction - collect impulse variables
                 z_impulse = [z_impulse;Gamma_d;Beta_d;Delta_d];
@@ -1189,16 +1178,11 @@ switch dcs_mode
                 z_impulse0 = [z_impulse0;ones(n_contacts,1);ones(n_contacts,1);ones(n_tangents,1)];
             end
             if isequal(friction_model,'Conic')
-                % bounds for friction froce
-                lbz_all = [lbz;-inf*ones(n_tangents,1)];
-                ubz_all = [ubz;inf*ones(n_tangents,1)];
                 % Impulse
                 lbz_impulse = [lbz_impulse;-inf*ones(n_tangents,1)];
                 ubz_impulse = [ubz_impulse; inf*ones(n_tangents,1)];
                 % conic friction model algebaric variables
                 z_all = [z_all;gamma;beta];
-                lbz_all = [lbz_all;0*ones(n_contacts,1);0*ones(n_contacts,1)];
-                ubz_all = [ubz_all;inf*ones(n_contacts,1);inf*ones(n_contacts,1)];
                 z0_all = [z0_all; ones(n_contacts,1);ones(n_contacts,1)];
                 % Conic impulse
                 z_impulse = [z_impulse;Gamma;Beta];
@@ -1210,8 +1194,6 @@ switch dcs_mode
                         % no extra constraints
                     case 'Abs'
                         z_all = [z_all;p_vt;n_vt];
-                        lbz_all = [lbz_all;0*ones(2*n_tangents,1)];
-                        ubz_all = [ubz_all;inf*ones(2*n_tangents,1)];
                         z0_all = [z0_all; ones(2*n_tangents,1)];
                         % Impulse
                         z_impulse = [z_impulse;P_vt;N_vt];
@@ -1220,8 +1202,6 @@ switch dcs_mode
                         z_impulse0 = [z_impulse0; ones(2*n_tangents,1)];
                     case 'Lp'
                         z_all = [z_all;p_vt;n_vt;alpha_vt];
-                        lbz_all = [lbz_all;0*ones(3*n_tangents,1)];
-                        ubz_all = [ubz_all;inf*ones(2*n_tangents,1);1*ones(n_tangents,1)];
                         z0_all = [z0_all; 1*ones(2*n_tangents,1);0.5*ones(n_tangents,1)];
                         % Impulse
                         z_impulse = [z_impulse;P_vt;N_vt;Alpha_vt];
@@ -1237,8 +1217,6 @@ n_lift_eq =length(g_lift);
 %% Add user provided algebraic
 z_all = vertcat(z_all,z);
 z0_all = [z0_all;z0];
-lbz_all = [lbz_all;lbz];
-ubz_all = [ubz_all;ubz];
 n_z_all = n_z_all + n_z;
 
 %% TODO %%%%%%%%%%%%%%
@@ -1276,8 +1254,6 @@ if ~isfield(model, 'f_x')
                     z_v = define_casadi_symbolic(casadi_symbolic_mode,['z_v'],n_q);
                     z_all = [z_all;z_v];
                     n_z_all = n_z_all+n_q;
-                    lbz_all = [lbz_all;-inf*ones(n_q,1)];
-                    ubz_all = [ubz_all;inf*ones(n_q,1)];
                     z0_all = [z0_all;x0(n_q+1:end)];
 
                     f_x = [v;z_v];
@@ -1407,8 +1383,6 @@ end
 %     z_all = [z_all;z_forces];
 %     n_z_all = n_z_all+n_q;
 %     z0_all = [z0_all;z0_forces];
-%     lbz_all = [lbz_all;-inf*ones(n_q,1)];
-%     ubz_all = [ubz_all;inf*ones(n_q,1)];
 %     g_lift_forces = [M*z_forces - f_v]; % lifting function
 %     % new simple dynamics after lifting
 %     f_x = [f_x(1:n_q); z_forces; f_x(end-n_quad:end)];
@@ -1466,8 +1440,6 @@ if n_u > 0
     model.u0 = u0;
 end
 model.z0_all = z0_all;
-model.lbz_all = lbz_all;
-model.ubz_all = ubz_all;
 
 model.z0 = z0;
 model.lbz = lbz;
