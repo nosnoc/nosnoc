@@ -36,7 +36,6 @@ classdef NosnocFormulationObject < handle
         g
         lbg
         ubg
-        
         % Cost
         cost
         % Objective
@@ -75,7 +74,7 @@ classdef NosnocFormulationObject < handle
                 initial
                 error("mismatched dims")
             end
-            
+
             n = size(symbolic, 1);
             n_w = size(obj.w, 1);
 

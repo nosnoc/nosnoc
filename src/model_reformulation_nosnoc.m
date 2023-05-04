@@ -526,11 +526,9 @@ if isequal(dcs_mode,'CLS')
 
     % dimensions and state space split
     casadi_symbolic_mode = model.x(1).type_name();
-    if mod(size(x,1),2)
-        n_x = size(x,1);
+    if mod(n_x,2)
         n_q = (n_x-1)/2;
     else
-        n_x = size(x,1);
         n_q = n_x/2;
     end
     if ~isfield(model,'q') && ~isfield(model,'v')
@@ -786,8 +784,7 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
     % index sets and dimensions for ubsystems
     m_ind_vec = 1;
     if isequal(dcs_mode,'Step')
-        % double the size of the vectors, since alpha,1-alpha treated at same
-        % time;
+        % double the size of the vectors, since alpha, 1-alpha treated at same time;
         m_vec = sum(n_c_sys)*2;
     end
     for ii = 1:length(m_vec)-1
@@ -876,7 +873,7 @@ switch dcs_mode
         % TODO allow for custom beta lifting
         beta = [];
         theta_step = [];
-        % Theta collects the vector for dot_x = F(x)Theta ,
+        % Theta collects the vector for dot_x = F(x)Theta,
         % terms or theta_step from lifting;
         if ~settings.general_inclusion
             for ii = 1:n_sys
@@ -890,7 +887,7 @@ switch dcs_mode
                         for j = 1:size(S_temp,1)
                             alpha_ij = 1;
                             for k = 1:size(S_temp,2)
-                                % create multiafine term
+                                % create multiaffine term
                                 if S_temp(j,k) ~=0
                                     alpha_ij = alpha_ij * (0.5*(1-S_temp(j,k))+S_temp(j,k)*alpha_all{ii}(k) ) ;
                                 end
@@ -1042,7 +1039,7 @@ switch dcs_mode
             end
             % equality constraints in DCS
             g_lift_theta_step = theta_step-theta_step_expr;
-            g_lift_beta= beta-[beta_bilinear_ode_expr;beta_bilinear_aux_expr;beta_prod_expr];
+            g_lift_beta = beta - [beta_bilinear_ode_expr; beta_bilinear_aux_expr; beta_prod_expr];
             % auxiliary functions to get inital guess for new algebraic variables theta and beta
             g_lift_theta_step_fun  = Function('g_lift_theta_step_fun',{alpha,beta},{theta_step_expr});
             g_lift_beta_fun = Function('g_lift_beta_fun',{alpha},{[beta_bilinear_ode_expr;beta_bilinear_aux_expr;beta_prod_expr_guess]});
@@ -1393,11 +1390,10 @@ n_algebraic_constraints = length(g_z_all);
 
 f_x_fun = Function('f_x_fun',{x,z_all,u,p,v_global},{f_x,f_q});
 g_z_all_fun = Function('g_z_all_fun',{x,z_all,u,p,v_global},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
 if isequal(dcs_mode,'CLS')
     g_impulse_fun = Function('g_impulse_fun',{q,v_post_impact,v_pre_impact,z_impulse},{g_impulse});
-end
-g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
-if ~isequal(dcs_mode,'CLS')
+else
     c_fun = Function('c_fun',{x,p},{c_all});
     dot_c = c_all.jacobian(x)*f_x;
     dot_c_fun = Function('c_fun',{x,z_all,u,p},{dot_c}); % total time derivative of switching functions
@@ -1518,7 +1514,6 @@ model.n_algebraic_constraints = n_algebraic_constraints;
 
 model.n_c_sys = n_c_sys;
 model.n_alpha = n_alpha;
-model.n_theta_step = n_theta_step;
 
 % CLS
 if isequal(dcs_mode,'CLS')

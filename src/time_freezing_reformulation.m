@@ -221,7 +221,7 @@ if ~time_freezing_model_exists
                 c = [f_c;v_normal;v_tangent_norms-eps_t];
             end
         end
-        %% unconstrained dynamcis with clock state
+        %% unconstrained dynamics with clock state
         inv_M = inv(M);
         f_ode = [v;...
             inv_M*f_v;
