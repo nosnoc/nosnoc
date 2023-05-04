@@ -395,7 +395,7 @@ classdef NosnocSolver < handle
                 fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %s \t\t %s \n',...
                     ii, stats.sigma_k(end), stats.complementarity_stats(end), stats.objective(end),inf_pr,inf_du, ...
                     stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
-                warning('todo: add missing log information')
+                % TODO: add missing log information
             end
         end
 
