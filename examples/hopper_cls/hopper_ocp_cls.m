@@ -71,12 +71,10 @@ settings.g_path_at_fe = 0; % evaluate path constraint on every integration step
 settings.g_path_at_stg = 0; % evaluate path constraint on every stage point
 settings.nonsmooth_switching_fun = 0;
 %settings.mpcc_mode = MpccMode.elastic_ineq;
-settings.nlpsol = 'ipopt';
-%settings.nlpsol = 'snopt';
-settings.opts_snopt.snopt.Major_feasibility_tolerance = 1e-3;
-settings.opts_snopt.snopt.Minor_feasibility_tolerance = 1e-3;
-obj.opts_snopt.snopt.Major_iterations_limit = 1000;
-obj.opts_snopt.snopt.Iterations_limit = 100000;
+%settings.nlpsol = 'ipopt';
+settings.nlpsol = 'snopt';
+settings.solver_opts.snopt.Major_feasibility_tolerance = 1e-3;
+settings.solver_opts.snopt.Minor_feasibility_tolerance = 1e-3;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.solver_opts.ipopt.linear_solver = 'ma57';
@@ -190,13 +188,13 @@ model.lsq_T = {x,x_end,Q_terminal};
 solver = NosnocSolver(model, settings);
 
 %% Initialize solver with reference
-x_init = mat2cell(x_ref, 1)';
+x_init = num2cell(x_ref, 1)';
 solver.set('x', x_init);
 solver.set('x_left_bp', x_init);
 
 %% Run solver
 [results,stats] = solver.solve();
-
+model = solver.model;
 %% read and plot results
 unfold_struct(results,'base');
 q_opt = x_opt(1:4,:);

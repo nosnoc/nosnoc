@@ -93,7 +93,6 @@ classdef NosnocSolver < handle
             %% Define CasADi function for the switch indicator function.
             nu_fun = Function('nu_fun', {w,p},{problem.nu_vector});
 
-            %% Outputs
             % TODO Clean this up
             % I.e: - No longer duplicate things in model and solver.
             %      - Separate model generation.
@@ -199,7 +198,6 @@ classdef NosnocSolver < handle
             end
         end
 
-        
         function [results,stats] = solve(obj)
             import casadi.*
             solver = obj.solver;

@@ -8,6 +8,7 @@ settings.n_s = 2;
 settings.psi_fun_type = CFunctionType.BILINEAR;
 % Time-settings  - Solve an time optimal control problem
 settings.time_optimal_problem = 1;
+settings.nlpsol = 'snopt';
 % Model - define all problem functions and
 % Discretization parameters
 model.N_stages = 10; % number of control intervals
