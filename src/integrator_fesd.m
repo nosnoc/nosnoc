@@ -32,7 +32,6 @@
 % [results] = integrator_fesd(model,settings);
 % [results,stats] = integrator_fesd(model,settings);
 % [results,stats,model] = integrator_fesd(model,settings);
-% [results,stats,model,settings] = integrator_fesd(model,settings);
 
 function [varargout] = integrator_fesd(varargin)
 import casadi.*
@@ -321,8 +320,5 @@ results.all_res = all_res;
 varargout{1} = results;
 varargout{2} = stats;
 varargout{3} = model;
-varargout{4} = settings;
-varargout{5} = solver;
-varargout{6} = solver_initialization;
 end
 
