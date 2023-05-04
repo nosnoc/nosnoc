@@ -49,13 +49,13 @@ settings.n_s = 2;  % number of stages in IRK methods
 settings.use_fesd = 1;
 
 settings.N_homotopy = 6;
-settings.solver_opts.ipopt.tol = 1e-6;
-settings.solver_opts.ipopt.acceptable_tol = 1e-6;
-settings.solver_opts.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 
 settings.cross_comp_mode = 1;
 settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
-settings.solver_opts.ipopt.max_iter = 1e3;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
 % settings.s_sot_max = 2;
@@ -68,7 +68,7 @@ settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
 settings.nonsmooth_switching_fun = 0;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.solver_opts.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretization
 T = 1; % prediction horizon

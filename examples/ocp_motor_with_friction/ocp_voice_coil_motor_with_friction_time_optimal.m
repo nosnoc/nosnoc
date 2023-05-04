@@ -15,7 +15,7 @@ import casadi.*
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
-% settings.solver_opts.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 % MPCC Method
 settings.N_homotopy = 7;
 settings.homotopy_update_rule = 'superlinear';

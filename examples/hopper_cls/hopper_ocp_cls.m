@@ -50,11 +50,11 @@ settings.use_fesd = 1;
 settings.N_homotopy = 7;
 settings.homotopy_update_slope = 0.1;
 settings.sigma_0 = 1e2;
-settings.solver_opts.ipopt.tol = 1e-6;
-settings.solver_opts.ipopt.acceptable_tol = 1e-6;
-settings.solver_opts.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 settings.cross_comp_mode = 1;
-settings.solver_opts.ipopt.max_iter = 5e3;
+settings.opts_casadi_nlp.ipopt.max_iter = 5e3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 0;
 % settings.s_sot_max = 2;
@@ -73,11 +73,11 @@ settings.nonsmooth_switching_fun = 0;
 %settings.mpcc_mode = MpccMode.elastic_ineq;
 %settings.nlpsol = 'ipopt';
 settings.nlpsol = 'snopt';
-settings.solver_opts.snopt.Major_feasibility_tolerance = 1e-3;
-settings.solver_opts.snopt.Minor_feasibility_tolerance = 1e-3;
+settings.opts_casadi_nlp.snopt.Major_feasibility_tolerance = 1e-3;
+settings.opts_casadi_nlp.snopt.Minor_feasibility_tolerance = 1e-3;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.solver_opts.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretization
 T = 1; % prediction horizon

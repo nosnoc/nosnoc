@@ -52,7 +52,7 @@ settings.cross_comp_mode = 1;
 settings.homotopy_update_rule = 'superlinear';
 settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 %settings.elasticity_mode = ElasticityMode.ELL_INF;
-settings.solver_opts.ipopt.max_iter = 1e4;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e4;
 settings.sigma_0 = 100;
 
 %% Model Settings

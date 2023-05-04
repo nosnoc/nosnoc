@@ -58,13 +58,13 @@ settings.dcs_mode = 'CLS';
 % settings.nonsmooth_switching_fun = 0;
 % settings.stabilizing_q_dynamics = 1;
 
-settings.solver_opts.ipopt.tol = 1e-8;
-settings.solver_opts.ipopt.acceptable_tol = 1e-8;
-settings.solver_opts.ipopt.acceptable_iter = 3;
-settings.solver_opts.ipopt.max_iter = 700;
+settings.opts_casadi_nlp.ipopt.tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.max_iter = 700;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.solver_opts.ipopt.linear_solver = 'ma27';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretization
 model = unitri_ai_model();

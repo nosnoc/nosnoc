@@ -48,7 +48,7 @@ settings.use_fesd = 1;
 settings.cross_comp_mode = 3;
 settings.T_final_max = 5*pi;
 settings.T_final_min = 2;
-settings.solver_opts.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 settings.dcs_mode = 'Step';
 
 % settings.relax_terminal_constraint = 2;

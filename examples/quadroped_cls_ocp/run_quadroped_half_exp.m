@@ -13,16 +13,16 @@ settings.irk_scheme = scenario.IrkScheme;
 settings.dcs_mode = 'CLS';
 settings.n_s = 2;  % number of stages in IRK methods
 settings.N_homotopy = scenario.N_homotopy;
-settings.solver_opts.ipopt.tol = 1e-6;
-settings.solver_opts.ipopt.acceptable_tol = 1e-6;
-settings.solver_opts.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 
-settings.solver_opts.ipopt.max_iter = scenario.max_iter;
+settings.opts_casadi_nlp.ipopt.max_iter = scenario.max_iter;
 settings.equidistant_control_grid = 1;
 settings.sigma_0 = scenario.sigma_0;
 settings.cross_comp_mode = scenario.cross_comp_mode;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.solver_opts.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretization
 model = half_unitri_ai_model();

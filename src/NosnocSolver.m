@@ -39,51 +39,51 @@ classdef NosnocSolver < handle
         function obj = NosnocSolver(model, settings)
             tic
             import casadi.*;
-            
+
             [model,settings] = model_reformulation_nosnoc(model,settings); % TODO Move this outside solver to NosnocModel Class
 
             settings.create_butcher_tableu(model); % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
-            
+
             obj.model = model;
             obj.settings = settings;
-            
+
             problem = NosnocProblem(settings, model.dims, model);
             obj.problem = problem;
-            
-            w = problem.w; % vectorize all variables, TODO: again, further cleanup necessary
-            g = problem.g; % vectorize all constraint functions
+
+            w = problem.w;
+            g = problem.g;
             p = problem.p;
             J_fun = problem.cost_fun;
             comp_res = problem.comp_res;
             comp_res_fesd = problem.comp_fesd;
             comp_res_std = problem.comp_std;
 
-            prob = struct('f', problem.cost, 'x', w, 'g', g,'p',p);
+            casadi_nlp = struct('f', problem.cost, 'x', w, 'g', g,'p',p);
 
             % TODO: Possible issue raise to casadi: allow unknown fields in options passed
             if strcmp(settings.nlpsol, 'ipopt')
-                solver_opts = rmfield(settings.solver_opts, 'snopt');
+                opts_casadi_nlp = rmfield(settings.solver_opts, 'snopt');
             elseif strcmp(settings.nlpsol, 'snopt')
-                solver_opts = rmfield(settings.solver_opts, 'ipopt');
+                opts_casadi_nlp = rmfield(settings.solver_opts, 'ipopt');
             end
-            
+
             if ~settings.multiple_solvers
-                solver = nlpsol(settings.solver_name, settings.nlpsol, prob, solver_opts);
+                solver = nlpsol(settings.solver_name, settings.nlpsol, casadi_nlp, opts_casadi_nlp);
             else
                 solver = {};
                 sigma_k = settings.sigma_0;
                 for k = 1:settings.N_homotopy
-                    solver_opts = settings.solver_opts;
-                    solver_opts.ipopt.mu_init = sigma_k * 1e-1;
-                    solver_opts.ipopt.mu_target = sigma_k * 1e-1;
-                    solver_opts.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
-                    solver_opts.ipopt.mu_strategy = 'monotone';
+                    opts_casadi_nlp = settings.solver_opts;
+                    opts_casadi_nlp.ipopt.mu_init = sigma_k * 1e-1;
+                    opts_casadi_nlp.ipopt.mu_target = sigma_k * 1e-1;
+                    opts_casadi_nlp.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
+                    opts_casadi_nlp.ipopt.mu_strategy = 'monotone';
                     if k == 1
-                        solver_opts.ipopt.warm_start_init_point = 'yes';
-                        solver_opts.ipopt.warm_start_bound_push = 1e-4 * sigma_k;
-                        solver_opts.ipopt.warm_start_mult_bound_push = 1e-4 * sigma_k;
+                        opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                        opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-4 * sigma_k;
+                        opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-4 * sigma_k;
                     end
-                    solver{k} = nlpsol(settings.solver_name, 'ipopt', prob, solver_opts);
+                    solver{k} = nlpsol(settings.solver_name, 'ipopt', casadi_nlp, opts_casadi_nlp);
                     % TODO: make homotopy update function and reuse here.
                     sigma_k = settings.homotopy_update_slope*sigma_k;
                 end
@@ -96,7 +96,6 @@ classdef NosnocSolver < handle
             % TODO Clean this up
             % I.e: - No longer duplicate things in model and solver.
             %      - Separate model generation.
-            obj.model.prob = prob;
             obj.model.problem = problem;
             obj.model.solver = solver;
             obj.model.g = g;
@@ -136,7 +135,7 @@ classdef NosnocSolver < handle
             solver_initialization.ubw = problem.ubw;
             solver_initialization.lbg = problem.lbg;
             solver_initialization.ubg = problem.ubg;
-            
+
             obj.solver_initialization = solver_initialization;
             solver_generating_time = toc;
             if settings.print_level >=2
@@ -166,11 +165,11 @@ classdef NosnocSolver < handle
                             for v=ind(ii,:,:)
                                 % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, etc.)
                                 if ~isempty(v) && length(v{1}) == length(val{ii})
-                                    obj.solver_initialization.w0(v{1}) = val{ii}; 
+                                    obj.solver_initialization.w0(v{1}) = val{ii};
                                 end
                             end
                         end
-                    % Otherwise if we have an initialization of the form N_stages-by-N_fe we do the same but 
+                    % Otherwise if we have an initialization of the form N_stages-by-N_fe we do the same but finite-element-wise
                     elseif ndims(val) == 2 && size(val, 1) == obj.model.dims.N_stages && size(val, 2) == obj.model.dimeisons.N_fe
                         for ii=1:obj.model.dims.N_stages
                             for jj=1:obj.model.dims.N_fe
@@ -179,7 +178,7 @@ classdef NosnocSolver < handle
                                 for v=ind(ii,jj,:)
                                     % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, cls, etc.)
                                     if ~isempty(v) && length(v{1}) == length(val{ii,jj})
-                                        obj.solver_initialization.w0(v{1}) = val{ii,jj}; 
+                                        obj.solver_initialization.w0(v{1}) = val{ii,jj};
                                     end
                                 end
                             end
@@ -187,7 +186,7 @@ classdef NosnocSolver < handle
                     else
                         error("nosnoc: Initialization either needs to be Stagewise or Finite Element wise, i.e. provide either an N_stage-by-1 or N_stage-by-N_fe cell array");
                     end
-                    % Otherwise we assume that we are initializing via a flat array and we simply check for the same length  
+                    % Otherwise we assume that we are initializing via a flat array and we simply check for the same length
                 else
                     if ndims(val) == 2 && length(val) == length(ind)
                         obj.solver_initialization.w0(flat_ind) = val;
@@ -204,7 +203,7 @@ classdef NosnocSolver < handle
             model = obj.model;
             settings = obj.settings;
             solver_initialization = obj.solver_initialization;
-            
+
             comp_res = model.comp_res;
             nabla_J_fun = model.nabla_J_fun;
 
@@ -225,7 +224,7 @@ classdef NosnocSolver < handle
             stats.objective = [];
             stats.complementarity_stats = [full(comp_res(w0, p_val))];
 
-            
+
             % Initialize Results struct
             results = struct;
             results.W = [w0];
@@ -269,7 +268,7 @@ classdef NosnocSolver < handle
                     stats.solver_stats = [stats.solver_stats, solver.stats];;
                 end
                 results.nlp_results = [results.nlp_results, nlp_results];
-                
+
                 if isequal(stats.solver_stats(end).return_status,'Infeasible_Problem_Detected')
                     obj.printInfeasibility(results);
                 end
@@ -281,16 +280,16 @@ classdef NosnocSolver < handle
                 % update results output.
                 w_opt = full(nlp_results.x);
                 results.W = [results.W,w_opt]; % all homotopy iterations
-                
+
                 w0 = w_opt;
-                
+
 
                 % update complementarity and objective stats
                 complementarity_iter = full(comp_res(w_opt, p_val));
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                 objective = full(model.problem.objective_fun(w_opt, p_val));
                 stats.objective = [stats.objective, objective];
-                
+
                 % update counter
                 ii = ii+1;
                 % Verbose
@@ -330,7 +329,7 @@ classdef NosnocSolver < handle
         function p_val = getInitialParameters(obj)
             model = obj.model;
             settings = obj.settings;
-            
+
             x0 = obj.solver_initialization.w0(1:model.dims.n_x);
             lambda00 = [];
             gamma_00 = [];
@@ -382,7 +381,7 @@ classdef NosnocSolver < handle
         function printNLPIterInfo(obj, stats)
             solver_stats = stats.solver_stats(end);
             ii = size(solver_stats, 2);
-            
+
             if strcmp(obj.settings.nlpsol, 'ipopt')
                 inf_pr = solver_stats.iterations.inf_pr(end);
                 inf_du = solver_stats.iterations.inf_du(end);
@@ -404,7 +403,7 @@ classdef NosnocSolver < handle
             model = obj.model;
             dims = model.dims;
             settings = obj.settings;
-            
+
             comp_res = model.comp_res;
 
 
@@ -435,7 +434,6 @@ classdef NosnocSolver < handle
                 fprintf('\n--------------------------------------------------------------------------------------\n');
             end
         end
-        
+
     end
 end
-

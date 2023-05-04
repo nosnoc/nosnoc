@@ -165,7 +165,7 @@ classdef NosnocOptions < handle
 
         % IPOPT Settings
         tol_ipopt(1,1) double {mustBeReal, mustBePositive} = 1e-16
-        solver_opts
+        opts_casadi_nlp
 
         % Relaxation of terminal constraint
         relax_terminal_constraint(1,1) {mustBeInteger, mustBeInRange(relax_terminal_constraint, 0, 3)} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
@@ -215,19 +215,19 @@ classdef NosnocOptions < handle
     methods
         function obj = NosnocOptions()
 
-            obj.solver_opts.ipopt.print_level = 0;
-            obj.solver_opts.print_time = 0;
-            obj.solver_opts.ipopt.sb = 'yes';
-            obj.solver_opts.verbose = false;
-            obj.solver_opts.ipopt.max_iter = 500;
-            obj.solver_opts.ipopt.bound_relax_factor = 0;
-            obj.solver_opts.ipopt.tol = 1e-16;
-            obj.solver_opts.ipopt.dual_inf_tol = 1e-16;
-            obj.solver_opts.ipopt.dual_inf_tol = 1e-16;
-            obj.solver_opts.ipopt.compl_inf_tol = 1e-16;
-            obj.solver_opts.ipopt.mu_strategy = 'adaptive';
-            obj.solver_opts.ipopt.mu_oracle = 'quality-function';
-            obj.solver_opts.snopt = struct();
+            obj.opts_casadi_nlp.ipopt.print_level = 0;
+            obj.opts_casadi_nlp.print_time = 0;
+            obj.opts_casadi_nlp.ipopt.sb = 'yes';
+            obj.opts_casadi_nlp.verbose = false;
+            obj.opts_casadi_nlp.ipopt.max_iter = 500;
+            obj.opts_casadi_nlp.ipopt.bound_relax_factor = 0;
+            obj.opts_casadi_nlp.ipopt.tol = 1e-16;
+            obj.opts_casadi_nlp.ipopt.dual_inf_tol = 1e-16;
+            obj.opts_casadi_nlp.ipopt.dual_inf_tol = 1e-16;
+            obj.opts_casadi_nlp.ipopt.compl_inf_tol = 1e-16;
+            obj.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+            obj.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+            obj.opts_casadi_nlp.snopt = struct();
 
             obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
         end
@@ -312,15 +312,15 @@ classdef NosnocOptions < handle
 
         function obj = set.print_level(obj, val)
             if val <4
-                obj.solver_opts.ipopt.print_level=0;
-                obj.solver_opts.print_time=0;
-                obj.solver_opts.ipopt.sb= 'yes';
+                obj.opts_casadi_nlp.ipopt.print_level=0;
+                obj.opts_casadi_nlp.print_time=0;
+                obj.opts_casadi_nlp.ipopt.sb= 'yes';
             elseif val == 4
-                obj.solver_opts.ipopt.print_level=0;
-                obj.solver_opts.print_time=1;
-                obj.solver_opts.ipopt.sb= 'no';
+                obj.opts_casadi_nlp.ipopt.print_level=0;
+                obj.opts_casadi_nlp.print_time=1;
+                obj.opts_casadi_nlp.ipopt.sb= 'no';
             else
-                obj.solver_opts.ipopt.print_level = 5;
+                obj.opts_casadi_nlp.ipopt.print_level = 5;
             end
             obj.print_level = val;
         end

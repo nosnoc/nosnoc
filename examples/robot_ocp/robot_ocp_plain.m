@@ -26,12 +26,12 @@ settings.print_level = 4;
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 %% homotopy settings
 settings.cross_comp_mode = 3;
-settings.solver_opts.ipopt.max_iter = 1500;
+settings.opts_casadi_nlp.ipopt.max_iter = 1500;
 settings.N_homotopy = 10;
-settings.solver_opts.ipopt.tol = 1e-12;
+settings.opts_casadi_nlp.ipopt.tol = 1e-12;
 settings.comp_tol = 1e-10;
 settings.sigma_0 = 1;
-settings.solver_opts.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 settings.mpcc_mode = 3;
 %% time-freezing
 settings.s_sot_max = 5;

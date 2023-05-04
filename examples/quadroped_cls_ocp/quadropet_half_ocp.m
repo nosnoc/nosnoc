@@ -47,11 +47,11 @@ settings.N_homotopy = 5;
 settings.sigma_0 = 1e2;
 
 settings.cross_comp_mode = 1;
-settings.solver_opts.ipopt.tol = 1e-8;
-settings.solver_opts.ipopt.acceptable_tol = 1e-8;
-settings.solver_opts.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 
-settings.solver_opts.ipopt.max_iter = 1000;
+settings.opts_casadi_nlp.ipopt.max_iter = 1000;
 
 settings.equidistant_control_grid = 0;
 settings.dcs_mode = 'CLS';
@@ -64,7 +64,7 @@ settings.dcs_mode = 'CLS';
 % settings.nonsmooth_switching_fun = 0;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.solver_opts.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 %% discretization
 model = half_unitri_ai_model();
 unfold_struct(model,'caller');
