@@ -5,7 +5,7 @@ unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 settings = settings_bkp;
 % Store differential states
-w_opt = full(results.x);
+w_opt = full(results.nlp_results(end).x);
 
 % populate outputs
 names = {"x", "v", "z"};
@@ -81,7 +81,7 @@ results.t_grid_u = t_grid(ind_t_grid_u);
 
 
 results.u_opt = u_opt;
-results.f_opt = full(results.f);
+results.f_opt = full(results.nlp_results(end).f);
 results.T_opt = T_opt;
 results.w_opt = w_opt;
 results.h_opt = h_opt;
