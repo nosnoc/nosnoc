@@ -15,7 +15,7 @@ import casadi.*
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.solver_opts.ipopt.linear_solver = 'ma57';
 % MPCC Method
 settings.N_homotopy = 10;
 % Discretization parameters

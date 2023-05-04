@@ -46,10 +46,10 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;  % number of stages in IRK methods
 settings.N_homotopy = 5;
 settings.cross_comp_mode = 1;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
-settings.opts_ipopt.ipopt.tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_iter = 3;
+settings.solver_opts.ipopt.max_iter = 1e3;
+settings.solver_opts.ipopt.tol = 1e-6;
+settings.solver_opts.ipopt.acceptable_tol = 1e-6;
+settings.solver_opts.ipopt.acceptable_iter = 3;
 settings.time_freezing = 1;
 settings.s_sot_min = 1;
 settings.equidistant_control_grid = 1;
@@ -59,7 +59,7 @@ settings.g_path_at_fe = 1; % evaluate path constraint on every integration step
 settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.solver_opts.ipopt.linear_solver = 'ma57';
 
 % The methods and time-freezing refomulation are detailed in https://arxiv.org/abs/2111.06759
 %% discretizatioon

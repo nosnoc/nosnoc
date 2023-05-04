@@ -47,13 +47,13 @@ settings.n_s = 1;  % number of stages in IRK methods
 
 settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
 settings.N_homotopy = 7;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.solver_opts.ipopt.max_iter = 1e3;
 settings.print_level = 3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.solver_opts.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 20; % control intervals

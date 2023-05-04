@@ -50,11 +50,11 @@ settings.use_fesd = 1;
 settings.N_homotopy = 7;
 settings.homotopy_update_slope = 0.1;
 settings.sigma_0 = 1e2;
-settings.opts_ipopt.ipopt.tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_iter = 3;
+settings.solver_opts.ipopt.tol = 1e-6;
+settings.solver_opts.ipopt.acceptable_tol = 1e-6;
+settings.solver_opts.ipopt.acceptable_iter = 3;
 settings.cross_comp_mode = 1;
-settings.opts_ipopt.ipopt.max_iter = 5e3;
+settings.solver_opts.ipopt.max_iter = 5e3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 0;
 % settings.s_sot_max = 2;
@@ -79,7 +79,7 @@ obj.opts_snopt.snopt.Major_iterations_limit = 1000;
 obj.opts_snopt.snopt.Iterations_limit = 100000;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.solver_opts.ipopt.linear_solver = 'ma57';
 
 %% discretization
 T = 1; % prediction horizon
@@ -185,8 +185,18 @@ model.lsq_x = {x,x_ref,Q};
 model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
-%% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+
+%% create nosnoc solver
+solver = NosnocSolver(model, settings);
+
+%% Initialize solver with reference
+x_init = mat2cell(x_ref, 1)';
+solver.set('x', x_init);
+solver.set('x_left_bp', x_init);
+
+%% Run solver
+[results,stats] = solver.solve();
+
 %% read and plot results
 unfold_struct(results,'base');
 q_opt = x_opt(1:4,:);

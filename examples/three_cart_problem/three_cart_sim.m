@@ -28,7 +28,7 @@ x0 = [-3; 0; 3; 0; 0; 0];
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';
-settings.opts_ipopt.ipopt.max_iter = 5e2;
+settings.solver_opts.ipopt.max_iter = 5e2;
 settings.print_level = 2;
 settings.N_homotopy = 12;
 settings.cross_comp_mode = 8;
@@ -39,7 +39,7 @@ settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.solver_opts.ipopt.linear_solver = 'ma57';
 
 %%
 % Symbolic variables and bounds
