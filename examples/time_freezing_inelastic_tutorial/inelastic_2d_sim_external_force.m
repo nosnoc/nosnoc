@@ -1,10 +1,9 @@
 clear all;
-clear all;
 clc;
 import casadi.*
 close all
 %%
-[settings] = NosnocOptions();  
+[settings] = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.print_level = 2;
@@ -20,8 +19,8 @@ g = 10;
 vertical_force = 0;
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
-u = SX.sym('u',2); 
-model.x = [q;v]; 
+u = SX.sym('u',2);
+model.x = [q;v];
 model.u = u;
 model.e = 0;
 model.mu = 0.3;
@@ -42,16 +41,10 @@ model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,~,~,solver,solver_initialization] = integrator_fesd(model,settings,u_sim);
-if 1
-    % re-run simulation without creating new solver object
-    [results_rerun,stats,model] = integrator_fesd(model,settings,u_sim);
-    norm(results.x_res-results_rerun.x_res)
-    unfold_struct(results_rerun,'base');
-end
+[results,stats] = integrator_fesd(model,settings,u_sim);
+unfold_struct(results,'base');
+
 %% read and plot results
-
-
 qx = x_res(1,:);
 qy = x_res(2,:);
 vx = x_res(3,:);

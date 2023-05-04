@@ -594,7 +594,7 @@ if isequal(dcs_mode,'CLS')
             end
         end
     end
-    % Dimension of tangens
+    % Dimension of tangents
     n_t = 0;
     if friction_exists
         if isequal(friction_model,'Polyhedral')

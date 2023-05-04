@@ -169,6 +169,7 @@ for ii = 1:N_sim
     end
 
 
+    % TODO: this should use indices instead of n_*
     switch dcs_mode
         case 'Stewart'
             alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
