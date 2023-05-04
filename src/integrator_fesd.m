@@ -33,26 +33,15 @@
 % [results,stats] = integrator_fesd(model,settings);
 % [results,stats,model] = integrator_fesd(model,settings);
 
-function [varargout] = integrator_fesd(varargin)
+function [varargout] = integrator_fesd(model, settings, u_sim)
 import casadi.*
 
-model = varargin{1};
-settings = varargin{2};
-solver_exists  = 0;
-control_exists = 0;
-if nargin>2
-    u_sim = varargin{3};
-    control_exists = 1;
+control_exists = 1;
+if ~exist('u_sim','var')
+    control_exists = 0;
+    u_sim = [];
 end
-if nargin>3
-    solver = varargin{4};
-    solver_initialization = varargin{5};
-    solver_exists = 1;
-    model.p_val(end) = model.T;
-end
-%%  unfold data
-unfold_struct(settings,'caller')
-unfold_struct(model,'caller')
+
 
 results.t_grid = [];
 results.x_res = [];
@@ -67,15 +56,15 @@ end
 [model] = refine_model_integrator(model,settings);
 
 %% Create solver functions for integrator step
-if ~solver_exists
-    tic
-    [solver, solver_initialization, model, settings] = create_nlp_nosnoc(model,settings);
-    solver_generating_time = toc;
-    if print_level >=2
-        fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
-    end
-end
+solver = NosnocSolver(model, settings);
+model = solver.model;
+settings = solver.settings;
+solver_initialization = solver.solver_initialization;
+dims = model.dims;
+
+
 % TODO remove this but needed now because unfold_struct clobers fields for some reason
+% TODO when moving to model class remove this
 settings_bkp = settings;
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
@@ -83,7 +72,7 @@ unfold_struct(solver_initialization,'caller')
 settings = settings_bkp;
 
 %% check does the provided u_sim has correct dims
-if exist('u_sim','var')
+if control_exists
     [n_rows,n_cols] = size(u_sim);
     if n_rows~=n_u || n_cols~=N_sim
         error('Matrix with control inputs has the wrong size. Required dimension is n_u x N_sim.')
@@ -126,11 +115,11 @@ all_res = [];
 %% Main simulation loop
 for ii = 1:N_sim
     if control_exists
-        solver_initialization.lbw([ind_u{:}]) = repmat(u_sim(:,ii),N_stages,1);
-        solver_initialization.ubw([ind_u{:}]) = repmat(u_sim(:,ii),N_stages,1);
+        % NOTE: This should work because sim only has N_stages=0
+        solver.set('u', u_sim(:,ii));
     end
 
-    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
+    [sol,stats] = solver.solve();
     res = extract_results_from_solver(model, settings, sol);
     all_res = [all_res,res];
     time_per_iter = [time_per_iter; stats.cpu_time_total];
@@ -143,7 +132,7 @@ for ii = 1:N_sim
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',ii, N_sim,simulation_time_pased,T_sim,time_per_iter(end));
     end
     % Store differential states
-    w_opt = full(sol.x);
+    w_opt = full(sol.nlp_results(end).x);
     W = [W, w_opt];
     diff_states = w_opt(ind_x);
     alg_states = w_opt(ind_z_all);
@@ -196,11 +185,13 @@ for ii = 1:N_sim
     if impose_terminal_phyisical_time
         model.p_val(end) = model.p_val(end)+model.T;
     end
-    solver_initialization.w0(1:n_x) = x0;
+    solver.set("x0", x0);
+    
 
     % TODO Set up homotopy solver to take p_val explicitly
     if use_previous_solution_as_initial_guess
-        solver_initialization.w0(n_x+1:end) = w_opt(n_x+1:end);
+        % TODO make this possible via solver interface, if probably only through removing the solver_initialization subfield.
+        solver.solver_initialization.w0(n_x+1:end) = w_opt(n_x+1:end);
     end
 
     % Store data

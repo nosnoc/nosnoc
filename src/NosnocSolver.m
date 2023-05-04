@@ -62,9 +62,9 @@ classdef NosnocSolver < handle
 
             % TODO: Possible issue raise to casadi: allow unknown fields in options passed
             if strcmp(settings.nlpsol, 'ipopt')
-                opts_casadi_nlp = rmfield(settings.solver_opts, 'snopt');
+                opts_casadi_nlp = rmfield(settings.opts_casadi_nlp, 'snopt');
             elseif strcmp(settings.nlpsol, 'snopt')
-                opts_casadi_nlp = rmfield(settings.solver_opts, 'ipopt');
+                opts_casadi_nlp = rmfield(settings.opts_casadi_nlp, 'ipopt');
             end
 
             if ~settings.multiple_solvers
@@ -73,7 +73,7 @@ classdef NosnocSolver < handle
                 solver = {};
                 sigma_k = settings.sigma_0;
                 for k = 1:settings.N_homotopy
-                    opts_casadi_nlp = settings.solver_opts;
+                    opts_casadi_nlp = settings.opts_casadi_nlp;
                     opts_casadi_nlp.ipopt.mu_init = sigma_k * 1e-1;
                     opts_casadi_nlp.ipopt.mu_target = sigma_k * 1e-1;
                     opts_casadi_nlp.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
@@ -97,7 +97,6 @@ classdef NosnocSolver < handle
             % I.e: - No longer duplicate things in model and solver.
             %      - Separate model generation.
             obj.model.problem = problem;
-            obj.model.solver = solver;
             obj.model.g = g;
             obj.model.w = w;
             obj.model.p = p;
@@ -154,7 +153,11 @@ classdef NosnocSolver < handle
                 % This line uses the index sets collected during the creation of the NosnocProblem and automatically gets
                 % the one of the form 'ind_<type>'. This makes this set generic for all variable types.
                 ind = obj.problem.(strcat('ind_', type));
-                flat_ind = sort([ind{:}]);
+                if iscell(ind)
+                    flat_ind = sort([ind{:}]);
+                else
+                    flat_ind = ind;
+                end
 
                 if iscell(val)
                     % If the passed value is an N_stage by 1 cell array we assume this initialization is done stage wise
