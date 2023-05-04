@@ -4,18 +4,21 @@ function [results]= form_structured_output(problem, w_opt, name, results)
     % generate structured output
     opt_s = cellfun(@(idx) w_opt(idx), ind(:,:,end), 'uni', 0);
     
-    len = length(opt_s{1});
-    if ~len
+    lens = cellfun(@(c) length(c), opt_s);
+    if all(lens==0)
         % leave and do nothing
         return
     end
+
+    
+    len = max(lens);
     results.(strcat(name, '_opt_s')) = opt_s;
 
     % generate elementwise structured output
     i_opt = cell(len, 1);
     i_opt_flat = cell(len, 1);
     for ii = 1:len
-        i_opt{ii} = cellfun(@(vec) vec(ii), opt_s);
+        i_opt{ii} = cellfun(@(vec) vec(ii), opt_s(~cellfun('isempty', opt_s)));
         i_opt_flat{ii} = reshape(transpose(i_opt{ii}), prod(size(i_opt{ii})), 1);
     end
 
@@ -24,6 +27,7 @@ function [results]= form_structured_output(problem, w_opt, name, results)
 
     % generate old output
     opt_ind = ind(:,:,end);
+    opt_ind = opt_ind(~cellfun('isempty', opt_ind)); % hack to handle nonimpacts
     opt_ind = sort_ind_sets(opt_ind(:));
     opt_vals = cellfun(@(ind) w_opt(ind), opt_ind, 'uni', false);
 
