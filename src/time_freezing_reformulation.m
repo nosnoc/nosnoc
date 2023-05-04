@@ -2,8 +2,6 @@ function [model,settings] = time_freezing_reformulation(model,settings)
 import casadi.*
 %% Load settings and model details
 unfold_struct(model,'caller');
-time_freezing = settings.time_freezing;
-time_freezing_model_exists = 0;
 
 %% TODOS
 % add to all functions model. prefix to get rid of unfold_struct
@@ -307,7 +305,6 @@ if ~time_freezing_model_exists
 
     %% Settings updates
     settings.time_freezing_model_exists = time_freezing_model_exists;
-    settings.friction_exists  = friction_exists;
     %% Model updates
     model.n_quad = n_quad;
     model.n_q = n_q;
