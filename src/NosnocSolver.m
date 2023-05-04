@@ -47,7 +47,7 @@ classdef NosnocSolver < handle
             obj.model = model;
             obj.settings = settings;
             
-            problem = NosnocProblem(settings, model.dimensions, model);
+            problem = NosnocProblem(settings, model.dims, model);
             obj.problem = problem;
             
             w = problem.w; % vectorize all variables, TODO: again, further cleanup necessary
@@ -119,7 +119,7 @@ classdef NosnocSolver < handle
                 problem.print();
             end
 
-            %% Model update: all index sets and dimensions
+            %% Model update: all index sets and dims
             % TODO: Maybe just return the problem, currently trying not to break compatibility for now.
             obj.model.ind_x = [problem.ind_x0.'; flatten_ind(problem.ind_x)];
             obj.model.ind_v = sort(flatten_ind(problem.ind_v));
@@ -159,8 +159,8 @@ classdef NosnocSolver < handle
 
                 if iscell(val)
                     % If the passed value is an N_stage by 1 cell array we assume this initialization is done stage wise
-                    if ndims(val) == 2 && size(val, 1) == obj.model.dimensions.N_stages && size(val,2) == 1
-                        for ii=1:obj.model.dimensions.N_stages
+                    if ndims(val) == 2 && size(val, 1) == obj.model.dims.N_stages && size(val,2) == 1
+                        for ii=1:obj.model.dims.N_stages
                             % All variables of each stage are set to the same value
                             % TODO: Interpolation
                             for v=ind(ii,:,:)
@@ -171,9 +171,9 @@ classdef NosnocSolver < handle
                             end
                         end
                     % Otherwise if we have an initialization of the form N_stages-by-N_fe we do the same but 
-                    elseif ndims(val) == 2 && size(val, 1) == obj.model.dimensions.N_stages && size(val, 2) == obj.model.dimeisons.N_fe
-                        for ii=1:obj.model.dimensions.N_stages
-                            for jj=1:obj.model.dimensions.N_fe
+                    elseif ndims(val) == 2 && size(val, 1) == obj.model.dims.N_stages && size(val, 2) == obj.model.dimeisons.N_fe
+                        for ii=1:obj.model.dims.N_stages
+                            for jj=1:obj.model.dims.N_fe
                                 % All variables of each finite element are set to the same value
                                 % TODO: Interpolation
                                 for v=ind(ii,jj,:)
@@ -331,7 +331,7 @@ classdef NosnocSolver < handle
             model = obj.model;
             settings = obj.settings;
             
-            x0 = obj.solver_initialization.w0(1:model.dimensions.n_x);
+            x0 = obj.solver_initialization.w0(1:model.dims.n_x);
             lambda00 = [];
             gamma_00 = [];
             p_vt_00 = [];
@@ -350,19 +350,19 @@ classdef NosnocSolver < handle
                 if model.friction_exists
                     switch settings.friction_model
                       case 'Polyhedral'
-                        v0 = x0(model.dimensions.n_q+1:end);
+                        v0 = x0(model.dims.n_q+1:end);
                         D_tangent_0 = model.D_tangent_fun(x0);
                         v_t0 = D_tangent_0'*v0;
-                        for ii = 1:model.dimensions.n_contacts
-                            ind_temp = model.dimensions.n_t*ii-(model.dimensions.n_t-1):model.dimensions.n_t*ii;
-                            gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dimensions.n_t];
+                        for ii = 1:model.dims.n_contacts
+                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                            gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dims.n_t];
                             delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v0+gamma_d00(ii)];
                         end
                       case 'Conic'
-                        v0 = x0(model.dimensions.n_q+1:end);
+                        v0 = x0(model.dims.n_q+1:end);
                         v_t0 = model.J_tangent_fun(x0)'*v0;
-                        for ii = 1:model.dimensions.n_contacts
-                            ind_temp = model.dimensions.n_t*ii-(model.dimensions.n_t-1):model.dimensions.n_t*ii;
+                        for ii = 1:model.dims.n_contacts
+                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
                             v_ti0 = v0(ind_temp);
                             gamma_00 = [gamma_00;norm(v_ti0)];
                             switch settings.conic_model_switch_handling
@@ -402,7 +402,7 @@ classdef NosnocSolver < handle
 
         function printSolverStats(obj, results, stats)
             model = obj.model;
-            dims = model.dimensions;
+            dims = model.dims;
             settings = obj.settings;
             
             comp_res = model.comp_res;
