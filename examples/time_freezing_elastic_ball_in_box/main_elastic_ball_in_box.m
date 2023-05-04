@@ -17,7 +17,8 @@ omega = -2*pi; % no impacts
 % omega = -3*pi; % impacts
 model = elastic_ball_in_box_model(omega);
 %% Solve OCP via nosnoc
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% Read and plot Result
 unfold_struct(results,'base');
 unfold_struct(model,'base');

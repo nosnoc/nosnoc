@@ -62,7 +62,8 @@ model.N_stages = 10;
 model.T = 1;
 %% solve OCP
 model = car_hystheresis_model_voronoi(model);
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% Read and plot Result
 plot_results_car_hysteresis(results,settings,model,stats)   
 %%

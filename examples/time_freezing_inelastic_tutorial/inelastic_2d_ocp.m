@@ -46,7 +46,8 @@ model.lbu = -u_max;
 model.ubu = u_max;
 model.f_q = u'*u;
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 % [results] = polishing_homotopy_solution(model,settings,results,stats.sigma_k);
 %%
 qx = results.x_opt(1,:);

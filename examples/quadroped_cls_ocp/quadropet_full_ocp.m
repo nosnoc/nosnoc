@@ -132,7 +132,8 @@ model.lsq_T = {x,x_end,Q_terminal};
 % model.a_n = 1e2;
 % model.n_dim_contact = 2;
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
 %%

@@ -168,7 +168,8 @@ model.g_terminal = q(1:length(q_target))-q_target;
 
 %% Solve OCP with NOSNOC
 if polishing_penalty_iteration
-    [results,stats,~,~] = nosnoc_solver(model,settings);
+    solver = NosnocSolver(model, settings);
+    [results,stats] = solver.solve();
 %     w0 = [results.w_opt;stats.complementarity_stats(end)*10];
     w0 = [results.w_opt;1e-2];
     settings.s_elastic_max = 0.1;
@@ -176,9 +177,11 @@ if polishing_penalty_iteration
     settings.mpcc_mode = 5;
     settings.N_homotopy = 1;
     settings.sigma_0 = 1e-6;
-    [results,stats,model,settings] = nosnoc_solver(model,settings,w0);
+    solver = NosnocSolver(model, settings);
+    [results,stats] = solver.solve();
 else
-    [results,stats,model,settings] = nosnoc_solver(model,settings);
+    solver = NosnocSolver(model, settings);
+    [results,stats] = solver.solve();
 end
 
 

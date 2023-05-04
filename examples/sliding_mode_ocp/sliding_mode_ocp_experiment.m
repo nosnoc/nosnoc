@@ -124,7 +124,8 @@ t_grid_integrator = [];
 
 %% Solve and plot
 x0 = model.x0;
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 f_opt = results.f_opt;
 cpu_time = stats.cpu_time_total;
 

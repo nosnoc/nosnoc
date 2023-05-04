@@ -132,8 +132,9 @@ end
 % Terminal Constraint
 model.g_terminal = [q-q_target];
 
-%% Solve 
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+%% Solve
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 fprintf('Objective values is: %2.4f \n',full(results.f_opt));
 %% plot
 plot_results_ms

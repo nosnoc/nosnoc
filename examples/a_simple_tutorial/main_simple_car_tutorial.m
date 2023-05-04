@@ -35,7 +35,6 @@ model.g_terminal = [q-200;v-0];
 % Solve OCP
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
-%[results,stats,model,settings] = nosnoc_solver(model,settings);
 
 %% Plot
 v_max = 20;

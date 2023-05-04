@@ -126,7 +126,8 @@ model.g_terminal = [q-q_goal;v-v_goal];
 settings.use_opti = 0;
 %% Solve OCP
 % This functions formulates and discretized the OCP. We obtain an matheatmical programm with complementarity constraint which is solved  in a homotopy procedure.
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 plot_results_nosnoc_tutorial
 if results.T_opt<1
    results.T_opt = results.t_grid(end) ;

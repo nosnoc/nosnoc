@@ -17,7 +17,8 @@ model.lbu = -5; model.ubu = 5;
 f_1 = [v;u]; f_2 = [v;3*u]; 
 model.c = v-10; model.S = [-1;1]; model.F = [f_1 f_2];
 model.g_terminal = [q-200;v-0];
-[results,stats,model,settings,solver_initialization] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 
 %% Plot
 v_max = 25;

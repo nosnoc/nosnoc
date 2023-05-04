@@ -95,7 +95,8 @@ model.g_terminal = x-x_target;
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 
 %% plots
 % unfold structure to workspace of this script

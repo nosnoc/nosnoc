@@ -130,7 +130,8 @@ else
     model.lsq_T = {x,x_ref,Q_terminal};
 end
 %% Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% plots
 % unfold structure to workspace of this script
 unfold_struct(results,'base');

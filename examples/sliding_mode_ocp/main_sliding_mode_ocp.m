@@ -132,7 +132,8 @@ else
 end
 
 %% Solve and plot
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 
 u_opt = results.u_opt;
 f_opt = full(results.f);
