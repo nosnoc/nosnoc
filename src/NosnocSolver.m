@@ -60,8 +60,15 @@ classdef NosnocSolver < handle
 
             prob = struct('f', problem.cost, 'x', w, 'g', g,'p',p);
 
+            % TODO: Possible issue raise to casadi: allow unknown fields in options passed
+            if strcmp(settings.nlpsol, 'ipopt')
+                solver_opts = rmfield(settings.solver_opts, 'snopt');
+            elseif strcmp(settings.nlpsol, 'snopt')
+                solver_opts = rmfield(settings.solver_opts, 'ipopt');
+            end
+            
             if ~settings.multiple_solvers
-                solver = nlpsol(settings.solver_name, settings.nlpsol, prob, settings.solver_opts);
+                solver = nlpsol(settings.solver_name, settings.nlpsol, prob, solver_opts);
             else
                 solver = {};
                 sigma_k = settings.sigma_0;
@@ -376,7 +383,7 @@ classdef NosnocSolver < handle
 
         function printNLPIterInfo(obj, stats)
             solver_stats = stats.solver_stats(end);
-            ii = length(solver_stats);
+            ii = size(solver_stats, 2);
             
             if strcmp(obj.settings.nlpsol, 'ipopt')
                 inf_pr = solver_stats.iterations.inf_pr(end);
@@ -384,11 +391,11 @@ classdef NosnocSolver < handle
                 fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %d \t\t %s \n',...
                     ii, stats.sigma_k(end), stats.complementarity_stats(end), stats.objective(end),inf_pr,inf_du, ...
                     stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
-            elseif strcmp(settings.nlpsol, 'snopt')
+            elseif strcmp(obj.settings.nlpsol, 'snopt')
                 % TODO: Findout snopt prim du inf log!
                 inf_pr = nan;
                 inf_du = nan;
-                fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %d \t\t %s \n',...
+                fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %s \t\t %s \n',...
                     ii, stats.sigma_k(end), stats.complementarity_stats(end), stats.objective(end),inf_pr,inf_du, ...
                     stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
                 warning('todo: add missing log information')

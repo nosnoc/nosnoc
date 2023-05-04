@@ -227,6 +227,7 @@ classdef NosnocOptions < handle
             obj.solver_opts.ipopt.compl_inf_tol = 1e-16;
             obj.solver_opts.ipopt.mu_strategy = 'adaptive';
             obj.solver_opts.ipopt.mu_oracle = 'quality-function';
+            obj.solver_opts.snopt = struct();
 
             obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
         end
