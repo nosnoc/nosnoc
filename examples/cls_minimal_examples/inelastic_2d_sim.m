@@ -36,14 +36,14 @@ model.D_tangent = [1,-1;0,0];
 model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
 N_FE = 2;
-T_sim = 0.7;
-N_sim = 1;
+T_sim = 1.7;
+N_sim = 5;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
-[results,stats,model,settings,solver] = integrator_fesd(model,settings);
+[results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = x_res(1,:);
@@ -67,6 +67,7 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 %% forces
+if N_sim == 1
 figure
 subplot(311)
 plot(t_grid,results.all_res.x_opt(3:4,:));
@@ -89,4 +90,4 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda$','interpreter','latex');
 xlim([0 T_sim])
-
+end

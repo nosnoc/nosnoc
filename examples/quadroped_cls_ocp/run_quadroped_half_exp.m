@@ -110,11 +110,11 @@ if run_animation
     figure('Renderer', 'painters', 'Position', [10 10 900 600])
     pos = get(gcf, 'Position');
     % on 4k
-%     width = pos(3)*1.5;
-%     height = pos(4)*1.5;
+    width = pos(3)*1.5;
+    height = pos(4)*1.5;
 
-    width = pos(3)*1.0;
-    height = pos(4)*1.0;
+%     width = pos(3)*1.0;
+%     height = pos(4)*1.0;
     frames_gif = zeros(height, width, 1, N_frames, 'uint8');
     frames_video = { };
     for ii = 1:N_frames

@@ -7,19 +7,18 @@ settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.print_level = 3;
-settings.N_homotopy = 6;
-settings.cross_comp_mode = 4;
+settings.N_homotopy = 10;
+settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 settings.sigma_0 = 1;
-settings.gamma_h = 0.0;
 settings.mpcc_mode = "Scholtes_ineq";
 % settings.nlpsol = 'snopt';
 % some new verbose options for debuging
 settings.print_details_if_infeasible = 0;
 settings.pause_homotopy_solver_if_infeasible = 0;
 settings.real_time_plot = 0;
-settings.no_initial_impacts = 0;
+settings.no_initial_impacts = 1;
 %%
 g = 9.81;
 % Symbolic variables and bounds
@@ -29,15 +28,15 @@ model.M = 1;
 model.x = [q;v];
 model.e = 0;
 model.mu = 0;
-x0 = [1;0];
-% x0 = [0;-2];
+x0 = [0.3;0];
+% x0 = [4;0];
 model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
-N_FE = 3;
-T_sim = 1;
+N_FE = 2;
+T_sim = 0.6;
 N_sim = 1;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
@@ -45,7 +44,7 @@ model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 
 %% Call nosnoc Integrator
-[results,stats,model,settings,solver] = integrator_fesd(model,settings);
+[results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = x_res(1,:);
