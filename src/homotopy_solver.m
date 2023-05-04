@@ -186,7 +186,7 @@ end
 
 %% polish homotopy solution with fixed active set.
 if polishing_step
-    [results] = polishing_homotopy_solution(model,settings,results,sigma_k);
+    [results] = polish_homotopy_solution(model,settings,results,sigma_k);
     complementarity_iter = results.complementarity_iter;
     complementarity_stats = [complementarity_stats;complementarity_iter];
     W = [W,results.w_opt];

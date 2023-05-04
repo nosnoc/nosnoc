@@ -1,4 +1,4 @@
-function [results] = polishing_homotopy_solution(varargin)
+function [results] = polish_homotopy_solution(varargin)
 % This functions fixes heuristicly the active set from the provided initial
 % guess (e.g., from the solution of the last NLP in the homotopy loop) and
 % solves a smooth NLP (without complementarity conditions).

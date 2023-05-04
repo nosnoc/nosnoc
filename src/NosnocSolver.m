@@ -301,7 +301,7 @@ classdef NosnocSolver < handle
             % polish homotopy solution with fixed active set.
             % TODO fix this!
             if settings.polishing_step
-                [results] = polishing_homotopy_solution(model,settings,results,sigma_k);
+                [results] = polish_homotopy_solution(model,settings,results,sigma_k);
                 complementarity_iter = results.complementarity_iter;
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                 W = [W,results.w_opt];

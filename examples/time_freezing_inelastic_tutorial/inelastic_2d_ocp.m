@@ -48,7 +48,7 @@ model.f_q = u'*u;
 %% Call nosnoc solver
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
-% [results] = polishing_homotopy_solution(model,settings,results,stats.sigma_k);
+% [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k);
 %%
 qx = results.x_opt(1,:);
 qy = results.x_opt(2,:);
