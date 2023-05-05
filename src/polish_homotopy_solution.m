@@ -108,14 +108,14 @@ settings.opts_ipopt.ipopt.max_iter = 1.5e3;
 solver = NosnocSolver(model, settings);
 
 %% set appropiate bounds to zero
-solver.solver_initialization.lbw(ind_lambda1_fixed(:)) = 0; solver.solver_initialization.ubw(ind_lambda1_fixed(:)) = 0;
-solver.solver_initialization.lbw(ind_alpha0_fixed(:)) = 0; solver.solver_initialization.ubw(ind_alpha0_fixed(:)) = 0;
+solver.problem.lbw(ind_lambda1_fixed(:)) = 0; solver.problem.ubw(ind_lambda1_fixed(:)) = 0;
+solver.problem.lbw(ind_alpha0_fixed(:)) = 0; solver.problem.ubw(ind_alpha0_fixed(:)) = 0;
 
-solver.solver_initialization.lbw(ind_lambda0_fixed(:)) = 0;  solver.solver_initialization.ubw(ind_lambda0_fixed(:)) = 0;
-solver.solver_initialization.lbw(ind_alpha1_fixed(:)) = 1;  solver.solver_initialization.ubw(ind_alpha1_fixed(:)) = 1;
+solver.problem.lbw(ind_lambda0_fixed(:)) = 0;  solver.problem.ubw(ind_lambda0_fixed(:)) = 0;
+solver.problem.lbw(ind_alpha1_fixed(:)) = 1;  solver.problem.ubw(ind_alpha1_fixed(:)) = 1;
 %
-solver.solver_initialization.lbw(ind_lambda1_sliding(:)) = 0;  solver.solver_initialization.ubw(ind_lambda1_sliding(:)) = 0;
-solver.solver_initialization.lbw(ind_lambda0_sliding(:)) = 0;  solver.solver_initialization.ubw(ind_lambda0_sliding(:)) = 0;
+solver.problem.lbw(ind_lambda1_sliding(:)) = 0;  solver.problem.ubw(ind_lambda1_sliding(:)) = 0;
+solver.problem.lbw(ind_lambda0_sliding(:)) = 0;  solver.problem.ubw(ind_lambda0_sliding(:)) = 0;
 
 %% Solve nlp
 tic

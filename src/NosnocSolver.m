@@ -32,7 +32,6 @@ classdef NosnocSolver < handle
         problem   % Nosnoc reformulated NLP
 
         solver                 % CasADi solver function
-        solver_initialization  % initialization for the generated NLP
     end
 
     methods
@@ -128,14 +127,6 @@ classdef NosnocSolver < handle
             obj.model.ind_t_final  = problem.ind_t_final;
             obj.model.p_val = problem.p0;
 
-            %% Store solver initialization data
-            solver_initialization.w0 = problem.w0;
-            solver_initialization.lbw = problem.lbw;
-            solver_initialization.ubw = problem.ubw;
-            solver_initialization.lbg = problem.lbg;
-            solver_initialization.ubg = problem.ubg;
-
-            obj.solver_initialization = solver_initialization;
             solver_generating_time = toc;
             if settings.print_level >=2
                 fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
@@ -144,8 +135,8 @@ classdef NosnocSolver < handle
 
         function set(obj, type, val)
             if strcmp(type, 'w0')
-                if length(obj.solver_initialization.w0) == length(val)
-                    obj.solver_initialization.w0 = val;
+                if length(obj.problem.w0) == length(val)
+                    obj.problem.w0 = val;
                 else
                     error("nosnoc: if initializing w0 all at once you need to provide a vector of corresponding size.")
                 end
@@ -168,7 +159,7 @@ classdef NosnocSolver < handle
                             for v=ind(ii,:,:)
                                 % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, etc.)
                                 if ~isempty(v) && length(v{1}) == length(val{ii})
-                                    obj.solver_initialization.w0(v{1}) = val{ii};
+                                    obj.problem.w0(v{1}) = val{ii};
                                 end
                             end
                         end
@@ -181,7 +172,7 @@ classdef NosnocSolver < handle
                                 for v=ind(ii,jj,:)
                                     % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, cls, etc.)
                                     if ~isempty(v) && length(v{1}) == length(val{ii,jj})
-                                        obj.solver_initialization.w0(v{1}) = val{ii,jj};
+                                        obj.problem.w0(v{1}) = val{ii,jj};
                                     end
                                 end
                             end
@@ -192,7 +183,7 @@ classdef NosnocSolver < handle
                     % Otherwise we assume that we are initializing via a flat array and we simply check for the same length
                 else
                     if ndims(val) == 2 && length(val) == length(ind)
-                        obj.solver_initialization.w0(flat_ind) = val;
+                        obj.problem.w0(flat_ind) = val;
                     else
                         error('nosnoc: set should be a cell array or a flat array')
                     end
@@ -205,16 +196,16 @@ classdef NosnocSolver < handle
             solver = obj.solver;
             model = obj.model;
             settings = obj.settings;
-            solver_initialization = obj.solver_initialization;
+            problem = obj.problem;
 
             comp_res = model.comp_res;
             nabla_J_fun = model.nabla_J_fun;
 
             % Initial conditions
             sigma_k = settings.sigma_0;
-            w0 = solver_initialization.w0;
-            lbw = solver_initialization.lbw; ubw = solver_initialization.ubw;
-            lbg = solver_initialization.lbg; ubg = solver_initialization.ubg;
+            w0 = problem.w0;
+            lbw = problem.lbw; ubw = problem.ubw;
+            lbg = problem.lbg; ubg = problem.ubg;
             p_val = obj.getInitialParameters();
 
             % Initialize Stats struct
@@ -321,7 +312,7 @@ classdef NosnocSolver < handle
         function printInfeasibility(obj, results)
             warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
             if obj.settings.print_details_if_infeasible
-                print_problem_details(results,obj.model,obj.solver_initialization,[]);
+                print_problem_details(results,obj.model,obj.probem, []);
             end
             if obj.settings.pause_homotopy_solver_if_infeasible
                 %             error('nosnoc: infeasible problem encounterd - stopping for debugging.')
@@ -333,7 +324,7 @@ classdef NosnocSolver < handle
             model = obj.model;
             settings = obj.settings;
 
-            x0 = obj.solver_initialization.w0(1:model.dims.n_x);
+            x0 = obj.problem.w0(1:model.dims.n_x);
             lambda00 = [];
             gamma_00 = [];
             p_vt_00 = [];

@@ -59,7 +59,6 @@ end
 solver = NosnocSolver(model, settings);
 model = solver.model;
 settings = solver.settings;
-solver_initialization = solver.solver_initialization;
 dims = model.dims;
 
 
@@ -68,7 +67,6 @@ dims = model.dims;
 settings_bkp = settings;
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
-unfold_struct(solver_initialization,'caller')
 settings = settings_bkp;
 
 %% check does the provided u_sim has correct dims
@@ -190,8 +188,8 @@ for ii = 1:N_sim
 
     % TODO Set up homotopy solver to take p_val explicitly
     if use_previous_solution_as_initial_guess
-        % TODO make this possible via solver interface, if probably only through removing the solver_initialization subfield.
-        solver.solver_initialization.w0(n_x+1:end) = w_opt(n_x+1:end);
+        % TODO make this possible via solver interface directly
+        solver.problem.w0(n_x+1:end) = w_opt(n_x+1:end);
     end
 
     % Store data
@@ -305,7 +303,6 @@ results.diff_res = diff_res;
 results.alg_res = alg_res;
 results.W = W;
 results.solver_ouput = sol;
-results.solver_initialization = solver_initialization;
 results.all_res = all_res;
 
 varargout{1} = results;
