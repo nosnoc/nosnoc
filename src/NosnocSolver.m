@@ -386,8 +386,14 @@ classdef NosnocSolver < handle
             ii = size(solver_stats, 2);
 
             if strcmp(obj.settings.nlpsol, 'ipopt')
-                inf_pr = solver_stats.iterations.inf_pr(end);
-                inf_du = solver_stats.iterations.inf_du(end);
+                if isfield(solver_stats, 'iterations')
+                    inf_pr = solver_stats.iterations.inf_pr(end);
+                    inf_du = solver_stats.iterations.inf_du(end);
+                else
+                    inf_pr = nan;
+                    inf_du = nan;
+                end
+                
                 fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %d \t\t %s \n',...
                     ii, stats.sigma_k(end), stats.complementarity_stats(end), stats.objective(end),inf_pr,inf_du, ...
                     stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
