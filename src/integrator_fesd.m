@@ -118,7 +118,7 @@ for ii = 1:N_sim
     end
 
     [sol,stats] = solver.solve();
-    res = extract_results_from_solver(model, settings, sol);
+    res = extract_results_from_solver(model, solver.problem, settings, sol);
     all_res = [all_res,res];
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose

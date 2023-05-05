@@ -1,4 +1,4 @@
-function results = extract_results_from_solver(model,settings,results)
+function results = extract_results_from_solver(model, problem, settings,results)
 import casadi.*
 settings_bkp = settings;
 unfold_struct(settings,'caller')
@@ -22,11 +22,11 @@ switch settings.dcs_mode
 end
 
 for name=names
-    results = form_structured_output(model.problem, w_opt, name, results);
+    results = form_structured_output(problem, w_opt, name, results);
 end
 
 % handle x0 properly
-x0 = w_opt(model.problem.ind_x0);
+x0 = w_opt(problem.ind_x0);
 results.x_opt = [x0, results.x_opt];
 results.x_opt_extended = [x0, results.x_opt_extended];
 

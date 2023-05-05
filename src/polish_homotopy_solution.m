@@ -1,4 +1,4 @@
-function [results] = polish_homotopy_solution(model,settings,results,eps_sigma)
+function [results] = polish_homotopy_solution(model,problem,settings,results,eps_sigma)
 % This functions fixes heuristicly the active set from the provided initial
 % guess (e.g., from the solution of the last NLP in the homotopy loop) and
 % solves a smooth NLP (without complementarity conditions).
@@ -25,7 +25,7 @@ unfold_struct(model,'caller');
 %% proces raw results to prepare for active sets
 % if exist('results.x_opt','var')
     % check has it been processed already
-    results = extract_results_from_solver(model,settings,results);
+    results = extract_results_from_solver(model,problem,settings,results);
 % end
 unfold_struct(results,'caller');
 %% thake x on relevant points, and get intex sets
@@ -122,7 +122,7 @@ tic
 [results,stats] = solver.solve();
 cpu_time_iter = toc;
 complementarity_iter = stats.complentarity_stats(end);
-results = extract_results_from_solver(model,settings,results);
+results = extract_results_from_solver(model,problem,settings,results);
 results.complementarity_iter = complementarity_iter;
 %% Verbose
 if print_level>=2

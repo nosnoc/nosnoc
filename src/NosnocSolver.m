@@ -89,25 +89,13 @@ classdef NosnocSolver < handle
             end
             obj.solver = solver;
 
-            %% Define CasADi function for the switch indicator function.
+            % Define CasADi function for the switch indicator function.
             nu_fun = Function('nu_fun', {w,p},{problem.nu_vector});
 
-            % TODO Clean this up
-            % I.e: - No longer duplicate things in model and solver.
-            %      - Separate model generation.
-            obj.model.problem = problem;
-            obj.model.g = g;
-            obj.model.w = w;
-            obj.model.p = p;
-            obj.model.J = problem.cost;
-            obj.model.J_fun = J_fun;
-            obj.model.comp_res = comp_res;
-            obj.model.comp_res_fesd = comp_res_fesd;
-            obj.model.comp_res_std = comp_res_std;
+            % TODO maybe these shuold also live in problem
             obj.model.nu_fun = nu_fun;
-
             % create CasADi function for objective gradient.
-            nabla_J = problem.cost.jacobian(obj.model.w);
+            nabla_J = problem.cost.jacobian(obj.problem.w);
             nabla_J_fun = Function('nabla_J_fun', {w,p},{nabla_J});
             obj.model.nabla_J = nabla_J;
             obj.model.nabla_J_fun = nabla_J_fun;
@@ -198,7 +186,7 @@ classdef NosnocSolver < handle
             settings = obj.settings;
             problem = obj.problem;
 
-            comp_res = model.comp_res;
+            comp_res = problem.comp_res;
             nabla_J_fun = model.nabla_J_fun;
 
             % Initial conditions
@@ -281,7 +269,7 @@ classdef NosnocSolver < handle
                 % update complementarity and objective stats
                 complementarity_iter = full(comp_res(w_opt, p_val));
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
-                objective = full(model.problem.objective_fun(w_opt, p_val));
+                objective = full(obj.problem.objective_fun(w_opt, p_val));
                 stats.objective = [stats.objective, objective];
 
                 % update counter
@@ -295,7 +283,7 @@ classdef NosnocSolver < handle
             % polish homotopy solution with fixed active set.
             % TODO fix this!
             if settings.polishing_step
-                [results] = polish_homotopy_solution(model,settings,results,sigma_k);
+                [results] = polish_homotopy_solution(model,problme,settings,results,sigma_k);
                 complementarity_iter = results.complementarity_iter;
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                 W = [W,results.w_opt];
@@ -304,7 +292,7 @@ classdef NosnocSolver < handle
             % number of iterations
             stats.homotopy_iterations = ii;
 
-            results = extract_results_from_solver(model,settings,results);
+            results = extract_results_from_solver(model,problem,settings,results);
 
             obj.printSolverStats(results,stats);
         end
@@ -404,7 +392,7 @@ classdef NosnocSolver < handle
             dims = model.dims;
             settings = obj.settings;
 
-            comp_res = model.comp_res;
+            comp_res = obj.problem.comp_res;
 
 
             fprintf('\n');
