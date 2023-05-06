@@ -1,5 +1,4 @@
 clear all;
-clear all;
 clc;
 import casadi.*
 close all
@@ -8,7 +7,7 @@ settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.print_level = 3;
-settings.N_homotopy = 6;
+settings.N_homotopy = 7;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.friction_model = "Polyhedral";
@@ -25,9 +24,14 @@ v = SX.sym('v',2);
 model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
-model.mu = 0.4;
-model.x0 = [0;0.5;4;0];
+model.mu = 0.2;
+% impact
+model.x0 = [0;1;4;0];
+% Free flight
+% model.x0 = [0;5.5;4;0];
+% Friction slip slip
 % model.x0 = [0;0.0;-0.6;0];
+% friction slip stick
 % model.x0 = [0;0.0;+0.6;0];
 model.f_v = [3*1;-g];
 model.f_c = q(2);
@@ -37,7 +41,7 @@ model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation setings
 N_FE = 2;
 T_sim = 1.7;
-N_sim = 5;
+N_sim = 10;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;

@@ -1,9 +1,9 @@
 n_q = 7;
 n_u = 4;
-T = {3,4,3,2.5,5,6,3,4,5};
+T = {4,4,3,2.5,5,6,3,4,5};
 N_FE = {2,2,2,2,2,2,3,2,2};
-N_stg = {20,30,30,40,40,25,40,30,50};
-max_iter = {3e3,4e3,3e3,3e3,3e3,5e3,2e3,3e3,2e3};
+N_stg = {25,30,30,40,40,25,40,30,50};
+max_iter = {2e3,4e3,3e3,3e3,3e3,5e3,2e3,3e3,2e3};
 cross_comp_mode = {1,1,1,1,1,1,1,1,1};
 q_x_final = {3,3,3,3,3,3,3,3,3};
 IrkScheme = {IRKSchemes.RADAU_IIA,IRKSchemes.RADAU_IIA,IRKSchemes.RADAU_IIA,IRKSchemes.RADAU_IIA,IRKSchemes.RADAU_IIA,IRKSchemes.RADAU_IIA,IRKSchemes.RADAU_IIA,IRKSchemes.RADAU_IIA,IRKSchemes.RADAU_IIA};

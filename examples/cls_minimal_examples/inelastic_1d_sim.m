@@ -6,19 +6,21 @@ close all
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
+settings.irk_representation = 'differential';
 settings.print_level = 3;
-settings.N_homotopy = 10;
+settings.N_homotopy = 5;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 settings.sigma_0 = 1;
 settings.mpcc_mode = "Scholtes_ineq";
-% settings.nlpsol = 'snopt';
 % some new verbose options for debuging
 settings.print_details_if_infeasible = 0;
 settings.pause_homotopy_solver_if_infeasible = 0;
 settings.real_time_plot = 0;
 settings.no_initial_impacts = 1;
+settings.opts_ipopt.ipopt.linear_solver = 'ma97';
+
 %%
 g = 9.81;
 % Symbolic variables and bounds
@@ -26,18 +28,18 @@ q = SX.sym('q',1);
 v = SX.sym('v',1);
 model.M = 1;
 model.x = [q;v];
-model.e = 0;
+model.e = 0.0;
 model.mu = 0;
-x0 = [0.3;0];
-% x0 = [4;0];
+x0 = [0.6;0];
 model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
-N_FE = 2;
-T_sim = 0.6;
+N_FE = 5;
+T_sim = 1.0;
 N_sim = 1;
+
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
@@ -93,7 +95,11 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 subplot(313)
-stem(t_grid,[results.all_res.Lambda_normal_opt,nan])
+if settings.no_initial_impacts == 1
+    stem(t_grid,[nan,results.all_res.Lambda_normal_opt,nan])
+else
+    stem(t_grid,[results.all_res.Lambda_normal_opt,nan])
+end
 hold on
 yline(Lambda_star,'k--')
 xlim([-0.01 t_grid(end)])
@@ -103,4 +109,6 @@ legend({'$\Lambda$ - numerical','$\Lambda$ - anlyitic'},'interpreter','latex');
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda$','interpreter','latex');
 
-fprintf('Impulse error %2.2e \n',abs(max(results.all_res.Lambda_normal_opt))-Lambda_star)
+if N_sim == 1
+    fprintf('Impulse error %2.2e \n',abs(max(results.all_res.Lambda_normal_opt))-Lambda_star)
+end
