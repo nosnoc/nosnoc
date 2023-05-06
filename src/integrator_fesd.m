@@ -132,17 +132,17 @@ for ii = 1:N_sim
     % Store differential states
     w_opt = full(sol.nlp_results(end).x);
     W = [W, w_opt];
-    diff_states = w_opt(ind_x);
-    alg_states = w_opt(ind_z_all);
+    diff_states = w_opt(solver.problem.ind_x_all);
+    alg_states = w_opt(solver.problem.ind_z_all);
 
     diff_res = [diff_res;diff_states ];
     alg_res = [alg_res;alg_states];
 
 
     % step-size
-    h_opt = w_opt(ind_h);
+    h_opt = w_opt(flatten_ind(solver.problem.ind_h));
     % differential
-    x_opt_extended = w_opt(ind_x);
+    x_opt_extended = w_opt(solver.problem.ind_x_all);
     x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
 
     % only bounadry value
@@ -181,7 +181,7 @@ for ii = 1:N_sim
     x0 = x_opt(:,end);
     %     update clock state
     if impose_terminal_phyisical_time
-        model.p_val(end) = model.p_val(end)+model.T;
+        solver.problem.p0(end) = solver.problem.p0(end)+model.T;
     end
     solver.set("x0", x0);
     
@@ -199,7 +199,7 @@ for ii = 1:N_sim
         h_vec = [h_vec;h_k(1)*ones(N_stages*N_finite_elements(1),1)];
     end
     %sot
-    s_sot_res  = [s_sot_res,w_opt(ind_sot)];
+    s_sot_res  = [s_sot_res,w_opt(flatten_ind(solver.problem.ind_sot))];
     %differntial.
     x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];

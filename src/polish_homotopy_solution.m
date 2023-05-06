@@ -132,7 +132,7 @@ if print_level>=2
         fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);
         fprintf('Objective function value: %2.4e.\n',cpu_time_iter);
         if time_optimal_problem
-            fprintf('Final time T_opt: %2.4f.\n',w_opt(model.ind_t_final));
+            fprintf('Final time T_opt: %2.4f.\n',w_opt(solver.problem.ind_t_final));
         end
     else
         fprintf('CPU time of iteration: %2.2f s.\n',cpu_time_iter);

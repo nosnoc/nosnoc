@@ -104,17 +104,6 @@ classdef NosnocSolver < handle
                 problem.print();
             end
 
-            %% Model update: all index sets and dims
-            % TODO: Maybe just return the problem, currently trying not to break compatibility for now.
-            obj.model.ind_x = [problem.ind_x0.'; flatten_ind(problem.ind_x)];
-            obj.model.ind_v = sort(flatten_ind(problem.ind_v));
-            obj.model.ind_z_all = problem.ind_z_all; %TODO fix this by breaking compat
-            obj.model.ind_u = problem.ind_u;
-            obj.model.ind_h = flatten_ind(problem.ind_h);
-            obj.model.ind_sot = flatten_ind(problem.ind_sot);
-            obj.model.ind_t_final  = problem.ind_t_final;
-            obj.model.p_val = problem.p0;
-
             solver_generating_time = toc;
             if settings.print_level >=2
                 fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
@@ -357,7 +346,7 @@ classdef NosnocSolver < handle
                     end
                 end
             end
-            p_val = [model.p_val(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
+            p_val = [obj.problem.p0(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
         end
 
         function printNLPIterInfo(obj, stats)
@@ -417,7 +406,7 @@ classdef NosnocSolver < handle
             end
             fprintf('\n--------------------------------------------------------------------------------------\n');
             if settings.time_optimal_problem
-                T_opt = results.w_opt(model.ind_t_final);
+                T_opt = results.w_opt(obj.problem.ind_t_final);
                 fprintf('Time optimal problem solved with T_opt: %2.4f.\n',T_opt);
                 fprintf('\n--------------------------------------------------------------------------------------\n');
             end

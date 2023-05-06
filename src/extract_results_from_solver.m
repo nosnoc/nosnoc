@@ -33,16 +33,16 @@ results.x_opt_extended = [x0, results.x_opt_extended];
 
 
 
-u_opt = w_opt([ind_u{:}]);
+u_opt = w_opt([problem.ind_u{:}]);
 u_opt = reshape(u_opt,n_u,N_stages);
 
 if time_optimal_problem
-    T_opt = w_opt(ind_t_final);
+    T_opt = w_opt(problem.ind_t_final);
 else
     T_opt = [];
 end
 if use_fesd
-    h_opt = w_opt(ind_h);
+    h_opt = w_opt(flatten_ind(problem.ind_h));
 else
     h_opt = [];
     if time_optimal_problem && ~use_speed_of_time_variables
@@ -58,7 +58,7 @@ t_grid = cumsum([0;h_opt]);
 %% Adapt the grid in case of time optimal problems
 if time_optimal_problem
     if use_speed_of_time_variables
-        s_sot = w_opt(ind_sot);
+        s_sot = w_opt(flatten_ind(problem.ind_sot));
         if ~local_speed_of_time_variable
             s_sot = s_sot*ones(N_stages,1);
         end
