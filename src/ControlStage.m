@@ -291,6 +291,9 @@ classdef ControlStage < NosnocFormulationObject
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
                             exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
+                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
+                            nonzeros = [sum([nonzeros_p{:}], 2),sum([nonzeros_n{:}], 2)]';
                             exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
                             exprs = exprs(:);
                         else
@@ -319,6 +322,9 @@ classdef ControlStage < NosnocFormulationObject
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
                             exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
+                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
+                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
+                            nonzeros = [sum(sum([nonzeros_p{:}], 2), 1),sum(sum([nonzeros_n{:}], 2), 1)]';
                             exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
                             exprs = exprs(:);
                         else

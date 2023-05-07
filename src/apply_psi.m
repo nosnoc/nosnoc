@@ -8,13 +8,14 @@ function result = apply_psi(comp_pairs, psi, sigma, scale)
     elseif size(comp_pairs, 1) ~= size(scale, 1)
         error('nosnoc: scale is incorrect.')
     end
-    result = [];
+    outsize = size(psi([],[],[]), 2);
+    result = double.empty(0,outsize);
     for ii = 1:size(comp_pairs, 1)
         x = comp_pairs(ii, 1);
         y = comp_pairs(ii, 2);
         % NOTE: this is a bit of a hack to identify placeholder pairs
         if x.is_zero() && y.is_zero()
-            result = vertcat(result, 0);
+            result = vertcat(result, zeros(1,outsize));
         else
             result = vertcat(result, psi(x,y,sigma*(scale(ii))));
         end
