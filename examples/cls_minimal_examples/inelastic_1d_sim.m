@@ -4,12 +4,12 @@ import casadi.*
 close all
 %%
 settings = NosnocOptions();
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;
-settings.irk_representation = 'differential';
+settings.irk_representation = 'integral';
 settings.print_level = 3;
-settings.N_homotopy = 5;
-settings.cross_comp_mode = 3;
+settings.N_homotopy = 15;
+settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 settings.sigma_0 = 1;
@@ -20,6 +20,8 @@ settings.pause_homotopy_solver_if_infeasible = 0;
 settings.real_time_plot = 0;
 settings.no_initial_impacts = 1;
 settings.opts_ipopt.ipopt.linear_solver = 'ma97';
+settings.sigma_0 = 10;
+settings.homotopy_update_slope = 0.2;
 
 %%
 g = 9.81;
@@ -36,14 +38,14 @@ model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
-N_FE = 5;
-T_sim = 1.0;
+N_FE = 2;
+T_sim = 1.5;
 N_sim = 1;
 
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 1;
+settings.use_previous_solution_as_initial_guess = 0;
 
 %% Call nosnoc Integrator
 [results,stats,model] = integrator_fesd(model,settings);
