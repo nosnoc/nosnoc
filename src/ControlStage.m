@@ -281,9 +281,11 @@ classdef ControlStage < NosnocFormulationObject
             elseif settings.cross_comp_mode == 9
                 for r=1:dims.n_sys
                     g_r = 0;
+                    nz_r = [];
                     for fe=obj.stage
                         pairs = fe.cross_comp_pairs(:, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma), pairs, 'uni', false);
+                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
@@ -292,18 +294,26 @@ classdef ControlStage < NosnocFormulationObject
                             exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
                             exprs = exprs(:);
                         else
+                            nonzeros = sum([nonzeros{:}], 2);
                             exprs = sum2([expr_cell{:}]);
                         end
-                        g_r = g_r + exprs;
+                        if isempty(nz_r)
+                            nz_r = zeros(size(nonzeros));
+                        end
+                        g_r = g_r + extract_nonzeros_from_vector(exprs);
+                        nz_r = nz_r + nonzeros;
                     end
+                    g_r = scale_sigma(g_r, sigma, nz_r);
                     g_cross_comp = vertcat(g_cross_comp, g_r);
                 end
             elseif settings.cross_comp_mode == 10
                 for r=1:dims.n_sys
                     g_r = 0;
+                    nz_r = [];
                     for fe=obj.stage
                         pairs = fe.cross_comp_pairs(:, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma), pairs, 'uni', false);
+                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
@@ -312,10 +322,16 @@ classdef ControlStage < NosnocFormulationObject
                             exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
                             exprs = exprs(:);
                         else
+                            nonzeros = sum(sum([nonzeros{:}], 2),1);
                             exprs = sum1(sum2([expr_cell{:}]));
                         end
-                        g_r = g_r + exprs;
+                        g_r = g_r + extract_nonzeros_from_vector(exprs);
+                        if isempty(nz_r)
+                            nz_r = zeros(size(nonzeros));
+                        end
+                        nz_r = nz_r + nonzeros;
                     end
+                    g_r = scale_sigma(g_r, sigma, nz_r);
                     g_cross_comp = vertcat(g_cross_comp, g_r);
                 end
             end

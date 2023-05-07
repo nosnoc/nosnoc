@@ -976,12 +976,10 @@ classdef FiniteElement < NosnocFormulationObject
 
                     for jj=1:n_discont-2
                         cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
-                        if (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
-                            cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
-                        end
                         if model.friction_exists
                             if settings.friction_model == FrictionModel.Conic
                                 cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma{end,1}), obj.w(obj.ind_beta_conic{jj,1})]);
+                                
                                 switch settings.conic_model_switch_handling
                                     case 'Plain'
                                         % no extra expr
@@ -995,6 +993,11 @@ classdef FiniteElement < NosnocFormulationObject
                                 cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_delta_d{end,1}), obj.w(obj.ind_lambda_tangent{jj,1})]);
                                 cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma_d{end,1}), obj.w(obj.ind_beta_d{jj,1})]);
                             end
+                        end
+                        if (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
+                            cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
+                            len_pad = size(cross_comp_pairs{1,jj+2},1) - size(cross_comp_pairs{2,jj+2}, 1);
+                            cross_comp_pairs{2,jj+2} = vertcat(cross_comp_pairs{2,jj+2}, zeros(len_pad, 2));
                         end
                     end
             end
@@ -1401,7 +1404,7 @@ classdef FiniteElement < NosnocFormulationObject
                                 exprs = exprs';
                                 exprs = exprs(:);
                             end
-                            g_cross_comp = vertcat(g_cross_comp, exprs);
+                            g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                         end
                     end
                 end
@@ -1410,14 +1413,15 @@ classdef FiniteElement < NosnocFormulationObject
                     for jj=1:obj.n_discont
                         for r=1:obj.n_indep
                             pairs = cross_comp_pairs{j, jj, r};
-                            exprs = apply_psi(pairs, psi_fun, sigma/sigma_scale);
+                            sigma_scale = 1/size(pairs, 1);
+                            exprs = apply_psi(pairs, psi_fun, sigma, sigma_scale);
                             if settings.relaxation_method == RelaxationMode.TWO_SIDED
                                 exprs = sum(exprs);
                                 exprs = exprs(:);
                             else
                                 exprs = sum(exprs);
                             end
-                            g_cross_comp = vertcat(g_cross_comp, exprs);
+                            g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                         end
                     end
                 end
@@ -1425,7 +1429,9 @@ classdef FiniteElement < NosnocFormulationObject
                 for j=1:obj.n_cont
                     for r=1:obj.n_indep
                         pairs = cross_comp_pairs(j, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                        %sigma_scale = cellfun(@(x) count_nonzero(x), expr_cell);
+                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma, sigma_scale), pairs, 'uni', false);
+                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
@@ -1434,11 +1440,11 @@ classdef FiniteElement < NosnocFormulationObject
                             exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
                             exprs = exprs(:);
                         else
-                            sum2([expr_cell{:}]);
+                            nonzeros = sum([nonzeros{:}], 2);
+                            exprs = sum2([expr_cell{:}]);
                         end
-                        exprs = sum(vertcat(expr_cell{:}));
-                        exprs = exprs(:);
-                        g_cross_comp = vertcat(g_cross_comp, exprs);
+                        exprs = scale_sigma(exprs, sigma, nonzeros);
+                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                     end
                 end
             elseif settings.cross_comp_mode == 4
@@ -1446,6 +1452,7 @@ classdef FiniteElement < NosnocFormulationObject
                     for r=1:obj.n_indep
                         pairs = cross_comp_pairs(:, jj, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
@@ -1454,9 +1461,11 @@ classdef FiniteElement < NosnocFormulationObject
                             exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
                             exprs = exprs(:);
                         else
+                            nonzeros = sum([nonzeros{:}], 2);
                             exprs = sum2([expr_cell{:}]);
                         end
-                        g_cross_comp = vertcat(g_cross_comp, exprs);
+                        exprs = scale_sigma(exprs, sigma, nonzeros);
+                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                     end
                 end
             elseif settings.cross_comp_mode == 5
@@ -1464,6 +1473,7 @@ classdef FiniteElement < NosnocFormulationObject
                     for r=1:obj.n_indep
                         pairs = cross_comp_pairs(j, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
@@ -1472,9 +1482,11 @@ classdef FiniteElement < NosnocFormulationObject
                             exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
                             exprs = exprs(:);
                         else
+                            nonzeros = sum(sum([nonzeros{:}], 2),1);
                             exprs = sum1(sum2([expr_cell{:}]));
                         end
-                        g_cross_comp = vertcat(g_cross_comp, exprs);
+                        exprs = scale_sigma(exprs, sigma, nonzeros);
+                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                     end
                 end
             elseif settings.cross_comp_mode == 6
@@ -1482,7 +1494,8 @@ classdef FiniteElement < NosnocFormulationObject
                     for r=1:obj.n_indep
                         pairs = cross_comp_pairs(:, jj, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
-                        if size([expr_cell{:}], 1) == 0
+                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
+                        if size(vertcat(expr_cell{:}), 1) == 0
                             exprs= [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1490,15 +1503,18 @@ classdef FiniteElement < NosnocFormulationObject
                             exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
                             exprs = exprs(:);
                         else
+                            nonzeros = sum(sum([nonzeros{:}], 2),1);
                             exprs = sum1(sum2([expr_cell{:}]));
                         end
-                        g_cross_comp = vertcat(g_cross_comp, exprs);
+                        exprs = scale_sigma(exprs, sigma, nonzeros);
+                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                     end
                 end
             elseif settings.cross_comp_mode == 7
                 for r=1:obj.n_indep
                     pairs = cross_comp_pairs(:, :, r);
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                    nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
                     if size([expr_cell{:}], 1) == 0
                         exprs= [];
                     elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
@@ -1507,14 +1523,17 @@ classdef FiniteElement < NosnocFormulationObject
                         exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
                         exprs = exprs(:);
                     else
+                        nonzeros = sum([nonzeros{:}], 2);
                         exprs = sum2([expr_cell{:}]);
                     end
-                    g_cross_comp = vertcat(g_cross_comp, exprs);
+                    exprs = scale_sigma(exprs, sigma, nonzeros);
+                    g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                 end
             elseif settings.cross_comp_mode == 8
                 for r=1:obj.n_indep
                     pairs = cross_comp_pairs(:, :, r);
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
+                    nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
                     if size([expr_cell{:}], 1) == 0
                         exprs= [];
                     elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
@@ -1523,9 +1542,11 @@ classdef FiniteElement < NosnocFormulationObject
                         exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
                         exprs = exprs(:);
                     else
+                        nonzeros = sum(sum([nonzeros{:}], 2),1);
                         exprs = sum1(sum2([expr_cell{:}]));
                     end
-                    g_cross_comp = vertcat(g_cross_comp, exprs);
+                    exprs = scale_sigma(exprs, sigma, nonzeros);
+                    g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                 end
             elseif settings.cross_comp_mode > 8
                 return

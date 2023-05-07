@@ -45,7 +45,7 @@ N_finite_elements = 3;
 
 settings.irk_representation = 'integral';
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
+%settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 settings.cross_comp_mode = 1;
 
 settings.print_level = 3;

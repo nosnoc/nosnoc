@@ -81,7 +81,7 @@ results.t_grid_u = t_grid(ind_t_grid_u);
 
 
 results.u_opt = u_opt;
-results.f_opt = full(results.nlp_results(end).f);
+results.f = full(results.nlp_results(end).f);
 results.T_opt = T_opt;
 results.w_opt = w_opt;
 results.h_opt = h_opt;
