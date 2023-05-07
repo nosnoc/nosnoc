@@ -975,11 +975,14 @@ classdef FiniteElement < NosnocFormulationObject
                     end
 
                     for jj=1:n_discont-2
-                        cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
+                        if settings.right_boundary_point_explicit || (obj.fe_idx == 1 && obj.ctrl_idx == 1)
+                            cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
+                        end
                         if model.friction_exists
                             if settings.friction_model == FrictionModel.Conic
-                                cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma{end,1}), obj.w(obj.ind_beta_conic{jj,1})]);
-                                
+                                if settings.right_boundary_point_explicit || (obj.fe_idx == 1 && obj.ctrl_idx == 1)
+                                    cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma{end,1}), obj.w(obj.ind_beta_conic{jj,1})]);
+                                end
                                 switch settings.conic_model_switch_handling
                                     case 'Plain'
                                         % no extra expr
@@ -1404,7 +1407,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_pairs{:});
             
             sigma_scale = 1; % TODO scale properly
-            % apply psi
+                             % apply psi
             g_cross_comp = [];
             lbg_cross_comp = [];
             ubg_cross_comp = [];
@@ -1448,6 +1451,7 @@ classdef FiniteElement < NosnocFormulationObject
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma, sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
+                            nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
                             exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
@@ -1472,6 +1476,7 @@ classdef FiniteElement < NosnocFormulationObject
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
+                            nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
                             exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
@@ -1496,6 +1501,7 @@ classdef FiniteElement < NosnocFormulationObject
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
                             exprs= [];
+                            nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
                             exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
@@ -1520,6 +1526,7 @@ classdef FiniteElement < NosnocFormulationObject
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size(vertcat(expr_cell{:}), 1) == 0
                             exprs= [];
+                            nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
                             exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
@@ -1543,6 +1550,7 @@ classdef FiniteElement < NosnocFormulationObject
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                     if size([expr_cell{:}], 1) == 0
                         exprs= [];
+                        nonzeros = [];
                     elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                         exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
                         exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
@@ -1565,6 +1573,7 @@ classdef FiniteElement < NosnocFormulationObject
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                     if size([expr_cell{:}], 1) == 0
                         exprs= [];
+                        nonzeros = [];
                     elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                         exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
                         exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
