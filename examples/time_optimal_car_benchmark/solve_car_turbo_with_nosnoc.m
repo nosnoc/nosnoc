@@ -74,7 +74,9 @@ model.g_terminal = [q-q_goal;v-v_goal];
 cpu_time_all = [];
 error_all = [];
 for ii = 1:N_trails
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
+
 cpu_time_all = [cpu_time_all, stats.cpu_time_total];
 results.T_opt = results.t_grid(end);
 [tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);

@@ -1,11 +1,11 @@
-function results = extract_results_from_solver(model,settings,results)
+function results = extract_results_from_solver(model, problem, settings,results)
 import casadi.*
 settings_bkp = settings;
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 settings = settings_bkp;
 % Store differential states
-w_opt = full(results.x);
+w_opt = full(results.nlp_results(end).x);
 
 % populate outputs
 names = {"x", "v", "z"};
@@ -22,27 +22,27 @@ switch settings.dcs_mode
 end
 
 for name=names
-    results = form_structured_output(model.problem, w_opt, name, results);
+    results = form_structured_output(problem, w_opt, name, results);
 end
 
 % handle x0 properly
-x0 = w_opt(model.problem.ind_x0);
+x0 = w_opt(problem.ind_x0);
 results.x_opt = [x0, results.x_opt];
 results.x_opt_extended = [x0, results.x_opt_extended];
 
 
 
 
-u_opt = w_opt([ind_u{:}]);
+u_opt = w_opt([problem.ind_u{:}]);
 u_opt = reshape(u_opt,n_u,N_stages);
 
 if time_optimal_problem
-    T_opt = w_opt(ind_t_final);
+    T_opt = w_opt(problem.ind_t_final);
 else
     T_opt = [];
 end
 if use_fesd
-    h_opt = w_opt(ind_h);
+    h_opt = w_opt(flatten_ind(problem.ind_h));
 else
     h_opt = [];
     if time_optimal_problem && ~use_speed_of_time_variables
@@ -58,7 +58,7 @@ t_grid = cumsum([0;h_opt]);
 %% Adapt the grid in case of time optimal problems
 if time_optimal_problem
     if use_speed_of_time_variables
-        s_sot = w_opt(ind_sot);
+        s_sot = w_opt(flatten_ind(problem.ind_sot));
         if ~local_speed_of_time_variable
             s_sot = s_sot*ones(N_stages,1);
         end
@@ -81,7 +81,7 @@ results.t_grid_u = t_grid(ind_t_grid_u);
 
 
 results.u_opt = u_opt;
-results.f_opt = full(results.f);
+results.f_opt = full(results.nlp_results(end).f);
 results.T_opt = T_opt;
 results.w_opt = w_opt;
 results.h_opt = h_opt;

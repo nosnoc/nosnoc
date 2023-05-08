@@ -41,19 +41,6 @@ unfold_struct(settings,'caller')
 settings = settings_bkp;
 
 %% Some settings refinments
-% update prin_level
-if print_level < 4
-    settings.opts_ipopt.ipopt.print_level = 0;
-    settings.opts_ipopt.print_time=0;
-    settings.opts_ipopt.ipopt.sb= 'yes';
-elseif print_level == 4
-    settings.opts_ipopt.ipopt.print_level = 0;
-    settings.opts_ipopt.print_time=1;
-    settings.opts_ipopt.ipopt.sb= 'no';
-else
-    settings.opts_ipopt.ipopt.print_level = 5;
-end
-
 if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end

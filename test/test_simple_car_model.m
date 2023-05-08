@@ -37,7 +37,7 @@ model.c = v-10;
 % Add terminal constraint
 model.g_terminal = [q-200;v-0];
 % Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
-
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 end
 

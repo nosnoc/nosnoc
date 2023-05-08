@@ -58,13 +58,13 @@ settings.dcs_mode = 'CLS';
 % settings.nonsmooth_switching_fun = 0;
 % settings.stabilizing_q_dynamics = 1;
 
-settings.opts_ipopt.ipopt.tol = 1e-8;
-settings.opts_ipopt.ipopt.acceptable_tol = 1e-8;
-settings.opts_ipopt.ipopt.acceptable_iter = 3;
-settings.opts_ipopt.ipopt.max_iter = 700;
+settings.opts_casadi_nlp.ipopt.tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.max_iter = 700;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_ipopt.ipopt.linear_solver = 'ma27';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretization
 model = unitri_ai_model();
@@ -132,7 +132,8 @@ model.lsq_T = {x,x_end,Q_terminal};
 % model.a_n = 1e2;
 % model.n_dim_contact = 2;
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
 %%

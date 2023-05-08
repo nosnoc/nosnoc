@@ -15,7 +15,7 @@ import casadi.*
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 % MPCC Method
 settings.N_homotopy = 10;
 % Discretization parameters
@@ -95,7 +95,8 @@ model.g_terminal = x-x_target;
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 
 %% plots
 % unfold structure to workspace of this script

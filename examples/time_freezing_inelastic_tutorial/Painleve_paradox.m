@@ -13,7 +13,7 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.dcs_mode = 'Step';
 settings.pss_lift_step_functions= 1;
-settings.opts_ipopt.ipopt.max_iter = 3e2;
+settings.opts_casadi_nlp.ipopt.max_iter = 3e2;
 settings.print_level = 2;
 settings.N_homotopy = 10;
 settings.cross_comp_mode = 1;
@@ -82,7 +82,7 @@ for ii = 1:length(qx)
     yc_res  = [yc_res,qy(ii)-l/2*cos(qtheta(ii))];
 end
 %%
-h = model.h_k;
+h = solver.model.h_k;
 figure
 for ii = 1:length(qx)
     plot([qx(ii)+l/2*sin(qtheta(ii)) xc_res(ii)],[qy(ii)+l/2*cos(qtheta(ii)) yc_res(ii)],'k','LineWidth',1.5)

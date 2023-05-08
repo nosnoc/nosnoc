@@ -47,11 +47,11 @@ settings.N_homotopy = 5;
 settings.sigma_0 = 1e2;
 
 settings.cross_comp_mode = 1;
-settings.opts_ipopt.ipopt.tol = 1e-8;
-settings.opts_ipopt.ipopt.acceptable_tol = 1e-8;
-settings.opts_ipopt.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 
-settings.opts_ipopt.ipopt.max_iter = 1000;
+settings.opts_casadi_nlp.ipopt.max_iter = 1000;
 
 settings.equidistant_control_grid = 0;
 settings.dcs_mode = 'CLS';
@@ -64,7 +64,7 @@ settings.dcs_mode = 'CLS';
 % settings.nonsmooth_switching_fun = 0;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 %% discretization
 model = half_unitri_ai_model();
 unfold_struct(model,'caller');
@@ -115,7 +115,8 @@ model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
 %

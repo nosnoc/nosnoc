@@ -49,13 +49,13 @@ settings.n_s = 2;  % number of stages in IRK methods
 settings.use_fesd = 1;
 
 settings.N_homotopy = 6;
-settings.opts_ipopt.ipopt.tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 
 settings.cross_comp_mode = 1;
 settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 settings.comp_tol = 1e-9;
 settings.time_freezing = 1;
 % settings.s_sot_max = 2;
@@ -68,7 +68,7 @@ settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
 settings.nonsmooth_switching_fun = 0;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretization
 T = 1; % prediction horizon
@@ -175,7 +175,8 @@ model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
 q_opt = x_opt(1:4,:);
@@ -249,9 +250,9 @@ for ii = 1:length(x_head)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
     end
 
     if ii~=length(x_head)

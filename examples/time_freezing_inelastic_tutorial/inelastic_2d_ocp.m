@@ -8,7 +8,7 @@ linewidth = 2.5;
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.N_homotopy = 6;
-settings.opts_ipopt.ipopt.max_iter = 5e2;
+settings.opts_casadi_nlp.ipopt.max_iter = 5e2;
 settings.print_level = 3;
 settings.time_freezing = 1;
 settings.s_sot_max = 10;
@@ -16,7 +16,7 @@ settings.s_sot_min = 0.99;
 settings.homotopy_update_rule = 'superlinear';
 settings.nonsmooth_switching_fun = 0;
 settings.pss_lift_step_functions = 0; 
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %%
 g = 9.81;
@@ -46,8 +46,9 @@ model.lbu = -u_max;
 model.ubu = u_max;
 model.f_q = u'*u;
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
-% [results] = polishing_homotopy_solution(model,settings,results,stats.sigma_k);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
+% [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k);
 %%
 qx = results.x_opt(1,:);
 qy = results.x_opt(2,:);

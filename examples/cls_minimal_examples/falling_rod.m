@@ -12,9 +12,11 @@ above_ground = 0.1;
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.dcs_mode = 'CLS';
-settings.friction_model = "Polyhedral";
-settings.friction_model = "Conic";
-settings.conic_model_switch_handling = "Lp";
+%settings.friction_model = "Polyhedral";
+settings.friction_model = "conic";
+settings.conic_model_switch_handling = "Abs";
+settings.pss_lift_step_functions= 0;
+settings.opts_casadi_nlp.ipopt.max_iter = 3e2;
 settings.print_level = 3;
 settings.N_homotopy = 6;
 settings.cross_comp_mode = 1;
@@ -99,7 +101,7 @@ for ii = 1:length(qx)
     yc_res  = [yc_res,qy(ii)-l/2*cos(qtheta(ii))];
 end
 %%
-h = model.h_k;
+h = solver.model.h_k;
 figure
 for ii = 1:length(qx)
     plot([qx(ii)+l/2*sin(qtheta(ii)) xc_res(ii)],[qy(ii)+l/2*cos(qtheta(ii)) yc_res(ii)],'k','LineWidth',1.5)

@@ -44,14 +44,14 @@ settings.n_s = 1;  % number of stages in IRK methods
 settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
 settings.use_fesd = 1;
 settings.N_homotopy = 7;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
 settings.stabilizing_q_dynamics = 1;
 % enforce inequality at finite elements.
 settings.g_path_at_fe = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-%settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+%settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 25; % control intervals
@@ -134,7 +134,8 @@ model.ubx = ubx;
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
 p1 = x_opt(1,:);
@@ -175,9 +176,9 @@ for ii = 1:length(p1)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
     end
     if ii~=length(p1)
         clf;

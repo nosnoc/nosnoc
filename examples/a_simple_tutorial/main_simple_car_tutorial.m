@@ -5,9 +5,12 @@ import casadi.*
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.cross_comp_mode = 1;
 settings.n_s = 2;
-settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH_POLY;
+settings.psi_fun_type = CFunctionType.BILINEAR;
 % Time-settings  - Solve an time optimal control problem
 settings.time_optimal_problem = 1;
+
+% settings.nlpsol = 'snopt';  % Note: requires installing.
+
 % Model - define all problem functions and
 % Discretization parameters
 model.N_stages = 10; % number of control intervals
@@ -32,7 +35,8 @@ model.c = v-10;
 % Add terminal constraint
 model.g_terminal = [q-200;v-0];
 % Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 
 %% Plot
 v_max = 20;

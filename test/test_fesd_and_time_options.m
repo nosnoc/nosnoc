@@ -50,7 +50,8 @@ else
     model.f_q = u^2;
 end
 % Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 if ~isempty(results.T_opt) && results.T_opt < 1e-2
     warning('Something went wrong.')
     disp(results.T_opt)

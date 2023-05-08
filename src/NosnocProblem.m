@@ -150,6 +150,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
         % Indices for all algebraic vars in the problem
         ind_z_all
+        ind_x_all
     end
 
     methods
@@ -806,6 +807,10 @@ classdef NosnocProblem < NosnocFormulationObject
                          flatten_ind(obj.ind_p_vt(:,:,1:obj.dims.n_s))
                         ];
             ind_z_all = sort(ind_z_all);
+        end
+
+        function ind_x_all = get.ind_x_all(obj)
+            ind_x_all = [obj.ind_x0.'; flatten_ind(obj.ind_x)];
         end
 
         function print(obj,filename)

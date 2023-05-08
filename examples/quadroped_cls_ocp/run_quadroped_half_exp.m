@@ -13,16 +13,16 @@ settings.irk_scheme = scenario.IrkScheme;
 settings.dcs_mode = 'CLS';
 settings.n_s = 2;  % number of stages in IRK methods
 settings.N_homotopy = scenario.N_homotopy;
-settings.opts_ipopt.ipopt.tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 
-settings.opts_ipopt.ipopt.max_iter = scenario.max_iter;
+settings.opts_casadi_nlp.ipopt.max_iter = scenario.max_iter;
 settings.equidistant_control_grid = 1;
 settings.sigma_0 = scenario.sigma_0;
 settings.cross_comp_mode = scenario.cross_comp_mode;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretization
 model = half_unitri_ai_model();
@@ -71,7 +71,8 @@ model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 model.u0 = 0*ones(n_u,1);
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'caller');
 %

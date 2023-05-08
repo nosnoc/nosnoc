@@ -52,7 +52,7 @@ settings.cross_comp_mode = 1;
 settings.homotopy_update_rule = 'superlinear';
 settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 %settings.elasticity_mode = ElasticityMode.ELL_INF;
-settings.opts_ipopt.ipopt.max_iter = 1e4;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e4;
 settings.sigma_0 = 100;
 
 %% Model Settings
@@ -62,7 +62,8 @@ model.N_stages = 10;
 model.T = 1;
 %% solve OCP
 model = car_hystheresis_model_voronoi(model);
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% Read and plot Result
 plot_results_car_hysteresis(results,settings,model,stats)   
 %%

@@ -56,7 +56,8 @@ model.f_v = [u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)];
 model.f_q = u'*u; model.f_q_T = 100*v'*v;
 model.g_path = u'*u-u_max^2;
 model.g_terminal = q-[q_target];
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %%
 plot_result_ball(model,settings,results,stats)
 fprintf('Objective values is: %2.4f \n',full(results.f_opt));

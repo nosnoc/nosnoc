@@ -34,14 +34,14 @@ settings.n_s = 2;
 settings.pss_lift_step_functions = 0;
 %% homotopy settings
 settings.cross_comp_mode = 3;
-settings.opts_ipopt.ipopt.max_iter = 2500;
+settings.opts_casadi_nlp.ipopt.max_iter = 2500;
 settings.N_homotopy = 5;
 settings.homotopy_update_rule = 'superlinear';
-settings.opts_ipopt.ipopt.tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 settings.comp_tol = 1e-10;
-settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% time-freezing
 settings.s_sot_max = 5;
