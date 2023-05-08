@@ -436,7 +436,7 @@ classdef FiniteElement < NosnocFormulationObject
                         'y_gap',...
                         zeros(dims.n_contacts,1),...
                         inf * ones(dims.n_contacts, 1),...
-                        ones(dims.n_contacts, 1),...
+                        0*ones(dims.n_contacts, 1),...
                         ii,1);
                     if model.friction_exists
                         lambda_tangent = define_casadi_symbolic(settings.casadi_symbolic_mode,...
@@ -620,7 +620,7 @@ classdef FiniteElement < NosnocFormulationObject
                     'Y_gap',...
                     zeros(dims.n_contacts,1),...
                     inf * ones(dims.n_contacts, 1),...
-                    ones(dims.n_contacts, 1),1);
+                    0*ones(dims.n_contacts, 1),1);
                 if model.friction_exists
                     Lambda_tangent = define_casadi_symbolic(settings.casadi_symbolic_mode,...
                         ['Lambda_tangent' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) ],...
@@ -973,34 +973,34 @@ classdef FiniteElement < NosnocFormulationObject
                             cross_comp_pairs{j,jj,1} = pairs;
                         end
                     end
-
-                    for jj=1:n_discont-2
-                        if settings.right_boundary_point_explicit || (obj.fe_idx == 1 && obj.ctrl_idx == 1)
+                    if settings.right_boundary_point_explicit || (obj.fe_idx == 1 && obj.ctrl_idx == 1)
+                        for jj=1:n_discont-2
+                            
                             cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
-                        end
-                        if model.friction_exists
-                            if settings.friction_model == FrictionModel.Conic
-                                if settings.right_boundary_point_explicit || (obj.fe_idx == 1 && obj.ctrl_idx == 1)
-                                    cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma{end,1}), obj.w(obj.ind_beta_conic{jj,1})]);
+                            if model.friction_exists
+                                if settings.friction_model == FrictionModel.Conic
+                                    if settings.right_boundary_point_explicit || (obj.fe_idx == 1 && obj.ctrl_idx == 1)
+                                        cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma{end,1}), obj.w(obj.ind_beta_conic{jj,1})]);
+                                    end
+                                    switch settings.conic_model_switch_handling
+                                        case 'Plain'
+                                            % no extra expr
+                                        case 'Abs'
+                                            cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_p_vt{end,1}), obj.w(obj.ind_n_vt{jj,1})]);
+                                        case 'Lp'
+                                            cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_p_vt{end,1}), obj.w(obj.ind_alpha_vt{jj,1})]);
+                                            cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_n_vt{end,1}), ones(dims.n_tangents,1)-obj.w(obj.ind_alpha_vt{jj,1})]);
+                                    end
+                                elseif settings.friction_model == FrictionModel.Polyhedral
+                                    cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_delta_d{end,1}), obj.w(obj.ind_lambda_tangent{jj,1})]);
+                                    cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma_d{end,1}), obj.w(obj.ind_beta_d{jj,1})]);
                                 end
-                                switch settings.conic_model_switch_handling
-                                    case 'Plain'
-                                        % no extra expr
-                                    case 'Abs'
-                                        cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_p_vt{end,1}), obj.w(obj.ind_n_vt{jj,1})]);
-                                    case 'Lp'
-                                        cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_p_vt{end,1}), obj.w(obj.ind_alpha_vt{jj,1})]);
-                                        cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_n_vt{end,1}), ones(dims.n_tangents,1)-obj.w(obj.ind_alpha_vt{jj,1})]);
-                                end
-                            elseif settings.friction_model == FrictionModel.Polyhedral
-                                cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_delta_d{end,1}), obj.w(obj.ind_lambda_tangent{jj,1})]);
-                                cross_comp_pairs{1,jj+2} = vertcat(cross_comp_pairs{1,jj+2}, [prev_fe.w(prev_fe.ind_gamma_d{end,1}), obj.w(obj.ind_beta_d{jj,1})]);
                             end
-                        end
-                        if (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
-                            cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
-                            len_pad = size(cross_comp_pairs{1,jj+2},1) - size(cross_comp_pairs{2,jj+2}, 1);
-                            cross_comp_pairs{2,jj+2} = vertcat(cross_comp_pairs{2,jj+2}, zeros(len_pad, 2));
+                            if (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
+                                cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
+                                len_pad = size(cross_comp_pairs{1,jj+2},1) - size(cross_comp_pairs{2,jj+2}, 1);
+                                cross_comp_pairs{2,jj+2} = vertcat(cross_comp_pairs{2,jj+2}, zeros(len_pad, 2));
+                            end
                         end
                     end
             end
