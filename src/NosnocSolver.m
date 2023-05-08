@@ -232,7 +232,7 @@ classdef NosnocSolver < handle
                     tic
                     nlp_results = solver('x0', w0, 'lbx', lbw, 'ubx', ubw,'lbg', lbg, 'ubg', ubg,'p',p_val);
                     cpu_time_iter = toc ;
-                    stats.solver_stats = [stats.solver_stats, solver.stats];;
+                    stats.solver_stats = [stats.solver_stats, solver.stats];
                 end
                 results.nlp_results = [results.nlp_results, nlp_results];
 
@@ -347,7 +347,7 @@ classdef NosnocSolver < handle
 
         function printNLPIterInfo(obj, stats)
             solver_stats = stats.solver_stats(end);
-            ii = size(solver_stats, 2);
+            ii = size(stats.solver_stats, 2);
 
             if strcmp(obj.settings.nlpsol, 'ipopt')
                 if isfield(solver_stats, 'iterations')
