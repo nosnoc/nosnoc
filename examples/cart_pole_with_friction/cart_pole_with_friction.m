@@ -93,7 +93,7 @@ x0 = [1; 0/180*pi; 0; 0]; % start downwards
 x_ref = [0; 180/180*pi; 0; 0]; % end upwards
 
 Q = diag([1; 100; 1; 1]);
-Q_terminal = diag([10; 100; 10; 20]);
+% Q_terminal = diag([10; 100; 10; 20]);
 Q_terminal = diag([100; 100; 10; 10]);
 % Q_terminal = 10*Q;
 R = 1;
