@@ -37,7 +37,10 @@ clc;
 import casadi.*
 
 % delete old gif
-delete cart_pole_with_friction.gif
+if exist('cart_pole_with_friction.gif')
+    delete cart_pole_with_friction.gif
+end
+
 %% Build problem
 import casadi.*
 [settings] = NosnocOptions();
@@ -189,10 +192,10 @@ for ii = 1:length(q1_opt)
     frame = getframe(1);
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
-    if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+    if ii == 1
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',results.h_opt(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',results.h_opt(ii-1));
     end
 
     if ii~=length(q1_opt)
