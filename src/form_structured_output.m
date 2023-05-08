@@ -40,6 +40,7 @@ function [results]= form_structured_output(problem, w_opt, name, results)
     opt_extended_ind = sort_ind_sets(opt_extended_ind(:));
     opt_extended_vals = cellfun(@(ind) w_opt(ind), opt_extended_ind, 'uni', false);
 
+    % TODO: it seems opt_extended is not packed.
     opt_extended = horzcat(opt_extended_vals{:});
     results.(strcat(name, '_opt_extended')) = opt;
 end
