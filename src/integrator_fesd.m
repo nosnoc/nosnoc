@@ -308,5 +308,7 @@ results.all_res = all_res;
 varargout{1} = results;
 varargout{2} = stats;
 varargout{3} = model;
+varargout{4} = settings;
+varargout{5} = solver;
 end
 

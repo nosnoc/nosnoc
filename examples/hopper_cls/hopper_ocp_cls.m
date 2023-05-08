@@ -44,6 +44,7 @@ delete hopper_simple.gif
 %%
 [settings] = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.mpcc_mode = MpccMode.elastic_two_sided;
 % settings.irk_representation = 'differential';
 settings.n_s = 2;  % number of stages in IRK methods
 settings.use_fesd = 1;
@@ -71,10 +72,10 @@ settings.g_path_at_fe = 0; % evaluate path constraint on every integration step
 settings.g_path_at_stg = 0; % evaluate path constraint on every stage point
 settings.nonsmooth_switching_fun = 0;
 %settings.mpcc_mode = MpccMode.elastic_ineq;
-%settings.nlpsol = 'ipopt';
-settings.nlpsol = 'snopt';
-settings.opts_casadi_nlp.snopt.Major_feasibility_tolerance = 1e-3;
-settings.opts_casadi_nlp.snopt.Minor_feasibility_tolerance = 1e-3;
+settings.nlpsol = 'ipopt';
+%settings.nlpsol = 'snopt';
+%settings.opts_casadi_nlp.snopt.Major_feasibility_tolerance = 1e-3;
+%settings.opts_casadi_nlp.snopt.Minor_feasibility_tolerance = 1e-3;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';

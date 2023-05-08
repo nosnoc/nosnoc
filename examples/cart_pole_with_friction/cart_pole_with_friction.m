@@ -135,6 +135,7 @@ end
 %% Solve OCP
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
+model = solver.model;
 %% plots
 % unfold structure to workspace of this script
 unfold_struct(results,'base');

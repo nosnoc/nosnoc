@@ -19,7 +19,9 @@ settings.print_details_if_infeasible = 0;
 settings.pause_homotopy_solver_if_infeasible = 0;
 settings.real_time_plot = 0;
 settings.no_initial_impacts = 1;
-settings.opts_ipopt.ipopt.linear_solver = 'ma97';
+settings.friction_model = 'Conic';
+settings.conic_model_switch_handling = 'Abs';
+%settings.opts_ipopt.ipopt.linear_solver = 'ma97';
 settings.sigma_0 = 10;
 settings.homotopy_update_slope = 0.2;
 
