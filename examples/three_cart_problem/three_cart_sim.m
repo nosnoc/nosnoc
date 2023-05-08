@@ -140,7 +140,7 @@ for ii = 1:length(p1)
     axis equal
     xlim([x_min x_max])
     ylim([-0.75 2.5])
-    pause(model.h_k);
+    pause(solver.model.h_k);
     clf
 end
 
