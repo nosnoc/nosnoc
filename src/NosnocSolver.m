@@ -52,10 +52,6 @@ classdef NosnocSolver < handle
             w = problem.w;
             g = problem.g;
             p = problem.p;
-            J_fun = problem.cost_fun;
-            comp_res = problem.comp_res;
-            comp_res_fesd = problem.comp_fesd;
-            comp_res_std = problem.comp_std;
 
             casadi_nlp = struct('f', problem.cost, 'x', w, 'g', g,'p',p);
 
