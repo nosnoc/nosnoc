@@ -11,7 +11,7 @@ function [results]= form_structured_output(problem, w_opt, name, results)
     end
 
     
-    len = max(lens);
+    len = max(lens, [], 'all');
     results.(strcat(name, '_opt_s')) = opt_s;
 
     % generate elementwise structured output
