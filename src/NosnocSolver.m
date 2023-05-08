@@ -125,7 +125,7 @@ classdef NosnocSolver < handle
 
                 if iscell(val)
                     % If the passed value is an N_stage by 1 cell array we assume this initialization is done stage wise
-                    if ndims(val) == 2 && size(val, 1) == obj.model.dims.N_stages && size(val,2) == 1
+                    if ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val,2) == 1
                         for ii=1:obj.model.dims.N_stages
                             % All variables of each stage are set to the same value
                             % TODO: Interpolation
@@ -137,7 +137,7 @@ classdef NosnocSolver < handle
                             end
                         end
                     % Otherwise if we have an initialization of the form N_stages-by-N_fe we do the same but finite-element-wise
-                    elseif ndims(val) == 2 && size(val, 1) == obj.model.dims.N_stages && size(val, 2) == obj.model.dimeisons.N_fe
+                    elseif ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val, 2) == obj.model.dimeisons.N_fe
                         for ii=1:obj.model.dims.N_stages
                             for jj=1:obj.model.dims.N_fe
                                 % All variables of each finite element are set to the same value

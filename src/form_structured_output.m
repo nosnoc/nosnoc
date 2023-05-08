@@ -19,7 +19,7 @@ function [results]= form_structured_output(problem, w_opt, name, results)
     i_opt_flat = cell(len, 1);
     for ii = 1:len
         i_opt{ii} = cellfun(@(vec) vec(ii), opt_s(~cellfun('isempty', opt_s)));
-        i_opt_flat{ii} = reshape(transpose(i_opt{ii}), prod(size(i_opt{ii})), 1);
+        i_opt_flat{ii} = reshape(transpose(i_opt{ii}), numel(i_opt{ii}), 1);
     end
 
     results.(strcat(name, '_i_opt')) = i_opt;
