@@ -179,7 +179,6 @@ for ii = 1:N_sim
         solver.problem.p0(end) = solver.problem.p0(end)+model.T;
     end
     solver.set("x0", x0);
-    
 
     % TODO Set up homotopy solver to take p_val explicitly
     if use_previous_solution_as_initial_guess
@@ -187,7 +186,13 @@ for ii = 1:N_sim
         solver.problem.w0(n_x+1:end) = w_opt(n_x+1:end);
     end
 
-    % Store data
+    % set all x values to xcurrent, as this is the best available guess.
+    solver.set('x', {x0})
+    solver.set('x_left_bp', {x0})
+    % try zeros?
+    % solver.set('lambda_normal', 1.0)
+
+    %% Store data
     if use_fesd
         h_vec = [h_vec;h_opt];
     else
@@ -222,7 +227,7 @@ for ii = 1:N_sim
     complementarity_stats  = [complementarity_stats; stats.complementarity_stats(end)];
     homotopy_iteration_stats = [homotopy_iteration_stats;stats.homotopy_iterations];
 
-    % plot during execution
+    %% plot during execution
     if real_time_plot
         if time_freezing
             figure(100)
