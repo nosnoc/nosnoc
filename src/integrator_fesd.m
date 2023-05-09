@@ -34,7 +34,6 @@
 % [results,stats,model] = integrator_fesd(model,settings);
 
 function [varargout] = integrator_fesd(model, settings, u_sim)
-import casadi.*
 
 control_exists = 1;
 if ~exist('u_sim','var')
@@ -59,8 +58,6 @@ end
 solver = NosnocSolver(model, settings);
 model = solver.model;
 settings = solver.settings;
-dims = model.dims;
-
 
 % TODO remove this but needed now because unfold_struct clobers fields for some reason
 % TODO when moving to model class remove this
@@ -122,9 +119,6 @@ for ii = 1:N_sim
     all_res = [all_res,res];
     time_per_iter = [time_per_iter; stats.cpu_time_total];
     % verbose
-    if stats.complementarity_stats(end) > 1e-3
-        %         error('NLP Solver did not converge for the current FESD problem. \n')
-    end
     simulation_time_pased = simulation_time_pased + model.T;
     if print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',ii, N_sim,simulation_time_pased,T_sim,time_per_iter(end));
@@ -135,9 +129,8 @@ for ii = 1:N_sim
     diff_states = w_opt(solver.problem.ind_x_all);
     alg_states = w_opt(solver.problem.ind_z_all);
 
-    diff_res = [diff_res;diff_states ];
+    diff_res = [diff_res;diff_states];
     alg_res = [alg_res;alg_states];
-
 
     % step-size
     h_opt = w_opt(flatten_ind(solver.problem.ind_h));
@@ -290,11 +283,11 @@ switch dcs_mode
   case 'CLS'
     % TODO
 end
-stats.complementarity_stats   = complementarity_stats;
+stats.complementarity_stats = complementarity_stats;
 stats.time_per_iter = time_per_iter;
 stats.homotopy_iteration_stats = homotopy_iteration_stats;
 
-results.h_vec  = h_vec;
+results.h_vec = h_vec;
 results.s_sot_res = s_sot_res;
 results.t_grid = cumsum([0;h_vec])';
 
