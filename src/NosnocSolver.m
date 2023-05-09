@@ -36,9 +36,8 @@ classdef NosnocSolver < handle
 
     methods
         function obj = NosnocSolver(model, settings)
+            import casadi.*
             tic
-            import casadi.*;
-
             [model,settings] = model_reformulation_nosnoc(model,settings); % TODO Move this outside solver to NosnocModel Class
 
             settings.create_butcher_tableu(model); % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
@@ -165,14 +164,12 @@ classdef NosnocSolver < handle
         end
 
         function [results,stats] = solve(obj)
-            import casadi.*
             solver = obj.solver;
             model = obj.model;
             settings = obj.settings;
             problem = obj.problem;
 
             comp_res = problem.comp_res;
-            nabla_J_fun = model.nabla_J_fun;
 
             % Initial conditions
             sigma_k = settings.sigma_0;
@@ -277,19 +274,42 @@ classdef NosnocSolver < handle
 
             results = extract_results_from_solver(model,problem,settings,results);
 
+            % check if solved to required accuracy
+            stats.converged = obj.is_converged(stats);
+
             obj.printSolverStats(results,stats);
         end
+
+        function converged = is_converged(obj, stats)
+            settings = obj.settings;
+            if strcmp(settings.nlpsol, 'ipopt')
+                last_stats = stats.solver_stats(end);
+                inf_pr = last_stats.iterations.inf_pr(end);
+                inf_du = last_stats.iterations.inf_du(end);
+                if inf_pr < settings.opts_casadi_nlp.ipopt.tol && inf_du < settings.opts_casadi_nlp.ipopt.tol ...
+                        && stats.complementarity_stats(end) < settings.comp_tol
+                    converged = 1;
+                else
+                    converged = 0;
+                end
+            else
+                % TODO..
+                converged = [];
+            end
+        end
+
 
         function printInfeasibility(obj, results)
             % warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
             if obj.settings.print_details_if_infeasible
-                print_problem_details(results,obj.model,obj.probem, []);
+                print_problem_details(results,obj.model,obj.problem, []);
             end
             if obj.settings.pause_homotopy_solver_if_infeasible
                 %             error('nosnoc: infeasible problem encounterd - stopping for debugging.')
                 keyboard
             end
         end
+
 
         function p_val = getInitialParameters(obj)
             model = obj.model;
@@ -373,8 +393,6 @@ classdef NosnocSolver < handle
             model = obj.model;
             dims = model.dims;
             settings = obj.settings;
-
-            comp_res = obj.problem.comp_res;
 
 
             fprintf('\n');

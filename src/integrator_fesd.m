@@ -118,11 +118,19 @@ for ii = 1:N_sim
     res = extract_results_from_solver(model, solver.problem, settings, sol);
     all_res = [all_res,res];
     time_per_iter = [time_per_iter; stats.cpu_time_total];
+
+    if stats.converged == 0
+        % TODO: return some infeasibility status
+        warning(['integrator_fesd: did not converge in step ', ii])
+        % keyboard;
+    elseif print_level >=2
+        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
+            ii, N_sim,simulation_time_pased,T_sim,time_per_iter(end));
+    end
+
     % verbose
     simulation_time_pased = simulation_time_pased + model.T;
-    if print_level >=2
-        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',ii, N_sim,simulation_time_pased,T_sim,time_per_iter(end));
-    end
+
     % Store differential states
     w_opt = full(sol.nlp_results(end).x);
     W = [W, w_opt];
@@ -136,16 +144,10 @@ for ii = 1:N_sim
     h_opt = w_opt(flatten_ind(solver.problem.ind_h));
     % differential
     x_opt_extended = w_opt(solver.problem.ind_x_all);
-    x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
+    x_opt_extended = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
 
     % only bounadry value
-    if isequal(irk_representation,'integral')
-        x_opt  = res.x_opt(:,2:end);
-    elseif isequal(irk_representation, 'differential_lift_x')
-        x_opt  = res.x_opt(:,2:end);
-    else
-        x_opt  = res.x_opt(:,2:end);
-    end
+    x_opt = res.x_opt(:,2:end);
 
 
     % TODO: this should use indices instead of n_*
@@ -170,7 +172,7 @@ for ii = 1:N_sim
             lambda_1_opt= lambda_1_opt_extended(:,1:n_s:end);
     end
 
-    % update initial guess and inital value
+    %% update initial guess and inital value
     x0 = x_opt(:,end);
     %     update clock state
     if impose_terminal_phyisical_time
