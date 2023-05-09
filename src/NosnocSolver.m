@@ -203,7 +203,7 @@ classdef NosnocSolver < handle
 
             if settings.print_level >= 3
                 %     fprintf('\niter\t\tsigma\t\tcompl_res\tobjective\tCPU time\tNLP iters\tstatus \t inf_pr \t inf_du \n')
-                fprintf('\niter \t\t sigma \t\t compl_res \t\t objective \t\t inf_pr \t\t inf_du \t\t CPU time \t\t NLP iters \t\t status \n')
+                fprintf('\niter\t sigma \t\t compl_res\t inf_pr \t inf_du \t objective \t CPU time \t NLP iter\t status \n')
             end
 
             while (complementarity_iter) > settings.comp_tol && ii < settings.N_homotopy && (sigma_k > settings.sigma_N || ii == 0)
@@ -283,7 +283,7 @@ classdef NosnocSolver < handle
         end
 
         function printInfeasibility(obj, results)
-            warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
+            % warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
             if obj.settings.print_details_if_infeasible
                 print_problem_details(results,obj.model,obj.probem, []);
             end
@@ -357,17 +357,16 @@ classdef NosnocSolver < handle
                     inf_pr = nan;
                     inf_du = nan;
                 end
-                
-                fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %d \t\t %s \n',...
-                    ii, stats.sigma_k(end), stats.complementarity_stats(end), stats.objective(end),inf_pr,inf_du, ...
-                    stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
+                fprintf('%d\t%6.2e\t %6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.3f \t %d \t %s \n',...
+                    ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
+                    stats.objective(end), stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
             elseif strcmp(obj.settings.nlpsol, 'snopt')
                 % TODO: Findout snopt prim du inf log!
                 inf_pr = nan;
                 inf_du = nan;
-                fprintf('%d \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %6.2e \t\t %6.2e \t\t %6.3f \t\t %s \t\t %s \n',...
-                    ii, stats.sigma_k(end), stats.complementarity_stats(end), stats.objective(end),inf_pr,inf_du, ...
-                    stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
+                fprintf('%d\t%6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.2e \t %6.3f \t %s \t %s \n',...
+                    ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
+                    stats.objective(end), stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
                 % TODO: add missing log information
             end
         end
