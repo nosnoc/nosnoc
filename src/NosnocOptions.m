@@ -215,16 +215,18 @@ classdef NosnocOptions < handle
     methods
         function obj = NosnocOptions()
 
+            default_tol = 1e-12;
+
             obj.opts_casadi_nlp.ipopt.print_level = 0;
             obj.opts_casadi_nlp.print_time = 0;
             obj.opts_casadi_nlp.ipopt.sb = 'yes';
             obj.opts_casadi_nlp.verbose = false;
             obj.opts_casadi_nlp.ipopt.max_iter = 500;
             obj.opts_casadi_nlp.ipopt.bound_relax_factor = 0;
-            obj.opts_casadi_nlp.ipopt.tol = 1e-16;
-            obj.opts_casadi_nlp.ipopt.dual_inf_tol = 1e-16;
-            obj.opts_casadi_nlp.ipopt.dual_inf_tol = 1e-16;
-            obj.opts_casadi_nlp.ipopt.compl_inf_tol = 1e-16;
+            obj.opts_casadi_nlp.ipopt.tol = default_tol;
+            obj.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+            obj.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+            obj.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
             obj.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
             obj.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
             obj.opts_casadi_nlp.snopt = struct();

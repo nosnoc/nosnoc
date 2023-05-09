@@ -247,9 +247,7 @@ classdef NosnocSolver < handle
                 % update results output.
                 w_opt = full(nlp_results.x);
                 results.W = [results.W,w_opt]; % all homotopy iterations
-
                 w0 = w_opt;
-
 
                 % update complementarity and objective stats
                 complementarity_iter = full(comp_res(w_opt, p_val));
@@ -268,7 +266,7 @@ classdef NosnocSolver < handle
             % polish homotopy solution with fixed active set.
             % TODO fix this!
             if settings.polishing_step
-                [results] = polish_homotopy_solution(model,problme,settings,results,sigma_k);
+                [results] = polish_homotopy_solution(model,problem,settings,results,sigma_k);
                 complementarity_iter = results.complementarity_iter;
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                 W = [W,results.w_opt];
