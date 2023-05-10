@@ -80,7 +80,7 @@ plot(t_grid,qx);
 hold on
 plot(tt1,q1,'k')
 plot(tt2,q2,'k')
-legend({'$q$ - numerical','$q$ - anlyitic'},'interpreter','latex');
+legend({'$q$ - numerical','$q$ - analytic'},'interpreter','latex');
 xlim([0 t_grid(end)])
 ylim([-0.1 x0(1)+0.1])
 grid on
@@ -93,7 +93,7 @@ hold on
 plot(tt1,v1,'k')
 plot(tt2,v2,'k')
 plot(t_grid,vx,'b.','MarkerSize',6);
-legend({'$q$ - numerical','$q$ - anlyitic'},'interpreter','latex');
+legend({'$q$ - numerical','$q$ - analytic'},'interpreter','latex');
 ylim([-3 3])
 grid on
 xlabel('$t$','interpreter','latex');
@@ -109,7 +109,7 @@ yline(Lambda_star,'k--')
 xlim([-0.01 t_grid(end)])
 ylim([-0.1 max([results.all_res.Lambda_normal_opt,Lambda_star])+1])
 grid on
-legend({'$\Lambda$ - numerical','$\Lambda$ - anlyitic'},'interpreter','latex');
+legend({'$\Lambda$ - numerical','$\Lambda$ - analytic'},'interpreter','latex');
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda$','interpreter','latex');
 
