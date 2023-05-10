@@ -134,6 +134,9 @@ classdef NosnocProblem < NosnocFormulationObject
 
         % Problem objective function
         objective_fun
+
+        % Problem constraint function
+        g_fun
     end
     % remaining list of TODOs
     % TODO: cleanup/add properties (in all components)
@@ -514,6 +517,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
             obj.cost_fun = Function('cost_fun', {obj.w, obj.p}, {obj.cost});
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
+            obj.g_fun = Function('g_fun', {obj.w, obj.p}, {obj.g});
 
             obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
 

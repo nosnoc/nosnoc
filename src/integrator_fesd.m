@@ -127,8 +127,6 @@ for ii = 1:N_sim
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
             ii, N_sim,simulation_time_pased,T_sim,time_per_iter(end));
     end
-
-    % verbose
     simulation_time_pased = simulation_time_pased + model.T;
 
     % Store differential states
