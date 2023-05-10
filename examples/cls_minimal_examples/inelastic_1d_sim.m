@@ -4,9 +4,9 @@ import casadi.*
 close all
 %%
 settings = NosnocOptions();
-settings.irk_scheme = IRKSchemes.RADAU_I;
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;
-settings.irk_representation = 'differential';
+% settings.irk_representation = 'differential';
 settings.print_level = 3;
 settings.N_homotopy = 15;
 settings.cross_comp_mode = 1;
@@ -116,5 +116,5 @@ ylabel('$\Lambda$','interpreter','latex');
 if N_sim == 1
     fprintf('Impulse error %2.2e \n',abs(max(results.all_res.Lambda_normal_opt)-Lambda_star))
     fprintf('position error %2.2e \n',abs(q2(end)-qx(end)))
-    fprintf('position error %2.2e \n',abs(v2(end)-vx(end)))
+    fprintf('velocity error %2.2e \n',abs(v2(end)-vx(end)))
 end
