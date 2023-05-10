@@ -87,7 +87,7 @@ if settings.dcs_mode == DcsMode.CLS
         end
     end
     results.x_with_impulse = x_with_impulse;
-    results.t_with_impulse = t_with_impulse;
+    results.t_with_impulse = t_with_impulse(1:end-1);
 end
 
 results.t_grid = t_grid;
