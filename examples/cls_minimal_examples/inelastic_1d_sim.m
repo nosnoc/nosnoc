@@ -18,7 +18,7 @@ settings.mpcc_mode = "Scholtes_ineq";
 settings.print_details_if_infeasible = 0;
 settings.pause_homotopy_solver_if_infeasible = 0;
 settings.real_time_plot = 0;
-settings.no_initial_impacts = 1;
+settings.no_initial_impacts = 0;
 settings.friction_model = 'Conic';
 settings.conic_model_switch_handling = 'Abs';
 %settings.opts_ipopt.ipopt.linear_solver = 'ma97';
@@ -40,7 +40,7 @@ model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
-N_FE = 2;
+N_FE = 5;
 T_sim = 1.5;
 N_sim = 1;
 
@@ -50,7 +50,7 @@ model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,model,settings,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = x_res(1,:);
@@ -88,7 +88,7 @@ ylabel('$q$','interpreter','latex');
 xlabel('$t$','interpreter','latex');
 % axis equal
 subplot(312)
-plot(t_grid,vx);
+plot(results.all_res.t_with_impulse(1:end-1), results.all_res.x_with_impulse(2,:));
 hold on
 plot(tt1,v1,'k')
 plot(tt2,v2,'k')
