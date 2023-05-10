@@ -42,5 +42,6 @@ function [results]= form_structured_output(problem, w_opt, name, results)
 
     % TODO: it seems opt_extended is not packed.
     opt_extended = horzcat(opt_extended_vals{:});
-    results.(strcat(name, '_opt_extended')) = opt;
+    results.(strcat(name, '_opt_extended')) = opt_extended;
+
 end

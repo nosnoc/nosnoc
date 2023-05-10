@@ -76,9 +76,22 @@ end
 
 ind_t_grid_u = cumsum([1; N_finite_elements]);
 
+
+if settings.dcs_mode == DcsMode.CLS
+    x_with_impulse = [x0];
+    t_with_impulse = kron(t_grid, ones(2,1));
+    for ii=1:size(results.x_opt_s,1)
+        for jj=1:size(results.x_opt_s,2)
+            x_with_impulse = [x_with_impulse,results.x_left_bp_opt_s{ii,jj}];
+            x_with_impulse = [x_with_impulse,results.x_opt_s{ii,jj}];
+        end
+    end
+    results.x_with_impulse = x_with_impulse;
+    results.t_with_impulse = t_with_impulse(1:end-1);
+end
+
 results.t_grid = t_grid;
 results.t_grid_u = t_grid(ind_t_grid_u);
-
 
 results.u_opt = u_opt;
 results.f = full(results.nlp_results(end).f);
