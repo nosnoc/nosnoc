@@ -4,9 +4,9 @@ import casadi.*
 close all
 %%
 settings = NosnocOptions();
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+settings.irk_scheme = IRKSchemes.RADAU_I;
 settings.n_s = 2;
-settings.irk_representation = 'integral';
+settings.irk_representation = 'differential';
 settings.print_level = 3;
 settings.N_homotopy = 15;
 settings.cross_comp_mode = 1;
@@ -32,7 +32,7 @@ q = SX.sym('q',1);
 v = SX.sym('v',1);
 model.M = 1;
 model.x = [q;v];
-model.e = 0.0;
+model.e = 0.8;
 model.mu = 0;
 x0 = [0.6;0];
 model.x0 = x0;
@@ -40,8 +40,8 @@ model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
-N_FE = 5;
-T_sim = 1.5;
+N_FE = 6*1;
+T_sim = 0.8;
 N_sim = 1;
 
 model.T_sim = T_sim;
@@ -114,5 +114,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda$','interpreter','latex');
 
 if N_sim == 1
-    fprintf('Impulse error %2.2e \n',abs(max(results.all_res.Lambda_normal_opt))-Lambda_star)
+    fprintf('Impulse error %2.2e \n',abs(max(results.all_res.Lambda_normal_opt)-Lambda_star))
+    fprintf('position error %2.2e \n',abs(q2(end)-qx(end)))
+    fprintf('position error %2.2e \n',abs(v2(end)-vx(end)))
 end
