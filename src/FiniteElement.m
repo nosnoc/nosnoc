@@ -180,7 +180,7 @@ classdef FiniteElement < NosnocFormulationObject
             parse(p, prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin{:});
 
             % TODO Combine this with the below if
-            if settings.right_boundary_point_explicit || settings.dcs_mode == 'CLS'
+            if settings.right_boundary_point_explicit || settings.dcs_mode == DcsMode.CLS
                 rbp_allowance = 0;
             else
                 rbp_allowance = 1;
