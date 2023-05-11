@@ -289,7 +289,7 @@ classdef NosnocSolver < handle
                 inf_pr = last_stats.iterations.inf_pr(end);
                 inf_du = last_stats.iterations.inf_du(end);
                 if inf_pr < settings.opts_casadi_nlp.ipopt.tol && inf_du < settings.opts_casadi_nlp.ipopt.tol ...
-                        && stats.complementarity_stats(end) < settings.comp_tol
+                        && stats.complementarity_stats(end) < 10 * settings.comp_tol
                     converged = 1;
                 else
                     converged = 0;
