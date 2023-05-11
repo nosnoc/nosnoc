@@ -357,7 +357,7 @@ classdef NosnocOptions < handle
 
         function obj = set.time_freezing(obj, val)
             if val
-                if obj.dcs_mode == "CLS"
+                if obj.dcs_mode == DcsMode.CLS
                     val = 0;
                     fprintf(['nosnoc: User uses dcs_mode.CLS and time_freezing = true at the same time, setting time_freezing to false.\n']);
                 else

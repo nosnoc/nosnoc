@@ -150,7 +150,7 @@ for ii = 1:N_sim
 
     % TODO: this should use indices instead of n_*
     switch dcs_mode
-        case 'Stewart'
+        case DcsMode.Stewart
             alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
             theta_opt_extended = [alg_states_extended(1:n_theta,:)];
             lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
@@ -159,7 +159,7 @@ for ii = 1:N_sim
             theta_opt= theta_opt_extended(:,1:n_s:end);
             lambda_opt= lambda_opt_extended(:,1:n_s:end);
             mu_opt= mu_opt_extended(:,1:n_s:end);
-        case 'Step'
+        case DcsMode.Step
             alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
             alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
             lambda_0_opt_extended = [alg_states_extended(n_alpha+1:2*n_alpha,:)];
@@ -204,7 +204,7 @@ for ii = 1:N_sim
 
     % algebraic
     switch dcs_mode
-      case 'Stewart'
+      case DcsMode.Stewart
         theta_res = [theta_res, theta_opt];
         lambda_res = [lambda_res, lambda_opt];
         mu_res = [mu_res, mu_opt];
@@ -212,7 +212,7 @@ for ii = 1:N_sim
         lambda_res_extended = [lambda_res_extended,lambda_opt_extended];
         mu_res_extended = [mu_res_extended,mu_opt_extended];
 
-      case 'Step'
+      case DcsMode.Step
         alpha_res = [alpha_res, alpha_opt];
         lambda_0_res = [lambda_0_res, lambda_0_opt];
         lambda_1_res = [lambda_1_res, lambda_1_opt];
@@ -271,21 +271,21 @@ results.x_res  = x_res;
 % Output all stage values as well.
 results.x_res_extended  = x_res_extended;
 switch dcs_mode
-  case 'Stewart'
+  case DcsMode.Stewart
     results.theta_res = theta_res;
     results.lambda_res = lambda_res;
     results.mu_res = mu_res;
     results.theta_res_extended  = theta_res_extended;
     results.lambda_res_extended  = lambda_res_extended;
     results.mu_res_extended  = mu_res_extended;
-  case 'Step'
+  case DcsMode.Step
     results.alpha_res = alpha_res;
     results.lambda_0_res = lambda_0_res;
     results.lambda_1_res = lambda_1_res;
     results.alpha_res_extended = alpha_res_extended;
     results.lambda_0_res_extended = lambda_0_res_extended;
     results.lambda_1_res_extended = lambda_1_res_extended;
-  case 'CLS'
+  case DcsMode.CLS
     % TODO
 end
 stats.complementarity_stats = complementarity_stats;

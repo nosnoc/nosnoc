@@ -11,8 +11,8 @@ eps_sigma = 10*eps_sigma;
 
 
 %% alert
-if isequal(settings.dcs_mode,'Stewart');
-    error('Polishing mode is currently avilable for settings.dcs_mode = ''Step''.');
+if isequal(settings.dcs_mode,DcsMode.Stewart);
+    error('Polishing mode is currently avilable for settings.dcs_mode = 'DcsMode.Step'.');
 end
 %% unfold
 import casadi.*
