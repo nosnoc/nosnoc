@@ -38,24 +38,24 @@ classdef NosnocOptions < handle
 
         % IRK and FESD Settings
         n_s = 2 % size of butcher tableau
-        irk_scheme IRKSchemes = IRKSchemes.RADAU_IIA
-        irk_representation IrkRepresentation = IrkRepresentation.integral;
+        irk_scheme = IRKSchemes.RADAU_IIA
+        irk_representation = IrkRepresentation.integral;
         cross_comp_mode = 3
-        gamma_h double = 1
-        dcs_mode DcsMode = DcsMode.Stewart
+        gamma_h = 1
+        dcs_mode = DcsMode.Stewart
 
         % Initialization - Stewart
         lp_initialization = 0
-        initial_theta double = 1
-        initial_lambda double = 1
-        initial_mu double = 1
+        initial_theta = 1
+        initial_lambda = 1
+        initial_mu = 1
 
         % Initialization - Step
-        initial_alpha double = 1
-        initial_lambda_0 double = 1
-        initial_lambda_1 double = 1
-        initial_beta double = 1
-        initial_theta_step double = 1
+        initial_alpha = 1
+        initial_lambda_0 = 1
+        initial_lambda_1 = 1
+        initial_beta = 1
+        initial_theta_step = 1
 
         % Step theta lifting
         pss_lift_step_functions = 0
@@ -72,40 +72,40 @@ classdef NosnocOptions < handle
         simple_v0_guess = 0 % TODO what is this
 
         % MPCC and Homotopy Settings
-        comp_tol double = 1e-9
-        mpcc_mode MpccMode = MpccMode.Scholtes_ineq % 'direct', 'Scholtes_eq', 'Scholtes_ineq', 'ell_1_penalty', 'elastic_ineq', 'elastic_eq' , 'elastic_two_sided',
+        comp_tol = 1e-9
+        mpcc_mode = MpccMode.Scholtes_ineq % 'direct', 'Scholtes_eq', 'Scholtes_ineq', 'ell_1_penalty', 'elastic_ineq', 'elastic_eq' , 'elastic_two_sided',
                                            % 'elastic_ell_1_ineq', 'elastic_ell_1_eq', 'elastic_ell_1_two_sided'
         objective_scaling_direct = 1
-        sigma_0 double = 1
-        sigma_N double = 1e-9
+        sigma_0 = 1
+        sigma_N = 1e-9
         homotopy_update_rule = 'linear' % 'linear' sigma_k = homotopy_update_slope*sigma_N
                                         % 'superlinear' - sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent))
                                         % TODO enum
-        homotopy_update_slope double = 0.1
-        homotopy_update_exponent double = 1.5 % the exponent in the superlinear rule
+        homotopy_update_slope = 0.1
+        homotopy_update_exponent = 1.5 % the exponent in the superlinear rule
         N_homotopy = 0 % 0 -> set automatically
-        s_elastic_max double = 1e1
-        s_elastic_min double = 0
-        s_elastic_0 double = 1
+        s_elastic_max = 1e1
+        s_elastic_min = 0
+        s_elastic_0 = 1
 
         % Default settings for the barrier tuned penalty/slack variables for mpcc modes 8 do 10.
-        rho_penalty double = 1e1
+        rho_penalty = 1e1
         sigma_penalty = 0 % TODO what is this
 
-        rho_lambda double = 1
-        rho_scale double = 30
+        rho_lambda = 1
+        rho_scale = 30
 
-        sigma_scale double = 0.1
+        sigma_scale = 0.1
 
-        rho_min double = 0.1
-        rho_max double = (log(30)-log(1e-16))/1
+        rho_min = 0.1
+        rho_max = (log(30)-log(1e-16))/1
 
-        rho_0 double = 0.5
+        rho_0 = 0.5
         % sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0)
         nonlinear_sigma_rho_constraint = 1
         convex_sigma_rho_constraint = 0
 
-        ratio_for_homotopy_stop double = 0.75
+        ratio_for_homotopy_stop = 0.75
 
         % Homotopy preprocess and polishing steps
 %         h_fixed_iterations = 0
@@ -117,9 +117,9 @@ classdef NosnocOptions < handle
 
 
         % Step equilibration
-        rho_h double = 1
-        step_equilibration StepEquilibrationMode = StepEquilibrationMode.heuristic_mean % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
-        step_equilibration_sigma double = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
+        rho_h = 1
+        step_equilibration = StepEquilibrationMode.heuristic_mean % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
+        step_equilibration_sigma = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
 
         % Multiple shooting type discretization
         equidistant_control_grid = 1
@@ -132,14 +132,14 @@ classdef NosnocOptions < handle
         local_speed_of_time_variable = 0
         stagewise_clock_constraint = 1
         impose_terminal_phyisical_time = 1
-        s_sot0 double = 1
-        s_sot_max double = 25
-        s_sot_min double = 1
-        S_sot_nominal double = 1
-        rho_sot double = 0
+        s_sot0 = 1
+        s_sot_max = 25
+        s_sot_min = 1
+        S_sot_nominal = 1
+        rho_sot = 0
 
-        T_final_max double = 1e2
-        T_final_min double = 0
+        T_final_max = 1e2
+        T_final_min = 0
         time_freezing_reduced_model = 0 % analytic reduction of lifter formulation, less algebraic variables (experimental)
         time_freezing_hysteresis = 0 % do not do automatic time freezing generation for hysteresis, it is not supported yet.
         time_freezing_nonlinear_friction_cone = 1 % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
@@ -151,26 +151,26 @@ classdef NosnocOptions < handle
         nonsmooth_switching_fun = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
         % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
         stabilizing_q_dynamics = 0
-        kappa_stabilizing_q_dynamics double = 1e-5
+        kappa_stabilizing_q_dynamics = 1e-5
         % Verbose
         print_level = 3
         print_details_if_infeasible = 0;
         pause_homotopy_solver_if_infeasible = 0;
 
         % Settings specific to CLS
-        friction_model  FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
-        conic_model_switch_handling  ConicModelSwitchHandling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
-        kappa_friction_reg  double = 0; % reg. term in friction equations to avoid large multipliers if no contact happens.
+        friction_model = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
+        conic_model_switch_handling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
+        kappa_friction_reg  = 0; % reg. term in friction equations to avoid large multipliers if no contact happens.
         lift_velocity_state = 0; % define auxliary algebraic vairable, dot{v} = z_v, to avoid symbolic inversion of the inerti matrix;
 
         % IPOPT Settings
-        tol_ipopt double = 1e-16
+        tol_ipopt = 1e-16
         opts_casadi_nlp
 
         % Relaxation of terminal constraint
         relax_terminal_constraint = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
         relax_terminal_constraint_from_above = 0
-        rho_terminal double = 1e2
+        rho_terminal = 1e2
         relax_terminal_constraint_homotopy = 0 % terminal penalty is governed by homotopy parameter
 
         % Integrator Specific
@@ -189,22 +189,22 @@ classdef NosnocOptions < handle
         no_initial_impacts = 0
 
         % All NLP parameters
-        T_val double = 1
+        T_val = 1
         p_val
 
         % Butcher Tableu
-        A_irk double
-        B_irk double
-        b_irk double
-        C_irk double
-        D_irk double
+        A_irk
+        B_irk
+        b_irk
+        C_irk
+        D_irk
 
         % psi func
-        psi_fun_type CFunctionType = CFunctionType.BILINEAR
-        relaxation_method RelaxationMode = RelaxationMode.INEQ
-        elasticity_mode ElasticityMode = ElasticityMode.NONE
+        psi_fun_type = CFunctionType.BILINEAR
+        relaxation_method = RelaxationMode.INEQ
+        elasticity_mode = ElasticityMode.NONE
 
-        right_boundary_point_explicit logical % TODO this shoud live in model probably
+        right_boundary_point_explicit % TODO this shoud live in model probably
     end
 
     properties(Dependent)
