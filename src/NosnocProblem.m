@@ -167,7 +167,7 @@ classdef NosnocProblem < NosnocFormulationObject
                 rbp_allowance = 1;
             end
 
-            if settings.dcs_mode == DcsMode.CLS && ~settings.right_boundary_point_explicit
+            if settings.dcs_mode == "CLS" && ~settings.right_boundary_point_explicit
                 rbp_x_only = 1;
             else
                 rbp_x_only = 0;

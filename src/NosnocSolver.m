@@ -325,11 +325,11 @@ classdef NosnocSolver < handle
             delta_d00 = [];
             y_gap00 = [];
             switch settings.dcs_mode
-              case DcsMode.Stewart
+              case 'Stewart'
                 lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-              case DcsMode.Step
+              case 'Step'
                 lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-              case DcsMode.CLS
+              case 'CLS'
                 % TODO: reconsider this if 0th element has an impulse
                 y_gap00 = model.f_c_fun(x0);
                 if model.friction_exists
