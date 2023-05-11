@@ -28,168 +28,168 @@ classdef NosnocOptions < handle
 % TODO clean up much of the work here.
     properties
         % General
-        solver_name {mustBeTextScalar} = 'nosnoc_solver'
+        solver_name = 'nosnoc_solver'
         nlpsol = 'ipopt'
-        use_fesd(1,1) logical = 1
-        casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
+        use_fesd = 1
+        casadi_symbolic_mode % 'casadi.SX' or 'casadi.MX', detected automatically
 
         % Interface settings
-        real_time_plot(1,1) logical = 0
+        real_time_plot = 0
 
         % IRK and FESD Settings
-        n_s(1,1) {mustBeInteger, mustBeInRange(n_s, 1, 9)} = 2
-        irk_scheme(1,1) IRKSchemes = IRKSchemes.RADAU_IIA
+        n_s = 2 % size of butcher tableau
+        irk_scheme IRKSchemes = IRKSchemes.RADAU_IIA
         irk_representation IrkRepresentation = IrkRepresentation.integral;
-        cross_comp_mode {mustBeInRange(cross_comp_mode, 1, 12)}= 3
-        gamma_h(1,1) double {mustBeReal, mustBeInRange(gamma_h, 0, 1)} = 1
+        cross_comp_mode = 3
+        gamma_h double = 1
         dcs_mode DcsMode = DcsMode.Stewart
 
         % Initialization - Stewart
-        lp_initialization(1,1) logical = 0
-        initial_theta(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_mu(1,1) double {mustBeReal, mustBeFinite} = 1
+        lp_initialization = 0
+        initial_theta double = 1
+        initial_lambda double = 1
+        initial_mu double = 1
 
         % Initialization - Step
-        initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda_0(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda_1(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_beta(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1
+        initial_alpha double = 1
+        initial_lambda_0 double = 1
+        initial_lambda_1 double = 1
+        initial_beta double = 1
+        initial_theta_step double = 1
 
         % Step theta lifting
-        pss_lift_step_functions(1,1) logical = 0
-        n_depth_step_lifting(1,1) {mustBeInteger, mustBeGreaterThanOrEqual(n_depth_step_lifting, 2)} = 2
+        pss_lift_step_functions = 0
+        n_depth_step_lifting = 2
 
         %General NLP/OCP Settings
-        g_path_at_fe(1,1) logical = 0 % evaluate nonlinear path constraint at every finte element boundary
-        g_path_at_stg(1,1) logical = 0 % evaluate nonlinear path constraint at every stage
+        g_path_at_fe = 0 % evaluate nonlinear path constraint at every finte element boundary
+        g_path_at_stg = 0 % evaluate nonlinear path constraint at every stage
 
-        x_box_at_fe(1,1) logical = 1 % evaluate box constraint for diff states at every finite element boundary point
-        x_box_at_stg(1,1) logical = 1 % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
+        x_box_at_fe = 1 % evaluate box constraint for diff states at every finite element boundary point
+        x_box_at_stg = 1 % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
 
-        time_optimal_problem(1,1) = 0
-        simple_v0_guess(1,1) = 0 % TODO what is this
+        time_optimal_problem = 0
+        simple_v0_guess = 0 % TODO what is this
 
         % MPCC and Homotopy Settings
-        comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
-        mpcc_mode(1,1) MpccMode = MpccMode.Scholtes_ineq % 'direct', 'Scholtes_eq', 'Scholtes_ineq', 'ell_1_penalty', 'elastic_ineq', 'elastic_eq' , 'elastic_two_sided',
+        comp_tol double = 1e-9
+        mpcc_mode MpccMode = MpccMode.Scholtes_ineq % 'direct', 'Scholtes_eq', 'Scholtes_ineq', 'ell_1_penalty', 'elastic_ineq', 'elastic_eq' , 'elastic_two_sided',
                                            % 'elastic_ell_1_ineq', 'elastic_ell_1_eq', 'elastic_ell_1_two_sided'
-        objective_scaling_direct(1,1) logical = 1
-        sigma_0(1,1) double {mustBeReal, mustBePositive} = 1
-        sigma_N(1,1) double {mustBeReal, mustBePositive} = 1e-9
+        objective_scaling_direct = 1
+        sigma_0 double = 1
+        sigma_N double = 1e-9
         homotopy_update_rule = 'linear' % 'linear' sigma_k = homotopy_update_slope*sigma_N
                                         % 'superlinear' - sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent))
                                         % TODO enum
-        homotopy_update_slope(1,1) double {mustBeReal, mustBeInRange(homotopy_update_slope, 0, 1, 'exclusive')} = 0.1
-        homotopy_update_exponent(1,1) double {mustBeReal, mustBePositive} = 1.5 % the exponent in the superlinear rule
+        homotopy_update_slope double = 0.1
+        homotopy_update_exponent double = 1.5 % the exponent in the superlinear rule
         N_homotopy = 0 % 0 -> set automatically
-        s_elastic_max(1,1) double {mustBeReal, mustBePositive} = 1e1
-        s_elastic_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
-        s_elastic_0(1,1) double {mustBeReal, mustBePositive} = 1
+        s_elastic_max double = 1e1
+        s_elastic_min double = 0
+        s_elastic_0 double = 1
 
         % Default settings for the barrier tuned penalty/slack variables for mpcc modes 8 do 10.
-        rho_penalty(1,1) double {mustBeReal, mustBePositive} = 1e1
+        rho_penalty double = 1e1
         sigma_penalty = 0 % TODO what is this
 
-        rho_lambda(1,1) double {mustBeReal, mustBePositive} = 1
-        rho_scale(1,1) double {mustBeReal, mustBePositive} = 30
+        rho_lambda double = 1
+        rho_scale double = 30
 
-        sigma_scale(1,1) double {mustBeReal, mustBePositive} = 0.1
+        sigma_scale double = 0.1
 
-        rho_min(1,1) double {mustBeReal, mustBePositive} = 0.1
-        rho_max(1,1) double {mustBeReal, mustBePositive} = (log(30)-log(1e-16))/1
+        rho_min double = 0.1
+        rho_max double = (log(30)-log(1e-16))/1
 
-        rho_0(1,1) double {mustBeReal, mustBePositive} = 0.5
+        rho_0 double = 0.5
         % sigma_0 = sigma_scale*rho_scale*exp(-rho_lambda*rho_0)
-        nonlinear_sigma_rho_constraint(1,1) logical = 1
-        convex_sigma_rho_constraint(1,1) logical = 0
+        nonlinear_sigma_rho_constraint = 1
+        convex_sigma_rho_constraint = 0
 
-        ratio_for_homotopy_stop(1,1) double {mustBeReal, mustBePositive} = 0.75
+        ratio_for_homotopy_stop double = 0.75
 
         % Homotopy preprocess and polishing steps
-%         h_fixed_iterations(1,1) logical = 0
-%         h_fixed_max_iter(1,1) logical = 1 % number of iterations that are done with fixed h in the homotopy loop
-%         h_fixed_change_sigma(1,1) logical = 1 % if this is on, do not update sigma and just solve on nlp with fixed h.
-        polishing_step(1,1) logical = 0 % heuristic for fixing active set, yet exerimental, not recommended to use.
-        polishing_derivative_test(1,1) logical = 0 % check in sliding mode also the derivative of switching functions
-        h_fixed_to_free_homotopy(1,1) logical = 0 % start with large penaly for equidistant grid, end with variable equilibrated grid.
+%         h_fixed_iterations = 0
+%         h_fixed_max_iter = 1 % number of iterations that are done with fixed h in the homotopy loop
+%         h_fixed_change_sigma = 1 % if this is on, do not update sigma and just solve on nlp with fixed h.
+        polishing_step = 0 % heuristic for fixing active set, yet exerimental, not recommended to use.
+        polishing_derivative_test = 0 % check in sliding mode also the derivative of switching functions
+        h_fixed_to_free_homotopy = 0 % start with large penaly for equidistant grid, end with variable equilibrated grid.
 
 
         % Step equilibration
-        rho_h(1,1) double {mustBeReal, mustBePositive} = 1
-        step_equilibration(1,1) StepEquilibrationMode = StepEquilibrationMode.heuristic_mean % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
-        step_equilibration_sigma(1,1) double {mustBeReal, mustBePositive} = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
+        rho_h double = 1
+        step_equilibration StepEquilibrationMode = StepEquilibrationMode.heuristic_mean % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
+        step_equilibration_sigma double = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
 
         % Multiple shooting type discretization
-        equidistant_control_grid(1,1) logical = 1
+        equidistant_control_grid = 1
 
         % Time-Setting & Time-Freezing
-        time_freezing(1,1) logical = 0
-        time_freezing_inelastic(1,1) logical = 0
+        time_freezing = 0
+        time_freezing_inelastic = 0
         % for time optimal problems and equidistant control grids in physical time
-        use_speed_of_time_variables(1,1) logical = 0
-        local_speed_of_time_variable(1,1) logical = 0
-        stagewise_clock_constraint(1,1) logical = 1
-        impose_terminal_phyisical_time(1,1) logical = 1
-        s_sot0(1,1) double {mustBeReal, mustBePositive} = 1
-        s_sot_max(1,1) double {mustBeReal, mustBePositive} = 25
-        s_sot_min(1,1) double {mustBeReal, mustBePositive} = 1
-        S_sot_nominal(1,1) double {mustBeReal, mustBePositive} = 1
-        rho_sot(1,1) double {mustBeReal, mustBeNonnegative} = 0
+        use_speed_of_time_variables = 0
+        local_speed_of_time_variable = 0
+        stagewise_clock_constraint = 1
+        impose_terminal_phyisical_time = 1
+        s_sot0 double = 1
+        s_sot_max double = 25
+        s_sot_min double = 1
+        S_sot_nominal double = 1
+        rho_sot double = 0
 
-        T_final_max(1,1) double {mustBeReal, mustBePositive} = 1e2
-        T_final_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
-        time_freezing_reduced_model(1,1) logical = 0 % analytic reduction of lifter formulation, less algebraic variables (experimental)
-        time_freezing_hysteresis(1,1) logical = 0 % do not do automatic time freezing generation for hysteresis, it is not supported yet.
-        time_freezing_nonlinear_friction_cone(1,1) logical = 1 % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
+        T_final_max double = 1e2
+        T_final_min double = 0
+        time_freezing_reduced_model = 0 % analytic reduction of lifter formulation, less algebraic variables (experimental)
+        time_freezing_hysteresis = 0 % do not do automatic time freezing generation for hysteresis, it is not supported yet.
+        time_freezing_nonlinear_friction_cone = 1 % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
 
-        time_freezing_quadrature_state(1,1) logical = 0 % make a nonsmooth quadrature state to integrate only if physical time is running
-        time_freezing_lift_forces(1,1) logical = 0 % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0
-        
-        % exerimentla expert otpions
-        nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
+        time_freezing_quadrature_state = 0 % make a nonsmooth quadrature state to integrate only if physical time is running
+        time_freezing_lift_forces = 0 % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0
+
+        % experimental expert otpions
+        nonsmooth_switching_fun = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
         % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
-        stabilizing_q_dynamics(1,1) logical = 0
-        kappa_stabilizing_q_dynamics(1,1) double {mustBeReal, mustBePositive} = 1e-5
+        stabilizing_q_dynamics = 0
+        kappa_stabilizing_q_dynamics double = 1e-5
         % Verbose
         print_level = 3
         print_details_if_infeasible = 0;
         pause_homotopy_solver_if_infeasible = 0;
 
         % Settings specific to CLS
-        friction_model (1,1) FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
-        conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
-        kappa_friction_reg (1,1) double {mustBeReal, mustBeNonnegative} = 0; % reg. term in friction equations to avoid large multipliers if no contact happens.
-        lift_velocity_state(1,1) logical = 0; % define auxliary algebraic vairable, dot{v} = z_v, to avoid symbolic inversion of the inerti matrix;
+        friction_model  FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
+        conic_model_switch_handling  ConicModelSwitchHandling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
+        kappa_friction_reg  double = 0; % reg. term in friction equations to avoid large multipliers if no contact happens.
+        lift_velocity_state = 0; % define auxliary algebraic vairable, dot{v} = z_v, to avoid symbolic inversion of the inerti matrix;
 
         % IPOPT Settings
-        tol_ipopt(1,1) double {mustBeReal, mustBePositive} = 1e-16
+        tol_ipopt double = 1e-16
         opts_casadi_nlp
 
         % Relaxation of terminal constraint
-        relax_terminal_constraint(1,1) {mustBeInteger, mustBeInRange(relax_terminal_constraint, 0, 3)} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
-        relax_terminal_constraint_from_above(1,1) logical = 0
-        rho_terminal(1,1) double {mustBeReal, mustBePositive} = 1e2
-        relax_terminal_constraint_homotopy(1,1) logical = 0 % terminal penalty is governed by homotopy parameter
+        relax_terminal_constraint = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
+        relax_terminal_constraint_from_above = 0
+        rho_terminal double = 1e2
+        relax_terminal_constraint_homotopy = 0 % terminal penalty is governed by homotopy parameter
 
         % Integrator Specific
-        use_previous_solution_as_initial_guess(1,1) logical = 0
-        simulation_problem(1,1) logical = 0
+        use_previous_solution_as_initial_guess = 0
+        simulation_problem = 0
 
         % Misc TODO these should probably live in model
-        general_inclusion(1,1) logical = 0
-        there_exist_free_x0(1,1) logical = 0
-        time_freezing_model_exists(1,1) logical = 0
+        general_inclusion = 0
+        there_exist_free_x0 = 0
+        time_freezing_model_exists = 0
 
         % TODO: make proper multiple solver class.
-        multiple_solvers(1,1) logical = 0
+        multiple_solvers = 0
 
         % Experimental:
-        no_initial_impacts(1,1) logical = 0
+        no_initial_impacts = 0
 
         % All NLP parameters
-        T_val(1,1) double {mustBeReal, mustBePositive} = 1
+        T_val double = 1
         p_val
 
         % Butcher Tableu
@@ -201,10 +201,10 @@ classdef NosnocOptions < handle
 
         % psi func
         psi_fun_type CFunctionType = CFunctionType.BILINEAR
-        relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
-        elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
+        relaxation_method RelaxationMode = RelaxationMode.INEQ
+        elasticity_mode ElasticityMode = ElasticityMode.NONE
 
-        right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
+        right_boundary_point_explicit logical % TODO this shoud live in model probably
     end
 
     properties(Dependent)
@@ -438,18 +438,10 @@ classdef NosnocOptions < handle
         end
 
         function obj = set.s_elastic_0(obj, val)
-            arguments
-                obj
-                val {mustBeBetweenMinMax(val, obj, 's_elastic_min', 's_elastic_max')}
-            end
             obj.s_elastic_0 = val;
         end
 
         function obj = set.rho_0(obj, val)
-            arguments
-                obj
-                val {mustBeBetweenMinMax(val, obj, 'rho_min', 'rho_max')}
-            end
             obj.rho_0 = val;
         end
 
