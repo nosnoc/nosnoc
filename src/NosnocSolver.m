@@ -69,7 +69,6 @@ classdef NosnocSolver < handle
                 solver = {};
                 sigma_k = settings.sigma_0;
                 for k = 1:settings.N_homotopy
-                    opts_casadi_nlp = settings.opts_casadi_nlp;
                     opts_casadi_nlp.ipopt.mu_init = sigma_k * 1e-1;
                     opts_casadi_nlp.ipopt.mu_target = sigma_k * 1e-1;
                     opts_casadi_nlp.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
