@@ -35,12 +35,10 @@ if ~settings.time_freezing_model_exists && settings.time_freezing && ~settings.t
     [model,settings] = time_freezing_reformulation(model,settings);
 end
 
-unfold_struct(model,'caller');
-settings_bkp = settings;
-unfold_struct(settings,'caller')
-settings = settings_bkp;
-
-%% Some settings refinments
+%% Some settings refinements
+% Determine is the SX or MX mode in CasADi used.
+casadi_symbolic_mode = class(model.x(1));
+settings.casadi_symbolic_mode  = casadi_symbolic_mode;
 if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end
@@ -52,12 +50,18 @@ else
 end
 
 if settings.N_homotopy == 0
-    settings.N_homotopy = ceil(abs(log(settings.sigma_N / settings.sigma_0) / log(settings.homotopy_update_slope)))
+    settings.N_homotopy = ceil(abs(log(settings.sigma_N / settings.sigma_0) / log(settings.homotopy_update_slope)));
     % TODO: compute
     if ~strcmp(settings.homotopy_update_rule, 'linear')
         warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
     end
 end
+
+%% TODO: remove this!!
+unfold_struct(model,'caller');
+settings_bkp = settings;
+unfold_struct(settings,'caller')
+settings = settings_bkp;
 
 %% If different names are used...
 if exist('N_stg','var')
@@ -92,9 +96,7 @@ h_k = h./N_finite_elements;
 model.h = h;
 model.h_k = h_k;
 model.N_finite_elements = N_finite_elements;
-%% Determine is the SX or MX mode in CasADi used.
-casadi_symbolic_mode = class(model.x(1));
-settings.casadi_symbolic_mode  = casadi_symbolic_mode;
+
 
 %% Check is x provided
 if isfield(model,'x')
@@ -471,7 +473,7 @@ n_c_sys = [];
 n_q = [];
 friction_exists = 0;
 
-if isequal(dcs_mode,'CLS')
+if dcs_mode == 'CLS'
     % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
     % Check existence of relevant functions
     n_sys = 1; % always one subystem in CLS (only loops over n_contacts later)
@@ -655,7 +657,7 @@ g_lift_beta = [];
 g_lift_theta_step  =[];
 % TODO: the time freezing reformulation could be carried out at this point
 % insetad at the begining and then go through the step/stewart checks.
-if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
+if dcs_mode == 'Step' || dcs_mode == 'Stewart'
     if ~exist('F')
         % Don't need F
         if ~settings.general_inclusion
@@ -685,7 +687,7 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
         if ~settings.general_inclusion
             % if the matrix S is not provided, maybe the g_ind are available
             % directly?
-            if isequal(dcs_mode,'Stewart')
+            if dcs_mode == 'Stewart'
                 if exist('g_ind')
                     if ~iscell(g_ind)
                         g_ind = {g_ind};
@@ -743,7 +745,7 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
         end
 
         % check are the matrices dense
-        if isequal(dcs_mode,'Stewart')
+        if dcs_mode == 'Stewart'
             for ii = 1:n_sys
                 if any(sum(abs(S{ii}),2)<size(S{ii},2))
                     if n_sys == 1
@@ -778,7 +780,7 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
     end
     % index sets and dimensions for ubsystems
     m_ind_vec = 1;
-    if isequal(dcs_mode,'Step')
+    if dcs_mode == 'Step'
         % double the size of the vectors, since alpha, 1-alpha treated at same time;
         m_vec = sum(n_c_sys)*2;
     end
@@ -792,7 +794,7 @@ if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
         n_c_sys = 0;
     end
 
-    if max(n_c_sys) < 2 && isequal(dcs_mode,'Step')
+    if max(n_c_sys) < 2 && dcs_mode == 'Step'
         pss_lift_step_functions = 0;
         if print_level >=1
             fprintf('nosnoc: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
@@ -1386,7 +1388,7 @@ n_algebraic_constraints = length(g_z_all);
 f_x_fun = Function('f_x_fun',{x,z_all,u,p,v_global},{f_x,f_q});
 g_z_all_fun = Function('g_z_all_fun',{x,z_all,u,p,v_global},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
 g_Stewart_fun = Function('g_Stewart_fun',{x,p},{g_ind_vec});
-if isequal(dcs_mode,'CLS')
+if dcs_mode == 'CLS'
     g_impulse_fun = Function('g_impulse_fun',{q,v_post_impact,v_pre_impact,z_impulse},{g_impulse});
 else
     c_fun = Function('c_fun',{x,p},{c_all});
@@ -1471,7 +1473,7 @@ model.f_q_T = f_q_T;
 % CasADi Functions
 model.f_x_fun = f_x_fun;
 model.g_z_all_fun = g_z_all_fun;
-if ~isequal(dcs_mode,'CLS')
+if ~(dcs_mode == 'CLS')
     model.g_switching_fun = g_switching_fun;
     model.c_fun = c_fun;
     model.dot_c_fun = dot_c_fun;
@@ -1511,7 +1513,7 @@ model.n_c_sys = n_c_sys;
 model.n_alpha = n_alpha;
 
 % CLS
-if isequal(dcs_mode,'CLS')
+if dcs_mode == 'CLS'
     model.n_contacts = n_contacts;
     model.n_tangents = n_tangents;
     model.n_t = n_t;
@@ -1562,7 +1564,7 @@ dims.n_lambda_1 = n_lambda_p;
 dims.n_f_sys = n_f_sys;
 dims.n_p_global = n_p_global;
 dims.n_p_time_var = n_p_time_var;
-if isequal(dcs_mode,'CLS')
+if dcs_mode == 'CLS'
     dims.n_contacts = n_contacts;
     dims.n_tangents = n_tangents;
     dims.n_t = n_t;
