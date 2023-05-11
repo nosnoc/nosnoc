@@ -1,4 +1,4 @@
-function [tout,yout,n_bounces] = two_springs_matlab(T_sim,y0,e,tol)
+function [t_grid,x_traj,n_bounces] = two_springs_matlab(T_sim,x0,e,tol)
 
 tstart = 0;
 tfinal = T_sim;
@@ -7,8 +7,8 @@ tfinal = T_sim;
 refine = 4;
 options1 = odeset('Events',@events1,'OutputSel',1,'RelTol',tol,'AbsTol',tol/10,'Refine',refine);
 
-tout = tstart;
-yout = y0.';
+t_grid = tstart;
+x_traj = x0.';
 teout = [];
 yeout = [];
 ieout = [];
@@ -19,15 +19,13 @@ n_bounces = 0;
 
 % Solve until the first terminal event.
 t = tstart;
-tout_i = [];
-yout_i = [];
 while abs(t(end)-tfinal)>tol
     if abs(tstart-tfinal)>tol
-        [t,y,te,ye,ie] = ode45(@(t,y) twospring_dynamics(y),[tstart tfinal],y0,options1);
+        [t,y,te,ye,ie] = ode45(@(t,y) twospring_dynamics(y),[tstart tfinal],x0,options1);
         teout = [teout; te];          % Events at tstart are never reported.
         yeout = [yeout; ye];
-        tout_i = [tout_i ;t];
-        yout_i = [yout_i ;y];
+        t_grid = [t_grid ;t];
+        x_traj = [x_traj ;y];
     end
 
     if isequal(ie,1)
@@ -36,43 +34,39 @@ while abs(t(end)-tfinal)>tol
         else
             mode = 1-mode;
             tstart = te;
-            y0 = y(end,:);
-            y0(3) =  -e*y0(3);
+            x0 = y(end,:);
+            x0(3) =  -e*x0(3);
             n_bounces = n_bounces+1;
         end
         ie = [];
         ye = nan;
     else
-        y0 = y(end,:);
+        x0 = y(end,:);
     end
 end
 
 mode_opt  = [mode_opt;mode];
-tout = [tout; tout_i];
-yout = [yout; yout_i];
 ieout = [ieout; ie];
-tstart = t(end);
-tfinal = tstart + T_sim;
 
 figure
 subplot(311)
-plot(tout,yout(:,1),'LineWidth',1.5)
+plot(t_grid,x_traj(:,1),'LineWidth',1.5)
 hold on
-plot(tout,yout(:,2),'LineWidth',1.5)
+plot(t_grid,x_traj(:,2),'LineWidth',1.5)
 grid on
 yline(0.2,'k-','LineWidth',1.5)
 ylabel('$q$','interpreter','latex');
 xlabel('$t$','interpreter','latex');
 subplot(312)
-plot(tout,yout(:,3),'LineWidth',1.5)
+plot(t_grid,x_traj(:,3),'LineWidth',1.5)
 hold on
-plot(tout,yout(:,4),'LineWidth',1.5)
+plot(t_grid,x_traj(:,4),'LineWidth',1.5)
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 fprintf('Number of bounces: %d \n',n_bounces);
 subplot(313)
-stem(tout,[nan;diff(yout(:,3))])
+stem(t_grid,[nan;diff(x_traj(:,3))])
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');

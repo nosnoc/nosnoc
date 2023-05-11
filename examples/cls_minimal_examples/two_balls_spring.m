@@ -46,8 +46,12 @@ model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 
+%% MATLAB solution
+[tout,yout,n_bounces] = two_springs_matlab(T_sim,x0,model.e,1e-9);
+
 %% Call nosnoc Integrator
 [results,stats,model,settings,solver] = integrator_fesd(model,settings);
+
 %% read and plot results
 unfold_struct(results,'base');
 q1 = x_res(1,:);
@@ -86,9 +90,7 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
 
-%% MATLAB solution
-[tout,yout,n_bounces] = two_springs_matlab(T_sim,x0,model.e,1e-9);
-
+%% compare
 error = norm(yout(end,:)'-x_res(:,end))
 fprintf('Numerical error %2.2e \n',error);
 
