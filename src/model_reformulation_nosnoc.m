@@ -57,11 +57,8 @@ if settings.N_homotopy == 0
     end
 end
 
-%% TODO: remove this!!
 unfold_struct(model,'caller');
-settings_bkp = settings;
 unfold_struct(settings,'caller')
-settings = settings_bkp;
 
 %% If different names are used...
 if exist('N_stg','var')
