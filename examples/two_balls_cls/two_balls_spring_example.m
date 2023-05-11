@@ -5,18 +5,24 @@ close all
 %%
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-% settings.irk_representation = 'differential';
-settings.n_s = 3;
+%settings.irk_representation = 'differential';
+settings.n_s = 2;
 settings.print_level = 3;
 % settings.N_homotopy = 8;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 settings.mpcc_mode = "Scholtes_ineq";
+% settings.elasticity_mode = ElasticityMode.ELL_INF;
+% settings.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
+% settings.relaxation_method = RelaxationMode.TWO_SIDED;
 settings.no_initial_impacts = 1;
+settings.print_details_if_infeasible = 0;
+settings.pause_homotopy_solver_if_infeasible = 0;
 % settings.opts_ipopt.ipopt.linear_solver = 'ma97';
 settings.sigma_0 = 5;
 settings.homotopy_update_slope = 0.1;
+%settings.comp_tol = 1e-6;
 
 %%
 g = 9.81;
@@ -58,11 +64,11 @@ settings.sigma_0 = 1e-3;
 [results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
 
 %% read and plot results
-unfold_struct(results,'base');
-q1 = x_res(1,:);
-q2 = x_res(2,:);
-v1 = x_res(3,:);
-v2 = x_res(4,:);
+q1 = results.x(1,:);
+q2 = results.x(2,:);
+v1 = results.x(3,:);
+v2 = results.x(4,:);
+t_grid = results.t_grid;
 
 %%
 figure
@@ -87,7 +93,7 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 subplot(313)
-Lambda_opt = [results.all_res.Lambda_normal_opt];
+Lambda_opt = [results.Lambda_normal];
 stem(t_grid(1:N_FE:end),[Lambda_opt,nan])
 hold on
 xlim([-0.01 t_grid(end)])
@@ -96,7 +102,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
 
 %% compare
-error = norm(x_traj_matlab(end,:)'-x_res(:,end));
+error = norm(x_traj_matlab(end,:)'-results.x(:,end));
 fprintf('Numerical error %2.2e \n',error);
 
 

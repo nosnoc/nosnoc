@@ -45,7 +45,7 @@ N_finite_elements = 3;
 
 settings.irk_representation = 'integral';
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-%settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
+settings.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
 settings.cross_comp_mode = 1;
 
 settings.print_level = 3;
@@ -135,14 +135,14 @@ end
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
 
-u_opt = results.u_opt;
+u_opt = results.u;
 f_opt = full(results.f);
 
 t_grid_optimizer = [results.t_grid];
-x_res_optimizer = [results.x_opt];
+x_res_optimizer = [results.x];
 %%
 figure
-stairs(results.t_grid,[results.h_opt;nan])
+stairs(results.t_grid,[results.h,nan])
 xlabel('$t$','Interpreter','latex');
 ylabel('$h_{ki}$','Interpreter','latex');
 %%

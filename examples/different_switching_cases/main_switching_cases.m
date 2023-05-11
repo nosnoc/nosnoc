@@ -68,7 +68,7 @@ switch switching_case
         [results,stats] = integrator_fesd(model,settings);
         %
         figure
-        plot(results.t_grid,results.x_res)
+        plot(results.t_grid,results.x)
         grid on
         xlabel('$t$','Interpreter','latex')
         ylabel('$x(t)$','Interpreter','latex')
@@ -85,7 +85,7 @@ switch switching_case
         [results,stats] = integrator_fesd(model,settings);
         %
         figure
-        plot(results.t_grid,results.x_res)
+        plot(results.t_grid,results.x)
         grid on
         xlabel('$t$','Interpreter','latex')
         ylabel('$x(t)$','Interpreter','latex')

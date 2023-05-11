@@ -53,7 +53,7 @@ settings.homotopy_update_rule = 'superlinear';
 % settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% Discretization parameters
-model.N_stages = 50; % number of control intervals
+model.N_stages = 30; % number of control intervals
 model.N_finite_elements = 2; % number of finite element on every control intevral
 model.T = 4;    % Time horizon
 
@@ -138,11 +138,13 @@ solver = NosnocSolver(model, settings);
 model = solver.model;
 %% plots
 % unfold structure to workspace of this script
-unfold_struct(results,'base');
-q1_opt = x_opt(1,:);
-q2_opt = x_opt(2,:);
-v1_opt = x_opt(3,:);
-v2_opt = x_opt(4,:);
+q1_opt = results.x(1,:);
+q2_opt = results.x(2,:);
+v1_opt = results.x(3,:);
+v2_opt = results.x(4,:);
+t_grid = results.t_grid;
+t_grid_u = results.t_grid_u;
+u_opt = results.u;
 
 
 %% Animation

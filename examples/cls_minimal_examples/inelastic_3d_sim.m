@@ -53,13 +53,13 @@ settings.use_previous_solution_as_initial_guess = 0;
 
 dims = model.dims;
 %%
-qx = results.x_res(1,:);
-qy = results.x_res(2,:);
-qz = results.x_res(3,:);
-vx = results.x_res(4,:);
-vy = results.x_res(5,:);
-vz = results.x_res(6,:);
-t_opt = results.x_res(7,:);
+qx = results.x(1,:);
+qy = results.x(2,:);
+qz = results.x(3,:);
+vx = results.x(4,:);
+vy = results.x(5,:);
+vz = results.x(6,:);
+t_opt = results.x(7,:);
 figure
 plot3(qx,qy,qz);
 axis equal
@@ -84,9 +84,9 @@ legend({'$t_1^\top v$','$t_2^\top v$','$n^\top v$'},'Interpreter','latex','Locat
 
 %%
 t_grid = results.t_grid;
-lambda0 = results.lambda_0_res;
-lambda1 = results.lambda_1_res;
-alpha = results.alpha_res;
+lambda0 = results.lambda_0;
+lambda1 = results.lambda_1;
+alpha = results.alpha;
 
 if settings.time_freezing_nonlinear_friction_cone
 theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));

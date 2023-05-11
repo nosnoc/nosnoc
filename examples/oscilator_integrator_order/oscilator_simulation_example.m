@@ -50,7 +50,6 @@ settings.n_s = 4;
 settings.dcs_mode = 'Step'; % 'Step;
 settings.mpcc_mode = MpccMode.Scholtes_ineq;  % Scholtes regularization
 
-settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-9;
 settings.cross_comp_mode = 1;
@@ -90,16 +89,16 @@ model.F = F;
 %% Call integrator
 [results,stats,model] = integrator_fesd(model,settings);
 %% numerical error
-x_fesd = results.x_res(:,end);
+x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");
 fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
 %% plot_solution_trajectory
 t_star = R_osc; % eact switching time
-x_res = results.x_res;
-if isempty(results.h_vec)
+x_res = results.x;
+if isempty(results.h)
     h_opt_full = h*ones(N_sim*N_stages,1);
 else
-    h_opt_full = results.h_vec;
+    h_opt_full = results.h;
 end
 x1_opt = x_res(1,:);
 x2_opt = x_res(2,:);

@@ -10,12 +10,13 @@ settings.print_level = 3;
 settings.N_homotopy = 7;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
-settings.friction_model = "Polyhedral";
-% settings.friction_model = "Conic"; % "Conic"
+settings.no_initial_impacts = 1;
+%settings.friction_model = "Polyhedral";
+settings.friction_model = "Conic"; % "Conic"
 settings.conic_model_switch_handling = "Abs";
 % settings.mpcc_mode = MpccMode.elastic_ineq;
 % settings.nlpsol = 'snopt';
-% settings.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
+% settings.psi_fun_type = CFunctionType.KANZOW_SCHWARTZ;
 %%
 g = 9.81;
 % Symbolic variables and bounds
@@ -50,10 +51,10 @@ settings.use_previous_solution_as_initial_guess = 1;
 [results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
-qx = x_res(1,:);
-qy = x_res(2,:);
-vx = x_res(3,:);
-vy = x_res(4,:);
+qx = results.x(1,:);
+qy = results.x(2,:);
+vx = results.x(3,:);
+vy = results.x(4,:);
 figure(1)
 subplot(121)
 plot(qx,qy);
@@ -63,9 +64,9 @@ xlabel('$q_x$','interpreter','latex');
 ylabel('$q_y$','interpreter','latex');
 % axis equal
 subplot(122)
-plot(t_grid,vy);
+plot(results.t_grid,vy);
 hold on
-plot(t_grid,vx);
+plot(results.t_grid,vx);
 % axis equal
 grid on
 xlabel('$t$','interpreter','latex');
@@ -74,22 +75,22 @@ ylabel('$v$','interpreter','latex');
 if N_sim == 1
 figure
 subplot(311)
-plot(t_grid,results.all_res.x_opt(3:4,:));
+plot(results.t_grid,results.x(3:4,:));
 hold on
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 subplot(312)
-plot(t_grid,[nan*ones(model.n_contacts,1),results.all_res.lambda_normal_opt])
+plot(results.t_grid,[nan*ones(model.n_contacts,1),results.lambda_normal])
 hold on
-plot(t_grid,[nan*ones(model.n_tangents,1),results.all_res.lambda_tangent_opt])
+plot(results.t_grid,[nan*ones(model.n_tangents,1),results.lambda_tangent])
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\lambda$','interpreter','latex');
 subplot(313)
-stem(t_grid,[results.all_res.Lambda_normal_opt,nan*ones(model.n_contacts,1)])
+stem(results.t_grid,[results.Lambda_normal,nan*ones(model.n_contacts,1)])
 hold on
-stem(t_grid,[results.all_res.Lambda_tangent_opt,nan*ones(model.n_tangents,1)]')
+stem(results.t_grid,[results.Lambda_tangent,nan*ones(model.n_tangents,1)]')
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda$','interpreter','latex');
