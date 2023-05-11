@@ -834,8 +834,6 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             % calculate lambda and theta
-
-
             if model.friction_exists && settings.friction_model == 'Conic' && settings.conic_model_switch_handling == 'Abs'
 
                 grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(gd), obj.w(dd));

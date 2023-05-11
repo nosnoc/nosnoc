@@ -9,7 +9,7 @@ settings.n_s = 1;
 % settings.irk_representation = 'differential';
 settings.print_level = 3;
 settings.N_homotopy = 20;
-settings.cross_comp_mode = 1;
+settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 settings.sigma_0 = 1;
@@ -47,7 +47,7 @@ model.f_v = -g;
 model.f_c = q;
 
 %% Simulation setings
-N_FE = 4;
+N_FE = 3;
 T_sim = 0.5;
 N_sim = 1;
 
