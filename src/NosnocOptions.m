@@ -83,7 +83,7 @@ classdef NosnocOptions < handle
                                         % TODO enum
         homotopy_update_slope(1,1) double {mustBeReal, mustBeInRange(homotopy_update_slope, 0, 1, 'exclusive')} = 0.1
         homotopy_update_exponent(1,1) double {mustBeReal, mustBePositive} = 1.5 % the exponent in the superlinear rule
-        N_homotopy(1,1) {mustBeInteger, mustBePositive} = ceil(abs(log(1e-9)/log(0.1)))
+        N_homotopy = 0 % 0 -> set automatically
         s_elastic_max(1,1) double {mustBeReal, mustBePositive} = 1e1
         s_elastic_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
         s_elastic_0(1,1) double {mustBeReal, mustBePositive} = 1

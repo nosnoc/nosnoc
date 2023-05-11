@@ -51,6 +51,14 @@ else
     settings.general_inclusion = 0;
 end
 
+if settings.N_homotopy == 0
+    settings.N_homotopy = ceil(abs(log(settings.sigma_N / settings.sigma_0) / log(settings.homotopy_update_slope)))
+    % TODO: compute
+    if ~strcmp(settings.homotopy_update_rule, 'linear')
+        warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
+    end
+end
+
 %% If different names are used...
 if exist('N_stg','var')
     N_stages = N_stg;
