@@ -35,10 +35,12 @@ if ~settings.time_freezing_model_exists && settings.time_freezing && ~settings.t
     [model,settings] = time_freezing_reformulation(model,settings);
 end
 
-%% Some settings refinements
-% Determine is the SX or MX mode in CasADi used.
-casadi_symbolic_mode = class(model.x(1));
-settings.casadi_symbolic_mode  = casadi_symbolic_mode;
+unfold_struct(model,'caller');
+settings_bkp = settings;
+unfold_struct(settings,'caller')
+settings = settings_bkp;
+
+%% Some settings refinments
 if settings.time_freezing
     settings.local_speed_of_time_variable = 1;
 end
@@ -50,15 +52,12 @@ else
 end
 
 if settings.N_homotopy == 0
-    settings.N_homotopy = ceil(abs(log(settings.sigma_N / settings.sigma_0) / log(settings.homotopy_update_slope)));
+    settings.N_homotopy = ceil(abs(log(settings.sigma_N / settings.sigma_0) / log(settings.homotopy_update_slope)))
     % TODO: compute
     if ~strcmp(settings.homotopy_update_rule, 'linear')
         warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
     end
 end
-
-unfold_struct(model,'caller');
-unfold_struct(settings,'caller')
 
 %% If different names are used...
 if exist('N_stg','var')
@@ -93,7 +92,9 @@ h_k = h./N_finite_elements;
 model.h = h;
 model.h_k = h_k;
 model.N_finite_elements = N_finite_elements;
-
+%% Determine is the SX or MX mode in CasADi used.
+casadi_symbolic_mode = class(model.x(1));
+settings.casadi_symbolic_mode  = casadi_symbolic_mode;
 
 %% Check is x provided
 if isfield(model,'x')
@@ -485,7 +486,8 @@ if isequal(dcs_mode,'CLS')
             error('The length of model.mu has to be one or match the length of model.f_c')
         end
         if length(model.mu) == 1
-            model.mu = model.mu*ones(n_contacts,1);
+            mu = mu*ones(n_contacts,1);
+            model.mu = mu;
         end
 
         if any(model.mu > 0)

@@ -16,7 +16,9 @@ if isequal(settings.dcs_mode,'Stewart');
 end
 %% unfold
 import casadi.*
+settings_bkp = settings;
 unfold_struct(settings,'caller');
+settings = settings_bkp;
 unfold_struct(model,'caller');
 
 

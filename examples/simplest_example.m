@@ -5,7 +5,7 @@ import casadi.*
 settings = NosnocOptions();
 settings.n_s = 2;
 settings.dcs_mode = 'Step';
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
+settings.mpcc_mode = MpccMode.Scholtes_eq;
 settings.print_level = 3;
 
 x1 = SX.sym('x1');
