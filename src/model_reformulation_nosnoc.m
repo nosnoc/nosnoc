@@ -488,8 +488,7 @@ if dcs_mode == 'CLS'
             error('The length of model.mu has to be one or match the length of model.f_c')
         end
         if length(model.mu) == 1
-            mu = mu*ones(n_contacts,1);
-            model.mu = mu;
+            model.mu = model.mu*ones(n_contacts,1);
         end
 
         if any(model.mu > 0)

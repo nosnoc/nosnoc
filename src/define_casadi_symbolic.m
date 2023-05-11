@@ -8,6 +8,7 @@ import casadi.*
     elseif strcmp(type, 'casadi.MX')  || strcmp(type, 'MX')
         sym = MX.sym(name, size);
     else
+        keyboard
         error('Type must be MX or SX.')
     end
 end
