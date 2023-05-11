@@ -894,6 +894,7 @@ classdef FiniteElement < NosnocFormulationObject
                     n_indep = dims.n_sys;
                     cross_comp_pairs = cell(n_cont, n_discont, n_indep);
                     if settings.use_fesd
+                        % Generate cross complementarity pairs from within the finite element.
                         for j=2:n_cont
                             for jj=1:n_discont
                                 for r=1:n_indep
@@ -902,6 +903,7 @@ classdef FiniteElement < NosnocFormulationObject
                             end
                         end
 
+                        % Generate cross complementarity pairs with the end of the last finite element.
                         for jj=1:n_discont
                             for r=1:n_indep
                                 cross_comp_pairs{1,jj,r} = [prev_fe.w(prev_fe.ind_lam{end,r}), obj.w(obj.ind_theta{jj,r})];
@@ -920,6 +922,7 @@ classdef FiniteElement < NosnocFormulationObject
                     n_indep = dims.n_sys;
                     cross_comp_pairs = cell(n_cont, n_discont, n_indep);
                     if settings.use_fesd
+                        % Generate cross complementarity pairs from within the finite element.
                         for j=2:n_cont
                             for jj=1:n_discont
                                 for r=1:n_indep
@@ -929,6 +932,7 @@ classdef FiniteElement < NosnocFormulationObject
                             end
                         end
 
+                        % Generate cross complementarity pairs with the end of the last finite element.
                         for jj=1:n_discont
                             for r=1:n_indep
                                 cross_comp_pairs{1,jj,r} = [vertcat(prev_fe.w(prev_fe.ind_lambda_n{end,r}),prev_fe.w(prev_fe.ind_lambda_p{end,r})),...
@@ -948,6 +952,12 @@ classdef FiniteElement < NosnocFormulationObject
                     n_discont = dims.n_s+2;
                     n_indep = 1;
                     cross_comp_pairs = cell(n_cont, n_discont, n_indep);
+                    % Generate cross complementarity pairs with the end of the last finite element.
+                    % NOTE: we start from the 3rd column here because we include the complementarity pairs with the impulse
+                    %       variables in the 2nd column and the complementarity pairs with the previous finite element in
+                    %       the 1st column. This is slightly different than in Step or Stewart where we only have the previous
+                    %       finite element to worry about. We iterate over the values for n_cont and n_discont therefore we
+                    %       must subtract the buffer added for these when we index into the index sets.
                     for j=3:n_cont
                         for jj=3:n_discont
                             pairs = [];
@@ -973,7 +983,10 @@ classdef FiniteElement < NosnocFormulationObject
                             cross_comp_pairs{j,jj,1} = pairs;
                         end
                     end
+
+                    % Here we generate the cross complemetarities with the previous FE and the impulse variables.
                     for jj=1:n_discont-2
+                        % Ignore the previous fe lambda normal if it is not the end point. 
                         if settings.right_boundary_point_explicit || (obj.fe_idx == 1 && obj.ctrl_idx == 1)
                             cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
                         end
@@ -1184,9 +1197,9 @@ classdef FiniteElement < NosnocFormulationObject
                 V_k  = X_k(dims.n_q+1:end);
                 % junction equations
                 obj.addConstraint(Q_k0-Q_k);
-%                 Z_impulse_k = [obj.w(obj.ind_Lambda_normal{1}); obj.w(obj.ind_Y_gap{1});obj.w(obj.ind_P_vn{1});obj.w(obj.ind_N_vn{1});...
-%                                obj.w(obj.ind_Lambda_tangent{1}); obj.w(obj.ind_Gamma_d{1}); obj.w(obj.ind_Beta_d{1}); obj.w(obj.ind_Delta_d{1}); ...
-%                                obj.w(obj.ind_Gamma{1}); obj.w(obj.ind_Beta_conic{1}); obj.w(obj.ind_P_vt{1}); obj.w(obj.ind_N_vt{1}); obj.w(obj.ind_Alpha_vt{1})];
+                %  Z_impulse_k = [obj.w(obj.ind_Lambda_normal{1}); obj.w(obj.ind_Y_gap{1});obj.w(obj.ind_P_vn{1});obj.w(obj.ind_N_vn{1});...
+                %  obj.w(obj.ind_Lambda_tangent{1}); obj.w(obj.ind_Gamma_d{1}); obj.w(obj.ind_Beta_d{1}); obj.w(obj.ind_Delta_d{1}); ...
+                %  obj.w(obj.ind_Gamma{1}); obj.w(obj.ind_Beta_conic{1}); obj.w(obj.ind_P_vt{1}); obj.w(obj.ind_N_vt{1}); obj.w(obj.ind_Alpha_vt{1})];
                 Z_impulse_k = [obj.w(obj.ind_Lambda_normal{1}); obj.w(obj.ind_Y_gap{1});obj.w(obj.ind_L_vn{1});...
                                obj.w(obj.ind_Lambda_tangent{1}); obj.w(obj.ind_Gamma_d{1}); obj.w(obj.ind_Beta_d{1}); obj.w(obj.ind_Delta_d{1}); ...
                     obj.w(obj.ind_Gamma{1}); obj.w(obj.ind_Beta_conic{1}); obj.w(obj.ind_P_vt{1}); obj.w(obj.ind_N_vt{1}); obj.w(obj.ind_Alpha_vt{1})];
@@ -1314,7 +1327,7 @@ classdef FiniteElement < NosnocFormulationObject
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global);
                 g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
-                expr = apply_psi(pairs, psi_fun, sigma_p);
+                expr = apply_psi(pairs, psi_fun, sigma);
                 if settings.relaxation_method == RelaxationMode.TWO_SIDED
                     exprs_p = expr(:,1);
                     exprs_n = expr(:,2);
@@ -1327,11 +1340,10 @@ classdef FiniteElement < NosnocFormulationObject
                 if model.g_comp_path_constraint && settings.g_path_at_stg
                     pairs = model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global);
                     g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
-                    expr = apply_psi(pairs, psi_fun, sigma_p);
+                    expr = apply_psi(pairs, psi_fun, sigma);
                     if settings.relaxation_method == RelaxationMode.TWO_SIDED
-                        exprs_p = expr(:,1);
-                        exprs_n = expr(:,2);
-                        expr = vertcat(exprs_p,exprs_n);
+                        expr = expr';
+                        expr = expr(:);
                     end
                     g_path_comp = vertcat(g_path_comp, expr);
                 end
@@ -1355,8 +1367,8 @@ classdef FiniteElement < NosnocFormulationObject
                 
                 Y_gap = obj.w(obj.ind_Y_gap{1});
                 Lambda_normal = obj.w(obj.ind_Lambda_normal{1});
-%                 P_vn = obj.w(obj.ind_P_vn{1});
-%                 N_vn = obj.w(obj.ind_N_vn{1});
+                % P_vn = obj.w(obj.ind_P_vn{1});
+                % N_vn = obj.w(obj.ind_N_vn{1});
                 L_vn = obj.w(obj.ind_L_vn{1});
                 P_vt = obj.w(obj.ind_P_vt{1});
                 N_vt = obj.w(obj.ind_N_vt{1});
@@ -1368,9 +1380,9 @@ classdef FiniteElement < NosnocFormulationObject
                 Delta_d = obj.w(obj.ind_Delta_d{1});
                 Gamma_d = obj.w(obj.ind_Gamma_d{1});
                 
-%                 impulse_pairs = vertcat(impulse_pairs, [Lambda_normal, (Y_gap+P_vn+N_vn)]);
-%                 impulse_pairs = vertcat(impulse_pairs, [P_vn, N_vn]);
-%               % constraint on position and velocity level separated
+                % impulse_pairs = vertcat(impulse_pairs, [Lambda_normal, (Y_gap+P_vn+N_vn)]);
+                % impulse_pairs = vertcat(impulse_pairs, [P_vn, N_vn]);
+                % constraint on position and velocity level separated
                 impulse_pairs = vertcat(impulse_pairs, [Lambda_normal, (Y_gap)]);
                 impulse_pairs = vertcat(impulse_pairs, [Lambda_normal, L_vn]);
                 impulse_pairs = vertcat(impulse_pairs, [Lambda_normal, -L_vn]);
@@ -1391,11 +1403,10 @@ classdef FiniteElement < NosnocFormulationObject
                         impulse_pairs = vertcat(impulse_pairs, [Gamma_d,Beta_d]);
                     end
                 end
-                expr = apply_psi(impulse_pairs, psi_fun, sigma_p);
+                expr = apply_psi(impulse_pairs, psi_fun, sigma);
                 if settings.relaxation_method == RelaxationMode.TWO_SIDED
-                    exprs_p = expr(:,1);
-                    exprs_n = expr(:,2);
-                    expr = vertcat(exprs_p,exprs_n);
+                    expr = expr';
+                    expr = expr(:);
                 end
                 g_impulse_comp = expr;
             end
