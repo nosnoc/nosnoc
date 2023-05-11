@@ -4,12 +4,14 @@ import casadi.*
 close all
 %%
 settings = NosnocOptions();
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.n_s = 1;
+%settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.n_s = 2;
 % settings.irk_representation = 'differential';
 settings.print_level = 3;
 settings.N_homotopy = 20;
-settings.cross_comp_mode = 3;
+settings.homotopy_update_slope = 0.1;
+settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 settings.sigma_0 = 1;
@@ -24,6 +26,7 @@ settings.conic_model_switch_handling = 'Abs';
 %settings.opts_ipopt.ipopt.linear_solver = 'ma97';
 settings.sigma_0 = 10;
 settings.homotopy_update_slope = 0.2;
+%settings.gamma_h = 0.5;
 
 % settings.opts_casadi_nlp.ipopt.soft_resto_pderror_reduction_factor = 0.5;
 % settings.opts_casadi_nlp.ipopt.required_infeasibility_reduction = 0.5;
