@@ -1,4 +1,4 @@
-function [t_grid,x_traj,n_bounces] = two_springs_matlab(T_sim,x0,e,tol)
+function [t_grid,x_traj,n_bounces] = two_balls_spring_matlab(T_sim,x0,e,tol)
 
 tstart = 0;
 tfinal = T_sim;
