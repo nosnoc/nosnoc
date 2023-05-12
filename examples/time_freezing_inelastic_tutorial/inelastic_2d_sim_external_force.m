@@ -31,7 +31,7 @@ model.f_v = [0;-g+vertical_force*g*q(1)]+u;
 model.f_c = q(2);
 model.J_tangent = [1; 0];
 
-%% Simulation setings
+%% Simulation settings
 N_FE = 3;
 T_sim = 1.5;
 N_sim = 40;

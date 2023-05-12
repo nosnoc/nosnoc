@@ -28,7 +28,7 @@ model.a_n = g;
 model.x0 = [0.8;0.5;-1.5;-1]; 
 model.f_v = [0;-g];
 model.f_c = [q(1);q(2)];
-%% Simulation setings
+%% Simulation settings
 N_FE = 3;
 T_sim = 1.5;
 N_sim = 40;

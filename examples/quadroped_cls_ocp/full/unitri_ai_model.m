@@ -1,7 +1,7 @@
 function model = unitri_ai_model() 
 %% quadroped model equations
 import casadi.*
-%% integrator setings
+%% integrator settings
 % model
 % dimensoon
 n_dim = 2;

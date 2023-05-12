@@ -31,7 +31,7 @@ model.f_c = q(2);
 model.J_tangent = [1; 0];
 model.n_dim_contact = 2;
 
-%% Simulation setings
+%% Simulation settings
 N_FE = 5;
 T_sim = 1.5;
 N_sim = 20;

@@ -29,7 +29,7 @@ model.x0 = [1;0];
 model.f_v = -g;
 model.f_c = q;
 model.n_dim_contact = 1;
-%% Simulation setings
+%% Simulation settings
 N_FE = 3;
 T_sim = 3;
 N_sim = 60;

@@ -52,7 +52,7 @@ model.M = diag([m,m,J]);
 model.f_v = [0;-g;0];
 model.f_c = [p_left(2);p_right(2)];
 model.n_dim_contact = n_dim_contact ;
-%% Simulation setings
+%% Simulation settings
 N_FE = 2;
 T_sim = 0.8;
 N_sim = 30;

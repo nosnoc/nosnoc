@@ -23,7 +23,7 @@ settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 settings.mpcc_mode = MpccMode.Scholtes_ineq;
 settings.pss_lift_step_functions = 0;
-%% integrator setings
+%% integrator settings
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 model.N_finite_elements = N_finite_elements;

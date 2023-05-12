@@ -32,7 +32,7 @@ F_ext = [1;1]*0;
 model.f_v = [F_ext;-g];
 model.f_c = q(3);
 model.J_tangent = [1 0;0 1; 0 0];
-%% Simulation setings
+%% Simulation settings
 N_finite_elements = 3;
 T_sim = 3;
 N_sim = 20;

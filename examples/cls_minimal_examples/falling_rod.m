@@ -66,7 +66,7 @@ theta0 = 0.75*pi/2*0;
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0;...
            2;0;0];
 
-%% Simulation setings
+%% Simulation settings
 N_finite_elements = 20;
 T_sim = 1;
 N_sim = 1;

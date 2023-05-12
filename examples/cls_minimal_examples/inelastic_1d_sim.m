@@ -39,7 +39,7 @@ model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 
-%% Simulation setings
+%% Simulation settings
 N_FE = 6*1;
 T_sim = 0.8;
 N_sim = 1;
@@ -55,7 +55,6 @@ settings.use_previous_solution_as_initial_guess = 0;
 unfold_struct(results,'base');
 qx = x_res(1,:);
 vx = x_res(2,:);
-
 
 t_s = sqrt(2*x0(1)/g);
 tt1 = linspace(0,t_s,100);

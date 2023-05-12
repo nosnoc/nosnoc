@@ -56,7 +56,7 @@ settings.homotopy_update_slope = 0.2;
 settings.homotopy_update_exponent = 2.5;
 %% Generate Model
 model = blocks_with_friction();
-%% Simulation setings
+%% Simulation settings
 N_finite_elements = 3;
 T_sim = 12;
 % T_sim = 4;

@@ -49,10 +49,10 @@ model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 
-%% Simulation setings
-N_FE = 3;
+%% Simulation settings
+N_FE = 2;
 T_sim = 0.5;
-N_sim = 1;
+N_sim = 10;
 
 model.T_sim = T_sim;
 model.N_FE = N_FE;

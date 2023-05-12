@@ -40,7 +40,7 @@ model.J_tangent = [1 0;0 1; 0 0];
 model.D_tangent = [1,-1,0,0;
                    0,0,1,-1;
                    0,0,0,0];
-%% Simulation setings
+%% Simulation settings
 N_finite_elements = 3;
 T_sim = 3;
 N_sim = 20;

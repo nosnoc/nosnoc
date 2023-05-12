@@ -53,7 +53,7 @@ model.J_tangent = xc.jacobian(q)';
 % tangent
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];
-%% Simulation setings
+%% Simulation settings
 N_finite_elements = 3;
 T_sim = 0.6;
 N_sim = 40;

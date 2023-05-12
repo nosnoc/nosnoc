@@ -28,7 +28,7 @@ model.f_v = [3*1;-g];
 model.f_c = [q(1);q(2)];
 model.J_tangent = [0 1;1 0];
 model.D_tangent = [model.J_tangent -model.J_tangent] ;
-%% Simulation setings
+%% Simulation settings
 N_FE = 5;
 T_sim = 0.7;
 N_sim = 1;

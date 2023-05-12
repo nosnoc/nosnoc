@@ -59,7 +59,7 @@ model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
 model.n_dim_contact = 2;
-%% Simulation setings
+%% Simulation settings
 N_FE = 2;
 T_sim = 3;
 N_sim = 60;

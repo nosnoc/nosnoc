@@ -36,21 +36,26 @@ model.x0 = x0;
 model.f_v = [-m*g+k*(q(2)-q(1)-l);-m*g-k*(q(2)-q(1)-l)];
 model.f_c = q(1)-R;
 
-%% Simulation setings
+%% Simulation settings
 N_FE = 2;
 T_sim = 1;
-N_sim = 80;
+N_sim = 1000;
 
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
 
 %% MATLAB solution
-[tout,yout,n_bounces] = two_springs_matlab(T_sim,x0,model.e,1e-9);
+[t_grid_matlab, x_traj_matlab, n_bounces] = two_springs_matlab(T_sim,x0,model.e,1e-5);
+
 
 %% Call nosnoc Integrator
-[results,stats,model,settings,solver] = integrator_fesd(model,settings);
+initial_guess = struct();
+initial_guess.x_traj = x_traj_matlab;
+initial_guess.t_grid = t_grid_matlab;
+settings.sigma_0 = 1e-3;
+
+[results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
 
 %% read and plot results
 unfold_struct(results,'base');
@@ -91,7 +96,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
 
 %% compare
-error = norm(yout(end,:)'-x_res(:,end))
+error = norm(x_traj_matlab(end,:)'-x_res(:,end));
 fprintf('Numerical error %2.2e \n',error);
 
 

@@ -38,7 +38,7 @@ model.f_c = q(2);
 model.J_tangent = [1; 0];
 model.D_tangent = [1,-1;0,0];
 model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
-%% Simulation setings
+%% Simulation settings
 N_FE = 2;
 T_sim = 1.7;
 N_sim = 10;

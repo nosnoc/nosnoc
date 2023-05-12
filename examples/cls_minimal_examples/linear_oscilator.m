@@ -51,7 +51,7 @@ model.f_c = q;
 % model.J_tangent = [1; 0]; 
 % model.D_tangent = [1,-1;0,0];
 
-%% Simulation setings
+%% Simulation settings
 N_FE = 5;
 T_sim = 1;
 N_sim = 1;
