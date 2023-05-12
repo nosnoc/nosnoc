@@ -54,7 +54,7 @@ classdef NosnocSolver < handle
             g = problem.g;
             p = problem.p;
 
-            casadi_nlp = struct('f', problem.cost, 'x', w, 'g', g,'p',p);
+            casadi_nlp = struct('f', problem.cost, 'x', w, 'g', g, 'p', p);
 
             % TODO: Possible issue raise to casadi: allow unknown fields in options passed
             if strcmp(settings.nlpsol, 'ipopt')
@@ -122,13 +122,13 @@ classdef NosnocSolver < handle
                 else
                     flat_ind = ind;
                 end
+                % TODO: Interpolation
 
                 if iscell(val)
                     % If the passed value is an N_stage by 1 cell array we assume this initialization is done stage wise
                     if ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val,2) == 1
                         for ii=1:obj.model.dims.N_stages
                             % All variables of each stage are set to the same value
-                            % TODO: Interpolation
                             for v=ind(ii,:,:)
                                 % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, etc.)
                                 if ~isempty(v) && length(v{1}) == length(val{ii})
@@ -137,11 +137,10 @@ classdef NosnocSolver < handle
                             end
                         end
                     % Otherwise if we have an initialization of the form N_stages-by-N_fe we do the same but finite-element-wise
-                    elseif ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val, 2) == obj.model.dimeisons.N_fe
+                    elseif ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val, 2) == obj.model.dims.N_finite_elements
                         for ii=1:obj.model.dims.N_stages
-                            for jj=1:obj.model.dims.N_fe
+                            for jj=1:obj.model.dims.N_finite_elements
                                 % All variables of each finite element are set to the same value
-                                % TODO: Interpolation
                                 for v=ind(ii,jj,:)
                                     % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, cls, etc.)
                                     if ~isempty(v) && length(v{1}) == length(val{ii,jj})
