@@ -33,7 +33,7 @@
 % [results,stats] = integrator_fesd(model,settings);
 % [results,stats,model] = integrator_fesd(model,settings);
 
-function [varargout] = integrator_fesd(model, settings, u_sim)
+function [varargout] = integrator_fesd(model, settings, u_sim, initial_guess)
 
 %% generate time-freezing model before turning off time-related settings
 if settings.time_freezing
@@ -47,19 +47,20 @@ end
 solver = NosnocSolver(model, settings);
 model = solver.model;
 settings = solver.settings;
+dims = model.dims;
 
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
 
 %% check does the provided u_sim has correct dims
-if n_u > 0
+if dims.n_u > 0
     if ~exist('u_sim','var')
         warning('no control values (u_sim) provided, using zeros')
-        u_sim = zeros(n_u, N_sim)
+        u_sim = zeros(n_u, N_sim);
     else
         [n_rows, n_cols] = size(u_sim);
-        if n_rows~=n_u || n_cols~=N_sim
-            error('Matrix with control inputs u_sim has the wrong size. Required dimension is n_u x N_sim.')
+        if n_rows ~= dims.n_u || n_cols~=N_sim
+            error('Control inputs u_sim has the wrong size. Required dimension is n_u x N_sim.')
         end
     end
 end
@@ -69,8 +70,8 @@ results.t_grid = [];
 results.x_res = [];
 stats = [];
 
-x_res = [x0];
-x_res_extended = [x0];
+x_res = [model.x0];
+x_res_extended = [model.x0];
 diff_res = [];
 alg_res = [];
 % Stewart
@@ -102,12 +103,65 @@ time_per_iter = [];
 simulation_time_pased = 0;
 W = [];
 all_res = [];
+t_current = 0;
+
+if exist('initial_guess', 'var')
+    % remove duplicate indices
+    [~, w] = unique(initial_guess.t_grid, 'stable');
+    initial_guess.t_grid = initial_guess.t_grid(w);
+    initial_guess.x_traj = initial_guess.x_traj(w, :);
+end
+
+
 %% Main simulation loop
-for ii = 1:N_sim
-    if n_u > 0
+for ii = 1:model.N_sim
+    if dims.n_u > 0
         solver.set('u', {u_sim(:,ii)});
     end
 
+    %% 
+    % TODO Set up homotopy solver to take p_val explicitly
+    if ii > 1 && settings.use_previous_solution_as_initial_guess
+        % TODO make this possible via solver interface directly
+        solver.problem.w0(n_x+1:end) = w_opt(n_x+1:end);
+    end
+
+    % set all x values to xcurrent, as this is the best available guess.
+    solver.set('x', {x0})
+    solver.set('x_left_bp', {x0})
+    if exist('initial_guess', 'var')
+        t_guess = t_current + cumsum([0; model.h_k * ones(model.N_finite_elements, 1)]);
+        x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess);
+        % 
+        x_init = cell(1, dims.N_finite_elements);
+        y_gap_init = cell(1, dims.N_finite_elements);
+        for j = 1:dims.N_finite_elements
+            x_init{j} = x_guess(j+1, :);
+            y_gap_init{j} = full(model.f_c_fun(x_init{j}));
+        end
+        solver.set('x', x_init);
+        solver.set('x_left_bp', x_init);
+        %
+        if isequal(settings.dcs_mode, 'CLS')
+            ind_v = dims.n_q + 1: 2*dims.n_q;
+            solver.set('lambda_normal', {0});
+            L_vn_init = {(x_init{1}(ind_v) + model.e * x_init{end}(ind_v))};
+            solver.set('L_vn', L_vn_init);
+            % 
+            diff_x = x_guess(1, :) - x_guess(end, :);
+            diff_v = diff_x(ind_v);
+            Lambda_normal_init = max(abs(diff_v));
+            % Note: this is a bit hacky..
+            if Lambda_normal_init < 4
+                Lambda_normal_init = 0.0;
+            end
+            solver.set('Lambda_normal', {Lambda_normal_init});
+            disp(['init Lambda_normal', num2str(Lambda_normal_init)]);
+            solver.set('y_gap', y_gap_init);
+        end
+    end
+
+    %% solve
     [sol,stats] = solver.solve();
     res = extract_results_from_solver(model, solver.problem, settings, sol);
     all_res = [all_res,res];
@@ -115,11 +169,10 @@ for ii = 1:N_sim
 
     if stats.converged == 0
         % TODO: return some infeasibility status
-        warning(['integrator_fesd: did not converge in step ', ii])
-        % keyboard;
+        warning(['integrator_fesd: did not converge in step ', num2str(ii)])
     elseif print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
-            ii, N_sim,simulation_time_pased,T_sim,time_per_iter(end));
+            ii, model.N_sim,simulation_time_pased, model.T_sim,time_per_iter(end));
     end
     simulation_time_pased = simulation_time_pased + model.T;
 
@@ -136,11 +189,10 @@ for ii = 1:N_sim
     h_opt = w_opt(flatten_ind(solver.problem.ind_h));
     % differential
     x_opt_extended = w_opt(solver.problem.ind_x_all);
-    x_opt_extended = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
+    x_opt_extended = reshape(x_opt_extended, dims.n_x,length(x_opt_extended)/ dims.n_x);
 
     % only bounadry value
     x_opt = res.x_opt(:,2:end);
-
 
     % TODO: this should use indices instead of n_*
     switch dcs_mode
@@ -164,25 +216,13 @@ for ii = 1:N_sim
             lambda_1_opt= lambda_1_opt_extended(:,1:n_s:end);
     end
 
-    %% update initial guess and inital value
+    %% update inital value
     x0 = x_opt(:,end);
-    %     update clock state
+    % update clock state
     if impose_terminal_phyisical_time
         solver.problem.p0(end) = solver.problem.p0(end)+model.T;
     end
     solver.set("x0", x0);
-
-    % TODO Set up homotopy solver to take p_val explicitly
-    if use_previous_solution_as_initial_guess
-        % TODO make this possible via solver interface directly
-        solver.problem.w0(n_x+1:end) = w_opt(n_x+1:end);
-    end
-
-    % set all x values to xcurrent, as this is the best available guess.
-    solver.set('x', {x0})
-    solver.set('x_left_bp', {x0})
-    % try zeros?
-    % solver.set('lambda_normal', 1.0)
 
     %% Store data
     if use_fesd
@@ -190,9 +230,10 @@ for ii = 1:N_sim
     else
         h_vec = [h_vec;h_k(1)*ones(N_stages*N_finite_elements(1),1)];
     end
+    t_current = sum(h_vec);
     %sot
     s_sot_res  = [s_sot_res,w_opt(flatten_ind(solver.problem.ind_sot))];
-    %differntial.
+    % differntial
     x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
     x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
 
@@ -221,27 +262,21 @@ for ii = 1:N_sim
 
     %% plot during execution
     if real_time_plot
+        figure(100)
+        clf
+        grid on
+        hold on
+        xlim([0 T_sim]);
+        ylabel('$x(t)$','Interpreter','latex');
         if time_freezing
-            figure(100)
-            clf
             plot(x_res(end,:),x_res(1:end-1,:));
             xlabel('$t$ [phyisical time]','Interpreter','latex');
-            ylabel('$x(t)$','Interpreter','latex');
-            grid on
-            xlim([0 T_sim]);
             ylim([min(min(x_res(1:end-1,:)))-0.3 max(max(x_res(1:end-1,:)))+0.3])
-            hold on
         else
-            figure(100)
-            clf
             t_temp = [0,cumsum(h_vec)'];
             plot(t_temp,x_res(:,1:end));
             xlabel('$t$','Interpreter','latex');
-            ylabel('$x(t)$','Interpreter','latex');
-            grid on
-            xlim([0 T_sim]);
             ylim([min(x_res(:))-0.3 max(x_res(:))+0.3])
-            hold on
         end
     end
 end
@@ -261,7 +296,7 @@ fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e
 fprintf('----------------------------------------------------------------------------------------------------------------------\n\n');
 %% Output
 
-results.x_res  = x_res;
+results.x_res = x_res;
 % Output all stage values as well.
 results.x_res_extended  = x_res_extended;
 switch dcs_mode
@@ -269,8 +304,8 @@ switch dcs_mode
     results.theta_res = theta_res;
     results.lambda_res = lambda_res;
     results.mu_res = mu_res;
-    results.theta_res_extended  = theta_res_extended;
-    results.lambda_res_extended  = lambda_res_extended;
+    results.theta_res_extended = theta_res_extended;
+    results.lambda_res_extended = lambda_res_extended;
     results.mu_res_extended  = mu_res_extended;
   case 'Step'
     results.alpha_res = alpha_res;
