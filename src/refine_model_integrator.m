@@ -29,6 +29,7 @@ function [model] = refine_model_integrator(model,settings)
 % This function changes possible inconsistent discretization settings.
 %% Unfold user structure
 unfold_struct(model,'caller')
+
 %% If different names are used...
 if exist('N_stg','var')
     N_stages = N_stg;

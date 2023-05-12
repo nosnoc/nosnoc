@@ -35,19 +35,8 @@
 
 function [varargout] = integrator_fesd(model, settings, u_sim)
 
-control_exists = 1;
-if ~exist('u_sim','var')
-    control_exists = 0;
-    u_sim = [];
-end
-
-
-results.t_grid = [];
-results.x_res = [];
-stats = [];
-
 %% generate time-freezing model before turning off time-related settings
-if settings.time_freezing && ~solver_exists
+if settings.time_freezing
     [model,settings] = time_freezing_reformulation(model,settings);
 end
 
@@ -59,21 +48,27 @@ solver = NosnocSolver(model, settings);
 model = solver.model;
 settings = solver.settings;
 
-% TODO remove this but needed now because unfold_struct clobers fields for some reason
-% TODO when moving to model class remove this
-settings_bkp = settings;
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
-settings = settings_bkp;
 
 %% check does the provided u_sim has correct dims
-if control_exists
-    [n_rows,n_cols] = size(u_sim);
-    if n_rows~=n_u || n_cols~=N_sim
-        error('Matrix with control inputs has the wrong size. Required dimension is n_u x N_sim.')
+if n_u > 0
+    if ~exist('u_sim','var')
+        warning('no control values (u_sim) provided, using zeros')
+        u_sim = zeros(n_u, N_sim)
+    else
+        [n_rows, n_cols] = size(u_sim);
+        if n_rows~=n_u || n_cols~=N_sim
+            error('Matrix with control inputs u_sim has the wrong size. Required dimension is n_u x N_sim.')
+        end
     end
 end
+
 %% Initialization
+results.t_grid = [];
+results.x_res = [];
+stats = [];
+
 x_res = [x0];
 x_res_extended = [x0];
 diff_res = [];
@@ -109,9 +104,8 @@ W = [];
 all_res = [];
 %% Main simulation loop
 for ii = 1:N_sim
-    if control_exists
-        % NOTE: This should work because sim only has N_stages=0
-        solver.set('u', u_sim(:,ii));
+    if n_u > 0
+        solver.set('u', {u_sim(:,ii)});
     end
 
     [sol,stats] = solver.solve();
