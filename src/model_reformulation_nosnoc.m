@@ -52,7 +52,7 @@ else
 end
 
 if settings.N_homotopy == 0
-    settings.N_homotopy = ceil(abs(log(settings.sigma_N / settings.sigma_0) / log(settings.homotopy_update_slope)))
+    settings.N_homotopy = ceil(abs(log(settings.sigma_N / settings.sigma_0) / log(settings.homotopy_update_slope)));
     % TODO: compute
     if ~strcmp(settings.homotopy_update_rule, 'linear')
         warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
