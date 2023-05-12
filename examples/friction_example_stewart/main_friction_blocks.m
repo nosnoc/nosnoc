@@ -43,7 +43,6 @@ import casadi.*
 settings.n_s = 2;                            
 settings.irk_scheme = IRKSchemes.RADAU_IIA;     
 settings.irk_representation = 'differential';
-settings.lift_irk_differential = 1;
 settings.print_level = 2;
 settings.use_fesd = 1;
 settings.mpcc_mode = 'Scholtes_ineq';

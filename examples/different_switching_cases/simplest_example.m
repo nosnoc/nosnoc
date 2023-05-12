@@ -41,7 +41,6 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.irk_representation= 'differential';
 settings.irk_representation= 'integral';
 settings.dcs_mode = 'Step';
-settings.lift_irk_differential = 1;
 
 % discretization parameters
 N_sim = 1;
