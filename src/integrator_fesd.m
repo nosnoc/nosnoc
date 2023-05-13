@@ -97,7 +97,7 @@ for ii = 1:model.N_sim
     % TODO Set up homotopy solver to take p_val explicitly
     if ii > 1 && settings.use_previous_solution_as_initial_guess
         % TODO make this possible via solver interface directly
-        solver.problem.w0(n_x+1:end) = w_opt(n_x+1:end);
+        solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
     end
 
     % set all x values to xcurrent, as this is the best available guess.
@@ -196,7 +196,7 @@ for ii = 1:model.N_sim
     end
     results.x = [results.x, res.x(:, 2:end)];
 
-    results.h = [results.h, res.h];
+    results.h = [results.h; res.h];
 
     %sot TODO: is there a better way to do this
     results.s_sot  = [results.s_sot, res.w(flatten_ind(solver.problem.ind_sot))];
@@ -246,7 +246,7 @@ stats.time_per_iter = time_per_iter;
 stats.homotopy_iteration_stats = homotopy_iteration_stats;
 stats.converged = converged;
 
-results.t_grid = cumsum([0,results.h])';
+results.t_grid = cumsum([0;results.h])';
 
 results.solver_ouput = sol;
 results.all_res = all_res;

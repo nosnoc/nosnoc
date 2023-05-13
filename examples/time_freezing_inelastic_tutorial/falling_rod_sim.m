@@ -65,13 +65,13 @@ settings.use_previous_solution_as_initial_guess = 0;
 [results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
-qx = x_res(1,:);
-qy = x_res(2,:);
-theta = x_res(3,:);
-vx = x_res(4,:); 
-vy = x_res(5,:);
-omega = x_res(6,:);
-t_clock = x_res(7,:);
+qx = results.x(1,:);
+qy = results.x(2,:);
+theta = results.x(3,:);
+vx = results.x(4,:); 
+vy = results.x(5,:);
+omega = results.x(6,:);
+t_clock = results.x(7,:);
 
 
 %% geometric trajetcorty

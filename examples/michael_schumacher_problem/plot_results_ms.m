@@ -1,21 +1,20 @@
-unfold_struct(results,'caller')
 unfold_struct(model,'caller')
 unfold_struct(settings,'caller')
-w_opt = full(results.x);
+w_opt = full(results.w);
 n = n_x+n_u;
 nn = n-1;
 tgrid = linspace(0, T, N_stages+1);
 tgrid_z = linspace(0, T, N_stages);
 %% read solutions
 
-u1_opt = u_opt(1,:);
-u2_opt = u_opt(2,:);
+u1_opt = results.u(1,:);
+u2_opt = results.u(2,:);
 
-x1_opt = x_opt(1,:);
-x2_opt = x_opt(2,:);
-x3_opt = x_opt(3,:);
-x4_opt = x_opt(4,:);
-x5_opt = x_opt(5,:);
+x1_opt = results.x(1,:);
+x2_opt = results.x(2,:);
+x3_opt = results.x(3,:);
+x4_opt = results.x(4,:);
+x5_opt = results.x(5,:);
 %% controls
 figure
 stairs(t_grid(1:N_finite_elements(1):end),[u1_opt,nan])

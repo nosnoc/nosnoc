@@ -50,13 +50,13 @@ solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
 % [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k);
 %%
-qx = results.x_opt(1,:);
-qy = results.x_opt(2,:);
-vx = results.x_opt(3,:);
-vy = results.x_opt(4,:);
-t_opt = results.x_opt(5,:);
-u_opt = results.u_opt(1,:);
-s_opt = results.w_opt(model.ind_sot);
+qx = results.x(1,:);
+qy = results.x(2,:);
+vx = results.x(3,:);
+vy = results.x(4,:);
+t_opt = results.x(5,:);
+u_opt = results.u(1,:);
+s_opt = results.w(solver.problem.ind_sot);
 
 figure
 subplot(131)
@@ -83,8 +83,7 @@ ylabel('$u$','Interpreter','latex');
 %% 
 t_grid = results.t_grid;
 f_x_fun = model.f_x_fun;
-x_opt = results.x_opt;
-z_opt = results.z_opt;
+x = results.x;
 u_opt_extended = [];
 s_opt_extended = [];
 for ii = 1:N_stg

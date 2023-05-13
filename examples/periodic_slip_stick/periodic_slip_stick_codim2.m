@@ -82,14 +82,14 @@ model.F = F;
 [results,stats,model] = integrator_fesd(model,settings);
 
 %% Plot results
-x1 = results.x_res(1,:);
-x2 = results.x_res(2,:);
-x3 = results.x_res(3,:);
+x1 = results.x(1,:);
+x2 = results.x(2,:);
+x3 = results.x(3,:);
 
 if isequal(settings.dcs_mode,'Stewart')
-    theta = results.theta_res;
+    theta = results.theta;
 else
-    alpha = results.alpha_res;
+    alpha = results.alpha;
 end
 t_grid = results.t_grid;
 

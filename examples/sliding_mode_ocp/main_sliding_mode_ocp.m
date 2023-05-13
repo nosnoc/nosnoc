@@ -142,7 +142,7 @@ t_grid_optimizer = [results.t_grid];
 x_res_optimizer = [results.x];
 %%
 figure
-stairs(results.t_grid,[results.h,nan])
+stairs(results.t_grid,[results.h;nan])
 xlabel('$t$','Interpreter','latex');
 ylabel('$h_{ki}$','Interpreter','latex');
 %%
@@ -174,8 +174,8 @@ if 0
         model.ubu = u_opt(:,ii);
         model.u0 = u_opt(:,ii);
         [results_integrator,stats,model] = integrator_fesd(model,settings);
-        model.x0 = results_integrator.x_res(:,end);
-        x_res_integrator = [x_res_integrator,results_integrator.x_res];
+        model.x0 = results_integrator.x(:,end);
+        x_res_integrator = [x_res_integrator,results_integrator.x];
         t_grid_integrator = [t_grid_integrator, results_integrator.t_grid+t_end];
         t_end = t_grid_integrator(end);
     end

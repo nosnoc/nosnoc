@@ -51,7 +51,7 @@ model.F = F;
 % Call integrator
 [results,stats,model] = integrator_fesd(model,settings);
 % numerical error
-x_fesd = results.x_res(:,end);
+x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");
 fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
 end

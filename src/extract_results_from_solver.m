@@ -40,19 +40,19 @@ end
 results.T = T_opt;
 
 if use_fesd
-    h_opt = w_opt(flatten_ind(problem.ind_h))';
+    h_opt = w_opt(flatten_ind(problem.ind_h));
 else
     h_opt = [];
     if time_optimal_problem && ~use_speed_of_time_variables
         T = T_opt;
     end
     for ii = 1:N_stages
-        h_opt = [h_opt,T/(N_stages*N_finite_elements(ii))*ones(N_finite_elements(ii),1)];
+        h_opt = [h_opt;T/(N_stages*N_finite_elements(ii))*ones(N_finite_elements(ii),1)];
     end
 end
 results.h = h_opt;
 
-t_grid = cumsum([0,h_opt]);
+t_grid = cumsum([0;h_opt]);
 
 %% Adapt the grid in case of time optimal problems
 if time_optimal_problem

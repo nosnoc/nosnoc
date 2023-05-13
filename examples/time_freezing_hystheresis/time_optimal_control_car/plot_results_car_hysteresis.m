@@ -28,7 +28,7 @@
 function [ ] = plot_results_car_hysteresis(varargin)
 close all
 %[] = plot_results_throwing_ball(results,settings,model)
-% crate and solve and OCP for an example time freezing problem
+% TODO (anton.pozharskiy) this is still broken, come back and fix it before summer school.
 
 
 %%
@@ -76,7 +76,7 @@ n = n_x+n_u;
 nn = n-1;
 %% Read solutions
 if use_fesd
-    h_opt = w_opt(ind_h);
+    h_opt = results.w(ind_h);
     tgrid = (cumsum([0;h_opt]));
     tgrid_z = cumsum(h_opt)';
 end
@@ -86,11 +86,11 @@ end
 try
 h_opt_stagewise = reshape(h_opt,N_finite_elements,N_stages);
 if length(ind_tf)>1
-    s_sot = w_opt(ind_tf);
+    s_sot = results.w(ind_tf);
 elseif length(ind_tf) == 0
     s_sot = ones(N_stages,1);
 else
-    s_sot = w_opt(ind_tf)*ones(N_stages,1);
+    s_sot = results.w(ind_tf)*ones(N_stages,1);
 end
 t_control_grid_pseudo = cumsum([0,sum(h_opt_stagewise)]);
 t_control_grid_pseudo_streched = cumsum([0,sum(h_opt_stagewise).*s_sot']);
@@ -102,45 +102,45 @@ end
 if mpcc_mode == 4
     ind_t = find([1;theta1_opt]>1e-2);
 else
-    ind_t = find(diff([nan;st.x_i_opt{5};nan])>1e-5);
+    ind_t = find(diff([nan;results.x(5,:);nan])>1e-5);
 end
-time_physical = st.x_i_opt{5}(ind_t);
+time_physical = results.x(5,:)(ind_t);
 
 %% plots in phyisical time for paper
 figure
 subplot(221)
-plot(st.x_i_opt{5},st.x_i_opt{2},'LineWidth',1.5)
+plot(results.x(5,:),results.x(2,:),'LineWidth',1.5)
 hold on
-plot(st.x_i_opt{5},st.x_i_opt{2}*0+v1,'k--','LineWidth',1.0)
-plot(st.x_i_opt{5},st.x_i_opt{2}*0+v2,'k--','LineWidth',1.0)
-plot(st.x_i_opt{5},st.x_i_opt{2}*0+v_max,'r--','LineWidth',1.5)
+plot(results.x(5,:),results.x(2,:)*0+v1,'k--','LineWidth',1.0)
+plot(results.x(5,:),results.x(2,:)*0+v2,'k--','LineWidth',1.0)
+plot(results.x(5,:),results.x(2,:)*0+v_max,'r--','LineWidth',1.5)
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$v(t)$ ','Interpreter','latex')
 grid on
 
 subplot(222)
-stairs(st.x_i_opt{5}(1:N_finite_elements:end),[u_opt';nan],'LineWidth',1.5)
+stairs(results.x(5,:)(1:N_finite_elements:end),[u_opt';nan],'LineWidth',1.5)
 ylim([-u_max*1.1 u_max*1.1])
-xlim([0 max(st.x_i_opt{5}(1:N_finite_elements:end))])
+xlim([0 max(results.x(5,:)(1:N_finite_elements:end))])
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$u(t)$ ','Interpreter','latex')
 grid on
 
 subplot(223)
-plot(st.x_i_opt{5},st.x_i_opt{4},'LineWidth',1.5)
+plot(results.x(5,:),results.x(4,:),'LineWidth',1.5)
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$w(t)$ ','Interpreter','latex')
 ylim([-0.1 1.1]);
 grid on
 
-ind_t = find(diff(st.x_i_opt{5})>0.01);
-ind_t_complement = find(abs(diff(st.x_i_opt{5}))<0.00000000000001);
-x2_opt_phy = st.x_i_opt{2};
-x4_opt_phy = st.x_i_opt{4};
+ind_t = find(diff(results.x(5,:))>0.01);
+ind_t_complement = find(abs(diff(results.x(5,:)))<0.00000000000001);
+x2_opt_phy = results.x(2,:);
+x4_opt_phy = results.x(4,:);
 x2_opt_phy(ind_t_complement) = nan;
 x4_opt_phy(ind_t_complement) = nan;
 subplot(224)
-plot(st.x_i_opt{2},st.x_i_opt{4},'LineWidth',1.5)
+plot(results.x(2,:),results.x(4,:),'LineWidth',1.5)
 hold on
 % plot(x2_opt_phy,x4_opt_phy,linewidth=2)
 % plot(x2_opt(ind_t),x4_opt(ind_t),linewidth=2)
@@ -158,7 +158,7 @@ saveas(gcf,'states_and_control')
 %% phase plot
 
 figure
-    plot(st.x_i_opt{2},st.x_i_opt{4})
+    plot(results.x(2,:),results.x(4,:))
     grid on
     ylim([-0.1 1.1])
     ylabel('$w$ [hystheresis state]','Interpreter','latex')

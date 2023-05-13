@@ -135,17 +135,17 @@ solver = NosnocSolver(model, settings);
 % [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k); % (experimental, projects and fixes active set at solution and solves NLP)
 %% read and plot results
 unfold_struct(results,'base');
-p1 = x_opt(1,:);
-p2 = x_opt(2,:);
-p3 = x_opt(3,:);
-v1 = x_opt(4,:);
-v2 = x_opt(5,:);
-v3 = x_opt(6,:);
-t_opt = x_opt(7,:);
+p1 = results.x(1,:);
+p2 = results.x(2,:);
+p3 = results.x(3,:);
+v1 = results.x(4,:);
+v2 = results.x(5,:);
+v3 = results.x(6,:);
+t_opt = results.x(7,:);
 
-u1_opt = u_opt(1,:);
-u2_opt = u_opt(2,:);
-u3_opt = u_opt(3,:);
+u1_opt = results.u(1,:);
+u2_opt = results.u(2,:);
+u3_opt = results.u(3,:);
 
 
 %% animation
