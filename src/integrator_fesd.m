@@ -104,6 +104,7 @@ simulation_time_pased = 0;
 W = [];
 all_res = [];
 t_current = 0;
+converged = [];
 
 if exist('initial_guess', 'var')
     % remove duplicate indices
@@ -173,9 +174,11 @@ for ii = 1:model.N_sim
     if stats.converged == 0
         % TODO: return some infeasibility status
         warning(['integrator_fesd: did not converge in step ', num2str(ii)])
+        converged = [converged, stats.converged];
     elseif print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
-            ii, model.N_sim,simulation_time_pased, model.T_sim,time_per_iter(end));
+            ii, model.N_sim,simulation_time_pased, model.T_sim, time_per_iter(end));
+        converged = [converged, stats.converged];
     end
     simulation_time_pased = simulation_time_pased + model.T;
 
@@ -323,6 +326,7 @@ end
 stats.complementarity_stats = complementarity_stats;
 stats.time_per_iter = time_per_iter;
 stats.homotopy_iteration_stats = homotopy_iteration_stats;
+stats.converged = converged;
 
 results.h_vec = h_vec;
 results.s_sot_res = s_sot_res;
