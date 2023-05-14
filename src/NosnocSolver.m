@@ -284,11 +284,14 @@ classdef NosnocSolver < handle
             settings = obj.settings;
             if strcmp(settings.nlpsol, 'ipopt')
                 last_stats = stats.solver_stats(end);
-                inf_pr = last_stats.iterations.inf_pr(end);
-                inf_du = last_stats.iterations.inf_du(end);
-                if inf_pr < settings.opts_casadi_nlp.ipopt.tol && inf_du < settings.opts_casadi_nlp.ipopt.tol ...
-                        && stats.complementarity_stats(end) < 10 * settings.comp_tol
-                    converged = 1;
+                converged = 0;
+                if isfield(last_stats, 'iterations')
+                    inf_pr = last_stats.iterations.inf_pr(end);
+                    inf_du = last_stats.iterations.inf_du(end);
+                    if inf_pr < settings.opts_casadi_nlp.ipopt.tol && inf_du < settings.opts_casadi_nlp.ipopt.tol ...
+                            && stats.complementarity_stats(end) < 10 * settings.comp_tol
+                        converged = 1;
+                    end
                 else
                     converged = 0;
                 end
