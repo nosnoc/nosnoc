@@ -33,7 +33,7 @@ close all
 import casadi.*
 %%
 plot_integrator_output = 1;
-plot_continious_time_sol = 0;
+plot_continious_time_sol = 1;
 %% discretization settings
 T_sim = pi/2;
 N_sim  = 29;
@@ -87,7 +87,7 @@ f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,model,settings, solver] = integrator_fesd(model,settings);
 %% numerical error
 x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");
@@ -142,13 +142,13 @@ end
 %% plot_continious_time_sol
 if plot_continious_time_sol
     unfold_struct(settings,'caller')
-    x_res_extended = results.x_res_extended;
-    h_opt = results.h_vec;
+    x_res_extended = results.extended.x;
+    h_opt = results.h;
     [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(n_s,irk_scheme);
     t_grid = results.t_grid;
     tgrid_long = 0;
     h_grid_long = [];
-    for ii  = 1:N_sim*N_stages*N_finite_elements;
+    for ii  = 1:N_sim*model.dims.N_stages*model.dims.N_finite_elements;
         if use_fesd
             h_yet = h_opt(ii);
         else
@@ -165,13 +165,16 @@ if plot_continious_time_sol
     x2_very_fine = [];
     tgrid_very_fine = [];
     figure
-    for ii =  1:N_stages*N_finite_elements*N_sim
+    for ii =  1:model.dims.N_stages*model.dims.N_finite_elements*N_sim
         % read
-        ind_now = 1+(ii-1)*(n_s+1):(ii)*(n_s+1)+1;
+        ind_now = 1+(ii-1)*(n_s):(ii)*(n_s)+1;
         tt = tgrid_long(ind_now);
         xx1 = x_res_extended(1,ind_now);
         xx2 = x_res_extended(2,ind_now);
         % fit
+        tt
+        xx1
+        length(xx1)-2
         p1 = polyfit(tt,xx1,length(xx1)-2);
         p2 = polyfit(tt,xx2,length(xx2)-2);
         t_eval = linspace(tt(1),tt(end),50);

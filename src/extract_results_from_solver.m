@@ -22,6 +22,7 @@ end
 % handle x0 properly
 x0 = w_opt(problem.ind_x0);
 results.x = [x0, results.x];
+results.extended.x = [x0, results.extended.x];
 
 u = w_opt([problem.ind_u{:}]);
 u = reshape(u,model.dims.n_u,model.dims.N_stages);

@@ -145,12 +145,14 @@ for ii = 1:model.N_sim
         for name=names
             if isfield(res, name)
                 results.(name) = [];
+                results.extended.(name) = [];
             end
         end
         results.x = [x0];
+        results.extended.x = [x0];
         results.s_sot = [];
-        results.x_with_impulse = [x0]
-        results.t_with_impulse = [0]
+        results.x_with_impulse = [x0];
+        results.t_with_impulse = [0];
     end
 
     if stats.converged == 0
@@ -193,8 +195,12 @@ for ii = 1:model.N_sim
         end
         
         results.(name) = [results.(name), res.(name)];
+        if ~strcmp(name, 'h')
+            results.extended.(name) = [results.extended.(name), res.extended.(name)];
+        end
     end
     results.x = [results.x, res.x(:, 2:end)];
+    results.extended.x = [results.extended.x, res.extended.x(:, 2:end)];
 
     %sot TODO: is there a better way to do this
     results.s_sot  = [results.s_sot, res.w(flatten_ind(solver.problem.ind_sot))];
