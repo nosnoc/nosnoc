@@ -19,6 +19,7 @@ settings.n_s = 2;
 % MPCC Method
 settings.N_homotopy = 7;
 settings.homotopy_update_rule = 'superlinear';
+settings.opts_casadi_nlp.ipopt.max_iter = 1000;
 % Discretization parameters
 model.N_stages = 30; % number of control intervals
 model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
