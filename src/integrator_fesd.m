@@ -151,6 +151,8 @@ for ii = 1:model.N_sim
         end
         results.x = [x0];
         results.s_sot = [];
+        results.x_with_impulse = [x0]
+        results.t_with_impulse = [0]
     end
 
     if stats.converged == 0
@@ -199,6 +201,15 @@ for ii = 1:model.N_sim
     %sot TODO: is there a better way to do this
     results.s_sot  = [results.s_sot, res.w(flatten_ind(solver.problem.ind_sot))];
 
+    if settings.dcs_mode == DcsMode.CLS
+        results.x_with_impulse = [results.x_with_impulse, res.x_with_impulse(:,2:end)];
+
+        % TODO maybe make solver take t0 and T_final as param?
+        
+        results.t_with_impulse = [results.t_with_impulse, t_current + res.t_with_impulse(2:end)];
+    end
+
+    t_current = t_current + model.T;
     %stats
     complementarity_stats  = [complementarity_stats; stats.complementarity_stats(end)];
     homotopy_iteration_stats = [homotopy_iteration_stats;stats.homotopy_iterations];
@@ -211,15 +222,15 @@ for ii = 1:model.N_sim
         hold on
         xlim([0 T_sim]);
         ylabel('$x(t)$','Interpreter','latex');
-        if time_freezing
-            plot(x_res(end,:),x_res(1:end-1,:));
+        if settings.time_freezing
+            plot(res.x(end,:),res.x(1:end-1,:));
             xlabel('$t$ [phyisical time]','Interpreter','latex');
-            ylim([min(min(x_res(1:end-1,:)))-0.3 max(max(x_res(1:end-1,:)))+0.3])
+            ylim([min(min(res.x(1:end-1,:)))-0.3 max(max(res.x(1:end-1,:)))+0.3])
         else
             t_temp = [0,cumsum(h_vec)'];
-            plot(t_temp,x_res(:,1:end));
+            plot(t_temp,res.x(:,1:end));
             xlabel('$t$','Interpreter','latex');
-            ylim([min(x_res(:))-0.3 max(x_res(:))+0.3])
+            ylim([min(res.x(:))-0.3 max(res.x(:))+0.3])
         end
     end
 end
