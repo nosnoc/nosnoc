@@ -6,8 +6,8 @@ close all
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 % settings.irk_representation = 'differential';
-settings.n_s = 3;
-settings.print_level = 3;
+settings.n_s = 5;
+settings.print_level = 1;
 % settings.N_homotopy = 8;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
@@ -17,6 +17,9 @@ settings.no_initial_impacts = 1;
 % settings.opts_ipopt.ipopt.linear_solver = 'ma97';
 settings.sigma_0 = 5;
 settings.homotopy_update_slope = 0.1;
+settings.real_time_plot = 1;
+settings.comp_tol  = 1e-13;
+settings.sigma_N = 1e-13;
 
 %%
 g = 9.81;
@@ -39,21 +42,19 @@ model.f_c = q(1)-R;
 %% Simulation settings
 N_FE = 2;
 T_sim = 1;
-N_sim = 1000;
-
+N_sim = 60;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
 
 %% MATLAB solution
-[t_grid_matlab, x_traj_matlab, n_bounces] = two_springs_matlab(T_sim,x0,model.e,1e-5);
+[t_grid_matlab, x_traj_matlab, n_bounces] = two_balls_spring_matlab(T_sim,x0,model.e,1e-13);
 
 
 %% Call nosnoc Integrator
 initial_guess = struct();
 initial_guess.x_traj = x_traj_matlab;
 initial_guess.t_grid = t_grid_matlab;
-settings.sigma_0 = 1e-3;
 
 [results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
 
@@ -82,13 +83,16 @@ plot(t_grid,v1,'LineWidth',1.5);
 hold on
 plot(t_grid,v2,'LineWidth',1.5);
 xlim([0 t_grid(end)])
-% ylim([-max(abs([v1,v2]))-1.0 max(abs([v1,v2]))+1])
+ylim([-max(abs([v1,v2]))-1.0 max(abs([v1,v2]))+1])
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 subplot(313)
 Lambda_opt = [results.all_res.Lambda_normal_opt];
+try
 stem(t_grid(1:N_FE:end),[Lambda_opt,nan])
+catch
+end
 hold on
 xlim([-0.01 t_grid(end)])
 grid on

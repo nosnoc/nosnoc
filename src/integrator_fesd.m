@@ -131,7 +131,7 @@ for ii = 1:model.N_sim
     solver.set('x_left_bp', {x0})
     if exist('initial_guess', 'var')
         t_guess = t_current + cumsum([0; model.h_k * ones(model.N_finite_elements, 1)]);
-        x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess);
+        x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess,'makima');
         % 
         x_init = cell(1, dims.N_finite_elements);
         y_gap_init = cell(1, dims.N_finite_elements);
@@ -145,15 +145,18 @@ for ii = 1:model.N_sim
         if isequal(settings.dcs_mode, 'CLS')
             ind_v = dims.n_q + 1: 2*dims.n_q;
             solver.set('lambda_normal', {0});
-            L_vn_init = {(x_init{1}(ind_v) + model.e * x_init{end}(ind_v))};
+            % Note : set this to zero
+            L_vn_init = {0*(x_init{end}(ind_v(1)) + model.e * x_init{end-1}(ind_v(1)))};
             solver.set('L_vn', L_vn_init);
             % 
             diff_x = x_guess(1, :) - x_guess(end, :);
-            diff_v = diff_x(ind_v);
+            diff_v = diff(x_guess(:,ind_v(1)));
             Lambda_normal_init = max(abs(diff_v));
             % Note: this is a bit hacky..
-            if Lambda_normal_init < 4
+            if Lambda_normal_init < 2
                 Lambda_normal_init = 0.0;
+            else
+%                 keyboard
             end
             solver.set('Lambda_normal', {Lambda_normal_init});
             disp(['init Lambda_normal', num2str(Lambda_normal_init)]);
