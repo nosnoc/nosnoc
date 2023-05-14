@@ -52,7 +52,7 @@ t_grid = cumsum([0,h_opt]);
 
 %% Adapt the grid in case of time optimal problems
 if settings.time_optimal_problem
-    if use_speed_of_time_variables
+    if settings.use_speed_of_time_variables
         s_sot = w_opt(flatten_ind(problem.ind_sot));
         if ~local_speed_of_time_variable
             s_sot = s_sot*ones(N_stages,1);
