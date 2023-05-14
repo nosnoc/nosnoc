@@ -67,15 +67,13 @@ end
 
 %% Initialization
 results = struct();
-
-all_res = [];
 % states
 complementarity_stats  = [];
 homotopy_iteration_stats = [];
 time_per_iter = [];
 simulation_time_pased = 0;
 W = [];
-all_res = [];
+sim_step_solver_results = [];
 t_current = 0;
 converged = [];
 
@@ -139,7 +137,7 @@ for ii = 1:model.N_sim
     [sol,stats] = solver.solve();
     [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
     names = [names, {"h"}];
-    all_res = [all_res,res];
+    sim_step_solver_results = [sim_step_solver_results,res];
     time_per_iter = [time_per_iter; stats.cpu_time_total];
 
     % Initialize results
@@ -258,7 +256,7 @@ stats.converged = converged;
 results.t_grid = cumsum([0,results.h])';
 
 results.solver_ouput = sol;
-results.all_res = all_res;
+results.sim_step_solver_results = sim_step_solver_results;
 
 varargout{1} = results;
 varargout{2} = stats;
