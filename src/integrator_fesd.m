@@ -138,6 +138,7 @@ for ii = 1:model.N_sim
     %% solve
     [sol,stats] = solver.solve();
     [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
+    names = [names, "h"]
     all_res = [all_res,res];
     time_per_iter = [time_per_iter; stats.cpu_time_total];
 
@@ -149,7 +150,6 @@ for ii = 1:model.N_sim
             end
         end
         results.x = [x0];
-        results.h = [];
         results.s_sot = [];
     end
 
