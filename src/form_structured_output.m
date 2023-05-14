@@ -15,4 +15,10 @@ function [results]= form_structured_output(problem, w_opt, name, results)
     temp = opt_s';
     flat = horzcat(temp{:});
     results.(name) = flat;
+
+    % generate extended
+    opt_extended = cellfun(@(idx) w_opt(idx), sort_ind_sets(ind(:)), 'uni', 0);
+
+    temp = opt_extended';
+    results.extended.(name) = horzcat(temp{:});
 end
