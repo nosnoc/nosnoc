@@ -36,19 +36,19 @@ end
 results.T = T_opt;
 
 if settings.use_fesd
-    h_opt = w_opt(flatten_ind(problem.ind_h));
+    h_opt = w_opt(flatten_ind(problem.ind_h))';
 else
     h_opt = [];
     if settings.time_optimal_problem && ~settings.use_speed_of_time_variables
         T = T_opt;
     end
     for ii = 1:N_stages
-        h_opt = [h_opt;T/(N_stages*N_finite_elements(ii))*ones(N_finite_elements(ii),1)];
+        h_opt = [h_opt,T/(N_stages*N_finite_elements(ii))*ones(N_finite_elements(ii),1)];
     end
 end
 results.h = h_opt;
 
-t_grid = cumsum([0;h_opt]);
+t_grid = cumsum([0,h_opt]);
 
 %% Adapt the grid in case of time optimal problems
 if settings.time_optimal_problem
@@ -60,12 +60,12 @@ if settings.time_optimal_problem
         h_rescaled = [];
         ind_prev = 1;
         for ii = 1:N_stages
-            h_rescaled = [h_rescaled;h_opt(ind_prev:model.dims.N_finite_elements(ii)+ind_prev-1).*s_sot(ii)];
+            h_rescaled = [h_rescaled,h_opt(ind_prev:model.dims.N_finite_elements(ii)+ind_prev-1).*s_sot(ii)];
             ind_prev = ind_prev+model.dims.N_finite_elements(ii);
         end
-        t_grid = cumsum([0;h_rescaled]);
+        t_grid = cumsum([0,h_rescaled]);
     else
-        t_grid = cumsum([0;h_opt]);
+        t_grid = cumsum([0,h_opt]);
     end
 end
 ind_t_grid_u = cumsum([1; model.dims.N_finite_elements]);

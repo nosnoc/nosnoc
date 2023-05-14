@@ -138,7 +138,7 @@ for ii = 1:model.N_sim
     %% solve
     [sol,stats] = solver.solve();
     [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
-    names = [names, "h"]
+    names = [names, {"h"}];
     all_res = [all_res,res];
     time_per_iter = [time_per_iter; stats.cpu_time_total];
 
@@ -196,8 +196,6 @@ for ii = 1:model.N_sim
     end
     results.x = [results.x, res.x(:, 2:end)];
 
-    results.h = [results.h; res.h];
-
     %sot TODO: is there a better way to do this
     results.s_sot  = [results.s_sot, res.w(flatten_ind(solver.problem.ind_sot))];
 
@@ -246,7 +244,7 @@ stats.time_per_iter = time_per_iter;
 stats.homotopy_iteration_stats = homotopy_iteration_stats;
 stats.converged = converged;
 
-results.t_grid = cumsum([0;results.h])';
+results.t_grid = cumsum([0,results.h])';
 
 results.solver_ouput = sol;
 results.all_res = all_res;
