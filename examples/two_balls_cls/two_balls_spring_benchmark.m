@@ -3,29 +3,20 @@ clc;
 import casadi.*
 close all
 
-
-NS_VALUES = [1, 2];
-NSIM_VALUES = 80 * [1, 2, 4, 8, 10];
-T_sim = 1;
+%%
+benchmark_globals;
 
 %% create model
-g = 9.81;
-R = 0.2;
-k = 1e4;
-l = 1;
-m = 1;
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2);
-x0 = [1;2;0;0];
-e = 0.8;
 
 
 %% create reference MATLAB solution
-ref_sol_filename = "two_balls_ref_sol.mat";
-% [t_grid_ref, x_traj_ref, n_bounces_ref] = two_balls_spring_matlab(T_sim, x0, e, 1e-11);
-% save(ref_sol_filename, "t_grid_ref", "x_traj_ref", "n_bounces_ref");
-load(ref_sol_filename)
+ref_sol_filename = "two_balls_guess_sol.mat";
+[t_grid_guess, x_traj_guess, n_bounces_guess] = two_balls_spring_matlab(1.1*T_sim, x0, e, 1e-3);
+save(ref_sol_filename, "t_grid_guess", "x_traj_guess", "n_bounces_guess");
+% load(ref_sol_filename)
 
 %% run experiments
 N_FE = 2;
@@ -33,7 +24,6 @@ N_FE = 2;
 for n_s = NS_VALUES
     for N_sim = NSIM_VALUES
         results_filename = strcat("two_balls_ns_", num2str(n_s), '_Nsim_', num2str(N_sim));
-
         %
         model.M = eye(2);
         model.x = [q;v];
@@ -57,15 +47,15 @@ for n_s = NS_VALUES
         settings.sigma_0 = 1e-1;
         settings.homotopy_update_slope = 0.1;
 
-        %% Simulation settings        
+        %% Simulation settings
         model.T_sim = T_sim;
         model.N_FE = N_FE;
         model.N_sim = N_sim;
 
         %% Call nosnoc Integrator
         initial_guess = struct();
-        initial_guess.x_traj = x_traj_ref;
-        initial_guess.t_grid = t_grid_ref;
+        initial_guess.x_traj = x_traj_guess;
+        initial_guess.t_grid = t_grid_guess;
         settings.sigma_0 = 1e-3;
         
         [results, stats, model, settings, solver] = integrator_fesd(model, settings, [], initial_guess);
@@ -116,7 +106,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
 
 %% compare
-error = norm(x_traj_ref(end,:)'-x_res(:,end));
+error = norm(x_traj_guess(end,:)'-x_res(:,end));
 fprintf('Numerical error %2.2e \n',error);
 
 
