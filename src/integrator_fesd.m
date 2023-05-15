@@ -137,7 +137,9 @@ for ii = 1:model.N_sim
     [sol,stats] = solver.solve();
     [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
     names = [names, {"h"}];
-    sim_step_solver_results = [sim_step_solver_results,res];
+    if settings.store_integrator_step_results
+        sim_step_solver_results = [sim_step_solver_results,res];
+    end
     time_per_iter = [time_per_iter; stats.cpu_time_total];
 
     % Initialize results
@@ -261,9 +263,25 @@ stats.converged = converged;
 
 results.t_grid = cumsum([0,results.h])';
 
-results.solver_ouput = sol;
-results.sim_step_solver_results = sim_step_solver_results;
+% generate fine t_grid
+[A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dims.n_s,settings.irk_scheme);
+tgrid_long = 0;
+h_grid_long = [];
+for ii  = 1:model.N_sim*model.dims.N_stages*model.dims.N_finite_elements;
+    if settings.use_fesd
+        h_yet = results.h(ii);
+    else
+        h_yet = model.h;
+    end
+    for jj = 1:n_s
+        tgrid_long = [tgrid_long;results.t_grid(ii)+c_irk(jj)*h_yet];
+    end
+end
+results.extended.t_grid = tgrid_long;
 
+if settings.store_integrator_step_results
+    results.sim_step_solver_results = sim_step_solver_results;
+end
 varargout{1} = results;
 varargout{2} = stats;
 varargout{3} = model;
