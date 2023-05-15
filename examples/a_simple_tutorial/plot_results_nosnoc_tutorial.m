@@ -1,21 +1,17 @@
 %%  Plot results
 t_grid = results.t_grid;
 t_grid_u = results.t_grid_u;
-q_opt=results.x_opt(1,:);
-v_opt=results.x_opt(2,:);
-u_opt=results.u_opt;
+q_opt=results.x(1,:);
+v_opt=results.x(2,:);
+u_opt=results.u;
 
 
-if isempty(results.T_opt)
-    T  = model.T;
-else
-    T = results.T_opt;
-end
+T = results.T;
 
 if settings.time_optimal_problem
     fprintf('Final time: %2.4f s.\n',T)
 else
-    fprintf('Objective value time: %2.4f s.\n',results.f_opt)
+    fprintf('Objective value time: %2.4f s.\n',results.f)
 end
 %%
 set(groot,'defaulttextinterpreter','latex')

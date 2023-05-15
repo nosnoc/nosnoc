@@ -266,7 +266,7 @@ classdef NosnocSolver < handle
                 [results] = polish_homotopy_solution(model,problem,settings,results,sigma_k);
                 complementarity_iter = results.complementarity_iter;
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
-                W = [W,results.w_opt];
+                W = [W,results.w];
             end
 
             % number of iterations
@@ -455,7 +455,7 @@ classdef NosnocSolver < handle
             end
             fprintf('\n--------------------------------------------------------------------------------------\n');
             if settings.time_optimal_problem
-                T_opt = results.w_opt(obj.problem.ind_t_final);
+                T_opt = results.w(obj.problem.ind_t_final);
                 fprintf('Time optimal problem solved with T_opt: %2.4f.\n',T_opt);
                 fprintf('\n--------------------------------------------------------------------------------------\n');
             end

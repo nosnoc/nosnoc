@@ -52,9 +52,9 @@ end
 % Solve OCP
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
-if ~isempty(results.T_opt) && results.T_opt < 1e-2
+if ~isempty(results.T) && results.T < 1e-2
     warning('Something went wrong.')
-    disp(results.T_opt)
+    disp(results.T)
 end
 % disp(results.f_opt)
 end

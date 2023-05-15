@@ -179,19 +179,19 @@ solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
-q_opt = x_opt(1:4,:);
-v_opt = x_opt(5:8,:);
-t_opt = x_opt(9,:);
+q_opt = results.x(1:4,:);
+v_opt = results.x(5:8,:);
+t_opt = results.x(9,:);
 
 % Swtiching functions: Gap function, normal velocity, tangentail velocity
 c_eval = [];
-for ii = 1:length(x_opt)
+for ii = 1:length(results.x)
     % Note: Empty parameter argument as there are no global/time_varying params.
-    c_eval = [c_eval,full(model.c_fun(x_opt(:,ii),[]))];
+    c_eval = [c_eval,full(model.c_fun(results.x(:,ii),[]))];
 end
 %%  plots
 fig_num = 2;
-plotHopperStatesControls(x_opt,u_opt,fig_num);
+plotHopperStatesControls(results.x,results.u,fig_num);
 fig_num = 4;
 % tagnetinal and normal velocity
 plotHopperSwitchingFun(t_opt,c_eval,fig_num);
@@ -200,7 +200,7 @@ plotHopperSwitchingFun(t_opt,c_eval,fig_num);
 if 0 
 figure
 % slip complement
-u_normalized = [u_opt(3,:),nan]./max(u_opt(3,:));
+u_normalized = [results.u(3,:),nan]./max(results.u(3,:));
 slip_cc = u_normalized .*c_eval(1,1:N_FE:end);
 plot(c_eval(1,1:N_FE:end));
 hold on 

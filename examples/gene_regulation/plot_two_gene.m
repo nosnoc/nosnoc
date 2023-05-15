@@ -29,11 +29,11 @@ function plot_two_gene(results, arrows)
 % Warning plotting arrow is _very_ slow because matlab is weird.
     hold on
     for result=results
-        plot(result.x_res(1,:), result.x_res(2,:));
+        plot(result.x(1,:), result.x(2,:));
         if arrows
-            dx = gradient(result.x_res(1,:));
-            dy = gradient(result.x_res(2,:));
-            quiv = quiver(result.x_res(1,:),result.x_res(2,:),dx,dy,10^-10);
+            dx = gradient(result.x(1,:));
+            dy = gradient(result.x(2,:));
+            quiv = quiver(result.x(1,:),result.x(2,:),dx,dy,10^-10);
 
             % Hack to get arrows
             U = quiv.UData;

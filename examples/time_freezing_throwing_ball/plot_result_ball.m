@@ -32,7 +32,7 @@ unfold_struct(settings,'caller')
 d = 3;
 
 obj = full(results.f);
-w_opt = full(results.x);
+w_opt = full(results.w);
 
 %  Colors
 blue = [0 0.4470 0.7410];
@@ -44,52 +44,6 @@ n = n_x+n_u;
 nn = n-1;
 tgrid = linspace(0, T, N_stages+1);
 tgrid_z = linspace(0, T, N_stages);
-%% read resultsutions
-
-diff_states = w_opt(ind_x);
-controls = w_opt([ind_u{:}]);
-alg_states = w_opt(ind_z_all);
-
-x_opt_s = cellfun(@(x) w_opt(x), problem.ind_x, 'uni', 0);
-theta_opt_s = cellfun(@(theta) w_opt(theta), problem.ind_theta, 'uni', 0);
-lambda_opt_s = cellfun(@(lam) w_opt(lam), problem.ind_lam, 'uni', 0);
-mu_opt_s = cellfun(@(mu) w_opt(mu), problem.ind_mu, 'uni', 0);
-
-% differential states
-x_opt = cell(n_x, 1);
-x_opt_flat = cell(n_x, 1);
-for i = 1:n_x
-    x_opt{i} = cellfun(@(x) x(i), x_opt_s);
-    x_opt_flat{i} = reshape(x_opt{i}, prod(size(x_opt{i})), 1);
-end
-n_z = n_z_all;
-% convex multiplers
-for i = 1:n_theta
-    eval( ['theta' num2str(i) '_opt = alg_states(' num2str(i) ':n_z+n_z*(d-1):end);']);
-    %     eval( ['theta' num2str(i) '_opt = alg_states(' num2str(i) ':n_z:end);']);
-end
-% lambdas
-for i = 1:n_theta
-    %     eval( ['lambda' num2str(i) '_opt = alg_states(' num2str(i+n_theta) ':n_z+n_z*d:end);']);
-    eval( ['lambda' num2str(i) '_opt = alg_states(' num2str(i+n_theta) ':n_z+n_z*(d-1):end);']);
-end
-% mu
-for i = 1:n_sys
-    %     eval( ['mu_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*d:end);']);
-    eval( ['mu' num2str(i) '_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*(d-1):end);']);
-end
-
-for i = 1:n_u
-    %     eval( ['mu_opt = alg_states(' num2str(i+2*n_theta) ':n_z+n_z*d:end);']);
-    eval( ['u' num2str(i) '_opt = controls(' num2str(i) ':n_u:end);']);
-end
-
-if use_fesd
-    h_opt = w_opt(ind_h);
-    tgrid = (cumsum([0;h_opt]));
-    tgrid_z = cumsum(h_opt)';
-end
-
 
 %%
 if strcmp(mpcc_mode, 'Sholtes_eq')

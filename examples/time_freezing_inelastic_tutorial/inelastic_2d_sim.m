@@ -43,11 +43,11 @@ settings.use_previous_solution_as_initial_guess = 0;
 [results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
-qx = x_res(1,:);
-qy = x_res(2,:);
-vx = x_res(3,:);
-vy = x_res(4,:);
-t_opt = x_res(5,:);
+qx = results.x(1,:);
+qy = results.x(2,:);
+vx = results.x(3,:);
+vy = results.x(4,:);
+t_opt = results.x(5,:);
 figure
 subplot(121)
 plot(qx,qy);
@@ -68,28 +68,28 @@ ylabel('$v$','interpreter','latex');
 % [qx(end),qy(end),t_opt(end)]
 
 %%
-alpha1 = alpha_res(1,:);
-alpha2 = alpha_res(2,:);
-alpha3 = alpha_res(3,:);
+alpha1 = results.alpha(1,:);
+alpha2 = results.alpha(2,:);
+alpha3 = results.alpha(3,:);
 theta1 = alpha1+(1-alpha1).*(alpha2);
 alpha_aux = (1-alpha1).*(1-alpha2);
 theta2 = alpha_aux.*(1-alpha3);
 theta3 = alpha_aux.*(alpha3);
 figure;
 subplot(131)
-plot(t_grid,[theta1,nan])
+plot(results.t_grid,[theta1,nan])
 xlabel('$\tau$','interpreter','latex');
 ylabel(['$\theta_1$'],'interpreter','latex');
 grid on
 ylim([-0.1 1.1]);
 subplot(132)
-plot(t_grid,[theta2,nan])
+plot(results.t_grid,[theta2,nan])
 xlabel('$\tau$','interpreter','latex');
 ylabel(['$\theta_2$'],'interpreter','latex');
 grid on
 ylim([-0.1 1.1]);
 subplot(133)
-plot(t_grid,[theta3,nan])
+plot(results.t_grid,[theta3,nan])
 xlabel('$\tau$','interpreter','latex');
 ylabel(['$\theta_3$'],'interpreter','latex');
 grid on
@@ -97,9 +97,9 @@ ylim([-0.1 1.1]);
 %% speed of time
 figure
 subplot(121)
-plot(t_grid,t_opt)
+plot(results.t_grid,t_opt)
 hold on
-plot(t_grid,t_grid,'k--')
+plot(results.t_grid,results.t_grid,'k--')
 grid on
 xlabel('$\tau$','interpreter','latex');
 ylabel('$t$','interpreter','latex');

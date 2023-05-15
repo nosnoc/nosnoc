@@ -19,6 +19,7 @@ settings.n_s = 2;
 % MPCC Method
 settings.N_homotopy = 7;
 settings.homotopy_update_rule = 'superlinear';
+settings.opts_casadi_nlp.ipopt.max_iter = 1000;
 % Discretization parameters
 model.N_stages = 30; % number of control intervals
 model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
@@ -102,11 +103,11 @@ solver = NosnocSolver(model, settings);
 %% plots
 % unfold structure to workspace of this script
 unfold_struct(results,'base');
-x1_opt = x_opt(1,:);
-v1_opt= x_opt(2,:);
-x2_opt= x_opt(3,:);
-v2_opt= x_opt(4,:);
-I_opt= x_opt(5,:);
+x1_opt = results.x(1,:);
+v1_opt= results.x(2,:);
+x2_opt= results.x(3,:);
+v2_opt= results.x(4,:);
+I_opt= results.x(5,:);
 
 figure
 subplot(411)
@@ -133,8 +134,8 @@ xlabel('$t$','Interpreter','latex')
 grid on
 % t_grid_u = t_grid_u';
 subplot(414)
-u_opt = [u_opt,nan];
-stairs(t_grid_u,u_opt);
+results.u = [results.u,nan];
+stairs(t_grid_u,results.u);
 ylabel('$u(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on

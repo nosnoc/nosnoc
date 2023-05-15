@@ -42,7 +42,7 @@ import casadi.*
 [settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;                            
 settings.irk_scheme = IRKSchemes.RADAU_IIA;     
-settings.irk_representation = 'differential';
+settings.irk_representation = IrkRepresentation.differential_lift_x;
 settings.print_level = 2;
 settings.use_fesd = 1;
 settings.mpcc_mode = 'Scholtes_ineq';

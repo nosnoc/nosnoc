@@ -36,7 +36,7 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontaneous switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-switching_case = 'sliding_mode'; 
+switching_case = 'leave_sliding_mode'; 
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
 %% NOSNOC settings
 [settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
@@ -68,7 +68,7 @@ switch switching_case
         [results,stats] = integrator_fesd(model,settings);
         %
         figure
-        plot(results.t_grid,results.x_res)
+        plot(results.t_grid,results.x)
         grid on
         xlabel('$t$','Interpreter','latex')
         ylabel('$x(t)$','Interpreter','latex')
@@ -85,7 +85,7 @@ switch switching_case
         [results,stats] = integrator_fesd(model,settings);
         %
         figure
-        plot(results.t_grid,results.x_res)
+        plot(results.t_grid,results.x)
         grid on
         xlabel('$t$','Interpreter','latex')
         ylabel('$x(t)$','Interpreter','latex')
@@ -101,14 +101,14 @@ switch switching_case
         model.F = [f_1 f_2];
         % implcit methods more accurate, explicit Euler enables "random"
         % leaving
-        settings.irk_scheme = 'Explicit-RK';
+        settings.irk_scheme = 'EXPLICIT_RK';
         settings.n_s = 1;
         model.N_finite_elements = 3; % set 4, 5 for different outcomes
         settings.use_previous_solution_as_initial_guess = 1;
         [results,stats] = integrator_fesd(model,settings);
         %
         figure
-        plot(results.t_grid,results.x_res)
+        plot(results.t_grid,results.x)
         grid on
         xlabel('$t$','Interpreter','latex')
         ylabel('$x(t)$','Interpreter','latex')
@@ -129,7 +129,7 @@ switch switching_case
         [results,stats] = integrator_fesd(model,settings);
         %
         figure
-        plot(results.t_grid,results.x_res(1,:))
+        plot(results.t_grid,results.x(1,:))
         grid on
         xlabel('$t$','Interpreter','latex')
         ylabel('$x(t)$','Interpreter','latex')

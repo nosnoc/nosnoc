@@ -71,13 +71,13 @@ settings.use_previous_solution_as_initial_guess = 1;
 [results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
-p1 = x_res(1,:);
-p2 = x_res(2,:);
-p3 = x_res(3,:);
-v1 = x_res(4,:);
-v2 = x_res(5,:);
-v3 = x_res(6,:);
-t_opt = x_res(7,:);
+p1 = results.x(1,:);
+p2 = results.x(2,:);
+p3 = results.x(3,:);
+v1 = results.x(4,:);
+v2 = results.x(5,:);
+v3 = results.x(6,:);
+t_opt = results.x(7,:);
 %%
 figure
 subplot(121)

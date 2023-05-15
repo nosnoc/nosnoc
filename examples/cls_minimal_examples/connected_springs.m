@@ -59,13 +59,12 @@ settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
 [results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
-unfold_struct(results,'base');
-qx = x_res(1,:);
-qy = x_res(2,:);
-vx = x_res(3,:);
-vy = x_res(4,:);
+qx = results.x(1,:);
+qy = results.x(2,:);
+vx = results.x(3,:);
+vy = results.x(4,:);
 if settings.time_freezing
-t_opt = x_res(5,:);
+t_opt = results.x(5,:);
 else
     t_opt = results.t_grid;
 end
@@ -90,9 +89,9 @@ ylabel('$v$','interpreter','latex');
 
 %%
 if settings.time_freezing
-alpha1 = alpha_res(1,:);
-alpha2 = alpha_res(2,:);
-alpha3 = alpha_res(3,:);
+alpha1 = results.alpha(1,:);
+alpha2 = results.alpha(2,:);
+alpha3 = results.alpha(3,:);
 theta1 = alpha1+(1-alpha1).*(alpha2);
 alpha_aux = (1-alpha1).*(1-alpha2);
 theta2 = alpha_aux.*(1-alpha3);

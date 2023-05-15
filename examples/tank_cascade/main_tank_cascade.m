@@ -21,17 +21,15 @@ model.T = 100;    % yime horizon
 %% Solve OCP via nosnoc
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
-%% Get variables into main workspace
-unfold_struct(results,'base');
 %% Read and plot Result 
 figure
 subplot(211)
-plot(t_grid,x_opt);
+plot(results.t_grid,results.x);
 hold on
 xlabel('$t$','interpreter','latex');
 ylabel('$L(t)$','interpreter','latex');
 subplot(212)
-stairs(t_grid_u,[nan*ones(n_u,1),u_opt]');
+stairs(results.t_grid,[nan*ones(n_u,1),results.u]');
 hold on
 xlabel('$t$','interpreter','latex');
 ylabel('$u(t)$','interpreter','latex');

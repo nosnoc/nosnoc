@@ -40,9 +40,9 @@ settings.use_previous_solution_as_initial_guess = 0;
 [results,stats,model] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
-qx = x_res(1,:); qy = x_res(2,:);
-vx = x_res(3,:); vy = x_res(4,:);
-t_opt = x_res(5,:);
+qx = results.x(1,:); qy = results.x(2,:);
+vx = results.x(3,:); vy = results.x(4,:);
+t_opt = results.x(5,:);
 figure
 subplot(121)
 plot(qx,qy,'LineWidth',2.5);

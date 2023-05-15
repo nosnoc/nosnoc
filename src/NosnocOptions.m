@@ -205,6 +205,9 @@ classdef NosnocOptions < handle
         elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
 
         right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
+
+        % Output options
+        store_integrator_step_results(1,1) logical = 0
     end
 
     properties(Dependent)

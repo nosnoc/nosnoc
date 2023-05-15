@@ -121,13 +121,13 @@ solver = NosnocSolver(model, settings);
 % [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k); % (experimental, projects and fixes active set at solution and solves NLP)
 %% read and plot results
 unfold_struct(results,'base');
-p1 = x_opt(1,:);
-p2 = x_opt(2,:);
-p3 = x_opt(3,:);
-v1 = x_opt(4,:);
-v2 = x_opt(5,:);
-v3 = x_opt(6,:);
-t_opt = x_opt(7,:);
+p1 = results.x(1,:);
+p2 = results.x(2,:);
+p3 = results.x(3,:);
+v1 = results.x(4,:);
+v2 = results.x(5,:);
+v3 = results.x(6,:);
+t_opt = results.x(7,:);
 
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
@@ -226,7 +226,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 
 subplot(133)
-stairs(t_opt(1:N_FE:end),[u_opt,nan],'LineWidth',1.5);
+stairs(t_opt(1:N_FE:end),[results.u,nan],'LineWidth',1.5);
 
 % legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
 grid on

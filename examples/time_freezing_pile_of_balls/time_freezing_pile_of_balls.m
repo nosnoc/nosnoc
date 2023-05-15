@@ -99,19 +99,17 @@ model.x0 = x0;
 model.f_c = f_c;
 %% Call nosnoc Integrator
 [results,stats,model] = integrator_fesd(model,settings);
-%% read and plot results
-unfold_struct(results,'base');
 %% velocity plot
-q = x_res(1:n_q,:);
-v = x_res(n_q+1:end-1,:);
-t_phy = x_res(end,:);
+q = results.x(1:n_q,:);
+v = results.x(n_q+1:end-1,:);
+t_phy = results.x(end,:);
 tt = 0:h:T_sim;
 %% animation
 hh1 = linspace(wall_left-3,wall_right+3,5);
 hh2 = linspace(wall_down,wall_up,5);
 q_max = max(q(:));
 ind = diff(t_phy)/h>0.1;
-q = x_res(1:n_q,ind);
+q = results.x(1:n_q,ind);
 time = t_phy(ind);
 %%
 delete impacting_balls

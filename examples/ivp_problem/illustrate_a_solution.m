@@ -28,9 +28,9 @@ model.f_q_T = (x-5/3)^2;
 
 %%
 t_grid = results.t_grid;
-x_res = results.x_res;
-lambda_res = results.lambda_res;
-mu_res = results.mu_res;
+x_res = results.x;
+lambda_res = results.lam;
+mu_res = results.mu;
 mu_res = min(x_res,-x_res);
 lambda_1 = x_res - mu_res;
 lambda_2 = -x_res - mu_res;

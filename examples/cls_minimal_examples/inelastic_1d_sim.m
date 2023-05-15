@@ -12,7 +12,7 @@ settings.N_homotopy = 15;
 settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
-settings.sigma_0 = 1;
+settings.sigma_0 = 10;
 settings.mpcc_mode = "Scholtes_ineq";
 % some new verbose options for debuging
 settings.print_details_if_infeasible = 0;
@@ -39,8 +39,8 @@ model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 
-%% Simulation settings
-N_FE = 6*1;
+%% Simulation setings
+N_FE = 6;
 T_sim = 0.8;
 N_sim = 1;
 
@@ -52,9 +52,8 @@ settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
 [results,stats,model,settings,solver] = integrator_fesd(model,settings);
 %% read and plot results
-unfold_struct(results,'base');
-qx = x_res(1,:);
-vx = x_res(2,:);
+qx = results.x(1,:);
+vx = results.x(2,:);
 
 t_s = sqrt(2*x0(1)/g);
 tt1 = linspace(0,t_s,100);
@@ -75,12 +74,12 @@ Lambda_star = v2(1)-v1(end);
 %%
 figure
 subplot(311)
-plot(t_grid,qx);
+plot(results.t_grid,qx);
 hold on
 plot(tt1,q1,'k')
 plot(tt2,q2,'k')
 legend({'$q$ - numerical','$q$ - analytic'},'interpreter','latex');
-xlim([0 t_grid(end)])
+xlim([0 results.t_grid(end)])
 ylim([-0.1 x0(1)+0.1])
 grid on
 ylabel('$q$','interpreter','latex');
@@ -91,7 +90,7 @@ plot(results.all_res.t_with_impulse, results.all_res.x_with_impulse(2,:));
 hold on
 plot(tt1,v1,'k')
 plot(tt2,v2,'k')
-plot(t_grid,vx,'b.','MarkerSize',6);
+plot(results.t_grid,vx,'b.','MarkerSize',6);
 legend({'$q$ - numerical','$q$ - analytic'},'interpreter','latex');
 ylim([-3 3])
 grid on
@@ -99,21 +98,21 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 subplot(313)
 if settings.no_initial_impacts == 1
-    stem(t_grid,[nan,results.all_res.Lambda_normal_opt,nan])
+    stem(results.t_grid,[nan,results.Lambda_normal,nan])
 else
-    stem(t_grid,[results.all_res.Lambda_normal_opt,nan])
+    stem(results.t_grid,[results.Lambda_normal,nan])
 end
 hold on
 yline(Lambda_star,'k--')
-xlim([-0.01 t_grid(end)])
-ylim([-0.1 max([results.all_res.Lambda_normal_opt,Lambda_star])+1])
+xlim([-0.01 results.t_grid(end)])
+ylim([-0.1 max([results.Lambda_normal,Lambda_star])+1])
 grid on
 legend({'$\Lambda$ - numerical','$\Lambda$ - analytic'},'interpreter','latex');
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda$','interpreter','latex');
 
 if N_sim == 1
-    fprintf('Impulse error %2.2e \n',abs(max(results.all_res.Lambda_normal_opt)-Lambda_star))
+    fprintf('Impulse error %2.2e \n',abs(max(results.Lambda_normal)-Lambda_star))
     fprintf('position error %2.2e \n',abs(q2(end)-qx(end)))
     fprintf('velocity error %2.2e \n',abs(v2(end)-vx(end)))
 end
