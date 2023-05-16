@@ -380,7 +380,7 @@ classdef NosnocSolver < handle
                 end
                 fprintf('%d\t%6.2e\t %6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.3f \t %d \t %s \n',...
                     ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
-                    stats.objective(end), stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
+                    solver_stats.iterations.obj(end), stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
             elseif strcmp(obj.settings.nlpsol, 'snopt')
                 % TODO: Findout snopt prim du inf log!
                 inf_pr = nan;
