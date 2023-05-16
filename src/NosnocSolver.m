@@ -447,11 +447,11 @@ classdef NosnocSolver < handle
             if stats.cpu_time_total < 60
                 fprintf('H. iters\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter \tComp. res.\n');
                 fprintf('%d\t\t\t\t%2.2f\t\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t%2.2e\t\t\t\t%2.2e\n',...
-                    stats.homotopy_iterations,stats.cpu_time_total,max(stats.cpu_time),min(stats.cpu_time),stats.complementarity_stats(end));
+                    stats.homotopy_iterations, stats.cpu_time_total, max(stats.cpu_time),min(stats.cpu_time), stats.complementarity_stats(end));
             else
                 fprintf('H. iters\t CPU Time (m)\t Max. CPU (m)/iter\tMin. CPU (m)/iter \tComp. res.\n');
                 fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e \n',...
-                    stats.homotopy_iterations,stats.cpu_time_total/60,max(stats.cpu_time)/60,min(stats.cpu_time)/60,stats.complementarity_stats(end));
+                    stats.homotopy_iterations,stats.cpu_time_total/60, max(stats.cpu_time)/60, min(stats.cpu_time)/60, stats.complementarity_stats(end));
             end
             fprintf('\n--------------------------------------------------------------------------------------\n');
             if settings.time_optimal_problem

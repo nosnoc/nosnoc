@@ -272,8 +272,7 @@ classdef NosnocProblem < NosnocFormulationObject
                 model.ubv_global,...
                 model.v0_global)
 
-            % TODO Rename
-            obj.createPrimalVariables();
+            obj.create_primal_variables();
 
             obj.createComplementarityConstraints();
 
@@ -521,17 +520,17 @@ classdef NosnocProblem < NosnocFormulationObject
 
             obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
 
-            if dims.n_p_global > 0;
+            if dims.n_p_global > 0
                 obj.p0 = [obj.p0; model.p_global_val];
             end
 
-            if dims.n_p_time_var > 0;
+            if dims.n_p_time_var > 0
                 obj.p0 = [obj.p0; model.p_time_var_val];
             end
         end
 
         % TODO this should be private
-        function createPrimalVariables(obj)
+        function create_primal_variables(obj)
             import casadi.*
             fe0 = FiniteElementZero(obj.settings, obj.dims, obj.model);
             obj.fe0 = fe0;
