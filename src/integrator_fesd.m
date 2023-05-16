@@ -153,17 +153,18 @@ for ii = 1:model.N_sim
                 results.extended.(name) = [];
             end
         end
-        results.x = [x0];
-        results.extended.x = [x0];
+        results.x = x0;
+        results.extended.x = x0;
         results.s_sot = [];
-        results.x_with_impulse = [x0];
-        results.t_with_impulse = [0];
+        results.x_with_impulse = x0;
+        results.t_with_impulse = 0;
     end
 
     if stats.converged == 0
         % TODO: return some infeasibility status
         warning(['integrator_fesd: did not converge in step ', num2str(ii)])
         converged = [converged, stats.converged];
+        keyboard
     elseif print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
             ii, model.N_sim,simulation_time_pased, model.T_sim, time_per_iter(end));
@@ -232,14 +233,14 @@ for ii = 1:model.N_sim
         xlim([0 T_sim]);
         ylabel('$x(t)$','Interpreter','latex');
         if settings.time_freezing
-            plot(res.x(end,:),res.x(1:end-1,:));
-            xlabel('$t$ [phyisical time]','Interpreter','latex');
-            ylim([min(min(res.x(1:end-1,:)))-0.3 max(max(res.x(1:end-1,:)))+0.3])
+            plot(results.x(end,:), results.x(1:end-1, :));
+            xlabel('$t$ [phyisical time]', 'Interpreter', 'latex');
+            ylim([min(min(results.x(1:end-1, :)))-0.3 max(max(results.x(1:end-1, :)))+0.3])
         else
-            t_temp = [0,cumsum(h_vec)'];
-            plot(t_temp,res.x(:,1:end));
-            xlabel('$t$','Interpreter','latex');
-            ylim([min(res.x(:))-0.3 max(res.x(:))+0.3])
+            t_temp = [0, cumsum(results.h)'];
+            plot(t_temp, results.x(:, 1:end));
+            xlabel('$t$', 'Interpreter', 'latex');
+            ylim([min(results.x(:))-0.3 max(results.x(:))+0.3])
         end
     end
 end
