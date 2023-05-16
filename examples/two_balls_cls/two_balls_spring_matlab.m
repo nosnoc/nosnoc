@@ -1,4 +1,4 @@
-function [t_grid,x_traj,n_bounces] = two_balls_spring_matlab(T_sim,x0,e,tol)
+function [t_grid,x_traj,n_bounces, lambda_normal] = two_balls_spring_matlab(T_sim,x0,e,tol)
 
 tstart = 0;
 tfinal = T_sim;
@@ -14,14 +14,14 @@ yeout = [];
 ieout = [];
 
 mode = 0;
-mode_opt = [mode];
+mode_opt = mode;
 n_bounces = 0;
 
 % Solve until the first terminal event.
 t = tstart;
 while abs(t(end)-tfinal)>tol
     if abs(tstart-tfinal)>tol
-        [t,y,te,ye,ie] = ode45(@(t,y) twospring_dynamics(y),[tstart tfinal],x0,options1);
+        [t,y,te,ye,ie] = ode15s(@(t,y) twospring_dynamics(y),[tstart tfinal],x0,options1);
         teout = [teout; te];          % Events at tstart are never reported.
         yeout = [yeout; ye];
         t_grid = [t_grid ;t];
@@ -66,7 +66,10 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 fprintf('Number of bounces: %d \n',n_bounces);
 subplot(313)
-stem(t_grid,[nan;diff(x_traj(:,3))])
+lambda_normal = [0;diff(x_traj(:,3))];
+lambda_normal(abs(lambda_normal) < 2) = 0;
+
+stem(t_grid,lambda_normal)
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');

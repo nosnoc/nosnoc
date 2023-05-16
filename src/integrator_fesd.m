@@ -28,6 +28,7 @@
 %
 %
 % TODO: remove varargout / varargin and make API clear!
+%    - seperate creation and call!
 % Examples of calling the function
 % [results] = integrator_fesd(model,settings);
 % [results,stats] = integrator_fesd(model,settings);
@@ -82,6 +83,7 @@ if exist('initial_guess', 'var')
     [~, w] = unique(initial_guess.t_grid, 'stable');
     initial_guess.t_grid = initial_guess.t_grid(w);
     initial_guess.x_traj = initial_guess.x_traj(w, :);
+    initial_guess.lambda_normal_traj = initial_guess.lambda_normal_traj(w, :);
 end
 
 
@@ -104,6 +106,7 @@ for ii = 1:model.N_sim
     if exist('initial_guess', 'var')
         t_guess = t_current + cumsum([0; model.h_k * ones(model.N_finite_elements, 1)]);
         x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess,'makima');
+        lambda_normal_guess = interp1(initial_guess.t_grid, initial_guess.lambda_normal_traj, t_guess(2:end-1), 'makima');
         % 
         x_init = cell(1, dims.N_finite_elements);
         y_gap_init = cell(1, dims.N_finite_elements);
@@ -118,20 +121,20 @@ for ii = 1:model.N_sim
             ind_v = dims.n_q + 1: 2*dims.n_q;
             solver.set('lambda_normal', {0});
             % Note : set this to zero
-            L_vn_init = {0*(x_init{end}(ind_v(1)) + model.e * x_init{end-1}(ind_v(1)))};
+            L_vn_init = {(x_init{end}(ind_v(1)) + model.e * x_init{end-1}(ind_v(1)))};
             solver.set('L_vn', L_vn_init);
             % 
-            diff_x = x_guess(1, :) - x_guess(end, :);
-            diff_v = diff(x_guess(:,ind_v(1)));
-            Lambda_normal_init = max(abs(diff_v));
-            % Note: this is a bit hacky..
-            if Lambda_normal_init < 2
-                Lambda_normal_init = 0.0;
-            else
-%                 keyboard
-            end
-            solver.set('Lambda_normal', {Lambda_normal_init});
-            disp(['init Lambda_normal', num2str(Lambda_normal_init)]);
+            % diff_x = x_guess(1, :) - x_guess(end, :);
+            % diff_v = diff(x_guess(:,ind_v(1)));
+%             Lambda_normal_init = max(abs(diff_v));
+%             % Note: this is a bit hacky..
+%             if Lambda_normal_init < 2
+%                 Lambda_normal_init = 0.0;
+%             else
+% %                 keyboard
+%             end
+            solver.set('Lambda_normal', {lambda_normal_guess});
+            % disp(['init Lambda_normal', num2str(lambda_normal_guess)]);
             solver.set('y_gap', y_gap_init);
         end
     end
@@ -164,7 +167,7 @@ for ii = 1:model.N_sim
         % TODO: return some infeasibility status
         warning(['integrator_fesd: did not converge in step ', num2str(ii)])
         converged = [converged, stats.converged];
-        keyboard
+        % keyboard
     elseif print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
             ii, model.N_sim,simulation_time_pased, model.T_sim, time_per_iter(end));
@@ -213,9 +216,7 @@ for ii = 1:model.N_sim
 
     if settings.dcs_mode == DcsMode.CLS
         results.x_with_impulse = [results.x_with_impulse, res.x_with_impulse(:,2:end)];
-
         % TODO maybe make solver take t0 and T_final as param?
-        
         results.t_with_impulse = [results.t_with_impulse, t_current + res.t_with_impulse(2:end)];
     end
 
@@ -235,13 +236,12 @@ for ii = 1:model.N_sim
         if settings.time_freezing
             plot(results.x(end,:), results.x(1:end-1, :));
             xlabel('$t$ [phyisical time]', 'Interpreter', 'latex');
-            ylim([min(min(results.x(1:end-1, :)))-0.3 max(max(results.x(1:end-1, :)))+0.3])
         else
-            t_temp = [0, cumsum(results.h)'];
+            t_temp = [0, cumsum(results.h)];
             plot(t_temp, results.x(:, 1:end));
             xlabel('$t$', 'Interpreter', 'latex');
-            ylim([min(results.x(:))-0.3 max(results.x(:))+0.3])
         end
+        ylim([min(min(results.x(1:end-1, :)))-0.3 max(max(results.x(1:end-1, :)))+0.3])
     end
 end
 total_time = sum(time_per_iter);

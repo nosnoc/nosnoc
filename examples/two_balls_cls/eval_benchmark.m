@@ -6,11 +6,11 @@ benchmark_globals;
 ref_sol_filename = "two_balls_ref_sol.mat";
 
 %% create reference solution
-% [t_grid_ref, x_traj_ref, n_bounces_ref] = two_balls_spring_matlab(T_sim, x0, e, 1e-12);
-% save(ref_sol_filename, "t_grid_ref", "x_traj_ref", "n_bounces_ref");
+[t_grid_ref, x_traj_ref, n_bounces_ref] = two_balls_spring_matlab(T_sim, x0, e, 1e-16);
+save(ref_sol_filename, "t_grid_ref", "x_traj_ref", "n_bounces_ref");
 
 %% load reference solution
-load(ref_sol_filename)
+% load(ref_sol_filename)
 
 %%
 x_ref = x_traj_ref(end, :)';
@@ -25,20 +25,27 @@ i = 1;
 for n_s = NS_VALUES 
     errors{i} = [];
     h_values{i} = [];
-    labels{i} = strcat('$n_s= $', num2str(n_s));
     for N_sim = NSIM_VALUES
-        results_filename = strcat("two_balls_ns_", num2str(n_s), '_Nsim_', num2str(N_sim));
-        load(results_filename);
-        label = strcat('n_s', num2str(n_s), ' N_sim', num2str(N_sim));
-        if all(stats.converged)
-            disp(strcat(label, ' converged.'))
-            x_sim_end = results.x_res(:, end);
-            errors{i} = [errors{i}, max(abs(x_sim_end - x_ref))];
-            h_values{i} = [h_values{i}, T_sim/N_sim];
-        else
-            disp(strcat(label, ' failed.'))
+        for N_FE = NFE_VALUES
+            results_filename = get_results_filename(n_s, N_sim, N_FE, IRK_SCHEME);
+            try
+                load(results_filename);
+            catch
+                disp(strcat('result not available: ', results_filename))
+                continue
+            end
+            label = strcat('n_s', num2str(n_s), ' N_sim', num2str(N_sim));
+            if all(stats.converged)
+                x_sim_end = results.x(:, end);
+                errors{i} = [errors{i}, max(abs(x_sim_end - x_ref))];
+                h_values{i} = [h_values{i}, T_sim/(N_sim*N_FE)];
+                disp(strcat(results_filename, ' converged with error ', num2str(errors{i}(end), '%e')))
+            else
+                disp(strcat(results_filename, ' failed.'))
+            end
         end
     end
+    labels{i} = get_label(settings);
     i = i+1;
 end
 
@@ -52,9 +59,18 @@ for ii = 1:length(NS_VALUES)
     hold on
 end
 
-set(gca,'TickLabelInterpreter','latex')
+set(gca,'TickLabelInterpreter','latex');
+set(gca, 'YScale', 'log');
+set(gca, 'XScale', 'log');
 xlabel('$h$','interpreter','latex');
 ylabel('$E(T)$','interpreter','latex');
 grid on
 
-legend(labels, 'interpreter','latex','Location','southwest');
+legend(labels, 'interpreter','latex','Location','southeast');
+
+
+function label = get_label(settings)
+    if settings.irk_scheme == "GAUSS_LEGENDRE"
+        label = sprintf('Gauss-Legendre: %d', 2*settings.n_s);
+    end
+end

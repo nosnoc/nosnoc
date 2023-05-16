@@ -14,65 +14,73 @@ v = SX.sym('v',2);
 
 %% create reference MATLAB solution
 ref_sol_filename = "two_balls_guess_sol.mat";
-[t_grid_guess, x_traj_guess, n_bounces_guess] = two_balls_spring_matlab(1.1*T_sim, x0, e, 1e-3);
-save(ref_sol_filename, "t_grid_guess", "x_traj_guess", "n_bounces_guess");
+[t_grid_guess, x_traj_guess, n_bounces_guess, lambda_normal_guess] = two_balls_spring_matlab(1.1*T_sim, x0, e, 1e-3);
+save(ref_sol_filename, "t_grid_guess", "x_traj_guess", "n_bounces_guess", "lambda_normal_guess");
 % load(ref_sol_filename)
 
 %% run experiments
-N_FE = 2;
-
 for n_s = NS_VALUES
     for N_sim = NSIM_VALUES
-        results_filename = strcat("two_balls_ns_", num2str(n_s), '_Nsim_', num2str(N_sim));
-        %
-        model.M = eye(2);
-        model.x = [q;v];
-        model.e = e;
-        model.mu = 0;
-        model.x0 = x0;
-        model.f_v = [-m*g+k*(q(2)-q(1)-l);-m*g-k*(q(2)-q(1)-l)];
-        model.f_c = q(1)-R;
-        % settings
-        settings = NosnocOptions();
-        settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-        % settings.irk_representation = 'differential';
-        settings.n_s = n_s;
-        settings.print_level = 3;
-        % settings.N_homotopy = 8;
-        settings.cross_comp_mode = 3;
-        settings.dcs_mode = DcsMode.CLS;
-        settings.multiple_solvers = 0;
-        settings.mpcc_mode = "Scholtes_ineq";
-        settings.no_initial_impacts = 1;
-        settings.sigma_0 = 1e-1;
-        settings.homotopy_update_slope = 0.1;
-
-        %% Simulation settings
-        model.T_sim = T_sim;
-        model.N_FE = N_FE;
-        model.N_sim = N_sim;
-
-        %% Call nosnoc Integrator
-        initial_guess = struct();
-        initial_guess.x_traj = x_traj_guess;
-        initial_guess.t_grid = t_grid_guess;
-        settings.sigma_0 = 1e-3;
-        
-        [results, stats, model, settings, solver] = integrator_fesd(model, settings, [], initial_guess);
-
-        save(results_filename, "results", "stats", "settings")
-
-        clear model solver
+        for N_FE = NFE_VALUES
+            model.M = eye(2);
+            model.x = [q;v];
+            model.e = e;
+            model.mu = 0;
+            model.x0 = x0;
+            model.f_v = [-m*g+k*(q(2)-q(1)-l);-m*g-k*(q(2)-q(1)-l)];
+            model.f_c = q(1)-R;
+            % settings
+            settings = NosnocOptions();
+            settings.irk_scheme = IRK_SCHEME;
+            % settings.irk_representation = 'differential';
+            settings.n_s = n_s;
+            settings.print_level = 3;
+            % settings.N_homotopy = 8;
+            settings.cross_comp_mode = 3; % 1 or 3
+            settings.dcs_mode = DcsMode.CLS;
+            settings.multiple_solvers = 0;
+            settings.mpcc_mode = "Scholtes_ineq";
+            settings.no_initial_impacts = 1;
+            % settings.sigma_0 = 1e-2;
+            settings.sigma_N = 1e-11;
+            settings.comp_tol = 1e-11;
+            settings.gamma_h = 0.99;
+            % settings.homotopy_update_slope = 0.5;
+            settings.rho_h = (1/(T_sim / N_sim))*2;
+            settings.opts_casadi_nlp.ipopt.max_iter = 1500;
+            % settings.opts_casadi_nlp.ipopt.bound_push = 1e-5;
+            % settings.opts_casadi_nlp.ipopt.bound_frac = 1e-5;
+            % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
+    
+            %% Simulation settings
+            model.T_sim = T_sim;
+            model.N_FE = N_FE;
+            model.N_sim = N_sim;
+    
+            results_filename = get_results_filename(n_s, N_sim, N_FE, settings.irk_scheme);
+            %% Call nosnoc Integrator
+            initial_guess = struct();
+            initial_guess.x_traj = x_traj_guess;
+            initial_guess.t_grid = t_grid_guess;
+            initial_guess.lambda_normal_traj = lambda_normal_guess;
+            
+            % [results, stats, model, settings, solver] = integrator_fesd(model, settings, [], initial_guess);
+            [results, stats, model, settings, solver] = integrator_fesd(model, settings, []);
+    
+            save(results_filename, "results", "stats", "settings")
+    
+            clear model solver
+        end
     end
 end
 
 
 %% read and plot results
-unfold_struct(results,'base');
-q1 = x_res(1,:);
-q2 = x_res(2,:);
-v1 = x_res(3,:);
-v2 = x_res(4,:);
+q1 = results.x(1,:);
+q2 = results.x(2,:);
+v1 = results.x(3,:);
+v2 = results.x(4,:);
+t_grid = results.t_grid;
 
 %%
 figure
@@ -92,12 +100,12 @@ plot(t_grid,v1,'LineWidth',1.5);
 hold on
 plot(t_grid,v2,'LineWidth',1.5);
 xlim([0 t_grid(end)])
-% ylim([-max(abs([v1,v2]))-1.0 max(abs([v1,v2]))+1])
+ylim([-max(abs([v1,v2]))-1.0 max(abs([v1,v2]))+1])
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 subplot(313)
-Lambda_opt = [results.all_res.Lambda_normal_opt];
+Lambda_opt = [results.Lambda_normal];
 stem(t_grid(1:N_FE:end),[Lambda_opt,nan])
 hold on
 xlim([-0.01 t_grid(end)])
@@ -106,8 +114,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
 
 %% compare
-error = norm(x_traj_guess(end,:)'-x_res(:,end));
+error = norm(x_traj_guess(end,:)'-results.x(:,end));
 fprintf('Numerical error %2.2e \n',error);
-
 
 
