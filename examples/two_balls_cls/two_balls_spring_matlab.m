@@ -48,31 +48,47 @@ end
 mode_opt  = [mode_opt;mode];
 ieout = [ieout; ie];
 
+
+PLOT_LAMBDA = 0;
+n_subplot = 2;
+if PLOT_LAMBDA
+    n_subplot = n_subplot+1;
+end
+
 figure
-subplot(311)
+subplot(n_subplot, 1, 1)
 plot(t_grid,x_traj(:,1),'LineWidth',1.5)
 hold on
 plot(t_grid,x_traj(:,2),'LineWidth',1.5)
 grid on
 yline(0.2,'k-','LineWidth',1.5)
-ylabel('$q$','interpreter','latex');
-xlabel('$t$','interpreter','latex');
-subplot(312)
+ylabel('$q$ [m]','interpreter','latex');
+xlabel('$t$ [s]','interpreter','latex');
+set(gca,'TickLabelInterpreter','latex');
+
+subplot(n_subplot, 1, 2)
 plot(t_grid,x_traj(:,3),'LineWidth',1.5)
 hold on
 plot(t_grid,x_traj(:,4),'LineWidth',1.5)
 grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v$','interpreter','latex');
+xlabel('$t$ [s]','interpreter','latex');
+ylabel('$v$ [m/s]','interpreter','latex');
 fprintf('Number of bounces: %d \n',n_bounces);
-subplot(313)
+set(gca,'TickLabelInterpreter','latex');
+legend('ball 1', 'ball 2', 'interpreter','latex')
+
+
 lambda_normal = [0;diff(x_traj(:,3))];
 lambda_normal(abs(lambda_normal) < 2) = 0;
+if PLOT_LAMBDA
+    subplot(n_subplot, 1, 3)
+    stem(t_grid,lambda_normal)
+    grid on
+    xlabel('$t$','interpreter','latex');
+    ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
+    set(gca,'TickLabelInterpreter','latex');
+end
 
-stem(t_grid,lambda_normal)
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
 % --------------------------------------------------------------------------
 
     function [value,isterminal,direction] = events1(t,y)
