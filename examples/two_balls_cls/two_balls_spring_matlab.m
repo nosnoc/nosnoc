@@ -7,8 +7,8 @@ tfinal = T_sim;
 refine = 4;
 options1 = odeset('Events',@events1,'OutputSel',1,'RelTol',tol,'AbsTol',tol/10,'Refine',refine);
 
-t_grid = tstart;
-x_traj = x0.';
+t_grid = [];
+x_traj = [];
 teout = [];
 yeout = [];
 ieout = [];
@@ -29,6 +29,10 @@ while abs(t(end)-tfinal)>tol
     end
 
     if isequal(ie,1)
+        % strip pre impact
+        t_grid(end) = [];
+        x_traj(end, :) = [];
+
         if abs(te-tstart)<tol
             tstart = tfinal;
         else
@@ -47,7 +51,6 @@ end
 
 mode_opt  = [mode_opt;mode];
 ieout = [ieout; ie];
-
 
 PLOT_LAMBDA = 0;
 n_subplot = 2;

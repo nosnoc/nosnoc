@@ -1,6 +1,6 @@
 function results_filename = get_results_filename(n_s, N_sim, N_FE, irk_scheme, with_guess)
     results_folder = 'results';
-    if ~exists(results_folder, 7)
+    if ~exist(results_folder, 'dir')
         mkdir(results_folder)
     end
 
