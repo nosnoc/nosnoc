@@ -9,16 +9,8 @@ classdef NosnocDimensions < handle
         n_z_all
         n_z
         n_s
-        n_theta
         n_sys
-        m_vec
-        m_ind_vec
         n_c_sys
-        n_alpha
-        n_beta
-        n_theta_step
-        n_lambda_0
-        n_lambda_1
         n_f_sys
         n_p_global
         n_p_time_var

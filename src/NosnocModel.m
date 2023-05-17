@@ -23,6 +23,7 @@ classdef NosnocModel < handle
 
         % control
         u
+        u0
         lbu
         ubu
 
@@ -58,6 +59,9 @@ classdef NosnocModel < handle
         g_path_ub
         g_comp_path
         g_terminal
+
+        % Terminal time
+        T
 
         %----- DCS/time_freezing mode user input -----
         f_c  % Gap functions
@@ -156,7 +160,7 @@ classdef NosnocModel < handle
 
     methods
         function obj = NosnocModel()
-            dims = NosnocDimensions();
+            obj.dims = NosnocDimensions();
         end
 
         function vars = generate_vars(obj,settings)
@@ -168,18 +172,19 @@ classdef NosnocModel < handle
         end
 
         function verify_and_backfill(obj, settings)
-            if ~isempty(obj.x)
-                obj.dims.n_x = length(x);
+            import casadi.*
+            if size(obj.x, 1) ~= 0
+                obj.dims.n_x = length(obj.x);
                 % check  lbx
-                if ~isempty(obj.lbx)
-                    if length(model.lbx) ~= obj.dims.n_x
+                if size(obj.lbx, 1) ~= 0
+                    if length(obj.lbx) ~= obj.dims.n_x
                         error('nosnoc: The vector lbx, for the lower bounds of x has the wrong size.')
                     end
                 else
                     obj.lbx = -inf*ones(obj.dims.n_x,1);
                 end
                 % check ubx
-                if ~isempty(obj.ubx)
+                if size(obj.ubx, 1) ~= 0
                     if length(obj.ubx) ~= obj.dims.n_x
                         error('nosnoc: The vector ubx, for the upper bounds of x has the wrong size.')
                     end
@@ -191,10 +196,10 @@ classdef NosnocModel < handle
             end
 
             %% Check is u provided
-            if ~isempty(obj.u)
+            if size(obj.u, 1) ~= 0
                 obj.dims.n_u = length(obj.u);
                 % check  lbu
-                if ~isempty(obj.lbu)
+                if size(obj.lbu, 1) ~= 0
                     if length(obj.lbu) ~= obj.dims.n_u
                         error('nosnoc: The vector lbu, for the lower bounds of u has the wrong size.')
                     end
@@ -202,7 +207,7 @@ classdef NosnocModel < handle
                     obj.lbu = -inf*ones(obj.dims.n_u,1);
                 end
                 % check ubu
-                if ~isempty(obj.ubu)
+                if size(obj.ubu, 1) ~= 0
                     if length(obj.ubu) ~= obj.dims.n_u
                         error('nosnoc: The vector ubu, for the upper bounds of u has the wrong size.')
                     end
@@ -210,28 +215,28 @@ classdef NosnocModel < handle
                     obj.ubu = inf*ones(obj.dims.n_u,1);
                 end
                 % check u0
-                if ~isempty(obj.u0)
-                    if length(u0) ~= obj.dims.n_u
+                if size(obj.u0, 1) ~= 0
+                    if length(obj.u0) ~= obj.dims.n_u
                         error('nosnoc: The vector u0, for the initial guess of u has the wrong size.')
                     end
                 else
                     obj.u0 = 0*ones(obj.dims.n_u,1);
                 end
             else
-                obj.u = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+                obj.u = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
                 obj.u0 = [];
                 obj.dims.n_u = 0;
-                if print_level >=1
+                if settings.print_level >=1
                     fprintf('nosnoc: No control vector u is provided. \n')
                 end
                 obj.lbu = [];
                 obj.ubu = [];
             end
             %% Check if z is provided
-            if ~isempty(obj.z)
-                obj.dims.n_z = length(z);
+            if size(obj.z, 1) ~= 0
+                obj.dims.n_z = length(obj.z);
 
-                if ~isempty(obj.z0)
+                if size(obj.z0, 1) ~= 0
                     if length(obj.z0) ~= obj.dims.n_z
                         error('nosnoc: The vector z0, for the initial guess of z has the wrong size.')
                     end
@@ -239,7 +244,7 @@ classdef NosnocModel < handle
                     obj.z0 = zeros(obj.dims.n_z, 1);
                 end
 
-                if ~isempty(obj.lbz)
+                if size(obj.lbz, 1) ~= 0
                     if length(obj.lbz) ~= obj.dims.n_z
                         error('nosnoc: The vector lbz, for the lower bound of z has the wrong size.')
                     end
@@ -247,7 +252,7 @@ classdef NosnocModel < handle
                     obj.lbz = -inf*ones(obj.dims.n_z, 1);
                 end
 
-                if ~isempty(obj.ubz)
+                if size(obj.ubz, 1) ~= 0
                     if length(obj.ubz) ~= obj.dims.n_z
                         error('nosnoc: The vector ubz, for the lower bound of z has the wrong size.')
                     end
@@ -259,46 +264,46 @@ classdef NosnocModel < handle
                 obj.z0 = [];
                 obj.lbz = [];
                 obj.ubz = [];
-                obj.z = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+                obj.z = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
             end
             %% Global vars (i.e., variables that do not change with time)
-            if ~isempty(obj.v_global)
-                obj.obj.dims.n_v_global = length(obj.v_global);
-                if ~isempty(obj.v0_global)
-                    if length(obj.v0_global) ~= obj.dims.n_v_global
+            if size(obj.v_global, 1) ~= 0
+                n_v_global = length(obj.v_global);
+                if size(obj.v0_global, 1) ~= 0
+                    if length(obj.v0_global) ~= n_v_global
                         error('nosnoc: The vector v0_global, for the initial guess of v_global has the wrong size.')
                     end
                 else
-                    obj.v0_global = zeros(obj.dims.n_z, 1);
+                    obj.v0_global = zeros(n_v_global, 1);
                 end
 
-                if ~isempty(obj.lbv_global)
-                    if length(obj.lbv_global) ~= obj.dims.n_v_global
+                if size(obj.lbv_global, 1) ~= 0
+                    if length(obj.lbv_global) ~= n_v_global
                         error('nosnoc: The vector lbv_global, for the lower bound of v_global has the wrong size.')
                     end
                 else
-                    obj.lbv_global = -inf*ones(obj.dims.n_z, 1);
+                    obj.lbv_global = -inf*ones(n_v_global, 1);
                 end
 
-                if ~isempty(obj.ubv_global)
+                if size(obj.ubv_global, 1) ~= 0
                     if length(obj.ubv_global) ~= obj.dims.n_v_global
                         error('nosnoc: The vector ubv_global, for the upper bound of v_global has the wrong size.')
                     end
                 else
-                    obj.ubv_global = inf*ones(obj.dims.n_z, 1);
+                    obj.ubv_global = inf*ones(n_v_global, 1);
                 end
             else
-                obj.dims.n_v_global = 0;
-                obj.v_global = define_casadi_symbolic(casadi_symbolic_mode, '', 0);
+                n_v_global = 0;
+                obj.v_global = define_casadi_symbolic(settings.casadi_symbolic_mode, '', 0);
                 obj.v0_global = [];
                 obj.lbv_global = [];
                 obj.ubv_global = [];
             end
 
             %% Parameters (time variable and that do not change with time)
-            if ~isempty(obj.p_global)
+            if size(obj.p_global, 1) ~= 0
                 obj.dims.n_p_global = size(obj.p_global,1);
-                if ~isempty(obj.p_global_val)
+                if size(obj.p_global_val, 1) ~= 0
                     if size(obj.p_global_val,1) ~= obj.dims.n_p_global
                         error('nosnoc: User provided p_global_val has the wrong size.')
                     end
@@ -307,68 +312,58 @@ classdef NosnocModel < handle
                 end
             else
                 obj.dims.n_p_global = 0;
-                obj.p_global = define_casadi_symbolic(casadi_symbolic_mode,'',0);
+                obj.p_global = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
                 obj.p_global_val = [];
-                if print_level >= 1
+                if settings.print_level >= 1
                     fprintf('nosnoc: No global parameters given. \n')
                 end
             end
 
-            if ~isempty(obj.p_time_var)
+            if size(obj.p_time_var, 1) ~= 0
                 obj.dims.n_p_time_var = size(obj.p_time_var, 1);
-                if ~isempty(obj.p_time_var_val)
-                    if size(obj.p_time_var_val) ~= [obj.dims.n_p_time_var, N_stages]
+                if size(obj.p_time_var_val, 1) ~= 0
+                    if size(obj.p_time_var_val) ~= [obj.dims.n_p_time_var, obj.dims.N_stages]
                         error('nosnoc: User provided p_global_val has the wrong size.')
                     end
                 else
-                    obj.p_time_var_val = zeros(obj.dims.n_p_time_var, N_stages);
+                    obj.p_time_var_val = zeros(obj.dims.n_p_time_var, obj.dims.N_stages);
                 end
 
                 obj.p_time_var_stages = [];
-                for ii=1:N_stages
-                    var_full = define_casadi_symbolic(casadi_symbolic_mode, ['p_time_var_' num2str(ii)], obj.dims.n_p_time_var);
+                for ii=1:obj.dims.N_stages
+                    var_full = define_casadi_symbolic(settings.casadi_symbolic_mode, ['p_time_var_' num2str(ii)], obj.dims.n_p_time_var);
                     obj.p_time_var_stages = horzcat(obj.p_time_var_stages, var_full);
                 end
             else
                 obj.dims.n_p_time_var = 0;
-                obj.p_time_var = define_casadi_symbolic(casadi_symbolic_mode,'',0);
-                obj.p_time_var_stages = define_casadi_symbolic(casadi_symbolic_mode,'', [0, N_stages]);
-                obj.p_time_var_val = double.empty(0,N_stages);
-                if print_level >= 1
+                obj.p_time_var = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
+                obj.p_time_var_stages = define_casadi_symbolic(settings.casadi_symbolic_mode,'', [0, obj.dims.N_stages]);
+                obj.p_time_var_val = double.empty(0,obj.dims.N_stages);
+                if settings.print_level >= 1
                     fprintf('nosnoc: No time varying parameters given. \n')
                 end
             end
 
-            p = vertcat(p_global,p_time_var);
+            p = vertcat(obj.p_global,obj.p_time_var);
 
-            %% g_z: stage algebraic constraints
-            % TODO  long term: split up model_reformulation to allow f_alg to use the rest of stage Z
-            if ~isempty(obj.g_z)
-                obj.dims.n_g_z = length(obj.g_z);
-            else
-                obj.g_z = [];
-                obj.dims.n_g_z = 0;
-            end
             %% Stage and terminal costs check
-            if ~~isempty(obj.f_q)
-                if print_level >=1
+            if ~size(obj.f_q, 1) ~= 0
+                if settings.print_level >=1
                     fprintf('nosnoc: No stage cost is provided. \n')
                 end
-                %     eval(['f_q = ', casadi_symbolic_mode, '.zeros(1);'])
                 obj.f_q = 0;
             end
 
-            if ~isempty(obj.f_q_T)
+            if size(obj.f_q_T, 1) ~= 0
                 terminal_cost = 1;
             else
-                if print_level >=1
+                if settings.print_level >=1
                     fprintf('nosnoc: No terminal cost is provided. \n')
                 end
-                %     eval(['f_q_T = ', casadi_symbolic_mode, '.zeros(1);'])
                 obj.f_q_T = 0;
             end
             %% Least squares objective terms with variables references
-            if ~isempty(obj.lsq_x)
+            if size(obj.lsq_x, 1) ~= 0
                 if length(lsq_x)<3
                     error('nosnoc: In lsq_x either the least squares function, the reference of the weight matrix are missing.')
                 end
@@ -381,27 +376,27 @@ classdef NosnocModel < handle
 
                 n_x_ref_rows = size(lsq_x{2},1);
                 n_x_ref_cols = size(lsq_x{2},2);
-                if n_x_ref_cols == N_stages
+                if n_x_ref_cols == obj.dims.N_stages
                     fprintf('nosnoc: the provided reference for the differential states is time variable. \n');
                 elseif n_x_ref_cols == 1
                     % replaciate
                     fprintf('nosnoc: the provided reference for the differential states is constant over time. \n');
-                    lsq_x{2} = repmat(lsq_x{2},1,N_stages);
+                    lsq_x{2} = repmat(lsq_x{2},1,obj.dims.N_stages);
                 else
-                    fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,N_stages)
+                    fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,obj.dims.N_stages)
                     error('nosnoc: Please provide x_ref in lsq_x{1} with an appropaite size.')
                 end
                 x_ref_val = lsq_x{2};
-                x_ref = define_casadi_symbolic(casadi_symbolic_mode,'x_ref',n_x_ref_rows);
+                x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',n_x_ref_rows);
                 f_lsq_x = (lsq_x{1}-x_ref)'*lsq_x{3}*(lsq_x{1}-x_ref);
             else
-                x_ref = define_casadi_symbolic(casadi_symbolic_mode,'x_ref',1);
+                x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',1);
                 f_lsq_x = 0;
-                x_ref_val = zeros(1,N_stages);
+                x_ref_val = zeros(1,obj.dims.N_stages);
             end
 
             % least square terms for control inputs
-            if ~isempty(obj.lsq_u)
+            if size(obj.lsq_u, 1) ~= 0
                 if length(obj.lsq_u)<3
                     error('nosnoc: In lsq_u either the least squares function, the reference of the weight matrix are missing.')
                 end
@@ -413,28 +408,28 @@ classdef NosnocModel < handle
                 end
                 n_u_ref_rows = size(obj.lsq_u{2},1);
                 n_u_ref_cols = size(obj.lsq_u{2},2);
-                if n_u_ref_cols == N_stages
+                if n_u_ref_cols == obj.dims.N_stages
                     fprintf('nosnoc: the provided reference for the control inputs is time variable. \n');
                 elseif n_u_ref_cols == 1
                     % replaciate
                     fprintf('nosnoc: the provided reference for the control inputs is constant over time. \n');
-                    lsq_u{2} = repmat(lsq_u{2},1,N_stages);
+                    lsq_u{2} = repmat(lsq_u{2},1,obj.dims.N_stages);
                 else
-                    fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,N_stages)
+                    fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,obj.dims.N_stages)
                     error('nosnoc: Please provide u_ref in lsq_u{2} with an appropaite size.')
                 end
                 u_ref_val = lsq_u{2};
-                u_ref = define_casadi_symbolic(casadi_symbolic_mode,'u_ref',n_u_ref_rows);
+                u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',n_u_ref_rows);
                 f_lsq_u = (lsq_u{1}-u_ref)'*lsq_u{3}*(lsq_u{1}-u_ref);
             else
-                u_ref = define_casadi_symbolic(casadi_symbolic_mode,'u_ref',1);
+                u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',1);
                 f_lsq_u = 0;
-                u_ref_val = zeros(1,N_stages);
+                u_ref_val = zeros(1,obj.dims.N_stages);
             end
 
 
             % least square terms for control inputs
-            if ~isempty(obj.lsq_T)
+            if size(obj.lsq_T, 1) ~= 0
                 % sanity chkecs on the input
                 if length(obj.lsq_T)<3
                     error('nosnoc: In lsq_u either the least squares function, the reference or the weight matrix are missing.')
@@ -455,19 +450,19 @@ classdef NosnocModel < handle
                     error('nosnoc: Please provide a reference vector in lsq_T{2} with an appropaite size.')
                 end
                 x_ref_end_val = lsq_T{2};
-                x_ref_end = define_casadi_symbolic(casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
+                x_ref_end = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
                 f_lsq_T = (lsq_T{1}-x_ref_end)'*lsq_T{3}*(lsq_T{1}-x_ref_end);
             else
-                x_ref_end  = define_casadi_symbolic(casadi_symbolic_mode,'x_ref_end',1);
+                x_ref_end  = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',1);
                 f_lsq_T = 0;
                 x_ref_end_val = 0;
             end
 
             %% Inequality constraints check
-            if ~isempty(obj.g_path)
+            if size(obj.g_path, 1) ~= 0
                 g_path_constraint  = 1;
                 n_g_path = length(g_path);
-                if ~isempty(obj.g_path_lb)
+                if size(obj.g_path_lb, 1) ~= 0
                     if length(g_path_lb)~=n_g_path;
                         error('The user provided vector g_path_lb has the wrong size.')
                     end
@@ -475,7 +470,7 @@ classdef NosnocModel < handle
                     g_path_lb = -inf*ones(n_g_path,1);
                 end
 
-                if ~isempty(obj.g_path_ub)
+                if size(obj.g_path_ub, 1) ~= 0
                     if length(g_path_ub)~=n_g_path;
                         error('The user provided vector g_path_ub has the wrong size.')
                     end
@@ -486,14 +481,14 @@ classdef NosnocModel < handle
             else
                 n_g_path = 0;
                 g_path_constraint  = 0;
-                if print_level >=1
+                if settings.print_level >=1
                     fprintf('nosnoc: No path constraints are provided. \n')
                 end
             end
 
             %% Check path complementarity constraints
             g_comp_path_constraint  = 0;
-            if ~isempty(obj.g_comp_path)
+            if size(obj.g_comp_path, 1) ~= 0
                 g_comp_path_constraint  = 1;
                 if size(g_comp_path, 2) ~= 2
                     error('g_comp_path must be of size (m, 2)')
@@ -501,15 +496,15 @@ classdef NosnocModel < handle
                 g_comp_path_fun  = Function('g_comp_path_fun',{x,u,p,v_global},{g_comp_path});
             else
                 g_comp_path_constraint = 0;
-                if print_level >=1
+                if settings.print_level >=1
                     fprintf('nosnoc: No path complementarity constraints are provided. \n')
                 end
             end
             %% Terminal constraints
-            if ~isempty(obj.g_terminal)
+            if size(obj.g_terminal, 1) ~= 0
                 terminal_constraint = 1;
                 n_g_terminal = length(obj.g_terminal);
-                if ~isempty(obj.g_terminal_lb)
+                if size(obj.g_terminal_lb, 1) ~= 0
                     if length(g_terminal_lb)~=n_g_terminal
                         error('nosnoc: The provided vector g_terminal_lb has the wrong size.')
                     end
@@ -517,7 +512,7 @@ classdef NosnocModel < handle
                     g_terminal_lb = 0*ones(n_g_terminal,1);
                 end
 
-                if ~isempty(obj.g_terminal_ub)
+                if size(obj.g_terminal_ub, 1) ~= 0
                     if length(g_terminal_ub)~=n_g_terminal
                         error('nosnoc: The provided vector g_terminal_ub has the wrong size.')
                     end
@@ -528,21 +523,16 @@ classdef NosnocModel < handle
             else
                 terminal_constraint = 0;
                 n_g_terminal = 0;
-                if print_level >=1
+                if settings.print_level >=1
                     fprintf('nosnoc: No terminal constraints are provided. \n')
                 end
             end
 
-            dcs_mode = settings.dcs_mode;
-            g_Stewart = {};
-            g_ind_vec = [];
+            obj.g_Stewart = {};
             c_all = [];
-            obj.dims.m_vec = [];
-            n_c_sys = [];
-            obj.dims.n_q = [];
             obj.friction_exists = 0;
 
-            if isequal(dcs_mode,'CLS')
+            if isequal(settings.dcs_mode,'CLS')
                 % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
                 % Check existence of relevant functions
                 obj.dims.n_sys = 1; % always one subystem in CLS (only loops over n_contacts later)
@@ -552,7 +542,7 @@ classdef NosnocModel < handle
                 obj.dims.n_contacts = length(obj.f_c);
 
                 % coefficient of friction checks
-                if ~isempty(obj.mu)
+                if size(obj.mu, 1) ~= 0
                     if length(obj.mu) ~= 1 && length(obj.mu) ~= obj.dims.n_contacts
                         error('The length of model.mu has to be one or match the length of model.f_c')
                     end
@@ -591,7 +581,7 @@ classdef NosnocModel < handle
                 end
 
                 % dimensions and state space split
-                casadi_symbolic_mode = obj.x(1).type_name();
+                settings.casadi_symbolic_mode = obj.x(1).type_name();
                 if mod(n_x,2)
                     obj.dims.n_q = (n_x-1)/2;
                 else
@@ -616,7 +606,7 @@ classdef NosnocModel < handle
                 end
 
                 %  Normal Contact Jacobian
-                if ~isempty(obj.J_normal)
+                if size(obj.J_normal, 1) ~= 0
                     J_normal = obj.J_normal;
                     J_normal_exists = 1;
                 else
@@ -642,7 +632,7 @@ classdef NosnocModel < handle
                 % Tangent Contact Jacobian
                 if obj.friction_exists
                     if isequal(settings.friction_model,'Conic')
-                        if ~isempty(obj.J_tangent)
+                        if size(obj.J_tangent, 1) ~= 0
                             J_tangent = obj.J_tangent;
                             if size(J_tangent,1)~=obj.dims.n_q
                                 error('nosnoc: J_tangent has the wrong size.')
@@ -672,7 +662,7 @@ classdef NosnocModel < handle
                 end
             end
 
-            if isequal(dcs_mode,'Step') || isequal(dcs_mode,'Stewart')
+            if isequal(settings.dcs_mode,'Step') || isequal(settings.dcs_mode,'Stewart')
                 if isempty(obj.F)
                     % Don't need F
                     if ~settings.general_inclusion
@@ -680,7 +670,6 @@ classdef NosnocModel < handle
                     else
                         % TODO Implement more subsystems.
                         obj.dims.n_sys = 1;
-                        obj.dims.m_vec = [size(f_x,1)];
                     end
                 else
                     % check how many subsystems are present
@@ -690,11 +679,6 @@ classdef NosnocModel < handle
                         obj.F = {obj.F};
                         obj.dims.n_sys = 1;
                     end
-                    % extract dimensions of subystems
-                    for ii = 1:obj.dims.n_sys
-                        m_temp = size(obj.F{ii},2);
-                        obj.dims.m_vec  = [obj.dims.m_vec m_temp];
-                    end
                 end
 
                 if isempty(obj.S)
@@ -702,7 +686,7 @@ classdef NosnocModel < handle
                     if ~settings.general_inclusion
                         % if the matrix S is not provided, maybe the g_ind are available
                         % directly?
-                        if isequal(dcs_mode,'Stewart')
+                        if isequal(settings.dcs_mode,'Stewart')
                             if exist('g_ind')
                                 if ~iscell(g_ind)
                                     g_ind = {g_ind};
@@ -710,9 +694,8 @@ classdef NosnocModel < handle
 
                                 for ii = 1:obj.dims.n_sys
                                     % discriminant functions
-                                    g_ind_vec =  [g_ind_vec;g_ind{ii};];
-                                    g_Stewart{ii} = g_ind{ii};
-                                    c_all = [c_all; zeros(1,casadi_symbolic_mode)];
+                                    obj.g_Stewart{ii} = g_ind{ii};
+                                    c_all = [c_all; zeros(1,settings.casadi_symbolic_mode)];
                                 end
                             else
                                 error(['nosnoc: Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
@@ -725,16 +708,16 @@ classdef NosnocModel < handle
                         if isempty(obj.c)
                             error('nosnoc: Expresion for c, the constraint function for regions R_i is not provided.');
                         else
-                            if ~iscell(c)
-                                c = {c};
+                            if ~iscell(obj,c)
+                                obj.c = {obj.c};
                             end
-                            if length(c) ~= obj.dims.n_sys
+                            if length(obj.c) ~= obj.dims.n_sys
                                 error('nosnoc: Number of different expressions for c does not match number of subsystems.')
                             end
                             for ii = 1:obj.dims.n_sys
                                 c_all = [c_all; c{ii}];
                                 n_c{ii} = length(c{ii});
-                                n_c_sys  = [n_c_sys;length(c{ii})];
+                                obj.dims.n_c_sys  = [obj.dims.n_c_sys;length(c{ii})];
                             end
 
                         end
@@ -754,13 +737,13 @@ classdef NosnocModel < handle
                         if ~iscell(obj.c)
                             obj.c = {obj.c};
                         end
-                        if length(c) ~= obj.dims.n_sys
+                        if length(obj.c) ~= obj.dims.n_sys
                             error('nosnoc: Number of different expressions for c does not match number of subsystems (taken to be number of matrices F_i which collect the modes of every subsystem).')
                         end
                     end
 
                     % check are the matrices dense
-                    if isequal(dcs_mode,'Stewart')
+                    if isequal(settings.dcs_mode,'Stewart')
                         for ii = 1:obj.dims.n_sys
                             if any(sum(abs(obj.S{ii}),2)<size(obj.S{ii},2))
                                 if obj.dims.n_sys == 1
@@ -773,45 +756,33 @@ classdef NosnocModel < handle
                     end
 
                     for ii = 1:obj.dims.n_sys
-                        if size(obj.S{ii},2) ~= length(c{ii})
+                        if size(obj.S{ii},2) ~= length(obj.c{ii})
                             error('nosnoc: The matrix S and vector c do not have compatible dimension.');
                         end
 
                         % discrimnant functions
-                        switch dcs_mode
+                        switch settings.dcs_mode
                             case 'Stewart'
                                 % Create Stewart's indicator functions g_ind_ii
-                                g_Stewart{ii} = -obj.S{ii}*c{ii};
-                                g_ind_vec = [g_ind_vec ;-obj.S{ii}*c{ii}];
+                                obj.g_Stewart{ii} = -obj.S{ii}*obj.c{ii};
                             case 'Step'
                                 %eval(['c_' num2str(ii) '= c{ii};']);
                         end
                         % dimensions of c
-                        c_all = [c_all; c{ii}];
-                        n_c{ii} = length(c{ii});
-                        n_c_sys  = [n_c_sys;length(c{ii})];
+                        c_all = [c_all; obj.c{ii}];
+                        n_c{ii} = length(obj.c{ii});
+                        obj.dims.n_c_sys  = [obj.dims.n_c_sys;length(obj.c{ii})];
                     end
 
                 end
-                % index sets and dimensions for ubsystems
-                m_ind_vec = 1;
-                if isequal(dcs_mode,'Step')
-                    % double the size of the vectors, since alpha, 1-alpha treated at same time;
-                    obj.dims.m_vec = sum(n_c_sys)*2;
-                end
-                for ii = 1:length(obj.dims.m_vec)-1
-                    m_ind_vec  = [m_ind_vec,m_ind_vec(end)+obj.dims.m_vec(ii)];
-                end
-                % m_ind_vec = [cumsum(obj.dims.m_vec)-obj.dims.m_vec(1)+1]; % index ranges of the corresponding thetas and lambdas
-                m = sum(obj.dims.m_vec);
 
-                if isempty(n_c_sys)
-                    n_c_sys = 0;
+                if isempty(obj.dims.n_c_sys)
+                    obj.dims.n_c_sys = 0;
                 end
 
-                if max(n_c_sys) < 2 && isequal(dcs_mode,'Step')
+                if max(obj.dims.n_c_sys) < 2 && isequal(settings.dcs_mode,'Step')
                     pss_lift_step_functions = 0;
-                    if print_level >=1
+                    if settings.print_level >=1
                         fprintf('nosnoc: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
                     end
                 end
@@ -822,8 +793,10 @@ classdef NosnocModel < handle
                     obj.dims.n_f_sys = [size(f_x,1)];
                 end
             end
-        end
-        
-    end
 
-end
+            % populate functions that can already be generated
+            obj.c_fun = Function('c_fun',{obj.x,p},{c_all});
+            obj.g_Stewart_fun = Function('g_Stewart_fun',{obj.x,p},{vertcat(obj.g_Stewart{:})});
+        end
+    end  % methods
+end % NosnocModel
