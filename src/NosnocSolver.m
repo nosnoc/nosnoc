@@ -276,8 +276,19 @@ classdef NosnocSolver < handle
 
             % check if solved to required accuracy
             stats.converged = obj.is_converged(stats);
+            stats.constraint_violation = obj.compute_constraint_violation(results.w);
 
             obj.print_solver_stats(results,stats);
+        end
+
+        function violation = compute_constraint_violation(obj, w)
+            problem = obj.problem;
+            ubw_violation = max(max(w - problem.ubw), 0);
+            lbw_violation = max(max(problem.lbw - w), 0);
+            g_val = full(obj.problem.g_fun(w, obj.p_val));
+            ubg_violation = max(max(g_val - problem.ubg), 0);
+            lbg_violation = max(max(problem.lbg - g_val), 0);
+            violation = max([lbg_violation, ubg_violation, lbw_violation, ubw_violation]);
         end
 
         function converged = is_converged(obj, stats)
@@ -432,17 +443,17 @@ classdef NosnocSolver < handle
             dims = model.dims;
             settings = obj.settings;
 
-            fprintf('\n');
-            fprintf('-----------------------------------------------------------------------------------------------\n');
-            if settings.use_fesd
-                fprintf( ['OCP with the FESD ' char(settings.irk_scheme) ' in ' char(settings.irk_representation) ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],...
-                    dims.n_s,dims.N_finite_elements(1),dims.N_stages);
-            else
-                fprintf( ['OCP with the Std ' char(settings.irk_scheme) ' in ' char(settings.irk_representation) ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],...
-                    dims.n_s,dims.N_finite_elements(1),dims.N_stages);
-            end
+            % fprintf('\n');
+            % fprintf('-----------------------------------------------------------------------------------------------\n');
+            % if settings.use_fesd
+            %     fprintf( ['OCP with the FESD ' char(settings.irk_scheme) ' in ' char(settings.irk_representation) ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],...
+            %         dims.n_s,dims.N_finite_elements(1),dims.N_stages);
+            % else
+            %     fprintf( ['OCP with the Std ' char(settings.irk_scheme) ' in ' char(settings.irk_representation) ' mode with %d RK-stages, %d finite elements and %d control intervals.\n'],...
+            %         dims.n_s,dims.N_finite_elements(1),dims.N_stages);
+            % end
 
-            fprintf('---------------------------------------------- Stats summary--------------------------\n');
+            fprintf('\n---------------------------------------------- Stats summary--------------------------\n');
             if stats.cpu_time_total < 60
                 fprintf('H. iters\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter \tComp. res.\n');
                 fprintf('%d\t\t\t\t%2.2f\t\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t%2.2e\t\t\t\t%2.2e\n',...
@@ -452,6 +463,7 @@ classdef NosnocSolver < handle
                 fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e \n',...
                     stats.homotopy_iterations,stats.cpu_time_total/60, max(stats.cpu_time)/60, min(stats.cpu_time)/60, stats.complementarity_stats(end));
             end
+            fprintf('\n');
         end
 
     end

@@ -73,10 +73,10 @@ complementarity_stats  = [];
 homotopy_iteration_stats = [];
 time_per_iter = [];
 simulation_time_pased = 0;
-W = [];
 sim_step_solver_results = [];
 t_current = 0;
 converged = [];
+constraint_violations = [];
 
 if exist('initial_guess', 'var')
     % remove duplicate indices
@@ -147,6 +147,7 @@ for ii = 1:model.N_sim
         sim_step_solver_results = [sim_step_solver_results,res];
     end
     time_per_iter = [time_per_iter; solver_stats.cpu_time_total];
+    constraint_violations = [constraint_violations, solver_stats.constraint_violation]
 
     % Initialize results
     if ii == 1
