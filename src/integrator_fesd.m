@@ -244,17 +244,16 @@ end
 total_time = sum(time_per_iter);
 %% Verbose
 fprintf('\n');
-fprintf('----------------------------------------------------------------------------------------------------------------------\n');
+fprintf('-----------------------------------------------------------------\n');
 if use_fesd
     fprintf( ['Simulation with the FESD ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 else
     fprintf( ['Simulation with the standard ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 end
-fprintf( ['RK representation: ' char(irk_representation) '.\n']);
-fprintf('---------------------------------------------- Stats summary----------------------------------------------------------\n');
+fprintf('---------------- Stats summary ----------------------------\n');
 fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
 fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, N_stages, N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
-fprintf('----------------------------------------------------------------------------------------------------------------------\n\n');
+fprintf('-----------------------------------------------------------------\n\n');
 %% Output
 
 integrator_stats.complementarity_stats = complementarity_stats;
@@ -268,7 +267,7 @@ results.t_grid = cumsum([0,results.h])';
 [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dims.n_s,settings.irk_scheme);
 tgrid_long = 0;
 h_grid_long = [];
-for ii  = 1:model.N_sim*model.dims.N_stages*model.dims.N_finite_elements;
+for ii = 1:model.N_sim*model.dims.N_stages*model.dims.N_finite_elements;
     if settings.use_fesd
         h_yet = results.h(ii);
     else
