@@ -93,7 +93,7 @@ for ii = 1:model.N_sim
         solver.set('u', {u_sim(:,ii)});
     end
 
-    %% 
+    %%
     % TODO Set up homotopy solver to take p_val explicitly
     if ii > 1 && settings.use_previous_solution_as_initial_guess
         % TODO make this possible via solver interface directly
@@ -107,7 +107,7 @@ for ii = 1:model.N_sim
         t_guess = t_current + cumsum([0; model.h_k * ones(model.N_finite_elements, 1)]);
         x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess,'makima');
         lambda_normal_guess = interp1(initial_guess.t_grid, initial_guess.lambda_normal_traj, t_guess(2:end-1), 'makima');
-        % 
+        %
         x_init = cell(1, dims.N_finite_elements);
         y_gap_init = cell(1, dims.N_finite_elements);
         for j = 1:dims.N_finite_elements
@@ -123,7 +123,7 @@ for ii = 1:model.N_sim
             % Note : set this to zero
             L_vn_init = {(x_init{end}(ind_v(1)) + model.e * x_init{end-1}(ind_v(1)))};
             solver.set('L_vn', L_vn_init);
-            % 
+            %
             % diff_x = x_guess(1, :) - x_guess(end, :);
             % diff_v = diff(x_guess(:,ind_v(1)));
 %             Lambda_normal_init = max(abs(diff_v));
@@ -140,13 +140,13 @@ for ii = 1:model.N_sim
     end
 
     %% solve
-    [sol,stats] = solver.solve();
+    [sol, solver_stats] = solver.solve();
     [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
     names = [names, {"h"}];
     if settings.store_integrator_step_results
         sim_step_solver_results = [sim_step_solver_results,res];
     end
-    time_per_iter = [time_per_iter; stats.cpu_time_total];
+    time_per_iter = [time_per_iter; solver_stats.cpu_time_total];
 
     % Initialize results
     if ii == 1
@@ -163,18 +163,17 @@ for ii = 1:model.N_sim
         results.t_with_impulse = 0;
     end
 
-    if stats.converged == 0
+    if solver_stats.converged == 0
         % TODO: return some infeasibility status
         warning(['integrator_fesd: did not converge in step ', num2str(ii)])
-        converged = [converged, stats.converged];
+        converged = [converged, solver_stats.converged];
         % keyboard
     elseif print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
             ii, model.N_sim,simulation_time_pased, model.T_sim, time_per_iter(end));
-        converged = [converged, stats.converged];
+        converged = [converged, solver_stats.converged];
     end
     simulation_time_pased = simulation_time_pased + model.T;
-    
 
     %% update initial guess and inital value
     x0 = res.x(:,end);
@@ -202,7 +201,6 @@ for ii = 1:model.N_sim
         if name == 'x' || ~isfield(res, name)
             continue
         end
-        
         results.(name) = [results.(name), res.(name)];
         if ~strcmp(name, 'h')
             results.extended.(name) = [results.extended.(name), res.extended.(name)];
@@ -221,9 +219,8 @@ for ii = 1:model.N_sim
     end
 
     t_current = t_current + model.T;
-    %stats
-    complementarity_stats  = [complementarity_stats; stats.complementarity_stats(end)];
-    homotopy_iteration_stats = [homotopy_iteration_stats;stats.homotopy_iterations];
+    complementarity_stats  = [complementarity_stats; solver_stats.complementarity_stats(end)];
+    homotopy_iteration_stats = [homotopy_iteration_stats; solver_stats.homotopy_iterations];
 
     %% plot during execution
     if real_time_plot
@@ -256,14 +253,14 @@ end
 fprintf( ['RK representation: ' char(irk_representation) '.\n']);
 fprintf('---------------------------------------------- Stats summary----------------------------------------------------------\n');
 fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
-fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n',N_sim,h_sim,N_stages,N_finite_elements(1),total_time,max(time_per_iter),min(time_per_iter),max(complementarity_stats),min(complementarity_stats));
+fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, N_stages, N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
 fprintf('----------------------------------------------------------------------------------------------------------------------\n\n');
 %% Output
 
-stats.complementarity_stats = complementarity_stats;
-stats.time_per_iter = time_per_iter;
-stats.homotopy_iteration_stats = homotopy_iteration_stats;
-stats.converged = converged;
+integrator_stats.complementarity_stats = complementarity_stats;
+integrator_stats.time_per_iter = time_per_iter;
+integrator_stats.homotopy_iteration_stats = homotopy_iteration_stats;
+integrator_stats.converged = converged;
 
 results.t_grid = cumsum([0,results.h])';
 
@@ -287,7 +284,7 @@ if settings.store_integrator_step_results
     results.sim_step_solver_results = sim_step_solver_results;
 end
 varargout{1} = results;
-varargout{2} = stats;
+varargout{2} = integrator_stats;
 varargout{3} = model;
 varargout{4} = settings;
 varargout{5} = solver;
