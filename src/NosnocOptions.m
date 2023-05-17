@@ -87,6 +87,7 @@ classdef NosnocOptions < handle
         s_elastic_max(1,1) double {mustBeReal, mustBePositive} = 1e1
         s_elastic_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
         s_elastic_0(1,1) double {mustBeReal, mustBePositive} = 1
+        elastic_scholtes(1,1) logical = 0
 
         % Default settings for the barrier tuned penalty/slack variables for mpcc modes 8 do 10.
         rho_penalty(1,1) double {mustBeReal, mustBePositive} = 1e1

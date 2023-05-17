@@ -568,6 +568,10 @@ classdef NosnocProblem < NosnocFormulationObject
             if obj.settings.elasticity_mode == ElasticityMode.ELL_INF
                 s_elastic = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_elastic',1);
                 obj.s_elastic = s_elastic;
+                if obj.settings.elastic_scholtes
+                    obj.settings.s_elastic_max = inf;
+                    obj.addConstraint(s_elastic-obj.sigma_p,-inf,0);
+                end
                 obj.addVariable(s_elastic, 'elastic', obj.settings.s_elastic_min, obj.settings.s_elastic_max, obj.settings.s_elastic_0);
             else
                 s_elastic = [];
