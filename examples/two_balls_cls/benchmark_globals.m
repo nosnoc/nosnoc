@@ -1,12 +1,16 @@
 %% benchmark_globals
-NS_VALUES = [1, 2, 3, 4];
-NSIM_VALUES = [60, 80, 160, 320, 500, 1000];
-% NSIM_VALUES = [160, 320, 500];
 
+% dream values
 NS_VALUES = [1, 2, 3, 4];
 NSIM_VALUES = [80, 160, 320];
 NFE_VALUES = [2, 4, 8, 10, 12, 20];
 IRK_SCHEME = IRKSchemes.GAUSS_LEGENDRE;
+
+% test values
+% NS_VALUES = [2];
+% NSIM_VALUES = [160];
+% NFE_VALUES = [2];
+% IRK_SCHEME = IRKSchemes.GAUSS_LEGENDRE;
 
 T_sim = 1;
 g = 9.81;
