@@ -9,13 +9,13 @@ settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;
 settings.print_level = 3;
 settings.N_homotopy = 6;
-settings.cross_comp_mode = 3;
+settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 settings.friction_model = "Polyhedral";
 %settings.friction_model = "Conic"; % "Conic"
 settings.conic_model_switch_handling = "Lp";
 settings.mpcc_mode = MpccMode.Scholtes_ineq;
-settings.psi_fun_type = CFunctionType.FISCHER_BURMEISTER;
+settings.no_initial_impacts = 1;
 %%
 g = 9.81;
 q = SX.sym('q',2);
@@ -30,7 +30,7 @@ model.f_c = [q(1);q(2)];
 model.J_tangent = [0 1;1 0];
 model.D_tangent = [model.J_tangent -model.J_tangent] ;
 %% Simulation settings
-N_FE = 5;
+N_FE = 10;
 T_sim = 0.7;
 N_sim = 1;
 model.T_sim = T_sim;
