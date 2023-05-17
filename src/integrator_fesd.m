@@ -81,6 +81,8 @@ constraint_violations = [];
 if exist('initial_guess', 'var')
     % remove duplicate indices
     [~, w] = unique(initial_guess.t_grid, 'stable');
+    % setdiff(w, 1:length(initial_guess.t_grid))
+    % keyboard
     initial_guess.t_grid = initial_guess.t_grid(w);
     initial_guess.x_traj = initial_guess.x_traj(w, :);
     initial_guess.lambda_normal_traj = initial_guess.lambda_normal_traj(w, :);
@@ -121,18 +123,18 @@ for ii = 1:model.N_sim
             ind_v = dims.n_q + 1: 2*dims.n_q;
             solver.set('lambda_normal', {0});
             % Note : set this to zero
-            L_vn_init = {(x_init{end}(ind_v(1)) + model.e * x_init{end-1}(ind_v(1)))};
+            L_vn_init = {0*(x_init{end}(ind_v(1)) + model.e * x_init{end-1}(ind_v(1)))};
             solver.set('L_vn', L_vn_init);
             %
-            % diff_x = x_guess(1, :) - x_guess(end, :);
             diff_v = diff(x_guess(:,ind_v(1)));
             Lambda_normal_init = max(abs(diff_v));
             % Note: this is a bit hacky..
-            if Lambda_normal_init < 2
+            if Lambda_normal_init < 2.0
                 Lambda_normal_init = 0.0;
             else
 %                 keyboard
             end
+            % Lambda_normal_init = lambda_normal_guess;
             solver.set('Lambda_normal', {Lambda_normal_init});
             % disp(['init Lambda_normal', num2str(lambda_normal_guess)]);
             solver.set('y_gap', y_gap_init);
@@ -142,6 +144,29 @@ for ii = 1:model.N_sim
     %% solve
     [sol, solver_stats] = solver.solve();
     [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
+    if solver_stats.converged == 0
+        disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+        % solver.print_iterate(sol.W(:,end))
+        if exist('initial_guess', 'var')
+            keyboard
+            % reset to neutral inital guess
+            disp(['provided initial guess in integrator step did not converge, trying neutral inital guess.'])
+            solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
+            solver.set('x', {x0})
+            solver.set('x_left_bp', {x0})
+            [sol, solver_stats] = solver.solve();
+            [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
+            if solver_stats.converged == 0
+                disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+                % solver.print_iterate(sol.W(:,end))
+                keyboard
+            end
+        end
+    elseif print_level >=2
+        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
+            ii, model.N_sim,simulation_time_pased, model.T_sim, solver_stats.cpu_time_total);
+    end
+
     names = [names, {"h"}];
     if settings.store_integrator_step_results
         sim_step_solver_results = [sim_step_solver_results,res];
@@ -164,16 +189,7 @@ for ii = 1:model.N_sim
         results.t_with_impulse = 0;
     end
 
-    if solver_stats.converged == 0
-        % TODO: return some infeasibility status
-        warning(['integrator_fesd: did not converge in step ', num2str(ii)])
-        converged = [converged, solver_stats.converged];
-        % keyboard
-    elseif print_level >=2
-        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
-            ii, model.N_sim,simulation_time_pased, model.T_sim, time_per_iter(end));
-        converged = [converged, solver_stats.converged];
-    end
+    converged = [converged, solver_stats.converged];
     simulation_time_pased = simulation_time_pased + model.T;
 
     %% update initial guess and inital value

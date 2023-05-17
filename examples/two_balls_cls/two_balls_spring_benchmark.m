@@ -20,7 +20,7 @@ save(ref_sol_filename, "t_grid_guess", "x_traj_guess", "n_bounces_guess", "lambd
 tic
 
 %% run experiments
-for with_guess = [0, 1]
+for with_guess = [1]
 for n_s = NS_VALUES
     for N_sim = NSIM_VALUES
         for N_FE = NFE_VALUES
@@ -67,6 +67,7 @@ for n_s = NS_VALUES
 
             if with_guess
                 settings.sigma_0 = 1e-2;
+                % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
                 [results, stats, model, settings, solver] = integrator_fesd(model, settings, [], initial_guess);
             else
                 [results, stats, model, settings, solver] = integrator_fesd(model, settings, []);

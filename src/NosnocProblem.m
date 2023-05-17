@@ -95,7 +95,6 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_v_global
         ind_s_terminal
 
-
         % Parameter index variables
         ind_p_x0
         ind_p_global
@@ -106,6 +105,9 @@ classdef NosnocProblem < NosnocFormulationObject
         settings
         dims
         ocp
+
+        % original initialization
+        w0_original
 
         % Algorithmic parameters
         sigma_p
@@ -527,6 +529,7 @@ classdef NosnocProblem < NosnocFormulationObject
             if dims.n_p_time_var > 0
                 obj.p0 = [obj.p0; model.p_time_var_val];
             end
+            obj.w0_original = obj.w0;
         end
 
         % TODO this should be private

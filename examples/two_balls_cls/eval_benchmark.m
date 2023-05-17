@@ -41,7 +41,7 @@ for n_s = NS_VALUES
                 h_values{i} = [h_values{i}, T_sim/(N_sim*N_FE)];
                 disp(strcat(results_filename, ' converged with error ', num2str(errors{i}(end), '%e')))
             else
-                keyboard
+                % keyboard
                 disp(strcat(results_filename, ' failed.'))
             end
         end
