@@ -7,8 +7,8 @@ tfinal = T_sim;
 refine = 4;
 options1 = odeset('Events',@events1,'OutputSel',1,'RelTol',tol,'AbsTol',tol/10,'Refine',refine);
 
-t_grid = tstart;
-x_traj = x0.';
+t_grid = [];
+x_traj = [];
 teout = [];
 yeout = [];
 ieout = [];
@@ -29,6 +29,8 @@ while abs(t(end)-tfinal)>tol
     end
 
     if isequal(ie,1)
+        t_grid(end) = [];
+        x_traj(end, :) = [];
         if abs(te-tstart)<tol
             tstart = tfinal;
         else
@@ -55,33 +57,34 @@ if PLOT_LAMBDA
     n_subplot = n_subplot+1;
 end
 
-figure
-subplot(n_subplot, 1, 1)
-plot(t_grid,x_traj(:,1),'LineWidth',1.5)
-grid on
-ylabel('$q$ [m]','interpreter','latex');
-xlabel('$t$ [s]','interpreter','latex');
-set(gca,'TickLabelInterpreter','latex');
-
-subplot(n_subplot, 1, 2)
-plot(t_grid,x_traj(:,2),'LineWidth',1.5)
-grid on
-xlabel('$t$ [s]','interpreter','latex');
-ylabel('$v$ [m/s]','interpreter','latex');
-fprintf('Number of bounces: %d \n',n_bounces);
-set(gca,'TickLabelInterpreter','latex');
-
-
+% 
+% figure
+% subplot(n_subplot, 1, 1)
+% plot(t_grid,x_traj(:,1),'LineWidth',1.5)
+% grid on
+% ylabel('$q$ [m]','interpreter','latex');
+% xlabel('$t$ [s]','interpreter','latex');
+% set(gca,'TickLabelInterpreter','latex');
+% 
+% subplot(n_subplot, 1, 2)
+% plot(t_grid,x_traj(:,2),'LineWidth',1.5)
+% grid on
+% xlabel('$t$ [s]','interpreter','latex');
+% ylabel('$v$ [m/s]','interpreter','latex');
+% fprintf('Number of bounces: %d \n',n_bounces);
+% set(gca,'TickLabelInterpreter','latex');
+% 
+% 
 lambda_normal = [0;diff(x_traj(:,2))];
 lambda_normal(abs(lambda_normal) < 2) = 0;
-if PLOT_LAMBDA
-    subplot(n_subplot, 1, 3)
-    stem(t_grid,lambda_normal)
-    grid on
-    xlabel('$t$','interpreter','latex');
-    ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
-    set(gca,'TickLabelInterpreter','latex');
-end
+% if PLOT_LAMBDA
+%     subplot(n_subplot, 1, 3)
+%     stem(t_grid,lambda_normal)
+%     grid on
+%     xlabel('$t$','interpreter','latex');
+%     ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
+%     set(gca,'TickLabelInterpreter','latex');
+% end
 
 % --------------------------------------------------------------------------
 

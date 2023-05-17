@@ -1,5 +1,5 @@
 clear all;
-clc;
+% clc;
 import casadi.*
 close all
 %%
@@ -12,9 +12,10 @@ settings.N_homotopy = 15;
 settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
-settings.sigma_0 = 10;
+
 settings.mpcc_mode = "Scholtes_ineq";
 % some new verbose options for debuging
+
 settings.print_details_if_infeasible = 0;
 settings.pause_homotopy_solver_if_infeasible = 0;
 settings.real_time_plot = 0;
@@ -22,9 +23,12 @@ settings.no_initial_impacts = 1;
 settings.friction_model = 'Conic';
 settings.conic_model_switch_handling = 'Abs';
 %settings.opts_ipopt.ipopt.linear_solver = 'ma97';
-settings.sigma_0 = 10;
-settings.homotopy_update_slope = 0.2;
-
+settings.sigma_0 = 1e1;
+settings.homotopy_update_slope = 0.1;
+use_guess = 1;
+% settings.sigma_0 = 1e-4;
+% settings.mpcc_mode = "elastic_ineq";
+% settings.s_elastic_max = 1e0;
 %%
 g = 9.81;
 % Symbolic variables and bounds
@@ -34,13 +38,23 @@ model.M = 1;
 model.x = [q;v];
 model.e = 1;
 model.mu = 0;
-x0 = [0.6;0];
+x0 = [0.8;0];
 model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
+%% Simulation setings
+N_FE = 4;
+T_sim = 1;
+N_sim = 1;
+
+model.T_sim = T_sim;
+model.N_FE = N_FE;
+model.N_sim = N_sim;
+settings.use_previous_solution_as_initial_guess = 0;
 
 %% Analytic solution
 
+if model.e == 0
 t_s = sqrt(2*x0(1)/g);
 tt1 = linspace(0,t_s,100);
 tt2 = linspace(t_s,T_sim,100);
@@ -53,29 +67,37 @@ else
     v2 = -model.e*v1(end)-g*(tt2-t_s);
     q2 = q1(end)+v2(1)*(tt2-t_s)-g*(tt2-t_s).^2/2;
 end
-tt = [tt1,tt2];
-q_exact = [q1,q2];
-v_exact = [v1,v2];
+t_grid = [tt1,tt2];
+q_traj= [q1,q2];
+v_traj = [v1,v2];
+x_traj = [q_traj',v_traj'];
+lambda_normal = [q1*0,q2*0+g];
+Lambda_star = v2(1)-v1(end);
+else
+    [t_grid,x_traj,n_bounces, lambda_normal] = bouncing_ball_matlab(T_sim,model.x0,model.e,1e-12);
+    Lambda_star = max(abs(diff(x_traj(:,2))));
 
-%% Simulation setings
-N_FE = 6;
-T_sim = 0.8;
-N_sim = 1;
+end
 
-model.T_sim = T_sim;
-model.N_FE = N_FE;
-model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
 
 %% Call nosnoc Integrator
-[results,stats,model,settings,solver] = integrator_fesd(model,settings);
+initial_guess = struct();
+initial_guess.x_traj = x_traj;
+initial_guess.t_grid = t_grid;
+initial_guess.lambda_normal_traj = lambda_normal;
+
+if use_guess
+    [results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
+else 
+    [results,stats,model,settings,solver] = integrator_fesd(model, settings);
+end
+
 %% read and plot results
 qx = results.x(1,:);
 vx = results.x(2,:);
 
 
 % exact impulse value
-Lambda_star = v2(1)-v1(end);
 
 
 %%
@@ -83,8 +105,9 @@ figure
 subplot(311)
 plot(results.t_grid,qx);
 hold on
-plot(tt1,q1,'k')
-plot(tt2,q2,'k')
+% plot(tt1,q1,'k')
+% plot(tt2,q2,'k')
+plot(t_grid,x_traj(:,1))
 legend({'$q$ - numerical','$q$ - analytic'},'interpreter','latex');
 xlim([0 results.t_grid(end)])
 ylim([-0.1 x0(1)+0.1])
@@ -95,8 +118,9 @@ xlabel('$t$','interpreter','latex');
 subplot(312)
 plot(results.t_with_impulse, results.x_with_impulse(2,:));
 hold on
-plot(tt1,v1,'k')
-plot(tt2,v2,'k')
+% plot(tt1,v1,'k')
+% plot(tt2,v2,'k')
+plot(t_grid,x_traj(:,2))
 plot(results.t_grid,vx,'b.','MarkerSize',6);
 legend({'$q$ - numerical','$q$ - analytic'},'interpreter','latex');
 ylim([-3 3])
@@ -120,6 +144,6 @@ ylabel('$\Lambda$','interpreter','latex');
 
 if N_sim == 1
     fprintf('Impulse error %2.2e \n',abs(max(results.Lambda_normal)-Lambda_star))
-    fprintf('position error %2.2e \n',abs(q2(end)-qx(end)))
-    fprintf('velocity error %2.2e \n',abs(v2(end)-vx(end)))
+    fprintf('position error %2.2e \n',abs(x_traj(end,1)-qx(end)))
+    fprintf('velocity error %2.2e \n',abs(x_traj(end,2)-vx(end)))
 end
