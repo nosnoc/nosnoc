@@ -35,6 +35,9 @@ classdef NosnocModel < handle
         p_time_var
         p_time_var_val
 
+        % All params
+        p
+
         F         % Dynamic functions
         c         % Switching functions
         S         % Sign matrix
@@ -50,8 +53,17 @@ classdef NosnocModel < handle
 
         % least squares
         lsq_x
+        x_ref
+        f_lsq_x
+        x_ref_val
         lsq_u
+        u_ref
+        f_lsq_u
+        u_ref_val
         lsq_T
+        x_ref_end
+        f_lsq_T
+        x_ref_end_val
 
         % constraints
         g_path
@@ -80,6 +92,9 @@ classdef NosnocModel < handle
 
         % all
         z_all
+
+        % switching, only for step and stewart
+        z_switching
         
         % Stewart
         theta
@@ -125,11 +140,13 @@ classdef NosnocModel < handle
         P_vt
         N_vt
         Alpha_vt
+        z_v
 
         %----- Generated model -----
         f_x % state dynamics (possibly not generated)
 
         g_switching
+        g_lift
         g_z_all
 
 
@@ -150,11 +167,8 @@ classdef NosnocModel < handle
         f_q_T_fun
         J_cc_fun
         f_lsq_x_fun
-        x_ref_val
         f_lsq_u_fun
-        u_ref_val
         f_lsq_T_fun
-        x_ref_end_val
         
         % params
         p_time_var_stages
@@ -173,10 +187,208 @@ classdef NosnocModel < handle
         end
 
         function reformulate(obj, settings)
-
+            
         end
 
-        function vars = generate_vars(obj,settings)
+        function generate_diffeq(obj, settings)
+            import casadi.*
+            dims = obj.dims;
+            dcs_mode = settings.dcs_mode;
+            
+            %% Model functions of the DCS mode
+            % if f_x doesnt exist we generate it from F
+            % if it does we are in expert mode. TODO name.
+            % Define differential equations
+            if isempty(obj.f_x)
+                f_x = zeros(dims.n_x,1);
+                % rhs of ODE;
+                for ii = 1:dims.n_sys
+                    switch dcs_mode
+                      case 'Stewart'
+                        f_x = f_x + obj.F{ii}*obj.theta_sys{ii};
+                      case 'Step'
+                        f_x = f_x + obj.F{ii}*obj.theta_step_sys{ii};
+                      case 'CLS'
+                        if ~lift_velocity_state
+                            if settings.friction_exists
+                                switch settings.friction_model
+                                  case 'Conic'
+                                    F_v = inv(M)*(f_v+obj.J_normal*obj.lambda_normal+obj.J_tangent*obj.lambda_tangent);
+                                  case 'Polyhedral'
+                                    F_v = inv(M)*(f_v+obj.J_normal*obj.lambda_normal+obj.D_tangent*obj.lambda_tangent);
+                                end
+                            else
+                                F_v = inv(M)*(obj.f_v+obj.J_normal*obj.lambda_normal);
+                            end
+                            f_x = [v;F_v];
+                        else
+                            f_x = [v;obj.z_v];
+                            if friction_exists
+                                switch friction_model
+                                  case 'Conic'
+                                    g_lift_v = obj.M*obj.z_v -(obj.f_v +obj.J_normal*obj.lambda_normal + obj.J_tangent*obj.lambda_tangent);
+                                  case 'Polyhedral'
+                                    g_lift_v =  obj.M*obj.z_v -(obj.f_v + obj.J_normal*obj.lambda_normal + obj.D_tangent*obj.lambda_tangent);
+                                end
+                            else
+                                g_lift_v =  obj.M*obj.z_v -(obj.f_v+obj.J_normal*obj.lambda_n);
+                            end
+                            obj.g_lift = [obj.g_lift;g_lift_v];
+                        end
+                    end
+                end
+            end
+
+            %% Define algebraic equations
+
+            g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i, 0 = c(x)-lambda_p+lambda_n
+            g_convex = []; % equation for the convex multiplers 1 = e' \theta
+            g_alg_cls = []; % algebraic equations in a CLS
+            f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
+            g_impulse = [];
+            lambda00_expr =[];
+            for ii = 1:dims.n_sys
+                switch dcs_mode
+                  case 'Stewart'
+                    % basic algebraic equations and complementarity condtions of the DCS
+                    % (Note that the cross complementarities are later defined when the discrete
+                    % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
+                    % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_sys
+                    % lambda_i'*theta_i = 0; for all i = 1,..., n_sys
+                    % lambda_i >= 0;    for all i = 1,..., n_sys
+                    % theta_i >= 0;     for all i = 1,..., n_sys
+                    % Gradient of Lagrange Function of indicator LP
+                    g_switching = [g_switching; g_Stewart{ii}-obj.lambda_sys{ii}+obj.mu_sys{ii}*e_ones_all{ii}];
+                    g_convex = [g_convex;e_ones_all{ii}'*obj.theta_sys{ii}-1];
+                    lambda00_expr = [lambda00_expr; g_Stewart{ii}- min(g_Stewart{ii})];
+                    f_comp_residual = f_comp_residual + obj.lambda_sys{ii}'*obj.theta_sys{ii};
+                  case 'Step'
+                    % c_i(x) - (lambda_p_i-lambda_n_i)  = 0; for all i = 1,..., n_sys
+                    % lambda_n_i'*alpha_i  = 0; for all i = 1,..., n_sys
+                    % lambda_p_i'*(e-alpha_i)  = 0; for all i = 1,..., n_sys
+                    % lambda_n_i >= 0;    for all i = 1,..., n_sys
+                    % lambda_p_i >= 0;    for all i = 1,..., n_sys
+                    % alpha_i >= 0;     for all i = 1,..., n_sys
+                    g_switching = [g_switching;obj.c{ii}-obj.lambda_p_sys{ii}+obj.lambda_n_sys{ii}];
+                    f_comp_residual = f_comp_residual + obj.lambda_n_sys{ii}'*obj.alpha_sys{ii}+obj.lambda_p_sys{ii}'*(ones(dims.n_c_sys(ii),1)-obj.alpha_sys{ii});
+                    %             lambda00_expr = [lambda00_expr; max(c{ii},0); -min(c{ii}, 0)];
+                    lambda00_expr = [lambda00_expr; -min(obj.c{ii}, 0); max(obj.c{ii},0)];
+                  case 'CLS'
+                    % dumy variables for impact quations:
+                    v_post_impact = define_casadi_symbolic(casadi_symbolic_mode,'v_post_impact',dims.n_q);
+                    v_pre_impact = define_casadi_symbolic(casadi_symbolic_mode,'v_pre_impact',dims.n_q);
+                    g_alg_cls = [g_alg_cls; y_gap - f_c];
+                    g_impulse = [g_impulse; M*(v_post_impact-v_pre_impact)-J_normal*Lambda_normal]; % TODO: can this be relaxed? velocity junction
+                    g_impulse = [g_impulse; Y_gap-f_c];
+                    % add state jump for every contact
+                    for ii = 1:dims.n_contacts
+                        %                 g_impulse = [g_impulse; P_vn(ii)-N_vn(ii) - J_normal(:,ii)'*(v_post_impact+e(ii)*v_pre_impact)];
+                        g_impulse = [g_impulse; L_vn(ii) - J_normal(:,ii)'*(v_post_impact+e(ii)*v_pre_impact)];
+                    end
+                    if friction_exists
+                        switch friction_model
+                          case 'Conic'
+                            g_impulse(1:dims.n_q) =  M*(v_post_impact-v_pre_impact)-J_normal*Lambda_normal-J_tangent*Lambda_tangent;
+                            % algebraic and friction equations
+                            for ii = 1:dims.n_contacts
+                                ind_temp = dims.n_t*ii-(dims.n_t-1):dims.n_t*ii;
+                                g_alg_cls  = [g_alg_cls;-J_tangent(:,ind_temp)'*v - 2*gamma(ii)*lambda_tangent(ind_temp);...
+                                    beta(ii)-((mu(ii)*lambda_normal(ii))^2-norm(lambda_tangent(ind_temp))^2)];
+                                g_impulse = [g_impulse;
+                                    -J_tangent(:,ind_temp)'*v_post_impact - 2*Gamma(ii)*Lambda_tangent(ind_temp);...
+                                    Beta - ((mu(ii)*Lambda_normal(ii))^2- norm(Lambda_tangent(ind_temp))^2)];
+
+                                if ~isequal(conic_model_switch_handling,'Plain')
+                                    % equality constraints for pos and neg parts of the tangetial velocity
+                                    g_alg_cls  = [g_alg_cls;J_tangent(:,ind_temp)'*v-(p_vt(ind_temp)-n_vt(ind_temp))];
+                                    g_impulse = [g_impulse;J_tangent(:,ind_temp)'*v_post_impact - (P_vt(ind_temp)-N_vt(ind_temp))];
+                                end
+                            end
+                          case 'Polyhedral'
+                            g_impulse(1:dims.n_q) = M*(v_post_impact-v_pre_impact)-J_normal*Lambda_normal-D_tangent*Lambda_tangent;
+                            % impulse lifting equations
+                            for ii = 1:dims.n_contacts
+                                ind_temp = dims.n_t*ii-(dims.n_t-1):dims.n_t*ii;
+                                g_alg_cls  = [g_alg_cls;beta_d(ii)-(mu(ii)*lambda_normal(ii) - sum(lambda_tangent(ind_temp)));...
+                                    delta_d(ind_temp) - (D_tangent(:,ind_temp)'*v + gamma_d(ii))];
+                                g_impulse = [g_impulse;Beta_d - (mu(ii)*Lambda_normal(ii)-sum(Lambda_tangent(ind_temp)));...
+                                    Delta_d(ind_temp)- (D_tangent(:,ind_temp)'*v_post_impact + Gamma_d(ii))];
+                            end
+                        end
+                    end
+                    % some CLS functions
+                    M_fun = Function('M_fun', {x}, {M});
+                    invM_fun = Function('invM_fun', {x}, {invM});
+                    f_c_fun = Function('f_c_fun', {x}, {f_c});
+                    J_normal_fun = Function('J_normal_fun', {x}, {J_normal});
+                    if friction_exists
+                        if isequal(friction_model,'Conic')
+                            J_tangent_fun = Function('J_tangent_fun', {x}, {J_tangent});
+                        else
+                            D_tangent_fun = Function('D_tangent_fun', {x}, {D_tangent});
+                        end
+                    end
+                end
+            end
+
+            %% Lifting of forces in rigid bodies (either with time freezing or the dcs system)
+            % the r.h.s of M(q)\ddot{q} = F(q,\dot{q},u) into  M{q}z_v-f(q,dor{q},u)=0; \ddot{q} = z_v
+            % TODO: rename time_freezing_lift_forces into lift_velocity_state and
+            % implemet above
+            % g_lift_forces = [];
+            % if time_freezing && time_freezing_lift_forces % TODO Is this broken with parameters/v_global
+            %     f_v = f_x(n_q+1:2*n_q);
+            %     if n_u > 0
+            %         f_v_fun = Function('f_v_fun',{x,z_all,u,v_global},{f_v});
+            %         z0_forces = full(f_v_fun(x0,z0_all,u0,v0_global));
+            %     else % TODO remove this?
+            %         f_v_fun = Function('f_v_fun',{x,z_all,v_global},{f_v});
+            %         z0_forces = full(f_v_fun(x0,z0_all,v0_global));
+            %     end
+            %     z_forces = define_casadi_symbolic(casadi_symbolic_mode,'z_forces',n_q);
+            %     z_all = [z_all;z_forces];
+            %     n_z_all = n_z_all+n_q;
+            %     z0_all = [z0_all;z0_forces];
+            %     g_lift_forces = [M*z_forces - f_v]; % lifting function
+            %     % new simple dynamics after lifting
+            %     f_x = [f_x(1:n_q); z_forces; f_x(end-n_quad:end)];
+            % end
+            %%  collect all algebraic equations
+            g_lp = [g_switching;g_convex;obj.g_lift];
+            g_z_all = [g_lp; obj.g_z; g_alg_cls];
+            n_algebraic_constraints = length(g_z_all);
+
+            %% CasADi functions for indicator and region constraint functions
+            % model equations
+            % TODO: @ Anton make this to be a function of v_global as well (and test on telescop arm example)
+
+            f_x_fun = Function('f_x_fun',{obj.x,obj.z_all,obj.u,obj.p,obj.v_global},{f_x,obj.f_q});
+            g_z_all_fun = Function('g_z_all_fun',{obj.x,obj.z_all,obj.u,obj.p,obj.v_global},{g_z_all}); % lp kkt conditions without bilinear complementarity term (it is treated with the other c.c. conditions)
+            g_Stewart_fun = Function('g_Stewart_fun',{obj.x,obj.p},{obj.g_Stewart{:}});
+            if isequal(dcs_mode,'CLS')
+                g_impulse_fun = Function('g_impulse_fun',{obj.q,v_post_impact,v_pre_impact,obj.z_impulse},{g_impulse});
+            else
+                c_all = vertcat(obj.c{:});
+                c_fun = Function('c_fun',{obj.x,obj.p},{c_all});
+                dot_c = c_all.jacobian(obj.x)*f_x;
+                dot_c_fun = Function('c_fun',{obj.x,obj.z_all,obj.u,obj.p},{dot_c}); % total time derivative of switching functions
+                model.lambda00_fun = Function('lambda00_fun',{obj.x,obj.p_global},{lambda00_expr});
+                g_switching_fun = Function('g_switching_fun', {obj.x,obj.z_switching,obj.u,obj.p}, {g_switching});
+            end
+
+
+            J_cc_fun = Function('J_cc_fun',{obj.z_all},{f_comp_residual});
+            f_q_T_fun = Function('f_q_T',{obj.x,obj.p,obj.v_global},{obj.f_q_T});
+
+            %%  CasADi functions for lest-square objective function terms
+            f_lsq_x_fun = Function('f_lsq_x_fun',{obj.x,obj.x_ref,obj.p},{obj.f_lsq_x});
+            if dims.n_u > 0
+                f_lsq_u_fun = Function('f_lsq_u_fun',{obj.u,obj.u_ref,obj.p},{obj.f_lsq_u});
+            end
+            f_lsq_T_fun = Function('f_lsq_T_fun',{obj.x,obj.x_ref_end,obj.p_global},{obj.f_lsq_T});
+        end
+        
+        function generate_vars(obj,settings)
             import casadi.*
             casadi_symbolic_mode = settings.casadi_symbolic_mode;
             dcs_mode = settings.dcs_mode;
@@ -452,7 +664,7 @@ classdef NosnocModel < handle
                     end
                 end
             end
-            g_lift = [g_lift_theta_step;g_lift_beta];
+            obj.g_lift = [g_lift_theta_step;g_lift_beta];
 
             %% Collect algebaric varaibles for the specific DCS mode, define initial guess and bounds
             % TODO: @Anton: Do the bounds and guess specification already while defining the varaibles?
@@ -462,16 +674,16 @@ classdef NosnocModel < handle
               case 'Stewart'
                 % symbolic variables z = [theta;lambda;mu_Stewart];
                 obj.z_all = [obj.theta;obj.lambda;obj.mu];
-                z_switching = [obj.lambda;obj.mu];
+                obj.z_switching = [obj.lambda;obj.mu];
               case 'Step'
                 obj.z_all = [obj.alpha;obj.lambda_n;obj.lambda_p;obj.beta;obj.theta_step];
-                z_switching = [obj.lambda_n;obj.lambda_p];
+                obj.z_switching = [obj.lambda_n;obj.lambda_p];
               case 'CLS'
                 obj.z_all = [obj.lambda_normal;obj.y_gap];
                 % Impulse
                 %         z_impulse = [Lambda_normal;Y_gap;P_vn;N_vn];
                 z_impulse = [obj.Lambda_normal;obj.Y_gap;L_vn];
-                if friction_exists
+                if settings.friction_exists
                     % tangetial contact froce (firction force)
                     obj.z_all = [obj.z_all;obj.lambda_tangent];
                     % Impulse
@@ -501,6 +713,10 @@ classdef NosnocModel < handle
                             z_impulse = [z_impulse;obj.P_vt;obj.N_vt;obj.Alpha_vt];
                         end
                     end
+                end
+                if settings.lift_velocity_state
+                    obj.z_v = define_casadi_symbolic(casadi_symbolic_mode,['z_v'],dims.n_q);
+                    obj.z_all = [obj.z_all;obj.z_v];
                 end
             end
             %% Add user provided algebraic
@@ -681,7 +897,7 @@ classdef NosnocModel < handle
                 end
             end
 
-            p = vertcat(obj.p_global,obj.p_time_var);
+            obj.p = vertcat(obj.p_global,obj.p_time_var);
 
             %% Stage and terminal costs check
             if ~size(obj.f_q, 1) ~= 0
@@ -723,13 +939,13 @@ classdef NosnocModel < handle
                     fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,dims.N_stages)
                     error('nosnoc: Please provide x_ref in lsq_x{1} with an appropaite size.')
                 end
-                x_ref_val = lsq_x{2};
-                x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',n_x_ref_rows);
-                f_lsq_x = (lsq_x{1}-x_ref)'*lsq_x{3}*(lsq_x{1}-x_ref);
+                obj.x_ref_val = lsq_x{2};
+                obj.x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',n_x_ref_rows);
+                obj.f_lsq_x = (lsq_x{1}-x_ref)'*lsq_x{3}*(lsq_x{1}-x_ref);
             else
-                x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',1);
-                f_lsq_x = 0;
-                x_ref_val = zeros(1,dims.N_stages);
+                obj.x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',1);
+                obj.f_lsq_x = 0;
+                obj.x_ref_val = zeros(1,dims.N_stages);
             end
 
             % least square terms for control inputs
@@ -755,13 +971,13 @@ classdef NosnocModel < handle
                     fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,dims.N_stages)
                     error('nosnoc: Please provide u_ref in lsq_u{2} with an appropaite size.')
                 end
-                u_ref_val = lsq_u{2};
-                u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',n_u_ref_rows);
-                f_lsq_u = (lsq_u{1}-u_ref)'*lsq_u{3}*(lsq_u{1}-u_ref);
+                obj.u_ref_val = lsq_u{2};
+                obj.u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',n_u_ref_rows);
+                obj.f_lsq_u = (lsq_u{1}-u_ref)'*lsq_u{3}*(lsq_u{1}-u_ref);
             else
-                u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',1);
-                f_lsq_u = 0;
-                u_ref_val = zeros(1,dims.N_stages);
+                obj.u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',1);
+                obj.f_lsq_u = 0;
+                obj.u_ref_val = zeros(1,dims.N_stages);
             end
 
 
@@ -786,13 +1002,13 @@ classdef NosnocModel < handle
                     fprintf('nosnoc: The reference in lsq_T has to be a vector of length %d. \n',length(lsq_T{1}));
                     error('nosnoc: Please provide a reference vector in lsq_T{2} with an appropaite size.')
                 end
-                x_ref_end_val = lsq_T{2};
-                x_ref_end = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
-                f_lsq_T = (lsq_T{1}-x_ref_end)'*lsq_T{3}*(lsq_T{1}-x_ref_end);
+                obj.x_ref_end_val = lsq_T{2};
+                obj.x_ref_end = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
+                obj.f_lsq_T = (lsq_T{1}-x_ref_end)'*lsq_T{3}*(lsq_T{1}-x_ref_end);
             else
-                x_ref_end  = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',1);
-                f_lsq_T = 0;
-                x_ref_end_val = 0;
+                obj.x_ref_end  = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',1);
+                obj.f_lsq_T = 0;
+                obj.x_ref_end_val = 0;
             end
 
             %% Inequality constraints check
@@ -1132,8 +1348,8 @@ classdef NosnocModel < handle
             end
 
             % populate functions that can already be generated
-            obj.c_fun = Function('c_fun',{obj.x,p},{c_all});
-            obj.g_Stewart_fun = Function('g_Stewart_fun',{obj.x,p},{vertcat(obj.g_Stewart{:})});
+            obj.c_fun = Function('c_fun',{obj.x,obj.p},{c_all});
+            obj.g_Stewart_fun = Function('g_Stewart_fun',{obj.x,obj.p},{vertcat(obj.g_Stewart{:})});
         end
     end  % methods
 end % NosnocModel

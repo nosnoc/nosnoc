@@ -282,6 +282,7 @@ classdef FiniteElement < NosnocFormulationObject
             % RK stage stuff
             for ii = 1:dims.n_s
                 % state / state derivative variables
+                % TODO @Anton better v initialization.
                 if (settings.irk_representation == IrkRepresentation.differential ||...
                         settings.irk_representation == IrkRepresentation.differential_lift_x)
                     v = define_casadi_symbolic(settings.casadi_symbolic_mode,...
