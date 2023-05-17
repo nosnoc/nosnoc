@@ -598,7 +598,7 @@ classdef NosnocProblem < NosnocFormulationObject
             else
                 sigma = s_elastic;
             end
-            
+
             g_cross_comp = SX([]);
             % TODO Implement other modes
             if ~settings.use_fesd || settings.cross_comp_mode < 11
