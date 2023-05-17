@@ -2,7 +2,6 @@
 clear all;
 benchmark_globals;
 
-
 ref_sol_filename = "two_balls_ref_sol.mat";
 
 %% create reference solution
@@ -25,9 +24,10 @@ i = 1;
 for n_s = NS_VALUES 
     errors{i} = [];
     h_values{i} = [];
+    for with_guess = [0, 1]
     for N_sim = NSIM_VALUES
         for N_FE = NFE_VALUES
-            results_filename = get_results_filename(n_s, N_sim, N_FE, IRK_SCHEME);
+            results_filename = get_results_filename(n_s, N_sim, N_FE, IRK_SCHEME, with_guess);
             try
                 load(results_filename);
             catch
@@ -41,9 +41,11 @@ for n_s = NS_VALUES
                 h_values{i} = [h_values{i}, T_sim/(N_sim*N_FE)];
                 disp(strcat(results_filename, ' converged with error ', num2str(errors{i}(end), '%e')))
             else
+                keyboard
                 disp(strcat(results_filename, ' failed.'))
             end
         end
+    end
     end
     labels{i} = get_label(settings);
     i = i+1;
