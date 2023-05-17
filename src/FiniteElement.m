@@ -320,6 +320,7 @@ classdef FiniteElement < NosnocFormulationObject
                         ii);
                 end
                 % algebraic variables
+                % TODO @Anton revive lp_based_guess here
                 if settings.dcs_mode == DcsMode.Stewart
                     % add thetas
                     for ij = 1:dims.n_sys

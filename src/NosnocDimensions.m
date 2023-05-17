@@ -6,7 +6,6 @@ classdef NosnocDimensions < handle
         n_f
         n_u
         n_q
-        n_z_all
         n_z
         n_s
         n_sys
