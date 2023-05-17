@@ -147,7 +147,7 @@ for ii = 1:model.N_sim
         sim_step_solver_results = [sim_step_solver_results,res];
     end
     time_per_iter = [time_per_iter; solver_stats.cpu_time_total];
-    constraint_violations = [constraint_violations, solver_stats.constraint_violation]
+    constraint_violations = [constraint_violations, solver_stats.constraint_violation];
 
     % Initialize results
     if ii == 1
