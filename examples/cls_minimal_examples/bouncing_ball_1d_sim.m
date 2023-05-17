@@ -16,8 +16,8 @@ settings.multiple_solvers = 0;
 settings.mpcc_mode = "Scholtes_ineq";
 % some new verbose options for debuging
 
-settings.print_details_if_infeasible = 0;
-settings.pause_homotopy_solver_if_infeasible = 0;
+settings.print_details_if_infeasible = 1;
+settings.pause_homotopy_solver_if_infeasible = 1;
 settings.real_time_plot = 0;
 settings.no_initial_impacts = 1;
 settings.friction_model = 'Conic';
@@ -25,7 +25,7 @@ settings.conic_model_switch_handling = 'Abs';
 %settings.opts_ipopt.ipopt.linear_solver = 'ma97';
 settings.sigma_0 = 1e1;
 settings.homotopy_update_slope = 0.1;
-use_guess = 1;
+use_guess = 0;
 % settings.sigma_0 = 1e-4;
 % settings.mpcc_mode = "elastic_ineq";
 % settings.s_elastic_max = 1e0;
@@ -43,7 +43,7 @@ model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 %% Simulation setings
-N_FE = 4;
+N_FE = 7;
 T_sim = 1;
 N_sim = 1;
 
