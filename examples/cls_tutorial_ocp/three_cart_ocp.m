@@ -43,7 +43,7 @@ delete three_carts2.gif
 %%
 [settings] = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.n_s = 1;  % number of stages in IRK methods
+settings.n_s = 3;  % number of stages in IRK methods
 settings.dcs_mode = 'CLS';
 
 % settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
@@ -55,11 +55,12 @@ settings.cross_comp_mode = 1;
 settings.homotopy_update_slope = 0.2;
 settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 6;
+% settings.gamma_h = 0.999;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
-N_stg = 30; % control intervals
+N_stg = 20; % control intervals
 N_FE = 3;  % integration steps per control intevral
 T = 6;
 
@@ -96,7 +97,7 @@ model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
-model.e = 0;
+model.e = [0 1];
 model.mu = 0.0;
 model.x0 = x0; 
 
@@ -131,7 +132,7 @@ p3 = results.x(3,:);
 v1 = results.x(4,:);
 v2 = results.x(5,:);
 v3 = results.x(6,:);
-t_opt = results.t_grid;
+t_grid = results.t_grid;
 
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
@@ -159,26 +160,21 @@ for ii = 1:length(p1)
     yp = [0 0 cart_height  cart_height];
     patch(xp,yp,'m','FaceAlpha',0.8)
 
-%     if k2 >0
-%     spring1 = linspace(min(p1(ii),p2(ii)),max(p1(ii),p2(ii)),5);
-%     plot(spring1,spring1*0+cart_height/2,'ko-','LineWidth',1);
-%     end
-
     % the refereneces
     % cart 1
     xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'b','FaceAlpha',0.15)
+    patch(xp,yp,'b','FaceAlpha',0.10)
     hold on
     % cart 2
     xp = [x_ref(2)-cart_width2/2 x_ref(2)+cart_height/2 x_ref(2)+cart_height/2 x_ref(2)-cart_width2/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'r','FaceAlpha',0.15)
+    patch(xp,yp,'r','FaceAlpha',0.10)
 
     % cart 3
     xp = [x_ref(3)-cart_width3/2 x_ref(3)+cart_height/2 x_ref(3)+cart_height/2 x_ref(3)-cart_width3/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'m','FaceAlpha',0.15)
+    patch(xp,yp,'m','FaceAlpha',0.10)
 
 
     % ground     
@@ -206,33 +202,108 @@ for ii = 1:length(p1)
     end
 end
 
+%%  several frames
+figure('Renderer', 'painters', 'Position', [100 100 1000 600])
+
+x_min = min([x(:)])-2;
+x_max = max([x(:)])+2;
+
+N_total = length(p1);
+N_shots = 8;
+N_skip = round(N_total/N_shots);
+for jj= 1:N_shots
+    if jj ~=N_shots
+    ii = (jj-1)*(N_skip)+1;
+    else
+        ii = N_total;
+    end
+    subplot(N_shots/2,2,jj)
+     % cart 1
+    xp = [p1(ii)-cart_width1/2 p1(ii)+cart_height/2 p1(ii)+cart_height/2 p1(ii)-cart_width1/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'b','FaceAlpha',0.8)
+    hold on
+    % cart 2
+    xp = [p2(ii)-cart_width2/2 p2(ii)+cart_height/2 p2(ii)+cart_height/2 p2(ii)-cart_width2/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'r','FaceAlpha',0.8)
+
+    % cart 3
+    xp = [p3(ii)-cart_width3/2 p3(ii)+cart_height/2 p3(ii)+cart_height/2 p3(ii)-cart_width3/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'m','FaceAlpha',0.8)
+
+    % the refereneces
+    % cart 1
+    xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'b','FaceAlpha',0.10)
+    hold on
+    % cart 2
+    xp = [x_ref(2)-cart_width2/2 x_ref(2)+cart_height/2 x_ref(2)+cart_height/2 x_ref(2)-cart_width2/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'r','FaceAlpha',0.10)
+
+    % cart 3
+    xp = [x_ref(3)-cart_width3/2 x_ref(3)+cart_height/2 x_ref(3)+cart_height/2 x_ref(3)-cart_width3/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'m','FaceAlpha',0.10)
+
+    text(-1.5,3,['$t = ' num2str(round(t_grid(ii),2)) '\ s$'],'interpreter','latex');
+    xlabel('$x$ [m]','Interpreter','latex');
+    if mod(jj,2)
+        ylabel('$y$ [m]','Interpreter','latex');
+    end
+    % ground     
+    xp = [x_min x_max x_max x_min ];
+    yp = [-1 -1 0 0];
+    patch(xp,yp,0*ones(1,3),'FaceAlpha',0.1,'EdgeColor','none');
+    
+    axis equal
+    xlim([x_min x_max])
+    ylim([-0.5 3.5])
+end
+set(gcf,'Units','inches');
+screenposition = get(gcf,'Position');
+set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
+
+
 %%
-figure('Renderer', 'painters', 'Position', [100 100 1400 600])
-subplot(131)
-plot(t_opt,p1,'LineWidth',1.5);
+figure('Renderer', 'painters', 'Position', [100 100 1100 250])
+% figure
+subplot(141)
+plot(t_grid,p1,'LineWidth',1.5);
 hold on
-plot(t_opt,p2,'LineWidth',1.5);
-plot(t_opt,p3,'LineWidth',1.5);
+plot(t_grid,p2,'LineWidth',1.5);
+plot(t_grid,p3,'LineWidth',1.5);
 % axis equal
 grid on
-legend({'$p_1(t)$','$p_2(t)$','$p_3(t)$'},'interpreter','latex');
+legend({'$p_1(t)$','$p_2(t)$','$p_3(t)$'},'interpreter','latex','Location','southeast');
 xlabel('$t$','interpreter','latex');
 ylabel('$p$','interpreter','latex');
 % axis equal
-subplot(132)
-plot(t_opt,v1,'LineWidth',1.5);
+subplot(142)
+plot(t_grid,v1,'LineWidth',1.5);
 hold on
-plot(t_opt,v2,'LineWidth',1.5);
-plot(t_opt,v3,'LineWidth',1.5);
+plot(t_grid,v2,'LineWidth',1.5);
+plot(t_grid,v3,'LineWidth',1.5);
 legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 
-subplot(133)
-stairs(t_opt(1:N_FE:end),[results.u,nan],'LineWidth',1.5);
-
+subplot(143)
+stairs(t_grid(1:N_FE:end),[results.u,nan],'LineWidth',1.5);
 % legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$u$','interpreter','latex');
+
+
+subplot(144)
+stem(t_grid,[ones(2,1)*nan,Lambda_normal]','LineWidth',1.5);
+legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex');
+grid on
+xlabel('$t$','interpreter','latex');
+ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
