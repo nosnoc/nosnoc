@@ -43,24 +43,24 @@ settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;  % number of stages in IRK methods
 settings.dcs_mode = 'CLS';
 settings.cross_comp_mode = 1;
-settings.friction_model = "Conic";
-settings.conic_model_switch_handling = "Abs";
+settings.friction_model = "Polyhedral";
+settings.conic_model_switch_handling = "Plain";
 
 if 0
-settings.sigma_0 = 1e0;
-settings.homotopy_update_slope = 0.2;
-settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 6;
-settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
+    settings.sigma_0 = 1e0;
+    settings.homotopy_update_slope = 0.2;
+    settings.homotopy_update_rule = 'superlinear';
+    settings.N_homotopy = 6;
+    settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
 else
-settings.gamma_h = 0.995;
-settings.sigma_0 = 1e0;
-settings.mpcc_mode = "elastic_ineq";
-settings.elastic_scholtes = 1;
-settings.homotopy_update_slope = 0.2;
-settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 5;
-settings.opts_casadi_nlp.ipopt.max_iter = 2e2;
+    settings.gamma_h = 0.995;
+    settings.sigma_0 = 1e0;
+    settings.mpcc_mode = "elastic_ineq";
+    settings.elastic_scholtes = 1;
+    settings.homotopy_update_slope = 0.2;
+    settings.homotopy_update_rule = 'superlinear';
+    settings.N_homotopy = 5;
+    settings.opts_casadi_nlp.ipopt.max_iter = 3e2;
 end
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
@@ -357,7 +357,7 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\lambda_{\mathrm{n}}(t)$','interpreter','latex');
 subplot(122)
-plot(t_grid,[ones(5,1)*nan,lambda_tangent]','LineWidth',1.5);
+plot(t_grid,[ones(size(lambda_tangent,1),1)*nan,lambda_tangent]','LineWidth',1.5);
 % legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
