@@ -38,8 +38,8 @@ import casadi.*
 filename = 'discs_switch_position_obstacle.gif';
 %%
 [settings] = NosnocOptions();
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.n_s = 1;  % number of stages in IRK methods
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.n_s = 2;  % number of stages in IRK methods
 
 settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
 settings.use_fesd = 1;
@@ -55,14 +55,14 @@ settings.N_homotopy = 7;
 settings.g_path_at_fe = 0;
 settings.sigma_0 = 1e1;
 settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
-
+settings.gamma_h = 0.995;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 25; % control intervals
-N_FE = 3;  % integration steps per control intevral
-T = 5;
+N_FE = 2;  % integration steps per control intevral
+T = 4;
 
 %% model parameters
 m1 = 2;
@@ -107,7 +107,7 @@ model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
-model.e = 1;
+model.e = 1*0;
 model.mu = 0.0;
 model.a_n = 10;
 model.x0 = x0;
@@ -144,15 +144,26 @@ solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
-p1 = results.x(1,:);
-p2 = results.x(2,:);
-p3 = results.x(3,:);
-p4 = results.x(4,:);
-v1 = results.x(5,:);
-v2 = results.x(6,:);
-v3 = results.x(7,:);
-v4 = results.x(8,:);
-t_grid = results.t_grid;
+p1 = x(1,:);
+p2 = x(2,:);
+p3 = x(3,:);
+p4 = x(4,:);
+v1 = x(5,:);
+v2 = x(6,:);
+v3 = x(7,:);
+v4 = x(8,:);
+u_opt = u;
+
+p1 = x_with_impulse(1,:);
+p2 = x_with_impulse(2,:);
+p3 = x_with_impulse(3,:);
+p4 = x_with_impulse(4,:);
+v1 = x_with_impulse(5,:);
+v2 = x_with_impulse(6,:);
+v3 = x_with_impulse(7,:);
+v4 = x_with_impulse(8,:);
+t_grid = results.t_with_impulse;
+
 
 %% animation
 figure('Renderer', 'painters', 'Position', [100 100 1000 800])
@@ -191,30 +202,106 @@ for ii = 1:length(p1)
     end
 end
 
-%%
-if 1
-    figure('Renderer', 'painters', 'Position', [100 100 1400 600])
-    subplot(311)
-    plot(t_grid,v1,'LineWidth',1.5);
+%%  several frames
+% figure('Renderer', 'painters', 'Position', [100 100 1000 400])
+figure('Renderer', 'painters', 'Position', [100 100 800 300])
+
+x_min = min([p1,p2,p3,p4])-1;
+x_max = max([p1,p2,p3,p4])+1;
+
+tt = linspace(0,2*pi,100);
+x_t = cos(tt);
+y_t = sin(tt);
+N_total = length(p1);
+N_shots = 12;
+N_skip = round(N_total/N_shots);
+for jj= 1:N_shots
+    if jj ~=N_shots
+    ii = (jj-1)*(N_skip)+1;
+    else
+        ii = N_total;
+    end
+    subplot(2,N_shots/2,jj)
+    plot(r1*x_t+p1(ii),r1*y_t+p2(ii),'b-','LineWidth',2);
     hold on
-    plot(t_grid,v2,'LineWidth',1.5);
-    legend({'$v_1(t)$','$v_2(t)$'},'interpreter','latex');
-    xlabel('$t$','interpreter','latex');
-    ylabel('$v(t)$','interpreter','latex');
-    grid on
-    % axis equal
-    subplot(312)
-    plot(t_grid,v3,'LineWidth',1.5);
-    hold on
-    plot(t_grid,v4,'LineWidth',1.5);
-    grid on
-    legend({'$v_3(t)$','$v_4(t)$'},'interpreter','latex');
-    xlabel('$t$','interpreter','latex');
-    ylabel('$v(t)$','interpreter','latex');
-    subplot(313)
-    stairs(t_grid(1:N_FE:end),[results.u,nan*ones(2,1)]','LineWidth',1.5);
-    legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
-    grid on
-    xlabel('$t$','interpreter','latex');
-    ylabel('$u$','interpreter','latex');
+    plot(r2*x_t+p3(ii),r2*y_t+p4(ii),'r-','LineWidth',2);
+    text(-1.5,2,['$t = ' num2str(round(t_grid(ii),2)) '\ s$'],'interpreter','latex');
+    % obstacle
+    plot(r_ob*x_t+q_ob(1),r_ob*y_t+q_ob(2),'k-','LineWidth',1.5);
+    axis equal
+    xlim([x_min x_max])
+    ylim([x_min x_max])
+    xlabel('$x$ [m]','Interpreter','latex');
+    ylabel('$y$ [m]','Interpreter','latex');
 end
+set(gcf,'Units','inches');
+screenposition = get(gcf,'Position');
+set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
+%%
+figure('Renderer', 'painters', 'Position', [100 100 800 450])
+subplot(subplot(321))
+plot(t_grid,p1,'LineWidth',1.5);
+hold on
+plot(t_grid,p2,'LineWidth',1.5);
+xlim([0 T]);
+legend({'$q_{1,1}(t)$','$q_{1,2}(t)$'},'interpreter','latex','location','best');
+xlabel('$t$','interpreter','latex');
+ylabel('$q(t)$','interpreter','latex');
+grid on
+% axis equal
+subplot(322)
+plot(t_grid,p3,'LineWidth',1.5);
+hold on
+plot(t_grid,p4,'LineWidth',1.5);
+grid on
+xlim([0 T]);
+legend({'$q_{2,1}(t)$','$q_{2,2}(t)$'},'interpreter','latex','location','southwest');
+xlabel('$t$','interpreter','latex');
+ylabel('$q(t)$','interpreter','latex');
+
+
+subplot(323)
+plot(t_grid,v1,'LineWidth',1.5);
+hold on
+plot(t_grid,v2,'LineWidth',1.5);
+xlim([0 T]);
+legend({'$v_{1,1}(t)$','$v_{1,2}(t)$'},'interpreter','latex','location','north');
+xlabel('$t$','interpreter','latex');
+ylabel('$v(t)$','interpreter','latex');
+grid on
+% axis equal
+subplot(324)
+plot(t_grid,v3,'LineWidth',1.5);
+hold on
+plot(t_grid,v4,'LineWidth',1.5);
+grid on
+xlim([0 T]);
+legend({'$v_{2,1}(t)$','$v_{2,2}(t)$'},'interpreter','latex','location','northwest');
+xlabel('$t$','interpreter','latex');
+ylabel('$v(t)$','interpreter','latex');
+subplot(3,2,5)
+stairs(t_grid_u,[u_opt,nan*ones(2,1)]','LineWidth',1.5);
+legend({'$u_{1,1}(t)$','$u_{1,2}(t)$'},'interpreter','latex','location','best');
+grid on
+xlabel('$t$','interpreter','latex');
+ylabel('$u(t)$','interpreter','latex');
+xlim([0 T]);
+set(gcf,'Units','inches');
+
+
+subplot(3,2,6)
+stem(results.t_grid(1:settings.n_s-1:end),[nan,Lambda_normal]','LineWidth',1.5);
+grid on
+hold on
+% plot(results.t_grid(1:settings.n_s-1:end),[nan,lambda_normal]','LineWidth',1.5);
+xlabel('$t$','interpreter','latex');
+ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
+xlim([0 T]);
+set(gcf,'Units','inches');
+
+
+screenposition = get(gcf,'Position');
+set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+eval(['print -dpdf -painters ' ['manipulation_states'] ])
+

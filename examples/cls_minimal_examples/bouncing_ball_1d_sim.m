@@ -19,17 +19,14 @@ settings.elastic_scholtes = 1;
 
 settings.print_details_if_infeasible = 0;
 settings.pause_homotopy_solver_if_infeasible = 0;
-settings.real_time_plot = 0;
+settings.real_time_plot = 1;
 settings.no_initial_impacts = 1;
-settings.friction_model = 'Conic';
-settings.conic_model_switch_handling = 'Abs';
 %settings.opts_ipopt.ipopt.linear_solver = 'ma97';
-settings.sigma_0 = 1e1;
-settings.homotopy_update_slope = 0.1;
+settings.sigma_0 = 1e0;
+settings.homotopy_update_slope = 0.2;
 use_guess = 0;
-% settings.sigma_0 = 1e-4;
-% settings.mpcc_mode = "elastic_ineq";
-% settings.s_elastic_max = 1e0;
+settings.use_previous_solution_as_initial_guess = 0;
+
 %%
 g = 9.81;
 % Symbolic variables and bounds
@@ -37,7 +34,7 @@ q = SX.sym('q',1);
 v = SX.sym('v',1);
 model.M = 1;
 model.x = [q;v];
-model.e = 1;
+model.e = 0;
 model.mu = 0;
 x0 = [0.8;0];
 model.x0 = x0;
@@ -45,8 +42,8 @@ model.f_v = -g;
 model.f_c = q;
 %% Simulation setings
 N_FE = 2;
-T_sim = 1;
-N_sim = 57;
+T_sim = 2;
+N_sim = 15;
 
 model.T_sim = T_sim;
 model.N_FE = N_FE;
@@ -150,8 +147,7 @@ legend({'$\Lambda$ - numerical','$\Lambda$ - analytic'},'interpreter','latex');
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda$','interpreter','latex');
 
-if N_sim == 1
-    fprintf('Impulse error %2.2e \n',abs(max(results.Lambda_normal)-Lambda_star))
-    fprintf('position error %2.2e \n',abs(x_traj(end,1)-qx(end)))
-    fprintf('velocity error %2.2e \n',abs(x_traj(end,2)-vx(end)))
-end
+fprintf('Impulse error %2.2e \n',abs(max(results.Lambda_normal)-Lambda_star))
+fprintf('position error %2.2e \n',abs(x_traj(end,1)-qx(end)))
+fprintf('velocity error %2.2e \n',abs(x_traj(end,2)-vx(end)))
+
