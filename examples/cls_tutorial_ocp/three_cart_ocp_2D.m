@@ -235,6 +235,72 @@ for ii = 1:length(p1x)
     end
 end
 
+%%  several frames
+figure('Renderer', 'painters', 'Position', [100 100 1000 600])
+
+x_min = min([x_ref])-2;
+x_max = max([x_ref])+2;
+
+N_total = length(p1x);
+N_shots = 8;
+N_skip = round(N_total/N_shots);
+for jj= 1:N_shots
+    if jj ~=N_shots
+    ii = (jj-1)*(N_skip)+1;
+    else
+        ii = N_total;
+    end
+    subplot(N_shots/2,2,jj)
+     % cart 1
+    xp = [p1x(ii)-cart_width1/2 p1x(ii)+cart_height/2 p1x(ii)+cart_height/2 p1x(ii)-cart_width1/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'b','FaceAlpha',0.8)
+    hold on
+    % cart 2
+    xp = [p2x(ii)-cart_width2/2 p2x(ii)+cart_height/2 p2x(ii)+cart_height/2 p2x(ii)-cart_width2/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'r','FaceAlpha',0.8)
+
+    % cart 3
+    xp = [p3x(ii)-cart_width3/2 p3x(ii)+cart_height/2 p3x(ii)+cart_height/2 p3x(ii)-cart_width3/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'m','FaceAlpha',0.8)
+
+    % the refereneces
+    % cart 1
+    xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'b','FaceAlpha',0.10)
+    hold on
+    % cart 2
+    xp = [x_ref(3)-cart_width2/2 x_ref(3)+cart_height/2 x_ref(3)+cart_height/2 x_ref(3)-cart_width2/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'r','FaceAlpha',0.10)
+
+    % cart 3
+    xp = [x_ref(5)-cart_width3/2 x_ref(5)+cart_height/2 x_ref(5)+cart_height/2 x_ref(5)-cart_width3/2];
+    yp = [0 0 cart_height  cart_height];
+    patch(xp,yp,'m','FaceAlpha',0.10)
+
+    text(-1.5,3,['$t = ' num2str(round(t_grid(ii),2)) '\ s$'],'interpreter','latex');
+    xlabel('$x$ [m]','Interpreter','latex');
+    if mod(jj,2)
+        ylabel('$y$ [m]','Interpreter','latex');
+    end
+    % ground     
+    xp = [x_min x_max x_max x_min ];
+    yp = [-1 -1 0 0];
+    patch(xp,yp,0*ones(1,3),'FaceAlpha',0.1,'EdgeColor','none');
+    
+    axis equal
+    xlim([x_min x_max])
+    ylim([-0.5 3.5])
+end
+set(gcf,'Units','inches');
+screenposition = get(gcf,'Position');
+set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
+
 %%
 figure('Renderer', 'painters', 'Position', [100 100 1400 600])
 subplot(131)
