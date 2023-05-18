@@ -13,11 +13,12 @@ settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 
-settings.mpcc_mode = "Scholtes_ineq";
+settings.mpcc_mode = "elastic_ineq";
+settings.elastic_scholtes = 1;
 % some new verbose options for debuging
 
-settings.print_details_if_infeasible = 1;
-settings.pause_homotopy_solver_if_infeasible = 1;
+settings.print_details_if_infeasible = 0;
+settings.pause_homotopy_solver_if_infeasible = 0;
 settings.real_time_plot = 0;
 settings.no_initial_impacts = 1;
 settings.friction_model = 'Conic';
@@ -43,9 +44,9 @@ model.x0 = x0;
 model.f_v = -g;
 model.f_c = q;
 %% Simulation setings
-N_FE = 7;
+N_FE = 2;
 T_sim = 1;
-N_sim = 1;
+N_sim = 57;
 
 model.T_sim = T_sim;
 model.N_FE = N_FE;
@@ -129,7 +130,14 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 subplot(313)
 if settings.no_initial_impacts == 1
-    stem(results.t_grid,[nan,results.Lambda_normal,nan])
+    Lm = [];
+    for ii=0:length(results.Lambda_normal)-1
+        if mod(ii,N_FE-1) == 0
+            Lm = [Lm,nan];
+        end
+        Lm = [Lm, results.Lambda_normal(ii+1)];
+    end
+    stem(results.t_grid,[Lm,nan])
 else
     stem(results.t_grid,[results.Lambda_normal,nan])
 end
