@@ -91,7 +91,6 @@ classdef NosnocSolver < handle
             if ~isempty(settings.ipopt_callback)
                 settings.opts_casadi_nlp.iteration_callback.solver = solver;
             end
-            
 
             % Define CasADi function for the switch indicator function.
             nu_fun = Function('nu_fun', {w,p},{problem.nu_vector});

@@ -33,6 +33,7 @@ for n_s = NS_VALUES
             model.f_c = q(1)-R;
             % settings
             settings = NosnocOptions();
+            settings.break_simulation_if_infeasible = 1;
             settings.irk_scheme = IRK_SCHEME;
             % settings.irk_representation = 'differential';
             settings.n_s = n_s;

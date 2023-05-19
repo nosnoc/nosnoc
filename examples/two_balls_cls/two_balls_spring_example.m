@@ -60,7 +60,7 @@ model.N_sim = N_sim;
 initial_guess = struct();
 initial_guess.x_traj = x_traj_matlab;
 initial_guess.t_grid = t_grid_matlab;
-initial_guess.lambda_normal_guess = lambda_normal_guess;
+initial_guess.lambda_normal_traj = lambda_normal_guess;
 
 [results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
 

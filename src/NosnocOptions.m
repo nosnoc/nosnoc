@@ -33,8 +33,9 @@ classdef NosnocOptions < handle
         use_fesd(1,1) logical = 1
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
 
-        % Interface settings
+        % Integrator settings
         real_time_plot(1,1) logical = 0
+        break_simulation_if_infeasible(1,1) logical = 1
 
         % IRK and FESD Settings
         n_s(1,1) {mustBeInteger, mustBeInRange(n_s, 1, 9)} = 2
@@ -199,6 +200,7 @@ classdef NosnocOptions < handle
         b_irk double
         C_irk double
         D_irk double
+        c_irk double
 
         % psi func
         psi_fun_type CFunctionType = CFunctionType.BILINEAR
@@ -251,6 +253,10 @@ classdef NosnocOptions < handle
                 obj.B_irk = B;
                 obj.C_irk = C;
                 obj.D_irk = D;
+                % also get time steps
+                [~, ~, c_irk] = generate_butcher_tableu(model.dims.n_s,obj.irk_scheme);
+                obj.c_irk = c_irk;
+
               case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
                 [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dims.n_s,obj.irk_scheme);
                 if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
@@ -260,6 +266,7 @@ classdef NosnocOptions < handle
                 end
                 obj.A_irk = A_irk;
                 obj.b_irk = b_irk;
+                obj.c_irk = c_irk;
             end
             obj.right_boundary_point_explicit = right_boundary_point_explicit;
         end
