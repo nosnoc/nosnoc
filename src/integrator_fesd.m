@@ -68,7 +68,18 @@ end
 
 %% Initialization
 results = struct();
-% states
+names = get_result_names_from_settings(settings);
+names = [names, {"h"}];
+for name=names
+    results.(name) = [];
+    results.extended.(name) = [];
+end
+results.x = x0;
+results.extended.x = x0;
+results.s_sot = [];
+results.x_with_impulse = x0;
+results.t_with_impulse = 0;
+% stats
 complementarity_stats  = [];
 homotopy_iteration_stats = [];
 time_per_iter = [];
@@ -143,7 +154,7 @@ for ii = 1:model.N_sim
 
     %% solve
     [sol, solver_stats] = solver.solve();
-    [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
+    res = extract_results_from_solver(model, solver.problem, settings, sol);
     if solver_stats.converged == 0
         disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
         % solver.print_iterate(sol.W(:,end))
@@ -155,7 +166,7 @@ for ii = 1:model.N_sim
             solver.set('Y_gap', {0});
             solver.set('L_vn', {0});
             [sol, solver_stats] = solver.solve();
-            [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
+            res = extract_results_from_solver(model, solver.problem, settings, sol);
             if solver_stats.converged == 0
                 disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
             end
@@ -165,27 +176,11 @@ for ii = 1:model.N_sim
             ii, model.N_sim,simulation_time_pased, model.T_sim, solver_stats.cpu_time_total);
     end
 
-    names = [names, {"h"}];
     if settings.store_integrator_step_results
         sim_step_solver_results = [sim_step_solver_results,res];
     end
     time_per_iter = [time_per_iter; solver_stats.cpu_time_total];
     constraint_violations = [constraint_violations, solver_stats.constraint_violation];
-
-    % Initialize results
-    if ii == 1
-        for name=names
-            if isfield(res, name)
-                results.(name) = [];
-                results.extended.(name) = [];
-            end
-        end
-        results.x = x0;
-        results.extended.x = x0;
-        results.s_sot = [];
-        results.x_with_impulse = x0;
-        results.t_with_impulse = 0;
-    end
 
     converged = [converged, solver_stats.converged];
     simulation_time_pased = simulation_time_pased + model.T;
