@@ -220,7 +220,7 @@ classdef NosnocOptions < handle
     methods
         function obj = NosnocOptions()
 
-            default_tol = 1e-4;
+            default_tol = 1e-12;
 
             obj.opts_casadi_nlp.ipopt.print_level = 0;
             obj.opts_casadi_nlp.print_time = 0;
