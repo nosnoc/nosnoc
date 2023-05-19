@@ -147,21 +147,26 @@ for ii = 1:model.N_sim
     if solver_stats.converged == 0
         disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
         % solver.print_iterate(sol.W(:,end))
-        if exist('initial_guess', 'var')
-            keyboard
+%         if exist('initial_guess', 'var')
+%             keyboard
             % reset to neutral inital guess
             disp(['provided initial guess in integrator step did not converge, trying neutral inital guess.'])
-            solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
-            solver.set('x', {x0})
-            solver.set('x_left_bp', {x0})
+%             solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
+%             solver.set('x', {x0})
+%             solver.set('x_left_bp', {x0})
+            solver.set('Lambda_normal', {7});
+            solver.set('lambda_normal', {0});
+            solver.set('y_gap', {0});
+            solver.set('Y_gap', {0});
+            solver.set('L_vn', {0});
             [sol, solver_stats] = solver.solve();
             [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
             if solver_stats.converged == 0
                 disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
                 % solver.print_iterate(sol.W(:,end))
-                keyboard
+%                 keyboard
             end
-        end
+%         end
     elseif print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
             ii, model.N_sim,simulation_time_pased, model.T_sim, solver_stats.cpu_time_total);
