@@ -1293,13 +1293,13 @@ classdef FiniteElement < NosnocFormulationObject
 
             % nonlinear inequality.
             % TODO: do this cleaner
-            if (model.g_path_constraint &&...
+            if (~isempty(model.g_path) &&...
                     (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 obj.addConstraint(model.g_path_fun(X_k0,Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
-                if model.g_path_constraint && settings.g_path_at_stg
+                if ~isempty(model.g_path) && settings.g_path_at_stg
                     obj.addConstraint(model.g_path_fun(X_ki{j},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
                 end
             end
@@ -1351,7 +1351,7 @@ classdef FiniteElement < NosnocFormulationObject
             ubg_path_comp = [];
             g_path_comp_pairs = [];
             % path complementarities
-            if (model.g_comp_path_constraint &&...
+            if (~isempty(model.g_comp_path) &&...
                 (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global);
                 g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
@@ -1365,7 +1365,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
-                if model.g_comp_path_constraint && settings.g_path_at_stg
+                if ~isempty(model.g_comp_path) && settings.g_path_at_stg
                     pairs = model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global);
                     g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
                     expr = apply_psi(pairs, psi_fun, sigma);

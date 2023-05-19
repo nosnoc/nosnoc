@@ -306,7 +306,7 @@ if ~time_freezing_model_exists
     %% Settings updates
     settings.time_freezing_model_exists = time_freezing_model_exists;
     %% Model updates
-    model.n_quad = n_quad;
+    model.dims.n_quad = n_quad;
     model.n_q = n_q;
     model.n_aux = n_aux;
     model.q = q;

@@ -46,7 +46,7 @@ t_grid = cumsum([0,h_opt]);
 if settings.time_optimal_problem
     if settings.use_speed_of_time_variables
         s_sot = w_opt(flatten_ind(problem.ind_sot));
-        if ~local_speed_of_time_variable
+        if ~settings.local_speed_of_time_variable
             s_sot = s_sot*ones(model.dims.N_stages,1);
         end
         h_rescaled = [];

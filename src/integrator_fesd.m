@@ -36,14 +36,6 @@
 
 function [varargout] = integrator_fesd(model, settings, u_sim, initial_guess)
 
-%% generate time-freezing model before turning off time-related settings
-if settings.time_freezing
-    [model,settings] = time_freezing_reformulation(model,settings);
-end
-
-%% Settings of integration
-[model] = refine_model_integrator(model,settings);
-
 %% Create solver functions for integrator step
 solver = NosnocSolver(model, settings);
 model = solver.model;
@@ -260,7 +252,7 @@ else
 end
 fprintf('---------------- Stats summary ----------------------------\n');
 fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
-fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, N_stages, N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
+fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, dims.N_stages, dims.N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
 fprintf('-----------------------------------------------------------------\n\n');
 
 %% Output

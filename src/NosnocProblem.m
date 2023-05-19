@@ -139,6 +139,12 @@ classdef NosnocProblem < NosnocFormulationObject
 
         % Problem constraint function
         g_fun
+
+        % switch indicator function
+        nu_fun
+
+        nabla_J
+        nabla_J_fun
     end
     % remaining list of TODOs
     % TODO: cleanup/add properties (in all components)
@@ -368,7 +374,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
 
             % Process terminal constraint.
-            if model.terminal_constraint
+            if ~isempty(model.g_terminal)
                 if settings.relax_terminal_constraint_homotopy
                     rho_terminal_p = 1/sigma_p;
                 end
@@ -530,6 +536,16 @@ classdef NosnocProblem < NosnocFormulationObject
                 obj.p0 = [obj.p0; model.p_time_var_val];
             end
             obj.w0_original = obj.w0;
+
+            % Define CasADi function for the switch indicator function.
+            nu_fun = Function('nu_fun', {obj.w,obj.p},{obj.nu_vector});
+            obj.nu_fun = nu_fun;
+            
+            % create CasADi function for objective gradient.
+            nabla_J = obj.cost.jacobian(obj.w);
+            nabla_J_fun = Function('nabla_J_fun', {obj.w,obj.p},{nabla_J});
+            obj.nabla_J = nabla_J;
+            obj.nabla_J_fun = nabla_J_fun;
         end
 
         % TODO this should be private
