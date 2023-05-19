@@ -57,6 +57,7 @@ settings.step_equilibration = 'heuristic_mean';  % heuristic_diff, heuristic_mea
 settings.rho_h = 1e2;
 
 %% model equations
+model = NosnocModel();
 % Variable defintion
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
@@ -100,8 +101,8 @@ model.x0 = [2*pi/3;pi/3;v0];
 model.x = x;
 model.T = 4;
 
-model.N_stages = 6;
-model.N_finite_elements = N_finite_elements;
+model.dims.N_stages = 6;
+model.dims.N_finite_elements = N_finite_elements;
 
 % Switching Functions
 p = 2; a = 0.15; a1 = 0;
@@ -142,7 +143,7 @@ t_grid_optimizer = [results.t_grid];
 x_res_optimizer = [results.x];
 %%
 figure
-stairs(results.t_grid,[results.h;nan])
+stairs(results.t_grid,[results.h,nan])
 xlabel('$t$','Interpreter','latex');
 ylabel('$h_{ki}$','Interpreter','latex');
 %%
