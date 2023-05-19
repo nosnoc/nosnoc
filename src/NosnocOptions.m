@@ -209,6 +209,7 @@ classdef NosnocOptions < handle
 
         % Output options
         store_integrator_step_results(1,1) logical = 0
+        ipopt_callback = [] % This should be a function handle that takes (model,problem,settings,ipopt_solver,results)
     end
 
     properties(Dependent)
@@ -219,7 +220,7 @@ classdef NosnocOptions < handle
     methods
         function obj = NosnocOptions()
 
-            default_tol = 1e-12;
+            default_tol = 1e-4;
 
             obj.opts_casadi_nlp.ipopt.print_level = 0;
             obj.opts_casadi_nlp.print_time = 0;

@@ -160,12 +160,35 @@ model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 %% Call nosnoc solver
 solver = NosnocSolver(model, settings);
 lambda_guess = {};
+y_gap_guess = {};
+x_guess = {};
 for ii = 1:N_stg
     lambda_guess{ii} = [0;0;g;g;g];
+    y_gap_guess{ii} = [1;1;0;0;0];
+    x_guess{ii} = x_ref;
 end
-% solver.set('lambda_normal',lambda_guess')
-% results = load("initial_guess_blocks");
-% solver.set('w0',results.results.w)
+solver.set('lambda_normal',lambda_guess');
+
+% use a previous solution to initialize
+if isfile('results.mat')
+    old_res = load('results.mat');
+    names = fieldnames(old_res.extended);
+    for k=1:numel(names)
+        name = names{k};
+        if name == 'x'
+            val = reshape(old_res.extended.x(:,2:end), 1, []);
+        else
+            val = reshape(old_res.extended.(name), 1, []);
+        end
+        val = val';
+        solver.set(name, val);
+    end
+end
+
+%solver.set('y_gap',y_gap_guess');
+%solver.set('Y_gap',y_gap_guess');
+%solver.set('x', x_guess');
+%solver.set('x_left_bp', x_guess');
 [results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');

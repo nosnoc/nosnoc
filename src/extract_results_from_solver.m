@@ -43,8 +43,8 @@ else
     if settings.time_optimal_problem && ~settings.use_speed_of_time_variables
         T = T_opt;
     end
-    for ii = 1:N_stages
-        h_opt = [h_opt,T/(N_stages*N_finite_elements(ii))*ones(N_finite_elements(ii),1)];
+    for ii = 1:model.dims.N_stages
+        h_opt = [h_opt,model.T/(model.dims.N_stages*model.dims.N_finite_elements(ii))*ones(1, model.dims.N_finite_elements(ii))];
     end
 end
 results.h = h_opt;
@@ -56,11 +56,11 @@ if settings.time_optimal_problem
     if settings.use_speed_of_time_variables
         s_sot = w_opt(flatten_ind(problem.ind_sot));
         if ~local_speed_of_time_variable
-            s_sot = s_sot*ones(N_stages,1);
+            s_sot = s_sot*ones(model.dims.N_stages,1);
         end
         h_rescaled = [];
         ind_prev = 1;
-        for ii = 1:N_stages
+        for ii = 1:model.dims.N_stages
             h_rescaled = [h_rescaled,h_opt(ind_prev:model.dims.N_finite_elements(ii)+ind_prev-1).*s_sot(ii)];
             ind_prev = ind_prev+model.dims.N_finite_elements(ii);
         end
