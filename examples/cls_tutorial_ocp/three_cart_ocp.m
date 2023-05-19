@@ -60,9 +60,9 @@ settings.N_homotopy = 6;
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
-N_stg = 20; % control intervals
-N_FE = 3;  % integration steps per control intevral
-T = 6;
+N_stg = 25; % control intervals
+N_FE = 2;  % integration steps per control intevral
+T = 5;
 
 %% model parameters
 m1 = 1;
@@ -77,7 +77,7 @@ ubx = [10; 15; 15; 5; 5; 5];
 lbx = [-15; -15; -10; -5; -5; -5];            
         
 x0 = [-3; 0; 3; 0; 0; 0];
-x_ref = [-7; 0; 5; 0; 0; 0];
+x_ref = [-7; 0; 6; 0; 0; 0];
 u_ref = 0;
 
 Q = diag([10; 1; 10; 0.1; 0.1; 0.1]);
@@ -266,44 +266,53 @@ end
 set(gcf,'Units','inches');
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
+eval(['print -dpdf -painters ' ['carts_frames'] ])
 
 
 %%
-figure('Renderer', 'painters', 'Position', [100 100 1100 250])
+figure('Renderer', 'painters', 'Position', [100 100 1100 260])
 % figure
 subplot(141)
 plot(t_grid,p1,'LineWidth',1.5);
 hold on
 plot(t_grid,p2,'LineWidth',1.5);
 plot(t_grid,p3,'LineWidth',1.5);
+xlim([0 T])
 % axis equal
 grid on
-legend({'$p_1(t)$','$p_2(t)$','$p_3(t)$'},'interpreter','latex','Location','southeast');
+legend({'$q_1(t)$','$q_2(t)$','$q_3(t)$'},'interpreter','latex','Location','east');
 xlabel('$t$','interpreter','latex');
-ylabel('$p$','interpreter','latex');
+ylabel('$q(t)$','interpreter','latex');
 % axis equal
 subplot(142)
 plot(t_grid,v1,'LineWidth',1.5);
 hold on
 plot(t_grid,v2,'LineWidth',1.5);
 plot(t_grid,v3,'LineWidth',1.5);
-legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex');
+legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex','Location','south');
 grid on
 xlabel('$t$','interpreter','latex');
-ylabel('$v$','interpreter','latex');
-
+ylabel('$v(t)$','interpreter','latex');
+xlim([0 T])
 subplot(143)
 stairs(t_grid(1:N_FE:end),[results.u,nan],'LineWidth',1.5);
 % legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
-ylabel('$u$','interpreter','latex');
+ylabel('$u(t)$','interpreter','latex');
+xlim([0 T])
 
 
 subplot(144)
 stem(t_grid,[ones(2,1)*nan,Lambda_normal]','LineWidth',1.5);
-legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex');
+legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex','Location','northwest');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
+xlim([0 T])
+
+
+set(gcf,'Units','inches');
+screenposition = get(gcf,'Position');
+set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+eval(['print -dpdf -painters ' ['carts_states'] ])

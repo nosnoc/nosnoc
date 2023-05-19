@@ -35,40 +35,40 @@ clc;
 import casadi.*
 
 %%
-play_animation = 0;
+play_animation = 1;
 
 %%
 [settings] = NosnocOptions();
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.n_s = 2;  % number of stages in IRK methods
+settings.n_s = 3;  % number of stages in IRK methods
 settings.dcs_mode = 'CLS';
 settings.cross_comp_mode = 1;
-settings.friction_model = "Polyhedral";
-settings.conic_model_switch_handling = "Plain";
+settings.friction_model = "Conic";
+settings.conic_model_switch_handling = "Abs";
 
-if 0
+if 1
     settings.sigma_0 = 1e0;
     settings.homotopy_update_slope = 0.2;
     settings.homotopy_update_rule = 'superlinear';
-    settings.N_homotopy = 6;
-    settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
+    settings.N_homotopy = 5;
+    settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 else
-    settings.gamma_h = 0.995;
+    settings.gamma_h = 0.9;
     settings.sigma_0 = 1e0;
     settings.mpcc_mode = "elastic_ineq";
     settings.elastic_scholtes = 1;
     settings.homotopy_update_slope = 0.2;
     settings.homotopy_update_rule = 'superlinear';
     settings.N_homotopy = 5;
-    settings.opts_casadi_nlp.ipopt.max_iter = 3e2;
+    settings.opts_casadi_nlp.ipopt.max_iter = 5e2;
 end
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
-N_stg = 30; % control intervals
+N_stg = 15; % control intervals
 N_FE = 2;  % integration steps per control intevral
-T = 6;
+T = 5;
 
 %% model parameters
 m1 = 1;
@@ -83,14 +83,18 @@ M = diag([m1, m1, m2, m2, m3, m3]);
 ubx = [10;  inf; 10;    inf;  10;  inf;  10; 10; 10; 10; 10; 10];
 lbx = [-10; -inf; -10; -inf; -10; -inf; -10; -10; -10; -10; -10;-10];
 
+
+ubx = [10;  2; 10;    2;  10;  2;  10; 10; 10; 10; 10; 10];
+lbx = [-10; -2; -10; -2; -10; -2; -10; -10; -10; -10; -10;-10];
+
 x0 = [ -3; 1; 0; 1;  3; 1; ...
     0; 0; 0; 0; 0; 0];
-x_ref = [-7; 0; 0; 0; 5; 0;...
+x_ref = [-7; 0; 0; 0; 6; 0;...
     0; 0; 0; 0; 0; 0];
 u_ref = 0;
 
 Q = diag([10; 0.1; 1; 0.1; 10; 0.1; 0.1; 0.1; 0.1; 0.1; 0.1; 0.1]);
-Q_terminal = 200*Q;
+Q_terminal = 300*Q;
 R = 0.1;
 
 u_max = 30;
@@ -141,7 +145,8 @@ model.J_tangent = J_tangent;
 model.D_tangent = [J_tangent, -J_tangent];
 
 model.e =  [0.0 1.0 0.0 0.0 0.0];
-model.mu = [0.0 0.0 0.3 0.3 0.25];
+% model.mu = [0.0 0.0 0.001 0.001 0.001];
+model.mu = [0.1 0.1 0.1 0.1 0.1];
 
 % box constraints on controls and states
 model.lbu = u_min;
@@ -158,7 +163,9 @@ lambda_guess = {};
 for ii = 1:N_stg
     lambda_guess{ii} = [0;0;g;g;g];
 end
-solver.set('lambda_normal',lambda_guess')
+% solver.set('lambda_normal',lambda_guess')
+% results = load("initial_guess_blocks");
+% solver.set('w0',results.results.w)
 [results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
@@ -311,43 +318,54 @@ set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:
 eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
 
 %%
-figure('Renderer', 'painters', 'Position', [100 100 1100 250])
+%%
+figure('Renderer', 'painters', 'Position', [100 100 1100 260])
 % figure
 subplot(141)
 plot(t_grid,p1x,'LineWidth',1.5);
 hold on
 plot(t_grid,p2x,'LineWidth',1.5);
 plot(t_grid,p3x,'LineWidth',1.5);
+xlim([0 T])
 % axis equal
 grid on
-legend({'$p_1(t)$','$p_2(t)$','$p_3(t)$'},'interpreter','latex','Location','southeast');
+legend({'$q_1(t)$','$q_2(t)$','$q_3(t)$'},'interpreter','latex','Location','east');
 xlabel('$t$','interpreter','latex');
-ylabel('$p$','interpreter','latex');
+ylabel('$q(t)$','interpreter','latex');
 % axis equal
 subplot(142)
 plot(t_grid,v1x,'LineWidth',1.5);
 hold on
 plot(t_grid,v2x,'LineWidth',1.5);
 plot(t_grid,v3x,'LineWidth',1.5);
-legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex');
+legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex','Location','south');
 grid on
 xlabel('$t$','interpreter','latex');
-ylabel('$v$','interpreter','latex');
-
+ylabel('$v(t)$','interpreter','latex');
+xlim([0 T])
 subplot(143)
 stairs(t_grid(1:N_FE:end),[results.u,nan],'LineWidth',1.5);
 % legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
-ylabel('$u$','interpreter','latex');
+ylabel('$u(t)$','interpreter','latex');
+xlim([0 T])
+
 
 subplot(144)
 stem(t_grid,[ones(2,1)*nan,Lambda_normal(1:2,:)]','LineWidth',1.5);
-legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex');
+legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex','Location','northwest');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
+xlim([0 T])
 
+
+set(gcf,'Units','inches');
+screenposition = get(gcf,'Position');
+set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+eval(['print -dpdf -painters ' ['carts_states'] ])
+%%
 
 figure
 subplot(121)
