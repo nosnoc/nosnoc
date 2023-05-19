@@ -147,13 +147,8 @@ for ii = 1:model.N_sim
     if solver_stats.converged == 0
         disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
         % solver.print_iterate(sol.W(:,end))
-%         if exist('initial_guess', 'var')
-%             keyboard
-            % reset to neutral inital guess
-            disp(['provided initial guess in integrator step did not converge, trying neutral inital guess.'])
-%             solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
-%             solver.set('x', {x0})
-%             solver.set('x_left_bp', {x0})
+        if settings.dcs_mode == "CLS"
+            disp('provided initial guess in integrator step did not converge, trying anther inital guess.');
             solver.set('Lambda_normal', {7});
             solver.set('lambda_normal', {0});
             solver.set('y_gap', {0});
@@ -163,10 +158,8 @@ for ii = 1:model.N_sim
             [res, names] = extract_results_from_solver(model, solver.problem, settings, sol);
             if solver_stats.converged == 0
                 disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
-                % solver.print_iterate(sol.W(:,end))
-%                 keyboard
             end
-%         end
+        end
     elseif print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
             ii, model.N_sim,simulation_time_pased, model.T_sim, solver_stats.cpu_time_total);
@@ -244,6 +237,10 @@ for ii = 1:model.N_sim
     complementarity_stats  = [complementarity_stats; solver_stats.complementarity_stats(end)];
     homotopy_iteration_stats = [homotopy_iteration_stats; solver_stats.homotopy_iterations];
 
+    if solver_stats.converged == 0 && settings.break_simulation_if_infeasible
+        disp('solver did not converge and break_simulation_if_infeasible is True -> finish simulation with Failure!')
+        break
+    end
     %% plot during execution
     if real_time_plot
         figure(100)
@@ -286,17 +283,10 @@ integrator_stats.converged = converged;
 results.t_grid = cumsum([0,results.h])';
 
 % generate fine t_grid
-[A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dims.n_s,settings.irk_scheme);
 tgrid_long = 0;
-h_grid_long = [];
-for ii = 1:model.N_sim*model.dims.N_stages*model.dims.N_finite_elements;
-    if settings.use_fesd
-        h_yet = results.h(ii);
-    else
-        h_yet = model.h;
-    end
+for ii = 1:length(results.h)
     for jj = 1:n_s
-        tgrid_long = [tgrid_long;results.t_grid(ii)+c_irk(jj)*h_yet];
+        tgrid_long = [tgrid_long; results.t_grid(ii) + settings.c_irk(jj)*results.h(ii)];
     end
 end
 results.extended.t_grid = tgrid_long;
