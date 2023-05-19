@@ -5,9 +5,10 @@ import casadi.*
 settings = NosnocOptions();
 settings.n_s = 2;
 settings.dcs_mode = 'Step';
-settings.mpcc_mode = MpccMode.Scholtes_eq;
+settings.mpcc_mode = MpccMode.Scholtes_ineq;
 settings.print_level = 3;
 
+model = NosnocModel();
 x1 = SX.sym('x1');
 model.p_time_var = SX.sym('t_var',1);
 model.x = x1;
@@ -20,8 +21,12 @@ model.F = [f_11, f_12];
 model.x0 = -1;
 
 model.T = pi/4;
-model.N_stages = 1;
-model.N_finite_elements = 2;
+model.dims.N_stages = 1;
+model.dims.N_finite_elements = 2;
+
+model.verify_and_backfill(settings);
+model.generate_vars(settings);
+model.generate_diffeq(settings);
 
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();

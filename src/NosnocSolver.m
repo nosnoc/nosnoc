@@ -53,6 +53,9 @@ classdef NosnocSolver < handle
             w = problem.w;
             g = problem.g;
             p = problem.p;
+            if ~isempty(settings.ipopt_callback)
+                settings.opts_casadi_nlp.iteration_callback = NosnocIpoptCallback('a_callback', model, problem, settings, length(w),length(g),length(p));
+            end
 
             casadi_nlp = struct('f', problem.cost, 'x', w, 'g', g, 'p', p);
 
@@ -84,6 +87,11 @@ classdef NosnocSolver < handle
                 end
             end
             obj.solver = solver;
+
+            if ~isempty(settings.ipopt_callback)
+                settings.opts_casadi_nlp.iteration_callback.solver = solver;
+            end
+            
 
             % Define CasADi function for the switch indicator function.
             nu_fun = Function('nu_fun', {w,p},{problem.nu_vector});
@@ -154,7 +162,7 @@ classdef NosnocSolver < handle
                     end
                     % Otherwise we assume that we are initializing via a flat array and we simply check for the same length
                 else
-                    if ndims(val) == 2 && length(val) == length(ind)
+                    if ndims(val) == 2 && length(val) == length(flat_ind)
                         obj.problem.w0(flat_ind) = val;
                     else
                         error('nosnoc: set should be a cell array or a flat array')

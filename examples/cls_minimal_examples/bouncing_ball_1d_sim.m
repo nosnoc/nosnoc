@@ -26,6 +26,7 @@ settings.sigma_0 = 1e0;
 settings.homotopy_update_slope = 0.2;
 use_guess = 0;
 settings.use_previous_solution_as_initial_guess = 0;
+settings.ipopt_callback = @bouncing_ball_1d_callback;
 
 %%
 g = 9.81;
@@ -43,7 +44,7 @@ model.f_c = q;
 %% Simulation setings
 N_FE = 2;
 T_sim = 2;
-N_sim = 15;
+N_sim = 1;
 
 model.T_sim = T_sim;
 model.N_FE = N_FE;
