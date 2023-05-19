@@ -36,6 +36,7 @@ import casadi.*
 
 %%
 play_animation = 1;
+no_friction = 0;
 
 %%
 [settings] = NosnocOptions();
@@ -43,27 +44,28 @@ settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 3;  % number of stages in IRK methods
 settings.dcs_mode = 'CLS';
 settings.cross_comp_mode = 1;
-settings.friction_model = "Conic";
+settings.friction_model = "Polyhedral";
 settings.conic_model_switch_handling = "Abs";
+settings.print_level = 5;
 
-if 1
+if 0
     settings.sigma_0 = 1e0;
     settings.homotopy_update_slope = 0.2;
     settings.homotopy_update_rule = 'superlinear';
     settings.N_homotopy = 5;
     settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 else
-    settings.gamma_h = 0.9;
+    settings.gamma_h = 0.9999;
     settings.sigma_0 = 1e0;
-    settings.mpcc_mode = "elastic_ineq";
+    settings.mpcc_mode = "Scholtes_ineq";
     settings.elastic_scholtes = 1;
     settings.homotopy_update_slope = 0.2;
-    settings.homotopy_update_rule = 'superlinear';
-    settings.N_homotopy = 5;
-    settings.opts_casadi_nlp.ipopt.max_iter = 5e2;
+    %settings.homotopy_update_rule = 'superlinear';
+    settings.N_homotopy = 6;
+    settings.opts_casadi_nlp.ipopt.max_iter = 5e3;
 end
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+%settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 15; % control intervals
@@ -145,9 +147,12 @@ model.J_tangent = J_tangent;
 model.D_tangent = [J_tangent, -J_tangent];
 
 model.e =  [0.0 1.0 0.0 0.0 0.0];
-% model.mu = [0.0 0.0 0.001 0.001 0.001];
-model.mu = [0.1 0.1 0.1 0.1 0.1];
-
+if no_friction
+    model.mu = 0.0;
+else
+    model.mu = [0.0 0.0 0.001 0.001 0.001];
+    %model.mu = [0.1 0.1 0.1 0.1 0.1];
+end
 % box constraints on controls and states
 model.lbu = u_min;
 model.ubu = u_max;
