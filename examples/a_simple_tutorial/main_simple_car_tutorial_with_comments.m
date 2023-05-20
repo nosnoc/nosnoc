@@ -68,8 +68,9 @@ settings.equidistant_control_grid = 1;
 settings.time_optimal_problem = 0;
 %% Model - define all problem functions and
 % Discretization parameters
-model.N_stages = 10; % number of control intervals
-model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+model = NosnocModel();
+model.dims.N_stages = 10; % number of control intervals
+model.dims.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 13;    % Time horizon
 
 % Symbolic variables and bounds

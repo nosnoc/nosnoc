@@ -99,15 +99,15 @@ v2 = v(3:4);
 x = [q;v];
 
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+model.dims.N_stages = N_stg;
+model.dims.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0.0;
 model.mu = 0;
 model.a_n = 10;
 model.x0 = x0; 
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 
 cv = 2*1;
 eps = 1e-1;

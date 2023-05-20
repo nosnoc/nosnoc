@@ -22,9 +22,9 @@ v_trash_hold = 10;
 v_max = 25;
 x_goal = [200 ;0];
 %% Discretization
-N_finite_elements = model.N_finite_elements;
+N_finite_elements = model.dims.N_finite_elements;
 N_control_intevrlas = 1;
-N_stages = model.N_stages;
+N_stages = model.dims.N_stages;
 
 % Time horizon
 T_val = 15; % Time horizon
@@ -139,8 +139,8 @@ output.yout = yout;
 output.results = results;
 output.cpu_time_all = cpu_time_all;
 output.cpu_time =  mean(cpu_time_all);
-output.N_stages =  model.N_stages;
-output.N_finite_elements =  model.N_finite_elements;
+output.N_stages =  model.dims.N_stages;
+output.N_finite_elements =  model.dims.N_finite_elements;
 
 end
 

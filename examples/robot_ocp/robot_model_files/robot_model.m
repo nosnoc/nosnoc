@@ -3,7 +3,7 @@ import casadi.*
 
 %% the dynamics
 model.n_q = 4;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 g = -9.81*1;
 % differential state
 qx = MX.sym('qx',1);                                                       % position

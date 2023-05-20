@@ -97,8 +97,8 @@ v2 = v(3:4);
 x = [q;v];
 
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+model.dims.N_stages = N_stg;
+model.dims.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.mu = 0;

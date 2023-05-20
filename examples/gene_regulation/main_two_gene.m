@@ -51,6 +51,7 @@ settings.n_s = 2;
 settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 settings.mpcc_mode = MpccMode.Scholtes_ineq; %MpccMode.elastic_ineq;
 settings.homotopy_update_rule = 'superlinear';
+settings.general_inclusion = 1;
 
 %% Generate different trajectories
 results = [];
@@ -61,7 +62,7 @@ for x1 = 3:3:12
         % Generate model
         model = two_gene_model(x0, lifting);
         % Time
-        model.N_finite_elements = N_finite_elements;
+        model.dims.N_finite_elements = N_finite_elements;
         model.T_sim = T_sim;
         model.N_sim = N_sim;
 

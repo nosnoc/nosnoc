@@ -39,6 +39,7 @@ m = 1;
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2);
+model = NosnocModel();
 model.M = eye(2);
 model.x = [q;v];
 model.e = 0.8;
@@ -53,7 +54,7 @@ N_FE = 2;
 T_sim = 1;
 N_sim = 94;
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+model.dims.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 
 %% MATLAB solution

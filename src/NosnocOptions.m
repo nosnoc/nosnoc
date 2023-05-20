@@ -35,7 +35,7 @@ classdef NosnocOptions < handle
 
         % Integrator settings
         real_time_plot(1,1) logical = 0
-        break_simulation_if_infeasible(1,1) logical = 1
+        break_simulation_if_infeasible(1,1) logical = 0
 
         % IRK and FESD Settings
         n_s(1,1) {mustBeInteger, mustBeInRange(n_s, 1, 9)} = 2

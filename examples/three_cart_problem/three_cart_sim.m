@@ -43,7 +43,8 @@ settings.stagewise_clock_constraint = 0;
 
 %%
 % Symbolic variables and bounds
-q = SX.sym('q',3); v = SX.sym('v',3); 
+q = SX.sym('q',3); v = SX.sym('v',3);
+model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0;
 model.mu = 0;
@@ -58,7 +59,7 @@ model.f_v = [1/m1*(u(1)-c_damping*v(1)-k1*q(1));...
 model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 %% Simulation settings
 N_FE = 2;
 T_sim = 3;

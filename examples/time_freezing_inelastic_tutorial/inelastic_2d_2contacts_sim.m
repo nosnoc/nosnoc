@@ -20,10 +20,12 @@ g = 10;
 vertical_force = 0;
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
+
+model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0;
 model.mu = 0;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 model.a_n = g;
 model.x0 = [0.8;0.5;-1.5;-1]; 
 model.f_v = [0;-g];

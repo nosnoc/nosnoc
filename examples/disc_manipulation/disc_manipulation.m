@@ -91,9 +91,10 @@ q1 = q(1:2);
 q2 = q(3:4);
 
 x = [q;v];
+model = NosnocModel();
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+model.dims.N_stages = N_stg;
+model.dims.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
@@ -108,7 +109,7 @@ model.f_v = [u;...
 
 % gap functions
 model.f_c = [norm(q1-q2)^2-(r1+r2)^2];
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 
 % box constraints on controls and states
 model.lbu = u_min;

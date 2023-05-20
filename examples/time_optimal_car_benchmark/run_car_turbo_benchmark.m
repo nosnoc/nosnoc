@@ -19,7 +19,7 @@ settings.comp_tol = 1e-12;
 settings.time_optimal_problem = 1;
 settings.n_s = 2;
 % model data
-model.N_finite_elements = 3;
+model.dims.N_finite_elements = 3;
 model.T = 1;
 
 %% results
@@ -41,7 +41,7 @@ T_opt_bonmin = [];
 %%  run nosnoc with fesd
 if run_fesd
     for ii = 1:length(N_stages_vec)
-        model.N_stages = N_stages_vec(ii);
+        model.dims.N_stages = N_stages_vec(ii);
         output = solve_car_turbo_with_nosnoc(model,settings);
         cpu_time_fesd  = [cpu_time_fesd, output.cpu_time];
         cpu_time_all_fesd  = [cpu_time_all_fesd , output.cpu_time_all'];
@@ -66,7 +66,7 @@ if run_std
     settings.local_speed_of_time_variable = 0;
 
     for ii = 1:length(N_stages_vec)
-        model.N_stages = N_stages_vec(ii);
+        model.dims.N_stages = N_stages_vec(ii);
         output = solve_car_turbo_with_nosnoc(model,settings);
         cpu_time_std  = [cpu_time_std, output.cpu_time];
         cpu_time_all_std  = [cpu_time_all_std , output.cpu_time_all'];
@@ -87,7 +87,7 @@ time_limit_reached = 0;
 if run_gurobi
     settings.gurobi_tol = 1e-6;
     for ii = 1:length(N_stages_vec)
-        model.N_stages = N_stages_vec(ii);
+        model.dims.N_stages = N_stages_vec(ii);
         output = solve_car_turbo_with_gurobi(model,settings);
         % save
         cpu_time_gurobi  = [cpu_time_gurobi, output.cpu_time];
@@ -122,7 +122,7 @@ end
 time_limit_reached = 0;
 if run_bonmin
     for ii = 1:length(N_stages_vec)
-        model.N_stages = N_stages_vec(ii);
+        model.dims.N_stages = N_stages_vec(ii);
         output = solve_car_turbo_with_bonmin(model,settings);
         % save
         cpu_time_bonmin  = [cpu_time_bonmin, output.cpu_time];

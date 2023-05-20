@@ -46,8 +46,9 @@ settings.dcs_mode = 'Step';
 N_sim = 1;
 T_sim = 0.75;
 
+model = NosnocModel();
 model.N_sim = N_sim;
-model.N_finite_elements = 2;
+model.dims.N_finite_elements = 2;
 model.T_sim = T_sim;
 
 model.x0 = -0.50;
@@ -60,7 +61,7 @@ model.F = [f_1 f_2];
 [results,stats,model] = integrator_fesd(model,settings);
 %
 figure
-plot(results.t_grid,results.x_res)
+plot(results.t_grid,results.x)
 grid on
 xlabel('$t$','Interpreter','latex')
 ylabel('$x(t)$','Interpreter','latex')

@@ -25,6 +25,7 @@ for irk_scheme = IRK_SCHEMES
         for n_s = NS_VALUES
             for N_sim = NSIM_VALUES
                 for N_FE = NFE_VALUES
+                    model = NosnocModel()
                     model.M = eye(2);
                     model.x = [q;v];
                     model.e = e;

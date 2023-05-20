@@ -33,6 +33,7 @@ g = 9.81;
 % Symbolic variables and bounds
 q = SX.sym('q',1);
 v = SX.sym('v',1);
+model = NosnocModel();
 model.M = 1;
 model.x = [q;v];
 model.e = 0;
@@ -47,7 +48,7 @@ T_sim = 2;
 N_sim = 1;
 
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+model.dims.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 

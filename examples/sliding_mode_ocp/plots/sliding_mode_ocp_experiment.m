@@ -38,8 +38,8 @@ else
 end
 model.x0 = [2*pi/3;pi/3;v0];
 model.T = 4;
-model.N_stages = 6;
-model.N_finite_elements = N_finite_elements;
+model.dims.N_stages = 6;
+model.dims.N_finite_elements = N_finite_elements;
 % Variable defintion
 x1 = MX.sym('x1');
 x2 = MX.sym('x2');
@@ -143,8 +143,8 @@ if estimate_terminal_error
     if ~use_matlab_integrator
         model.T_sim = 4/6;
         model.N_sim = 32;
-        model.N_stages = 1;
-        model.N_finite_elements = 2;
+        model.dims.N_stages = 1;
+        model.dims.N_finite_elements = 2;
         model.g_terminal = [];
         model.g_terminal_lb = [];
         model.g_terminal_ub = [];

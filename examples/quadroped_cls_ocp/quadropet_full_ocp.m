@@ -127,17 +127,17 @@ x_ref = interp1([0 0.5 1],[x0,x_mid,x_end]',linspace(0,1,N_stg),'spline')'; %spl
 model.mu = 0.8;
 
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+model.dims.N_stages = N_stg;
+model.dims.N_finite_elements  = N_FE;
 
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 % LSQ objective
 model.lsq_x = {x,x_ref,Q};
 model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 % model.a_n = 1e2;
-% model.n_dim_contact = 2;
+% model.dims.n_dim_contact = 2;
 %% Call nosnoc solver
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();

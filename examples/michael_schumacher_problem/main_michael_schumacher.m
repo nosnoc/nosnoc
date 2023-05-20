@@ -55,10 +55,11 @@ settings.dcs_mode = 'Step';
 % settings.rho_terminal = 1e3;
 
 %% model equations
+model = NosnocModel();
 model.x0 = zeros(5,1);
 model.T = 5; 
-model.N_stages = 25; 
-model.N_finite_elements = 2;
+model.dims.N_stages = 25; 
+model.dims.N_finite_elements = 2;
 
 %% Variable defintion
 % Declare model variables

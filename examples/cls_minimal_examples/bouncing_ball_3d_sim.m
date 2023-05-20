@@ -25,10 +25,11 @@ settings.cross_comp_mode = 1;
 g = 10;
 % Symbolic variables and bounds
 q = SX.sym('q',3); 
-v = SX.sym('v',3); 
+v = SX.sym('v',3);
+model = NosnocModel();
 model.e = 0;
 model.mu = 0.2;
-model.n_dim_contact = 3;
+model.dims.n_dim_contact = 3;
 model.x = [q;v]; 
 model.a_n = g;
 model.x0 = [0;0;1;2;1;0]; 
@@ -45,7 +46,7 @@ N_finite_elements = 3;
 T_sim = 3;
 N_sim = 20;
 model.T_sim = T_sim;
-model.N_FE = N_finite_elements;
+model.dims.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call FESD Integrator

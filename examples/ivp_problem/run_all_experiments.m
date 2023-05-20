@@ -45,8 +45,8 @@ settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.equidistant_control_grid = 0;
 %% Generate Model
 model.T = 2;
-model.N_stages = 1;
-model.N_finite_elements = 25;
+model.dims.N_stages = 1;
+model.dims.N_finite_elements = 25;
 model.x0 = -1;
 % Variable defintion
 x = MX.sym('x');

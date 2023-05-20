@@ -59,7 +59,7 @@ x_star = [exp(1);0];
 T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 
-model.N_finite_elements = N_finite_elements;
+model.dims.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 model.R_osc = R_osc;

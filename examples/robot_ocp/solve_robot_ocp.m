@@ -95,7 +95,7 @@ end
 model.f_c = f_c;
 model.J_tangent = J_tangent;
 model.J_normal= J_normal;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 %% OCP
 % Objective and constraints
 model.f_q = u'*u;

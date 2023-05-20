@@ -159,8 +159,8 @@ t_end = 0;
 if 0
     model.T_sim = 4/6;
     model.N_sim = 12;
-    model.N_stages = 1;
-    model.N_finite_elements = 2;
+    model.dims.N_stages = 1;
+    model.dims.N_finite_elements = 2;
     model.g_terminal = [];
     model.g_terminal_lb = [];
     model.g_terminal_ub = [];

@@ -1,11 +1,12 @@
 function [model] = elastic_ball_in_box_model(omega)
 import casadi.*
-%% Discretization parameters 
-N_stages = 40;
-N_finite_elements = 4;
+%% Discretization parameters
+model = NosnocModel();
+model.dims.N_stages = 40;
+model.dims.N_finite_elements = 4;
 N_periods = 2;
 alpha0 = pi/4; % inital angle
-T = N_periods*(2*pi/abs(omega));
+model.T = N_periods*(2*pi/abs(omega));
 %% Model Parameters
 time_var_reference = 1;
 qx_c = 0.0;
@@ -25,7 +26,7 @@ qy0 = R*cos(alpha0);
 vx0 = R*omega*cos(alpha0);
 vy0 = -R*omega*sin(alpha0);
 t0  = 0;
-x0 = [qx0;qy0;vx0;vy0;t0];
+model.x0 = [qx0;qy0;vx0;vy0;t0];
 %% Model parameters for time freezing
 k_tf = 100;  % stiffnes 
 gamma_tf = 1; % restitution coefficient
@@ -40,20 +41,20 @@ vy = SX.sym('vy');
 t = SX.sym('t');
 q = [qx;qy];
 v = [vx;vy];
-x = [q;v;t];
-n_x = length(x);
+model.x = [q;v;t];
+n_x = length(model.x);
 n_q = 2;
-lbx = -inf*ones(n_x,1);
-ubx = inf*ones(n_x,1);
+model.lbx = -inf*ones(n_x,1);
+model.ubx = inf*ones(n_x,1);
 %% control
 ux = SX.sym('ux');
 uy = SX.sym('uy');
-u = [ux;uy];
+model.u = [ux;uy];
 n_u = 2;
-u0 = [0;0];
+model.u0 = [0;0];
 umax = inf;
-lbu = -umax*ones(n_u,1);
-ubu = umax*ones(n_u,1);
+model.lbu = -umax*ones(n_u,1);
+model.ubu = umax*ones(n_u,1);
 %% Switching functions
 % distance of constraints to (0,0) 
 unit_size = 0.05*R*1;
@@ -67,7 +68,7 @@ c_2 = -qx+a_right; % right
 c_3 = -qy+b_top; % top
 c_4 = qx-a_left; % left
 % sign matrix for the modes
-S = [1 1 1 1;...  % interior
+model.S = [1 1 1 1;...  % interior
      -1 1 1 1;...  % bottom
      -1 -1 1 1;...  % bottom right
       1 -1 1 1;...  % right
@@ -76,7 +77,7 @@ S = [1 1 1 1;...  % interior
       1 1 -1 -1;...  % top left
       1 1 1 -1;...  % left
      -1 1 1 -1]; % bottom left
-c = [c_1;c_2;c_3;c_4];
+model.c = [c_1;c_2;c_3;c_4];
 
 %% auxiliary dynamics
 f_aux_right = [vx;0;-k_tf*(qx-a_right)-c_tf*vx;0;0];
@@ -96,7 +97,7 @@ f_17 = f_aux_top+f_aux_left;
 f_18 = f_aux_left;
 f_19 = f_aux_bottom+f_aux_left;
 % in matrix form
-F = [f_11 f_12 f_13 f_14 f_15 f_16 f_17 f_18 f_19];
+model.F = [f_11 f_12 f_13 f_14 f_15 f_16 f_17 f_18 f_19];
 
 %% objective
 % if time_var_reference  
@@ -106,21 +107,16 @@ F = [f_11 f_12 f_13 f_14 f_15 f_16 f_17 f_18 f_19];
     vy_ref = -R*omega*sin(omega*t+alpha0);
     q_ref = [qx_ref;qy_ref];    
     v_ref = [vx_ref;vy_ref];
-    f_q = (rho_q*(q-q_ref)'*(q-q_ref)+rho_v*(v-v_ref)'*(v-v_ref)+rho_u*u'*u); 
+    model.f_q = (rho_q*(q-q_ref)'*(q-q_ref)+rho_v*(v-v_ref)'*(v-v_ref)+rho_u*u'*u); 
 % else
 %     f_q = active_control*(rho_q*((qx-qx_c)^2+(qy-qy_c)^2-R^2)^2+rho_v*(v'*v-v_target^2)^2+rho_u*(u'*u));
 % end
 % Terminal Cost
-f_q_T = 0;
+model.f_q_T = 0;
 
 %%  general nonlinear constinrst
-g_path = u'*u;
-g_path_lb = -inf;
-g_path_ub = u_max_R^2;
-%% Populate model
-names = who;
-for ii = 1:length(names)
-    eval([ 'model.' names{ii} '=' names{ii} ';'])
-end
+model.g_path = u'*u;
+model.g_path_lb = -inf;
+model.g_path_ub = u_max_R^2;
 end
 

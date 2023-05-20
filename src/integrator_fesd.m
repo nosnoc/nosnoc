@@ -37,6 +37,7 @@
 function [varargout] = integrator_fesd(model, settings, u_sim, initial_guess)
 
 %% Create solver functions for integrator step
+settings.equidistant_control_grid = 0; % reset settings
 solver = NosnocSolver(model, settings);
 model = solver.model;
 settings = solver.settings;
@@ -109,7 +110,7 @@ for ii = 1:model.N_sim
     solver.set('x', {x0})
     solver.set('x_left_bp', {x0})
     if exist('initial_guess', 'var')
-        t_guess = t_current + cumsum([0; model.h_k * ones(model.N_finite_elements, 1)]);
+        t_guess = t_current + cumsum([0; model.h_k * ones(dims.N_finite_elements, 1)]);
         x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess,'makima');
         lambda_normal_guess = interp1(initial_guess.t_grid, initial_guess.lambda_normal_traj, t_guess(2:end-1), 'makima');
         %

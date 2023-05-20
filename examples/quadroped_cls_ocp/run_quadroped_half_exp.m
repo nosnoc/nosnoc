@@ -63,8 +63,8 @@ x_ref = interp1([0 0.5 1],[x0,x_mid,x_end]',linspace(0,1,N_stg),'spline')'; %spl
 %% Populate model
 model.mu = 0.8;
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+model.dims.N_stages = N_stg;
+model.dims.N_finite_elements  = N_FE;
 % LSQ objective
 model.lsq_x = {x,x_ref,Q};
 model.lsq_u = {u,u_ref,R};

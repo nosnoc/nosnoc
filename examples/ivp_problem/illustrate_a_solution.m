@@ -8,8 +8,8 @@ settings.n_s = 1;
 % Generate Model
 model.T_sim = 0.2;
 model.N_sim = 30;
-model.N_stages = 1;
-model.N_finite_elements = 2;
+model.dims.N_stages = 1;
+model.dims.N_finite_elements = 2;
 model.x0 = -0.1;
 % Variable defintion
 x = MX.sym('x');
