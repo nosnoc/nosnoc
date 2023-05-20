@@ -102,7 +102,7 @@ for ii = 1:model.N_sim
 
     if ii > 1 && settings.use_previous_solution_as_initial_guess
         % TODO make this possible via solver interface directly
-        solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
+        solver.problem.w0(dims.n_x+1:end) = res.w(dims.n_x+1:end);
     end
 
     %% set initial guess
@@ -177,8 +177,27 @@ for ii = 1:model.N_sim
     time_per_iter = [time_per_iter; solver_stats.cpu_time_total];
     constraint_violations = [constraint_violations, solver_stats.constraint_violation];
     converged = [converged, solver_stats.converged];
-    complementarity_stats  = [complementarity_stats; solver_stats.complementarity_stats(end)];
-    homotopy_iteration_stats = [homotopy_iteration_stats; solver_stats.homotopy_iterations];
+    simulation_time_pased = simulation_time_pased + model.T;
+
+    %% update initial guess and inital value
+    x0 = res.x(:,end);
+    %     update clock state
+    if impose_terminal_phyisical_time
+        solver.problem.p0(end) = solver.problem.p0(end)+model.T;
+    end
+    solver.set("x0", x0);
+
+    % TODO Set up homotopy solver to take p_val explicitly
+    if use_previous_solution_as_initial_guess
+        % TODO make this possible via solver interface directly
+        solver.problem.w0(dims.n_x+1:end) = res.w(dims.n_x+1:end);
+    end
+
+    % set all x values to xcurrent, as this is the best available guess.
+    solver.set('x', {x0})
+    solver.set('x_left_bp', {x0})
+    % try zeros?
+    % solver.set('lambda_normal', 1.0)
 
     %% Store data
     % update results struct

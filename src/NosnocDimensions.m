@@ -27,5 +27,8 @@ classdef NosnocDimensions < handle
         n_quad
         n_aux
         n_dim_contact
+
+        n_theta_step
+        n_beta
     end
 end

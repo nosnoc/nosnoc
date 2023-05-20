@@ -23,16 +23,19 @@ settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 settings.mpcc_mode = MpccMode.Scholtes_ineq;
 settings.pss_lift_step_functions = 0;
+settings.break_simulation_if_infeasible = 0;
+settings.print_level = 2
 %% integrator settings
+model = NosnocModel();
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-model.N_finite_elements = N_finite_elements;
+model.dims.N_finite_elements = N_finite_elements;
 settings.use_previous_solution_as_initial_guess = 1;
 
 %% model
 % dimensoon
 model.a_n = 100;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 n_balls = 4;
 n_q = n_balls*2; % number of positions
 % parameters
@@ -98,7 +101,7 @@ model.f_v = f_v;
 model.x0 = x0;
 model.f_c = f_c;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,model,settings,solver] = integrator_fesd(model,settings);
 %% velocity plot
 q = results.x(1:n_q,:);
 v = results.x(n_q+1:end-1,:);
