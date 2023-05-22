@@ -21,13 +21,15 @@ labels = cell(length(NS_VALUES), 1);
 
 %%
 i = 1;
+for kk = 1
 for n_s = NS_VALUES 
     errors{i} = [];
     h_values{i} = [];
-    for with_guess = [0, 1]
+    
+    for with_guess = [0]
     for N_sim = NSIM_VALUES
         for N_FE = NFE_VALUES
-            results_filename = get_results_filename(n_s, N_sim, N_FE, IRK_SCHEME, with_guess);
+            results_filename = get_results_filename(n_s, N_sim, N_FE, IRK_SCHEME{kk}, with_guess);
             try
                 load(results_filename);
             catch
@@ -47,10 +49,11 @@ for n_s = NS_VALUES
         end
     end
     end
-    labels{i} = get_label(settings);
+%     labels{i} = get_label(settings);
+    labels{i} = 'hh';
     i = i+1;
 end
-
+end
 
 %% order plot
 list_of_markers = {'-o','-d','-s','-x','-v','-^','-<','->','-*'};
@@ -67,6 +70,22 @@ set(gca, 'XScale', 'log');
 xlabel('$h$','interpreter','latex');
 ylabel('$E(T)$','interpreter','latex');
 grid on
+
+
+% triankle
+% r = 7;
+% x1 = 5e-3;
+% x2 = 1e-2;
+% x3 = 1e-2;
+% y1 = 1e-7;
+% y2 = y1;
+% slope = log10(y1)+r/2;
+% y3 = 10.^(slope);
+% loglog([x1 x2], [y1 y2],'k','LineWidth',1.2)
+% loglog([x2 x3], [y2 y3],'k','LineWidth',1.2)
+% loglog([x1 x2], [y1 y3],'k','LineWidth',1.2)
+
+
 
 legend(labels, 'interpreter','latex','Location','southeast');
 

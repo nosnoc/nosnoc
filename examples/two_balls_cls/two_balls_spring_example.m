@@ -9,7 +9,7 @@ settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 5;
 settings.print_level = 3;
 % settings.N_homotopy = 8;
-settings.cross_comp_mode = 3;
+settings.cross_comp_mode = 1;
 settings.dcs_mode = DcsMode.CLS;
 settings.multiple_solvers = 0;
 settings.mpcc_mode = "Scholtes_ineq";
@@ -26,6 +26,10 @@ settings.real_time_plot = 1;
 settings.comp_tol  = 1e-13;
 settings.sigma_N = 1e-13;
 
+settings.mpcc_mode = "elastic_ineq";
+settings.elastic_scholtes = 1;
+settings.sigma_0 = 1e0;
+settings.homotopy_update_slope = 0.2;
 %%
 g = 9.81;
 R = 0.2;
@@ -47,12 +51,13 @@ model.f_c = q(1)-R;
 %% Simulation settings
 N_FE = 2;
 T_sim = 1;
-N_sim = 60;
+N_sim = 75;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
 
 %% MATLAB solution
+settings.use_previous_solution_as_initial_guess = 1;
 [t_grid_matlab, x_traj_matlab, n_bounces, lambda_normal_guess] = two_balls_spring_matlab(T_sim,x0,model.e,1e-13);
 
 
@@ -62,7 +67,8 @@ initial_guess.x_traj = x_traj_matlab;
 initial_guess.t_grid = t_grid_matlab;
 initial_guess.lambda_normal_traj = lambda_normal_guess;
 
-[results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
+% [results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
+[results,stats,model,settings,solver] = integrator_fesd(model, settings);
 
 %% read and plot results
 q1 = results.x(1,:);

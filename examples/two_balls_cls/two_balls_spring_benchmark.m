@@ -20,67 +20,70 @@ save(ref_sol_filename, "t_grid_guess", "x_traj_guess", "n_bounces_guess", "lambd
 tic
 
 %% run experiments
-for with_guess = [1]
-for n_s = NS_VALUES
-    for N_sim = NSIM_VALUES
-        for N_FE = NFE_VALUES
-            model.M = eye(2);
-            model.x = [q;v];
-            model.e = e;
-            model.mu = 0;
-            model.x0 = x0;
-            model.f_v = [-m*g+k*(q(2)-q(1)-l);-m*g-k*(q(2)-q(1)-l)];
-            model.f_c = q(1)-R;
-            % settings
-            settings = NosnocOptions();
-            settings.break_simulation_if_infeasible = 1;
-            settings.irk_scheme = IRK_SCHEME;
-            % settings.irk_representation = 'differential';
-            settings.n_s = n_s;
-            settings.print_level = 3;
-            % settings.N_homotopy = 8;
-            settings.cross_comp_mode = 3; % 1 or 3
-            settings.dcs_mode = DcsMode.CLS;
-            settings.multiple_solvers = 0;
-            settings.mpcc_mode = "Scholtes_ineq";
-            settings.no_initial_impacts = 1;
-            % settings.sigma_0 = 1e-2;
-            settings.sigma_N = 1e-11;
-            settings.comp_tol = 1e-11;
-            settings.gamma_h = 0.99;
-            % settings.homotopy_update_slope = 0.5;
-            settings.rho_h = (1/(T_sim / N_sim))*2;
-            settings.opts_casadi_nlp.ipopt.max_iter = 1500;
-            % settings.opts_casadi_nlp.ipopt.bound_push = 1e-5;
-            % settings.opts_casadi_nlp.ipopt.bound_frac = 1e-5;
-            % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
-
-            %% Simulation settings
-            model.T_sim = T_sim;
-            model.N_FE = N_FE;
-            model.N_sim = N_sim;
-
-            %% Call nosnoc Integrator
-            initial_guess = struct();
-            initial_guess.x_traj = x_traj_guess;
-            initial_guess.t_grid = t_grid_guess;
-            initial_guess.lambda_normal_traj = lambda_normal_guess;
-
-            if with_guess
-                settings.sigma_0 = 1e-2;
-                % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
-                [results, stats, model, settings, solver] = integrator_fesd(model, settings, [], initial_guess);
-            else
-                [results, stats, model, settings, solver] = integrator_fesd(model, settings, []);
+for kk = 1:length(IRK_SCHEME)
+    for with_guess = [1 0]
+        for n_s = NS_VALUES
+            if kk == 3
+                if n_s == 1
+                    n_s = 5;
+                end
             end
+            for N_sim = NSIM_VALUES
+                for N_FE = NFE_VALUES
+                    model.M = eye(2);
+                    model.x = [q;v];
+                    model.e = e;
+                    model.mu = 0;
+                    model.x0 = x0;
+                    model.f_v = [-m*g+k*(q(2)-q(1)-l);-m*g-k*(q(2)-q(1)-l)];
+                    model.f_c = q(1)-R;
+                    % settings
+                    settings = NosnocOptions();
+                    settings.irk_scheme = IRK_SCHEME{kk};
+                    % settings.irk_representation = 'differential';
+                    settings.n_s = n_s;
+                    settings.print_level = 3;
+                    settings.cross_comp_mode = 1;
+                    settings.dcs_mode = DcsMode.CLS;
+                    settings.multiple_solvers = 0;
+                    settings.no_initial_impacts = 1;
+                    settings.print_details_if_infeasible = 0;
+                    settings.pause_homotopy_solver_if_infeasible = 0;
+                    % settings.opts_ipopt.ipopt.linear_solver = 'ma97';
+                    settings.comp_tol  = 1e-13;
+                    settings.sigma_N = 1e-13;
+                    settings.mpcc_mode = "elastic_ineq";
+                    settings.elastic_scholtes = 1;
+                    settings.sigma_0 = 1e0;
+                    settings.homotopy_update_slope = 0.2;
+                    settings.opts_casadi_nlp.ipopt.max_iter = 1500;
+                    settings.use_previous_solution_as_initial_guess  = 1;
+                    %% Simulation settings
+                    model.T_sim = T_sim;
+                    model.N_FE = N_FE;
+                    model.N_sim = N_sim;
 
-            results_filename = get_results_filename(n_s, N_sim, N_FE, settings.irk_scheme, with_guess);
-            save(results_filename, "results", "stats", "settings")
+                    %% Call nosnoc Integrator
+                    initial_guess = struct();
+                    initial_guess.x_traj = x_traj_guess;
+                    initial_guess.t_grid = t_grid_guess;
+                    initial_guess.lambda_normal_traj = lambda_normal_guess;
 
-            clear model solver
+                    if with_guess
+                        % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
+                        [results, stats, model, settings, solver] = integrator_fesd(model, settings, [], initial_guess);
+                    else
+                        [results, stats, model, settings, solver] = integrator_fesd(model, settings, []);
+                    end
+
+                    results_filename = get_results_filename(n_s, N_sim, N_FE, settings.irk_scheme, with_guess);
+                    save(results_filename, 'results', 'stats', 'settings')
+
+                    clear model solver
+                end
+            end
         end
     end
-end
 end
 disp('experiment loop took')
 toc
