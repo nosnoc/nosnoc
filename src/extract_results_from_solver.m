@@ -16,7 +16,7 @@ results.x = [x0, results.x];
 results.extended.x = [x0, results.extended.x];
 
 u = w_opt([problem.ind_u{:}]);
-u = reshape(u,model.dims.n_u,model.N_stages);
+u = reshape(u,model.dims.n_u,settings.N_stages);
 
 results.u = u;
 
@@ -34,8 +34,8 @@ else
     if settings.time_optimal_problem && ~settings.use_speed_of_time_variables
         T = T_opt;
     end
-    for ii = 1:model.N_stages
-        h_opt = [h_opt,model.T/(model.N_stages*model.N_finite_elements(ii))*ones(1, model.dims.N_finite_elements(ii))];
+    for ii = 1:settings.N_stages
+        h_opt = [h_opt,model.T/(settings.N_stages*settings.N_finite_elements(ii))*ones(1, model.dims.N_finite_elements(ii))];
     end
 end
 results.h = h_opt;
@@ -47,20 +47,20 @@ if settings.time_optimal_problem
     if settings.use_speed_of_time_variables
         s_sot = w_opt(flatten_ind(problem.ind_sot));
         if ~settings.local_speed_of_time_variable
-            s_sot = s_sot*ones(model.N_stages,1);
+            s_sot = s_sot*ones(settings.N_stages,1);
         end
         h_rescaled = [];
         ind_prev = 1;
-        for ii = 1:model.N_stages
-            h_rescaled = [h_rescaled,h_opt(ind_prev:model.N_finite_elements(ii)+ind_prev-1).*s_sot(ii)];
-            ind_prev = ind_prev+model.N_finite_elements(ii);
+        for ii = 1:settings.N_stages
+            h_rescaled = [h_rescaled,h_opt(ind_prev:settings.N_finite_elements(ii)+ind_prev-1).*s_sot(ii)];
+            ind_prev = ind_prev+settings.N_finite_elements(ii);
         end
         t_grid = cumsum([0,h_rescaled]);
     else
         t_grid = cumsum([0,h_opt]);
     end
 end
-ind_t_grid_u = cumsum([1; model.N_finite_elements]);
+ind_t_grid_u = cumsum([1; settings.N_finite_elements]);
 
 if settings.dcs_mode == DcsMode.CLS
     x_with_impulse = [x0];

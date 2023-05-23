@@ -80,11 +80,11 @@ solver = NosnocSolver(model, settings);
 
 cpu_time_all = [cpu_time_all, stats.cpu_time_total];
 results.T_opt = results.t_grid(end);
-[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);
+[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,settings.N_stages,1);
 error_all = [error_all ;error];
 end
 results.T_opt = results.t_grid(end);
-[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);
+[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,settings.N_stages,1);
 
 
 output.T_opt = results.T_opt;
@@ -95,8 +95,8 @@ output.yout = yout;
 output.results = results;
 output.cpu_time_all = cpu_time_all;
 output.cpu_time =  mean(cpu_time_all);
-output.N_stages =  model.N_stages;
-output.N_finite_elements =  model.N_finite_elements ;
+output.N_stages =  settings.N_stages;
+output.N_finite_elements =  settings.N_finite_elements ;
 
 
 

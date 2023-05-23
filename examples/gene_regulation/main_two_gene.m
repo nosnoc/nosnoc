@@ -62,7 +62,7 @@ for x1 = 3:3:12
         % Generate model
         model = two_gene_model(x0, lifting);
         % Time
-        model.N_finite_elements = N_finite_elements;
+        settings.N_finite_elements = N_finite_elements;
         model.T_sim = T_sim;
         model.N_sim = N_sim;
 

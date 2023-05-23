@@ -57,8 +57,8 @@ settings.sigma_0 = 100;
 
 %% Model Settings
 model.fuel_cost_on = 0;
-model.N_finite_elements = 5;
-model.N_stages = 10;
+settings.N_finite_elements = 5;
+settings.N_stages = 10;
 model.T = 1;
 %% solve OCP
 model = car_hystheresis_model_voronoi(model);
@@ -68,6 +68,6 @@ solver = NosnocSolver(model, settings);
 plot_results_car_hysteresis(results,settings,model,stats)   
 %%
 T_opt = results.T_opt;
-N_stages = model.N_stages;
+N_stages = settings.N_stages;
 u_opt = results.u_opt;
 [tout,yout,error] = car_hysteresis_sim(u_opt,T_opt,N_stages);

@@ -44,8 +44,8 @@ q_target = [4;0.5];
 
 model = NosnocModel();
 model.T = 4; 
-model.N_stages = 20; 
-model.N_finite_elements = 3;
+settings.N_stages = 20; 
+settings.N_finite_elements = 3;
 % model equations
 q = SX.sym('q',2);
 v = SX.sym('v',2); 
@@ -67,4 +67,4 @@ fprintf('Final time is: %2.4f \n',full(results.T_opt));
 if isempty(results.T_opt)
     results.T_opt = results.t_grid(end);
 end
-[tout,yout,error] = bouncing_ball_sim(results.u_opt,results.T_opt,model.N_stages,model.x0(1:4),beta,0.9,q_target);
+[tout,yout,error] = bouncing_ball_sim(results.u_opt,results.T_opt,settings.N_stages,model.x0(1:4),beta,0.9,q_target);

@@ -2,10 +2,6 @@ classdef NosnocModel < handle
 
     properties
         %----- basic user input -----
-        % descritization
-        N_stages
-        N_finite_elements
-        
         % state
         x
         x0
@@ -210,7 +206,7 @@ classdef NosnocModel < handle
             obj.dims = NosnocDimensions();
         end
 
-        function generate_equations(obj, settings)
+        function generate_diffeq(obj, settings)
             import casadi.*
             dims = obj.dims;
             dcs_mode = settings.dcs_mode;
@@ -407,7 +403,7 @@ classdef NosnocModel < handle
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{obj.x,obj.x_ref_end,obj.p_global},{obj.f_lsq_T});
         end
         
-        function generate_variables(obj,settings)
+        function generate_vars(obj,settings)
             import casadi.*
             casadi_symbolic_mode = settings.casadi_symbolic_mode;
             dcs_mode = settings.dcs_mode;
@@ -754,39 +750,17 @@ classdef NosnocModel < handle
             end
             dims = obj.dims;
 
-            if isempty(obj.obj.N_stages)
-                if settings.print_level >= 2
-                    fprintf('Info: number of stages N_stages not provided, setting to defaul value N_stages = 1.\n')
-                end
-                obj.obj.N_stages = 1;
-            end
-
-            
-            % nominal lengths of the finite elements for different control intevrals, every control interval might have a different number of finite elements.
-            obj.N_finite_elements = obj.N_finite_elements(:); % make a column vector of the input
-            if length(obj.N_finite_elements) > obj.N_stages
-                obj.N_finite_elements = obj.N_finite_elements(1:N_stages);
-                if print_level >=1
-                    fprintf('nosnoc: Provided N_finite_elements had more entries then N_stages, the surplus of entries was removed. \n')
-                end
-            end
-            if length(obj.N_finite_elements) == 1
-                obj.N_finite_elements = obj.N_finite_elements*ones(obj.N_stages,1);
-            elseif length(obj.N_finite_elements) > 1 && length(obj.N_finite_elements) < obj.N_stages
-                obj.N_finite_elements = obj.N_finite_elements(:); % make sure it is a column vector
-                obj.N_finite_elements = [obj.N_finite_elements;obj.N_finite_elements(end)*ones(obj.N_stages-length(obj.N_finite_elements),1)];
-            end
             
             if ~isempty(obj.N_sim) && ~isempty(obj.T_sim)
                 obj.T = obj.T_sim/obj.N_sim;
-                obj.h_sim = obj.T_sim/(obj.N_sim*obj.N_stages*obj.N_finite_elements);
+                obj.h_sim = obj.T_sim/(obj.N_sim*settings.N_stages*obj.N_finite_elements);
                 if settings.print_level >= 2 && exist("h_sim")
                     fprintf('Info: N_sim is given, so the h_sim provided by the user is overwritten.\n')
                 end
             elseif ~isempty(obj.N_sim) || ~isempty(obj.T_sim)
                 error('Provide both N_sim and T_sim for the integration.')
             end
-            obj.h = obj.T/obj.N_stages;
+            obj.h = obj.T/settings.N_stages;
             obj.h_k = obj.h./obj.N_finite_elements;
             
             if size(obj.x, 1) ~= 0
@@ -938,23 +912,23 @@ classdef NosnocModel < handle
             if size(obj.p_time_var, 1) ~= 0
                 dims.n_p_time_var = size(obj.p_time_var, 1);
                 if size(obj.p_time_var_val, 1) ~= 0
-                    if size(obj.p_time_var_val) ~= [dims.n_p_time_var, obj.N_stages]
+                    if size(obj.p_time_var_val) ~= [dims.n_p_time_var, settings.N_stages]
                         error('nosnoc: User provided p_global_val has the wrong size.')
                     end
                 else
-                    obj.p_time_var_val = zeros(dims.n_p_time_var, obj.N_stages);
+                    obj.p_time_var_val = zeros(dims.n_p_time_var, settings.N_stages);
                 end
 
                 obj.p_time_var_stages = [];
-                for ii=1:obj.N_stages
+                for ii=1:settings.N_stages
                     var_full = define_casadi_symbolic(settings.casadi_symbolic_mode, ['p_time_var_' num2str(ii)], dims.n_p_time_var);
                     obj.p_time_var_stages = horzcat(obj.p_time_var_stages, var_full);
                 end
             else
                 dims.n_p_time_var = 0;
                 obj.p_time_var = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
-                obj.p_time_var_stages = define_casadi_symbolic(settings.casadi_symbolic_mode,'', [0, obj.N_stages]);
-                obj.p_time_var_val = double.empty(0,obj.N_stages);
+                obj.p_time_var_stages = define_casadi_symbolic(settings.casadi_symbolic_mode,'', [0, settings.N_stages]);
+                obj.p_time_var_val = double.empty(0,settings.N_stages);
                 if settings.print_level >= 1
                     fprintf('nosnoc: No time varying parameters given. \n')
                 end
@@ -992,14 +966,14 @@ classdef NosnocModel < handle
 
                 n_x_ref_rows = size(obj.lsq_x{2},1);
                 n_x_ref_cols = size(obj.lsq_x{2},2);
-                if n_x_ref_cols == obj.N_stages
+                if n_x_ref_cols == settings.N_stages
                     fprintf('nosnoc: the provided reference for the differential states is time variable. \n');
                 elseif n_x_ref_cols == 1
                     % replaciate
                     fprintf('nosnoc: the provided reference for the differential states is constant over time. \n');
-                    lsq_x{2} = repmat(obj.lsq_x{2},1,obj.N_stages);
+                    lsq_x{2} = repmat(obj.lsq_x{2},1,settings.N_stages);
                 else
-                    fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,obj.N_stages)
+                    fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,settings.N_stages)
                     error('nosnoc: Please provide x_ref in lsq_x{1} with an appropaite size.')
                 end
                 obj.x_ref_val = obj.lsq_x{2};
@@ -1008,7 +982,7 @@ classdef NosnocModel < handle
             else
                 obj.x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',1);
                 obj.f_lsq_x = 0;
-                obj.x_ref_val = zeros(1,obj.N_stages);
+                obj.x_ref_val = zeros(1,settings.N_stages);
             end
 
             % least square terms for control inputs
@@ -1024,14 +998,14 @@ classdef NosnocModel < handle
                 end
                 n_u_ref_rows = size(obj.lsq_u{2},1);
                 n_u_ref_cols = size(obj.lsq_u{2},2);
-                if n_u_ref_cols == obj.N_stages
+                if n_u_ref_cols == settings.N_stages
                     fprintf('nosnoc: the provided reference for the control inputs is time variable. \n');
                 elseif n_u_ref_cols == 1
                     % replaciate
                     fprintf('nosnoc: the provided reference for the control inputs is constant over time. \n');
-                    obj.lsq_u{2} = repmat(obj.lsq_u{2},1,obj.N_stages);
+                    obj.lsq_u{2} = repmat(obj.lsq_u{2},1,settings.N_stages);
                 else
-                    fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,obj.N_stages)
+                    fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,settings.N_stages)
                     error('nosnoc: Please provide u_ref in lsq_u{2} with an appropaite size.')
                 end
                 obj.u_ref_val = obj.lsq_u{2};
@@ -1040,7 +1014,7 @@ classdef NosnocModel < handle
             else
                 obj.u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',1);
                 obj.f_lsq_u = 0;
-                obj.u_ref_val = zeros(1,obj.N_stages);
+                obj.u_ref_val = zeros(1,settings.N_stages);
             end
 
 
@@ -1202,6 +1176,10 @@ classdef NosnocModel < handle
                 if isempty(obj.q) && isempty(obj.v)
                     obj.q = obj.x(1:dims.n_q);
                     obj.v = obj.x(dims.n_q+1:2*dims.n_q);
+                    fprintf('Automatically detected state consisting of generalized coordinates q:\n');
+                    print_casadi_vector(obj.q);
+                    fprintf('and velocities v:\n');
+                    print_casadi_vector(obj.v);
                 end
 
                 if isempty(obj.f_v)
@@ -1460,7 +1438,7 @@ classdef NosnocModel < handle
                 end
 
                 if length(obj.mu(:)) ~= 1 && length(obj.mu(:)) ~= dims.n_contacts
-                    errro('nosnoc: Vector mu has to have length 1 or n_c.')
+                    error('nosnoc: Vector mu has to have length 1 or n_contacts.')
                 end
 
                 if any(obj.mu<0)

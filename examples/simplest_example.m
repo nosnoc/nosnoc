@@ -21,8 +21,8 @@ model.F = [f_11, f_12];
 model.x0 = -1;
 
 model.T = pi/4;
-model.N_stages = 1;
-model.N_finite_elements = 2;
+settings.N_stages = 1;
+settings.N_finite_elements = 2;
 model.dims.n_s = 2;
 
 

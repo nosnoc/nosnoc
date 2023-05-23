@@ -134,8 +134,8 @@ x_ref = [x_ref1,x_ref2];
 
 %% Fill in model
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;

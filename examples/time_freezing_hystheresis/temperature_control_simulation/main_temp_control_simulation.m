@@ -40,7 +40,7 @@ settings.print_level = 2;
 model = temp_control_model_voronoi();
 %% - Simulation settings
 model.T_sim = 4;
-model.N_finite_elements = 2;
+settings.N_finite_elements = 2;
 model.N_sim = 40;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator 

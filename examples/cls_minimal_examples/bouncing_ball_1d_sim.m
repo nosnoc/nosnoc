@@ -48,7 +48,7 @@ T_sim = 2;
 N_sim = 1;
 
 model.T_sim = T_sim;
-model.N_finite_elements = N_FE;
+settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 

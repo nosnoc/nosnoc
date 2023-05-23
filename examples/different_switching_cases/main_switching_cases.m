@@ -52,7 +52,7 @@ T_sim = 1.5;
 
 model = NosnocModel();
 model.N_sim = N_sim;
-model.N_finite_elements = 2;
+settings.N_finite_elements = 2;
 model.T_sim = T_sim;
 
 switch switching_case
@@ -104,7 +104,7 @@ switch switching_case
         % leaving
         settings.irk_scheme = 'EXPLICIT_RK';
         settings.n_s = 1;
-        model.N_finite_elements = 3; % set 4, 5 for different outcomes
+        settings.N_finite_elements = 3; % set 4, 5 for different outcomes
         settings.use_previous_solution_as_initial_guess = 1;
         [results,stats] = integrator_fesd(model,settings);
         %

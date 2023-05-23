@@ -55,7 +55,7 @@ settings.cross_comp_mode  = 3;
 settings.homotopy_update_rule = 'superlinear';
 %% Time settings
 model = NosnocModel();
-model.N_finite_elements = N_finite_elements;
+settings.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 % Inital Value

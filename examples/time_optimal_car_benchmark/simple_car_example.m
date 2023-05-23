@@ -48,8 +48,8 @@ settings.homotopy_update_rule = 'superlinear';
 settings.time_optimal_problem = 1;
 %% Model - define all problem functions and
 % Discretization parameters
-model.N_stages = 10; % number of control intervals
-model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+settings.N_stages = 10; % number of control intervals
+settings.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 1;    % Time horizon
 
 % Symbolic variables and bounds
@@ -111,4 +111,4 @@ plot_results_nosnoc_tutorial
 if results.T_opt<1
    results.T_opt = results.t_grid(end) ;
 end
- [tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);
+ [tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,settings.N_stages,1);

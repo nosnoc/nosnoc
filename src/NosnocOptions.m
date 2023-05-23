@@ -33,9 +33,13 @@ classdef NosnocOptions < handle
         use_fesd(1,1) logical = 1
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
 
+        % descritization
+        N_stages(1,1) {mustBeInteger, mustBePositive} = 1;
+        N_finite_elements {mustBeInteger, mustBePositive} = 2;
+
         % Integrator settings
         real_time_plot(1,1) logical = 0
-        break_simulation_if_infeasible(1,1) logical = 0
+        break_simulation_if_infeasible(1,1) logical = 1
 
         % IRK and FESD Settings
         n_s(1,1) {mustBeInteger, mustBeInRange(n_s, 1, 9)} = 2
@@ -383,15 +387,17 @@ classdef NosnocOptions < handle
             obj.time_freezing = val;
         end
 
-%         function obj = set.h_fixed_change_sigma(obj, val)
-%             if val == 0
-%                 if obj.print_level >= 1
-%                     fprintf('Info: Setting fixed max iterations to true in the case that the sigma change is not fixed. \n')
-%                 end
-%                 obj.h_fixed_max_iter = 1;
-%             end
-%             obj.h_fixed_max_iter = val;
-%         end
+        function N_finite_elements = get.N_finite_elements(obj)
+            if isscalar(obj.N_finite_element)
+                N_finite_elements = obj.N_finite_elements*ones(obj.N_stages,1);
+            else
+                if length(obj.N_finite_elements) == obj.N_stages
+                    N_finite_elements = obj.N_finite elements;
+                else
+                    error('settings.N_finite_elements must be length 1 or N_stages');
+                end
+            end
+        end
 
         function obj = set.mpcc_mode(obj, val)
             if val == MpccMode.direct
