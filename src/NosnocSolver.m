@@ -41,7 +41,7 @@ classdef NosnocSolver < handle
             import casadi.*
             tic
             model.verify_and_backfill(settings);
-            model.generate_vars(settings);
+            model.generate_variables(settings);
             model.generate_equations(settings);
 
             % calculate homotopy

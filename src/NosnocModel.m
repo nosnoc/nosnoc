@@ -407,7 +407,7 @@ classdef NosnocModel < handle
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{obj.x,obj.x_ref_end,obj.p_global},{obj.f_lsq_T});
         end
         
-        function generate_vars(obj,settings)
+        function generate_variables(obj,settings)
             import casadi.*
             casadi_symbolic_mode = settings.casadi_symbolic_mode;
             dcs_mode = settings.dcs_mode;
