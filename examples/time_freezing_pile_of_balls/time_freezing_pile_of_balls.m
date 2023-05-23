@@ -29,7 +29,7 @@ settings.print_level = 2
 model = NosnocModel();
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-model.dims.N_finite_elements = N_finite_elements;
+model.N_finite_elements = N_finite_elements;
 settings.use_previous_solution_as_initial_guess = 1;
 
 %% model

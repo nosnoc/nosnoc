@@ -15,8 +15,8 @@ settings.homotopy_update_rule = 'superlinear';
 %% Generate Model
 model = tank_cascade();
 %% Discretization parameters
-model.dims.N_stages = 100; % number of control intervals
-model.dims.N_finite_elements = 2; % number of finite element on every control intevral
+model.N_stages = 100; % number of control intervals
+model.N_finite_elements = 2; % number of finite element on every control intevral
 model.T = 100;    % yime horizon
 %% Solve OCP via nosnoc
 solver = NosnocSolver(model, settings);

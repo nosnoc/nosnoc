@@ -135,8 +135,8 @@ classdef NosnocSolver < handle
 
                 if iscell(val)
                     % If the passed value is an N_stage by 1 cell array we assume this initialization is done stage wise
-                    if ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val,2) == 1
-                        for ii=1:obj.model.dims.N_stages
+                    if ismatrix(val) && size(val, 1) == obj.model.N_stages && size(val,2) == 1
+                        for ii=1:obj.model.N_stages
                             % All variables of each stage are set to the same value
                             for v=ind(ii,:,:)
                                 % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, etc.)
@@ -146,9 +146,9 @@ classdef NosnocSolver < handle
                             end
                         end
                     % Otherwise if we have an initialization of the form N_stages-by-N_fe we do the same but finite-element-wise
-                    elseif ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val, 2) == obj.model.dims.N_finite_elements
-                        for ii=1:obj.model.dims.N_stages
-                            for jj=1:obj.model.dims.N_finite_elements
+                    elseif ismatrix(val) && size(val, 1) == obj.model.N_stages && size(val, 2) == obj.model.N_finite_elements
+                        for ii=1:obj.model.N_stages
+                            for jj=1:obj.model.N_finite_elements
                                 % All variables of each finite element are set to the same value
                                 for v=ind(ii,jj,:)
                                     % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, cls, etc.)

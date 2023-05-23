@@ -59,7 +59,7 @@ x_star = [exp(1);0];
 T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 
-model.dims.N_finite_elements = N_finite_elements;
+model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 model.R_osc = R_osc;
@@ -150,7 +150,7 @@ if plot_continious_time_sol
     x2_very_fine = [];
     tgrid_very_fine = [];
     figure
-    for ii =  1:model.dims.N_stages*model.dims.N_finite_elements*N_sim
+    for ii =  1:model.N_stages*model.N_finite_elements*N_sim
         % read
         ind_now = 1+(ii-1)*(n_s):(ii)*(n_s)+1;
         tt = tgrid_long(ind_now);

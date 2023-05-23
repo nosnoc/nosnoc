@@ -20,8 +20,8 @@ settings.n_s = 2;
 % MPCC Method
 settings.N_homotopy = 10;
 % Discretization parameters
-model.dims.N_stages = 30; % number of control intervals
-model.dims.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+model.N_stages = 30; % number of control intervals
+model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 0.08;    % Time horizon
 
 %% The Model

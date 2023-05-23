@@ -54,7 +54,7 @@ N_FE = 2;
 T_sim = 1;
 N_sim = 94;
 model.T_sim = T_sim;
-model.dims.N_finite_elements = N_FE;
+model.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 
 %% MATLAB solution

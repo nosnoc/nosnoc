@@ -101,8 +101,8 @@ model.x0 = [2*pi/3;pi/3;v0];
 model.x = x;
 model.T = 4;
 
-model.dims.N_stages = 6;
-model.dims.N_finite_elements = N_finite_elements;
+model.N_stages = 6;
+model.N_finite_elements = N_finite_elements;
 
 % Switching Functions
 p = 2; a = 0.15; a1 = 0;
@@ -159,8 +159,8 @@ t_end = 0;
 if 0
     model.T_sim = 4/6;
     model.N_sim = 12;
-    model.dims.N_stages = 1;
-    model.dims.N_finite_elements = 2;
+    model.N_stages = 1;
+    model.N_finite_elements = 2;
     model.g_terminal = [];
     model.g_terminal_lb = [];
     model.g_terminal_ub = [];

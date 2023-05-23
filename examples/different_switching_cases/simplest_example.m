@@ -48,7 +48,7 @@ T_sim = 0.75;
 
 model = NosnocModel();
 model.N_sim = N_sim;
-model.dims.N_finite_elements = 2;
+model.N_finite_elements = 2;
 model.T_sim = T_sim;
 
 model.x0 = -0.50;

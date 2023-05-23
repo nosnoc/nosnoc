@@ -58,8 +58,8 @@ settings.dcs_mode = 'Step';
 model = NosnocModel();
 model.x0 = zeros(5,1);
 model.T = 5; 
-model.dims.N_stages = 25; 
-model.dims.N_finite_elements = 2;
+model.N_stages = 25; 
+model.N_finite_elements = 2;
 
 %% Variable defintion
 % Declare model variables

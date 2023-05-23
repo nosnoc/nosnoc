@@ -1,7 +1,5 @@
 classdef NosnocDimensions < handle
     properties
-        N_stages
-        N_finite_elements
         n_x
         n_f
         n_u

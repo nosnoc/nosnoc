@@ -97,8 +97,8 @@ x = [q;v];
 
 model = NosnocModel();
 model.T = T;
-model.dims.N_stages = N_stg;
-model.dims.N_finite_elements  = N_FE;
+model.N_stages = N_stg;
+model.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;

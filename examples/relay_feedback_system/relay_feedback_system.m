@@ -54,7 +54,7 @@ settings.comp_tol = 1e-9;
 settings.homotopy_update_rule = 'superlinear';
 %% Time settings
 model = NosnocModel();
-model.dims.N_finite_elements = N_finite_elements;
+model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 % Inital Value
