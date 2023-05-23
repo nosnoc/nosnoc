@@ -6,7 +6,7 @@ close all
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 % settings.irk_representation = 'differential';
-settings.n_s = 5;
+settings.n_s = 2;
 settings.print_level = 3;
 % settings.N_homotopy = 8;
 settings.cross_comp_mode = 1;
@@ -22,7 +22,7 @@ settings.pause_homotopy_solver_if_infeasible = 0;
 % settings.opts_ipopt.ipopt.linear_solver = 'ma97';
 settings.sigma_0 = 5;
 settings.homotopy_update_slope = 0.1;
-settings.real_time_plot = 1;
+settings.real_time_plot = 0;
 settings.comp_tol  = 1e-13;
 settings.sigma_N = 1e-13;
 
