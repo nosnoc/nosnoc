@@ -254,8 +254,8 @@ classdef FiniteElement < NosnocFormulationObject
 
             if settings.use_fesd
                 h = define_casadi_symbolic(settings.casadi_symbolic_mode, ['h_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)]);
-                h_ctrl_stage = model.T/dims.N_stages;
-                h0 = h_ctrl_stage / dims.N_finite_elements(ctrl_idx);
+                h_ctrl_stage = model.T/settings.N_stages;
+                h0 = h_ctrl_stage / settings.N_finite_elements(ctrl_idx);
                 ubh = (1 + settings.gamma_h) * h0;
                 lbh = (1 - settings.gamma_h) * h0;
                 if settings.time_rescaling && ~settings.use_speed_of_time_variables
@@ -303,7 +303,7 @@ classdef FiniteElement < NosnocFormulationObject
                     elseif settings.x_box_at_fe && ii == dims.n_s && settings.right_boundary_point_explicit
                         lbx = model.lbx;
                         ubx = model.ubx;
-                    elseif fe_idx == dims.N_finite_elements(ctrl_idx) && ii == dims.n_s && settings.right_boundary_point_explicit
+                    elseif fe_idx == settings.N_finite_elements(ctrl_idx) && ii == dims.n_s && settings.right_boundary_point_explicit
                         lbx = model.lbx;
                         ubx = model.ubx;
                     else
@@ -805,7 +805,7 @@ classdef FiniteElement < NosnocFormulationObject
 
             if (~settings.right_boundary_point_explicit ||...
                     settings.irk_representation == IrkRepresentation.differential)
-                if settings.x_box_at_stg || settings.x_box_at_fe || fe_idx == dims.N_finite_elements(ctrl_idx)
+                if settings.x_box_at_stg || settings.x_box_at_fe || fe_idx == settings.N_finite_elements(ctrl_idx)
                     lbx = model.lbx;
                     ubx = model.ubx;
                 else
@@ -1054,9 +1054,9 @@ classdef FiniteElement < NosnocFormulationObject
             if obj.settings.use_fesd
                 h = obj.w(obj.ind_h);
             elseif obj.settings.time_optimal_problem && ~obj.settings.use_speed_of_time_variables
-                h = obj.T_final/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
+                h = obj.T_final/(obj.settings.N_stages*obj.settings.N_finite_elements(obj.ctrl_idx));
             else
-                h = obj.model.T/(obj.dims.N_stages*obj.dims.N_finite_elements(obj.ctrl_idx));
+                h = obj.model.T/(obj.settings.N_stages*obj.settings.N_finite_elements(obj.ctrl_idx));
             end
         end
 
@@ -1294,7 +1294,7 @@ classdef FiniteElement < NosnocFormulationObject
             % nonlinear inequality.
             % TODO: do this cleaner
             if (~isempty(model.g_path) &&...
-                    (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
+                    (obj.fe_idx == settings.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 obj.addConstraint(model.g_path_fun(X_k0,Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
@@ -1311,7 +1311,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
             if (~settings.right_boundary_point_explicit &&...
                 settings.use_fesd &&...
-                obj.fe_idx < dims.N_finite_elements(obj.ctrl_idx) &&...
+                obj.fe_idx < settings.N_finite_elements(obj.ctrl_idx) &&...
                 settings.dcs_mode ~= DcsMode.CLS)
 
                 % TODO verify this.
@@ -1352,7 +1352,7 @@ classdef FiniteElement < NosnocFormulationObject
             g_path_comp_pairs = [];
             % path complementarities
             if (~isempty(model.g_comp_path) &&...
-                (obj.fe_idx == dims.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
+                (obj.fe_idx == settings.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global);
                 g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
                 expr = apply_psi(pairs, psi_fun, sigma);
@@ -1664,7 +1664,7 @@ classdef FiniteElement < NosnocFormulationObject
 
             % only heuristic mean is done for first finite element
             if settings.step_equilibration == StepEquilibrationMode.heuristic_mean
-                h_fe = model.T / (sum(dims.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
+                h_fe = model.T / (sum(settings.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
                 obj.cost = obj.cost + rho_h_p * (obj.h - h_fe).^2;
                 return;
             elseif obj.fe_idx <= 1

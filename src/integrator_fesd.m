@@ -110,13 +110,13 @@ for ii = 1:model.N_sim
     solver.set('x', {x0})
     solver.set('x_left_bp', {x0})
     if exist('initial_guess', 'var')
-        t_guess = t_current + cumsum([0; model.h_k * ones(dims.N_finite_elements, 1)]);
+        t_guess = t_current + cumsum([0; model.h_k * ones(settings.N_finite_elements, 1)]);
         x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess,'makima');
         lambda_normal_guess = interp1(initial_guess.t_grid, initial_guess.lambda_normal_traj, t_guess(2:end-1), 'makima');
         %
-        x_init = cell(1, dims.N_finite_elements);
-        y_gap_init = cell(1, dims.N_finite_elements);
-        for j = 1:dims.N_finite_elements
+        x_init = cell(1, settings.N_finite_elements);
+        y_gap_init = cell(1, settings.N_finite_elements);
+        for j = 1:settings.N_finite_elements
             x_init{j} = x_guess(j+1, :);
             y_gap_init{j} = full(model.f_c_fun(x_init{j}));
         end
@@ -272,7 +272,7 @@ else
 end
 fprintf('---------------- Stats summary ----------------------------\n');
 fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
-fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, dims.N_stages, dims.N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
+fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, settings.N_stages, settings.N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
 fprintf('-----------------------------------------------------------------\n\n');
 
 %% Output

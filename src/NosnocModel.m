@@ -206,7 +206,7 @@ classdef NosnocModel < handle
             obj.dims = NosnocDimensions();
         end
 
-        function generate_diffeq(obj, settings)
+        function generate_equations(obj, settings)
             import casadi.*
             dims = obj.dims;
             dcs_mode = settings.dcs_mode;
@@ -403,7 +403,7 @@ classdef NosnocModel < handle
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{obj.x,obj.x_ref_end,obj.p_global},{obj.f_lsq_T});
         end
         
-        function generate_vars(obj,settings)
+        function generate_variables(obj,settings)
             import casadi.*
             casadi_symbolic_mode = settings.casadi_symbolic_mode;
             dcs_mode = settings.dcs_mode;
@@ -750,10 +750,9 @@ classdef NosnocModel < handle
             end
             dims = obj.dims;
 
-            
             if ~isempty(obj.N_sim) && ~isempty(obj.T_sim)
                 obj.T = obj.T_sim/obj.N_sim;
-                obj.h_sim = obj.T_sim/(obj.N_sim*settings.N_stages*obj.N_finite_elements);
+                obj.h_sim = obj.T_sim/(obj.N_sim*settings.N_stages*settings.N_finite_elements);
                 if settings.print_level >= 2 && exist("h_sim")
                     fprintf('Info: N_sim is given, so the h_sim provided by the user is overwritten.\n')
                 end
@@ -761,7 +760,7 @@ classdef NosnocModel < handle
                 error('Provide both N_sim and T_sim for the integration.')
             end
             obj.h = obj.T/settings.N_stages;
-            obj.h_k = obj.h./obj.N_finite_elements;
+            obj.h_k = obj.h./settings.N_finite_elements;
             
             if size(obj.x, 1) ~= 0
                 dims.n_x = length(obj.x);

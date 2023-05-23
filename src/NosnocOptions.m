@@ -388,11 +388,11 @@ classdef NosnocOptions < handle
         end
 
         function N_finite_elements = get.N_finite_elements(obj)
-            if isscalar(obj.N_finite_element)
+            if isscalar(obj.N_finite_elements)
                 N_finite_elements = obj.N_finite_elements*ones(obj.N_stages,1);
             else
                 if length(obj.N_finite_elements) == obj.N_stages
-                    N_finite_elements = obj.N_finite elements;
+                    N_finite_elements = obj.N_finite_elements;
                 else
                     error('settings.N_finite_elements must be length 1 or N_stages');
                 end

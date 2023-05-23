@@ -182,52 +182,52 @@ classdef NosnocProblem < NosnocFormulationObject
             end
             obj.ind_u = [];
             obj.ind_x0 = [];
-            obj.ind_x = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance+rbp_x_only);
-            obj.ind_v = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s);
-            obj.ind_z = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_x = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance+rbp_x_only);
+            obj.ind_v = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s);
+            obj.ind_z = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
             % Stewart
-            obj.ind_theta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lam = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_mu = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_theta = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lam = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_mu = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
             % Step
-            obj.ind_alpha = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_n = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_p = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_theta_step = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_alpha = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_n = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_p = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_theta_step = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
             % CLS
-            obj.ind_lambda_normal = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_tangent = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_y_gap = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_normal = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_tangent = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_y_gap = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
             % friction multipliers and lifting
             % conic
-            obj.ind_gamma =  cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta_conic = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_gamma =  cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta_conic = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
             % poly
-            obj.ind_gamma_d = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta_d = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_delta_d = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_gamma_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_delta_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
             % variables related to conic
-            obj.ind_p_vt = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_n_vt = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_alpha_vt = cell(dims.N_stages,dims.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_p_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_n_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_alpha_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
 
             % Impulse
-            obj.ind_x_left_bp = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Y_gap = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Lambda_normal = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Lambda_tangent = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Gamma = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Beta_conic = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Gamma_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Beta_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Delta_d = cell(dims.N_stages,dims.N_finite_elements(1),1);
-%             obj.ind_P_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
-%             obj.ind_N_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_L_vn = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_P_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_N_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
-            obj.ind_Alpha_vt = cell(dims.N_stages,dims.N_finite_elements(1),1);
+            obj.ind_x_left_bp = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Y_gap = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Lambda_normal = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Lambda_tangent = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Gamma = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Beta_conic = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Gamma_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Beta_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Delta_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
+%             obj.ind_P_vn = cell(settings.N_stages,settings.N_finite_elements(1),1);
+%             obj.ind_N_vn = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_L_vn = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_P_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_N_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_Alpha_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
 
             
             % misc
@@ -263,7 +263,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
             if dims.n_p_time_var > 0;
                 n_p = length(obj.p);
-                obj.ind_p_time_var = arrayfun(@(s) (n_p+(s*dims.n_p_time_var)+1):(n_p+(s*dims.n_p_time_var)+dims.n_p_time_var) , 0:dims.N_stages-1);
+                obj.ind_p_time_var = arrayfun(@(s) (n_p+(s*dims.n_p_time_var)+1):(n_p+(s*dims.n_p_time_var)+dims.n_p_time_var) , 0:settings.N_stages-1);
                 obj.p = [obj.p; model.p_time_var_stages(:)];
             end
             if settings.time_optimal_problem
@@ -315,7 +315,7 @@ classdef NosnocProblem < NosnocFormulationObject
                         % if time_freezing is on, everything is done via the clock state.
                         if settings.use_speed_of_time_variables
                             integral_clock_state = 0;
-                            for k=1:dims.N_stages
+                            for k=1:settings.N_stages
                                 stage = obj.stages(k);
                                 if settings.local_speed_of_time_variable
                                     s_sot = obj.sot{k};
@@ -340,7 +340,7 @@ classdef NosnocProblem < NosnocFormulationObject
                         % all step sizes add up to prescribed time T.
                         % if use_speed_of_time_variables = true, numerical time is decupled from the sot scaling (no mather if local or not):
                         sum_h_all = 0;
-                        for k=1:dims.N_stages
+                        for k=1:settings.N_stages
                             stage=obj.stages(k);
                             for fe=stage.stage
                                 sum_h_all = sum_h_all+fe.h;
@@ -353,7 +353,7 @@ classdef NosnocProblem < NosnocFormulationObject
                                 obj.addConstraint(sum_h_all-T_final, 0, 0);
                             else
                                 integral_clock_state = 0;
-                                for k=1:dims.N_stages
+                                for k=1:settings.N_stages
                                     stage = obj.stages(k);
                                     if settings.local_speed_of_time_variable
                                         s_sot = obj.sot{k};
@@ -464,7 +464,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
             if settings.elasticity_mode == ElasticityMode.ELL_1
                 sum_s_elastic = 0;
-                for k=1:dims.N_stages
+                for k=1:settings.N_stages
                     stage=obj.stages(k);
                     for fe=stage.stage
                         sum_s_elastic = sum_s_elastic + fe.sumElastic;
@@ -487,7 +487,7 @@ classdef NosnocProblem < NosnocFormulationObject
             % Calculate standard complementarities.
             J_comp_std = 0;
             J_comp_std_infty = 0;
-            for k=1:dims.N_stages
+            for k=1:settings.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
                     for j=1:dims.n_s
@@ -499,7 +499,7 @@ classdef NosnocProblem < NosnocFormulationObject
             % calculate complementarity residual via vector of all complementarities
             all_pairs = [];
             all_products = [];
-            for k=1:dims.N_stages
+            for k=1:settings.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
                     all_pairs = [all_pairs;fe.all_comp_pairs];
@@ -593,7 +593,7 @@ classdef NosnocProblem < NosnocFormulationObject
                 s_elastic = [];
             end
 
-            for ii=1:obj.dims.N_stages
+            for ii=1:obj.settings.N_stages
                 % TODO: maybe this should be a function
                 stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.sigma_p, obj.rho_h_p, obj.rho_sot_p, s_elastic);
                 obj.stages = [obj.stages, stage];
@@ -825,7 +825,7 @@ classdef NosnocProblem < NosnocFormulationObject
 
         function nu_vector = get.nu_vector(obj)
             nu_vector = [];
-            for k=obj.dims.N_stages
+            for k=obj.settings.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
                     nu_vector = vertcat(nu_vector,fe.nu_vector);

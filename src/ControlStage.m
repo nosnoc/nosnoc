@@ -127,7 +127,7 @@ classdef ControlStage < NosnocFormulationObject
             end
             
             obj.stage = [];
-            for ii=1:obj.dims.N_finite_elements
+            for ii=1:obj.settings.N_finite_elements
                 fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii, T_final);
                 % 1) Runge-Kutta discretization
                 fe.forwardSimulation(obj.ocp, obj.Uk, s_sot, p_stage);
@@ -154,11 +154,11 @@ classdef ControlStage < NosnocFormulationObject
             obj.createComplementarityConstraints(sigma_p, s_elastic);
 
             % least squares cost
-            obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
-            obj.objective = obj.objective + (model.T/dims.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.cost = obj.cost + (model.T/settings.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.objective = obj.objective + (model.T/settings.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             if dims.n_u > 0
-                obj.cost = obj.cost + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
-                obj.objective = obj.objective + (model.T/dims.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.cost = obj.cost + (model.T/settings.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.objective = obj.objective + (model.T/settings.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
             end
             
             % TODO: combine this into a function
@@ -168,15 +168,15 @@ classdef ControlStage < NosnocFormulationObject
                 elseif ~settings.time_freezing
                     if settings.use_speed_of_time_variables
                         obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h)
-                        obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/dims.N_stages);
+                        obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/settings.N_stages);
                     else
-                        obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/dims.N_stages);
+                        obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/settings.N_stages);
                     end
                 end
             end
             if settings.time_freezing && settings.stagewise_clock_constraint
                 if settings.time_optimal_problem
-                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/dims.N_stages) + model.x0(end));
+                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/settings.N_stages) + model.x0(end));
                 else
                     obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end));
                 end
