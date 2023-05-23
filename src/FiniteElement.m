@@ -1429,6 +1429,14 @@ classdef FiniteElement < NosnocFormulationObject
                         impulse_pairs = vertcat(impulse_pairs, [Gamma_d,Beta_d]);
                     end
                 end
+                % if we are not in the first element we need to also cross comp Ygap  with lambdas of prev fe
+                % TODO this should be done cleaner but for now this is fine.
+                if (obj.fe_idx ~= 1) && ~settings.right_boundary_point_explicit
+                    for ii=1:obj.prev_fe.n_discont-2
+                        impulse_pairs = vertcat(impulse_pairs, [Y_gap, obj.prev_fe.w(obj.prev_fe.ind_lambda_normal{ii, 1})]);
+                    end
+                end
+                
                 expr = apply_psi(impulse_pairs, psi_fun, sigma);
                 if settings.relaxation_method == RelaxationMode.TWO_SIDED
                     expr = expr';
