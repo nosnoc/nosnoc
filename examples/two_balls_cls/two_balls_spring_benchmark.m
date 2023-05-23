@@ -20,14 +20,9 @@ save(ref_sol_filename, "t_grid_guess", "x_traj_guess", "n_bounces_guess", "lambd
 tic
 
 %% run experiments
-for kk = 1:length(IRK_SCHEME)
-    for with_guess = [1 0]
+for irk_scheme = IRK_SCHEMES
+    for with_guess = [0]
         for n_s = NS_VALUES
-            if kk == 3
-                if n_s == 1
-                    n_s = 5;
-                end
-            end
             for N_sim = NSIM_VALUES
                 for N_FE = NFE_VALUES
                     model.M = eye(2);
@@ -39,7 +34,7 @@ for kk = 1:length(IRK_SCHEME)
                     model.f_c = q(1)-R;
                     % settings
                     settings = NosnocOptions();
-                    settings.irk_scheme = IRK_SCHEME{kk};
+                    settings.irk_scheme = irk_scheme;
                     % settings.irk_representation = 'differential';
                     settings.n_s = n_s;
                     settings.print_level = 3;
