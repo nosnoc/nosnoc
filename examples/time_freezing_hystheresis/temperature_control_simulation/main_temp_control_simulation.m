@@ -44,6 +44,6 @@ settings.N_finite_elements = 2;
 model.N_sim = 40;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator 
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% Read and plot result
 plot_results_for_paper

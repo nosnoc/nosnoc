@@ -67,7 +67,7 @@ settings.use_previous_solution_as_initial_guess = 1;
 settings.time_freezing = 0;
 settings.use_speed_of_time_variables = 0;
 settings.local_speed_of_time_variable = 0;
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);

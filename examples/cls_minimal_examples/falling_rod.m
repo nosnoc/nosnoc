@@ -79,7 +79,7 @@ if settings.time_freezing
     [model,settings] = time_freezing_reformulation(model,settings);
     settings.time_freezing = 0;
 end
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %%
 qx = results.x_res(1,:);
 qy = results.x_res(2,:);

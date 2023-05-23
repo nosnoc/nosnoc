@@ -71,7 +71,7 @@ model.N_sim = N_sim;
 
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% Get variables into main workspace
 unfold_struct(model,'base');
 unfold_struct(settings,'base');

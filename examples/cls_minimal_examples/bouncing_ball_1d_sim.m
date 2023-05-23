@@ -87,9 +87,9 @@ initial_guess.t_grid = t_grid;
 initial_guess.lambda_normal_traj = lambda_normal;
 
 if use_guess
-    [results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
+    [results,stats,solver] = integrator_fesd(model, settings, [], initial_guess);
 else 
-    [results,stats,model,settings,solver] = integrator_fesd(model, settings);
+    [results,stats,solver] = integrator_fesd(model, settings);
 end
 
 %% read and plot results

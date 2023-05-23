@@ -87,7 +87,7 @@ f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-[results,stats,model,settings, solver] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% numerical error
 x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");

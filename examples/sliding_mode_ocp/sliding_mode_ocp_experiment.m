@@ -165,7 +165,7 @@ if estimate_terminal_error
                 model.lbu = u_opt(:,ii);
                 model.ubu = u_opt(:,ii);
                 model.u0 = u_opt(:,ii);
-                [results_integrator,stats,model] = integrator_fesd(model,settings_integrator);
+                [results_integrator,stats,solver] = integrator_fesd(model,settings_integrator);
                 model.x0 = results_integrator.x_res(:,end);
                 x_res_integrator = [x_res_integrator,results_integrator.x_res];
                 t_grid_integrator = [t_grid_integrator, results_integrator.t_grid+t_end];
@@ -181,7 +181,7 @@ if estimate_terminal_error
                     model.lbu = u_opt(:,ii);
                     model.ubu = u_opt(:,ii);
                     model.u0 = u_opt(:,ii);
-                    [results_integrator,stats,model] = integrator_fesd(model,settings_integrator);
+                    [results_integrator,stats,solver] = integrator_fesd(model,settings_integrator);
                     model.x0 = results_integrator.x_res(:,end);
                     x_res_integrator = [x_res_integrator,results_integrator.x_res];
                     t_grid_integrator = [t_grid_integrator, results_integrator.t_grid+t_end];

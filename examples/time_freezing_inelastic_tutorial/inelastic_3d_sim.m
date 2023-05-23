@@ -42,7 +42,7 @@ model.N_FE = N_finite_elements;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call FESD Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);

@@ -83,7 +83,7 @@ model.S = [-1;1];
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 
 %% Plot results
 x1 = results.x(1,:);

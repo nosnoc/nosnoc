@@ -174,7 +174,7 @@ if 0
         model.lbu = u_opt(:,ii);
         model.ubu = u_opt(:,ii);
         model.u0 = u_opt(:,ii);
-        [results_integrator,stats,model] = integrator_fesd(model,settings);
+        [results_integrator,stats,solver] = integrator_fesd(model,settings);
         model.x0 = results_integrator.x(:,end);
         x_res_integrator = [x_res_integrator,results_integrator.x];
         t_grid_integrator = [t_grid_integrator, results_integrator.t_grid+t_end];

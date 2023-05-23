@@ -32,9 +32,9 @@
 % Examples of calling the function
 % [results] = integrator_fesd(model,settings);
 % [results,stats] = integrator_fesd(model,settings);
-% [results,stats,model] = integrator_fesd(model,settings);
+% [results,stats,solver] = integrator_fesd(model,settings);
 
-function [varargout] = integrator_fesd(model, settings, u_sim, initial_guess)
+function [results, integrator_stats, solver] = integrator_fesd(model, settings, u_sim, initial_guess)
 
 %% Create solver functions for integrator step
 settings.equidistant_control_grid = 0; % reset settings
@@ -295,10 +295,5 @@ results.extended.t_grid = tgrid_long;
 if settings.store_integrator_step_results
     results.sim_step_solver_results = sim_step_solver_results;
 end
-varargout{1} = results;
-varargout{2} = integrator_stats;
-varargout{3} = model;
-varargout{4} = settings;
-varargout{5} = solver;
 end
 

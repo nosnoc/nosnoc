@@ -24,7 +24,7 @@ model.F = [f_11 f_12];
 model.f_q = x^2;
 model.f_q_T = (x-5/3)^2;
 
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 
 %%
 t_grid = results.t_grid;

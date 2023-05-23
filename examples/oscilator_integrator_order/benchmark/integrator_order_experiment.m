@@ -101,7 +101,7 @@ for i = 1:length(n_s_vec)
         model.N_sim = N_sim;
         % generate new model with updated settings;
         model = oscilator(model);
-        [results,stats,model] = integrator_fesd(model,settings);
+        [results,stats,solver] = integrator_fesd(model,settings);
         % numerical error
         x_fesd = results.x_res(:,end);
         error_x = norm(x_fesd-x_star,"inf");

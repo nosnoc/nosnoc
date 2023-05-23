@@ -49,7 +49,7 @@ settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

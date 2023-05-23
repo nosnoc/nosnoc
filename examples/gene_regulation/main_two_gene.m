@@ -66,7 +66,7 @@ for x1 = 3:3:12
         model.T_sim = T_sim;
         model.N_sim = N_sim;
 
-        [result,stats,model] = integrator_fesd(model,settings);
+        [result,stats,solver] = integrator_fesd(model,settings);
         results = [results,result];
     end
 end
