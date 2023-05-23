@@ -210,7 +210,7 @@ classdef NosnocModel < handle
             obj.dims = NosnocDimensions();
         end
 
-        function generate_diffeq(obj, settings)
+        function generate_equations(obj, settings)
             import casadi.*
             dims = obj.dims;
             dcs_mode = settings.dcs_mode;

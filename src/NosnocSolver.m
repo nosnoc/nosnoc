@@ -42,7 +42,7 @@ classdef NosnocSolver < handle
             tic
             model.verify_and_backfill(settings);
             model.generate_vars(settings);
-            model.generate_diffeq(settings);
+            model.generate_equations(settings);
 
             % calculate homotopy
             if settings.N_homotopy == 0
