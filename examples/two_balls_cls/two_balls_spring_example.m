@@ -51,7 +51,7 @@ model.f_c = q(1)-R;
 %% Simulation settings
 N_FE = 2;
 T_sim = 1;
-N_sim = 75;
+N_sim = 94;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
