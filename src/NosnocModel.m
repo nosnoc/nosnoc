@@ -1202,7 +1202,7 @@ classdef NosnocModel < handle
                 end
 
                 if J_normal_exists
-                    if size(J_normal,1)~=dims.n_q && size(J_normal,2)~=dims.n_contacts
+                    if size(obj.J_normal,1)~=dims.n_q && size(obj.J_normal,2)~=dims.n_contacts
                         fprintf('nosnoc: J_normal should be %d x %d matrix.\n',dims.n_q,dims.n_contacts);
                         error('nosnoc: J_normal has the wrong size.')
                     end
@@ -1213,7 +1213,7 @@ classdef NosnocModel < handle
                     J_normal_exists = 1;
                 end
 
-                if is_zero(obj.J_normal)
+                if any(all(obj.J_normal == 0))
                     error('nosnoc: The normal vector should have at least one non-zero entry.')
                 end
 
