@@ -1213,9 +1213,9 @@ classdef NosnocModel < handle
                     J_normal_exists = 1;
                 end
 
-                if any(all(obj.J_normal == 0))
-                    error('nosnoc: The normal vector should have at least one non-zero entry.')
-                end
+%                 if any(all(obj.J_normal == 0))
+%                     error('nosnoc: The normal vector should have at least one non-zero entry.')
+%                 end
 
                 % Tangent Contact Jacobian
                 if obj.friction_exists
