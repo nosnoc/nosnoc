@@ -6,7 +6,7 @@ close all
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 % settings.irk_representation = 'differential';
-settings.n_s = 5;
+settings.n_s = 2;
 settings.print_level = 3;
 % settings.N_homotopy = 8;
 settings.cross_comp_mode = 1;
@@ -22,7 +22,7 @@ settings.pause_homotopy_solver_if_infeasible = 0;
 % settings.opts_ipopt.ipopt.linear_solver = 'ma97';
 settings.sigma_0 = 5;
 settings.homotopy_update_slope = 0.1;
-settings.real_time_plot = 1;
+settings.real_time_plot = 0;
 settings.comp_tol  = 1e-13;
 settings.sigma_N = 1e-13;
 
@@ -51,7 +51,7 @@ model.f_c = q(1)-R;
 %% Simulation settings
 N_FE = 2;
 T_sim = 1;
-N_sim = 75;
+N_sim = 94;
 model.T_sim = T_sim;
 model.N_FE = N_FE;
 model.N_sim = N_sim;
@@ -70,43 +70,8 @@ initial_guess.lambda_normal_traj = lambda_normal_guess;
 % [results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
 [results,stats,model,settings,solver] = integrator_fesd(model, settings);
 
-%% read and plot results
-q1 = results.x(1,:);
-q2 = results.x(2,:);
-v1 = results.x(3,:);
-v2 = results.x(4,:);
-t_grid = results.t_grid;
-
 %%
-figure
-subplot(311)
-plot(t_grid,q1,'LineWidth',1.5);
-hold on
-plot(t_grid,q2,'LineWidth',1.5);
-yline(R,'k--')
-xlim([0 t_grid(end)])
-% ylim([-1.0 max([q1,q2])+1])
-grid on
-ylabel('$q$','interpreter','latex');
-xlabel('$t$','interpreter','latex');
-% axis equal
-subplot(312)
-plot(t_grid,v1,'LineWidth',1.5);
-hold on
-plot(t_grid,v2,'LineWidth',1.5);
-xlim([0 t_grid(end)])
-ylim([-max(abs([v1,v2]))-1.0 max(abs([v1,v2]))+1])
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v$','interpreter','latex');
-subplot(313)
-Lambda_opt = [results.Lambda_normal];
-stem(t_grid(1:N_FE:end),[Lambda_opt,nan])
-hold on
-xlim([-0.01 t_grid(end)])
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$\Lambda_{\mathrm{n}}$','interpreter','latex');
+plot_two_ball_traj(results);
 
 %% compare
 error = norm(x_traj_matlab(end,:)'-results.x(:,end));

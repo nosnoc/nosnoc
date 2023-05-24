@@ -83,7 +83,6 @@ results.t_with_impulse = 0;
 complementarity_stats  = [];
 homotopy_iteration_stats = [];
 time_per_iter = [];
-simulation_time_pased = 0;
 sim_step_solver_results = [];
 t_current = 0;
 converged = [];
@@ -173,7 +172,7 @@ for ii = 1:model.N_sim
         end
     elseif print_level >=2
         fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
-            ii, model.N_sim,simulation_time_pased, model.T_sim, solver_stats.cpu_time_total);
+            ii, model.N_sim, t_current, model.T_sim, solver_stats.cpu_time_total);
     end
 
     if settings.store_integrator_step_results
@@ -183,7 +182,6 @@ for ii = 1:model.N_sim
     constraint_violations = [constraint_violations, solver_stats.constraint_violation];
 
     converged = [converged, solver_stats.converged];
-    simulation_time_pased = simulation_time_pased + model.T;
 
     %% update initial guess and inital value
     x0 = res.x(:,end);
@@ -219,7 +217,7 @@ for ii = 1:model.N_sim
     results.x = [results.x, res.x(:, 2:end)];
     results.extended.x = [results.extended.x, res.extended.x(:, 2:end)];
 
-    %sot TODO: is there a better way to do this
+    % TODO: is there a better way to do this
     results.s_sot  = [results.s_sot, res.w(flatten_ind(solver.problem.ind_sot))];
 
     if settings.dcs_mode == DcsMode.CLS
