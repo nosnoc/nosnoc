@@ -105,6 +105,7 @@ q1 = q(1:2);
 q2 = q(3:4);
 q3 = q(5:6);
 
+model = NosnocModel();
 model.T = T;
 model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
