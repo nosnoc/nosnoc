@@ -11,6 +11,7 @@ settings.N_homotopy = 7;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.no_initial_impacts = 1;
+settings.comp_tol = 1e-6;
 %settings.friction_model = "Polyhedral";
 settings.friction_model = "Conic"; % "Conic"
 settings.conic_model_switch_handling = "Abs";

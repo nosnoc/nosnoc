@@ -4,7 +4,7 @@ import casadi.*
 close all
 %%
 settings = NosnocOptions();
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+settings.irk_scheme = IRKSchemes.RADAU_IIA;
 % settings.irk_representation = 'differential';
 settings.n_s = 2;
 settings.print_level = 3;
@@ -52,7 +52,7 @@ model.f_c = q(1)-R;
 %% Simulation settings
 N_FE = 2;
 T_sim = 1;
-N_sim = 94;
+N_sim = 80;
 model.T_sim = T_sim;
 settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
@@ -68,8 +68,8 @@ initial_guess.x_traj = x_traj_matlab;
 initial_guess.t_grid = t_grid_matlab;
 initial_guess.lambda_normal_traj = lambda_normal_guess;
 
-% [results,stats,model,settings,solver] = integrator_fesd(model, settings, [], initial_guess);
-[results,stats,model,settings,solver] = integrator_fesd(model, settings);
+% [results,stats,solver] = integrator_fesd(model, settings, [], initial_guess);
+[results,stats,solver] = integrator_fesd(model, settings);
 
 %%
 plot_two_ball_traj(results);

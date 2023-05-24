@@ -51,8 +51,6 @@ model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call FESD Integrator
 [results,stats,solver] = integrator_fesd(model,settings);
-
-dims = model.dims;
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);
@@ -60,7 +58,7 @@ qz = results.x(3,:);
 vx = results.x(4,:);
 vy = results.x(5,:);
 vz = results.x(6,:);
-t_opt = results.x(7,:);
+t_grid = results.t_grid;
 figure
 plot3(qx,qy,qz);
 axis equal
@@ -73,56 +71,11 @@ ylabel('$q_y$','Interpreter','latex');
 zlabel('$q_z$','Interpreter','latex');
 %%
 figure
-plot(t_opt,vx,'LineWidth',2);
+plot(t_grid,vx,'LineWidth',2);
 grid on
 hold on
-plot(t_opt,vy);
-plot(t_opt,vz);
+plot(t_grid,vy);
+plot(t_grid ,vz);
 xlabel('$t$','Interpreter','latex');
 ylabel('$v$','Interpreter','latex');
 legend({'$t_1^\top v$','$t_2^\top v$','$n^\top v$'},'Interpreter','latex','Location','best');
-
-
-%%
-t_grid = results.t_grid;
-lambda0 = results.lambda_0;
-lambda1 = results.lambda_1;
-alpha = results.alpha;
-
-if settings.time_freezing_nonlinear_friction_cone
-theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
-theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:));
-theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:));
-theta = [theta1;theta2;theta3];
-else
-theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
-theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:)).*(1-alpha(4,:));
-theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:)).*(alpha(4,:));
-theta4  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(1-alpha(4,:));
-theta5  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(alpha(4,:));
-theta = [theta1;theta2;theta3;theta4;theta5];
-end
-
-n_f = dims.n_theta_step;
-t_grid(1) = [];
-figure
-for ii = 1:n_f 
-    subplot(1,n_f,ii)
-    plot(t_grid,theta(ii,:));
-    grid on
-    xlabel('$\tau$','Interpreter','latex')
-    ylabel(['$\theta_' num2str(ii) '$'],'Interpreter','latex')
-    ylim([-0.1 1.1])
-end
-%% switching functions
-% c_fun = model.c_fun;
-% x_res = results.x_res;
-% t_grid = results.t_grid;
-% c_eval = [];
-% for ii = 1:length(x_res)
-%     c_eval = [c_eval,full(c_fun(x_res(:,ii)))];
-% end
-% figure
-% plot(t_grid,c_eval))
-% grid on
-
