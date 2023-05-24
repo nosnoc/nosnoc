@@ -5,10 +5,10 @@ import casadi.*
 %%
 [settings] = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;
+settings.n_s = 2;
 settings.mpcc_mode = MpccMode.Scholtes_ineq;
-settings.print_level = 2;
-settings.N_homotopy = 6;
+settings.print_level = 3;
+settings.N_homotopy = 10;
 settings.use_fesd = 1;
 %settings.time_freezing = 1;
 settings.dcs_mode = 'CLS';
@@ -42,9 +42,9 @@ model.D_tangent = [1,-1,0,0;
                    0,0,1,-1;
                    0,0,0,0];
 %% Simulation settings
-N_finite_elements = 3;
-T_sim = 3;
-N_sim = 20;
+N_finite_elements = 10;
+T_sim = 2;
+N_sim = 1;
 model.T_sim = T_sim;
 settings.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
