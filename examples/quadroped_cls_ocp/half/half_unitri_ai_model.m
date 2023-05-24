@@ -36,7 +36,6 @@ q0 = [0.0000
       0.6283];
 
 
-
 v0 = zeros(n_q,1);
 x0 = [q0;v0];
 
@@ -70,7 +69,7 @@ model.lbu = -33.5*ones(4,1);
 
 u_expanded = [u(1:2);0;0;u(3:4);0;0];
 
-model.ubx =  [inf; 3; 1*pi; 1*pi*ones(4, 1);50*ones(7, 1)];  
+model.ubx =  [10; 3; 1*pi; 1*pi*ones(4, 1);50*ones(7, 1)];  
 model.lbx = [-1; 0.0; -1*pi; -1*pi*ones(4, 1);-50*ones(7, 1)]; 
 
 % World parameters
@@ -142,19 +141,21 @@ model.M = M;
 C = C_func(model, q , v);
 B = B_func();
 f_v = -C+B'*u_expanded;
+f_c = gap_func(model, q)';
 
-%% Switching functions
-f_c = gap_func(model, q )';
-% Jacobians
-J_normal = W_N_func(model, q );
-J_tangent = W_T_func(model, q );
+J_normal = W_N_func(model, q)';
+J_tangent = W_T_func(model, q)';
+D_tangent  = [];
+for ii = 1:size(J_tangent,2)
+    D_tangent  = [D_tangent, J_tangent(:,ii), -J_tangent(:,ii)];
+end
 
 %% Populate model
 model.f_v = f_v;
 model.f_c = f_c;
-model.J_normal  = J_normal';
-model.J_tangent = J_tangent';
-
+model.J_normal  = J_normal;
+model.J_tangent = J_tangent;
+model.D_tangent = D_tangent;
 % save('unitree_ai','model');
 
 %% kinemaics and Jacobian

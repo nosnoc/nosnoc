@@ -63,9 +63,9 @@ settings.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
-N_stg = 20; % control intervals
+N_stg = 15; % control intervals
 N_FE = 2;  % integration steps per control intevral
-T = 5;
+T = 6;
 
 %% model parameters
 m1 = 1;

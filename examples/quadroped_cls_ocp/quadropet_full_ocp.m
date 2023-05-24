@@ -39,7 +39,7 @@ import casadi.*
 filename = 'quadroped_jump_full';
 run_animation = 1;
 video_speed_up = 1;
-objective = 'jump'; % jump % wlk
+objective = 'walk'; % jump % wlk
 %%
 settings = NosnocOptions();
 settings.irk_scheme = 'RADAU_IIA';
@@ -47,21 +47,31 @@ settings.n_s = 2;
 settings.sigma_0 = 1e1;
 settings.N_homotopy = 4;
 
-settings.cross_comp_mode = 3;
 settings.dcs_mode = 'CLS';
+settings.friction_model = "Polyhedral";
 
-% settings.time_freezing = 1;
-% settings.s_sot_min = 0.98;
-% settings.equidistant_control_grid = 1;
-% settings.pss_lift_step_functions = 0;
-% settings.stagewise_clock_constraint = 1;
-% settings.nonsmooth_switching_fun = 0;
-% settings.stabilizing_q_dynamics = 1;
-
+settings.cross_comp_mode = 1;
 settings.opts_casadi_nlp.ipopt.tol = 1e-8;
 settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
 settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-settings.opts_casadi_nlp.ipopt.max_iter = 700;
+
+settings.gamma_h = 0.99;
+settings.sigma_0 = 1e1;
+settings.mpcc_mode = "Scholtes_ineq";
+settings.homotopy_update_slope = 0.2;
+% settings.homotopy_update_rule = 'superlinear';
+settings.N_homotopy = 7;
+
+% NLP solver settings;
+default_tol = 1e-6;
+settings.comp_tol = default_tol;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
+settings.opts_casadi_nlp.ipopt.tol = default_tol;
+settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+settings.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+
+
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
@@ -72,20 +82,17 @@ unfold_struct(model,'caller');
 
 
 if isequal(objective,'walk')
-    x0 = x0+0.05*rand(1);
-    T = 1.5; % prediction horizon
-    N_stg = 15; % control intervals
+    T = 3; % prediction horizon
+    N_stg = 20; % control intervals
     N_FE = 2;  % integration steps per control intevral
     x_mid = x0;
     x_mid(1) = 1;
     x_mid(2) = 0.4;
 %     x_mid(n_q+1) = 4;
     x_end = x0;
-    x_end(1) = 1.5;
-%     x_end(n_q+1) = 2;
-    Q = diag([50; 10;  10; 10*ones(n_q-3,1); 10; 0.1*ones(n_q-1,1)]);
-    Q = diag([1; 1;  1; 1*ones(n_q-3,1); 1*ones(n_q,1)]);
-    Q_terminal= diag([500; 500; 500; 100*ones(n_q-3,1); 50*ones(n_q,1)]);
+    x_end(1) = 2;
+    Q = diag([50; 10;  10; 10*ones(n_q-3,1); 10; 0.1*ones(n_q-1,1)])/10;
+    Q_terminal= diag([500; 500; 500; 100*ones(n_q-3,1); 50*ones(n_q,1)])/10;
     u_ref = zeros(n_u,1);
     R = diag([0.1*ones(n_u,1)]);
 elseif isequal(objective,'jump')
@@ -137,15 +144,15 @@ solver = NosnocSolver(model, settings);
 %% read and plot results
 unfold_struct(results,'base');
 %%
-q_res = x_opt(1:n_q,:);
-v_res = x_opt(n_q+1:2*n_q,:);
+q_res = x(1:n_q,:);
+v_res = x(n_q+1:2*n_q,:);
 
 h = T/(N_stg*N_FE);
 
 if settings.time_freezing
-    t_phy = x_opt(end,:);ind = diff(t_phy)/h>0.1;
-    q_res = x_opt(1:n_q,ind);
-    v_res = x_opt(n_q+1:2*n_q,ind);
+    t_phy = x(end,:);ind = diff(t_phy)/h>0.1;
+    q_res = x(1:n_q,ind);
+    v_res = x(n_q+1:2*n_q,ind);
     N_frames = sum(ind);
 else
     N_frames  = size(q_res,2);
@@ -161,7 +168,7 @@ if run_animation
         if ii == 1
             x_input = x0;
         else
-            x_input = x_opt(:, ii);
+            x_input = x(:, ii);
         end
         [Quadruped_X(:, ii), Quadruped_Y(:, ii)] = getQuadrupedConfiguration(model, x_input(1:11, 1));
     end
@@ -182,8 +189,8 @@ if run_animation
     pos = get(gcf, 'Position');
     width = pos(3)*1.5;
     height = pos(4)*1.5;
-    width = pos(3)*1.0;
-    height = pos(4)*1.0;
+%     width = pos(3)*1.0;
+%     height = pos(4)*1.0;
     frames_gif = zeros(height, width, 1, N_frames, 'uint8');
     frames_video = { };
     for ii = 1:N_frames

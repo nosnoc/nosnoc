@@ -37,25 +37,38 @@ import casadi.*
 filename = 'half_quadroped_gait';
 run_animation = 1;
 video_speed_up = 1;
-objective = 'jump'; % jump % wlk
+objective = 'walk'; % jump % walk
 %%
 settings = NosnocOptions();
-settings.irk_scheme = "RADAU_IIA";
+settings.irk_scheme = 'RADAU_IIA';
 settings.n_s = 2;  % number of stages in IRK methods
-settings.use_fesd = 1;
-settings.N_homotopy = 5;
-settings.sigma_0 = 1e2;
+
+settings.dcs_mode = 'CLS';
+settings.friction_model = "Polyhedral";
 
 settings.cross_comp_mode = 1;
 settings.opts_casadi_nlp.ipopt.tol = 1e-8;
 settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
 settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 
-settings.opts_casadi_nlp.ipopt.max_iter = 1000;
+settings.gamma_h = 0.99;
+settings.sigma_0 = 1e1;
+settings.mpcc_mode = "Scholtes_ineq";
+settings.homotopy_update_slope = 0.1;
+% settings.homotopy_update_rule = 'superlinear';
+settings.N_homotopy = 7;
 
-settings.equidistant_control_grid = 0;
-settings.dcs_mode = 'CLS';
+% NLP solver settings;
+default_tol = 1e-5;
+settings.comp_tol = default_tol;
+settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
+settings.opts_casadi_nlp.ipopt.tol = default_tol;
+settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+settings.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
 
+settings.equidistant_control_grid = 1;
+settings.multiple_solvers = 1;
 % settings.time_freezing = 1;
 % settings.stabilizing_q_dynamics = 0;
 % settings.s_sot_min = 0.99;
@@ -64,7 +77,7 @@ settings.dcs_mode = 'CLS';
 % settings.nonsmooth_switching_fun = 0;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 %% discretization
 model = half_unitri_ai_model();
 unfold_struct(model,'caller');
@@ -72,15 +85,15 @@ unfold_struct(model,'caller');
 if isequal(objective,'walk')
     T = 2; % prediction horizon
     N_stg = 20; % control intervals
-    N_FE = 3;  % integration steps per control intevral
+    N_FE = 2;  % integration steps per control intevral
     x_mid = x0;
-    x_mid(1) = 0.75;
     x_end = x0;
-    x_end(1) = 2;
-    Q = diag([50; 50; 25*ones(n_q-2,1); 0.1*ones(n_q,1)])/10;
+    x_end(1) = 2.0;
+    x_mid(1) = x_end(1)/2;
+    Q = diag([50; 50; 25*ones(n_q-2,1); 0.1*ones(n_q,1)])/50;
     Q_terminal= diag([500; 500; 500; 100*ones(n_q-3,1); 50*ones(n_q,1)])/10;
     u_ref = zeros(n_u,1);
-    R = diag([0.1*ones(n_u,1)]);
+    R = diag([0.01*ones(n_u,1)]);
 elseif isequal(objective,'jump')
     T = 1; % prediction horizon
     N_stg = 10; % control intervals
@@ -89,6 +102,8 @@ elseif isequal(objective,'jump')
     x_mid(2) = 0.6;
     x_end = x0;
     x_end(2) = 0.8;
+%     Q = diag([10; 50;  10; 10; 10; 10; 10; 0.1*ones(n_q,1)])/10;
+%     Q_terminal = diag([300; 300; 300; 10; 10; 10; 10; 0.1*ones(n_q,1)])/20;
     Q = diag([10; 50;  10; 10; 10; 10; 10; 0.1*ones(n_q,1)]);
     Q_terminal = diag([300; 300; 300; 10; 10; 10; 10; 0.1*ones(n_q,1)]);
     Q_terminal = Q;
@@ -100,7 +115,7 @@ end
 % interpolate refernece
 x_ref = interp1([0 0.5 1],[x0,x_mid,x_end]',linspace(0,1,N_stg),'spline')'; %spline
 %% Populate model
-model.mu = 1;
+model.mu = 0.8;
 model.T = T;
 model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
@@ -120,8 +135,8 @@ solver = NosnocSolver(model, settings);
 %% read and plot results
 unfold_struct(results,'base');
 %
-q_res = x_opt(1:n_q,:);
-v_res = x_opt(n_q+1:2*n_q,:);
+q_res = x(1:n_q,:);
+v_res = x(n_q+1:2*n_q,:);
 
 N_sim = length(q_res);
 N_frames = N_sim;
@@ -146,12 +161,12 @@ if run_animation
         if ii == 1
             x_input = x0;
         else
-            x_input = x_opt(:, ii);
+            x_input = x(:, ii);
         end
         [Quadruped_X(:, ii), Quadruped_Y(:, ii)] = getHalfQuadrupedConfiguration(model, x_input(1:11, 1));
     end
 
-    %%
+    %
     ground_X = [min(q_res(1,:))-0.5  max(q_res(1,:))+0.5];
     ground_patch_X = [ground_X  ground_X(end:-1:1)];
     ground_patch_Y = [ground_Y-2  ground_Y];
@@ -167,8 +182,8 @@ if run_animation
     pos = get(gcf, 'Position');
     width = pos(3)*1.5;
     height = pos(4)*1.5;
-    width = pos(3)*1.0;
-    height = pos(4)*1.0;
+%     width = pos(3)*1.0;
+%     height = pos(4)*1.0;
     frames_gif = zeros(height, width, 1, N_frames, 'uint8');
     frames_video = { };
     for ii = 1:N_frames
