@@ -50,7 +50,7 @@ settings.sigma_0 = 1e0;
 settings.mpcc_mode = "Scholtes_ineq";
 settings.homotopy_update_slope = 0.2;
 settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 7;
+settings.N_homotopy = 6;
 
 % NLP solver settings;
 default_tol = 1e-8;
@@ -90,6 +90,12 @@ x0 = [ -3; 1; 0; 1;  3; 1; ...
     0; 0; 0; 0; 0; 0];
 x_ref = [-7; 0; 0; 0; 5; 0;...
     0; 0; 0; 0; 0; 0];
+
+
+x_ref = [-7; 1; 0; 1; 5; 1;...
+    0; 0; 0; 0; 0; 0];
+
+
 u_ref = 0;
 
 Q = diag([10; 0.1; 1; 0.1; 10; 0.1; 0.1; 0.1; 0.1; 0.1; 0.1; 0.1]);
@@ -271,7 +277,7 @@ x_min = min([x_ref])-2;
 x_max = max([x_ref])+2;
 
 N_total = length(p1x);
-N_shots = 10;
+N_shots = 6;
 N_skip = round(N_total/N_shots);
 for jj= 1:N_shots
     if jj ~=N_shots
@@ -299,17 +305,17 @@ for jj= 1:N_shots
     % cart 1
     xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
     yp = [0 0 cart_height  cart_height];
-    patch('XData',xp,'YData',yp,'FaceColor', [0 0.4470 0.7410],'FaceAlpha',0.1,'EdgeColor','none')
+    patch('XData',xp,'YData',yp,'FaceColor', [0 0.4470 0.7410],'FaceAlpha',0.2,'EdgeColor','none')
     hold on
     % cart 2
     xp = [x_ref(3)-cart_width2/2 x_ref(3)+cart_height/2 x_ref(3)+cart_height/2 x_ref(3)-cart_width2/2];
     yp = [0 0 cart_height  cart_height];
-    patch('XData',xp,'YData',yp,'FaceColor', [0.8500 0.3250 0.0980], 'FaceAlpha',0.1,'EdgeColor','none')
+    patch('XData',xp,'YData',yp,'FaceColor', [0.8500 0.3250 0.0980], 'FaceAlpha',0.2,'EdgeColor','none')
 
     % cart 3
     xp = [x_ref(5)-cart_width3/2 x_ref(5)+cart_height/2 x_ref(5)+cart_height/2 x_ref(5)-cart_width3/2];
     yp = [0 0 cart_height  cart_height];
-    patch('XData',xp,'YData',yp,'FaceColor',[0.9290 0.6940 0.1250], 'FaceAlpha',0.1,'EdgeColor','none')
+    patch('XData',xp,'YData',yp,'FaceColor',[0.9290 0.6940 0.1250], 'FaceAlpha',0.2,'EdgeColor','none')
 
     text(-1.5,3,['$t = ' num2str(round(t_grid(ii),2)) '\ s$'],'interpreter','latex');
     xlabel('$x$ [m]','Interpreter','latex');
@@ -328,20 +334,27 @@ end
 set(gcf,'Units','inches');
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
+eval(['print -dpdf -painters ' ['cart_frames'] ])
+
+% 
+%     set(gcf, 'Color', 'w');
+%     set(gca,'TickLabelInterpreter','latex');
+%     filename = strcat('cart_frames', '.pdf');
+%     export_fig(filename)
 
 %%
 
 
-lambda_tangent = [-results.lambda_tangent(1,:)+results.lambda_tangent(2,:);
-                  -results.lambda_tangent(3,:)+results.lambda_tangent(4,:);
-                  -results.lambda_tangent(5,:)+results.lambda_tangent(6,:);...
-                  -results.lambda_tangent(7,:)+results.lambda_tangent(8,:);...
+lambda_tangent = [-results.lambda_tangent(5,:)+results.lambda_tangent(6,:);...
+                    -results.lambda_tangent(7,:)+results.lambda_tangent(8,:);...
                   -results.lambda_tangent(9,:)+results.lambda_tangent(10,:);...
+                   -results.lambda_tangent(1,:)+results.lambda_tangent(2,:);
+                  -results.lambda_tangent(3,:)+results.lambda_tangent(4,:);
+                 
                   ];
 
-
-figure('Renderer', 'painters', 'Position', [100 100 1300 400])
+lambda_normal = [results.lambda_normal(3:5,:);results.lambda_normal(1:2,:)];
+figure('Renderer', 'painters', 'Position', [100 100 1350 400])
 % figure
 subplot(231)
 plot(t_grid,p1x,'LineWidth',1.5);
@@ -351,7 +364,7 @@ plot(t_grid,p3x,'LineWidth',1.5);
 xlim([0 T])
 % axis equal
 grid on
-legend({'$q_1(t)$','$q_2(t)$','$q_3(t)$'},'interpreter','latex','Location','east');
+legend({'$q_1(t)$','$q_2(t)$','$q_3(t)$'},'interpreter','latex','Location','southwest');
 xlabel('$t$','interpreter','latex');
 ylabel('$q(t)$','interpreter','latex');
 % axis equal
@@ -360,7 +373,7 @@ plot(t_grid,v1x,'LineWidth',1.5);
 hold on
 plot(t_grid,v2x,'LineWidth',1.5);
 plot(t_grid,v3x,'LineWidth',1.5);
-legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex','Location','south');
+legend({'$v_1(t)$','$v_2(t)$','$v_3(t)$'},'interpreter','latex','Location','southeast');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$','interpreter','latex');
@@ -376,7 +389,7 @@ xlim([0 T])
 
 subplot(234)
 stem(t_grid,[ones(2,1)*nan,Lambda_normal(1:2,:)]','LineWidth',1.5);
-legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex','Location','northwest');
+legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex','Location','northeast');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
@@ -385,17 +398,22 @@ xlim([0 T])
 
 subplot(235)
 plot(t_grid,[ones(5,1)*nan,lambda_normal]','LineWidth',1.5);
-legend({'$\lambda_{\mathrm{n}}^1(t)$','$\lambda_{\mathrm{n}}^2(t)$','$\lambda_{\mathrm{n}}^3(t)$','$\lambda_{\mathrm{n}}^4(t)$','$\lambda_{\mathrm{n}}^5(t)$'},'interpreter','latex');
+legend({'$\lambda_{\mathrm{n}}^1(t)$','$\lambda_{\mathrm{n}}^2(t)$','$\lambda_{\mathrm{n}}^3(t)$','$\lambda_{\mathrm{n}}^4(t)$','$\lambda_{\mathrm{n}}^5(t)$'},'interpreter','latex','Location','east');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\lambda_{\mathrm{n}}(t)$','interpreter','latex');
+ylim([-1 11])
+xlim([0 T])
 subplot(236)
 plot(t_grid,[ones(size(lambda_tangent,1),1)*nan,lambda_tangent]','LineWidth',1.5);
-legend({'$\lambda_{\mathrm{t}}^1(t)$','$\lambda_{\mathrm{t}}^2(t)$','$\lambda_{\mathrm{t}}^3(t)$','$\lambda_{\mathrm{t}}^4(t)$','$\lambda_{\mathrm{t}}^5(t)$'},'interpreter','latex');
+legend({'$\lambda_{\mathrm{t}}^1(t)$','$\lambda_{\mathrm{t}}^2(t)$','$\lambda_{\mathrm{t}}^3(t)$','$\lambda_{\mathrm{t}}^4(t)$','$\lambda_{\mathrm{t}}^5(t)$'},'interpreter','latex','Location','southeast');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel(['$\lambda_{\mathrm{t}}' ...
     '(t)$'],'interpreter','latex');
+
+ylim([-2.5 2.5])
+xlim([0 T])
 
 set(gcf,'Units','inches');
 screenposition = get(gcf,'Position');

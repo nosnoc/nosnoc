@@ -239,7 +239,7 @@ end
 set(gcf,'Units','inches');
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
+eval(['print -dpdf -painters ' ['manipulation_frames'] ])
 %%
 figure('Renderer', 'painters', 'Position', [100 100 800 450])
 subplot(subplot(321))
