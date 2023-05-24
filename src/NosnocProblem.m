@@ -84,7 +84,7 @@ classdef NosnocProblem < NosnocFormulationObject
         ind_L_vn
         ind_P_vt
         ind_N_vt
- 
+
         ind_Alpha_vt
         % misc
         ind_nu_lift
@@ -180,6 +180,12 @@ classdef NosnocProblem < NosnocFormulationObject
             else
                 rbp_x_only = 0;
             end
+
+            right_ygap = 0;
+            if settings.dcs_mode == "CLS" && ~settings.right_boundary_point_explicit
+                right_ygap = 1;
+            end
+
             obj.ind_u = [];
             obj.ind_x0 = [];
             obj.ind_x = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance+rbp_x_only);
@@ -198,7 +204,7 @@ classdef NosnocProblem < NosnocFormulationObject
             % CLS
             obj.ind_lambda_normal = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_lambda_tangent = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_y_gap = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_y_gap = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+right_ygap);
             % friction multipliers and lifting
             % conic
             obj.ind_gamma =  cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
@@ -555,7 +561,7 @@ classdef NosnocProblem < NosnocFormulationObject
             obj.fe0 = fe0;
 
             %             obj.p = vertcat(obj.p, fe0.x0, fe0.lambda{1,:},fe0.y_gap{1,:},fe0.gamma{1,:},fe0.gamma_d{1,:},fe0.delta_d{1,:},fe0.p_vt{1,:},fe0.n_vt{1,:});
-            obj.p = vertcat(obj.p, fe0.x0, fe0.cross_comp_cont_0{1,:},fe0.cross_comp_cont_1{1,:},fe0.cross_comp_cont_2{1,:});
+            obj.p = vertcat(obj.p, fe0.x0, fe0.cross_comp_cont_0{1,:}, fe0.cross_comp_cont_1{1,:},fe0.cross_comp_cont_2{1,:});
 
             X0 = fe0.x{1};
             obj.addVariable(X0,...
@@ -795,26 +801,15 @@ classdef NosnocProblem < NosnocFormulationObject
 
         function cc_vector = get.cc_vector(obj)
             cc_vector = [];
-
             for stage=obj.stages
                 for fe=stage.stage
-                    cross_comp_discont_0 = fe.cross_comp_discont_0;
-                    cross_comp_cont_0 = fe.cross_comp_cont_0;
-                    for j=1:obj.dims.n_s
-                        for jj = j:obj.dims.n_s
-                            for r=1:obj.dims.n_sys
-                                cc_vector = vertcat(cc_vector, diag(cross_comp_discont_0{j,r})*cross_comp_cont_0{jj,r});
-                            end
-                        end
-                    end
-                    for j=1:obj.dims.n_s
-                        for r=1:obj.dims.n_sys
-                            cc_vector = vertcat(cc_vector, diag(cross_comp_discont_0{j,r})*fe.prev_fe.cross_comp_cont_0{end,r});
-                        end
+                    for ic = 1:size(fe.all_comp_pairs, 1)
+                        cc_vector = vertcat(cc_vector, fe.all_comp_pairs(ic, 1) * fe.all_comp_pairs(ic, 2));
                     end
                 end
             end
         end
+
         function u = get.u(obj)
             u = cellfun(@(u) obj.w(u), obj.ind_u, 'UniformOutput', false);
         end

@@ -24,7 +24,7 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef ControlStage < NosnocFormulationObject 
+classdef ControlStage < NosnocFormulationObject
     properties
         stage
         Uk
@@ -181,7 +181,7 @@ classdef ControlStage < NosnocFormulationObject
                     obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end));
                 end
             end
-        end 
+        end
 
         % TODO this should be private
         function addFiniteElement(obj, fe)
