@@ -11,6 +11,7 @@ settings.N_homotopy = 7;
 settings.cross_comp_mode = 3;
 settings.dcs_mode = DcsMode.CLS;
 settings.no_initial_impacts = 1;
+settings.comp_tol = 1e-6;
 %settings.friction_model = "Polyhedral";
 settings.friction_model = "Conic"; % "Conic"
 settings.conic_model_switch_handling = "Abs";
@@ -22,6 +23,7 @@ g = 9.81;
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2);
+model = NosnocModel();
 model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
@@ -38,17 +40,17 @@ model.f_v = [3*1;-g];
 model.f_c = q(2);
 model.J_tangent = [1; 0];
 model.D_tangent = [1,-1;0,0];
-model.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
+model.dims.n_dim_contact = 2; % TODO: REMOVE THIS IN time-freezing
 %% Simulation settings
 N_FE = 2;
 T_sim = 1.7;
 N_sim = 10;
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

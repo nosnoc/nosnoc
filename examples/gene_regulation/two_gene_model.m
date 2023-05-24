@@ -28,6 +28,7 @@
 function [model] = two_gene_model(x0, lifting)
 % Generate model for two gene regulatory network with given initial conditions
     import casadi.*
+    model = NosnocModel();
     % Initial Value
     model.x0 = x0;
     % Variables

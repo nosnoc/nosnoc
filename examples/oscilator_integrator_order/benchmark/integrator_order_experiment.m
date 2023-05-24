@@ -68,8 +68,8 @@ T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 t1_star = 1; % optimal siwtch points
 
-model.N_stages = N_stages;
-model.N_finite_elements = N_finite_elements;
+settings.N_stages = N_stages;
+settings.N_finite_elements = N_finite_elements;
 model.smooth_model = 0;
 %% for results storing
 errors_all_experiments = [];
@@ -101,7 +101,7 @@ for i = 1:length(n_s_vec)
         model.N_sim = N_sim;
         % generate new model with updated settings;
         model = oscilator(model);
-        [results,stats,model] = integrator_fesd(model,settings);
+        [results,stats,solver] = integrator_fesd(model,settings);
         % numerical error
         x_fesd = results.x_res(:,end);
         error_x = norm(x_fesd-x_star,"inf");

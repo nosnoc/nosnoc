@@ -25,6 +25,7 @@ for irk_scheme = IRK_SCHEMES
         for n_s = NS_VALUES
             for N_sim = NSIM_VALUES
                 for N_FE = NFE_VALUES
+                    model = NosnocModel()
                     model.M = eye(2);
                     model.x = [q;v];
                     model.e = e;
@@ -66,9 +67,9 @@ for irk_scheme = IRK_SCHEMES
 
                     if with_guess
                         % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
-                        [results, stats, model, settings, solver] = integrator_fesd(model, settings, [], initial_guess);
+                        [results, stats, solver] = integrator_fesd(model, settings, [], initial_guess);
                     else
-                        [results, stats, model, settings, solver] = integrator_fesd(model, settings, []);
+                        [results, stats, solver] = integrator_fesd(model, settings, []);
                     end
 
                     results_filename = get_results_filename(n_s, N_sim, N_FE, settings.irk_scheme, with_guess);

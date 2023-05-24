@@ -54,15 +54,16 @@ settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 settings.comp_tol = 1e-5;
 settings.homotopy_update_rule = 'superlinear';
 settings.cross_comp_mode = 12;
+settings.general_inclusion = 1;
 
 % Generate model
 model = irma_model(switch_on, lifting);
 % Time
-model.N_finite_elements = N_finite_elements;
+settings.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 
 
 plot_irma(results);

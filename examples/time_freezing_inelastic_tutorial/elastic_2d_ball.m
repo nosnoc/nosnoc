@@ -21,14 +21,15 @@ settings.stagewise_clock_constraint = 0;
 g = 10;
 % Symbolic variables and bounds
 q = SX.sym('q',1); 
-v = SX.sym('v',1); 
+v = SX.sym('v',1);
+model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0.9;
 model.k_aux = 50;
 model.x0 = [1;0]; 
 model.f_v = -g;
 model.f_c = q;
-model.n_dim_contact = 1;
+model.dims.n_dim_contact = 1;
 %% Simulation settings
 N_FE = 3;
 T_sim = 3;
@@ -38,7 +39,7 @@ model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

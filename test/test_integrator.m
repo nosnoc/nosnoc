@@ -26,7 +26,8 @@ settings.N_homotopy = 7;
 x_star = [exp(1);0];
 x_star = [exp(T_sim-1)*cos(2*pi*(T_sim-1));-exp((T_sim-1))*sin(2*pi*(T_sim-1))];
 
-model.N_finite_elements = N_finite_elements;
+model = NosnocModel();
+settings.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 omega = -2*pi;
@@ -49,7 +50,7 @@ f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
 % Call integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 % numerical error
 x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");

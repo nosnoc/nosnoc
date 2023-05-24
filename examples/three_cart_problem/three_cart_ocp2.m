@@ -41,7 +41,7 @@ import casadi.*
 delete three_carts2.gif
 
 %%
-[settings] = NosnocOptions();  
+settings = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;  % number of stages in IRK methods
 
@@ -85,9 +85,10 @@ q = SX.sym('q',3);
 v = SX.sym('v',3); 
 u = SX.sym('u',1);
 x = [q;v];
+model = NosnocModel();
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
@@ -104,7 +105,7 @@ model.f_v = [-c_damping*v(1);...
 model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 % box constraints on controls and states
 model.lbu = u_min;
 model.ubu = u_max;

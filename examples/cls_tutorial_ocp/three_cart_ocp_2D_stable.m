@@ -35,7 +35,9 @@ import casadi.*
 play_animation = 1;
 
 %%
-[settings] = NosnocOptions();
+settings = NosnocOptions();
+model = NosnocModel();
+%%
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;  % number of stages in IRK methods
 settings.dcs_mode = 'CLS';
@@ -67,6 +69,10 @@ N_stg = 15; % control intervals
 N_FE = 2;  % integration steps per control intevral
 T = 6;
 
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
+model.T = T;
+
 %% model parameters
 m1 = 1;
 m2 = 1;
@@ -79,7 +85,6 @@ M = diag([m1, m1, m2, m2, m3, m3]);
 
 ubx = ones(12,1)*10;
 lbx = -ones(12,1)*10;
-
 
 x0 = [ -3; 1; 0; 1;  3; 1; ...
     0; 0; 0; 0; 0; 0];
@@ -105,9 +110,8 @@ q1 = q(1:2);
 q2 = q(3:4);
 q3 = q(5:6);
 
-model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+
+
 model.x = x;
 model.u = u;
 model.x0 = x0;

@@ -53,8 +53,9 @@ settings.homotopy_update_rule = 'superlinear';
 % settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% Discretization parameters
-model.N_stages = 30; % number of control intervals
-model.N_finite_elements = 2; % number of finite element on every control intevral
+model = NosnocModel();
+settings.N_stages = 30; % number of control intervals
+settings.N_finite_elements = 2; % number of finite element on every control intevral
 model.T = 4;    % Time horizon
 
 %% Model parameters and defintion

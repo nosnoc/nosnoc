@@ -41,6 +41,7 @@ p_com = [qx;qy];
 p_left = p_com-0.5*l*[cos(theta);sin(theta)];
 p_right = p_com+0.5*l*[cos(theta);sin(theta)];
 
+model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0;
 model.mu = 0.0;
@@ -51,7 +52,7 @@ model.x0 = [q0;v0];
 model.M = diag([m,m,J]);
 model.f_v = [0;-g;0];
 model.f_c = [p_left(2);p_right(2)];
-model.n_dim_contact = n_dim_contact ;
+model.dims.n_dim_contact = n_dim_contact ;
 %% Simulation settings
 N_FE = 2;
 T_sim = 0.8;
@@ -62,7 +63,7 @@ model.N_sim = N_sim;
 
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

@@ -19,7 +19,8 @@ settings.pss_lift_step_functions = 0;
 g = 10;
 vertical_force = 0;
 % Symbolic variables and bounds
-q = SX.sym('q',2); v = SX.sym('v',2); 
+q = SX.sym('q',2); v = SX.sym('v',2);
+model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0;
 model.mu = 0.3;
@@ -29,7 +30,7 @@ model.x0 = [0;1;3;0];
 model.f_v = [0;-g+vertical_force*g*q(1)];
 model.f_c = q(2);
 model.J_tangent = [1; 0];
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 
 %% Simulation settings
 N_FE = 5;
@@ -40,7 +41,7 @@ model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

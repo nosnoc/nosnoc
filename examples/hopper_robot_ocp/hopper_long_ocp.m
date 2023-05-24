@@ -134,8 +134,8 @@ x_ref = [x_ref1,x_ref2];
 
 %% Fill in model
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
@@ -148,7 +148,7 @@ model.f_v = f_v;
 model.f_c = f_c;
 model.J_tangent = J_tangent;
 model.J_normal = J_normal;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 
 % box constraints on controls and states
 model.lbu = lbu;

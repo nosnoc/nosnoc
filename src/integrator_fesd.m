@@ -32,19 +32,12 @@
 % Examples of calling the function
 % [results] = integrator_fesd(model,settings);
 % [results,stats] = integrator_fesd(model,settings);
-% [results,stats,model] = integrator_fesd(model,settings);
+% [results,stats,solver] = integrator_fesd(model,settings);
 
-function [varargout] = integrator_fesd(model, settings, u_sim, initial_guess)
-
-%% generate time-freezing model before turning off time-related settings
-if settings.time_freezing
-    [model,settings] = time_freezing_reformulation(model,settings);
-end
-
-%% Settings of integration
-[model] = refine_model_integrator(model,settings);
+function [results, integrator_stats, solver] = integrator_fesd(model, settings, u_sim, initial_guess)
 
 %% Create solver functions for integrator step
+settings.equidistant_control_grid = 0; % reset settings
 solver = NosnocSolver(model, settings);
 model = solver.model;
 settings = solver.settings;
@@ -110,20 +103,20 @@ for ii = 1:model.N_sim
 
     if ii > 1 && settings.use_previous_solution_as_initial_guess
         % TODO make this possible via solver interface directly
-        solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
+        solver.problem.w0(dims.n_x+1:end) = res.w(dims.n_x+1:end);
     end
 
     %% set initial guess
     solver.set('x', {x0})
     solver.set('x_left_bp', {x0})
     if exist('initial_guess', 'var')
-        t_guess = t_current + cumsum([0; model.h_k * ones(model.N_finite_elements, 1)]);
+        t_guess = t_current + cumsum([0; model.h_k * ones(settings.N_finite_elements, 1)]);
         x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess,'makima');
         lambda_normal_guess = interp1(initial_guess.t_grid, initial_guess.lambda_normal_traj, t_guess(2:end-1), 'makima');
         %
-        x_init = cell(1, dims.N_finite_elements);
-        y_gap_init = cell(1, dims.N_finite_elements);
-        for j = 1:dims.N_finite_elements
+        x_init = cell(1, settings.N_finite_elements);
+        y_gap_init = cell(1, settings.N_finite_elements);
+        for j = 1:settings.N_finite_elements
             x_init{j} = x_guess(j+1, :);
             y_gap_init{j} = full(model.f_c_fun(x_init{j}));
         end
@@ -185,8 +178,6 @@ for ii = 1:model.N_sim
     time_per_iter = [time_per_iter; solver_stats.cpu_time_total];
     constraint_violations = [constraint_violations, solver_stats.constraint_violation];
     converged = [converged, solver_stats.converged];
-    complementarity_stats  = [complementarity_stats; solver_stats.complementarity_stats(end)];
-    homotopy_iteration_stats = [homotopy_iteration_stats; solver_stats.homotopy_iterations];
 
     %% Store data
     % update results struct
@@ -260,7 +251,7 @@ else
 end
 fprintf('---------------- Stats summary ----------------------------\n');
 fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
-fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, N_stages, N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
+fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, settings.N_stages, settings.N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
 fprintf('-----------------------------------------------------------------\n\n');
 
 %% Output
@@ -283,10 +274,5 @@ results.extended.t_grid = tgrid_long;
 if settings.store_integrator_step_results
     results.sim_step_solver_results = sim_step_solver_results;
 end
-varargout{1} = results;
-varargout{2} = integrator_stats;
-varargout{3} = model;
-varargout{4} = settings;
-varargout{5} = solver;
 end
 

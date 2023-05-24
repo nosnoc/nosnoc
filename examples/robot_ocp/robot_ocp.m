@@ -53,7 +53,7 @@ settings.stagewise_clock_constraint = 0;
 
 %% Discretization
 model.T = 2.5;
-model.N_stages = 25;
+settings.N_stages = 25;
 model.N_FE = 3;
 
 %% call function to discretize, solve and plot results

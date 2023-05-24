@@ -11,7 +11,8 @@ clear all;
 close all;
 %% Build problem
 import casadi.*
-[settings] = NosnocOptions();
+settings = NosnocOptions();
+model = NosnocModel();
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
@@ -19,8 +20,8 @@ settings.n_s = 2;
 % MPCC Method
 settings.N_homotopy = 10;
 % Discretization parameters
-model.N_stages = 30; % number of control intervals
-model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+settings.N_stages = 30; % number of control intervals
+settings.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 0.08;    % Time horizon
 
 %% The Model

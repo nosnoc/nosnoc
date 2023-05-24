@@ -57,7 +57,7 @@ settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 6;
 % settings.gamma_h = 0.999;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+%settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 25; % control intervals
@@ -92,9 +92,10 @@ q = SX.sym('q',3);
 v = SX.sym('v',3); 
 u = SX.sym('u',1);
 x = [q;v];
+model = NosnocModel();
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = [0 1];

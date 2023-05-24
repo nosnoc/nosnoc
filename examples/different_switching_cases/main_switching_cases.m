@@ -39,7 +39,9 @@ import casadi.*
 switching_case = 'leave_sliding_mode'; 
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
 %% NOSNOC settings
-[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
+settings = NosnocOptions();  %% Optionally call this function to have an overview of all options.
+model = NosnocModel();
+
 settings.n_s = 2;
 settings.homotopy_update_slope = 0.1;
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
@@ -50,8 +52,9 @@ settings.print_level = 2;
 N_sim = 16;
 T_sim = 1.5;
 
+
 model.N_sim = N_sim;
-model.N_finite_elements = 2;
+settings.N_finite_elements = 2;
 model.T_sim = T_sim;
 
 switch switching_case
@@ -103,7 +106,7 @@ switch switching_case
         % leaving
         settings.irk_scheme = 'EXPLICIT_RK';
         settings.n_s = 1;
-        model.N_finite_elements = 3; % set 4, 5 for different outcomes
+        settings.N_finite_elements = 3; % set 4, 5 for different outcomes
         settings.use_previous_solution_as_initial_guess = 1;
         [results,stats] = integrator_fesd(model,settings);
         %

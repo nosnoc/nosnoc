@@ -20,9 +20,10 @@ settings.cross_comp_mode = 1;
 settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 settings.time_freezing = 1;
 %%
+model = NosnocModel();
 model.e = 0;
 model.mu = 1;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 %% the dynamics
 model.n_q = 3;
 model.g = -9.81*1;
@@ -58,7 +59,7 @@ N_finite_elements = 3;
 T_sim = 0.6;
 N_sim = 40;
 model.T_sim = T_sim;
-model.N_finite_elements = N_finite_elements;
+settings.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
@@ -66,7 +67,7 @@ settings.use_previous_solution_as_initial_guess = 1;
 settings.time_freezing = 0;
 settings.use_speed_of_time_variables = 0;
 settings.local_speed_of_time_variable = 0;
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);

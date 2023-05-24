@@ -23,11 +23,10 @@ settings.cross_comp_mode = 1;
 settings.sigma_0 = 1e2;
 settings.print_details_if_infeasible = 0;
 %%
+model = NosnocModel();
 model.e = 0;
 model.mu = 0.7;
 %% the dynamics
-model.n_q = 3;
-model.g = -9.81;
 qx = SX.sym('qx',1);
 qy = SX.sym('qy',1);
 qtheta = SX.sym('qtheta',1);
@@ -72,7 +71,7 @@ T_sim = 1;
 N_sim = 1;
 
 model.T_sim = T_sim;
-model.N_finite_elements = N_finite_elements;
+settings.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call FESD Integrator
@@ -80,7 +79,7 @@ if settings.time_freezing
     [model,settings] = time_freezing_reformulation(model,settings);
     settings.time_freezing = 0;
 end
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %%
 qx = results.x_res(1,:);
 qy = results.x_res(2,:);

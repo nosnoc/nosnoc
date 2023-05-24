@@ -40,7 +40,18 @@ classdef NosnocSolver < handle
         function obj = NosnocSolver(model, settings)
             import casadi.*
             tic
-            [model,settings] = model_reformulation_nosnoc(model,settings); % TODO Move this outside solver to NosnocModel Class
+            model.verify_and_backfill(settings);
+            model.generate_variables(settings);
+            model.generate_equations(settings);
+
+            % calculate homotopy
+            if settings.N_homotopy == 0
+                settings.N_homotopy = ceil(abs(log(settings.sigma_N / settings.sigma_0) / log(settings.homotopy_update_slope)));
+                % TODO: compute
+                if ~strcmp(settings.homotopy_update_rule, 'linear')
+                    warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
+                end
+            end
 
             settings.create_butcher_tableu(model); % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
 
@@ -92,16 +103,7 @@ classdef NosnocSolver < handle
                 settings.opts_casadi_nlp.iteration_callback.solver = solver;
             end
 
-            % Define CasADi function for the switch indicator function.
-            nu_fun = Function('nu_fun', {w,p},{problem.nu_vector});
-
-            % TODO maybe these shuold also live in problem
-            obj.model.nu_fun = nu_fun;
-            % create CasADi function for objective gradient.
-            nabla_J = problem.cost.jacobian(obj.problem.w);
-            nabla_J_fun = Function('nabla_J_fun', {w,p},{nabla_J});
-            obj.model.nabla_J = nabla_J;
-            obj.model.nabla_J_fun = nabla_J_fun;
+            
 
             if settings.print_level > 5
                 problem.print();
@@ -133,8 +135,8 @@ classdef NosnocSolver < handle
 
                 if iscell(val)
                     % If the passed value is an N_stage by 1 cell array we assume this initialization is done stage wise
-                    if ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val,2) == 1
-                        for ii=1:obj.model.dims.N_stages
+                    if ismatrix(val) && size(val, 1) == obj.settings.N_stages && size(val,2) == 1
+                        for ii=1:obj.settings.N_stages
                             % All variables of each stage are set to the same value
                             for v=ind(ii,:,:)
                                 % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, etc.)
@@ -144,9 +146,9 @@ classdef NosnocSolver < handle
                             end
                         end
                     % Otherwise if we have an initialization of the form N_stages-by-N_fe we do the same but finite-element-wise
-                    elseif ismatrix(val) && size(val, 1) == obj.model.dims.N_stages && size(val, 2) == obj.model.dims.N_finite_elements
-                        for ii=1:obj.model.dims.N_stages
-                            for jj=1:obj.model.dims.N_finite_elements
+                    elseif ismatrix(val) && size(val, 1) == obj.settings.N_stages && size(val, 2) == obj.settings.N_finite_elements
+                        for ii=1:obj.settings.N_stages
+                            for jj=1:obj.settings.N_finite_elements
                                 % All variables of each finite element are set to the same value
                                 for v=ind(ii,jj,:)
                                     % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, cls, etc.)
@@ -392,13 +394,15 @@ classdef NosnocSolver < handle
                 if isfield(solver_stats, 'iterations')
                     inf_pr = solver_stats.iterations.inf_pr(end);
                     inf_du = solver_stats.iterations.inf_du(end);
+                    objective = solver_stats.iterations.obj(end);
                 else
                     inf_pr = nan;
                     inf_du = nan;
+                    objective = nan;
                 end
                 fprintf('%d\t%6.2e\t %6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.3f \t %d \t %s \n',...
                     ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
-                    solver_stats.iterations.obj(end), stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
+                    objective, stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
             elseif strcmp(obj.settings.nlpsol, 'snopt')
                 % TODO: Findout snopt prim du inf log!
                 inf_pr = nan;

@@ -54,7 +54,8 @@ settings.comp_tol = 1e-9;
 settings.cross_comp_mode  = 3;
 settings.homotopy_update_rule = 'superlinear';
 %% Time settings
-model.N_finite_elements = N_finite_elements;
+model = NosnocModel();
+settings.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 % Inital Value
@@ -78,7 +79,7 @@ model.S = [-1;1];
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 
 %% Plot results
 x1 = results.x(1,:);

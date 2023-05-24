@@ -28,6 +28,7 @@
 function [model] = oscilator(model_in)
 
 import casadi.*
+model = NosnocModel();    
 %% Time horizon
 if ~isempty(model_in)
     unfold_struct(model_in,'caller');
@@ -45,7 +46,7 @@ if smooth_model
     A2 = A1;
 end
 %% Inital Value
-x0 = [exp(-1);0];
+model.x0 = [exp(-1);0];
 % x0 = [2*exp(-1);0];
 if ~exist('R_osc')
     R_osc = 1;
@@ -56,24 +57,17 @@ end
 % x2 = MX.sym('x2');
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
-x = [x1;x2];
+model.x = [x1;x2];
 % every constraint function corresponds to a simplex (note that the c_i might be vector valued)
 c = x1^2+x2^2-R_osc^2;
 % sign matrix for the modes
-S = [1;-1];
-c = [c];
+model.S = [1;-1];
+model.c = [c];
 
 f_11 = A1*x;
 f_12 = A2*x;
 % in matrix form
-F = [f_11 f_12];
-%% Generic part
-% (make of local workspace a struct and pass to output
-names = who;
-
-for ii = 1:length(names)
-    eval([ 'model.' names{ii} '=' names{ii} ';'])
-end
+model.F = [f_11 f_12];
 
 end
 
