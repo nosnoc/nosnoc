@@ -101,18 +101,19 @@ end
 
 %% Main simulation loop
 for ii = 1:model.N_sim
+
+    %% set problem parameters, controls
+    solver.set("x0", x0);
     if dims.n_u > 0
         solver.set('u', {u_sim(:,ii)});
     end
 
-    %%
-    % TODO Set up homotopy solver to take p_val explicitly
     if ii > 1 && settings.use_previous_solution_as_initial_guess
         % TODO make this possible via solver interface directly
         solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
     end
 
-    % set all x values to xcurrent, as this is the best available guess.
+    %% set initial guess
     solver.set('x', {x0})
     solver.set('x_left_bp', {x0})
     if exist('initial_guess', 'var')
@@ -154,6 +155,8 @@ for ii = 1:model.N_sim
     %% solve
     [sol, solver_stats] = solver.solve();
     res = extract_results_from_solver(model, solver.problem, settings, sol);
+
+    %% handle failure -> try second initialization
     if solver_stats.converged == 0
         disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
         % solver.print_iterate(sol.W(:,end))
@@ -175,33 +178,15 @@ for ii = 1:model.N_sim
             ii, model.N_sim, t_current, model.T_sim, solver_stats.cpu_time_total);
     end
 
+    %% gather results
     if settings.store_integrator_step_results
         sim_step_solver_results = [sim_step_solver_results,res];
     end
     time_per_iter = [time_per_iter; solver_stats.cpu_time_total];
     constraint_violations = [constraint_violations, solver_stats.constraint_violation];
-
     converged = [converged, solver_stats.converged];
-
-    %% update initial guess and inital value
-    x0 = res.x(:,end);
-    %     update clock state
-    if impose_terminal_phyisical_time
-        solver.problem.p0(end) = solver.problem.p0(end)+model.T;
-    end
-    solver.set("x0", x0);
-
-    % TODO Set up homotopy solver to take p_val explicitly
-    if use_previous_solution_as_initial_guess
-        % TODO make this possible via solver interface directly
-        solver.problem.w0(n_x+1:end) = res.w(n_x+1:end);
-    end
-
-    % set all x values to xcurrent, as this is the best available guess.
-    solver.set('x', {x0})
-    solver.set('x_left_bp', {x0})
-    % try zeros?
-    % solver.set('lambda_normal', 1.0)
+    complementarity_stats  = [complementarity_stats; solver_stats.complementarity_stats(end)];
+    homotopy_iteration_stats = [homotopy_iteration_stats; solver_stats.homotopy_iterations];
 
     %% Store data
     % update results struct
@@ -218,17 +203,13 @@ for ii = 1:model.N_sim
     results.extended.x = [results.extended.x, res.extended.x(:, 2:end)];
 
     % TODO: is there a better way to do this
-    results.s_sot  = [results.s_sot, res.w(flatten_ind(solver.problem.ind_sot))];
+    results.s_sot = [results.s_sot, res.w(flatten_ind(solver.problem.ind_sot))];
 
     if settings.dcs_mode == DcsMode.CLS
         results.x_with_impulse = [results.x_with_impulse, res.x_with_impulse(:,2:end)];
         % TODO maybe make solver take t0 and T_final as param?
         results.t_with_impulse = [results.t_with_impulse, t_current + res.t_with_impulse(2:end)];
     end
-
-    t_current = t_current + model.T;
-    complementarity_stats  = [complementarity_stats; solver_stats.complementarity_stats(end)];
-    homotopy_iteration_stats = [homotopy_iteration_stats; solver_stats.homotopy_iterations];
 
     if solver_stats.converged == 0 && settings.break_simulation_if_infeasible
         disp('solver did not converge and break_simulation_if_infeasible is True -> finish simulation with Failure!')
@@ -252,7 +233,22 @@ for ii = 1:model.N_sim
         end
         ylim([min(min(results.x(1:end-1, :)))-0.3 max(max(results.x(1:end-1, :)))+0.3])
     end
+
+    %% debug here before problem changes
+    % if ~isequal(sign(x0(3:4)), sign(res.x(3:4,end)))
+    %     disp('sign switch in velocity')
+    %     keyboard
+    % end
+
+    %% update inital value
+    x0 = res.x(:,end);
+    t_current = t_current + model.T;
+    % update clock state
+    if impose_terminal_phyisical_time
+        solver.problem.p0(end) = solver.problem.p0(end)+model.T;
+    end
 end
+
 total_time = sum(time_per_iter);
 %% Verbose
 fprintf('\n');
