@@ -37,7 +37,9 @@ import casadi.*
 
 filename = 'discs_switch_position_obstacle.gif';
 %%
-[settings] = NosnocOptions();
+settings = NosnocOptions();
+model = NosnocModel();
+%%
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;  % number of stages in IRK methods
 
