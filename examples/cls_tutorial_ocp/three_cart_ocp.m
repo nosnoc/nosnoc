@@ -110,6 +110,8 @@ model.f_v = [-c_damping*v(1);...
 model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
+
+
 % box constraints on controls and states
 model.lbu = u_min;
 model.ubu = u_max;

@@ -33,42 +33,38 @@ import casadi.*
 
 %%
 play_animation = 1;
-no_friction = 0;
 
 %%
 [settings] = NosnocOptions();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;  % number of stages in IRK methods
 settings.dcs_mode = 'CLS';
-settings.cross_comp_mode = 3;
-settings.friction_model = "Conic";
-settings.conic_model_switch_handling = "Abs";
+settings.cross_comp_mode = 1;
+settings.friction_model = "Polyhedral";
 settings.print_level = 3;
 
-if 1
-    settings.sigma_0 = 1e0;
-    settings.homotopy_update_slope = 0.2;
-    settings.homotopy_update_rule = 'superlinear';
-    settings.N_homotopy = 5;
-    settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
-else
-    settings.gamma_h = 0.9999;
-    settings.sigma_0 = 1e0;
-    settings.mpcc_mode = "Scholtes_ineq";
-    settings.elastic_scholtes = 1;
-    settings.homotopy_update_slope = 0.2;
-    %settings.homotopy_update_rule = 'superlinear';
-    settings.N_homotopy = 6;
-    settings.opts_casadi_nlp.ipopt.max_iter = 5e3;
-end
+settings.gamma_h = 0.8;
+settings.sigma_0 = 1e0;
+settings.mpcc_mode = "Scholtes_ineq";
+settings.homotopy_update_slope = 0.2;
+settings.homotopy_update_rule = 'superlinear';
+settings.N_homotopy = 7;
 
+% NLP solver settings;
+default_tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
+settings.opts_casadi_nlp.ipopt.tol = default_tol;
+settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+settings.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
 N_stg = 15; % control intervals
-N_FE = 3;  % integration steps per control intevral
+N_FE = 2;  % integration steps per control intevral
 T = 5;
+
 
 %% model parameters
 m1 = 1;
@@ -80,21 +76,18 @@ cart_width3 = 2;
 
 M = diag([m1, m1, m2, m2, m3, m3]);
 
-ubx = [10;  inf; 10;    inf;  10;  inf;  10; 10; 10; 10; 10; 10];
-lbx = [-10; -inf; -10; -inf; -10; -inf; -10; -10; -10; -10; -10;-10];
+ubx = ones(12,1)*10;
+lbx = -ones(12,1)*10;
 
-
-ubx = [10;  2;   10;    2;  10;  2;  10; 10; 10; 10; 10; 10];
-lbx = [-10; -2; -10; -2; -10; -2; -10; -10; -10; -10; -10;-10];
 
 x0 = [ -3; 1; 0; 1;  3; 1; ...
-        0; 0; 0; 0; 0; 0];
-x_ref = [-7; 0; 0; 0; 6; 0;...
-          0; 0; 0; 0; 0; 0];
+    0; 0; 0; 0; 0; 0];
+x_ref = [-6; 0; 0; 0; 5; 0;...
+    0; 0; 0; 0; 0; 0];
 u_ref = 0;
 
 Q = diag([10; 0.1; 1; 0.1; 10; 0.1; 0.1; 0.1; 0.1; 0.1; 0.1; 0.1]);
-Q_terminal = 300*Q;
+Q_terminal = 200*Q;
 R = 0.1;
 
 u_max = 30;
@@ -134,12 +127,12 @@ f_c = [q2(1) - q1(1) - 0.5*cart_width2 - 0.5*cart_width1;...
     q3(2)-cart_width3/2;...
     ];
 
-J_tangent = [ 0  0 1 0 0 ;...
-             -1 -1 0 0 0;...
-              0  0 0 1 0;...
-              1  0 0 0 0;...
-              0  0 0 0 1;...
-              0  1 0 0 0];
+J_tangent = [0  0 1 0 0 ;...
+            -1 -1 0 0 0;...
+            0  0 0 1 0;...
+            1  0 0 0 0;...
+            0  0 0 0 1;...
+            0  1 0 0 0];
 
 J_tangent =   J_tangent./vecnorm(J_tangent);
 
@@ -148,19 +141,18 @@ J_normal_fun = Function('J_normal_fun',{q},{J_normal});
 J_normal = full(J_normal_fun(x0(1:6)))';
 J_normal  = J_normal ./vecnorm(J_normal);
 
+D_tangent  = [];
+for ii = 1:size(J_tangent,2)
+    D_tangent  = [D_tangent, J_tangent(:,ii), -J_tangent(:,ii)];
+end
 
 model.f_c = f_c;
 model.J_normal = J_normal;
 model.J_tangent = J_tangent;
-model.D_tangent = [J_tangent, -J_tangent];
-
+model.D_tangent = D_tangent;
 model.e =  [0.0 1.0 0.0 0.0 0.0];
-if no_friction
-    model.mu = 0.0;
-else
-%     model.mu = [0.0 0.0 0.001 0.001 0.001];
-    model.mu = [0.2 0.2 0.2 0.2 0.2];
-end
+model.mu = [0.1 0.1 0.2 0.2 0.2];
+
 % box constraints on controls and states
 model.lbu = u_min;
 model.ubu = u_max;
@@ -169,42 +161,15 @@ model.ubx = ubx;
 % Stage cost
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
-% model.g_terminal = [x-x_ref];
+
 %% Call nosnoc solver
 solver = NosnocSolver(model, settings);
 lambda_normal_guess = {};
-y_gap_guess = {};
-x_guess = {};
 for ii = 1:N_stg
     lambda_normal_guess{ii} = [0;0;g;g;g];
-%     lambda_tangent_guess{ii} = model.mu(1)*[0;0;g;g;g];
-    y_gap_guess{ii} = [1;1;0;0;0];
-    x_guess{ii} = x_ref;
 end
+
 solver.set('lambda_normal',lambda_normal_guess');
-% solver.set('w0',rand(size(solver.problem.w)))
-% solver.set('lambda_tangent',lambda_tangent_guess');
-
-% use a previous solution to initialize
-if isfile('results.mat')
-    old_res = load('results.mat');
-    names = fieldnames(old_res.extended);
-    for k=1:numel(names)
-        name = names{k};
-        if name == 'x'
-            val = reshape(old_res.extended.x(:,2:end), 1, []);
-        else
-            val = reshape(old_res.extended.(name), 1, []);
-        end
-        val = val';
-        solver.set(name, val);
-    end
-end
-
-%solver.set('y_gap',y_gap_guess');
-%solver.set('Y_gap',y_gap_guess');
-%solver.set('x', x_guess');
-%solver.set('x_left_bp', x_guess');
 [results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
@@ -224,46 +189,46 @@ v3y = x(12,:);
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
 filename = 'three_carts_with_friction.gif';
-    carts_appart = 2;
-    x_min = min(x_ref)-2.5;
-    x_max = max(x_ref)+2.5;
-    cart_height = 2;
+carts_appart = 2;
+x_min = min(x_ref)-2.5;
+x_max = max(x_ref)+2.5;
+cart_height = 2;
 
-    carts_appart = 1.5*1;
+carts_appart = 1.5*1;
 if play_animation
     figure(1)
-    
+
     for ii = 1:length(p1x)
         % cart 1
         xp = [p1x(ii)-cart_width1/2 p1x(ii)+cart_height/2 p1x(ii)+cart_height/2 p1x(ii)-cart_width1/2];
         yp = [0 0 cart_height  cart_height];
-        patch(xp,yp,'b','FaceAlpha',0.8)
+        patch('XData',xp,'YData',yp,'FaceColor', [0 0.4470 0.7410],'FaceAlpha',0.9)
         hold on
         % cart 2
         xp = [p2x(ii)-cart_width2/2 p2x(ii)+cart_height/2 p2x(ii)+cart_height/2 p2x(ii)-cart_width2/2];
         yp = [0 0 cart_height  cart_height];
-        patch(xp,yp,'r','FaceAlpha',0.8)
+        patch('XData',xp,'YData',yp,'FaceColor', [0.8500 0.3250 0.0980], 'FaceAlpha',0.9)
 
         % cart 3
         xp = [p3x(ii)-cart_width3/2 p3x(ii)+cart_height/2 p3x(ii)+cart_height/2 p3x(ii)-cart_width3/2];
         yp = [0 0 cart_height  cart_height];
-        patch(xp,yp,'m','FaceAlpha',0.8)
+        patch('XData',xp,'YData',yp,'FaceColor',[0.9290 0.6940 0.1250], 'FaceAlpha',0.9)
 
-        % the refereneces
+        %         % the refereneces
         % cart 1
         xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
         yp = [0 0 cart_height  cart_height];
-        patch(xp,yp,'b','FaceAlpha',0.10)
+        patch('XData',xp,'YData',yp,'FaceColor', [0 0.4470 0.7410],'FaceAlpha',0.1,'EdgeColor','none')
         hold on
         % cart 2
         xp = [x_ref(3)-cart_width2/2 x_ref(3)+cart_height/2 x_ref(3)+cart_height/2 x_ref(3)-cart_width2/2];
         yp = [0 0 cart_height  cart_height];
-        patch(xp,yp,'r','FaceAlpha',0.10)
+        patch('XData',xp,'YData',yp,'FaceColor', [0.8500 0.3250 0.0980], 'FaceAlpha',0.1,'EdgeColor','none')
 
         % cart 3
         xp = [x_ref(5)-cart_width3/2 x_ref(5)+cart_height/2 x_ref(5)+cart_height/2 x_ref(5)-cart_width3/2];
         yp = [0 0 cart_height  cart_height];
-        patch(xp,yp,'m','FaceAlpha',0.10)
+        patch('XData',xp,'YData',yp,'FaceColor',[0.9290 0.6940 0.1250], 'FaceAlpha',0.1,'EdgeColor','none')
 
         % ground
         xp = [x_min x_max x_max x_min ];
@@ -309,33 +274,33 @@ for jj= 1:N_shots
     % cart 1
     xp = [p1x(ii)-cart_width1/2 p1x(ii)+cart_height/2 p1x(ii)+cart_height/2 p1x(ii)-cart_width1/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'b','FaceAlpha',0.8)
+    patch('XData',xp,'YData',yp,'FaceColor', [0 0.4470 0.7410],'FaceAlpha',0.9)
     hold on
     % cart 2
     xp = [p2x(ii)-cart_width2/2 p2x(ii)+cart_height/2 p2x(ii)+cart_height/2 p2x(ii)-cart_width2/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'r','FaceAlpha',0.8)
+    patch('XData',xp,'YData',yp,'FaceColor', [0.8500 0.3250 0.0980], 'FaceAlpha',0.9)
 
     % cart 3
     xp = [p3x(ii)-cart_width3/2 p3x(ii)+cart_height/2 p3x(ii)+cart_height/2 p3x(ii)-cart_width3/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'m','FaceAlpha',0.8)
+    patch('XData',xp,'YData',yp,'FaceColor',[0.9290 0.6940 0.1250], 'FaceAlpha',0.9)
 
-    % the refereneces
+    %         % the refereneces
     % cart 1
     xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'b','FaceAlpha',0.10)
+    patch('XData',xp,'YData',yp,'FaceColor', [0 0.4470 0.7410],'FaceAlpha',0.1,'EdgeColor','none')
     hold on
     % cart 2
     xp = [x_ref(3)-cart_width2/2 x_ref(3)+cart_height/2 x_ref(3)+cart_height/2 x_ref(3)-cart_width2/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'r','FaceAlpha',0.10)
+    patch('XData',xp,'YData',yp,'FaceColor', [0.8500 0.3250 0.0980], 'FaceAlpha',0.1,'EdgeColor','none')
 
     % cart 3
     xp = [x_ref(5)-cart_width3/2 x_ref(5)+cart_height/2 x_ref(5)+cart_height/2 x_ref(5)-cart_width3/2];
     yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'m','FaceAlpha',0.10)
+    patch('XData',xp,'YData',yp,'FaceColor',[0.9290 0.6940 0.1250], 'FaceAlpha',0.1,'EdgeColor','none')
 
     text(-1.5,3,['$t = ' num2str(round(t_grid(ii),2)) '\ s$'],'interpreter','latex');
     xlabel('$x$ [m]','Interpreter','latex');
@@ -405,17 +370,24 @@ set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:
 eval(['print -dpdf -painters ' ['carts_states'] ])
 %%
 
+lambda_tangent = [-results.lambda_tangent(1,:)+results.lambda_tangent(2,:);
+                  -results.lambda_tangent(3,:)+results.lambda_tangent(4,:);
+                  -results.lambda_tangent(5,:)+results.lambda_tangent(6,:);...
+                  -results.lambda_tangent(7,:)+results.lambda_tangent(8,:);...
+                  -results.lambda_tangent(9,:)+results.lambda_tangent(10,:);...
+                  ];
 figure
 subplot(121)
 plot(t_grid,[ones(5,1)*nan,lambda_normal]','LineWidth',1.5);
-% legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex');
+legend({'$\lambda_{\mathrm{n}}^1(t)$','$\lambda_{\mathrm{n}}^2(t)$','$\lambda_{\mathrm{n}}^3(t)$','$\lambda_{\mathrm{n}}^4(t)$','$\lambda_{\mathrm{n}}^5(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\lambda_{\mathrm{n}}(t)$','interpreter','latex');
 subplot(122)
 plot(t_grid,[ones(size(lambda_tangent,1),1)*nan,lambda_tangent]','LineWidth',1.5);
-% legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex');
+legend({'$\lambda_{\mathrm{t}}^1(t)$','$\lambda_{\mathrm{t}}^2(t)$','$\lambda_{\mathrm{t}}^3(t)$','$\lambda_{\mathrm{t}}^4(t)$','$\lambda_{\mathrm{t}}^5(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel(['$\lambda_{\mathrm{t}}' ...
     '(t)$'],'interpreter','latex');
+
