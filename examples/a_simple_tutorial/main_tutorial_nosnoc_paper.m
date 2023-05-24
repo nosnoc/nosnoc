@@ -1,14 +1,18 @@
 clear all
 import casadi.*
 %%
-[settings] = NosnocOptions();  
+settings = NosnocOptions();  
+model = NosnocModel();  
+
 settings.time_optimal_problem = 1;
 settings.n_s = 2; 
 settings.mpcc_mode = 'elastic_ineq';
 settings.s_sot_max =	25;
 settings.s_sot_min =	1/25;
 
-model.N_stg = 10; model.N_FE = 3; model.T = 1;    
+settings.N_stages = 10; 
+settings.N_finite_elements = 3; 
+model.T = 1;    
 q = SX.sym('q'); v = SX.sym('v'); 
 model.x = [q;v]; model.x0 = [0;0]; 
 model.lbx = [-inf;-25]; model.ubx = [inf;25];

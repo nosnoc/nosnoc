@@ -41,7 +41,7 @@ import casadi.*
 delete three_carts2.gif
 
 %%
-[settings] = NosnocOptions();  
+settings = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;  % number of stages in IRK methods
 

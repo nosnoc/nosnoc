@@ -1,8 +1,6 @@
 unfold_struct(model,'caller')
 unfold_struct(settings,'caller')
-w_opt = full(results.w);
-n = n_x+n_u;
-nn = n-1;
+unfold_struct(results,'caller')
 tgrid = linspace(0, T, N_stages+1);
 tgrid_z = linspace(0, T, N_stages);
 %% read solutions

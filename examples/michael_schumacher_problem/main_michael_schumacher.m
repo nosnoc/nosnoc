@@ -41,15 +41,17 @@ path_constraint = 'linear';
 track_width = 0.5;
 
 settings = NosnocOptions();  %% Optionally call this function to have an overview of all options.
-settings.time_optimal_problem = 0;
+settings.time_optimal_problem = 1;
 settings.n_s = 2; 
 settings.sigma_0 = 1e0;
 settings.use_fesd = 1;
 settings.cross_comp_mode = 3;
 settings.T_final_max = 5*pi;
 settings.T_final_min = 2;
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 settings.dcs_mode = 'Step';
+settings.elastic_scholtes = 1;
+settings.mpcc_mode = 'elastic_ineq';
 
 % settings.relax_terminal_constraint = 2;
 % settings.rho_terminal = 1e3;
@@ -136,6 +138,6 @@ model.g_terminal = [q-q_target];
 %% Solve
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
-fprintf('Objective values is: %2.4f \n',full(results.f_opt));
+fprintf('Objective values is: %2.4f \n',full(results.f));
 %% plot
 plot_results_ms

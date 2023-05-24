@@ -29,7 +29,7 @@ hold on
 xlabel('$t$','interpreter','latex');
 ylabel('$L(t)$','interpreter','latex');
 subplot(212)
-stairs(results.t_grid,[nan*ones(n_u,1),results.u]');
+stairs(results.t_grid_u,[nan*ones(model.dims.n_u,1),results.u]');
 hold on
 xlabel('$t$','interpreter','latex');
 ylabel('$u(t)$','interpreter','latex');

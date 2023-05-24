@@ -9,7 +9,8 @@ model.u0 = [0;0;0;0]; % guess for control variables
 L1 = SX.sym('L1');
 L2 = SX.sym('L2');
 L3 = SX.sym('L3');
-model.x = [L1;L2;L3];
+x = [L1;L2;L3];
+model.x = x;
 n_x = 3;
 
 % lower and upper bounds
@@ -21,8 +22,9 @@ wu0 = SX.sym('wu0');
 wu1 = SX.sym('wu1');
 wu2 = SX.sym('wu2');
 wu3 = SX.sym('wu3');
-model.u = [wu0;wu1;wu2;wu3];
-n_u = length(u);
+u = [wu0;wu1;wu2;wu3];
+model.u = u;
+n_u = length(model.u);
 % Guess and Bounds
 model.lbu  = 0.25*ones(n_u,1);
 model.ubu  = 1.25*ones(n_u,1);

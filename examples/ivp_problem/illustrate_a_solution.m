@@ -2,23 +2,25 @@ clear all
 clc
 close all
 import casadi.*
-% settings
+%% settings
+model = NosnocModel();
 settings = NosnocOptions();
+%%
 settings.n_s = 1;     
-% Generate Model
-model.T_sim = 0.2;
-model.N_sim = 30;
-settings.N_stages = 1;
 settings.N_finite_elements = 2;
+
+% Generate Model
+model.N_sim = 30;
+model.T_sim = 0.2;
 model.x0 = -0.1;
 % Variable defintion
-x = MX.sym('x');
+x = SX.sym('x');
 model.x = x;
 model.c = x;
 model.S = [1;-1];
 % modes of the ODE
-f_11 = [1];
-f_12 = [3];
+f_11 = 1;
+f_12 = 3;
 model.F = [f_11 f_12];
 % objective
 model.f_q = x^2;

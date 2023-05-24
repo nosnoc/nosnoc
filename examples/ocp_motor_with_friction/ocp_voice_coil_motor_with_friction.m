@@ -11,7 +11,7 @@ clear all;
 close all;
 %% Build problem
 import casadi.*
-[settings] = NosnocOptions();
+settings = NosnocOptions();
 model = NosnocModel();
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
