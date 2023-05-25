@@ -109,13 +109,23 @@ classdef NosnocFormulationObject < handle
 
             if ismember('lb', p.UsingDefaults)
                 lb = zeros(n, 1);
-            else
+            elseif length(p.Results.lb) == 1
+                lb = p.Results.lb * ones(n, 1);
+            elseif length(p.Results.lb) == n
                 lb = p.Results.lb;
+            else
+                disp("addConstraint: dimension of lb does not match symbolic")
+                keyboard
             end
             if ismember('ub', p.UsingDefaults)
                 ub = zeros(n, 1);
-            else
+            elseif length(p.Results.ub) == 1
+                ub = p.Results.ub * ones(n, 1);
+            elseif length(p.Results.ub) == n
                 ub = p.Results.ub;
+            else
+                disp("addConstraint: dimension of ub does not match symbolic")
+                keyboard
             end
 
             obj.g = vertcat(obj.g, symbolic);
