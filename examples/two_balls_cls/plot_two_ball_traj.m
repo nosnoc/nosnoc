@@ -1,5 +1,8 @@
 function plot_two_ball_traj(results, title_str)
 
+if nargin < 2
+    title_str = '';
+end
 benchmark_globals;
 N_FE = NFE_VALUES(1);
 

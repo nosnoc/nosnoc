@@ -4,9 +4,9 @@ import casadi.*
 close all
 %%
 settings = NosnocOptions();
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 % settings.irk_representation = 'differential';
-settings.n_s = 2;
+settings.n_s = 1;
 settings.print_level = 3;
 % settings.N_homotopy = 8;
 settings.cross_comp_mode = 1;
@@ -52,7 +52,7 @@ model.f_c = q(1)-R;
 %% Simulation settings
 N_FE = 2;
 T_sim = 1;
-N_sim = 80;
+N_sim = 722;
 model.T_sim = T_sim;
 settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
@@ -77,6 +77,5 @@ plot_two_ball_traj(results);
 %% compare
 error = norm(x_traj_matlab(end,:)'-results.x(:,end));
 fprintf('Numerical error %2.2e \n',error);
-
 
 

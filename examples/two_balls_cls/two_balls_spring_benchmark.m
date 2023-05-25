@@ -25,7 +25,7 @@ for irk_scheme = IRK_SCHEMES
         for n_s = NS_VALUES
             for N_sim = NSIM_VALUES
                 for N_FE = NFE_VALUES
-                    model = NosnocModel()
+                    model = NosnocModel();
                     model.M = eye(2);
                     model.x = [q;v];
                     model.e = e;
@@ -56,7 +56,7 @@ for irk_scheme = IRK_SCHEMES
                     settings.use_previous_solution_as_initial_guess  = 1;
                     %% Simulation settings
                     model.T_sim = T_sim;
-                    model.N_FE = N_FE;
+                    settings.N_finite_elements = N_FE;
                     model.N_sim = N_sim;
 
                     %% Call nosnoc Integrator

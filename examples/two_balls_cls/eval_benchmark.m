@@ -12,7 +12,7 @@ save(ref_sol_filename, "t_grid_ref", "x_traj_ref", "n_bounces_ref");
 % load(ref_sol_filename)
 
 
-for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE, IRKSchemes.RADAU_IIA]
+for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE] %, IRKSchemes.RADAU_IIA]
     %%
     x_ref = x_traj_ref(end, :)';
     
@@ -39,6 +39,7 @@ for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE, IRKSchemes.RADAU_IIA]
                     x_sim_end = results.x(:, end);
                     errors{i} = [errors{i}, max(abs(x_sim_end - x_ref))];
                     h_values{i} = [h_values{i}, T_sim/(N_sim*N_FE)];
+                    % h_values{i} = [h_values{i}, max(results.h)];
                     disp(strcat(results_filename, ' converged with error ', num2str(errors{i}(end), '%e')))
                 else
                     disp(strcat(results_filename, ' failed.'))
@@ -46,6 +47,9 @@ for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE, IRKSchemes.RADAU_IIA]
             end
         end
         end
+        % order h
+        [h_values{i}, permute] = sort(h_values{i});
+        errors{i} = errors{i}(permute);
         labels{i} = get_label(settings);
         i = i+1;
     end
@@ -59,8 +63,7 @@ for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE, IRKSchemes.RADAU_IIA]
         hold on
     end
     
-    set(gcf, 'Color', 'w');
-    set(gca,'TickLabelInterpreter','latex');
+
     set(gca, 'YScale', 'log');
     set(gca, 'XScale', 'log');
     xlabel('step size $h$','interpreter','latex');
@@ -83,7 +86,8 @@ for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE, IRKSchemes.RADAU_IIA]
     
     legend(labels, 'interpreter','latex','Location','southeast');
     
-    
+    set(gcf, 'Color', 'w');
+    set(gca,'TickLabelInterpreter','latex');
     filename = strcat('order_plot_', string(irk_scheme), '.pdf');
     export_fig(filename)
 
