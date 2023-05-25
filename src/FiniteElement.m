@@ -154,11 +154,7 @@ classdef FiniteElement < NosnocFormulationObject
     end
 
     properties(SetAccess=private)
-        % TODO: rename into cross_comp_cont cross_comp_discont?
-        cross_comp_cont_0 % cross comp variables that are cont (requite conecetion to prev. element, e.g. lambda in stewart)
         cross_comp_discont_0 % cross comp variables that are discont (e.g. theta in stewart)
-        cross_comp_cont_1 % cross comp variables that are cont and get complemented with cross_comp_cont_2 that are cont as well
-        cross_comp_cont_2
     end
 
     methods
@@ -179,6 +175,16 @@ classdef FiniteElement < NosnocFormulationObject
             addOptional(p, 'T_final',[]);
             parse(p, prev_fe, settings, model, dims, ctrl_idx, fe_idx, varargin{:});
 
+            % store inputs
+            obj.ctrl_idx = ctrl_idx;
+            obj.fe_idx = fe_idx;
+
+            obj.settings = settings;
+            obj.model = model;
+            obj.dims = dims;
+
+            obj.prev_fe = prev_fe;
+
             % TODO Combine this with the below if
             if settings.right_boundary_point_explicit || settings.dcs_mode == 'CLS'
                 rbp_allowance = 0;
@@ -193,6 +199,12 @@ classdef FiniteElement < NosnocFormulationObject
                 rbp_x_only = 0;
                 obj.ind_x = cell(dims.n_s+rbp_allowance, 1);
             end
+
+            right_ygap = 0;
+            if settings.dcs_mode == "CLS" && ~settings.right_boundary_point_explicit
+                right_ygap = 1;
+            end
+
             obj.ind_v = cell(dims.n_s, 1);
             obj.ind_z = cell(dims.n_s+rbp_allowance, 1);
             % Stewart
@@ -208,7 +220,9 @@ classdef FiniteElement < NosnocFormulationObject
             % CLS
             obj.ind_lambda_normal = cell(dims.n_s+rbp_allowance,dims.n_sys);
             obj.ind_lambda_tangent = cell(dims.n_s+rbp_allowance,dims.n_sys);
-            obj.ind_y_gap = cell(dims.n_s+rbp_allowance,dims.n_sys);
+
+            obj.ind_y_gap = cell(dims.n_s+right_ygap,dims.n_sys);
+
             % friction multipliers and lifting
             % conic
             obj.ind_gamma = cell(dims.n_s+rbp_allowance,dims.n_sys);
@@ -242,15 +256,6 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_h = [];
             obj.ind_elastic = [];
             obj.ind_boundary = [];
-
-            obj.ctrl_idx = ctrl_idx;
-            obj.fe_idx = fe_idx;
-
-            obj.settings = settings;
-            obj.model = model;
-            obj.dims = dims;
-
-            obj.prev_fe = prev_fe;
 
             if settings.use_fesd
                 h = define_casadi_symbolic(settings.casadi_symbolic_mode, ['h_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)]);
@@ -800,6 +805,17 @@ classdef FiniteElement < NosnocFormulationObject
                             dims.n_s+1,...
                             ij);
                     end
+                elseif settings.dcs_mode == DcsMode.CLS && obj.fe_idx == settings.N_finite_elements(obj.ctrl_idx)
+                    % only for last finite element (in ctrl stage).
+                    y_gap_end = define_casadi_symbolic(settings.casadi_symbolic_mode,...
+                        ['y_gap_end_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)],...
+                        dims.n_contacts);
+                    obj.addVariable(y_gap_end,...
+                        'y_gap',...
+                        zeros(dims.n_contacts,1),...
+                        inf * ones(dims.n_contacts, 1),...
+                        0*ones(dims.n_contacts, 1),...
+                        dims.n_s+1, 1);
                 end
             end
 
@@ -833,53 +849,6 @@ classdef FiniteElement < NosnocFormulationObject
                                 -inf,...
                                 inf,...
                                 1);
-            end
-
-            % calculate lambda and theta
-
-
-            if model.friction_exists && settings.friction_model == 'Conic' && settings.conic_model_switch_handling == 'Abs'
-
-                grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(gd), obj.w(dd));
-                obj.cross_comp_cont_0 = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p,...
-                    obj.ind_y_gap, obj.ind_gamma, obj.ind_p_vt, obj.ind_n_vt, obj.ind_gamma_d, obj.ind_delta_d, 'UniformOutput', false);
-
-                grab = @(t, a, ln, b, avt, bd, lt) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a), obj.w(ln), obj.w(b), obj.w(bd));
-                obj.cross_comp_discont_0 = cellfun(grab, obj.ind_theta, obj.ind_alpha,...
-                    obj.ind_lambda_normal, obj.ind_beta_conic, obj.ind_alpha_vt, obj.ind_beta_d, obj.ind_lambda_tangent, 'UniformOutput', false);
-
-
-                grab = @(pvt) vertcat(obj.w(pvt));
-                obj.cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
-                grab = @(nvt) vertcat(obj.w(nvt));
-                obj.cross_comp_cont_2 = cellfun(grab,  obj.ind_n_vt, 'UniformOutput', false);
-            elseif model.friction_exists && settings.friction_model == 'Conic'
-                grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(pvt), obj.w(nvt), obj.w(gd), obj.w(dd));
-                obj.cross_comp_cont_0 = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p,...
-                    obj.ind_y_gap, obj.ind_gamma, obj.ind_p_vt, obj.ind_n_vt, obj.ind_gamma_d, obj.ind_delta_d, 'UniformOutput', false);
-
-                grab = @(t, a, ln, b, avt, bd, lt) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a), obj.w(ln), obj.w(b), ones(size(avt))' - obj.w(avt), obj.w(avt), obj.w(bd));
-                obj.cross_comp_discont_0 = cellfun(grab, obj.ind_theta, obj.ind_alpha,...
-                                                   obj.ind_lambda_normal, obj.ind_beta_conic, obj.ind_alpha_vt, obj.ind_beta_d, obj.ind_lambda_tangent, 'UniformOutput', false);
-
-                grab = @(pvt) [];
-                obj.cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
-                grab = @(nvt) [];
-                obj.cross_comp_cont_2 = cellfun(grab,  obj.ind_n_vt, 'UniformOutput', false);
-            else
-                % ??
-                grab = @(l, ln, lp ,yg, g, pvt, nvt, gd,dd) vertcat(obj.w(l), obj.w(ln), obj.w(lp), obj.w(yg), obj.w(g), obj.w(pvt), obj.w(nvt), obj.w(gd), obj.w(dd));
-                obj.cross_comp_cont_0 = cellfun(grab, obj.ind_lam, obj.ind_lambda_n, obj.ind_lambda_p,...
-                    obj.ind_y_gap, obj.ind_gamma, obj.ind_p_vt, obj.ind_n_vt, obj.ind_gamma_d, obj.ind_delta_d, 'UniformOutput', false);
-
-                grab = @(t, a, ln, b, avt, bd, lt) vertcat(obj.w(t), obj.w(a), ones(size(a))' - obj.w(a), obj.w(ln), obj.w(b), ones(size(avt))' - obj.w(avt), obj.w(avt), obj.w(bd), obj.w(lt));
-                obj.cross_comp_discont_0 = cellfun(grab, obj.ind_theta, obj.ind_alpha,...
-                                                   obj.ind_lambda_normal, obj.ind_beta_conic, obj.ind_alpha_vt, obj.ind_beta_d, obj.ind_lambda_tangent, 'UniformOutput', false);
-
-                grab = @(pvt) [];
-                obj.cross_comp_cont_1 = cellfun(grab, obj.ind_p_vt, 'UniformOutput', false);
-                grab = @(nvt) [];
-                obj.cross_comp_cont_2 = cellfun(grab,  obj.ind_n_vt, 'UniformOutput', false);
             end
         end
 
@@ -969,7 +938,7 @@ classdef FiniteElement < NosnocFormulationObject
                                 if model.friction_exists
                                     if settings.friction_model == FrictionModel.Conic
                                         pairs = vertcat(pairs, [obj.w(obj.ind_gamma{j-2,1}), obj.w(obj.ind_beta_conic{jj-2,1})]);
-                                        switch settings.conic_model_switch_handling
+                                        switch settings.conic_modey_gapl_switch_handling
                                             case 'Plain'
                                                 % no extra expr
                                             case 'Abs'
@@ -989,7 +958,7 @@ classdef FiniteElement < NosnocFormulationObject
 
                         % Here we generate the cross complemetarities with the previous FE and the impulse variables.
                         for jj=1:n_discont-2
-                            % Ignore the previous fe lambda normal if it is not the end point. 
+                            % Ignore the previous fe lambda normal if it is not the end point.
                             if settings.right_boundary_point_explicit || (obj.fe_idx == 1 && obj.ctrl_idx == 1)
                                 cross_comp_pairs{1,jj+2} = [prev_fe.w(prev_fe.ind_y_gap{end,1}), obj.w(obj.ind_lambda_normal{jj,1})];
                             end
@@ -1018,7 +987,7 @@ classdef FiniteElement < NosnocFormulationObject
                                 cross_comp_pairs{2,jj+2} = vertcat(cross_comp_pairs{2,jj+2}, zeros(len_pad, 2));
                             end
                         end
-                    else
+                    else % no fesd
                         for jj=3:n_discont
                             pairs = [];
 
@@ -1078,8 +1047,18 @@ classdef FiniteElement < NosnocFormulationObject
 
         function nu_vector = get.nu_vector(obj)
             import casadi.*
+
             if obj.settings.use_fesd && obj.fe_idx > 1
-                eta_k = obj.prev_fe.sumCrossCompCont0().*obj.sumCrossCompCont0() + obj.prev_fe.sumCrossCompDiscont0().*obj.sumCrossCompDiscont0();
+                % eta_k = obj.prev_fe.sumCrossCompCont0().*obj.sumCrossCompCont0() + obj.prev_fe.sumCrossCompDiscont0().*obj.sumCrossCompDiscont0();
+                pairs_fe = vertcat(obj.cross_comp_pairs{:});
+                pairs_prev_fe = vertcat(obj.prev_fe.cross_comp_pairs{:});
+    
+                cont_fe = pairs_fe(1,:);
+                discont_fe = pairs_fe(2,:);
+    
+                cont_prev_fe = pairs_prev_fe(1,:);
+                discont_prev_fe = pairs_prev_fe(2,:);
+                eta_k = sum(discont_prev_fe) * sum(discont_fe) + sum(cont_prev_fe) * sum(cont_fe);
                 nu_vector = 1;
                 for jjj=1:length(eta_k)
                     nu_vector = nu_vector * eta_k(jjj);
@@ -1126,51 +1105,6 @@ classdef FiniteElement < NosnocFormulationObject
                 cross_comp_discont_0_vec = obj.cross_comp_discont_0(:,p.Results.sys).';
             end
             sum_cross_comp_discont_0 = sum([cross_comp_discont_0_vec{:}], 2);
-        end
-
-        function sum_cross_comp_cont_1 = sumCrossCompCont1(obj, varargin)
-            % TODO!!! : DO appropiate cross comp functions
-            import casadi.*
-            p = inputParser();
-            p.FunctionName = 'sumCrossCompCont1';
-
-            % TODO: add checks.
-            addRequired(p, 'obj');
-            addOptional(p, 'sys',[]);
-            parse(p, obj, varargin{:});
-
-            if ismember('sys', p.UsingDefaults)
-                cross_comp_cont_1 = obj.cross_comp_cont_1;
-                cross_comp_cont_1_vec = arrayfun(@(row) vertcat(cross_comp_cont_1{row, :}), 1:size(cross_comp_cont_1,1), 'UniformOutput', false);
-                cross_comp_cont_1_vec = [cross_comp_cont_1_vec, {vertcat(obj.prev_fe.cross_comp_cont_1{end,:})}];
-            else
-                cross_comp_cont_1_vec = obj.cross_comp_cont_1(:,p.Results.sys).';
-                cross_comp_cont_1_vec = [cross_comp_cont_1_vec, obj.prev_fe.cross_comp_cont_1(end,p.Results.sys)];
-            end
-            sum_cross_comp_cont_1 = sum([cross_comp_cont_1_vec{:}], 2);
-        end
-
-
-        function sum_cross_comp_cont_2 = sumCrossCompCont2(obj, varargin)
-            % TODO!!! : DO appropiate cross comp functions
-            import casadi.*
-            p = inputParser();
-            p.FunctionName = 'sumCrossCompCont2';
-
-            % TODO: add checks.
-            addRequired(p, 'obj');
-            addOptional(p, 'sys',[]);
-            parse(p, obj, varargin{:});
-
-            if ismember('sys', p.UsingDefaults)
-                cross_comp_cont_2 = obj.cross_comp_cont_2;
-                cross_comp_cont_2_vec = arrayfun(@(row) vertcat(cross_comp_cont_2{row, :}), 1:size(cross_comp_cont_2,1), 'UniformOutput', false);
-                cross_comp_cont_2_vec = [cross_comp_cont_2_vec, {vertcat(obj.prev_fe.cross_comp_cont_2{end,:})}];
-            else
-                cross_comp_cont_2_vec = obj.cross_comp_cont_2(:,p.Results.sys).';
-                cross_comp_cont_2_vec = [cross_comp_cont_2_vec, obj.prev_fe.cross_comp_cont_2(end,p.Results.sys)];
-            end
-            sum_cross_comp_cont_2 = sum([cross_comp_cont_2_vec{:}], 2);
         end
 
 
@@ -1236,6 +1170,9 @@ classdef FiniteElement < NosnocFormulationObject
                 else
                     obj.addConstraint(V_k0-V_k);
                 end
+                % additional y_eps constraint
+                x_eps = vertcat(Q_k0 + obj.h * settings.eps_cls * V_k0, V_k0);
+                obj.addConstraint( model.f_c_fun(x_eps), 0, inf);
             else
                 X_k0 = obj.prev_fe.x{end};
             end
@@ -1317,6 +1254,10 @@ classdef FiniteElement < NosnocFormulationObject
                 % TODO verify this.
                 obj.addConstraint(model.g_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk, p_stage));
             end
+            % y_gap_end
+            if ~settings.right_boundary_point_explicit && settings.N_finite_elements(obj.ctrl_idx) == obj.fe_idx
+                obj.addConstraint(model.f_c_fun(obj.x{end}) - obj.w(obj.ind_y_gap{end}))
+            end
         end
 
         function createComplementarityConstraints(obj, sigma_p, s_elastic, p_stage)
@@ -1382,7 +1323,7 @@ classdef FiniteElement < NosnocFormulationObject
             ubg_impulse_comp = [];
             impulse_pairs = [];
             if settings.dcs_mode == DcsMode.CLS && (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
-                 % comp condts 
+                % comp condts
                 % Y_gap comp. to Lambda_Normal+P_vn+N_vn;..
                 % P_vn comp.to N_vn;
                 %  if conic:
@@ -1438,7 +1379,13 @@ classdef FiniteElement < NosnocFormulationObject
                         impulse_pairs = vertcat(impulse_pairs, [Y_gap, obj.prev_fe.w(obj.prev_fe.ind_lambda_normal{ii, 1})]);
                     end
                 end
-                
+
+                if (obj.fe_idx == settings.N_finite_elements(obj.ctrl_idx)) && ~settings.right_boundary_point_explicit
+                    for ii=1:settings.n_s
+                        impulse_pairs = vertcat(impulse_pairs, [obj.w(obj.ind_y_gap{end}), obj.w(obj.ind_lambda_normal{ii, 1})]);
+                    end
+                end
+
                 expr = apply_psi(impulse_pairs, psi_fun, sigma);
                 if settings.relaxation_method == RelaxationMode.TWO_SIDED
                     expr = expr';
