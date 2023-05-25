@@ -1,4 +1,4 @@
-clear all;
+lear all;
 % clc;
 import casadi.*
 close all
@@ -24,9 +24,9 @@ settings.no_initial_impacts = 1;
 %settings.opts_ipopt.ipopt.linear_solver = 'ma97';
 settings.sigma_0 = 1e0;
 settings.homotopy_update_slope = 0.2;
-use_guess = 0;
-settings.use_previous_solution_as_initial_guess = 0;
-settings.ipopt_callback = @bouncing_ball_1d_callback;
+settings.use_previous_solution_as_initial_guess = 1;
+% settings.ipopt_callback = @bouncing_ball_1d_callback;
+
 
 %%
 g = 9.81;
@@ -36,7 +36,7 @@ v = SX.sym('v',1);
 model = NosnocModel();
 model.M = 1;
 model.x = [q;v];
-model.e = 0;
+model.e = 1;
 model.mu = 0;
 x0 = [0.8;0];
 model.x0 = x0;
@@ -44,8 +44,8 @@ model.f_v = -g;
 model.f_c = q;
 %% Simulation setings
 N_FE = 2;
-T_sim = 2;
-N_sim = 1;
+T_sim = 3;
+N_sim = 10;
 
 model.T_sim = T_sim;
 settings.N_finite_elements = N_FE;
@@ -81,16 +81,8 @@ end
 
 
 %% Call nosnoc Integrator
-initial_guess = struct();
-initial_guess.x_traj = x_traj;
-initial_guess.t_grid = t_grid;
-initial_guess.lambda_normal_traj = lambda_normal;
+[results,stats,solver] = integrator_fesd(model, settings);
 
-if use_guess
-    [results,stats,solver] = integrator_fesd(model, settings, [], initial_guess);
-else 
-    [results,stats,solver] = integrator_fesd(model, settings);
-end
 
 %% read and plot results
 qx = results.x(1,:);

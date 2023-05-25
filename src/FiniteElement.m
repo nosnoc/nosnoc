@@ -938,7 +938,7 @@ classdef FiniteElement < NosnocFormulationObject
                                 if model.friction_exists
                                     if settings.friction_model == FrictionModel.Conic
                                         pairs = vertcat(pairs, [obj.w(obj.ind_gamma{j-2,1}), obj.w(obj.ind_beta_conic{jj-2,1})]);
-                                        switch settings.conic_modey_gapl_switch_handling
+                                        switch settings.conic_model_switch_handling
                                             case 'Plain'
                                                 % no extra expr
                                             case 'Abs'
@@ -1171,8 +1171,10 @@ classdef FiniteElement < NosnocFormulationObject
                     obj.addConstraint(V_k0-V_k);
                 end
                 % additional y_eps constraint
-                x_eps = vertcat(Q_k0 + obj.h * settings.eps_cls * V_k0, V_k0);
-                obj.addConstraint( model.f_c_fun(x_eps), 0, inf);
+                if settings.eps_cls > 0
+                    x_eps = vertcat(Q_k0 + obj.h * settings.eps_cls * V_k0, V_k0);
+                    obj.addConstraint( model.f_c_fun(x_eps), 0, inf);
+                end
             else
                 X_k0 = obj.prev_fe.x{end};
             end

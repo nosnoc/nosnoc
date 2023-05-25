@@ -1212,9 +1212,9 @@ classdef NosnocModel < handle
                     fprintf('nosnoc: normal contact Jacobian not provided, but it is computed from the gap functions.\n');
                     J_normal_exists = 1;
                 end
-                if is_zero(obj.J_normal)
-                    error('nosnoc: The normal vector should have at least one non-zero entry.')
-                end
+%                 if is_zero(obj.J_normal)
+%                     error('nosnoc: The normal vector should have at least one non-zero entry.')
+%                 end
 
                 % Tangent Contact Jacobian
                 if obj.friction_exists

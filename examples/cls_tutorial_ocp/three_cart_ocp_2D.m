@@ -60,6 +60,7 @@ settings.opts_casadi_nlp.ipopt.tol = default_tol;
 settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
 settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
 settings.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+settings.eps_cls = 0;
 
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
@@ -85,6 +86,10 @@ M = diag([m1, m1, m2, m2, m3, m3]);
 
 ubx = ones(12,1)*10;
 lbx = -ones(12,1)*10;
+
+
+% ubx = ones(12,1)*inf;
+% lbx = -ones(12,1)*inf;
 
 x0 = [ -3; 1; 0; 1;  3; 1; ...
     0; 0; 0; 0; 0; 0];
@@ -353,7 +358,8 @@ lambda_tangent = [-results.lambda_tangent(5,:)+results.lambda_tangent(6,:);...
                   ];
 
 lambda_normal = [results.lambda_normal(3:5,:);results.lambda_normal(1:2,:)];
-figure('Renderer', 'painters', 'Position', [100 100 1350 400])
+% figure('Renderer', 'painters', 'Position', [100 100 1350 400])
+figure('Renderer', 'painters', 'Position', [100 100 900 400])
 % figure
 subplot(231)
 plot(t_grid,p1x,'LineWidth',1.5);

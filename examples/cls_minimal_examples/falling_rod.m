@@ -12,20 +12,21 @@ above_ground = 0.1;
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.dcs_mode = 'CLS';
-%settings.friction_model = "Polyhedral";
-settings.friction_model = "conic";
+settings.friction_model = "Polyhedral";
+settings.friction_model = "Conic";
 settings.conic_model_switch_handling = "Abs";
 settings.pss_lift_step_functions= 0;
 settings.opts_casadi_nlp.ipopt.max_iter = 3e2;
 settings.print_level = 3;
-settings.N_homotopy = 6;
+settings.N_homotopy = 10;
 settings.cross_comp_mode = 1;
-settings.sigma_0 = 1e2;
+settings.sigma_0 = 1e0;
+settings.comp_tol = 1e-6;
 settings.print_details_if_infeasible = 0;
 %%
 model = NosnocModel();
 model.e = 0;
-model.mu = 0.7;
+model.mu = 0.2;
 %% the dynamics
 qx = SX.sym('qx',1);
 qy = SX.sym('qy',1);
@@ -59,21 +60,21 @@ model.D_tangent = [xc_left.jacobian(q)',-xc_left.jacobian(q)'];
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];
 
-above_ground = 0.18*0;
+above_ground = 0.18*1;
 theta0 = 0.75*pi/2*0;
-% theta0 = pi/2;
+theta0 = pi/2;
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0;...
            2;0;0];
 
 %% Simulation settings
-N_finite_elements = 20;
+N_finite_elements = 2;
 T_sim = 1;
-N_sim = 1;
+N_sim = 10;
 
 model.T_sim = T_sim;
 settings.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
+settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 if settings.time_freezing
     [model,settings] = time_freezing_reformulation(model,settings);
@@ -81,14 +82,14 @@ if settings.time_freezing
 end
 [results,stats,solver] = integrator_fesd(model,settings);
 %%
-qx = results.x_res(1,:);
-qy = results.x_res(2,:);
-qtheta = results.x_res(3,:);
-vx = results.x_res(4,:);
-vy = results.x_res(5,:);
-omega = results.x_res(6,:);
+qx = results.x(1,:);
+qy = results.x(2,:);
+qtheta = results.x(3,:);
+vx = results.x(4,:);
+vy = results.x(5,:);
+omega = results.x(6,:);
 if settings.time_freezing
-    t = results.x_res(7,:);
+    t = results.x(7,:);
 else
     t = results.t_grid;
 end
