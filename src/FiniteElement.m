@@ -1170,6 +1170,9 @@ classdef FiniteElement < NosnocFormulationObject
                 else
                     obj.addConstraint(V_k0-V_k);
                 end
+                % additional y_eps constraint
+                x_eps = vertcat(Q_k0 + obj.h * settings.eps_cls * V_k0, V_k0);
+                obj.addConstraint( model.f_c_fun(x_eps), 0, inf);
             else
                 X_k0 = obj.prev_fe.x{end};
             end

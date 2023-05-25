@@ -152,8 +152,8 @@ classdef NosnocOptions < handle
 
         time_freezing_quadrature_state(1,1) logical = 0 % make a nonsmooth quadrature state to integrate only if physical time is running
         time_freezing_lift_forces(1,1) logical = 0 % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0
-        
-        % exerimentla expert otpions
+
+        % exerimental expert options
         nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
         % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
         stabilizing_q_dynamics(1,1) logical = 0
@@ -167,7 +167,8 @@ classdef NosnocOptions < handle
         friction_model (1,1) FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
         conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
         kappa_friction_reg (1,1) double {mustBeReal, mustBeNonnegative} = 0; % reg. term in friction equations to avoid large multipliers if no contact happens.
-        lift_velocity_state(1,1) logical = 0; % define auxliary algebraic vairable, dot{v} = z_v, to avoid symbolic inversion of the inerti matrix;
+        lift_velocity_state(1,1) logical = 0; % define auxliary algebraic vairable, dot{v} = z_v, to avoid symbolic inversion of the inertia matrix;
+        eps_cls double = 1e-3 % constraint: enforce f_c at Euler step with h * eps_cls
 
         % IPOPT Settings
         tol_ipopt(1,1) double {mustBeReal, mustBePositive} = 1e-16
