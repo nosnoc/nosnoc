@@ -1,6 +1,6 @@
 close all
 for n_s = [1]
-for N_sim = [94, 997]
+for N_sim = [722]
     irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
     with_guess = 0;
     N_FE = 2;
