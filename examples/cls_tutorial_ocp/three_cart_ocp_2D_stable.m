@@ -50,7 +50,7 @@ settings.sigma_0 = 1e0;
 settings.mpcc_mode = "Scholtes_ineq";
 settings.homotopy_update_slope = 0.2;
 settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 6;
+settings.N_homotopy = 7;
 
 % NLP solver settings;
 default_tol = 1e-8;
@@ -92,8 +92,8 @@ x_ref = [-7; 0; 0; 0; 5; 0;...
     0; 0; 0; 0; 0; 0];
 
 
-x_ref = [-7; 1; 0; 1; 5; 1;...
-    0; 0; 0; 0; 0; 0];
+% x_ref = [-7; 1; 0; 1; 5; 1;...
+%     0; 0; 0; 0; 0; 0];
 
 
 u_ref = 0;
