@@ -898,7 +898,7 @@ classdef FiniteElement < NosnocFormulationObject
                             for jj=1:n_discont
                                 for r=1:n_indep
                                     cross_comp_pairs{j,jj,r} = [vertcat(obj.w(obj.ind_lambda_n{j-1,r}),obj.w(obj.ind_lambda_p{j-1,r})),...
-                                        vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
+                                        vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_c_sys(r),1)-obj.w(obj.ind_alpha{jj,r}))];
                                 end
                             end
                         end
@@ -907,14 +907,14 @@ classdef FiniteElement < NosnocFormulationObject
                         for jj=1:n_discont
                             for r=1:n_indep
                                 cross_comp_pairs{1,jj,r} = [vertcat(prev_fe.w(prev_fe.ind_lambda_n{end,r}),prev_fe.w(prev_fe.ind_lambda_p{end,r})),...
-                                    vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{jj,r}))];
+                                    vertcat(obj.w(obj.ind_alpha{jj,r}), ones(dims.n_c_sys(r),1)-obj.w(obj.ind_alpha{jj,r}))];
                             end
                         end
                     else 
                         for j=1:n_discont
                             for r=1:n_indep
                                 cross_comp_pairs{j,j,r} = [vertcat(obj.w(obj.ind_lambda_n{j,r}),obj.w(obj.ind_lambda_p{j,r})),...
-                                    vertcat(obj.w(obj.ind_alpha{j,r}), ones(dims.n_alpha,1)-obj.w(obj.ind_alpha{j,r}))];
+                                    vertcat(obj.w(obj.ind_alpha{j,r}), ones(dims.n_c_sys(r),1)-obj.w(obj.ind_alpha{j,r}))];
                             end
                         end
                     end
