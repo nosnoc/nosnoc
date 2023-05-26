@@ -221,7 +221,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.ind_lambda_normal = cell(dims.n_s+rbp_allowance,dims.n_sys);
             obj.ind_lambda_tangent = cell(dims.n_s+rbp_allowance,dims.n_sys);
 
-            obj.ind_y_gap = cell(dims.n_s+right_ygap,dims.n_sys);
+            obj.ind_y_gap = cell(dims.n_s+right_ygap+rbp_allowance,dims.n_sys);
 
             % friction multipliers and lifting
             % conic
@@ -1257,7 +1257,9 @@ classdef FiniteElement < NosnocFormulationObject
                 obj.addConstraint(model.g_switching_fun(obj.x{end}, obj.rkStageZ(dims.n_s+1), Uk, p_stage));
             end
             % y_gap_end
-            if ~settings.right_boundary_point_explicit && settings.N_finite_elements(obj.ctrl_idx) == obj.fe_idx
+            if (~settings.right_boundary_point_explicit &&...
+                settings.N_finite_elements(obj.ctrl_idx) == obj.fe_idx &&...
+                settings.dcs_mode == DcsMode.CLS)
                 obj.addConstraint(model.f_c_fun(obj.x{end}) - obj.w(obj.ind_y_gap{end}))
             end
         end
