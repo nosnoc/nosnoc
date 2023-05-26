@@ -77,7 +77,7 @@ classdef NosnocModel < handle
         g_terminal_ub
 
         % Terminal time
-        T
+        T = 1.0
 
         % Sim
         T_sim

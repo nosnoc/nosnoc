@@ -60,9 +60,16 @@ else
     unfold_struct(settings,'caller');
 %     unfold_struct(stats,'caller');
 end
+dims = model.dims;
 %%
-N_finite_elements = N_finite_elements(1);
+N_finite_elements = settings.N_finite_elements(1);
 h_k = h_k(1);
+v1 = 10;
+v2 = 15;
+q_goal = 150;
+v_goal = 0;
+v_max = 25;
+u_max = 5;
 
 %%
 %  Colors
@@ -72,13 +79,12 @@ red = [0.8500 0.3250 0.0980];
 organe = [0.9290 0.6940 0.1250];
 grey = [0.85 0.85 0.85];
 %%
-n = n_x+n_u;
+n = dims.n_x+dims.n_u;
 nn = n-1;
 %% Read solutions
 if use_fesd
-    h_opt = results.w(ind_h);
-    tgrid = (cumsum([0;h_opt]));
-    tgrid_z = cumsum(h_opt)';
+    h_opt = results.h;
+    tgrid = results.t_grid;
 end
 
 %%
@@ -102,39 +108,40 @@ end
 if mpcc_mode == 4
     ind_t = find([1;theta1_opt]>1e-2);
 else
-    ind_t = find(diff([nan;results.x(5,:);nan])>1e-5);
+    ind_t = find(diff([nan,results.x(5,:),nan])>1e-5);
 end
-time_physical = results.x(5,:)(ind_t);
+time_physical_full = results.x(5,:);
+time_physical = time_physical_full(ind_t);
 
 %% plots in phyisical time for paper
 figure
 subplot(221)
-plot(results.x(5,:),results.x(2,:),'LineWidth',1.5)
+plot(time_physical_full,results.x(2,:),'LineWidth',1.5)
 hold on
-plot(results.x(5,:),results.x(2,:)*0+v1,'k--','LineWidth',1.0)
-plot(results.x(5,:),results.x(2,:)*0+v2,'k--','LineWidth',1.0)
-plot(results.x(5,:),results.x(2,:)*0+v_max,'r--','LineWidth',1.5)
+plot(time_physical_full,results.x(2,:)*0+v1,'k--','LineWidth',1.0)
+plot(time_physical_full,results.x(2,:)*0+v2,'k--','LineWidth',1.0)
+plot(time_physical_full,results.x(2,:)*0+v_max,'r--','LineWidth',1.5)
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$v(t)$ ','Interpreter','latex')
 grid on
 
 subplot(222)
-stairs(results.x(5,:)(1:N_finite_elements:end),[u_opt';nan],'LineWidth',1.5)
+stairs(time_physical_full(1:N_finite_elements:end),[results.u';nan],'LineWidth',1.5)
 ylim([-u_max*1.1 u_max*1.1])
-xlim([0 max(results.x(5,:)(1:N_finite_elements:end))])
+xlim([0 max(time_physical_full(1:N_finite_elements:end))])
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$u(t)$ ','Interpreter','latex')
 grid on
 
 subplot(223)
-plot(results.x(5,:),results.x(4,:),'LineWidth',1.5)
+plot(time_physical_full,results.x(4,:),'LineWidth',1.5)
 xlabel('$t$ ','Interpreter','latex')
 ylabel('$w(t)$ ','Interpreter','latex')
 ylim([-0.1 1.1]);
 grid on
 
-ind_t = find(diff(results.x(5,:))>0.01);
-ind_t_complement = find(abs(diff(results.x(5,:)))<0.00000000000001);
+ind_t = find(diff(time_physical_full)>0.01);
+ind_t_complement = find(abs(diff(time_physical_full))<0.00000000000001);
 x2_opt_phy = results.x(2,:);
 x4_opt_phy = results.x(4,:);
 x2_opt_phy(ind_t_complement) = nan;
@@ -180,8 +187,8 @@ end
 if 0
     x_iter = sol.W(ind_x,:);
     % x_iter =x_iter(1:d+1:end,:);
-    x_iter1= x_iter(1:n_x:end,:);
-    x_iter2= x_iter(2:n_x:end,:);
+    x_iter1= x_iter(1:dims.n_x:end,:);
+    x_iter2= x_iter(2:dims.n_x:end,:);
     figure
     plot(x_iter1,x_iter2)
 
