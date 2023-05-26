@@ -41,9 +41,10 @@ N_finite_elements = 3;
 T_sim = 20;
 N_sim  = 100;
 
-%% settings
+%% init
 settings = NosnocOptions();
-settings.use_fesd = 1;
+model = NosnocModel();
+%% settings
 settings.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
 settings.print_level = 2;
 settings.n_s = 4;
@@ -54,11 +55,10 @@ settings.cross_comp_mode  = 3;
 settings.homotopy_update_rule = 'superlinear';
 settings.pss_lift_step_functions = 0;
 %% Time settings
-model = NosnocModel();
-settings.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-% Inital Value
+settings.N_finite_elements = N_finite_elements;
+%% model
 model.x0 = [0.04;-0.01;-0.02];
 % Variable defintion
 x1 = SX.sym('x1',1);

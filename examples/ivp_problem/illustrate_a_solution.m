@@ -2,10 +2,10 @@ clear all
 clc
 close all
 import casadi.*
-%% settings
+%% Init model and settings
 model = NosnocModel();
 settings = NosnocOptions();
-%%
+%% settings
 settings.n_s = 1;     
 settings.N_finite_elements = 2;
 

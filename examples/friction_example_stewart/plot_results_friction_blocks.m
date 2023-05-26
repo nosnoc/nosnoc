@@ -135,26 +135,3 @@ figure
 stairs(results.h,'k')
 xlabel('finite element','interpreter','latex');
 ylabel('$h_{n}$','interpreter','latex');
-%%
-figure
-semilogy(stats.complementarity_stats+1e-20,'k','LineWidth',1.5)
-xlabel('integration step n','interpreter','latex');
-ylabel('comp residual','interpreter','latex');
-grid on
-
-
-%% Strong stationarity
-% figure
-% plot(theta1_opt+lambda1_opt)
-% hold on
-% plot(theta2_opt+lambda2_opt)
-% plot(theta3_opt+lambda3_opt)
-% grid on
-% yline(0,'k')
-% ylabel('$\theta+\lambda>0$','interpreter','latex');
-%
-% a = min(theta1_opt+lambda1_opt);
-% b = min(theta2_opt+lambda2_opt);
-% c = min(theta3_opt+lambda3_opt);
-% biactivity = min([a;b;c])
-

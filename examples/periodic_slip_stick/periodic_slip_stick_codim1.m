@@ -42,9 +42,10 @@ import casadi.*
 N_finite_elements = 2;
 T_sim = 40;
 N_sim  = 100;
-
-%% settings
+%% init
 settings = NosnocOptions();
+model = NosnocModel();
+%% settings
 settings.use_fesd = 1;
 settings.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
 settings.print_level = 2;
@@ -54,7 +55,6 @@ settings.comp_tol = 1e-9;
 settings.cross_comp_mode  = 3;
 settings.homotopy_update_rule = 'superlinear';
 %% Time settings
-model = NosnocModel();
 settings.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;

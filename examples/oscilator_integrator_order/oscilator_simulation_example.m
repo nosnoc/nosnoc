@@ -40,9 +40,11 @@ N_sim  = 29;
 N_finite_elements = 2;
 R_osc  = 1;
 
-%% settings
+%% Init
 % collocation settings
 settings = NosnocOptions();
+model = NosnocModel();
+%% settings
 settings.use_fesd = 1;       % switch detection method on/off
 settings.irk_scheme = IRKSchemes.RADAU_IIA; %'Gauss-Legendre';
 settings.print_level = 2;
@@ -62,7 +64,6 @@ x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 settings.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-model.R_osc = R_osc;
 smooth_model = 0; % if 1, use model without switch for a sanity check
 omega = -2*pi;
 A1 = [1 omega;...

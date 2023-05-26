@@ -86,28 +86,20 @@ M = diag([m1, m1, m2, m2, m3, m3]);
 
 ubx = ones(12,1)*10;
 lbx = -ones(12,1)*10;
-
-
-% ubx = ones(12,1)*inf;
-% lbx = -ones(12,1)*inf;
+ubu = 30;
+lbu = -30;
 
 x0 = [ -3; 1; 0; 1;  3; 1; ...
     0; 0; 0; 0; 0; 0];
-
+u_ref = 0;
 
 x_ref = [-7; 1; 0; 1; 5; 1;...
     0; 0; 0; 0; 0; 0];
-
  
-u_ref = 0;
-
 Q = diag([10; 0.001; 1; 0.001; 10; 0.001; ...
           0.1; 0.1; 0.1; 0.1; 0.1; 0.1]);
 Q_terminal = 100*Q;
 R = 0.1;
-
-u_max = 30;
-u_min = -30;
 
 %% Symbolic variables and bounds
 g = 9.81;
@@ -119,8 +111,6 @@ x = [q;v];
 q1 = q(1:2);
 q2 = q(3:4);
 q3 = q(5:6);
-
-
 
 model.x = x;
 model.u = u;
@@ -165,16 +155,11 @@ model.f_c = f_c;
 model.J_normal = J_normal;
 model.J_tangent = J_tangent;
 model.D_tangent = D_tangent;
-model.e =  [0.0 1.0 0.0 0.0 0.0];
-model.mu = [0.1 0.1 0.2 0.2 0.2];
-
-
 model.e =  [0.0 0.5 0.0 0.0 0.0];
 model.mu = [0.1 0.1 0.2 0.2 0.2];
-
 % box constraints on controls and states
-model.lbu = u_min;
-model.ubu = u_max;
+model.lbu = lbu;
+model.ubu = ubu;
 model.lbx = lbx;
 model.ubx = ubx;
 % Stage cost
@@ -187,8 +172,9 @@ lambda_normal_guess = {};
 for ii = 1:N_stg
     lambda_normal_guess{ii} = [0;0;g;g;g];
 end
-
 solver.set('lambda_normal',lambda_normal_guess');
+
+
 [results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
@@ -339,26 +325,16 @@ set(gcf,'Units','inches');
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
 eval(['print -dpdf -painters ' ['cart_frames'] ])
-
-% 
-%     set(gcf, 'Color', 'w');
-%     set(gca,'TickLabelInterpreter','latex');
-%     filename = strcat('cart_frames', '.pdf');
-%     export_fig(filename)
-
 %%
-
 
 lambda_tangent = [-results.lambda_tangent(5,:)+results.lambda_tangent(6,:);...
                     -results.lambda_tangent(7,:)+results.lambda_tangent(8,:);...
                   -results.lambda_tangent(9,:)+results.lambda_tangent(10,:);...
                    -results.lambda_tangent(1,:)+results.lambda_tangent(2,:);
                   -results.lambda_tangent(3,:)+results.lambda_tangent(4,:);
-                 
                   ];
-
 lambda_normal = [results.lambda_normal(3:5,:);results.lambda_normal(1:2,:)];
-% figure('Renderer', 'painters', 'Position', [100 100 1350 400])
+
 figure('Renderer', 'painters', 'Position', [100 100 900 400])
 % figure
 subplot(231)
@@ -391,7 +367,6 @@ xlabel('$t$','interpreter','latex');
 ylabel('$u(t)$','interpreter','latex');
 xlim([0 T])
 
-
 subplot(234)
 stem(t_grid,[ones(2,1)*nan,Lambda_normal(1:2,:)]','LineWidth',1.5);
 legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex','Location','northeast');
@@ -399,7 +374,6 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
 xlim([0 T])
-
 
 subplot(235)
 plot(t_grid,[ones(5,1)*nan,lambda_normal]','LineWidth',1.5);
@@ -409,6 +383,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$\lambda_{\mathrm{n}}(t)$','interpreter','latex');
 ylim([-1 11])
 xlim([0 T])
+
 subplot(236)
 plot(t_grid,[ones(size(lambda_tangent,1),1)*nan,lambda_tangent]','LineWidth',1.5);
 legend({'$\lambda_{\mathrm{t}}^1(t)$','$\lambda_{\mathrm{t}}^2(t)$','$\lambda_{\mathrm{t}}^3(t)$','$\lambda_{\mathrm{t}}^4(t)$','$\lambda_{\mathrm{t}}^5(t)$'},'interpreter','latex','Location','southeast');
@@ -424,4 +399,3 @@ set(gcf,'Units','inches');
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
 eval(['print -dpdf -painters ' ['carts_states'] ])
-

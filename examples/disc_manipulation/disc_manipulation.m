@@ -38,8 +38,10 @@ import casadi.*
 
 %%
 filename = 'discs_manipulation.gif';
-%%
-[settings] = NosnocOptions();
+%% init
+settings = NosnocOptions();
+model = NosnocModel();
+% settings
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;  % number of stages in IRK methods
 settings.mpcc_mode = MpccMode.elastic_ineq;
@@ -47,10 +49,8 @@ settings.homotopy_update_rule = 'superlinear';
 settings.N_homotopy = 7;
 settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
-
-%% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
-
+% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 %% discretizatioon
 N_stg = 10; % control intervals
 N_FE = 5;  % integration steps per control intevral
@@ -78,10 +78,10 @@ u_min = -u_max;
 
 u_ref = [0;0];
 x_ref = [q_target1;q_target2;zeros(4,1)];
-
 Q = diag([5;5;10;10;0*ones(4,1)]);
 R = diag([0.1 0.1]);
 Q_terminal = 100*Q;
+
 %% Symbolic variables and bounds
 q = SX.sym('q',4);
 v = SX.sym('v',4);
@@ -91,7 +91,6 @@ q1 = q(1:2);
 q2 = q(3:4);
 
 x = [q;v];
-model = NosnocModel();
 model.T = T;
 settings.N_stages = N_stg;
 settings.N_finite_elements  = N_FE;
@@ -108,7 +107,7 @@ model.f_v = [u;...
     zeros(2,1)];
 
 % gap functions
-model.f_c = [norm(q1-q2)^2-(r1+r2)^2];
+model.f_c = norm(q1-q2)^2-(r1+r2)^2;
 model.dims.n_dim_contact = 2;
 
 % box constraints on controls and states
@@ -116,12 +115,15 @@ model.lbu = u_min;
 model.ubu = u_max;
 model.lbx = lbx;
 model.ubx = ubx;
+
 %% Stage cost
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
+
 %% Call nosnoc solver
 solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
+
 %% read and plot results
 unfold_struct(results,'base');
 p1 = results.x(1,:);
