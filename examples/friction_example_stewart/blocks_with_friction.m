@@ -28,10 +28,10 @@
 function [model] = blocks_with_friction()
 import casadi.*
 
-
+model = NosnocModel();
 %% Initial value
-x0 = [-1;1;-1;-1;1;1;0];
-u0 = 0; % guess for control variables
+model.x0 = [-1;1;-1;-1;1;1;0];
+model.u0 = 0; % guess for control variables
 %% Numer of ODE layers
 % n_sys = 3;% number of Cartesian products in the model ("independet switches"), we call this layer
 % % number of modes in every simplex
@@ -52,7 +52,7 @@ t = SX.sym('t');
 
 q = [q1;q2;q3];
 v = [v1;v2;v3];
-x = [q;v;t];
+model.x = [q;v;t];
 
 %% Control
 % u = SX.sym('u');
@@ -73,8 +73,8 @@ S1 = [1;-1];
 S2 = [1;-1];
 S3 = [1;-1];
 % discrimnant functions
-S = {S1,S2,S3};
-c = {c1,c2,c3};
+model.S = {S1,S2,S3};
+model.c = {c1,c2,c3};
 
 
 %% Modes of the ODEs layers (for all  i = 1,...,n_sys);
@@ -112,16 +112,16 @@ F1 = [f_11 f_12];
 F2 = [f_21 f_22];
 F3 = [f_31 f_32];
 
-F = {F1 F2 F3};
+model.F = {F1 F2 F3};
 
 %% Objective
 % f_q = 0*u^2 + 1*v'*v;
 % f_q_T = 10*v'*v;
 %% Generic part
 % (make of local workspace a struct and pass to output
-names = who;
-for ii = 1:length(names)
-    eval([ 'model.' names{ii} '=' names{ii} ';'])
-end
+% names = who;
+% for ii = 1:length(names)
+%     eval([ 'model.' names{ii} '=' names{ii} ';'])
+% end
 
 end

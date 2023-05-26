@@ -37,7 +37,10 @@ clc;
 import casadi.*
 
 % delete old gif
-delete cart_pole_with_friction.gif
+if exist('cart_pole_with_friction.gif')
+    delete cart_pole_with_friction.gif
+end
+
 %% Build problem
 import casadi.*
 [settings] = NosnocOptions();
@@ -46,12 +49,14 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.N_homotopy = 8;
 settings.homotopy_update_rule = 'superlinear';
+settings.dcs_mode = 'Step';
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better performance:
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% Discretization parameters
-model.N_stages = 50; % number of control intervals
-model.N_finite_elements = 2; % number of finite element on every control intevral
+model = NosnocModel();
+settings.N_stages = 30; % number of control intervals
+settings.N_finite_elements = 2; % number of finite element on every control intevral
 model.T = 4;    % Time horizon
 
 %% Model parameters and defintion
@@ -93,7 +98,7 @@ x0 = [1; 0/180*pi; 0; 0]; % start downwards
 x_ref = [0; 180/180*pi; 0; 0]; % end upwards
 
 Q = diag([1; 100; 1; 1]);
-Q_terminal = diag([10; 100; 10; 20]);
+% Q_terminal = diag([10; 100; 10; 20]);
 Q_terminal = diag([100; 100; 10; 10]);
 % Q_terminal = 10*Q;
 R = 1;
@@ -130,14 +135,18 @@ else
     model.lsq_T = {x,x_ref,Q_terminal};
 end
 %% Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
+model = solver.model;
 %% plots
 % unfold structure to workspace of this script
-unfold_struct(results,'base');
-q1_opt = x_opt(1,:);
-q2_opt = x_opt(2,:);
-v1_opt = x_opt(3,:);
-v2_opt = x_opt(4,:);
+q1_opt = results.x(1,:);
+q2_opt = results.x(2,:);
+v1_opt = results.x(3,:);
+v2_opt = results.x(4,:);
+t_grid = results.t_grid;
+t_grid_u = results.t_grid_u;
+u_opt = results.u;
 
 
 %% Animation
@@ -188,10 +197,10 @@ for ii = 1:length(q1_opt)
     frame = getframe(1);
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
-    if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+    if ii == 1
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime', solver.model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime', solver.model.h_k(1));
     end
 
     if ii~=length(q1_opt)

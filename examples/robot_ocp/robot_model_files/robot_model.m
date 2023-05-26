@@ -3,7 +3,7 @@ import casadi.*
 
 %% the dynamics
 model.n_q = 4;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 g = -9.81*1;
 % differential state
 qx = MX.sym('qx',1);                                                       % position
@@ -27,7 +27,7 @@ model.x0 = [q0;v0];
 model.u0 = [0;0];
 %% friction cone parameters
 model.e = 0.0;
-model.mu = 0.7;
+model.mu_f = 0.7;
 %%
 mHip = 3.975; % mass of hip
 mThigh = 1.782; %

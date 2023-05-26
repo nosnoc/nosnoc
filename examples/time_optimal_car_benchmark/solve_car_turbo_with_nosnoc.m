@@ -40,6 +40,7 @@ v_trash_hold = 10;
 % Symbolic variables and bounds
 q = SX.sym('q'); % position
 v = SX.sym('v'); % velocity
+model = NosnocModel();
 model.x = [q;v]; % add all important data to the struct model,
 model.x0 = [0;0]; % inital value
 
@@ -74,14 +75,16 @@ model.g_terminal = [q-q_goal;v-v_goal];
 cpu_time_all = [];
 error_all = [];
 for ii = 1:N_trails
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
+
 cpu_time_all = [cpu_time_all, stats.cpu_time_total];
 results.T_opt = results.t_grid(end);
-[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);
+[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,settings.N_stages,1);
 error_all = [error_all ;error];
 end
 results.T_opt = results.t_grid(end);
-[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,model.N_stages,1);
+[tout,yout,error]= car_turbo_sim(results.u_opt,results.T_opt,settings.N_stages,1);
 
 
 output.T_opt = results.T_opt;
@@ -92,8 +95,8 @@ output.yout = yout;
 output.results = results;
 output.cpu_time_all = cpu_time_all;
 output.cpu_time =  mean(cpu_time_all);
-output.N_stages =  model.N_stages;
-output.N_finite_elements =  model.N_finite_elements ;
+output.N_stages =  settings.N_stages;
+output.N_finite_elements =  settings.N_finite_elements ;
 
 
 

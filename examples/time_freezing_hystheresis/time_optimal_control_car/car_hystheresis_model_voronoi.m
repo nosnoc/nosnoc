@@ -6,6 +6,7 @@ else
     fuel_cost_on = 1;
     fuel_cost_same = 0;
 end
+model = NosnocModel();
 %% Terminal constraint and bounds
 q_goal = 150;
 v_goal = 0;
@@ -28,15 +29,18 @@ w = SX.sym('w');
 t = SX.sym('t');
 x = [q;v;L;w;t];
 % controls
-u = SX.sym('u');
+u= SX.sym('u');
+
+model.x = x;
+model.u = u;
 
 % Bounds on x and u
-lbx = -[inf;0;inf;inf;inf];
-ubx = [inf;v_max;inf;inf;inf];
-lbu = -u_max;
-ubu = u_max;
+model.lbx = -[inf;0;inf;inf;inf];
+model.ubx = [inf;v_max;inf;inf;inf];
+model.lbu = -u_max;
+model.ubu = u_max;
 %% Inital Value
-x0 = zeros(5,1);
+model.x0 = zeros(5,1);
 % u0 = 10;
 %% PSS via Voronoi Cuts
 z1 = [1/4;-1/4];
@@ -66,19 +70,13 @@ f_3 = f_push_up;
 f_4 = 2*f_B-f_3;
 f_1 = 2*f_A-f_2;
 % in matrix form
-F = [f_1 f_2 f_3 f_4];
+model.F = [f_1 f_2 f_3 f_4];
 %% objective and terminal constraint
-f_q = fuel_cost_on*L;
+model.f_q = fuel_cost_on*L;
 % terminal constraint
-g_terminal = [q-q_goal;v-v_goal];
+model.g_terminal = [q-q_goal;v-v_goal];
 % g_terminal_lb = zeros(2,1);
 % g_terminal_ub = zeros(2,1);
 % f_q_T = 1e3*[q-q_goal;v-v_goal]'*[q-q_goal;v-v_goal];
-%% populate model struct
-% (make of local workspace a struct and pass to output
-names = who;
-for ii = 1:length(names)
-    eval([ 'model.' names{ii} '=' names{ii} ';'])
-end
 end
 

@@ -28,7 +28,7 @@ x0 = [-3; 0; 3; 0; 0; 0];
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';
-settings.opts_ipopt.ipopt.max_iter = 5e2;
+settings.opts_casadi_nlp.ipopt.max_iter = 5e2;
 settings.print_level = 2;
 settings.N_homotopy = 12;
 settings.cross_comp_mode = 8;
@@ -39,14 +39,15 @@ settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %%
 % Symbolic variables and bounds
-q = SX.sym('q',3); v = SX.sym('v',3); 
+q = SX.sym('q',3); v = SX.sym('v',3);
+model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0;
-model.mu = 0;
+model.mu_f = 0;
 model.a_n = 100;
 model.x0 = x0; 
 % fixed control
@@ -58,8 +59,8 @@ model.f_v = [1/m1*(u(1)-c_damping*v(1)-k1*q(1));...
 model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
-model.n_dim_contact = 2;
-%% Simulation setings
+model.dims.n_dim_contact = 2;
+%% Simulation settings
 N_FE = 2;
 T_sim = 3;
 N_sim = 60;
@@ -68,16 +69,16 @@ model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
-p1 = x_res(1,:);
-p2 = x_res(2,:);
-p3 = x_res(3,:);
-v1 = x_res(4,:);
-v2 = x_res(5,:);
-v3 = x_res(6,:);
-t_opt = x_res(7,:);
+p1 = results.x(1,:);
+p2 = results.x(2,:);
+p3 = results.x(3,:);
+v1 = results.x(4,:);
+v2 = results.x(5,:);
+v3 = results.x(6,:);
+t_opt = results.x(7,:);
 %%
 figure
 subplot(121)
@@ -140,7 +141,7 @@ for ii = 1:length(p1)
     axis equal
     xlim([x_min x_max])
     ylim([-0.75 2.5])
-    pause(model.h_k);
+    pause(solver.model.h_k);
     clf
 end
 

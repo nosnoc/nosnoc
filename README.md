@@ -4,25 +4,37 @@
 You can use **NOSNOC**  from `MATLAB` or `python`.
 
 ## General
-It is a modular tool for numerically solving nonsmooth optimal control problems with Piecewise Smooth/Filippov Systems (PSS). It supports:
-1. Automatic discretization via the FESD method - high accuracy and correct sensitivities. (Note that standard time-stepping methods have only first-order accuracy and wrong sensitivities even when they appear to be differentiable!)
+**NOSNOC** is a tool for numerically solving optimal control problems with nonsmooth dynamical systems with switches and/or state jumps. 
+It supports:
+1. Automatic discretization via the FESD method - high accuracy and correct sensitivities. Note that classical time-stepping methods only have first-order accuracy and wrong sensitivities even when they appear to be differentiable.
 
 2. Automatic reformulations of systems with state jumps (e.g. contact problems) via time-freezing into Filippov systems/PSS.
 (enables high accuracy even for systems with state jumps)
 
-3. Solving the nonsmooth nonlinear programs via homotopy methods. Enables the use of off-the-shelf solvers like IPOPT.
+3. Solving the nonsmooth nonlinear programs via homotopy methods. Enables the use of off-the-shelf solvers like IPOPT and SNOPT.
 
 
 
-**NOSNOC** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of PSS.
+**NOSNOC** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of systems with switches and jumps.
 It enables the treatment of a broad class of nonsmooth systems in a unified way. 
-The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
+
+
+NOSNOC offers several ways to treat switched systems, piecewise smooth systems, Filippov systems, hybrid systems, rigid body models with impacts and friction in simulation, and optimal control.
+It discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting mathematical program with complementarity constraints (MPCCs). 
+The MPCCs are solved in a homotopy loop with a standard solver like IPOPT or SNOPT.
+The user may directly provide a DCS or define the different modes of a Filippov system and the reformulation is automated.
+
+With NOSNOC one can simulate and solve optimal control problems subject to different kinds of nonsmooth systems, by declaring the `dcs_mode`: 
+1. `settings.dcs_mode = 'Stewart'` - for treating Filippov systems via Stewart's reformulation 
+2. `settings.dcs_mode = 'Step'` - for treating nonsmooth systems via set valued step functions (covers also all Filippov systems that are treated with Stewart's).
+3. `settings.dcs_mode = 'CLS'` - for rigid bodies with friction and impact (also called complementarity Lagrangian systems (CLS)) - uses FESD tailored to CLS.
+4. `settings.time_freezing = 1` - and using for the `dcs_mode = Step`, the CLS is reformulated into an equivalent Filippov system and treated with FESD.
 
 ## Installation
 
 **NOSNOC** requires `CasADi` version 3.5.5.
 
- Versions to come will support a `python` interface as well.
+ 
 ### Installation for MATLAB
 
 
@@ -38,7 +50,7 @@ The user manual can be found [here](https://github.com/nurkanovic/nosnoc/blob/ma
      ```
 	 
 
-Note that `IPOPT` is shipped with `CasADi`, but more information including detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
+Note that `IPOPT` is shipped with `CasADi`. More information including detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
 
 ### Installation for python
 
@@ -66,13 +78,10 @@ pip install -e .
 The interface of **NOSNOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
 User inputs should be given as `CasADi` expressions.
 
-To get started we recommend you to check our example library in 
+To get started we recommend you look into our example libraries for 
 [MATLAB](https://github.com/nurkanovic/nosnoc/tree/main/examples/matlab) or [python](https://github.com/FreyJo/nosnoc_py/tree/main/examples).  
 
 In case you need help, feel free to contact us! 
-
-More details can be found in the [user manual](https://github.com/nurkanovic/nosnoc/blob/main/doc/nosnoc_manual.pdf).
-
 
 
 ## Literature - theory and algorithms
@@ -99,7 +108,7 @@ IEEE Control Systems Letters 2021
 
 [The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps](https://arxiv.org/abs/2111.06759) \
 A. Nurkanović, S. Albrecht, B. Brogliato, M. Diehl \
-arXiv preprint 2021
+Automatica 2023 (accepted for publication)
 
 [Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing](https://cdn.syscop.de/publications/Nurkanovic2022a.pdf) \
 A.Nurkanović , M. Diehl \
@@ -125,7 +134,6 @@ IEEE Control Systems Letters 2022
   publisher={IEEE}
 }
 ```
-
 
 
 

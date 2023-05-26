@@ -17,7 +17,7 @@ jobs:
       uses: matlab-actions/setup-matlab@v1
       with:
         # NOTE: no longer earliest version to support more property validation functions
-        release: R2020b
+        release: R2021b
 
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.

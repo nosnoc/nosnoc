@@ -42,37 +42,35 @@ import casadi.*
 [settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
 settings.n_s = 2;                            
 settings.irk_scheme = IRKSchemes.RADAU_IIA;     
-settings.irk_representation = 'differential';
-settings.lift_irk_differential = 1;
+% settings.irk_representation = IrkRepresentation.differential_lift_x;
 settings.print_level = 2;
 settings.use_fesd = 1;
 settings.mpcc_mode = 'Scholtes_ineq';
-settings.sigma_0 = 1e4;
+settings.sigma_0 = 1;
 settings.s_elastic_max = 1e1;                    
 settings.cross_comp_mode = 3;
 settings.comp_tol = 1e-9;
 settings.N_homotopy = 10;
-settings.homotopy_update_rule = 'superlinear';
-settings.homotopy_update_slope = 0.2;
-settings.homotopy_update_exponent = 2.5;
+% settings.homotopy_update_rule = 'superlinear';
+% settings.homotopy_update_slope = 0.2;
+% settings.homotopy_update_exponent = 2.5;
 %% Generate Model
 model = blocks_with_friction();
-%% Simulation setings
+%% Simulation settings
 N_finite_elements = 3;
 T_sim = 12;
-% T_sim = 4;
 N_sim = 85;
 
 settings.dcs_mode = 'Stewart';
 % settings.dcs_mode = 'Step';
 
 model.T_sim = T_sim;
-model.N_finite_elements = N_finite_elements;
+settings.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
 
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% Get variables into main workspace
 unfold_struct(model,'base');
 unfold_struct(settings,'base');

@@ -33,35 +33,37 @@ close all
 import casadi.*
 %%
 plot_integrator_output = 1;
-plot_continious_time_sol = 0;
+plot_continious_time_sol = 1;
 %% discretization settings
 T_sim = pi/2;
 N_sim  = 29;
 N_finite_elements = 2;
 R_osc  = 1;
 
-%% settings
+%% Init
 % collocation settings
 settings = NosnocOptions();
+model = NosnocModel();
+%% settings
 settings.use_fesd = 1;       % switch detection method on/off
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE; %'Gauss-Legendre';
+settings.irk_scheme = IRKSchemes.RADAU_IIA; %'Gauss-Legendre';
 settings.print_level = 2;
 settings.n_s = 4;
 settings.dcs_mode = 'Step'; % 'Step;
-settings.mpcc_mode = 'Scholtes_ineq';  % Scholtes regularization
+settings.mpcc_mode = MpccMode.Scholtes_ineq;  % Scholtes regularization
+
 % Penalty/Relaxation paraemetr
 settings.comp_tol = 1e-9;
-settings.cross_comp_mode  = 3;
+settings.cross_comp_mode = 1;
 
 %% Time settings
 x_star = [exp(1);0];
 T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 
-model.N_finite_elements = N_finite_elements;
+settings.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-model.R_osc = R_osc;
 smooth_model = 0; % if 1, use model without switch for a sanity check
 omega = -2*pi;
 A1 = [1 omega;...
@@ -86,18 +88,18 @@ f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% numerical error
-x_fesd = results.x_res(:,end);
+x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");
 fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
 %% plot_solution_trajectory
 t_star = R_osc; % eact switching time
-x_res = results.x_res;
-if isempty(results.h_vec)
+x_res = results.x;
+if isempty(results.h)
     h_opt_full = h*ones(N_sim*N_stages,1);
 else
-    h_opt_full = results.h_vec;
+    h_opt_full = results.h;
 end
 x1_opt = x_res(1,:);
 x2_opt = x_res(2,:);
@@ -141,32 +143,17 @@ end
 %% plot_continious_time_sol
 if plot_continious_time_sol
     unfold_struct(settings,'caller')
-    x_res_extended = results.x_res_extended;
-    h_opt = results.h_vec;
-    [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(n_s,irk_scheme);
-    t_grid = results.t_grid;
-    tgrid_long = 0;
-    h_grid_long = [];
-    for ii  = 1:N_sim*N_stages*N_finite_elements;
-        if use_fesd
-            h_yet = h_opt(ii);
-        else
-            h_yet = model.h;
-        end
-        for jj = 1:n_s
-            tgrid_long = [tgrid_long;t_grid(ii)+c_irk(jj)*h_yet];
-        end
-        tgrid_long = [tgrid_long;t_grid(ii)+h_yet];
-    end
+    x_res_extended = results.extended.x;
+    tgrid_long = results.extended.t_grid;
 
     %
     x1_very_fine = [];
     x2_very_fine = [];
     tgrid_very_fine = [];
     figure
-    for ii =  1:N_stages*N_finite_elements*N_sim
+    for ii =  1:settings.N_stages*settings.N_finite_elements*N_sim
         % read
-        ind_now = 1+(ii-1)*(n_s+1):(ii)*(n_s+1)+1;
+        ind_now = 1+(ii-1)*(n_s):(ii)*(n_s)+1;
         tt = tgrid_long(ind_now);
         xx1 = x_res_extended(1,ind_now);
         xx2 = x_res_extended(2,ind_now);

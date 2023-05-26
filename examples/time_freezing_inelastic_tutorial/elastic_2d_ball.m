@@ -21,15 +21,16 @@ settings.stagewise_clock_constraint = 0;
 g = 10;
 % Symbolic variables and bounds
 q = SX.sym('q',1); 
-v = SX.sym('v',1); 
+v = SX.sym('v',1);
+model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0.9;
 model.k_aux = 50;
 model.x0 = [1;0]; 
 model.f_v = -g;
 model.f_c = q;
-model.n_dim_contact = 1;
-%% Simulation setings
+model.dims.n_dim_contact = 1;
+%% Simulation settings
 N_FE = 3;
 T_sim = 3;
 N_sim = 60;
@@ -38,12 +39,12 @@ model.N_FE = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
-qx = x_res(1,:);
-vx = x_res(2,:);
-t_opt = x_res(3,:);
+qx = results.x(1,:);
+vx = results.x(2,:);
+t_opt = results.x(3,:);
 figure
 subplot(121)
 plot(t_opt,qx);
@@ -63,14 +64,14 @@ ylabel('$v$','interpreter','latex');
 %% speed of time
 figure
 subplot(121)
-plot(t_grid,t_opt)
+plot(results.t_grid,t_opt)
 hold on
-plot(t_grid,t_grid,'k--')
+plot(results.t_grid,results.t_grid,'k--')
 grid on
 xlabel('$\tau$','interpreter','latex');
 ylabel('$t$','interpreter','latex');
 subplot(122)
-stairs(s_sot_res)
+stairs(results.s_sot)
 grid on
 xlabel('simulation step','interpreter','latex');
 ylabel('$s$','interpreter','latex');

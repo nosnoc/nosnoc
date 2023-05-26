@@ -44,16 +44,7 @@ N_sim_vec = round(N_sim_vec);
 % make all number odd
 % N_sim_vec(mod(N_sim_vec,2)==0) = N_sim_vec(mod(N_sim_vec,2)==0)+1;
 % % vector with nonminal step sizes of "outer ingeration steps"
-h_sim_vec = T_sim./N_sim_vec;
-% % length of fintie elements
-% h_i = h_sim_vec/(N_finite_elements*N_stages);
-% % number of finite elements until switching point
-% Ns = ts./h_i;
-% % sanity check
-% if any(abs(Ns - round(Ns)) == 0)
-%     error('exact switch detection just by chance');
-% end
-% 
+
 legend_str = [legend_str(n_s_vec)];
 
 %% settings
@@ -77,8 +68,8 @@ T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 t1_star = 1; % optimal siwtch points
 
-model.N_stages = N_stages;
-model.N_finite_elements = N_finite_elements;
+settings.N_stages = N_stages;
+settings.N_finite_elements = N_finite_elements;
 model.smooth_model = 0;
 %% for results storing
 errors_all_experiments = [];
@@ -110,7 +101,7 @@ for i = 1:length(n_s_vec)
         model.N_sim = N_sim;
         % generate new model with updated settings;
         model = oscilator(model);
-        [results,stats,model] = integrator_fesd(model,settings);
+        [results,stats,solver] = integrator_fesd(model,settings);
         % numerical error
         x_fesd = results.x_res(:,end);
         error_x = norm(x_fesd-x_star,"inf");

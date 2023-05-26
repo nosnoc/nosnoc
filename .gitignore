@@ -1,3 +1,6 @@
+private*
+export_fig
+
 qt_temp*
 *.gz
 *.log

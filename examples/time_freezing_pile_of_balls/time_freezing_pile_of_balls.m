@@ -23,16 +23,19 @@ settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 settings.mpcc_mode = MpccMode.Scholtes_ineq;
 settings.pss_lift_step_functions = 0;
-%% integrator setings
+settings.break_simulation_if_infeasible = 0;
+settings.print_level = 2
+%% integrator settings
+model = NosnocModel();
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-model.N_finite_elements = N_finite_elements;
+settings.N_finite_elements = N_finite_elements;
 settings.use_previous_solution_as_initial_guess = 1;
 
 %% model
 % dimensoon
 model.a_n = 100;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 n_balls = 4;
 n_q = n_balls*2; % number of positions
 % parameters
@@ -92,26 +95,24 @@ model.e = 0;
 model.q = q;
 model.v = v;
 model.x = x;
-model.mu = mu;
+model.mu_f = mu;
 model.M = M;
 model.f_v = f_v;
 model.x0 = x0;
 model.f_c = f_c;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
-%% read and plot results
-unfold_struct(results,'base');
+[results,stats,model,settings,solver] = integrator_fesd(model,settings);
 %% velocity plot
-q = x_res(1:n_q,:);
-v = x_res(n_q+1:end-1,:);
-t_phy = x_res(end,:);
+q = results.x(1:n_q,:);
+v = results.x(n_q+1:end-1,:);
+t_phy = results.x(end,:);
 tt = 0:h:T_sim;
 %% animation
 hh1 = linspace(wall_left-3,wall_right+3,5);
 hh2 = linspace(wall_down,wall_up,5);
 q_max = max(q(:));
 ind = diff(t_phy)/h>0.1;
-q = x_res(1:n_q,ind);
+q = results.x(1:n_q,ind);
 time = t_phy(ind);
 %%
 delete impacting_balls

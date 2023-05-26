@@ -44,14 +44,14 @@ settings.n_s = 1;  % number of stages in IRK methods
 settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
 settings.use_fesd = 1;
 settings.N_homotopy = 7;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
 settings.stabilizing_q_dynamics = 1;
 % enforce inequality at finite elements.
 settings.g_path_at_fe = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-%settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+%settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 25; % control intervals
@@ -96,16 +96,17 @@ v1 = v(1:2);
 v2 = v(3:4);
 
 x = [q;v];
+model = NosnocModel();
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu = 0.0;
+model.mu_f = 0.0;
 model.a_n = 10;
 model.x0 = x0;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 
 cv = 2;
 eps = 1e-1;
@@ -134,18 +135,19 @@ model.ubx = ubx;
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
-p1 = x_opt(1,:);
-p2 = x_opt(2,:);
-p3 = x_opt(3,:);
-p4 = x_opt(4,:);
-v1 = x_opt(5,:);
-v2 = x_opt(6,:);
-v3 = x_opt(7,:);
-v4 = x_opt(8,:);
-t_opt = x_opt(9,:);
+p1 = results.x(1,:);
+p2 = results.x(2,:);
+p3 = results.x(3,:);
+p4 = results.x(4,:);
+v1 = results.x(5,:);
+v2 = results.x(6,:);
+v3 = results.x(7,:);
+v4 = results.x(8,:);
+t_opt = results.x(9,:);
 
 %% animation
 figure('Renderer', 'painters', 'Position', [100 100 1000 800])
@@ -175,9 +177,9 @@ for ii = 1:length(p1)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
     end
     if ii~=length(p1)
         clf;
@@ -205,7 +207,7 @@ if 1
     xlabel('$t$','interpreter','latex');
     ylabel('$v(t)$','interpreter','latex');
     subplot(313)
-    stairs(t_opt(1:N_FE:end),[u_opt,nan*ones(2,1)]','LineWidth',1.5);
+    stairs(t_opt(1:N_FE:end),[results.u,nan*ones(2,1)]','LineWidth',1.5);
     legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
     grid on
     xlabel('$t$','interpreter','latex');

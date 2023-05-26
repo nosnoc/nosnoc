@@ -43,8 +43,10 @@ N_finite_elements = 2;
 T_sim = 10;
 N_sim  = 200;
 
-%% settings
+%% init nosnoc 
 settings = NosnocOptions();
+model = NosnocModel();
+%% settings
 settings.use_fesd = 1;
 settings.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
 settings.print_level = 2;
@@ -53,10 +55,10 @@ settings.dcs_mode = 'Stewart'; % 'Step;
 settings.comp_tol = 1e-9;
 settings.homotopy_update_rule = 'superlinear';
 %% Time settings
-model.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-% Inital Value
+settings.N_finite_elements = N_finite_elements;
+%% Model
 model.x0 = [0;-0.001;-0.02];
 % Variable defintion
 x = SX.sym('x',3);
@@ -82,17 +84,17 @@ model.S = [-1;1];
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 
 %% Plot results
-x1 = results.x_res(1,:);
-x2 = results.x_res(2,:);
-x3 = results.x_res(3,:);
+x1 = results.x(1,:);
+x2 = results.x(2,:);
+x3 = results.x(3,:);
 
 if isequal(settings.dcs_mode,'Stewart')
-    theta = results.theta_res;
+    theta = results.theta;
 else
-    alpha = results.alpha_res;
+    alpha = results.alpha;
 end
 t_grid = results.t_grid;
 

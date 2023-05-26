@@ -1,10 +1,11 @@
 clear all;
-clear all;
 clc;
 import casadi.*
 close all
-%%
-[settings] = NosnocOptions();  
+%% init nosnoc
+settings = NosnocOptions();
+model = NosnocModel();
+%% settings
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.print_level = 2;
@@ -20,43 +21,38 @@ g = 10;
 vertical_force = 0;
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
-u = SX.sym('u',2); 
-model.x = [q;v]; 
+u = SX.sym('u',2);
+
+model.x = [q;v];
 model.u = u;
 model.e = 0;
-model.mu = 0.3;
-model.n_dim_contact = 2;
+model.mu_f = 0.3;
+model.dims.n_dim_contact = 2;
 model.a_n = g;
 model.x0 = [0;1;3;0]; 
 model.f_v = [0;-g+vertical_force*g*q(1)]+u;
 model.f_c = q(2);
 model.J_tangent = [1; 0];
 
-%% Simulation setings
+%% Simulation settings
 N_FE = 3;
 T_sim = 1.5;
 N_sim = 40;
 u_sim = 1*ones(2,N_sim);
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,~,~,solver,solver_initialization] = integrator_fesd(model,settings,u_sim);
-if 1
-    % re-run simulation without creating new solver object
-    [results_rerun,stats,model] = integrator_fesd(model,settings,u_sim);
-    norm(results.x_res-results_rerun.x_res)
-    unfold_struct(results_rerun,'base');
-end
+[results,stats] = integrator_fesd(model,settings,u_sim);
+unfold_struct(results,'base');
+
 %% read and plot results
-
-
-qx = x_res(1,:);
-qy = x_res(2,:);
-vx = x_res(3,:);
-vy = x_res(4,:);
-t_opt = x_res(5,:);
+qx = results.x(1,:);
+qy = results.x(2,:);
+vx = results.x(3,:);
+vy = results.x(4,:);
+t_opt = results.x(5,:);
 figure
 subplot(121)
 plot(qx,qy);
@@ -77,28 +73,28 @@ ylabel('$v$','interpreter','latex');
 % [qx(end),qy(end),t_opt(end)]
 
 %%
-alpha1 = alpha_res(1,:);
-alpha2 = alpha_res(2,:);
-alpha3 = alpha_res(3,:);
+alpha1 = results.alpha(1,:);
+alpha2 = results.alpha(2,:);
+alpha3 = results.alpha(3,:);
 theta1 = alpha1+(1-alpha1).*(alpha2);
 alpha_aux = (1-alpha1).*(1-alpha2);
 theta2 = alpha_aux.*(1-alpha3);
 theta3 = alpha_aux.*(alpha3);
 figure;
 subplot(131)
-plot(t_grid,[theta1,nan])
+plot(results.t_grid,[theta1,nan])
 xlabel('$\tau$','interpreter','latex');
 ylabel(['$\theta_1$'],'interpreter','latex');
 grid on
 ylim([-0.1 1.1]);
 subplot(132)
-plot(t_grid,[theta2,nan])
+plot(results.t_grid,[theta2,nan])
 xlabel('$\tau$','interpreter','latex');
 ylabel(['$\theta_2$'],'interpreter','latex');
 grid on
 ylim([-0.1 1.1]);
 subplot(133)
-plot(t_grid,[theta3,nan])
+plot(results.t_grid,[theta3,nan])
 xlabel('$\tau$','interpreter','latex');
 ylabel(['$\theta_3$'],'interpreter','latex');
 grid on
@@ -106,9 +102,9 @@ ylim([-0.1 1.1]);
 %% speed of time
 figure
 subplot(121)
-plot(t_grid,t_opt)
+plot(results.t_grid,t_opt)
 hold on
-plot(t_grid,t_grid,'k--')
+plot(results.t_grid,results.t_grid,'k--')
 grid on
 xlabel('$\tau$','interpreter','latex');
 ylabel('$t$','interpreter','latex');
@@ -124,7 +120,7 @@ ylabel('$s$','interpreter','latex');
 if 0 
 lambda0 = lambda_0_res;
 lambda1 = lambda_1_res;
-alpha = alpha_res;
+alpha = results.alpha;
 comp1 = alpha.*lambda0;
 comp2 = lambda1.*(ones(size(alpha))-alpha);
 figure

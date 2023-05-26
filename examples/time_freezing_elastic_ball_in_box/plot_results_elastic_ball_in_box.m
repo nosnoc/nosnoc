@@ -8,11 +8,11 @@ red = [0.8500 0.3250 0.0980];
 organe = [0.9290 0.6940 0.1250];
 grey = [0.85 0.85 0.85];
 
-qx_opt = x_opt(1,:);
-qy_opt = x_opt(2,:);
-vx_opt = x_opt(3,:);
-vy_opt = x_opt(4,:);
-t_opt = x_opt(5,:);
+qx_opt = results.x(1,:);
+qy_opt = results.x(2,:);
+vx_opt = results.x(3,:);
+vy_opt = results.x(4,:);
+t_opt = results.x(5,:);
 %%
 
 figure('Renderer', 'painters', 'Position', [100 100 800 200])
@@ -25,10 +25,10 @@ plot(0:0.1:t_fin,0:0.1:t_fin,'r-')
 xlabel('Numerical time - $\tau$','Interpreter','latex');
 ylabel('Physical time - $t$','Interpreter','latex');
 hold on
-for ii= 1:N_finite_elements(1):length(t_grid)
+for ii= 1:settings.N_finite_elements(1):length(t_grid)
     xline(t_grid(ii),'k--')
 end
-s_sot_opt = results.w_opt(model.ind_sot);
+s_sot_opt = results.w(solver.problem.ind_sot);
 subplot(122)
 stairs(t_grid_u,[nan;s_sot_opt],'k','linewidth',1.5);
 ylim([0.0 max(s_sot_opt)+1])
@@ -72,10 +72,10 @@ xlim([0 t_opt(end)])
 ylim ([-11 11])
 
 subplot(325)
-stairs(t_grid_u,[nan,u_opt(1,:)],'linewidth',linewidth)
+stairs(t_grid_u,[nan,results.u(1,:)],'linewidth',linewidth)
 hold on
 grid on
-stairs(t_grid_u,[nan,u_opt(2,:)],'linewidth',linewidth)
+stairs(t_grid_u,[nan,results.u(2,:)],'linewidth',linewidth)
 xlabel('$\tau$','Interpreter','latex');
 ylabel('$u(\tau)$','Interpreter','latex');
 legend({'$u_1(\tau)$','$u_2(\tau)$'},'Interpreter','latex','location','north');
@@ -110,10 +110,10 @@ xlim([0 t_opt(end)])
 ylim ([-11 11])
 
 subplot(326)
-stairs(t_opt(1:N_finite_elements(1):end),[nan,u_opt(1,:)],'linewidth',linewidth)
+stairs(t_opt(1:settings.N_finite_elements(1):end),[nan,results.u(1,:)],'linewidth',linewidth)
 hold on
 grid on
-stairs(t_opt(1:N_finite_elements(1):end),[nan,u_opt(2,:)],'linewidth',linewidth)
+stairs(t_opt(1:settings.N_finite_elements(1):end),[nan,results.u(2,:)],'linewidth',linewidth)
 xlabel('$t$','Interpreter','latex');
 ylabel('$u(t)$','Interpreter','latex');
 legend({'$u_1(t)$','$u_2(t)$'},'Interpreter','latex','location','north');

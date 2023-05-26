@@ -15,22 +15,21 @@ settings.homotopy_update_rule = 'superlinear';
 %% Generate Model
 model = tank_cascade();
 %% Discretization parameters
-model.N_stages = 100; % number of control intervals
-model.N_finite_elements = 2; % number of finite element on every control intevral
+settings.N_stages = 100; % number of control intervals
+settings.N_finite_elements = 2; % number of finite element on every control intevral
 model.T = 100;    % yime horizon
 %% Solve OCP via nosnoc
-[results,stats,model,settings] = nosnoc_solver(model,settings);
-%% Get variables into main workspace
-unfold_struct(results,'base');
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 %% Read and plot Result 
 figure
 subplot(211)
-plot(t_grid,x_opt);
+plot(results.t_grid,results.x);
 hold on
 xlabel('$t$','interpreter','latex');
 ylabel('$L(t)$','interpreter','latex');
 subplot(212)
-stairs(t_grid_u,[nan*ones(n_u,1),u_opt]');
+stairs(results.t_grid_u,[nan*ones(model.dims.n_u,1),results.u]');
 hold on
 xlabel('$t$','interpreter','latex');
 ylabel('$u(t)$','interpreter','latex');

@@ -41,16 +41,16 @@ import casadi.*
 delete three_carts2.gif
 
 %%
-[settings] = NosnocOptions();  
+settings = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;  % number of stages in IRK methods
 
 settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
 settings.N_homotopy = 6;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 settings.time_freezing = 1;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 30; % control intervals
@@ -85,13 +85,14 @@ q = SX.sym('q',3);
 v = SX.sym('v',3); 
 u = SX.sym('u',1);
 x = [q;v];
+model = NosnocModel();
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu = 0.0;
+model.mu_f = 0.0;
 model.a_n = 10;
 model.x0 = x0; 
 
@@ -104,7 +105,7 @@ model.f_v = [-c_damping*v(1);...
 model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 % box constraints on controls and states
 model.lbu = u_min;
 model.ubu = u_max;
@@ -116,17 +117,18 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 % model.g_terminal = [x-x_ref];
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
-% [results] = polishing_homotopy_solution(model,settings,results,stats.sigma_k); % (experimental, projects and fixes active set at solution and solves NLP)
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
+% [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k); % (experimental, projects and fixes active set at solution and solves NLP)
 %% read and plot results
 unfold_struct(results,'base');
-p1 = x_opt(1,:);
-p2 = x_opt(2,:);
-p3 = x_opt(3,:);
-v1 = x_opt(4,:);
-v2 = x_opt(5,:);
-v3 = x_opt(6,:);
-t_opt = x_opt(7,:);
+p1 = results.x(1,:);
+p2 = results.x(2,:);
+p3 = results.x(3,:);
+v1 = results.x(4,:);
+v2 = results.x(5,:);
+v3 = results.x(6,:);
+t_opt = results.x(7,:);
 
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
@@ -184,16 +186,16 @@ for ii = 1:length(p1)
     axis equal
     xlim([x_min x_max])
     ylim([-0.75 3.5])
-    pause(model.h_k);
+    pause(solver.model.h_k);
    
     frame = getframe(1);
     im = frame2im(frame);
 
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
     end
 
     if ii~=length(p1)
@@ -225,7 +227,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 
 subplot(133)
-stairs(t_opt(1:N_FE:end),[u_opt,nan],'LineWidth',1.5);
+stairs(t_opt(1:N_FE:end),[results.u,nan],'LineWidth',1.5);
 
 % legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
 grid on

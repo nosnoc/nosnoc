@@ -11,7 +11,11 @@ end
 
 q_opt = x_opt(1:4,:);
 v_opt = x_opt(5:8,:);
-t_opt = x_opt(9,:);
+if settings.time_freezing
+    t_opt = x_opt(9,:);
+else
+t_opt = results.t_grid;
+end
 
 q1 = q_opt(1,:);
 q2 = q_opt(2,:);

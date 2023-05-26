@@ -37,34 +37,38 @@ illustrate_regions  = 1;
 terminal_constraint = 1;
 linear_control = 1;
 
-%% NOS-NOC settings
-[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
+%% NOSNOC settings and model
+settings = NosnocOptions();  %% Optionally call this function to have an overview of all options.
+model = NosnocModel();
+%%
+settings.n_s = 3;
+N_finite_elements = 3;
 
-settings.n_s = 2;
-N_finite_elements = 6;
-
-settings.irk_representation = 'differential';
+settings.irk_representation = 'integral';
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
+settings.cross_comp_mode = 1;
 
 settings.print_level = 3;
 settings.use_fesd = 1;
-settings.comp_tol = 1e-6;
+settings.comp_tol = 1e-9;
 settings.equidistant_control_grid = 1;
 
-settings.step_equilibration = 'l2_relaxed_scaled';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
+settings.step_equilibration = 'heuristic_mean';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
 settings.rho_h = 1e2;
 
 %% model equations
-% Variable defintion
-x1 = MX.sym('x1');
-x2 = MX.sym('x2');
 
-v1 = MX.sym('v1');
-v2 = MX.sym('v2');
+% Variable defintion
+x1 = SX.sym('x1');
+x2 = SX.sym('x2');
+
+v1 = SX.sym('v1');
+v2 = SX.sym('v2');
 
 % Control
-u1 = MX.sym('u1');
-u2 = MX.sym('u2');
+u1 = SX.sym('u1');
+u2 = SX.sym('u2');
 model.u = [u1;u2];
 
 if linear_control
@@ -98,8 +102,8 @@ model.x0 = [2*pi/3;pi/3;v0];
 model.x = x;
 model.T = 4;
 
-model.N_stages = 6;
-model.N_finite_elements = N_finite_elements;
+settings.N_stages = 6;
+settings.N_finite_elements = N_finite_elements;
 
 % Switching Functions
 p = 2; a = 0.15; a1 = 0;
@@ -130,16 +134,17 @@ else
 end
 
 %% Solve and plot
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 
-u_opt = results.u_opt;
+u_opt = results.u;
 f_opt = full(results.f);
 
 t_grid_optimizer = [results.t_grid];
-x_res_optimizer = [results.x_opt];
+x_res_optimizer = [results.x];
 %%
 figure
-stairs(results.t_grid,[results.h_opt;nan])
+stairs(results.t_grid,[results.h,nan])
 xlabel('$t$','Interpreter','latex');
 ylabel('$h_{ki}$','Interpreter','latex');
 %%
@@ -155,8 +160,8 @@ t_end = 0;
 if 0
     model.T_sim = 4/6;
     model.N_sim = 12;
-    model.N_stages = 1;
-    model.N_finite_elements = 2;
+    settings.N_stages = 1;
+    settings.N_finite_elements = 2;
     model.g_terminal = [];
     model.g_terminal_lb = [];
     model.g_terminal_ub = [];
@@ -170,9 +175,9 @@ if 0
         model.lbu = u_opt(:,ii);
         model.ubu = u_opt(:,ii);
         model.u0 = u_opt(:,ii);
-        [results_integrator,stats,model] = integrator_fesd(model,settings);
-        model.x0 = results_integrator.x_res(:,end);
-        x_res_integrator = [x_res_integrator,results_integrator.x_res];
+        [results_integrator,stats,solver] = integrator_fesd(model,settings);
+        model.x0 = results_integrator.x(:,end);
+        x_res_integrator = [x_res_integrator,results_integrator.x];
         t_grid_integrator = [t_grid_integrator, results_integrator.t_grid+t_end];
         t_end = t_grid_integrator(end);
     end
@@ -205,70 +210,70 @@ else
 end
 
 %%
-if 0
-figure
-subplot(211)
-plot(t_grid_optimizer,x_res_optimizer(1:2,:))
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$x(t)$ - optimizer','interpreter','latex');
-subplot(212)
-plot(t_grid_integrator,x_res_integrator(1:2,:))
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$x(t)$ - integrator','interpreter','latex');
-%
-figure
-subplot(211)
-plot(t_grid_optimizer,x_res_optimizer(3:4,:))
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v(t)$ - optimizer','interpreter','latex');
-subplot(212)
-plot(t_grid_integrator,x_res_integrator(3:4,:))
-grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$v(t)$ - integrator','interpreter','latex');
+if 1
+    figure
+    subplot(211)
+    plot(t_grid_optimizer,x_res_optimizer(1:2,:))
+    grid on
+    xlabel('$t$','interpreter','latex');
+    ylabel('$x(t)$ - optimizer','interpreter','latex');
+    subplot(212)
+    plot(t_grid_integrator,x_res_integrator(1:2,:))
+    grid on
+    xlabel('$t$','interpreter','latex');
+    ylabel('$x(t)$ - integrator','interpreter','latex');
+    %
+    figure
+    subplot(211)
+    plot(t_grid_optimizer,x_res_optimizer(3:4,:))
+    grid on
+    xlabel('$t$','interpreter','latex');
+    ylabel('$v(t)$ - optimizer','interpreter','latex');
+    subplot(212)
+    plot(t_grid_integrator,x_res_integrator(3:4,:))
+    grid on
+    xlabel('$t$','interpreter','latex');
+    ylabel('$v(t)$ - integrator','interpreter','latex');
 
-%
-figure
-subplot(121)
-plot(x_res_optimizer(1,:),x_res_optimizer(2,:),'LineWidth',2)
-grid on
-hold on
-plot(x_target(1),x_target(2),'rx')
-if illustrate_regions
+    %
+    figure
+    subplot(121)
+    plot(x_res_optimizer(1,:),x_res_optimizer(2,:),'LineWidth',2)
+    grid on
     hold on
-    t2 = -5:0.01:5;
-    plot(-a*(t2-a1).^p,t2,'k')
+    plot(x_target(1),x_target(2),'rx')
+    if illustrate_regions
+        hold on
+        t2 = -5:0.01:5;
+        plot(-a*(t2-a1).^p,t2,'k')
+        hold on
+        t1 = t2;
+        plot(t1,-b*t1.^q,'k')
+        grid on
+        axis equal
+        xlim([-1.5 1.5])
+        ylim([-1.5 1.5])
+    end
+    subplot(122)
+    plot(x_res_integrator(1,:),x_res_integrator(2,:),'LineWidth',2)
     hold on
-    t1 = t2;
-    plot(t1,-b*t1.^q,'k')
+    plot(x_target(1),x_target(2),'rx')
     grid on
     axis equal
-    xlim([-1.5 1.5])
-    ylim([-1.5 1.5])
+    if illustrate_regions
+        hold on
+        %     p = 2; a = -0.1; a1 = 0;
+        %     b = -0.05; q = 3;
+        t2 = -5:0.01:5;
+        plot(-a*(t2-a1).^p,t2,'k')
+        hold on
+        t1 = t2;
+        plot(t1,-b*t1.^q,'k')
+        grid on
+        axis equal
+        xlim([-1.5 1.5])
+        ylim([-1.5 1.5])
+    end
 end
-subplot(122)
-plot(x_res_integrator(1,:),x_res_integrator(2,:),'LineWidth',2)
-hold on
-plot(x_target(1),x_target(2),'rx')
-grid on
-axis equal
-if illustrate_regions
-    hold on
-%     p = 2; a = -0.1; a1 = 0;
-%     b = -0.05; q = 3;
-    t2 = -5:0.01:5;
-    plot(-a*(t2-a1).^p,t2,'k')
-    hold on
-    t1 = t2;
-    plot(t1,-b*t1.^q,'k')
-    grid on
-    axis equal
-    xlim([-1.5 1.5])
-    ylim([-1.5 1.5])
-end
-end
-%% 
+%%
 sliding_mode_plot_for_paper

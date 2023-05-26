@@ -11,16 +11,17 @@ clear all;
 close all;
 %% Build problem
 import casadi.*
-[settings] = NosnocOptions();
+settings = NosnocOptions();
+model = NosnocModel();
 % Choosing the Runge - Kutta Method and number of stages
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 % MPCC Method
 settings.N_homotopy = 10;
 % Discretization parameters
-model.N_stages = 30; % number of control intervals
-model.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+settings.N_stages = 30; % number of control intervals
+settings.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 0.08;    % Time horizon
 
 %% The Model
@@ -95,44 +96,44 @@ model.g_terminal = x-x_target;
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 
 %% plots
 % unfold structure to workspace of this script
-unfold_struct(results,'base');
-x1_opt = x_opt(1,:);
-v1_opt= x_opt(2,:);
-x2_opt= x_opt(3,:);
-v2_opt= x_opt(4,:);
-I_opt= x_opt(5,:);
+x1_opt = results.x(1,:);
+v1_opt= results.x(2,:);
+x2_opt= results.x(3,:);
+v2_opt= results.x(4,:);
+I_opt= results.x(5,:);
 
 figure
 subplot(411)
-plot(t_grid,x1_opt)
+plot(results.t_grid,x1_opt)
 hold on
-plot(t_grid,x2_opt)
+plot(results.t_grid,x2_opt)
 ylabel('$x(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
 legend({'$x_1(t)$','$x_2(t)$'},'Interpreter','latex','Location','best')
 subplot(412)
-plot(t_grid,v1_opt)
+plot(results.t_grid,v1_opt)
 hold on
-plot(t_grid,v2_opt)
+plot(results.t_grid,v2_opt)
 yline(0,'k--')
 ylabel('$v(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
 legend({'$v_1(t)$','$v_2(t)$'},'Interpreter','latex','Location','best')
 subplot(413)
-plot(t_grid,I_opt)
+plot(results.t_grid,I_opt)
 ylabel('$I(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
-% t_grid_u = t_grid_u';
+% results.t_grid_u = results.t_grid_u';
 subplot(414)
-u_opt = [u_opt,nan];
-stairs(t_grid_u,u_opt);
+results.u = [results.u,nan];
+stairs(results.t_grid_u,results.u);
 ylabel('$u(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on

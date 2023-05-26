@@ -8,7 +8,7 @@ linewidth = 2.5;
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.N_homotopy = 6;
-settings.opts_ipopt.ipopt.max_iter = 5e2;
+settings.opts_casadi_nlp.ipopt.max_iter = 5e2;
 settings.print_level = 3;
 settings.time_freezing = 1;
 settings.s_sot_max = 10;
@@ -16,7 +16,7 @@ settings.s_sot_min = 0.99;
 settings.homotopy_update_rule = 'superlinear';
 settings.nonsmooth_switching_fun = 0;
 settings.pss_lift_step_functions = 0; 
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %%
 g = 9.81;
@@ -28,34 +28,37 @@ q = SX.sym('q',2);
 v = SX.sym('v',2); 
 u = SX.sym('u');
 x = [q;v];
+
+model = NosnocModel();
 model.T = 2;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu = 0.6;
+model.mu_f = 0.6;
 model.a_n = g;
 model.x0 = [0;1.5;0;0]; 
 model.f_v = [0+u;-g];
 model.f_c = q(2);
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 model.g_terminal = [x-[3;0;0;0]];
 model.J_tangent = [1;0];
 model.lbu = -u_max;
 model.ubu = u_max;
 model.f_q = u'*u;
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
-% [results] = polishing_homotopy_solution(model,settings,results,stats.sigma_k);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
+% [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k);
 %%
-qx = results.x_opt(1,:);
-qy = results.x_opt(2,:);
-vx = results.x_opt(3,:);
-vy = results.x_opt(4,:);
-t_opt = results.x_opt(5,:);
-u_opt = results.u_opt(1,:);
-s_opt = results.w_opt(model.ind_sot);
+qx = results.x(1,:);
+qy = results.x(2,:);
+vx = results.x(3,:);
+vy = results.x(4,:);
+t_opt = results.x(5,:);
+u_opt = results.u(1,:);
+s_opt = results.w(solver.problem.ind_sot);
 
 figure
 subplot(131)
@@ -82,8 +85,7 @@ ylabel('$u$','Interpreter','latex');
 %% 
 t_grid = results.t_grid;
 f_x_fun = model.f_x_fun;
-x_opt = results.x_opt;
-z_opt = results.z_opt;
+x = results.x;
 u_opt_extended = [];
 s_opt_extended = [];
 for ii = 1:N_stg

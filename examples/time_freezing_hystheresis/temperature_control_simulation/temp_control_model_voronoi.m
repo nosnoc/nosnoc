@@ -27,6 +27,8 @@
 
 function [model] = temp_control_model_voronoi()
 import casadi.*
+
+model = NosnocModel();
 %% Model Parameters
 % inital value
 t0 = 0;
@@ -49,14 +51,14 @@ z4 = [3/4;5/4];
 Z_voronoi = [z1 z2 z3 z4];
 
 %% Inital Value
-x0 = [y0;w0;t0];
+model.x0 = [y0;w0;t0];
 %% Variable defintion
 y = MX.sym('y');
 w = MX.sym('w');
 t = MX.sym('t');
 
-x = [y;w;t];
-n_x = length(x);
+model.x = [y;w;t];
+n_x = length(model.x);
 
 % linear transformation for rescaling of the switching function.
 psi = (y-y1)/(y2-y1);
@@ -67,7 +69,7 @@ g_12 = norm([psi;w]-z2)^2;
 g_13 = norm([psi;w]-z3)^2;
 g_14 = norm([psi;w]-z4)^2;
 
-g_ind = [g_11;g_12;g_13;g_14];
+model.g_ind = [g_11;g_12;g_13;g_14];
 
 %% Modes of hystersis model
 
@@ -83,13 +85,8 @@ f_1 = 2*f_A-f_push_down;
 f_2 = f_push_down;
 f_3 = f_push_up;
 f_4 = 2*f_B-f_push_up;
-F = [f_1 f_2 f_3 f_4];
+model.F = [f_1 f_2 f_3 f_4];
 
-%% Generic part
-% (make of local workspace a struct and pass to output
-names = who;
-for ii = 1:length(names)
-    eval([ 'model.' names{ii} '=' names{ii} ';'])
-end
+
 end
 

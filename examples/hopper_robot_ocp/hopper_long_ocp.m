@@ -46,10 +46,10 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;  % number of stages in IRK methods
 settings.N_homotopy = 5;
 settings.cross_comp_mode = 1;
-settings.opts_ipopt.ipopt.max_iter = 1e3;
-settings.opts_ipopt.ipopt.tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_tol = 1e-6;
-settings.opts_ipopt.ipopt.acceptable_iter = 3;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
+settings.opts_casadi_nlp.ipopt.tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 settings.time_freezing = 1;
 settings.s_sot_min = 1;
 settings.equidistant_control_grid = 1;
@@ -59,7 +59,7 @@ settings.g_path_at_fe = 1; % evaluate path constraint on every integration step
 settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_ipopt.ipopt.linear_solver = 'ma57';
+% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 % The methods and time-freezing refomulation are detailed in https://arxiv.org/abs/2111.06759
 %% discretizatioon
@@ -134,12 +134,12 @@ x_ref = [x_ref1,x_ref2];
 
 %% Fill in model
 model.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+settings.N_stages = N_stg;
+settings.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu = mu;
+model.mu_f = mu;
 model.a_n = 25;
 model.x0 = x0;
 
@@ -148,7 +148,7 @@ model.f_v = f_v;
 model.f_c = f_c;
 model.J_tangent = J_tangent;
 model.J_normal = J_normal;
-model.n_dim_contact = 2;
+model.dims.n_dim_contact = 2;
 
 % box constraints on controls and states
 model.lbu = lbu;
@@ -163,7 +163,8 @@ model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-[results,stats,model,settings] = nosnoc_solver(model,settings);
+solver = NosnocSolver(model, settings);
+[results,stats] = solver.solve();
 
 %% read and plot results
 unfold_struct(results,'base');
@@ -237,9 +238,9 @@ for ii = 1:length(q_opt)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
     end
 
     if ii~=length(q_opt)

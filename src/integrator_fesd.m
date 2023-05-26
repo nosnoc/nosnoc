@@ -27,323 +27,252 @@
 
 %
 %
+% TODO: remove varargout / varargin and make API clear!
+%    - seperate creation and call!
 % Examples of calling the function
 % [results] = integrator_fesd(model,settings);
 % [results,stats] = integrator_fesd(model,settings);
-% [results,stats,model] = integrator_fesd(model,settings);
-% [results,stats,model,settings] = integrator_fesd(model,settings);
+% [results,stats,solver] = integrator_fesd(model,settings);
 
-function [varargout] = integrator_fesd(varargin)
-import casadi.*
-
-model = varargin{1};
-settings = varargin{2};
-solver_exists  = 0;
-control_exists = 0;
-if nargin>2
-    u_sim = varargin{3};
-    control_exists = 1;
-
-end
-if nargin>3
-    solver = varargin{4};
-    solver_initialization = varargin{5};
-    solver_exists = 1;
-    model.p_val(end) = model.T;
-end
-%%  unfold data
-% use_previous_solution_as_initial_guess = 1;
-unfold_struct(settings,'caller')
-unfold_struct(model,'caller')
-
-results.t_grid = [];
-results.x_res = [];
-stats = [];
-
-%% generate time-freezing model before turning off time-related settings
-if settings.time_freezing && ~solver_exists
-    settings.virtual_forces = 0;
-    settings.integrator_forward_sweep = 0; % this is not done inside a simulator
-    [model,settings] = time_freezing_reformulation(model,settings);
-end
-
-%% Settings of integration
-[model] = refine_model_integrator(model,settings);
+function [results, integrator_stats, solver] = integrator_fesd(model, settings, u_sim, initial_guess)
 
 %% Create solver functions for integrator step
-if ~solver_exists
-    tic
-    [solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
-    %     [solver,solver_initialization, model,settings] = create_nlp_nosnoc_rv(model,settings);
-    solver_generating_time = toc;
-    if print_level >=2
-        fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
-    end
-end
-% TODO remove this but needed now because unfold_struct clobers fields for some reason
-settings_bkp = settings;
+settings.equidistant_control_grid = 0; % reset settings
+solver = NosnocSolver(model, settings);
+model = solver.model;
+settings = solver.settings;
+dims = model.dims;
+
 unfold_struct(settings,'caller')
 unfold_struct(model,'caller')
-unfold_struct(solver_initialization,'caller')
-settings = settings_bkp;
 
-%% chekc does the provided u_sim has correct dimensions
-if exist('u_sim','var')
-    [n_rows,n_cols] = size(u_sim);
-    if n_rows~=n_u || n_cols~=N_sim
-        error('Matrix with control inputs has the wrong size. Required dimension is n_u x N_sim.')
+%% check does the provided u_sim has correct dims
+if dims.n_u > 0
+    if ~exist('u_sim','var')
+        warning('no control values (u_sim) provided, using zeros')
+        u_sim = zeros(n_u, N_sim);
+    else
+        [n_rows, n_cols] = size(u_sim);
+        if n_rows ~= dims.n_u || n_cols~=N_sim
+            error('Control inputs u_sim has the wrong size. Required dimension is n_u x N_sim.')
+        end
     end
 end
+
 %% Initialization
-x_res = [x0];
-x_res_extended = [x0];
-diff_res = [];
-alg_res = [];
-% Stewart
-theta_res = [];
-lambda_res = [];
-mu_res = [];
-% Output including all RK-stage values
-lambda_res_extended = [];
-theta_res_extended = [];
-mu_res_extended = [];
-
-% Step
-alpha_res = [];
-lambda_0_res = [];
-lambda_1_res = [];
-% Output including all RK-stage values
-alpha_res_extended = [];
-lambda_0_res_extended = [];
-lambda_1_res_extended = [];
-
-% step size
-h_vec = [];
-% sot (in time-freezing)
-s_sot_res = [];
-% states
+results = struct();
+names = get_result_names_from_settings(settings);
+names = [names, {"h"}];
+for name=names
+    results.(name) = [];
+    results.extended.(name) = [];
+end
+results.x = x0;
+results.extended.x = x0;
+results.s_sot = [];
+results.x_with_impulse = x0;
+results.t_with_impulse = 0;
+% stats
 complementarity_stats  = [];
 homotopy_iteration_stats = [];
 time_per_iter = [];
-simulation_time_pased = 0;
+sim_step_solver_results = [];
+t_current = 0;
+converged = [];
+constraint_violations = [];
+
+if exist('initial_guess', 'var')
+    % remove duplicate indices
+    [~, w] = unique(initial_guess.t_grid, 'stable');
+    % setdiff(w, 1:length(initial_guess.t_grid))
+    % keyboard
+    initial_guess.t_grid = initial_guess.t_grid(w);
+    initial_guess.x_traj = initial_guess.x_traj(w, :);
+    initial_guess.lambda_normal_traj = initial_guess.lambda_normal_traj(w, :);
+end
+
+
 %% Main simulation loop
-for ii = 1:N_sim+additional_residual_ingeration_step
-    if ii == N_sim+additional_residual_ingeration_step && additional_residual_ingeration_step
-        model.T = T_residual;
-        [solver,~, model,settings] = create_nlp_nosnoc(model,settings);
+for ii = 1:model.N_sim
+
+    %% set problem parameters, controls
+    solver.set("x0", x0);
+    if dims.n_u > 0
+        solver.set('u', {u_sim(:,ii)});
     end
 
-    if control_exists
-        solver_initialization.lbw([ind_u{:}]) = repmat(u_sim(:,ii),N_stages,1);
-        solver_initialization.ubw([ind_u{:}])  = repmat(u_sim(:,ii),N_stages,1);
+    if ii > 1 && settings.use_previous_solution_as_initial_guess
+        % TODO make this possible via solver interface directly
+        solver.problem.w0(dims.n_x+1:end) = res.w(dims.n_x+1:end);
     end
 
-    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
-    res = extract_results_from_solver(model, settings, sol);
-    time_per_iter = [time_per_iter; stats.cpu_time_total];
-    % verbose
-    if stats.complementarity_stats(end) > 1e-3
-        %         error('NLP Solver did not converge for the current FESD problem. \n')
-    end
-    simulation_time_pased  =  simulation_time_pased + model.T;
-    if print_level >=2
-        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',ii,N_sim+additional_residual_ingeration_step,simulation_time_pased,T_sim,time_per_iter(end));
-    end
-    % Store differential states
-    w_opt = full(sol.x);
-    diff_states = w_opt(ind_x);
-    alg_states = w_opt(ind_z_all);
-
-    diff_res = [diff_res;diff_states ];
-    alg_res = [alg_res;alg_states];
-
-
-    % step-size
-    h_opt = w_opt(ind_h);
-    % differential
-    x_opt_extended = w_opt(ind_x);
-    x_opt_extended  = reshape(x_opt_extended,n_x,length(x_opt_extended)/n_x);
-
-    % only bounadry value
-    if isequal(irk_representation,'integral')
-        x_opt  = res.x_opt(:,2:end);
-    elseif isequal(irk_representation, 'differential_lift_x')
-        x_opt  = res.x_opt(:,2:end);
-    else
-        x_opt  = res.x_opt(:,2:end);
-    end
-
-
-    switch dcs_mode
-        case 'Stewart'
-            alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
-            theta_opt_extended = [alg_states_extended(1:n_theta,:)];
-            lambda_opt_extended = [alg_states_extended(n_theta+1:2*n_theta,:)];
-            mu_opt_extended = [alg_states_extended(end-n_sys+1:end,:)];
-
-            theta_opt= theta_opt_extended(:,1:n_s:end);
-            lambda_opt= lambda_opt_extended(:,1:n_s:end);
-            mu_opt= mu_opt_extended(:,1:n_s:end);
-        case 'Step'
-            alg_states_extended = reshape(alg_states,n_z_all,length(alg_states)/n_z_all);
-            alpha_opt_extended = [alg_states_extended(1:n_alpha,:)];
-            lambda_0_opt_extended = [alg_states_extended(n_alpha+1:2*n_alpha,:)];
-            lambda_1_opt_extended = [alg_states_extended(2*n_alpha+1:3*n_alpha,:)];
-
-            if pss_lift_step_functions
-                if n_beta >0
-                    beta_opt_extended = [alg_states_extended(3*n_alpha+1:3*n_alpha+n_beta,:)];
-                end
-                if n_theta_step >0
-                    gamma_opt_extended = [alg_states_extended(3*n_alpha+n_beta+1:end,:)];
-                end
+    %% set initial guess
+    solver.set('x', {x0})
+    solver.set('x_left_bp', {x0})
+    if exist('initial_guess', 'var')
+        t_guess = t_current + cumsum([0; model.h_k * ones(settings.N_finite_elements, 1)]);
+        x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess,'makima');
+        lambda_normal_guess = interp1(initial_guess.t_grid, initial_guess.lambda_normal_traj, t_guess(2:end-1), 'makima');
+        %
+        x_init = cell(1, settings.N_finite_elements);
+        y_gap_init = cell(1, settings.N_finite_elements);
+        for j = 1:settings.N_finite_elements
+            x_init{j} = x_guess(j+1, :);
+            y_gap_init{j} = full(model.f_c_fun(x_init{j}));
+        end
+        solver.set('x', x_init);
+        solver.set('x_left_bp', x_init);
+        %
+        if isequal(settings.dcs_mode, 'CLS')
+            ind_v = dims.n_q + 1: 2*dims.n_q;
+            solver.set('lambda_normal', {0});
+            % Note : set this to zero
+            L_vn_init = {0*(x_init{end}(ind_v(1)) + model.e * x_init{end-1}(ind_v(1)))};
+            solver.set('L_vn', L_vn_init);
+            %
+            diff_v = diff(x_guess(:,ind_v(1)));
+            Lambda_normal_init = max(abs(diff_v));
+            % Note: this is a bit hacky..
+            if Lambda_normal_init < 2.0
+                Lambda_normal_init = 0.0;
+            else
+%                 keyboard
             end
-
-            alpha_opt= alpha_opt_extended(:,1:n_s:end);
-            lambda_0_opt= lambda_0_opt_extended(:,1:n_s:end);
-            lambda_1_opt= lambda_1_opt_extended(:,1:n_s:end);
-    end
-
-    % update initial guess and inital value
-    x0 = x_opt(:,end);
-    %     update clock state
-    if impose_terminal_phyisical_time
-        model.p_val(end) = model.p_val(end)+model.T;
-
-    end
-    solver_initialization.w0(1:n_x) = x0;
-
-    % TODO Set up homotopy solver to take p_val explicitly
-    if use_previous_solution_as_initial_guess
-        solver_initialization.w0(n_x+1:end) = w_opt(n_x+1:end);
-    end
-
-    % Store data
-    if use_fesd
-        h_vec = [h_vec;h_opt];
-    else
-        h_vec = [h_vec;h_k(1)*ones(N_stages*N_finite_elements(1),1)];
-    end
-    %sot
-    s_sot_res  = [s_sot_res,w_opt(ind_sot)];
-    %differntial.
-    x_res = [x_res, x_opt(:,end-N_finite_elements(1)*N_stages+1:end)];
-    x_res_extended = [x_res_extended,x_opt_extended(:,2:end)];
-
-    % algebraic
-    switch dcs_mode
-      case 'Stewart'
-        theta_res = [theta_res, theta_opt];
-        lambda_res = [lambda_res, lambda_opt];
-        mu_res = [mu_res, mu_opt];
-        theta_res_extended = [theta_res_extended,theta_opt_extended ];
-        lambda_res_extended = [lambda_res_extended,lambda_opt_extended];
-        mu_res_extended = [mu_res_extended,mu_opt_extended];
-
-      case 'Step'
-        alpha_res = [alpha_res, alpha_opt];
-        lambda_0_res = [lambda_0_res, lambda_0_opt];
-        lambda_1_res = [lambda_1_res, lambda_1_opt];
-
-        alpha_res_extended = [alpha_res_extended, alpha_opt_extended];
-        lambda_0_res_extended = [lambda_0_res_extended, lambda_0_opt_extended];
-        lambda_1_res_extended = [lambda_1_res_extended, lambda_1_opt_extended];
-    end
-
-    %stats
-    complementarity_stats  = [complementarity_stats; stats.complementarity_stats(end)];
-    homotopy_iteration_stats = [homotopy_iteration_stats;stats.homotopy_iterations];
-    %% plot during execution
-    if real_time_plot
-        if time_freezing
-            figure(100)
-            clf
-            %         t_temp = [0,cumsum(h_vec)'];
-            plot(x_res(end,:),x_res(1:end-1,:));
-            xlabel('$t$ [phyisical time]','Interpreter','latex');
-            ylabel('$x(t)$','Interpreter','latex');
-            grid on
-            xlim([0 T_sim]);
-            ylim([min(min(x_res(1:end-1,:)))-0.3 max(max(x_res(1:end-1,:)))+0.3])
-            hold on
-        else
-            figure(100)
-            clf
-            t_temp = [0,cumsum(h_vec)'];
-            plot(t_temp,x_res(:,1:end));
-            xlabel('$t$','Interpreter','latex');
-            ylabel('$x(t)$','Interpreter','latex');
-            grid on
-            xlim([0 T_sim]);
-            ylim([min(x_res(:))-0.3 max(x_res(:))+0.3])
-            hold on
+            % Lambda_normal_init = lambda_normal_guess;
+            solver.set('Lambda_normal', {Lambda_normal_init});
+            % disp(['init Lambda_normal', num2str(lambda_normal_guess)]);
+            solver.set('y_gap', y_gap_init);
         end
     end
 
+    %% solve
+    [sol, solver_stats] = solver.solve();
+    res = extract_results_from_solver(model, solver.problem, settings, sol);
+
+    %% handle failure -> try second initialization
+    if solver_stats.converged == 0
+        disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+        % solver.print_iterate(sol.W(:,end))
+        if settings.dcs_mode == "CLS"
+            disp('provided initial guess in integrator step did not converge, trying anther inital guess.');
+            solver.set('Lambda_normal', {7});
+            solver.set('lambda_normal', {0});
+            solver.set('y_gap', {0});
+            solver.set('Y_gap', {0});
+            solver.set('L_vn', {0});
+            [sol, solver_stats] = solver.solve();
+            res = extract_results_from_solver(model, solver.problem, settings, sol);
+            if solver_stats.converged == 0
+                disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+            end
+        end
+    elseif print_level >=2
+        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
+            ii, model.N_sim, t_current, model.T_sim, solver_stats.cpu_time_total);
+    end
+
+    %% gather results
+    if settings.store_integrator_step_results
+        sim_step_solver_results = [sim_step_solver_results,res];
+    end
+    time_per_iter = [time_per_iter; solver_stats.cpu_time_total];
+    constraint_violations = [constraint_violations, solver_stats.constraint_violation];
+    converged = [converged, solver_stats.converged];
+
+    %% Store data
+    % update results struct
+    for name=names
+        if name == 'x' || ~isfield(res, name)
+            continue
+        end
+        results.(name) = [results.(name), res.(name)];
+        if ~strcmp(name, 'h')
+            results.extended.(name) = [results.extended.(name), res.extended.(name)];
+        end
+    end
+    results.x = [results.x, res.x(:, 2:end)];
+    results.extended.x = [results.extended.x, res.extended.x(:, 2:end)];
+
+    % TODO: is there a better way to do this
+    results.s_sot = [results.s_sot, res.w(flatten_ind(solver.problem.ind_sot))];
+
+    if settings.dcs_mode == DcsMode.CLS
+        results.x_with_impulse = [results.x_with_impulse, res.x_with_impulse(:,2:end)];
+        % TODO maybe make solver take t0 and T_final as param?
+        results.t_with_impulse = [results.t_with_impulse, t_current + res.t_with_impulse(2:end)];
+    end
+
+    if solver_stats.converged == 0 && settings.break_simulation_if_infeasible
+        disp('solver did not converge and break_simulation_if_infeasible is True -> finish simulation with Failure!')
+        break
+    end
+    %% plot during execution
+    if real_time_plot
+        figure(100)
+        clf
+        grid on
+        hold on
+        xlim([0 T_sim]);
+        ylabel('$x(t)$','Interpreter','latex');
+        if settings.time_freezing
+            plot(results.x(end,:), results.x(1:end-1, :));
+            xlabel('$t$ [phyisical time]', 'Interpreter', 'latex');
+        else
+            t_temp = [0, cumsum(results.h)];
+            plot(t_temp, results.x(:, 1:end));
+            xlabel('$t$', 'Interpreter', 'latex');
+        end
+        ylim([min(min(results.x(1:end-1, :)))-0.3 max(max(results.x(1:end-1, :)))+0.3])
+    end
+
+    %% debug here before problem changes
+    % if ~isequal(sign(x0(3:4)), sign(res.x(3:4,end)))
+    %     disp('sign switch in velocity')
+    %     keyboard
+    % end
+
+    %% update inital value
+    x0 = res.x(:,end);
+    t_current = t_current + model.T;
+    % update clock state
+    if impose_terminal_phyisical_time
+        solver.problem.p0(end) = solver.problem.p0(end)+model.T;
+    end
 end
+
 total_time = sum(time_per_iter);
 %% Verbose
 fprintf('\n');
-fprintf('----------------------------------------------------------------------------------------------------------------------\n');
+fprintf('-----------------------------------------------------------------\n');
 if use_fesd
     fprintf( ['Simulation with the FESD ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 else
     fprintf( ['Simulation with the standard ' char(irk_scheme) ' with %d-RK stages completed.\n'],n_s);
 end
-fprintf( ['RK representation: ' char(irk_representation) '.\n']);
-% fprintf('Total integration steps: %d, nominal step-size h = %2.3f.\n',N_sim,h_sim);
-if additional_residual_ingeration_step
-    fprintf('--> + additional residual step to reach T_sim with  T_residual =  %2.3f.\n',T_residual);
-end
-%%
-% fprintf('---------------------------- Stats ---------------------------------------------------------\n');
-% fprintf('Total CPU time: %2.3f s.\nN_stg = %d, N_FE = %d.\n',sum(time_per_iter),N_stages,N_finite_elements(1));
-% fprintf('Max iteration time: %2.3f s.\nMin iteration time: %2.3f s.\n',max(time_per_iter),min(time_per_iter));
-% fprintf('Max complementarity residual: %2.3e.\nMin complementarity residual: %2.3e.\n',max(complementarity_stats),min(complementarity_stats));
-% fprintf('-----------------------------------------------------------------------------------------------\n\n');
-%%
-fprintf('---------------------------------------------- Stats summary----------------------------------------------------------\n');
+fprintf('---------------- Stats summary ----------------------------\n');
 fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
-fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n',N_sim,h_sim,N_stages,N_finite_elements(1),total_time,max(time_per_iter),min(time_per_iter),max(complementarity_stats),min(complementarity_stats));
-fprintf('----------------------------------------------------------------------------------------------------------------------\n\n');
+fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', N_sim, h_sim, settings.N_stages, settings.N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
+fprintf('-----------------------------------------------------------------\n\n');
+
 %% Output
+integrator_stats.complementarity_stats = complementarity_stats;
+integrator_stats.time_per_iter = time_per_iter;
+integrator_stats.homotopy_iteration_stats = homotopy_iteration_stats;
+integrator_stats.converged = converged;
 
-results.x_res  = x_res;
-% Output all stage values as well.
-results.x_res_extended  = x_res_extended;
-switch dcs_mode
-    case 'Stewart'
-        results.theta_res = theta_res;
-        results.lambda_res = lambda_res;
-        results.mu_res = mu_res;
-        results.theta_res_extended  = theta_res_extended;
-        results.lambda_res_extended  = lambda_res_extended;
-        results.mu_res_extended  = mu_res_extended;
-    case 'Step'
-        results.alpha_res = alpha_res;
-        results.lambda_0_res = lambda_0_res;
-        results.lambda_1_res = lambda_1_res;
-        results.alpha_res_extended = alpha_res_extended;
-        results.lambda_0_res_extended = lambda_0_res_extended;
-        results.lambda_1_res_extended = lambda_1_res_extended;
+results.t_grid = cumsum([0,results.h])';
+
+% generate fine t_grid
+tgrid_long = 0;
+for ii = 1:length(results.h)
+    for jj = 1:n_s
+        tgrid_long = [tgrid_long; results.t_grid(ii) + settings.c_irk(jj)*results.h(ii)];
+    end
 end
-stats.complementarity_stats   = complementarity_stats;
-stats.time_per_iter = time_per_iter;
-stats.homotopy_iteration_stats = homotopy_iteration_stats;
+results.extended.t_grid = tgrid_long;
 
-results.h_vec  = h_vec;
-results.s_sot_res = s_sot_res;
-results.t_grid = cumsum([0;h_vec])';
-
-% full diff and alg variables (e.g. for initalizing a solver)
-results.diff_res = diff_res;
-results.alg_res = alg_res;
-
-varargout{1} = results;
-varargout{2} = stats;
-varargout{3} = model;
-varargout{4} = settings;
-varargout{5} = solver;
-varargout{6} = solver_initialization;
+if settings.store_integrator_step_results
+    results.sim_step_solver_results = sim_step_solver_results;
+end
 end
 

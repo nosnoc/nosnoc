@@ -1,19 +1,21 @@
 function [model] = tank_cascade()
 import casadi.*
+model = NosnocModel();
 %% Inital value
-x0 = [0.1;0.1;0.1];
-u0 = [0;0;0;0]; % guess for control variables
+model.x0 = [0.1;0.1;0.1];
+model.u0 = [0;0;0;0]; % guess for control variables
 %% Variable defintion
 % differential states
 L1 = SX.sym('L1');
 L2 = SX.sym('L2');
 L3 = SX.sym('L3');
 x = [L1;L2;L3];
+model.x = x;
 n_x = 3;
 
 % lower and upper bounds
-lbx = 1e-3*ones(n_x,1);
-ubx = inf*ones(n_x,1);
+model.lbx = 1e-3*ones(n_x,1);
+model.ubx = inf*ones(n_x,1);
 
 %% Control
 wu0 = SX.sym('wu0');
@@ -21,10 +23,11 @@ wu1 = SX.sym('wu1');
 wu2 = SX.sym('wu2');
 wu3 = SX.sym('wu3');
 u = [wu0;wu1;wu2;wu3];
-n_u = length(u);
+model.u = u;
+n_u = length(model.u);
 % Guess and Bounds
-lbu  = 0.25*ones(n_u,1);
-ubu  = 1.25*ones(n_u,1);
+model.lbu  = 0.25*ones(n_u,1);
+model.ubu  = 1.25*ones(n_u,1);
 % Parameters
 H1 = -0.5;
 H2 = -0.5;
@@ -45,8 +48,8 @@ c2 = -(L3-H3);
 S1 = [1;-1];
 S2 = [1;-1];
 % c = [c1;c2];
-c = {c1,c2};
-S = {S1,S2};
+model.c = {c1,c2};
+model.S = {S1,S2};
 
 F_input = 0;
 f11 = [wu0*k0-wu1*k1*sqrt(L1-L2-H2);wu1*k1*sqrt(L1-L2-H2);-wu3*k3*sqrt(L3)];
@@ -57,16 +60,10 @@ f22 = [0;-wu2*k2*sqrt(L2);wu2*k2*sqrt(L2)];
 % in matrix form
 F1 = [f11 f12];
 F2 = [f21 f22];
-F = {F1,F2};
+model.F = {F1,F2};
 
 %% Objective
-f_q = (x-ones(n_x,1)*0.75)'*(x-ones(n_x,1)*0.75);
-f_q_T = 0;
-
-%% Populate model
-names = who;
-for ii = 1:length(names)
-    eval([ 'model.' names{ii} '=' names{ii} ';'])
-end
+model.f_q = (x-ones(n_x,1)*0.75)'*(x-ones(n_x,1)*0.75);
+model.f_q_T = 0;
 
 end

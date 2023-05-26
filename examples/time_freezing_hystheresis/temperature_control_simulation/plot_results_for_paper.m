@@ -32,9 +32,9 @@ unfold_struct(stats,'base');
 unfold_struct(model,'base');
 
 tgrid = cumsum([0; h_vec(1:1:end)]);
-x1_opt = x_res(1,:);
-x2_opt = x_res(2,:);
-x3_opt = x_res(3,:);
+x1_opt = results.x(1,:);
+x2_opt = results.x(2,:);
+x3_opt = results.x(3,:);
 y1 = 18;
 y2 = 20;
 theta1 = 18;

@@ -3,12 +3,14 @@ close all
 clc;
 import casadi.*
 
-%%
-[settings] = NosnocOptions();  
+%% init nosnoc
+settings = NosnocOptions();  
+model = NosnocModel();
+%% settings
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';
-settings.opts_ipopt.ipopt.max_iter = 1e3;
+settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
 settings.print_level = 2;
 settings.N_homotopy = 6;
 settings.time_freezing = 1;
@@ -19,30 +21,32 @@ settings.stagewise_clock_constraint = 0;
 g = 10;
 vertical_force = 0;
 % Symbolic variables and bounds
-q = SX.sym('q',2); v = SX.sym('v',2); 
+q = SX.sym('q',2); 
+v = SX.sym('v',2); 
+
 model.x = [q;v]; 
 model.e = 0;
-model.mu = 0;
-model.n_dim_contact = 2;
+model.mu_f = 0;
+model.dims.n_dim_contact = 2;
 model.a_n = g;
 model.x0 = [0.8;0.5;-1.5;-1]; 
 model.f_v = [0;-g];
 model.f_c = [q(1);q(2)];
-%% Simulation setings
+%% Simulation settings
 N_FE = 3;
 T_sim = 1.5;
 N_sim = 40;
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,model] = integrator_fesd(model,settings);
+[results,stats,solver] = integrator_fesd(model,settings);
 %% read and plot results
 unfold_struct(results,'base');
-qx = x_res(1,:); qy = x_res(2,:);
-vx = x_res(3,:); vy = x_res(4,:);
-t_opt = x_res(5,:);
+qx = results.x(1,:); qy = results.x(2,:);
+vx = results.x(3,:); vy = results.x(4,:);
+t_opt = results.x(5,:);
 figure
 subplot(121)
 plot(qx,qy,'LineWidth',2.5);

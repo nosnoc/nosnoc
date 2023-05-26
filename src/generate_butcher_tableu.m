@@ -396,7 +396,7 @@ switch irk_scheme
         error('Lobatto-IIIC IRK schemes avilable only for n_s =  {2,3,4,5}.');
     end
 
-  case 'Explicit-RK'
+  case IRKSchemes.EXPLICIT_RK
     switch n_s
       case 1
         % explicit Euler

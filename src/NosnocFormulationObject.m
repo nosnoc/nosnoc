@@ -74,7 +74,7 @@ classdef NosnocFormulationObject < handle
                 initial
                 error("mismatched dims")
             end
-            
+
             n = size(symbolic, 1);
             n_w = size(obj.w, 1);
 
@@ -103,19 +103,29 @@ classdef NosnocFormulationObject < handle
             addOptional(p, 'ub', []);
             addOptional(p, 'type', []);
             parse(p, obj, symbolic, varargin{:});
-            
+
             n = length(symbolic);
             n_g = length(obj.g);
 
             if ismember('lb', p.UsingDefaults)
                 lb = zeros(n, 1);
-            else
+            elseif length(p.Results.lb) == 1
+                lb = p.Results.lb * ones(n, 1);
+            elseif length(p.Results.lb) == n
                 lb = p.Results.lb;
+            else
+                disp("addConstraint: dimension of lb does not match symbolic")
+                keyboard
             end
             if ismember('ub', p.UsingDefaults)
                 ub = zeros(n, 1);
-            else
+            elseif length(p.Results.ub) == 1
+                ub = p.Results.ub * ones(n, 1);
+            elseif length(p.Results.ub) == n
                 ub = p.Results.ub;
+            else
+                disp("addConstraint: dimension of ub does not match symbolic")
+                keyboard
             end
 
             obj.g = vertcat(obj.g, symbolic);
