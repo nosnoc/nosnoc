@@ -5,14 +5,18 @@ import casadi.*
 
 %%
 plot_results = 1;
-[settings] = NosnocOptions();  
+%%
+settings = NosnocOptions();  
+model = NosnocModel();
+%%
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.print_level = 2;
-settings.N_homotopy = 8;
+settings.print_level = 3;
+settings.N_homotopy = 15;
 settings.use_fesd = 1;
 settings.time_freezing = 1;
+settings.comp_tol = 1e-9;
 settings.stagewise_clock_constraint = 0;
 settings.impose_terminal_phyisical_time = 0;
 settings.pss_lift_step_functions = 0;
@@ -41,7 +45,6 @@ p_com = [qx;qy];
 p_left = p_com-0.5*l*[cos(theta);sin(theta)];
 p_right = p_com+0.5*l*[cos(theta);sin(theta)];
 
-model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0;
 model.mu = 0.0;
@@ -58,8 +61,8 @@ N_FE = 2;
 T_sim = 0.8;
 N_sim = 30;
 model.T_sim = T_sim;
-model.N_FE = N_FE;
 model.N_sim = N_sim;
+settings.N_finite_elements = N_FE;
 
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator

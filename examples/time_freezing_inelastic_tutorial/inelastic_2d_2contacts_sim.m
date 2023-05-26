@@ -3,8 +3,10 @@ close all
 clc;
 import casadi.*
 
-%%
-[settings] = NosnocOptions();  
+%% init nosnoc
+settings = NosnocOptions();  
+model = NosnocModel();
+%% settings
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';
@@ -19,9 +21,9 @@ settings.stagewise_clock_constraint = 0;
 g = 10;
 vertical_force = 0;
 % Symbolic variables and bounds
-q = SX.sym('q',2); v = SX.sym('v',2); 
+q = SX.sym('q',2); 
+v = SX.sym('v',2); 
 
-model = NosnocModel();
 model.x = [q;v]; 
 model.e = 0;
 model.mu = 0;
@@ -35,7 +37,7 @@ N_FE = 3;
 T_sim = 1.5;
 N_sim = 40;
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
