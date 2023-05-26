@@ -12,7 +12,8 @@ save(ref_sol_filename, "t_grid_ref", "x_traj_ref", "n_bounces_ref");
 % load(ref_sol_filename)
 
 
-for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE] %, IRKSchemes.RADAU_IIA]
+% for irk_scheme = [IRKSchemes.RADAU_IIA]
+for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE]
     %%
     x_ref = x_traj_ref(end, :)';
     
@@ -66,10 +67,12 @@ for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE] %, IRKSchemes.RADAU_IIA]
 
     set(gca, 'YScale', 'log');
     set(gca, 'XScale', 'log');
-    xlabel('step size $h$','interpreter','latex');
+    xlabel('time step $\bar{h}$','interpreter','latex');
     ylabel('error $E(T)$','interpreter','latex');
     grid on
-    
+    all_h_vals = horzcat(h_values{:});
+    xlim([min(all_h_vals) max(all_h_vals)])
+    ylim([1e-10, 1e2])
     
     % % triangle
     % r = 7;
@@ -84,12 +87,15 @@ for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE] %, IRKSchemes.RADAU_IIA]
     % loglog([x2 x3], [y2 y3],'k','LineWidth',1.2)
     % loglog([x1 x2], [y1 y3],'k','LineWidth',1.2)
     
-    legend(labels, 'interpreter','latex','Location','southeast');
+    legend(labels, 'interpreter','latex','Location','northwest');
     
     set(gcf, 'Color', 'w');
     set(gca,'TickLabelInterpreter','latex');
     filename = strcat('order_plot_', string(irk_scheme), '.pdf');
     export_fig(filename)
+
+    fail_percentage = 100*(1 - (length(all_h_vals) / (length(NSIM_VALUES) * length(NS_VALUES))));
+    disp(strcat('excluded ', num2str(fail_percentage, '%.3f'), '% of settings.'))
 
 end
 
