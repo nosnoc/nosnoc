@@ -6,7 +6,7 @@ close all
 settings = NosnocOptions();
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 % settings.irk_representation = 'differential';
-settings.n_s = 1;
+settings.n_s = 3;
 settings.print_level = 3;
 % settings.N_homotopy = 8;
 settings.cross_comp_mode = 1;
@@ -52,7 +52,7 @@ model.f_c = q(1)-R;
 %% Simulation settings
 N_FE = 2;
 T_sim = 1;
-N_sim = 722;
+N_sim = 200;
 model.T_sim = T_sim;
 settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;

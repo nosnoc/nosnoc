@@ -10,7 +10,7 @@ settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 1;
 settings.time_freezing = 1;
 settings.N_homotopy = 6;
-settings.homotopy_update_rule = 'superlinear';
+% settings.homotopy_update_rule = 'superlinear';
 %% Generate Model
 % angulary velocity of reference
 omega = -2*pi; % no impacts
