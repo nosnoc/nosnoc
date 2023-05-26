@@ -7,8 +7,10 @@ import casadi.*
 J = 1; % no frictioinal impulse
 J = 1/32; % frictional impulse apperas
 above_ground = 0.1;
-%%
-[settings] = NosnocOptions();  
+%% init nosnoc
+settings = NosnocOptions();  
+model = NosnocModel();
+%% settings
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.dcs_mode = 'Step';
@@ -20,13 +22,12 @@ settings.cross_comp_mode = 1;
 settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 settings.time_freezing = 1;
 %%
-model = NosnocModel();
+
 model.e = 0;
 model.mu = 1;
 model.dims.n_dim_contact = 2;
 %% the dynamics
-model.n_q = 3;
-model.g = -9.81*1;
+
 model.a_n = 100;
 qx = MX.sym('qx',1);
 qy = MX.sym('qy',1);
