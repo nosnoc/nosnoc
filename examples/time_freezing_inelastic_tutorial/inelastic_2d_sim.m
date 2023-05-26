@@ -3,11 +3,13 @@ clear all;
 clc;
 import casadi.*
 close all
+%% init nosnoc
+settings = NosnocOptions();  
+model = NosnocModel();
 %%
-[settings] = NosnocOptions();  
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 2;
-settings.N_homotopy = 6;
+settings.N_homotopy = 15;
 settings.cross_comp_mode = 8;
 settings.time_freezing = 1;
 settings.impose_terminal_phyisical_time = 1;
@@ -19,8 +21,9 @@ settings.pss_lift_step_functions = 0;
 g = 10;
 vertical_force = 0;
 % Symbolic variables and bounds
-q = SX.sym('q',2); v = SX.sym('v',2);
-model = NosnocModel();
+q = SX.sym('q',2); 
+v = SX.sym('v',2);
+
 model.x = [q;v]; 
 model.e = 0;
 model.mu = 0.3;
@@ -37,7 +40,7 @@ N_FE = 5;
 T_sim = 1.5;
 N_sim = 20;
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator

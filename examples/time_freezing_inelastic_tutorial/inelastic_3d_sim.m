@@ -2,8 +2,10 @@ clear all;
 clear all;
 clc;
 import casadi.*
-%%
-[settings] = NosnocOptions();  
+%% init nosnoc
+settings = NosnocOptions();  
+model = NosnocModel();
+%% settings
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.mpcc_mode = MpccMode.Scholtes_ineq;
@@ -16,12 +18,12 @@ settings.impose_terminal_phyisical_time  = 1;
 settings.stagewise_clock_constraint = 0;
 settings.nonsmooth_switching_fun = 1;
 settings.pss_lift_step_functions = 0;
+settings.use_previous_solution_as_initial_guess = 0;
 %%
 g = 10;
 % Symbolic variables and bounds
 q = SX.sym('q',3); 
 v = SX.sym('v',3);
-model = NosnocModel();
 model.e = 0;
 model.mu = 0.2;
 model.dims.n_dim_contact = 3;
@@ -38,9 +40,9 @@ N_finite_elements = 3;
 T_sim = 3;
 N_sim = 20;
 model.T_sim = T_sim;
-model.N_FE = N_finite_elements;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
+settings.N_finite_elements = N_finite_elements;
+
 %% Call FESD Integrator
 [results,stats,solver] = integrator_fesd(model,settings);
 %%

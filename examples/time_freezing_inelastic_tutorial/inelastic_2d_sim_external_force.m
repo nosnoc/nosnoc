@@ -2,8 +2,10 @@ clear all;
 clc;
 import casadi.*
 close all
-%%
-[settings] = NosnocOptions();
+%% init nosnoc
+settings = NosnocOptions();
+model = NosnocModel();
+%% settings
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.print_level = 2;
@@ -21,7 +23,6 @@ vertical_force = 0;
 q = SX.sym('q',2); v = SX.sym('v',2); 
 u = SX.sym('u',2);
 
-model = NosnocModel();
 model.x = [q;v];
 model.u = u;
 model.e = 0;
@@ -39,7 +40,7 @@ T_sim = 1.5;
 N_sim = 40;
 u_sim = 1*ones(2,N_sim);
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
