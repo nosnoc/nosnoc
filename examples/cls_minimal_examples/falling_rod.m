@@ -21,8 +21,9 @@ settings.print_level = 3;
 settings.N_homotopy = 10;
 settings.cross_comp_mode = 1;
 settings.sigma_0 = 1e0;
-settings.comp_tol = 1e-6;
+settings.comp_tol = 1e-5;
 settings.print_details_if_infeasible = 0;
+settings.break_simulation_if_infeasible = 0;
 %%
 model = NosnocModel();
 model.e = 0;
@@ -53,7 +54,7 @@ yc_right = qy+l/2*cos(qtheta);
 xc_right = qx+l/2*sin(qtheta);
 model.f_v = [0;-g;0];
 model.f_c = [yc_left;yc_right];
-model.J_tangent = xc_left.jacobian(q)';
+model.J_tangent = [xc_left.jacobian(q)',xc_right.jacobian(q)'];
 model.D_tangent = [xc_left.jacobian(q)',-xc_left.jacobian(q)'];
 
 % tangent
