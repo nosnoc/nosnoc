@@ -204,7 +204,7 @@ classdef NosnocProblem < NosnocFormulationObject
             % CLS
             obj.ind_lambda_normal = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
             obj.ind_lambda_tangent = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_y_gap = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+right_ygap);
+            obj.ind_y_gap = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+right_ygap+rbp_allowance);
             % friction multipliers and lifting
             % conic
             obj.ind_gamma =  cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
