@@ -31,9 +31,9 @@ if settings.use_fesd
     h_opt = w_opt(flatten_ind(problem.ind_h))';
 else
     h_opt = [];
-    if settings.time_optimal_problem && ~settings.use_speed_of_time_variables
-        T = T_opt;
-    end
+    % if settings.time_optimal_problem && ~settings.use_speed_of_time_variables
+    %     T = T_opt;
+    % end
     for ii = 1:settings.N_stages
         h_opt = [h_opt,model.T/(settings.N_stages*settings.N_finite_elements(ii))*ones(1, model.settings.N_finite_elements(ii))];
     end
@@ -63,7 +63,7 @@ end
 ind_t_grid_u = cumsum([1; settings.N_finite_elements]);
 
 if settings.dcs_mode == DcsMode.CLS
-    x_with_impulse = [x0];
+    x_with_impulse = x0;
     t_with_impulse = kron(t_grid, ones(2,1));
     for ii=1:size(results.structured.x,1)
         for jj=1:size(results.structured.x,2)

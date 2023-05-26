@@ -163,7 +163,7 @@ classdef NosnocSolver < handle
                     end
                     % Otherwise we assume that we are initializing via a flat array and we simply check for the same length
                 else
-                    if ndims(val) == 2 && length(val) == length(flat_ind)
+                    if ismatrix(val) && length(val) == length(flat_ind)
                         obj.problem.w0(flat_ind) = val;
                     else
                         error('nosnoc: set should be a cell array or a flat array')
@@ -200,7 +200,7 @@ classdef NosnocSolver < handle
 
             % Initialize Results struct
             results = struct;
-            results.W = [w0];
+            results.W = w0;
             results.nlp_results = [];
 
             % homotopy loop
@@ -301,15 +301,14 @@ classdef NosnocSolver < handle
         end
 
         function converged = is_converged(obj, stats)
-            settings = obj.settings;
-            if strcmp(settings.nlpsol, 'ipopt')
+            if strcmp(obj.settings.nlpsol, 'ipopt')
                 last_stats = stats.solver_stats(end);
                 converged = 0;
                 if isfield(last_stats, 'iterations')
                     inf_pr = last_stats.iterations.inf_pr(end);
                     inf_du = last_stats.iterations.inf_du(end);
-                    if inf_pr < settings.opts_casadi_nlp.ipopt.tol && inf_du < settings.opts_casadi_nlp.ipopt.tol ...
-                            && stats.complementarity_stats(end) < 10 * settings.comp_tol
+                    if inf_pr < obj.settings.opts_casadi_nlp.ipopt.tol && inf_du < obj.settings.opts_casadi_nlp.ipopt.tol ...
+                            && stats.complementarity_stats(end) < 10 * obj.settings.comp_tol
                         converged = 1;
                     end
                 else
@@ -376,8 +375,8 @@ classdef NosnocSolver < handle
                               case 'Plain'
                                 % no extra vars
                               case {'Abs','Lp'}
-                                p_vt_00 = [p_vt_00;max(v_ti0,0)];
-                                n_vt_00 = [n_vt_00;max(-v_ti0,0)];
+                                p_vt_00 = [p_vt_00; max(v_ti0,0)];
+                                n_vt_00 = [n_vt_00; max(-v_ti0,0)];
                             end
                         end
                     end
@@ -450,9 +449,9 @@ classdef NosnocSolver < handle
 
         end
         function print_solver_stats(obj, results, stats)
-            model = obj.model;
-            dims = model.dims;
-            settings = obj.settings;
+            % model = obj.model;
+            % dims = model.dims;
+            % settings = obj.settings;
 
             % fprintf('\n---------------------------------------------- Stats summary--------------------------\n');
             % if stats.cpu_time_total < 60
