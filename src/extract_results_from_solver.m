@@ -35,7 +35,7 @@ else
     %     T = T_opt;
     % end
     for ii = 1:settings.N_stages
-        h_opt = [h_opt,model.T/(settings.N_stages*settings.N_finite_elements(ii))*ones(1, model.settings.N_finite_elements(ii))];
+        h_opt = [h_opt,model.T/(settings.N_stages*settings.N_finite_elements(ii))*ones(1, settings.N_finite_elements(ii))];
     end
 end
 results.h = h_opt;
