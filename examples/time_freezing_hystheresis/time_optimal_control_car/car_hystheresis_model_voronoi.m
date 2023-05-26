@@ -27,9 +27,12 @@ v = SX.sym('v');
 L = SX.sym('L');
 w = SX.sym('w');
 t = SX.sym('t');
-model.x = [q;v;L;w;t];
+x = [q;v;L;w;t];
 % controls
-model.u = SX.sym('u');
+u= SX.sym('u');
+
+model.x = x;
+model.u = u;
 
 % Bounds on x and u
 model.lbx = -[inf;0;inf;inf;inf];
@@ -52,7 +55,7 @@ g_2 = norm([psi;w]-z2)^2;
 g_3 = norm([psi;w]-z3)^2;
 g_4 = norm([psi;w]-z4)^2;
 
-model.g_ind = [g_1;g_2;g_3;g_4];
+g_ind = [g_1;g_2;g_3;g_4];
 
 % modes of the ODEs layers
 f_A = [v;u;Pn;0;1];

@@ -41,20 +41,23 @@ vy = SX.sym('vy');
 t = SX.sym('t');
 q = [qx;qy];
 v = [vx;vy];
-model.x = [q;v;t];
+x = [q;v;t];
 n_x = length(model.x);
 n_q = 2;
 model.lbx = -inf*ones(n_x,1);
 model.ubx = inf*ones(n_x,1);
+
+model.x = x;
 %% control
 ux = SX.sym('ux');
 uy = SX.sym('uy');
-model.u = [ux;uy];
+u = [ux;uy];
 n_u = 2;
 model.u0 = [0;0];
 umax = inf;
 model.lbu = -umax*ones(n_u,1);
 model.ubu = umax*ones(n_u,1);
+model.u = u;
 %% Switching functions
 % distance of constraints to (0,0) 
 unit_size = 0.05*R*1;

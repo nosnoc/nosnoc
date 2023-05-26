@@ -25,10 +25,10 @@ plot(0:0.1:t_fin,0:0.1:t_fin,'r-')
 xlabel('Numerical time - $\tau$','Interpreter','latex');
 ylabel('Physical time - $t$','Interpreter','latex');
 hold on
-for ii= 1:N_finite_elements(1):length(t_grid)
+for ii= 1:settings.N_finite_elements(1):length(t_grid)
     xline(t_grid(ii),'k--')
 end
-s_sot_opt = results.w_opt(model.ind_sot);
+s_sot_opt = results.w(solver.problem.ind_sot);
 subplot(122)
 stairs(t_grid_u,[nan;s_sot_opt],'k','linewidth',1.5);
 ylim([0.0 max(s_sot_opt)+1])
