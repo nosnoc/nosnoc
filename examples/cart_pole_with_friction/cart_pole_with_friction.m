@@ -49,6 +49,7 @@ settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.N_homotopy = 8;
 settings.homotopy_update_rule = 'superlinear';
+settings.dcs_mode = 'Step';
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better performance:
 % settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 

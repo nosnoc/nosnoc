@@ -51,7 +51,8 @@ model.x = x;
 %% control
 ux = SX.sym('ux');
 uy = SX.sym('uy');
-u = [ux;uy];
+model.u = [ux;uy];
+u = model.u;
 n_u = 2;
 model.u0 = [0;0];
 umax = inf;

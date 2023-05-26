@@ -110,10 +110,10 @@ xlim([0 t_opt(end)])
 ylim ([-11 11])
 
 subplot(326)
-stairs(t_opt(1:N_finite_elements(1):end),[nan,results.u(1,:)],'linewidth',linewidth)
+stairs(t_opt(1:settings.N_finite_elements(1):end),[nan,results.u(1,:)],'linewidth',linewidth)
 hold on
 grid on
-stairs(t_opt(1:N_finite_elements(1):end),[nan,results.u(2,:)],'linewidth',linewidth)
+stairs(t_opt(1:settings.N_finite_elements(1):end),[nan,results.u(2,:)],'linewidth',linewidth)
 xlabel('$t$','Interpreter','latex');
 ylabel('$u(t)$','Interpreter','latex');
 legend({'$u_1(t)$','$u_2(t)$'},'Interpreter','latex','location','north');

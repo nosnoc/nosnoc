@@ -147,9 +147,9 @@ model.D_tangent = D_tangent;
 
 model.e =  [0.5 0.0 0.0];
 if no_friction
-    model.mu = 0.0;
+    model.mu_f = 0.0;
 else
-    model.mu = [0.1 0.3 0.3];
+    model.mu_f = [0.1 0.3 0.3];
 end
 % box constraints on controls and states
 model.lbu = u_min;

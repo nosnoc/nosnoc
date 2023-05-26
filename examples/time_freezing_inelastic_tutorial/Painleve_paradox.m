@@ -24,7 +24,7 @@ settings.time_freezing = 1;
 %%
 
 model.e = 0;
-model.mu = 1;
+model.mu_f = 1;
 model.dims.n_dim_contact = 2;
 %% the dynamics
 

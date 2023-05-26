@@ -26,7 +26,7 @@ v = SX.sym('v',2);
 
 model.x = [q;v]; 
 model.e = 0;
-model.mu = 0.3;
+model.mu_f = 0.3;
 model.a_n = g;
 model.a_n = 20;
 model.x0 = [0;1;3;0]; 

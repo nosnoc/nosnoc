@@ -42,6 +42,7 @@ classdef NosnocModel < handle
         c         % Switching functions
         S         % Sign matrix
         g_Stewart % Stewart indicator functions
+        g_ind
         
         f_q        % Stage cost
         f_q_T      % Terminal cost
@@ -260,7 +261,7 @@ classdef NosnocModel < handle
             g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i, 0 = c(x)-lambda_p+lambda_n
             g_convex = []; % equation for the convex multiplers 1 = e' \theta
             g_alg_cls = []; % algebraic equations in a CLS
-            f_comp_residual = 0; % the orthogonality conditions diag(\theta) \lambda = 0.
+            f_comp_residual = 0; % the orthogonality cond)itions diag(\theta) \lambda = 0.
             g_impulse = [];
             lambda00_expr =[];
             for ii = 1:dims.n_sys
@@ -309,10 +310,10 @@ classdef NosnocModel < handle
                             for ii = 1:dims.n_contacts
                                 ind_temp = dims.n_t*ii-(dims.n_t-1):dims.n_t*ii;
                                 g_alg_cls  = [g_alg_cls;-obj.J_tangent(:,ind_temp)'*obj.v - 2*obj.gamma(ii)*obj.lambda_tangent(ind_temp);...
-                                    obj.beta(ii)-((obj.mu(ii)*obj.lambda_normal(ii))^2-norm(obj.lambda_tangent(ind_temp))^2)];
+                                    obj.beta(ii)-((obj.mu_f(ii)*obj.lambda_normal(ii))^2-norm(obj.lambda_tangent(ind_temp))^2)];
                                 g_impulse = [g_impulse;
                                     -obj.J_tangent(:,ind_temp)'*v_post_impact - 2*obj.Gamma(ii)*obj.Lambda_tangent(ind_temp);...
-                                    obj.Beta - ((obj.mu(ii)*obj.Lambda_normal(ii))^2- norm(obj.Lambda_tangent(ind_temp))^2)];
+                                    obj.Beta - ((obj.mu_f(ii)*obj.Lambda_normal(ii))^2- norm(obj.Lambda_tangent(ind_temp))^2)];
 
                                 if ~isequal(settings.conic_model_switch_handling,'Plain')
                                     % equality constraints for pos and neg parts of the tangetial velocity
@@ -325,9 +326,9 @@ classdef NosnocModel < handle
                             % impulse lifting equations
                             for ii = 1:dims.n_contacts
                                 ind_temp = dims.n_t*ii-(dims.n_t-1):dims.n_t*ii;
-                                g_alg_cls  = [g_alg_cls;obj.beta_d(ii)-(obj.mu(ii)*obj.lambda_normal(ii) - sum(obj.lambda_tangent(ind_temp)));...
+                                g_alg_cls  = [g_alg_cls;obj.beta_d(ii)-(obj.mu_f(ii)*obj.lambda_normal(ii) - sum(obj.lambda_tangent(ind_temp)));...
                                     obj.delta_d(ind_temp) - (obj.D_tangent(:,ind_temp)'*obj.v + obj.gamma_d(ii))];
-                                g_impulse = [g_impulse;obj.Beta_d - (obj.mu(ii)*obj.Lambda_normal(ii)-sum(obj.Lambda_tangent(ind_temp)));...
+                                g_impulse = [g_impulse;obj.Beta_d - (obj.mu_f(ii)*obj.Lambda_normal(ii)-sum(obj.Lambda_tangent(ind_temp)));...
                                     obj.Delta_d(ind_temp)- (obj.D_tangent(:,ind_temp)'*v_post_impact + obj.Gamma_d(ii))];
                             end
                         end
@@ -783,6 +784,7 @@ classdef NosnocModel < handle
             else
                 error('nosnoc: Please provide the state vector x, a CasADi symbolic variable.');
             end
+            settings.casadi_symbolic_mode = ['casadi.' obj.x(1).type_name()];
 
             %% Check is u provided
             if size(obj.u, 1) ~= 0
@@ -1129,24 +1131,24 @@ classdef NosnocModel < handle
                 dims.n_contacts = length(obj.f_c);
 
                 % coefficient of friction checks
-                if size(obj.mu, 1) ~= 0
-                    if length(obj.mu) ~= 1 && length(obj.mu) ~= dims.n_contacts
-                        error('The length of model.mu has to be one or match the length of model.f_c')
+                if size(obj.mu_f, 1) ~= 0
+                    if length(obj.mu_f) ~= 1 && length(obj.mu_f) ~= dims.n_contacts
+                        error('The length of model.mu_f has to be one or match the length of model.f_c')
                     end
-                    if length(obj.mu) == 1
-                        obj.mu = obj.mu*ones(dims.n_contacts,1);
+                    if length(obj.mu_f) == 1
+                        obj.mu_f = obj.mu_f*ones(dims.n_contacts,1);
                     end
 
-                    if any(obj.mu > 0)
+                    if any(obj.mu_f > 0)
                         obj.friction_exists = 1;
                     else
                         obj.friction_exists = 0;
                     end
                 else
-                    obj.mu = zeros(dims.n_contacts,1);
+                    obj.mu_f = zeros(dims.n_contacts,1);
                     fprintf('nosnoc: Coefficients of friction mu not provided, setting it to zero for all contacts. \n')
                 end
-                if any(obj.mu<0)
+                if any(obj.mu_f<0)
                     error('nosnoc: The coefficients of friction mu should be nonnegative.')
                 end
 
@@ -1166,7 +1168,6 @@ classdef NosnocModel < handle
                 end
 
                 % dimensions and state space split
-                settings.casadi_symbolic_mode = ['casadi.' obj.x(1).type_name()];
                 if mod(dims.n_x,2)
                     dims.n_q = (dims.n_x-1)/2;
                 else
@@ -1275,12 +1276,13 @@ classdef NosnocModel < handle
                         if isequal(settings.dcs_mode,'Stewart')
                             if ~isempty(obj.g_ind)
                                 if ~iscell(obj.g_ind)
-                                    g_ind = {obj.g_ind};
+                                    obj.g_ind = {obj.g_ind};
                                 end
 
                                 for ii = 1:dims.n_sys
                                     % discriminant functions
-                                    obj.g_Stewart{ii} = g_ind{ii};
+                                    obj.g_Stewart{ii} = obj.g_ind{ii};
+                                    obj.c{ii} = zeros(1,settings.casadi_symbolic_mode);
                                     c_all = [c_all; zeros(1,settings.casadi_symbolic_mode)];
                                 end
                             else
@@ -1430,23 +1432,23 @@ classdef NosnocModel < handle
                 end
 
                 % coefficient of friction
-                if isempty(obj.mu)
-                    obj.mu = 0;
+                if isempty(obj.mu_f)
+                    obj.mu_f = 0;
                     fprintf('nosnoc: Coefficients of friction mu not provided, setting it to zero for all contacts. \n')
                 end
 
-                if length(obj.mu(:)) ~= 1 && length(obj.mu(:)) ~= dims.n_contacts
+                if length(obj.mu_f(:)) ~= 1 && length(obj.mu_f(:)) ~= dims.n_contacts
                     error('nosnoc: Vector mu has to have length 1 or n_contacts.')
                 end
 
-                if any(obj.mu<0)
+                if any(obj.mu_f<0)
                     error('nosnoc: The coefficients of friction mu should be nonnegative.')
                 end
 
-                if any(obj.mu)>0
+                if any(obj.mu_f)>0
                     obj.friction_exists = 1;
-                    if length(obj.mu(:)) == 1
-                        obj.mu = ones(dims.n_contacts,1)*obj.mu;
+                    if length(obj.mu_f(:)) == 1
+                        obj.mu_f = ones(dims.n_contacts,1)*obj.mu_f;
                     end
                 else
                     obj.friction_exists = 0;
@@ -1627,16 +1629,16 @@ classdef NosnocModel < handle
                     f_aux_normal = [f_q_dynamics;inv_M_aux*obj.J_normal*obj.a_n;zeros(1,dims.n_contacts)];
 
                     for ii = 1:dims.n_contacts
-                        if obj.friction_exists && obj.mu(ii)>0
+                        if obj.friction_exists && obj.mu_f(ii)>0
                             % auxiliary tangent;
                             if dims.n_dim_contact == 2
                                 v_tangent_ii = obj.J_tangent(:,ii)'*obj.v;
-                                f_aux_pos_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(obj.J_normal(:,ii)-obj.J_tangent(:,ii)*(obj.mu(ii)))*obj.a_n;0]; % for v>0
-                                f_aux_neg_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(obj.J_normal(:,ii)+obj.J_tangent(:,ii)*(obj.mu(ii)))*obj.a_n;0]; % for v<0
+                                f_aux_pos_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(obj.J_normal(:,ii)-obj.J_tangent(:,ii)*(obj.mu_f(ii)))*obj.a_n;0]; % for v>0
+                                f_aux_neg_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(obj.J_normal(:,ii)+obj.J_tangent(:,ii)*(obj.mu_f(ii)))*obj.a_n;0]; % for v<0
                             else
                                 v_tangent_ii = v_tangent(:,ii);
-                                f_aux_pos_ii = [f_q_dynamics(:,ii);inv_M_aux*(obj.J_normal(:,ii)*obj.a_n-obj.J_tangent(:,ii*2-1:ii*2)*obj.mu(ii)*obj.a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
-                                f_aux_neg_ii = [f_q_dynamics(:,ii);inv_M_aux*(obj.J_normal(:,ii)*obj.a_n+obj.J_tangent(:,ii*2-1:ii*2)*obj.mu(ii)*obj.a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
+                                f_aux_pos_ii = [f_q_dynamics(:,ii);inv_M_aux*(obj.J_normal(:,ii)*obj.a_n-obj.J_tangent(:,ii*2-1:ii*2)*obj.mu_f(ii)*obj.a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
+                                f_aux_neg_ii = [f_q_dynamics(:,ii);inv_M_aux*(obj.J_normal(:,ii)*obj.a_n+obj.J_tangent(:,ii*2-1:ii*2)*obj.mu_f(ii)*obj.a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
                             end
                             f_aux_pos = [f_aux_pos,f_aux_pos_ii];
                             f_aux_neg= [f_aux_neg,f_aux_neg_ii];
@@ -1676,10 +1678,10 @@ classdef NosnocModel < handle
                     f_aux_n1 = [f_aux_n1;zeros(dims.n_quad+1,1)];
                     f_ode = [obj.v;obj.invM*obj.f_v;1];
                     % updated with clock state
-                    F = [f_ode, f_aux_n1];
-                    S = [1; -1];
+                    obj.F = [f_ode, f_aux_n1];
+                    obj.S = [1; -1];
+                    obj.c = obj.f_c;
                     dims.n_aux = 1;
-                    obj.c = f_c;
                 end
 
                 %% Settings updates

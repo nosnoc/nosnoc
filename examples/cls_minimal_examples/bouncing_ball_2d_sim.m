@@ -29,7 +29,7 @@ v = SX.sym('v',2);
 model.M = diag([1,1]);
 model.x = [q;v];
 model.e = 0;
-model.mu = 0.2;
+model.mu_f = 0.2;
 % impact
 model.x0 = [0;1;4;0];
 % Free flight

@@ -27,7 +27,7 @@ settings.break_simulation_if_infeasible = 0;
 %%
 model = NosnocModel();
 model.e = 0;
-model.mu = 0.2;
+model.mu_f = 0.2;
 %% the dynamics
 qx = SX.sym('qx',1);
 qy = SX.sym('qy',1);

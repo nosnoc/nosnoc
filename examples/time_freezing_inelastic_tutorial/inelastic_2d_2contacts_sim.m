@@ -26,7 +26,7 @@ v = SX.sym('v',2);
 
 model.x = [q;v]; 
 model.e = 0;
-model.mu = 0;
+model.mu_f = 0;
 model.dims.n_dim_contact = 2;
 model.a_n = g;
 model.x0 = [0.8;0.5;-1.5;-1]; 
