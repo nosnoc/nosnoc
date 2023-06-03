@@ -246,6 +246,128 @@ classdef NosnocOptions < handle
             obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
         end
 
+        function [] = preprocess(obj)
+            import casadi.*
+            % automatically set up casadi opts
+            if obj.print_level < 4 
+                obj.opts_casadi_nlp.ipopt.print_level=0;
+                obj.opts_casadi_nlp.print_time=0;
+                obj.opts_casadi_nlp.ipopt.sb= 'yes';
+            elseif print_level == 4
+                obj.opts_casadi_nlp.ipopt.print_level=0;
+                obj.opts_casadi_nlp.print_time=1;
+                obj.opts_casadi_nlp.ipopt.sb= 'no';
+            else
+                obj.opts_casadi_nlp.ipopt.print_level = 5;
+            end
+
+            % check irk scheme compatibility
+            if ismember(obj.irk_scheme, IRKSchemes.differential_only)
+                if obj.print_level >=1
+                    fprintf(['Info: The user provided RK scheme: ' char(obj.irk_scheme) ' is only available in the differential representation.\n']);
+                end
+                obj.irk_representation = 'differential';
+            end
+
+            % check impacts mode
+            if obj.dcs_mode == DcsMode.CLS && obj.time_freezing == 1
+                if obj.print_level >=1
+                    fprintf(['nosnoc: User uses dcs_mode.CLS and time_freezing = true at the same time. Defaulting to time freezing as it is currently more competitive\n']);
+                end
+                obj.time_freezing = 1;
+                obj.dcs_mode = DcsMode.Step;
+            end
+
+            if obj.time_freezing
+                obj.use_speed_of_time_variables = 1;
+                obj.local_speed_of_time_variable = 1;
+            end
+
+            % N finite elements shape 
+            if isscalar(obj.N_finite_elements)
+                obj.N_finite_elements = obj.N_finite_elements*ones(obj.N_stages,1);
+            else
+                if length(obj.N_finite_elements) == obj.N_stages
+                    obj.N_finite_elements = obj.N_finite_elements;
+                else
+                    error('settings.N_finite_elements must be length 1 or N_stages');
+                end
+            end
+
+            % MPCC mode setup
+            if obj.mpcc_mode == MpccMode.direct
+                % TODO maybe need to check later if people try to set sigmas/n_homotopy as for now we just let them break the
+                %      assumptions.
+                if obj.print_level >= 1
+                    fprintf('Info: Setting N_homotopy to 1 and sigma_0,sigma_N to constants in direct mode.\n')
+                end
+                obj.N_homotopy = 1;
+                obj.sigma_0 = 1e-12;
+                obj.sigma_N = 1e-12;
+                obj.mpcc_mode = MpccMode.Scholtes_ineq;
+            end
+            if obj.mpcc_mode == MpccMode.ell_1_penalty
+                if obj.print_level >= 1
+                    fprintf('Info: Setting cross_comp_mode to 12 in ell_1_penalty mode.\n')
+                end
+                obj.cross_comp_mode = 12;
+            end
+
+            switch obj.mpcc_mode
+                case MpccMode.Scholtes_ineq
+                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.relaxation_method = RelaxationMode.INEQ;
+                    obj.elasticity_mode = ElasticityMode.NONE;
+                case MpccMode.Scholtes_eq
+                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.relaxation_method = RelaxationMode.EQ;
+                    obj.elasticity_mode = ElasticityMode.NONE;
+                case MpccMode.elastic_ineq
+                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.relaxation_method = RelaxationMode.INEQ;
+                    obj.elasticity_mode = ElasticityMode.ELL_INF;
+                case MpccMode.elastic_eq
+                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.relaxation_method = RelaxationMode.EQ;
+                    obj.elasticity_mode = ElasticityMode.ELL_INF;
+                case MpccMode.elastic_two_sided
+                    obj.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
+                    obj.relaxation_method = RelaxationMode.TWO_SIDED;
+                    obj.elasticity_mode = ElasticityMode.ELL_INF;
+                case MpccMode.elastic_ell_1_ineq
+                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.relaxation_method = RelaxationMode.INEQ;
+                    obj.elasticity_mode = ElasticityMode.ELL_1;
+                case MpccMode.elastic_ell_1_eq
+                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.relaxation_method = RelaxationMode.EQ;
+                    obj.elasticity_mode = ElasticityMode.ELL_1;
+                case MpccMode.elastic_ell_1_two_sided
+                    obj.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
+                    obj.relaxation_method = RelaxationMode.TWO_SIDED;
+                    obj.elasticity_mode = ElasticityMode.ELL_1;
+            end
+
+            if ~obj.time_rescaling
+                if obj.print_level >= 1 && obj.use_speed_of_time_variables
+                    warning('nosnoc:NosnocOptions:erroneous_use_speed_of_time_variables', "use_speed_of_time_variables erroneously set to true even though we are not rescaling time, this likely means your settings are somehow faulty. Using use_speed_of_time_variables = false")
+                end
+                obj.use_speed_of_time_variables = 0;
+            end
+
+            if ~obj.use_speed_of_time_variables
+                if obj.print_level >= 1 && obj.local_speed_of_time_variable
+                    warning('nosnoc:NosnocOptions:erroneous_local_speed_of_time_variable',"local_speed_of_time_variable erroneously set to true even though we are not using speed of time variales, this likely means your settings are somehow faulty. Using local_speed_of_time_variable = false")
+                end
+                obj.local_speed_of_time_variable = 0;
+            end
+
+            if obj.nonlinear_sigma_rho_constraint
+                obj.convex_sigma_rho_constraint = 1;
+            end
+            
+        end
+
         function [] = create_butcher_tableu(obj, model)
             switch obj.irk_representation
               case IrkRepresentation.integral
@@ -329,181 +451,8 @@ classdef NosnocOptions < handle
             psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
         end
 
-        function obj = set.print_level(obj, val)
-            if val <4
-                obj.opts_casadi_nlp.ipopt.print_level=0;
-                obj.opts_casadi_nlp.print_time=0;
-                obj.opts_casadi_nlp.ipopt.sb= 'yes';
-            elseif val == 4
-                obj.opts_casadi_nlp.ipopt.print_level=0;
-                obj.opts_casadi_nlp.print_time=1;
-                obj.opts_casadi_nlp.ipopt.sb= 'no';
-            else
-                obj.opts_casadi_nlp.ipopt.print_level = 5;
-            end
-            obj.print_level = val;
-        end
-
-        function obj = set.irk_scheme(obj, val)
-            if ismember(val, IRKSchemes.differential_only)
-                if obj.print_level >=1
-                    fprintf(['Info: The user provided RK scheme: ' char(val) ' is only available in the differential representation.\n']);
-                end
-                obj.irk_representation = 'differential';
-            end
-            obj.irk_scheme = val;
-        end
-
-        function obj = set.dcs_mode(obj, val)
-            if val == DcsMode.CLS && obj.time_freezing == 1
-                if obj.print_level >=1
-                    fprintf(['nosnoc: User uses dcs_mode.CLS and time_freezing = true at the same time .\n']);
-                end
-                obj.time_freezing = 0;
-            end
-            obj.dcs_mode = val;
-        end
-
-        function obj = set.irk_representation(obj, val)
-            if strcmp(val,'integral') && ismember(obj.irk_scheme, IRKSchemes.differential_only)
-                error([obj.irk_scheme ' is only available with a differential representation!']);
-            end
-
-            obj.irk_representation = val;
-        end
-
-        function obj = set.time_freezing(obj, val)
-            if val
-                if obj.dcs_mode == "CLS"
-                    val = 0;
-                    fprintf(['nosnoc: User uses dcs_mode.CLS and time_freezing = true at the same time, setting time_freezing to false.\n']);
-                else
-                    obj.use_speed_of_time_variables = 1;
-                    obj.local_speed_of_time_variable = 1;
-                    if obj.print_level >= 1
-                        fprintf('nosnoc: Setting local speed of time variables to true as they are necessary for time freezing\n')
-                    end
-                end
-            end
-            obj.time_freezing = val;
-        end
-
-        function N_finite_elements = get.N_finite_elements(obj)
-            if isscalar(obj.N_finite_elements)
-                N_finite_elements = obj.N_finite_elements*ones(obj.N_stages,1);
-            else
-                if length(obj.N_finite_elements) == obj.N_stages
-                    N_finite_elements = obj.N_finite_elements;
-                else
-                    error('settings.N_finite_elements must be length 1 or N_stages');
-                end
-            end
-        end
-
-        function obj = set.mpcc_mode(obj, val)
-            if val == MpccMode.direct
-                % TODO maybe need to check later if people try to set sigmas/n_homotopy as for now we just let them break the
-                %      assumptions.
-                if obj.print_level >= 1
-                    fprintf('Info: Setting N_homotopy to 1 and sigma_0,sigma_N to constants in direct mode.\n')
-                end
-                obj.N_homotopy = 1;
-                obj.sigma_0 = 1e-12;
-                obj.sigma_N = 1e-12;
-                val = MpccMode.Scholtes_ineq;
-            end
-            if val == MpccMode.ell_1_penalty
-                if obj.print_level >= 1
-                    fprintf('Info: Setting cross_comp_mode to 12 in ell_1_penalty mode.\n')
-                end
-                obj.cross_comp_mode = 12;
-            end
-
-            switch val
-              case MpccMode.Scholtes_ineq
-                obj.psi_fun_type = CFunctionType.BILINEAR;
-                obj.relaxation_method = RelaxationMode.INEQ;
-                obj.elasticity_mode = ElasticityMode.NONE;
-              case MpccMode.Scholtes_eq
-                obj.psi_fun_type = CFunctionType.BILINEAR;
-                obj.relaxation_method = RelaxationMode.EQ;
-                obj.elasticity_mode = ElasticityMode.NONE;
-              case MpccMode.elastic_ineq
-                obj.psi_fun_type = CFunctionType.BILINEAR;
-                obj.relaxation_method = RelaxationMode.INEQ;
-                obj.elasticity_mode = ElasticityMode.ELL_INF;
-              case MpccMode.elastic_eq
-                obj.psi_fun_type = CFunctionType.BILINEAR;
-                obj.relaxation_method = RelaxationMode.EQ;
-                obj.elasticity_mode = ElasticityMode.ELL_INF;
-              case MpccMode.elastic_two_sided
-                obj.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
-                obj.relaxation_method = RelaxationMode.TWO_SIDED;
-                obj.elasticity_mode = ElasticityMode.ELL_INF;
-              case MpccMode.elastic_ell_1_ineq
-                obj.psi_fun_type = CFunctionType.BILINEAR;
-                obj.relaxation_method = RelaxationMode.INEQ;
-                obj.elasticity_mode = ElasticityMode.ELL_1;
-              case MpccMode.elastic_ell_1_eq
-                obj.psi_fun_type = CFunctionType.BILINEAR;
-                obj.relaxation_method = RelaxationMode.EQ;
-                obj.elasticity_mode = ElasticityMode.ELL_1;
-              case MpccMode.elastic_ell_1_two_sided
-                obj.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
-                obj.relaxation_method = RelaxationMode.TWO_SIDED;
-                obj.elasticity_mode = ElasticityMode.ELL_1;
-            end
-            obj.mpcc_mode = val;
-        end
-
-        function obj = set.s_elastic_0(obj, val)
-            arguments
-                obj
-                val {mustBeBetweenMinMax(val, obj, 's_elastic_min', 's_elastic_max')}
-            end
-            obj.s_elastic_0 = val;
-        end
-
-        function obj = set.rho_0(obj, val)
-            arguments
-                obj
-                val {mustBeBetweenMinMax(val, obj, 'rho_min', 'rho_max')}
-            end
-            obj.rho_0 = val;
-        end
-
         function time_rescaling = get.time_rescaling(obj)
             time_rescaling = (obj.time_freezing && obj.impose_terminal_phyisical_time) || obj.time_optimal_problem;
-        end
-
-        function use_speed_of_time_variables = get.use_speed_of_time_variables(obj)
-            if ~obj.time_rescaling
-                if obj.print_level >= 1 && obj.use_speed_of_time_variables
-                    warning('nosnoc:NosnocOptions:erroneous_use_speed_of_time_variables', "use_speed_of_time_variables erroneously set to true even though we are not rescaling time, this likely means your settings are somehow faulty. Using use_speed_of_time_variables = false")
-                end
-                use_speed_of_time_variables = 0;
-            else
-                use_speed_of_time_variables = obj.use_speed_of_time_variables;
-            end
-        end
-
-        function local_speed_of_time_variable = get.local_speed_of_time_variable(obj)
-            if ~obj.use_speed_of_time_variables
-                if obj.print_level >= 1 && obj.local_speed_of_time_variable
-                    warning('nosnoc:NosnocOptions:erroneous_local_speed_of_time_variable',"local_speed_of_time_variable erroneously set to true even though we are not using speed of time variales, this likely means your settings are somehow faulty. Using local_speed_of_time_variable = false")
-                end
-                local_speed_of_time_variable = 0;
-            else
-                local_speed_of_time_variable = obj.local_speed_of_time_variable;
-            end
-        end
-
-        function convex_sigma_rho_constraint = get.convex_sigma_rho_constraint(obj)
-            if obj.nonlinear_sigma_rho_constraint
-                convex_sigma_rho_constraint = 1;
-            else
-                convex_sigma_rho_constraint = obj.convex_sigma_rho_constraint;
-            end
         end
     end
 end
