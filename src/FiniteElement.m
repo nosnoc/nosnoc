@@ -1458,7 +1458,7 @@ classdef FiniteElement < NosnocFormulationObject
                         pairs = cross_comp_pairs(j, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma, sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
-                            exprs= [];
+                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                             nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1487,7 +1487,7 @@ classdef FiniteElement < NosnocFormulationObject
                         pairs = cross_comp_pairs(:, jj, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
-                            exprs= [];
+                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                             nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1513,7 +1513,7 @@ classdef FiniteElement < NosnocFormulationObject
                         pairs = cross_comp_pairs(j, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
-                            exprs= [];
+                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                             nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1542,7 +1542,7 @@ classdef FiniteElement < NosnocFormulationObject
                         pairs = cross_comp_pairs(:, jj, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size(vertcat(expr_cell{:}), 1) == 0
-                            exprs= [];
+                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                             nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1570,7 +1570,7 @@ classdef FiniteElement < NosnocFormulationObject
                     pairs = cross_comp_pairs(:, :, r);
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                     if size([expr_cell{:}], 1) == 0
-                        exprs= [];
+                        exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                         nonzeros = [];
                     elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                         exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1597,7 +1597,7 @@ classdef FiniteElement < NosnocFormulationObject
                     pairs = cross_comp_pairs(:, :, r);
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                     if size([expr_cell{:}], 1) == 0
-                        exprs= [];
+                        exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                         nonzeros = [];
                     elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                         exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
