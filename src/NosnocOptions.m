@@ -211,6 +211,7 @@ classdef NosnocOptions < handle
         psi_fun_type CFunctionType = CFunctionType.BILINEAR
         relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
         elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
+        psi_fun
 
         right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
 
@@ -221,7 +222,7 @@ classdef NosnocOptions < handle
 
     properties(Dependent)
         time_rescaling
-        psi_fun
+        
     end
 
     methods
@@ -365,48 +366,15 @@ classdef NosnocOptions < handle
             if obj.nonlinear_sigma_rho_constraint
                 obj.convex_sigma_rho_constraint = 1;
             end
-            
-        end
 
-        function [] = create_butcher_tableu(obj, model)
-            switch obj.irk_representation
-              case IrkRepresentation.integral
-                [B, C, D, tau_root] = generate_butcher_tableu_integral(model.dims.n_s, obj.irk_scheme);
-                if tau_root(end) == 1
-                    right_boundary_point_explicit  = 1;
-                else
-                    right_boundary_point_explicit  = 0;
-                end
-                obj.B_irk = B;
-                obj.C_irk = C;
-                obj.D_irk = D;
-                % also get time steps
-                [~, ~, c_irk] = generate_butcher_tableu(model.dims.n_s,obj.irk_scheme);
-                obj.c_irk = c_irk;
-
-              case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
-                [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dims.n_s,obj.irk_scheme);
-                if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
-                    right_boundary_point_explicit  = 1;
-                else
-                    right_boundary_point_explicit  = 0;
-                end
-                obj.A_irk = A_irk;
-                obj.b_irk = b_irk;
-                obj.c_irk = c_irk;
-            end
-            obj.right_boundary_point_explicit = right_boundary_point_explicit;
-        end
-
-        function psi_fun = get.psi_fun(obj)
-            import casadi.*
+            % psi function
             a = define_casadi_symbolic(obj.casadi_symbolic_mode,'a',1);
             b = define_casadi_symbolic(obj.casadi_symbolic_mode,'b',1);
             sigma = define_casadi_symbolic(obj.casadi_symbolic_mode,'sigma',1);
 
             switch obj.psi_fun_type
               case CFunctionType.BILINEAR
-                psi_mpcc = a*b-sigma;
+                psi_mpcc = a.*b-sigma;
                 
               case CFunctionType.BILINEAR_TWO_SIDED
                 psi_mpcc = [a*b-sigma,a*b+sigma];
@@ -445,10 +413,39 @@ classdef NosnocOptions < handle
 
               case CFunctionType.KADRANI
                 psi_mpcc = (a-sigma)*(b-sigma);
-
             end
 
-            psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
+            obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
+        end
+
+        function [] = create_butcher_tableu(obj, model)
+            switch obj.irk_representation
+              case IrkRepresentation.integral
+                [B, C, D, tau_root] = generate_butcher_tableu_integral(model.dims.n_s, obj.irk_scheme);
+                if tau_root(end) == 1
+                    right_boundary_point_explicit  = 1;
+                else
+                    right_boundary_point_explicit  = 0;
+                end
+                obj.B_irk = B;
+                obj.C_irk = C;
+                obj.D_irk = D;
+                % also get time steps
+                [~, ~, c_irk] = generate_butcher_tableu(model.dims.n_s,obj.irk_scheme);
+                obj.c_irk = c_irk;
+
+              case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
+                [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dims.n_s,obj.irk_scheme);
+                if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
+                    right_boundary_point_explicit  = 1;
+                else
+                    right_boundary_point_explicit  = 0;
+                end
+                obj.A_irk = A_irk;
+                obj.b_irk = b_irk;
+                obj.c_irk = c_irk;
+            end
+            obj.right_boundary_point_explicit = right_boundary_point_explicit;
         end
 
         function time_rescaling = get.time_rescaling(obj)

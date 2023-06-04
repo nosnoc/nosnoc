@@ -511,7 +511,7 @@ classdef NosnocProblem < NosnocFormulationObject
                     all_pairs = [all_pairs;fe.all_comp_pairs];
                 end
             end
-            all_products = apply_psi(all_pairs, @(x,y,t) x*y, 0);
+            all_products = apply_psi(all_pairs, @(x,y,t) x.*y, 0);
 
             obj.comp_res = Function('comp_res', {obj.w, obj.p}, {max(all_products)});
 
@@ -659,7 +659,11 @@ classdef NosnocProblem < NosnocFormulationObject
                             if isempty(nz_r)
                                 nz_r = zeros(size(nonzeros));
                             end
-                            g_r = g_r + extract_nonzeros_from_vector(exprs);
+                            idx = exprs.sparsity().find();
+                            if numel(idx) == 0
+                                idx = [];
+                            end
+                            g_r = g_r + exprs(idx);
                             nz_r = nz_r + nonzeros;
                         end
                     end
@@ -692,7 +696,11 @@ classdef NosnocProblem < NosnocFormulationObject
                             if isempty(nz_r)
                                 nz_r = zeros(size(nonzeros));
                             end
-                            g_r = g_r + extract_nonzeros_from_vector(exprs);
+                            idx = exprs.sparsity().find();
+                            if numel(idx) == 0
+                                idx = [];
+                            end
+                            g_r = g_r + exprs(idx);
                             nz_r = nz_r + nonzeros;
                         end
                     end
@@ -803,9 +811,7 @@ classdef NosnocProblem < NosnocFormulationObject
             cc_vector = [];
             for stage=obj.stages
                 for fe=stage.stage
-                    for ic = 1:size(fe.all_comp_pairs, 1)
-                        cc_vector = vertcat(cc_vector, fe.all_comp_pairs(ic, 1) * fe.all_comp_pairs(ic, 2));
-                    end
+                    cc_vector = vertcat(cc_vector, fe.all_comp_pairs(:, 1) .* fe.all_comp_pairs(:, 2));
                 end
             end
         end
