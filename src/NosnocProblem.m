@@ -716,7 +716,7 @@ classdef NosnocProblem < NosnocFormulationObject
                     for stage=obj.stages
                         for fe=stage.stage
                             pairs = fe.cross_comp_pairs(:, :, r);
-                            expr_cell = cellfun(@(pair) apply_psi(pair, @(a,b,t) a*b, 0), pairs, 'uni', false);
+                            expr_cell = cellfun(@(pair) apply_psi(pair, @(a,b,t) a.*b, 0), pairs, 'uni', false);
                             expr = sum1(sum2([expr_cell{:}]));
                             cost = cost + expr;
                         end
