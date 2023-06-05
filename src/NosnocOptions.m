@@ -406,7 +406,7 @@ classdef NosnocOptions < handle
                 b1 = b-sigma;
                 psi_mpcc  = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
 
-              case CFunctionType.LIN_FUKUSHIMA
+              case CFunctionType.LIN_FUKUSHIMAgs
                 psi_mpcc1 = [a*b-sigma];
                 psi_mpcc2 = [-((a-sigma)*(b-sigma)-sigma^2)];
                 psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
@@ -416,9 +416,9 @@ classdef NosnocOptions < handle
             end
 
             obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
-        end
 
-        function [] = create_butcher_tableu(obj, model)
+            % create Butcher tableau
+            % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
             switch obj.irk_representation
               case IrkRepresentation.integral
                 [B, C, D, tau_root] = generate_butcher_tableu_integral(model.dims.n_s, obj.irk_scheme);
