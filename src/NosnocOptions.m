@@ -421,7 +421,7 @@ classdef NosnocOptions < handle
             % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
             switch obj.irk_representation
               case IrkRepresentation.integral
-                [B, C, D, tau_root] = generate_butcher_tableu_integral(model.dims.n_s, obj.irk_scheme);
+                [B, C, D, tau_root] = generate_butcher_tableu_integral(obj.n_s, obj.irk_scheme);
                 if tau_root(end) == 1
                     right_boundary_point_explicit  = 1;
                 else
@@ -431,11 +431,11 @@ classdef NosnocOptions < handle
                 obj.C_irk = C;
                 obj.D_irk = D;
                 % also get time steps
-                [~, ~, c_irk] = generate_butcher_tableu(model.dims.n_s,obj.irk_scheme);
+                [~, ~, c_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
                 obj.c_irk = c_irk;
 
               case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
-                [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(model.dims.n_s,obj.irk_scheme);
+                [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
                 if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
                     right_boundary_point_explicit  = 1;
                 else
