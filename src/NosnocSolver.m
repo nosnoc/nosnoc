@@ -31,7 +31,7 @@ classdef NosnocSolver < handle
         settings  % Nosnoc Options
         problem   % Nosnoc reformulated NLP
 
-        solver                 % CasADi solver function
+        solver % CasADi solver function
 
         p_val % parameter values (homotopy parameters + problem parameters)
     end
@@ -471,7 +471,7 @@ classdef NosnocSolver < handle
             end
 
         end
-        function print_solver_stats(obj, results, stats)
+        function  print_solver_stats(obj, results, stats)
             % model = obj.model;
             % dims = model.dims;
             % settings = obj.settings;
