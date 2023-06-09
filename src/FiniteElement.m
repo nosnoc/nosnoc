@@ -69,8 +69,6 @@ classdef FiniteElement < NosnocFormulationObject
         ind_Beta_d
         ind_Delta_d
         %
-%         ind_P_vn
-%         ind_N_vn
         ind_L_vn
         ind_P_vt
         ind_N_vt
@@ -79,7 +77,7 @@ classdef FiniteElement < NosnocFormulationObject
         ind_h
         ind_nu_lift
         ind_elastic
-        ind_boundary % index of bundary value lambda and mu, TODO is this even necessary?
+        ind_cross_comp_liftm
 
         n_cont
         n_discont
@@ -91,6 +89,8 @@ classdef FiniteElement < NosnocFormulationObject
 
         cross_comp_pairs
         all_comp_pairs
+        n_comp_components
+        
 
         ctrl_idx
         fe_idx
@@ -1036,7 +1036,6 @@ classdef FiniteElement < NosnocFormulationObject
             import casadi.*
 
             if obj.settings.use_fesd && obj.fe_idx > 1
-                % eta_k = obj.prev_fe.sumCrossCompCont0().*obj.sumCrossCompCont0() + obj.prev_fe.sumCrossCompDiscont0().*obj.sumCrossCompDiscont0();
                 pairs_fe = vertcat(obj.cross_comp_pairs{:});
                 pairs_prev_fe = vertcat(obj.prev_fe.cross_comp_pairs{:});
     
@@ -1054,46 +1053,6 @@ classdef FiniteElement < NosnocFormulationObject
                 nu_vector = [];
             end
         end
-
-        function sum_cross_comp_cont_0 = sumCrossCompCont0(obj, varargin)
-            import casadi.*
-            p = inputParser();
-            p.FunctionName = 'sumCrossCompCont0';
-
-            % TODO: add checks.
-            addRequired(p, 'obj');
-            addOptional(p, 'sys',[]);
-            parse(p, obj, varargin{:});
-
-            if ismember('sys', p.UsingDefaults)
-                cross_comp_cont_0 = obj.cross_comp_cont_0;
-                cross_comp_cont_0_vec = arrayfun(@(row) vertcat(cross_comp_cont_0{row, :}), 1:size(cross_comp_cont_0,1), 'UniformOutput', false);
-                cross_comp_cont_0_vec = [cross_comp_cont_0_vec, {vertcat(obj.prev_fe.cross_comp_cont_0{end,:})}];
-            else
-                cross_comp_cont_0_vec = obj.cross_comp_cont_0(:,p.Results.sys).';
-                cross_comp_cont_0_vec = [cross_comp_cont_0_vec, obj.prev_fe.cross_comp_cont_0(end,p.Results.sys)];
-            end
-            sum_cross_comp_cont_0 = sum([cross_comp_cont_0_vec{:}], 2);
-        end
-
-        function sum_cross_comp_discont_0 = sumCrossCompDiscont0(obj, varargin)
-            p = inputParser();
-            p.FunctionName = 'sumCrossCompDiscont0';
-
-            % TODO: add checks.
-            addRequired(p, 'obj');
-            addOptional(p, 'sys',[]);
-            parse(p, obj, varargin{:});
-            %obj.theta
-            if ismember('sys', p.UsingDefaults)
-                cross_comp_discont_0 = obj.cross_comp_discont_0;
-                cross_comp_discont_0_vec = arrayfun(@(row) vertcat(cross_comp_discont_0{row, :}), 1:size(cross_comp_discont_0,1), 'UniformOutput', false);
-            else
-                cross_comp_discont_0_vec = obj.cross_comp_discont_0(:,p.Results.sys).';
-            end
-            sum_cross_comp_discont_0 = sum([cross_comp_discont_0_vec{:}], 2);
-        end
-
 
         function sum_elastic = sumElastic(obj)
             elastic = obj.elastic;
@@ -1257,26 +1216,8 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
-            psi_fun = settings.psi_fun;
-
-            % TODO This needs n_comp. that can be calculated apriori so lets do that
-            if settings.elasticity_mode == ElasticityMode.ELL_1
-                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode,...
-                    ['s_elastic_' num2str(obj.ctrl_idx) '_' num2str(obj.fe_idx)],...
-                    n_comp);
-                obj.addVariable(s_elastic,...
-                    'elastic',...
-                    settings.s_elastic_min*ones(n_comp,1),...
-                    settings.s_elastic_max*ones(n_comp,1),...
-                    settings.s_elastic_0*ones(n_comp,1));
-            end
-
-            if settings.elasticity_mode == ElasticityMode.NONE
-                sigma = sigma_p;
-            else
-                sigma = s_elastic;
-            end
-            
+            all_pairs = [];
+            n_pair_components = [];
             
             g_path_comp = [];
             lbg_path_comp = [];
