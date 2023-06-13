@@ -1,23 +1,26 @@
 function result = apply_psi(comp_pairs, psi, sigma, scale)
+    import casadi.*
     if ~exist('scale', 'var')
         scale = 1;
     end
-
-    if isscalar(scale)
-        scale = scale*ones(size(comp_pairs, 1), 1);
-    elseif size(comp_pairs, 1) ~= size(scale, 1)
-        error('nosnoc: scale is incorrect.')
+    if isempty(comp_pairs)
+        result = SX([]);
+        return
     end
-    outsize = size(psi([],[],[]), 2);
-    result = double.empty(0,outsize);
-    for ii = 1:size(comp_pairs, 1)
-        x = comp_pairs(ii, 1);
-        y = comp_pairs(ii, 2);
-        % NOTE: this is a bit of a hack to identify placeholder pairs
-        if x.is_zero() && y.is_zero()
-            result = vertcat(result, zeros(1,outsize));
-        else
-            result = vertcat(result, psi(x,y,sigma*(scale(ii))));
-        end
+    temp = comp_pairs(:,1);
+    sparsity = temp.sparsity();
+    % TODO: for some reason casadi also wants outputs to be scalar to allow for
+    % multiple argument evaluation. This is a problem for 2-sided relaxations so
+    % here is a mild hack to allow it to still work.
+    if (size(psi(sigma,sigma,sigma),2) == 1)
+        result = psi(comp_pairs(:,1), comp_pairs(:,2), sigma*scale);
+    else
+        result = psi(comp_pairs(:,1)', comp_pairs(:,2)', sigma*scale);
+        result = reshape(result, [length(temp),2])';
     end
+    
+    % Note: This is done to maintain sparsity of the outputs. For some reason
+    % matrix application of functions does not preserve sparsity which
+    % is either a bug or a feature I don't understand
+    result = result.*sparsity;
 end

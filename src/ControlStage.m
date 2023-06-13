@@ -303,7 +303,11 @@ classdef ControlStage < NosnocFormulationObject
                         if isempty(nz_r)
                             nz_r = zeros(size(nonzeros));
                         end
-                        g_r = g_r + extract_nonzeros_from_vector(exprs);
+                        idx = exprs.sparsity().find();
+                        if numel(idx) == 0
+                            idx = [];
+                        end
+                        g_r = g_r + exprs(idx);
                         nz_r = nz_r + nonzeros;
                     end
                     g_r = scale_sigma(g_r, sigma, nz_r);
@@ -331,7 +335,11 @@ classdef ControlStage < NosnocFormulationObject
                             nonzeros = sum(sum([nonzeros{:}], 2),1);
                             exprs = sum1(sum2([expr_cell{:}]));
                         end
-                        g_r = g_r + extract_nonzeros_from_vector(exprs);
+                        idx = exprs.sparsity().find();
+                        if numel(idx) == 0
+                            idx = [];
+                        end
+                        g_r = g_r + exprs(idx);
                         if isempty(nz_r)
                             nz_r = zeros(size(nonzeros));
                         end

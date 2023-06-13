@@ -853,6 +853,7 @@ classdef FiniteElement < NosnocFormulationObject
         end
 
         function cross_comp_pairs = getCrossCompPairs(obj)
+            import casadi.*
             model = obj.model;
             settings = obj.settings;
             dims = obj.dims;
@@ -982,9 +983,12 @@ classdef FiniteElement < NosnocFormulationObject
                                 end
                             end
                             if (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
-                                cross_comp_pairs{2,jj+2} = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
-                                len_pad = size(cross_comp_pairs{1,jj+2},1) - size(cross_comp_pairs{2,jj+2}, 1);
-                                cross_comp_pairs{2,jj+2} = vertcat(cross_comp_pairs{2,jj+2}, zeros(len_pad, 2));
+                                comp = [obj.w(obj.ind_Y_gap{1}), obj.w(obj.ind_lambda_normal{jj,1})]; % TODO maybe we need the other cross comps?
+                                size_comp = size(comp, 1);
+                                size_full_comp = size(cross_comp_pairs{end,jj+2});
+                                sparsity = Sparsity.rowcol([0:(size_comp-1)],[0,1],size_full_comp(1),size_full_comp(2));
+                                cross_comp_pairs{2,jj+2} = define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', size_full_comp, sparsity);
+                                cross_comp_pairs{2,jj+2}(1:size_comp, :) = comp;
                             end
                         end
                     else % no fesd
@@ -1419,7 +1423,11 @@ classdef FiniteElement < NosnocFormulationObject
                                 exprs = exprs';
                                 exprs = exprs(:);
                             end
-                            g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
+                            idx = exprs.sparsity().find();
+                            if numel(idx) == 0
+                                idx = [];
+                            end
+                            g_cross_comp = vertcat(g_cross_comp, exprs(idx));
                         end
                     end
                 end
@@ -1436,7 +1444,11 @@ classdef FiniteElement < NosnocFormulationObject
                             else
                                 exprs = sum(exprs);
                             end
-                            g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
+                            idx = exprs.sparsity().find();
+                            if numel(idx) == 0
+                                idx = [];
+                            end
+                            g_cross_comp = vertcat(g_cross_comp, exprs(idx));
                         end
                     end
                 end
@@ -1444,10 +1456,9 @@ classdef FiniteElement < NosnocFormulationObject
                 for j=1:obj.n_cont
                     for r=1:obj.n_indep
                         pairs = cross_comp_pairs(j, :, r);
-                        %sigma_scale = cellfun(@(x) count_nonzero(x), expr_cell);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma, sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
-                            exprs= [];
+                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                             nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1463,7 +1474,11 @@ classdef FiniteElement < NosnocFormulationObject
                             exprs = sum2([expr_cell{:}]);
                         end
                         exprs = scale_sigma(exprs, sigma, nonzeros);
-                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
+                        idx = exprs.sparsity().find();
+                        if numel(idx) == 0
+                            idx = [];
+                        end
+                        g_cross_comp = vertcat(g_cross_comp, exprs(idx));
                     end
                 end
             elseif settings.cross_comp_mode == 4
@@ -1472,7 +1487,7 @@ classdef FiniteElement < NosnocFormulationObject
                         pairs = cross_comp_pairs(:, jj, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
-                            exprs= [];
+                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                             nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1488,7 +1503,8 @@ classdef FiniteElement < NosnocFormulationObject
                             exprs = sum2([expr_cell{:}]);
                         end
                         exprs = scale_sigma(exprs, sigma, nonzeros);
-                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
+                        idx = exprs.sparsity().find();
+                        g_cross_comp = vertcat(g_cross_comp, exprs(idx));
                     end
                 end
             elseif settings.cross_comp_mode == 5
@@ -1497,7 +1513,7 @@ classdef FiniteElement < NosnocFormulationObject
                         pairs = cross_comp_pairs(j, :, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size([expr_cell{:}], 1) == 0
-                            exprs= [];
+                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                             nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1513,7 +1529,11 @@ classdef FiniteElement < NosnocFormulationObject
                             exprs = sum1(sum2([expr_cell{:}]));
                         end
                         exprs = scale_sigma(exprs, sigma, nonzeros);
-                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
+                        idx = exprs.sparsity().find();
+                        if numel(idx) == 0
+                            idx = [];
+                        end
+                        g_cross_comp = vertcat(g_cross_comp, exprs(idx));
                     end
                 end
             elseif settings.cross_comp_mode == 6
@@ -1522,7 +1542,7 @@ classdef FiniteElement < NosnocFormulationObject
                         pairs = cross_comp_pairs(:, jj, r);
                         expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                         if size(vertcat(expr_cell{:}), 1) == 0
-                            exprs= [];
+                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                             nonzeros = [];
                         elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                             exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1538,7 +1558,11 @@ classdef FiniteElement < NosnocFormulationObject
                             exprs = sum1(sum2([expr_cell{:}]));
                         end
                         exprs = scale_sigma(exprs, sigma, nonzeros);
-                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
+                        idx = exprs.sparsity().find();
+                        if numel(idx) == 0
+                            idx = [];
+                        end
+                        g_cross_comp = vertcat(g_cross_comp, exprs(idx));
                     end
                 end
             elseif settings.cross_comp_mode == 7
@@ -1546,7 +1570,7 @@ classdef FiniteElement < NosnocFormulationObject
                     pairs = cross_comp_pairs(:, :, r);
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                     if size([expr_cell{:}], 1) == 0
-                        exprs= [];
+                        exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                         nonzeros = [];
                     elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                         exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1562,14 +1586,18 @@ classdef FiniteElement < NosnocFormulationObject
                         exprs = sum2([expr_cell{:}]);
                     end
                     exprs = scale_sigma(exprs, sigma, nonzeros);
-                    g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
+                    idx = exprs.sparsity().find();
+                    if numel(idx) == 0
+                        idx = [];
+                    end
+                    g_cross_comp = vertcat(g_cross_comp, exprs(idx));
                 end
             elseif settings.cross_comp_mode == 8
                 for r=1:obj.n_indep
                     pairs = cross_comp_pairs(:, :, r);
                     expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
                     if size([expr_cell{:}], 1) == 0
-                        exprs= [];
+                        exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
                         nonzeros = [];
                     elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
                         exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
@@ -1585,7 +1613,11 @@ classdef FiniteElement < NosnocFormulationObject
                         exprs = sum1(sum2([expr_cell{:}]));
                     end
                     exprs = scale_sigma(exprs, sigma, nonzeros);
-                    g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
+                    idx = exprs.sparsity().find();
+                    if numel(idx) == 0
+                        idx = [];
+                    end
+                    g_cross_comp = vertcat(g_cross_comp, exprs(idx));
                 end
             elseif settings.cross_comp_mode > 8
                 return

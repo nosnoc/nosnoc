@@ -31,7 +31,7 @@ unfold_struct(results,'base');
 unfold_struct(stats,'base');
 unfold_struct(model,'base');
 
-tgrid = cumsum([0; h_vec(1:1:end)]);
+tgrid = results.t_grid;
 x1_opt = results.x(1,:);
 x2_opt = results.x(2,:);
 x3_opt = results.x(3,:);

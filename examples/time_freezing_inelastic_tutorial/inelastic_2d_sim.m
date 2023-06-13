@@ -8,14 +8,15 @@ settings = NosnocOptions();
 model = NosnocModel();
 %%
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.print_level = 2;
+settings.print_level = 3;
 settings.N_homotopy = 15;
-settings.cross_comp_mode = 8;
+settings.cross_comp_mode = 1;
 settings.time_freezing = 1;
 settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
 settings.stagewise_clock_constraint = 0;
 settings.mpcc_mode = MpccMode.Scholtes_ineq;
+settings.comp_tol = 1e-6;
 settings.pss_lift_step_functions = 0;
 %%
 g = 10;
@@ -36,7 +37,7 @@ model.J_tangent = [1; 0];
 model.dims.n_dim_contact = 2;
 
 %% Simulation settings
-N_FE = 5;
+N_FE = 3;
 T_sim = 1.5;
 N_sim = 20;
 model.T_sim = T_sim;
@@ -108,7 +109,7 @@ grid on
 xlabel('$\tau$','interpreter','latex');
 ylabel('$t$','interpreter','latex');
 subplot(122)
-stairs(s_sot_res)
+stairs(results.s_sot)
 grid on
 xlabel('simulation step','interpreter','latex');
 ylabel('$s$','interpreter','latex');

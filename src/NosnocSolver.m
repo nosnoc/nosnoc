@@ -53,8 +53,8 @@ classdef NosnocSolver < handle
                 end
             end
 
-            settings.create_butcher_tableu(model); % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
-
+            settings.preprocess();
+            
             obj.model = model;
             obj.settings = settings;
 

@@ -49,6 +49,7 @@ if settings.time_optimal_problem
         if ~settings.local_speed_of_time_variable
             s_sot = s_sot*ones(settings.N_stages,1);
         end
+        results.s_sot = s_sot;
         h_rescaled = [];
         ind_prev = 1;
         for ii = 1:settings.N_stages
@@ -74,6 +75,7 @@ if settings.dcs_mode == DcsMode.CLS
     results.x_with_impulse = x_with_impulse;
     results.t_with_impulse = t_with_impulse(1:end-1);
 end
+
 
 results.t_grid = t_grid;
 results.t_grid_u = t_grid(ind_t_grid_u);

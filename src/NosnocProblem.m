@@ -404,20 +404,20 @@ classdef NosnocProblem < NosnocFormulationObject
                         s_terminal_ell_1 = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
                         obj.addVariable(s_terminal_ell_1,...
                             's_terminal',...
-                            1e3*ones(n_terminal,1),...
                             -inf*ones(n_terminal,1),...
-                            inf*ones(n_terminal,1));
+                            inf*ones(n_terminal,1),...
+                            1e3*ones(n_terminal,1));
 
-                        obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_1,...
+                        obj.addConstraint(g_terminal-model.g_terminal_lb-s_terminal_ell_1,...
                             -inf*ones(n_terminal,1),...
                             zeros(n_terminal,1));
-                        obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_1,...
+                        obj.addConstraint(-(g_terminal-model.g_terminal_lb)-s_terminal_ell_1,...
                             -inf*ones(n_terminal,1),...
                             zeros(n_terminal,1));
 
                         obj.cost = obj.cost + rho_terminal_p*sum(s_terminal_ell_1);
                     case 2 % l_2
-                        obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-g_terminal_lb);
+                        obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-model.g_terminal_lb);
                     case 3 % l_inf
                         s_terminal_ell_inf = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
                         obj.addVariable(s_terminal_ell_inf,...
@@ -426,10 +426,10 @@ classdef NosnocProblem < NosnocFormulationObject
                             -inf,...
                             inf);
 
-                        obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
+                        obj.addConstraint(g_terminal-model.g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
                             -inf*ones(n_terminal,1),...
                             zeros(n_terminal,1));
-                        obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
+                        obj.addConstraint(-(g_terminal-model.g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
                             -inf*ones(n_terminal,1),...
                             zeros(n_terminal,1));
 
@@ -443,10 +443,10 @@ classdef NosnocProblem < NosnocFormulationObject
                         else
                             error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
                         end
-                        obj.addConstraint(g_terminal-g_terminal_lb-elastic,...
+                        obj.addConstraint(g_terminal-model.g_terminal_lb-elastic,...
                             -inf*ones(n_terminal,1),...
                             zeros(n_terminal,1));
-                        obj.addConstraint(-(g_terminal-g_terminal_lb)-elastic,...
+                        obj.addConstraint(-(g_terminal-model.g_terminal_lb)-elastic,...
                             -inf*ones(n_terminal,1),...
                             zeros(n_terminal,1));
                 end
@@ -511,7 +511,7 @@ classdef NosnocProblem < NosnocFormulationObject
                     all_pairs = [all_pairs;fe.all_comp_pairs];
                 end
             end
-            all_products = apply_psi(all_pairs, @(x,y,t) x*y, 0);
+            all_products = apply_psi(all_pairs, @(x,y,t) x.*y, 0);
 
             obj.comp_res = Function('comp_res', {obj.w, obj.p}, {max(all_products)});
 
@@ -659,7 +659,11 @@ classdef NosnocProblem < NosnocFormulationObject
                             if isempty(nz_r)
                                 nz_r = zeros(size(nonzeros));
                             end
-                            g_r = g_r + extract_nonzeros_from_vector(exprs);
+                            idx = exprs.sparsity().find();
+                            if numel(idx) == 0
+                                idx = [];
+                            end
+                            g_r = g_r + exprs(idx);
                             nz_r = nz_r + nonzeros;
                         end
                     end
@@ -692,7 +696,11 @@ classdef NosnocProblem < NosnocFormulationObject
                             if isempty(nz_r)
                                 nz_r = zeros(size(nonzeros));
                             end
-                            g_r = g_r + extract_nonzeros_from_vector(exprs);
+                            idx = exprs.sparsity().find();
+                            if numel(idx) == 0
+                                idx = [];
+                            end
+                            g_r = g_r + exprs(idx);
                             nz_r = nz_r + nonzeros;
                         end
                     end
@@ -708,7 +716,7 @@ classdef NosnocProblem < NosnocFormulationObject
                     for stage=obj.stages
                         for fe=stage.stage
                             pairs = fe.cross_comp_pairs(:, :, r);
-                            expr_cell = cellfun(@(pair) apply_psi(pair, @(a,b,t) a*b, 0), pairs, 'uni', false);
+                            expr_cell = cellfun(@(pair) apply_psi(pair, @(a,b,t) a.*b, 0), pairs, 'uni', false);
                             expr = sum1(sum2([expr_cell{:}]));
                             cost = cost + expr;
                         end
@@ -803,9 +811,7 @@ classdef NosnocProblem < NosnocFormulationObject
             cc_vector = [];
             for stage=obj.stages
                 for fe=stage.stage
-                    for ic = 1:size(fe.all_comp_pairs, 1)
-                        cc_vector = vertcat(cc_vector, fe.all_comp_pairs(ic, 1) * fe.all_comp_pairs(ic, 2));
-                    end
+                    cc_vector = vertcat(cc_vector, fe.all_comp_pairs(:, 1) .* fe.all_comp_pairs(:, 2));
                 end
             end
         end
