@@ -5,7 +5,7 @@ import casadi.*
 settings = NosnocOptions();
 settings.n_s = 2;
 settings.dcs_mode = 'Stewart';
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
+settings.mpcc_mode = MpccMode.ell_1_penalty;
 settings.print_level = 3;
 
 model = NosnocModel();

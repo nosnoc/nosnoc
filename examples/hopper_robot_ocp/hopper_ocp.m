@@ -66,9 +66,10 @@ settings.stagewise_clock_constraint = 1;
 settings.g_path_at_fe = 1; % evaluate path constraint on every integration step
 settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
 settings.nonsmooth_switching_fun = 0;
+settings.print_level = 5;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretization
 T = 1; % prediction horizon
