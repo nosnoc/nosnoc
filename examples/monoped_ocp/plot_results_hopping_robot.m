@@ -261,8 +261,8 @@ end
 
 %% constraint drif, normal and tangential velocity
 f_c = model.f_c;
-tangent1 = model.tangent1;
-nabla_q_f_c = model.nabla_q_f_c;
+tangent1 = model.J_tangent;
+nabla_q_f_c = model.J_normal;
 f_c_fun = Function('f_c_fun',{q},{f_c});
 nabla_q_f_c_fun = Function('nabla_q_f_c_fun',{q},{nabla_q_f_c});
 tangent1_fun = Function('tangent1_fun',{q},{tangent1});
