@@ -98,15 +98,15 @@ model.J_normal= J_normal;
 model.dims.n_dim_contact = 2;
 %% OCP
 % Objective and constraints
-model.f_q = 100*u'*u;
+model.f_q = u'*u;
 % box constraints
-u_max = 500;
+u_max = 200;
 model.lbu = -u_max*ones(2,1);
 model.ubu = u_max*ones(2,1);
 
 % Sanity constraints
-model.lbx = [-0.5;0;-pi/2;-pi/2;-inf;-inf;-inf;-inf];
-model.ubx = [q_target(1)+0.5; 2.0;pi/2;pi/2;inf;inf;inf;inf];
+model.lbx = [-0.5;0;-pi;-pi;-inf;-inf;-inf;-inf];
+model.ubx = [q_target(1)+0.5; 2.0;pi;pi;inf;inf;inf;inf];
 %% path constraints
 % lower bound on knee
 p_knee_x = p_knee(1);
@@ -168,13 +168,13 @@ if general_inequality_constraints
 end
 
 % least squares weight
-Q = diag([1.0, 1.0, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4]);
-Q_terminal = 10000*diag([1.0, 1.0, 1e-4, 1e-4, 1.0, 1.0, 1.0, 1.0]);
+Q = diag([1.0, 1.0, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8]);
+Q_terminal = 100*diag([1.0, 1.0, 1e-8, 1e-8, 1.0, 1.0, 1.0, 1.0]);
 
 % Generate reference trajectory
-x_mid = [q_target(1)/2; 0.5;0;0;0;0;0;0];
+x_mid = [q_target(1)/2; 0.4;0;0;q_target(1)/model.T;0;0;0];
 x_target = [q_target;zeros(4,1)];
-x_ref = interp1([0 0.5 1],[model.x0,x_mid,x_target]',linspace(0,1,settings.N_stages),'spline')'; %spline
+x_ref = interp1([0 0.5 1],[model.x0,x_mid,x_target]',linspace(0,1,settings.N_stages),'spline')' %spline
 
 model.lsq_x = {x, x_ref, Q}; % TODO also do trajectory
 model.lsq_T = {x, x_target, Q_terminal};
@@ -200,7 +200,7 @@ else
     for ii = 1:settings.N_stages
         x_guess{ii} = x_ref(:,ii);
     end
-    %solver.set('x', x_guess');
+    solver.set('x', x_guess');
     [results,stats] = solver.solve();
 end
 
