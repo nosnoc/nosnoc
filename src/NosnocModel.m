@@ -492,6 +492,12 @@ classdef NosnocModel < handle
                 %% time-freezing inelastic impacts (exploit structure with taiolored formulae)
                 if settings.time_freezing_inelastic
                     % theta_step are the lifting variables that enter the ODE r.h.s.
+                      if any(obj.mu_f > 0)
+                        obj.friction_exists = 1;
+                    else
+                        obj.friction_exists = 0;
+                      end
+                      
                     if ~settings.nonsmooth_switching_fun
                         alpha_q = obj.alpha(1:dims.n_contacts);
                         alpha_v_normal = obj.alpha(dims.n_contacts+1:2*dims.n_contacts);
