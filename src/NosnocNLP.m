@@ -35,7 +35,7 @@
 %      - provide instructive names for terminal constraint relaxations
 %      - provide more instructive names for cross_comp (match python)
 
-classdef NosnocProblem < NosnocFormulationObject
+classdef NosnocNLP < NosnocFormulationObject
     properties
         % Index vectors
         ind_x

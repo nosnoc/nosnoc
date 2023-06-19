@@ -88,7 +88,7 @@ classdef FiniteElement < NosnocFormulationObject
         ind_comp
 
         cross_comp_pairs
-        all_comp_pairs
+        general_comp_pairs
         n_comp_components
         
 
@@ -1216,43 +1216,23 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
-            all_pairs = [];
-            n_pair_components = [];
-            
-            g_path_comp = [];
-            lbg_path_comp = [];
-            ubg_path_comp = [];
             g_path_comp_pairs = [];
+
             % path complementarities
             if (~isempty(model.g_comp_path) &&...
                 (obj.fe_idx == settings.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
                 pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global);
                 g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
-                expr = apply_psi(pairs, psi_fun, sigma);
-                if settings.relaxation_method == RelaxationMode.TWO_SIDED
-                    exprs_p = expr(:,1);
-                    exprs_n = expr(:,2);
-                    expr = vertcat(exprs_p,exprs_n);
-                end
-                g_path_comp = vertcat(g_path_comp, expr);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if ~isempty(model.g_comp_path) && settings.g_path_at_stg
                     pairs = model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global);
                     g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
-                    expr = apply_psi(pairs, psi_fun, sigma);
-                    if settings.relaxation_method == RelaxationMode.TWO_SIDED
-                        expr = expr';
-                        expr = expr(:);
-                    end
-                    g_path_comp = vertcat(g_path_comp, expr);
                 end
             end
+            general_comp_pairs = g_path_comp_pairs
 
-            g_impulse_comp = [];
-            lbg_impulse_comp = [];
-            ubg_impulse_comp = [];
             impulse_pairs = [];
             if settings.dcs_mode == DcsMode.CLS && (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
                 % comp condts
@@ -1317,15 +1297,9 @@ classdef FiniteElement < NosnocFormulationObject
                         impulse_pairs = vertcat(impulse_pairs, [obj.w(obj.ind_y_gap{end}), obj.w(obj.ind_lambda_normal{ii, 1})]);
                     end
                 end
-
-                expr = apply_psi(impulse_pairs, psi_fun, sigma);
-                if settings.relaxation_method == RelaxationMode.TWO_SIDED
-                    expr = expr';
-                    expr = expr(:);
-                end
-                g_impulse_comp = expr;
             end
-
+            
+            general_comp_pairs = vertcat(general_comp_pairs, 
 
             cross_comp_pairs = obj.getCrossCompPairs();
 

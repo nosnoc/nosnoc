@@ -587,18 +587,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
-            sigma_p = obj.sigma_p;
-            s_elastic = obj.s_elastic;
-
-            psi_fun = settings.psi_fun;
-
-            if settings.elasticity_mode == ElasticityMode.NONE
-                sigma = sigma_p;
-            else
-                sigma = s_elastic;
-            end
-
-            g_cross_comp = SX([]);
+            cross_comp_pairs = {};
             % TODO Implement other modes
             if ~settings.use_fesd || settings.cross_comp_mode < 11
                 % Do nothing, handled at the FE or stage level
