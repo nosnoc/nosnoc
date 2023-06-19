@@ -38,7 +38,7 @@ end
 
 %% Make gif animation
 ymin = min(p_foot_res(2,:))-0.1;
-ymax = max(qz)+0.1;
+ymax = max(qz)+0.5;
 xmin = min(qx)-0.5;
 xmax = max(qx)+0.5;
 xx = xmin:0.1:xmax;

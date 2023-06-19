@@ -58,7 +58,7 @@ vx = results.x(3,:);
 vy = results.x(4,:);
 t_opt = results.x(5,:);
 u_opt = results.u(1,:);
-s_opt = results.w(solver.problem.ind_sot);
+s_opt = results.w([solver.problem.ind_sot{:}]);
 
 figure
 subplot(131)

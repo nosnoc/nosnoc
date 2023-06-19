@@ -1,9 +1,9 @@
 clear all; 
 close all; 
 clc;
-delete robot_ocp.mat
-delete robot_ocp.gif
-delete log_robot.txt
+delete monoped_ocp.mat
+delete monoped_ocp.gif
+delete monoped_ocp.txt
 
 import casadi.*
 %% robot scene description
@@ -14,11 +14,14 @@ filename = 'monoped_ocp';
 
 %% auxiliary dynamics and friction
 a_n = 200;
-mu = 0.80*1;
+mu = 0.80;
 %% obstacles
 q_target = [3;0.4;0;0];
-
-q_target = [0;0.4;0;0];
+% go a bit forward
+q_target = [0.75;0.4;0;0];
+% q_target = [0.5;0.4;0;0];
+% acorobatic move
+q_target = [0.2;0.4;pi;0];
 
 %% Default settings NOSNOC
 settings = NosnocOptions();
@@ -27,16 +30,15 @@ model = NosnocModel();
 settings.print_level = 3;
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.n_s = 2;
-settings.pss_lift_step_functions = 1;
 %% homotopy settings
 settings.cross_comp_mode = 3;
 settings.opts_casadi_nlp.ipopt.max_iter = 5000;
 settings.opts_casadi_nlp.ipopt.max_iter = 1000;
-settings.N_homotopy = 8;
+settings.N_homotopy = 5;
 % settings.homotopy_update_rule = 'superlinear';
-settings.homotopy_update_slope = 0.2;
-settings.opts_casadi_nlp.ipopt.tol = 1e-6;
-settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+settings.homotopy_update_slope = 0.1;
+settings.opts_casadi_nlp.ipopt.tol = 1e-8;
+settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
 settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 settings.comp_tol = 1e-6;
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
@@ -46,15 +48,14 @@ settings.s_sot_max = 10;
 settings.s_sot_min = 0.99;
 settings.rho_sot = 0.00;
 settings.time_freezing = 1;
-settings.pss_lift_step_functions = 1;
+settings.pss_lift_step_functions = 0;
 settings.stagewise_clock_constraint = 1;
 
 %% Discretization
-model.T = 0.5;
-settings.N_stages = 5;
+model.T = 1;
+settings.N_stages = 10;
 settings.N_finite_elements = 3;
 
-%% call function to discretize, solve and plot results
 %% friction cone parameters
 model.e = 0;
 model.mu_f = mu;
@@ -119,7 +120,7 @@ model.q = q;
 model.v = v;
 model.u = u;
 %% inital values
-q0 = [0;0.7;0;0];
+q0 = [0;0.4;0;0];
 v0 = [0;0;0;0];
 model.x0 = [q0;v0];
 %% Dynamics and Kinematics
@@ -149,12 +150,16 @@ model.dims.n_dim_contact = 2;
 %% OCP
 % Objective and constraints
 % box constraints
-u_max = 0;
+u_max = 100;
 model.lbu = -u_max*ones(2,1);
 model.ubu = u_max*ones(2,1);
 % Sanity constraints
 model.lbx = [-0.5;0;-pi;-pi;-inf;-inf;-inf;-inf];
 model.ubx = [q_target(1)+0.5; 10;pi;pi;inf;inf;inf;inf];
+
+
+model.lbx = [-0.5;0;-pi;-pi;-100*ones(4,1)];
+model.ubx = [q_target(1)+0.5; 10;pi;pi;100*ones(4,1)];
 %% path constraints
 % lower bound on knee
 p_knee_x = p_knee(1);
@@ -207,13 +212,26 @@ Q_terminal = 100*diag([1.0, 1.0, 1e-8, 1e-8, 1.0, 1.0, 1.0, 1.0]);
 
 
 Q = diag([1, 1, 1, 1, 1e-3, 1e-3, 1e-3, 1e-3]);
-Q_terminal = 100*Q;
+Q_terminal = 200*Q;
+
+Q = diag([1, 1, 1, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
+Q_terminal = 1000*Q;
+% TODO: maybe have even higher weights for terminal velocity, e.g. 10
+% instead of 1e-3 as now?
+
+Q = diag([1, 1, 10, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
+Q_terminal = diag([1e3, 1e3, 1e3, 1e3, 10, 10, 10, 10]);
+
+
 u_ref = [0;0];
 
 R = 1e-1*eye(2);
 
 % Generate reference trajectory
-x_mid = [q_target(1)/2; 0.4;0;0;q_target(1)/model.T;0;0;0];
+x_mid = [q_target(1)/2; 0.5;0;0;q_target(1)/model.T;0;0;0];
+
+% accorbatic refference
+% x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/model.T;0;0;0];
 x_target = [q_target;zeros(4,1)];
 x_ref = interp1([0 0.5 1],[model.x0,x_mid,x_target]',linspace(0,1,settings.N_stages),'spline')'; %spline
 

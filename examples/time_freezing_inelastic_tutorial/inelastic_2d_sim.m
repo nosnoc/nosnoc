@@ -10,7 +10,7 @@ model = NosnocModel();
 settings.irk_scheme = IRKSchemes.RADAU_IIA;
 settings.print_level = 3;
 settings.N_homotopy = 15;
-settings.cross_comp_mode = 1;
+settings.cross_comp_mode = 3;
 settings.time_freezing = 1;
 settings.impose_terminal_phyisical_time = 1;
 settings.local_speed_of_time_variable = 1;
@@ -27,7 +27,7 @@ v = SX.sym('v',2);
 
 model.x = [q;v]; 
 model.e = 0;
-model.mu_f = 0.3;
+model.mu_f = 0.1;
 model.a_n = g;
 model.a_n = 20;
 model.x0 = [0;1;3;0]; 
@@ -37,9 +37,9 @@ model.J_tangent = [1; 0];
 model.dims.n_dim_contact = 2;
 
 %% Simulation settings
-N_FE = 3;
-T_sim = 1.5;
-N_sim = 20;
+N_FE = 5;
+T_sim = 2.5;
+N_sim = 5;
 model.T_sim = T_sim;
 settings.N_finite_elements = N_FE;
 model.N_sim = N_sim;

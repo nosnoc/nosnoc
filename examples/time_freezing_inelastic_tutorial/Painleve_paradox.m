@@ -64,8 +64,7 @@ settings.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-[model,settings] = time_freezing_reformulation(model,settings);
-settings.time_freezing = 0;
+% [model,settings] = time_freezing_reformulation(model,settings);
 settings.use_speed_of_time_variables = 0;
 settings.local_speed_of_time_variable = 0;
 [results,stats,solver] = integrator_fesd(model,settings);
@@ -95,7 +94,7 @@ for ii = 1:length(qx)
     axis equal
     ylim([-0.1 2])
     grid on
-    pause(h)
+    pause(0.01)
     clf
 end
 %%
