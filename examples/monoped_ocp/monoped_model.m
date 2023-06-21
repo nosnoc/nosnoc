@@ -18,7 +18,6 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref)
     %%
     settings.print_level = 5;
     settings.irk_scheme = IRKSchemes.RADAU_IIA;
-    settings.dcs_mode = dcs_mode;
     settings.n_s = 2;
     %% homotopy settings
     settings.cross_comp_mode = 3;
@@ -38,7 +37,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref)
     settings.s_sot_min = 0.99;
     settings.rho_sot = 0.00;
     settings.time_freezing = 1;
-    settings.pss_lift_step_functions = 0;
+    settings.pss_lift_step_functions = 1;
     settings.stagewise_clock_constraint = 1;
 
     %% Discretization
