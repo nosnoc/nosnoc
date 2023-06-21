@@ -1,8 +1,8 @@
-function [results, stats] = monoped_model(N_stages, initialize_with_ref)
+function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_res)
     import casadi.*
     %% robot scene description
     constant_inertia_matrix = 0;
-    general_inequality_constraints = 1;
+    general_inequality_constraints = 0;
     save_figure = 0;
     filename = 'monoped_ocp';
 
@@ -16,9 +16,9 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref)
     settings = NosnocOptions();
     model = NosnocModel();
     %%
-    settings.print_level = 5;
+    settings.print_level = 3;
     settings.irk_scheme = IRKSchemes.RADAU_IIA;
-    settings.n_s = 2;
+    settings.n_s = 3;
     %% homotopy settings
     settings.cross_comp_mode = 3;
     settings.opts_casadi_nlp.ipopt.max_iter = 10000;
@@ -30,14 +30,14 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref)
     settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
     settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
     settings.comp_tol = 1e-6;
-    %settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+    settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
     %% time-freezing
     settings.s_sot_max = 10;
     settings.s_sot_min = 0.99;
     settings.rho_sot = 0.00;
     settings.time_freezing = 1;
-    settings.pss_lift_step_functions = 1;
+    settings.pss_lift_step_functions = 0;
     settings.stagewise_clock_constraint = 1;
 
     %% Discretization
@@ -143,10 +143,6 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref)
     model.lbu = -u_max*ones(2,1);
     model.ubu = u_max*ones(2,1);
     % Sanity constraints
-    model.lbx = [-0.5;0;-pi;-pi;-inf;-inf;-inf;-inf];
-    model.ubx = [q_target(1)+0.5; 10;pi;pi;inf;inf;inf;inf];
-
-
     model.lbx = [-0.5;0;-pi;-pi;-100*ones(4,1)];
     model.ubx = [q_target(1)+0.5; 10;pi;pi;100*ones(4,1)];
     %% path constraints
@@ -210,11 +206,8 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref)
     x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/model.T;0;0;0];
     x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/model.T;0;0;0];
 
-    % accorbatic refference
-    % x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/model.T;0;0;0];
     x_target = [q_target;zeros(4,1)];
     x_ref = interp1([0 0.25 0.5 0.75 1],[model.x0,x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,settings.N_stages),'spline')'; %spline
-    plot(x_ref(2,:))
 
     model.lsq_x = {x, x_ref, Q}; % TODO also do trajectory
     model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
@@ -234,17 +227,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref)
     end
     [results,stats] = solver.solve();
 
-    %% Save statistics
-    % fid = fopen('log_robot.txt','a');
-    % fprintf(fid,[ '---------------------------------------\n']);
-    % fprintf(fid,[ 'Scenario:' scenario.filename  '.\n']);
-    % fprintf(fid,'Complementarity residual %2.2e \n',stats.complementarity_stats(end));
-    % fprintf(fid,'CPU time %2.3f min. \n',stats.cpu_time_total/60);
-    % fprintf(fid,[ '---------------------------------------\n']);
-    % fclose(fid);
-    %%
-    % results.stats = stats;
-    % save(scenario.filename,'results')
-
-    plot_results_hopping_robot
+    if plot_res
+        plot_results_hopping_robot
+    end
 end

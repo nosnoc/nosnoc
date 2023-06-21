@@ -1,8 +1,8 @@
-function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref)
+function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref, plot_res)
     import casadi.*
     %% robot scene description
     constant_inertia_matrix = 0;
-    general_inequality_constraints = 1;
+    general_inequality_constraints = 0;
     save_figure = 0;
     filename = 'monoped_ocp';
 
@@ -16,10 +16,10 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref)
     settings = NosnocOptions();
     model = NosnocModel();
     %%
-    settings.print_level = 5;
+    settings.print_level = 3;
     settings.irk_scheme = IRKSchemes.RADAU_IIA;
     settings.dcs_mode = DcsMode.Stewart;
-    settings.n_s = 2;
+    settings.n_s = 3;
     %% homotopy settings
     settings.cross_comp_mode = 3;
     settings.opts_casadi_nlp.ipopt.max_iter = 10000;
@@ -31,7 +31,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref)
     settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
     settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
     settings.comp_tol = 1e-6;
-    %settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+    settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
     %% time-freezing
     settings.s_sot_max = 10;
@@ -199,8 +199,8 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref)
 
     % least squares weight
 
-    Q = diag([1, 10, 10, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
-    Q_terminal = diag([1e3, 1e3, 1e3, 1e3, 10, 10, 10, 10]);
+    Q = diag([10, 1, 10, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
+    Q_terminal = diag([1e5, 1e5, 1e5, 1e5, 10, 10, 10, 10]);
 
 
     u_ref = [0;0];
@@ -216,7 +216,6 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref)
     % x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/model.T;0;0;0];
     x_target = [q_target;zeros(4,1)];
     x_ref = interp1([0 0.25 0.5 0.75 1],[model.x0,x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,settings.N_stages),'spline')'; %spline
-    plot(x_ref(2,:))
 
     model.lsq_x = {x, x_ref, Q}; % TODO also do trajectory
     model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
@@ -237,7 +236,6 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref)
     f_aux_neg = vertcat(SX.zeros(n_q, 1), inv_M_aux*(J_normal+J_tangent*mu)*a_n, 0);
 
     model.F = horzcat(f_ode, f_ode, f_ode, f_ode, f_ode, f_ode, f_aux_pos, f_aux_neg);
-    model.F
     model.S = [1, 1, 1;
         1, 1, -1;
         1, -1, 1;
@@ -276,5 +274,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref)
     % results.stats = stats;
     % save(scenario.filename,'results')
 
-    plot_results_hopping_robot
+    if plot_res
+        plot_results_hopping_robot
+    end
 end
