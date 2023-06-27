@@ -19,7 +19,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     settings.print_level = 3;
     settings.irk_scheme = IRKSchemes.RADAU_IIA;
     settings.dcs_mode = DcsMode.Stewart;
-    settings.n_s = 3;
+    settings.n_s = 2;
     %% homotopy settings
     settings.cross_comp_mode = 3;
     settings.opts_casadi_nlp.ipopt.max_iter = 10000;
@@ -27,11 +27,14 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     settings.N_homotopy = 5;
     % settings.homotopy_update_rule = 'superlinear';
     settings.homotopy_update_slope = 0.1;
-    settings.opts_casadi_nlp.ipopt.tol = 1e-6;
-    settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+    settings.opts_casadi_nlp.ipopt.tol = 1e-5;
+    settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
     settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-    settings.comp_tol = 1e-6;
-    settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+    settings.comp_tol = 1e-5;
+    settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+    %settings.opts_casadi_nlp.ipopt.ma97_print_level = 0;
+    %settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+    %settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
     %% time-freezing
     settings.s_sot_max = 10;
@@ -248,6 +251,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     model.x = [x;t];
     model.lbx = [model.lbx;-inf];
     model.ubx = [model.ubx;inf];
+    model.u0 = [0;0;1];
     model.x0 = [model.x0;0];
 
     %% Solve OCP with NOSNOC

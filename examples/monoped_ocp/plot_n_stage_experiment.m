@@ -20,21 +20,27 @@ function plot_n_stage_experiment(filename)
     sparse_iters = cellfun(@(s) sum([s.solver_stats.iter_count]), sparse_stats);
     
     % plot cpu_time vs N
-    figure;
+    fig=figure;
     hold on;
     grid on;
     plot(stages, dense_cpu, 'Xr-')
     plot(stages, sparse_cpu, 'Xb-')
-    xlabel('$N$', 'interpreter', 'latex')
-    ylabel('cpu time [s]', 'interpreter', 'latex')
+    xlabel('$N$', 'interpreter', 'latex', 'FontSize', 36)
+    ylabel('cpu time [s]', 'interpreter', 'latex', 'FontSize', 36)
+    legend(["Stewart","Step"])
     hold off;
+    saveas(fig,'cpu_time.pdf')
 
-    figure;
+    fig=figure;
     hold on;
     grid on;
     plot(stages, dense_cpu./dense_iters, 'Xr-')
     plot(stages, sparse_cpu./sparse_iters, 'Xb-')
-    xlabel('$N$', 'interpreter', 'latex')
-    ylabel('cpu time per NLP iteration [s]', 'interpreter', 'latex')
+    xlabel('$N$', 'interpreter', 'latex', 'FontSize', 36)
+    ylabel('cpu time per NLP iteration [s]', 'interpreter', 'latex', 'FontSize', 36)
+    legend(["Stewart","Step"])
     hold off;
+    saveas(fig,'cpu_time_per_iter.pdf')
+
+    
 end

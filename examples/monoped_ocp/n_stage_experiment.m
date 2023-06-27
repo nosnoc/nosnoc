@@ -9,8 +9,8 @@ function n_stage_experiment(name, stages)
     stats = cell(nexp, 0);
 
     addAttachedFiles(gcp,["robot_model_files/robot_model_kinematics.m"])
-    parfor ii=1:length(experiments)
-        experiment = experiments{ii};
+    parfor (ii=1:length(experiments), 5)
+        experiment = experiments{ii}
         stages = experiment(1);
         mode = experiment(2);
         if mode

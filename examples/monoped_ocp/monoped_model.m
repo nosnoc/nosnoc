@@ -18,7 +18,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     %%
     settings.print_level = 3;
     settings.irk_scheme = IRKSchemes.RADAU_IIA;
-    settings.n_s = 3;
+    settings.n_s = 2;
     %% homotopy settings
     settings.cross_comp_mode = 3;
     settings.opts_casadi_nlp.ipopt.max_iter = 10000;
@@ -26,18 +26,24 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     settings.N_homotopy = 5;
     % settings.homotopy_update_rule = 'superlinear';
     settings.homotopy_update_slope = 0.1;
-    settings.opts_casadi_nlp.ipopt.tol = 1e-6;
-    settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+    settings.opts_casadi_nlp.ipopt.tol = 1e-5;
+    settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
     settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-    settings.comp_tol = 1e-6;
-    settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+    settings.comp_tol = 1e-5;
+    settings.opts_casadi_nlp.ipopt.linear_solver = 'ma97';
+    % settings.nlpsol = 'snopt';
+    % settings.opts_casadi_nlp.snopt.Major_iterations_limit = 100000;
+    % settings.opts_casadi_nlp.snopt.Minor_iterations_limit = 10000;
+    settings.initial_alpha = 0.5;
+    %settings.opts_casadi_nlp.ipopt.ma57_pre_alloc = 2.0;
+    %settings.opts_casadi_nlp.ipopt.ma57_automatic_scaling = 'yes';
 
     %% time-freezing
     settings.s_sot_max = 10;
     settings.s_sot_min = 0.99;
     settings.rho_sot = 0.00;
     settings.time_freezing = 1;
-    settings.pss_lift_step_functions = 0;
+    settings.pss_lift_step_functions = 1;
     settings.stagewise_clock_constraint = 1;
 
     %% Discretization
@@ -193,7 +199,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
 
     % least squares weight
 
-    Q = diag([1, 10, 10, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
+    Q = diag([1, 1, 10, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
     Q_terminal = diag([1e3, 1e3, 1e3, 1e3, 10, 10, 10, 10]);
 
 
