@@ -27,5 +27,5 @@ model.dims.n_s = 2;
 
 
 
-solver = NosnocSolver(model, settings);
-[results,stats] = solver.solve();
+%solver = NosnocSolver(model, settings);
+%[results,stats] = solver.solve();

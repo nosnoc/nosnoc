@@ -405,7 +405,6 @@ classdef NosnocMPCC < NosnocFormulationObject
 
                     obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
                   case 4 % l_inf, relaxed
-                         % TODO: ask armin if this is correct.
                     if ismember(settings.mpcc_mode, MpccMode.elastic)
                         elastic = s_elastic*ones(n_terminal,1);
                     elseif ismemeber(settings.mpcc_mode, MpccMode.elastic_ell_1)

@@ -1299,226 +1299,25 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             end
             
-            general_comp_pairs = vertcat(general_comp_pairs, 
+            general_comp_pairs = vertcat(general_comp_pairs, impulse_pairs);
 
             cross_comp_pairs = obj.getCrossCompPairs();
 
             obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_pairs{:});
             
-            sigma_scale = 1; % TODO scale properly
-                             % apply psi
-            g_cross_comp = [];
-            lbg_cross_comp = [];
-            ubg_cross_comp = [];
-            if settings.cross_comp_mode == 1
-                for j=1:obj.n_cont
-                    for jj=1:obj.n_discont
-                        for r=1:obj.n_indep
-                            pairs = cross_comp_pairs{j, jj, r};
-                            % TODO This is ugly but I don't have a better idea at the moment
-                            exprs = apply_psi(pairs, psi_fun, sigma);
-                            if settings.relaxation_method == RelaxationMode.TWO_SIDED
-                                exprs = exprs';
-                                exprs = exprs(:);
-                            end
-                            idx = exprs.sparsity().find();
-                            if numel(idx) == 0
-                                idx = [];
-                            end
-                            g_cross_comp = vertcat(g_cross_comp, exprs(idx));
-                        end
-                    end
-                end
-            elseif settings.cross_comp_mode == 2
-                for j=1:obj.n_cont
-                    for jj=1:obj.n_discont
-                        for r=1:obj.n_indep
-                            pairs = cross_comp_pairs{j, jj, r};
-                            sigma_scale = 1/size(pairs, 1);
-                            exprs = apply_psi(pairs, psi_fun, sigma, sigma_scale);
-                            if settings.relaxation_method == RelaxationMode.TWO_SIDED
-                                exprs = sum(exprs);
-                                exprs = exprs(:);
-                            else
-                                exprs = sum(exprs);
-                            end
-                            idx = exprs.sparsity().find();
-                            if numel(idx) == 0
-                                idx = [];
-                            end
-                            g_cross_comp = vertcat(g_cross_comp, exprs(idx));
-                        end
-                    end
-                end
-            elseif settings.cross_comp_mode == 3
-                for j=1:obj.n_cont
-                    for r=1:obj.n_indep
-                        pairs = cross_comp_pairs(j, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma, sigma_scale), pairs, 'uni', false);
-                        if size([expr_cell{:}], 1) == 0
-                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
-                            nonzeros = [];
-                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                            nonzeros = [sum([nonzeros_p{:}], 2),sum([nonzeros_n{:}], 2)]';
-                            exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
-                            exprs = exprs(:);
-                        else
-                            nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                            nonzeros = sum([nonzeros{:}], 2);
-                            exprs = sum2([expr_cell{:}]);
-                        end
-                        exprs = scale_sigma(exprs, sigma, nonzeros);
-                        idx = exprs.sparsity().find();
-                        if numel(idx) == 0
-                            idx = [];
-                        end
-                        g_cross_comp = vertcat(g_cross_comp, exprs(idx));
-                    end
-                end
-            elseif settings.cross_comp_mode == 4
+            for j=1:obj.n_cont
                 for jj=1:obj.n_discont
                     for r=1:obj.n_indep
-                        pairs = cross_comp_pairs(:, jj, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
-                        if size([expr_cell{:}], 1) == 0
-                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
-                            nonzeros = [];
-                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                            nonzeros = [sum([nonzeros_p{:}], 2),sum([nonzeros_n{:}], 2)]';
-                            exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
+                        pairs = cross_comp_pairs{j, jj, r};
+                        % TODO This is ugly but I don't have a better idea at the moment
+                        exprs = apply_psi(pairs, psi_fun, sigma);
+                        if settings.relaxation_method == RelaxationMode.TWO_SIDED
+                            exprs = exprs';
                             exprs = exprs(:);
-                        else
-                            nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                            nonzeros = sum([nonzeros{:}], 2);
-                            exprs = sum2([expr_cell{:}]);
                         end
-                        exprs = scale_sigma(exprs, sigma, nonzeros);
-                        idx = exprs.sparsity().find();
-                        g_cross_comp = vertcat(g_cross_comp, exprs(idx));
+                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
                     end
                 end
-            elseif settings.cross_comp_mode == 5
-                for j=1:obj.n_cont
-                    for r=1:obj.n_indep
-                        pairs = cross_comp_pairs(j, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
-                        if size([expr_cell{:}], 1) == 0
-                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
-                            nonzeros = [];
-                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                            nonzeros = [sum(sum([nonzeros_p{:}], 2), 1),sum(sum([nonzeros_n{:}], 2), 1)]';
-                            exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
-                            exprs = exprs(:);
-                        else
-                            nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                            nonzeros = sum(sum([nonzeros{:}], 2),1);
-                            exprs = sum1(sum2([expr_cell{:}]));
-                        end
-                        exprs = scale_sigma(exprs, sigma, nonzeros);
-                        idx = exprs.sparsity().find();
-                        if numel(idx) == 0
-                            idx = [];
-                        end
-                        g_cross_comp = vertcat(g_cross_comp, exprs(idx));
-                    end
-                end
-            elseif settings.cross_comp_mode == 6
-                for jj=1:obj.n_discont
-                    for r=1:obj.n_indep
-                        pairs = cross_comp_pairs(:, jj, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
-                        if size(vertcat(expr_cell{:}), 1) == 0
-                            exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
-                            nonzeros = [];
-                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                            nonzeros = [sum(sum([nonzeros_p{:}], 2), 1),sum(sum([nonzeros_n{:}], 2), 1)]';
-                            exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
-                            exprs = exprs(:);
-                        else
-                            nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                            nonzeros = sum(sum([nonzeros{:}], 2),1);
-                            exprs = sum1(sum2([expr_cell{:}]));
-                        end
-                        exprs = scale_sigma(exprs, sigma, nonzeros);
-                        idx = exprs.sparsity().find();
-                        if numel(idx) == 0
-                            idx = [];
-                        end
-                        g_cross_comp = vertcat(g_cross_comp, exprs(idx));
-                    end
-                end
-            elseif settings.cross_comp_mode == 7
-                for r=1:obj.n_indep
-                    pairs = cross_comp_pairs(:, :, r);
-                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
-                    if size([expr_cell{:}], 1) == 0
-                        exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
-                        nonzeros = [];
-                    elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                        exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                        exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                        nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                        nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                        nonzeros = [sum([nonzeros_p{:}], 2),sum([nonzeros_n{:}], 2)]';
-                        exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
-                        exprs = exprs(:);
-                    else
-                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                        nonzeros = sum([nonzeros{:}], 2);
-                        exprs = sum2([expr_cell{:}]);
-                    end
-                    exprs = scale_sigma(exprs, sigma, nonzeros);
-                    idx = exprs.sparsity().find();
-                    if numel(idx) == 0
-                        idx = [];
-                    end
-                    g_cross_comp = vertcat(g_cross_comp, exprs(idx));
-                end
-            elseif settings.cross_comp_mode == 8
-                for r=1:obj.n_indep
-                    pairs = cross_comp_pairs(:, :, r);
-                    expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma/sigma_scale), pairs, 'uni', false);
-                    if size([expr_cell{:}], 1) == 0
-                        exprs= define_casadi_symbolic(settings.casadi_symbolic_mode, 'dummy', 0);
-                        nonzeros = [];
-                    elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                        exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                        exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                        nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                        nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                        nonzeros = [sum(sum([nonzeros_p{:}], 2), 1),sum(sum([nonzeros_n{:}], 2), 1)]';
-                        exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
-                        exprs = exprs(:);
-                    else
-                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                        nonzeros = sum(sum([nonzeros{:}], 2),1);
-                        exprs = sum1(sum2([expr_cell{:}]));
-                    end
-                    exprs = scale_sigma(exprs, sigma, nonzeros);
-                    idx = exprs.sparsity().find();
-                    if numel(idx) == 0
-                        idx = [];
-                    end
-                    g_cross_comp = vertcat(g_cross_comp, exprs(idx));
-                end
-            elseif settings.cross_comp_mode > 8
-                return
             end
 
             g_comp = vertcat(g_cross_comp, g_path_comp, g_impulse_comp);
