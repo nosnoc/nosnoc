@@ -253,8 +253,7 @@ classdef FiniteElement < NosnocFormulationObject
             % misc
             obj.ind_h = [];
             obj.ind_elastic = [];
-            obj.ind_boundary = [];
-
+            
             if settings.use_fesd
                 h = define_casadi_symbolic(settings.casadi_symbolic_mode, ['h_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)]);
                 h_ctrl_stage = model.T/settings.N_stages;
@@ -1216,6 +1215,8 @@ classdef FiniteElement < NosnocFormulationObject
             settings = obj.settings;
             dims = obj.dims;
 
+            % TODO: Lift all pairs that are not scalar.
+            % TODO: how to determine pairs that are not scalar?
             g_path_comp_pairs = [];
 
             % path complementarities
@@ -1231,8 +1232,7 @@ classdef FiniteElement < NosnocFormulationObject
                     g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
                 end
             end
-            general_comp_pairs = g_path_comp_pairs
-
+            
             impulse_pairs = [];
             if settings.dcs_mode == DcsMode.CLS && (obj.fe_idx ~= 1 || ~settings.no_initial_impacts)
                 % comp condts
@@ -1299,37 +1299,9 @@ classdef FiniteElement < NosnocFormulationObject
                 end
             end
             
-            general_comp_pairs = vertcat(general_comp_pairs, impulse_pairs);
-
             cross_comp_pairs = obj.getCrossCompPairs();
 
-            obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_pairs{:});
-            
-            for j=1:obj.n_cont
-                for jj=1:obj.n_discont
-                    for r=1:obj.n_indep
-                        pairs = cross_comp_pairs{j, jj, r};
-                        % TODO This is ugly but I don't have a better idea at the moment
-                        exprs = apply_psi(pairs, psi_fun, sigma);
-                        if settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs = exprs';
-                            exprs = exprs(:);
-                        end
-                        g_cross_comp = vertcat(g_cross_comp, extract_nonzeros_from_vector(exprs));
-                    end
-                end
-            end
-
-            g_comp = vertcat(g_cross_comp, g_path_comp, g_impulse_comp);
-
-            [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
-            
-            n_cross_comp = length(g_cross_comp);
-            n_path_comp = length(g_path_comp);
-            n_comp = n_cross_comp + n_path_comp;
-            
-            % Add reformulated constraints
-            obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
+            obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_pairs);
         end
 
         function stepEquilibration(obj, sigma_p, rho_h_p)

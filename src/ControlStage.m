@@ -69,8 +69,6 @@ classdef ControlStage < NosnocFormulationObject
         ind_Beta_conic
         ind_Beta_d
         ind_Delta_d
-%         ind_P_vn
-%         ind_N_vn
         ind_L_vn
         ind_P_vt
         ind_N_vt
@@ -151,8 +149,6 @@ classdef ControlStage < NosnocFormulationObject
                 prev_fe = fe;
             end
 
-            obj.createComplementarityConstraints(sigma_p, s_elastic);
-
             % least squares cost
             obj.cost = obj.cost + (model.T/settings.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             obj.objective = obj.objective + (model.T/settings.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
@@ -224,8 +220,6 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_Gamma_d = [obj.ind_Gamma_d; transpose(flatten_sys(increment_indices(fe.ind_Gamma_d, w_len)))];
             obj.ind_Beta_d = [obj.ind_Beta_d; transpose(flatten_sys(increment_indices(fe.ind_Beta_d, w_len)))];
             obj.ind_Delta_d = [obj.ind_Delta_d; transpose(flatten_sys(increment_indices(fe.ind_Delta_d, w_len)))];
-%             obj.ind_P_vn = [obj.ind_P_vn; transpose(flatten_sys(increment_indices(fe.ind_P_vn, w_len)))];
-%             obj.ind_N_vn = [obj.ind_N_vn; transpose(flatten_sys(increment_indices(fe.ind_N_vn, w_len)))];
             obj.ind_L_vn = [obj.ind_L_vn; transpose(flatten_sys(increment_indices(fe.ind_L_vn, w_len)))];
             obj.ind_P_vt = [obj.ind_P_vt; transpose(flatten_sys(increment_indices(fe.ind_P_vt, w_len)))];
             obj.ind_N_vt = [obj.ind_N_vt; transpose(flatten_sys(increment_indices(fe.ind_N_vt, w_len)))];
@@ -247,125 +241,6 @@ classdef ControlStage < NosnocFormulationObject
             obj.lbw = vertcat(obj.lbw, lb);
             obj.ubw = vertcat(obj.ubw, ub);
             obj.w0 = vertcat(obj.w0, initial);
-        end
-        
-        function createComplementarityConstraints(obj, sigma_p, s_elastic)
-            import casadi.*           
-            model = obj.model;
-            settings = obj.settings;
-            dims = obj.dims;
-
-            psi_fun = settings.psi_fun;
-
-            % Generate the s_elastic variable if necessary.
-            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_elastic_' num2str(obj.ctrl_idx)], n_comp);
-                obj.addVariable(s_elastic,...
-                                'elastic',...
-                                settings.s_elastic_min*ones(n_comp,1),...
-                                settings.s_elastic_max*ones(n_comp,1),...
-                                settings.s_elastic_0*ones(n_comp,1));
-            end
-
-            if settings.elasticity_mode == ElasticityMode.NONE
-                sigma = sigma_p;
-            else
-                sigma = s_elastic;
-            end
-            
-            g_cross_comp = [];
-            if ~settings.use_fesd || settings.cross_comp_mode < 9 || settings.cross_comp_mode > 10
-                % Do nothing, handled at the FE level
-                % along with modes 1-8
-                return                
-            elseif settings.cross_comp_mode == 9
-                for r=1:dims.n_sys
-                    g_r = 0;
-                    nz_r = [];
-                    for fe=obj.stage
-                        pairs = fe.cross_comp_pairs(:, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma), pairs, 'uni', false);
-                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                        if size([expr_cell{:}], 1) == 0
-                            exprs= [];
-                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                            nonzeros = [sum([nonzeros_p{:}], 2),sum([nonzeros_n{:}], 2)]';
-                            exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
-                            exprs = exprs(:);
-                        else
-                            nonzeros = sum([nonzeros{:}], 2);
-                            exprs = sum2([expr_cell{:}]);
-                        end
-                        if isempty(nz_r)
-                            nz_r = zeros(size(nonzeros));
-                        end
-                        idx = exprs.sparsity().find();
-                        if numel(idx) == 0
-                            idx = [];
-                        end
-                        g_r = g_r + exprs(idx);
-                        nz_r = nz_r + nonzeros;
-                    end
-                    g_r = scale_sigma(g_r, sigma, nz_r);
-                    g_cross_comp = vertcat(g_cross_comp, g_r);
-                end
-            elseif settings.cross_comp_mode == 10
-                for r=1:dims.n_sys
-                    g_r = 0;
-                    nz_r = [];
-                    for fe=obj.stage
-                        pairs = fe.cross_comp_pairs(:, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma), pairs, 'uni', false);
-                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                        if size([expr_cell{:}], 1) == 0
-                            exprs= [];
-                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                            nonzeros = [sum(sum([nonzeros_p{:}], 2), 1),sum(sum([nonzeros_n{:}], 2), 1)]';
-                            exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
-                            exprs = exprs(:);
-                        else
-                            nonzeros = sum(sum([nonzeros{:}], 2),1);
-                            exprs = sum1(sum2([expr_cell{:}]));
-                        end
-                        idx = exprs.sparsity().find();
-                        if numel(idx) == 0
-                            idx = [];
-                        end
-                        g_r = g_r + exprs(idx);
-                        if isempty(nz_r)
-                            nz_r = zeros(size(nonzeros));
-                        end
-                        nz_r = nz_r + nonzeros;
-                    end
-                    g_r = scale_sigma(g_r, sigma, nz_r);
-                    g_cross_comp = vertcat(g_cross_comp, g_r);
-                end
-            end
-
-            g_comp = g_cross_comp;
-            n_comp = length(g_cross_comp);
-
-            [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
-            
-            obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
-
-            % TODO handle ell_1_penalty at top level.
-            % If We need to add a cost from the reformulation do that.
-            if settings.mpcc_mode == MpccMode.ell_1_penalty
-                if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*cost;
-                else
-                    obj.cost = sigma_p*obj.cost + cost;
-                end
-            end
         end
     end
 end

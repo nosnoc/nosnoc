@@ -135,8 +135,21 @@ classdef NosnocMPCC < NosnocFormulationObject
         nabla_J_fun
     end
 
-    methods
-        
+    properties(Dependent, SetAccess=private, Hidden)
+        % Properties generated on the fly.
+
+        % casadi symbolics/expresions for u, sot, and nu
+        u
+        sot
+        nu_vector
+        cc_vector
+
+        % Indices for all algebraic vars in the problem
+        ind_z_all
+        ind_x_all
+    end
+
+    methods        
         function obj = NosnocMPCC(settings, dims, model)
             import casadi.*
             obj@NosnocFormulationObject();
@@ -257,8 +270,6 @@ classdef NosnocMPCC < NosnocFormulationObject
                 model.v0_global)
 
             obj.create_primal_variables();
-
-            obj.createComplementarityConstraints();
 
             last_stage = obj.stages(end);
             last_fe = last_stage.stage(end);
@@ -580,115 +591,6 @@ classdef NosnocMPCC < NosnocFormulationObject
             end
         end
 
-        function createComplementarities(obj)
-            import casadi.*
-            model = obj.model;
-            settings = obj.settings;
-            dims = obj.dims;
-
-            cross_comp_pairs = {};
-            % TODO Implement other modes
-            if ~settings.use_fesd || settings.cross_comp_mode < 11
-                % Do nothing, handled at the FE or stage level
-                return
-            elseif settings.cross_comp_mode == 11
-                for r=1:dims.n_sys
-                    g_r = 0;
-                    nz_r = [];
-                    for stage=obj.stages
-                        for fe=stage.stage
-                            pairs = fe.cross_comp_pairs(:, :, r);
-                            expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma), pairs, 'uni', false);
-                            nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                            if size(vertcat(expr_cell{:}), 1) == 0
-                                exprs= [];
-                            elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                                exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                                exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                                nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                                nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                                nonzeros = [sum([nonzeros_p{:}], 2),sum([nonzeros_n{:}], 2)]';
-                                exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
-                                exprs = exprs(:);
-                            else
-                                nonzeros = sum([nonzeros{:}], 2);
-                                exprs = sum2([expr_cell{:}]);
-                            end
-                            if isempty(nz_r)
-                                nz_r = zeros(size(nonzeros));
-                            end
-                            g_r = g_r + extract_nonzeros_from_vector(exprs);
-                            nz_r = nz_r + nonzeros;
-                        end
-                    end
-                    g_r = scale_sigma(g_r, sigma, nz_r);
-                    g_cross_comp = vertcat(g_cross_comp, g_r);
-                end
-            elseif settings.cross_comp_mode == 12
-                for r=1:dims.n_sys
-                    g_r = 0;
-                    nz_r = [];
-                    for stage=obj.stages
-                        for fe=stage.stage
-                            pairs = fe.cross_comp_pairs(:, :, r);
-                            expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma), pairs, 'uni', false);
-                            nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                            if size(vertcat(expr_cell{:}), 1) == 0
-                                exprs= [];
-                            elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                                exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                                exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                                nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                                nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                                nonzeros = [sum(sum([nonzeros_p{:}], 2), 1),sum(sum([nonzeros_n{:}], 2), 1)]';
-                                exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
-                                exprs = exprs(:);
-                            else
-                                nonzeros = sum(sum([nonzeros{:}], 2),1);
-                                exprs = sum1(sum2([expr_cell{:}]));
-                            end
-                            if isempty(nz_r)
-                                nz_r = zeros(size(nonzeros));
-                            end
-                            g_r = g_r + extract_nonzeros_from_vector(exprs);
-                            nz_r = nz_r + nonzeros;
-                        end
-                    end
-                    g_r = scale_sigma(g_r, sigma, nz_r);
-                    g_cross_comp = vertcat(g_cross_comp, g_r);
-                end
-            end
-
-            % If We need to add a cost from the reformulation do that as needed;
-            if settings.mpcc_mode == MpccMode.ell_1_penalty % this implies bilinear
-                cost = 0;
-                for r=1:dims.n_sys
-                    for stage=obj.stages
-                        for fe=stage.stage
-                            pairs = fe.cross_comp_pairs(:, :, r);
-                            expr_cell = cellfun(@(pair) apply_psi(pair, @(a,b,t) a*b, 0), pairs, 'uni', false);
-                            expr = sum1(sum2([expr_cell{:}]));
-                            cost = cost + expr;
-                        end
-                    end
-                end
-                if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*cost;
-                else
-                    obj.cost = sigma_p*obj.cost + cost;
-                end
-            else
-                g_comp = g_cross_comp;
-                n_comp = length(g_cross_comp);
-
-                [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
-
-                % Add reformulated constraints
-                obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
-
-            end
-        end
-
         % TODO this should be private
         function addControlStage(obj, stage)
             w_len = length(obj.w);
@@ -820,17 +722,28 @@ classdef NosnocMPCC < NosnocFormulationObject
                 fileID = 1;
             end
             fprintf(fileID, "i\tlbg\t\t ubg\t\t g_expr\n");
-            for i = 1:length(obj.lbg)
-                expr_str = formattedDisplayText(obj.g(i));
-                fprintf(fileID, "%d\t%.2e\t%.2e\t%s\n", i, obj.lbg(i), obj.ubg(i), expr_str);
+            for ii = 1:length(obj.lbg)
+                expr_str = formattedDisplayText(obj.g(ii));
+                fprintf(fileID, "%d\t%.2e\t%.2e\t%s\n", ii, obj.lbg(ii), obj.ubg(ii), expr_str);
             end
 
             fprintf(fileID, "\nw\t\t\tw0\t\tlbw\t\tubw\n");
-            for i = 1:length(obj.lbw)
+            for ii = 1:length(obj.lbw)
                 % keyboard
-                expr_str = pad(formattedDisplayText(obj.w(i)), 20);
-                lb_str = pad(sprintf('%.2e', obj.lbw(i)), 10);
-                fprintf(fileID, "%s\t%.2e\t%s\t%.2e\t\n", expr_str, obj.w0(i), lb_str, obj.ubw(i));
+                expr_str = pad(formattedDisplayText(obj.w(ii)), 20);
+                lb_str = pad(sprintf('%.2e', obj.lbw(ii)), 10);
+                fprintf(fileID, "%s\t%.2e\t%s\t%.2e\t\n", expr_str, obj.w0(ii), lb_str, obj.ubw(ii));
+            end
+
+            fprintf(fileID, "\nCross Complementarity Pairs\n");
+            fprintf(fileID, "\na \t\t b\n");
+
+            for stage=obj.stages
+                for fe=stage.stage
+                    for ii=1:size(fe.all_comp_pairs, 1)
+                        fprintf(fileID, "%s\t\t%s\n",fe.all_comp_pairs(ii,1), fe.all_comp_pairs(ii,2));
+                    end
+                end
             end
 
             fprintf(fileID, '\nobjective\n');

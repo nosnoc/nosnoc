@@ -25,7 +25,12 @@ settings.N_stages = 1;
 settings.N_finite_elements = 2;
 model.dims.n_s = 2;
 
+model.verify_and_backfill(settings);
+model.generate_variables(settings);
+model.generate_equations(settings);
+settings.preprocess()
 
+mpcc = NosnocMPCC(settings, model.dims, model);
 
 %solver = NosnocSolver(model, settings);
 %[results,stats] = solver.solve();
