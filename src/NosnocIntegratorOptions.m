@@ -229,7 +229,7 @@ classdef NosnocOptions < handle
                 obj.opts_casadi_nlp.ipopt.print_level=0;
                 obj.opts_casadi_nlp.print_time=0;
                 obj.opts_casadi_nlp.ipopt.sb= 'yes';
-            elseif obj.print_level == 4
+            elseif print_level == 4
                 obj.opts_casadi_nlp.ipopt.print_level=0;
                 obj.opts_casadi_nlp.print_time=1;
                 obj.opts_casadi_nlp.ipopt.sb= 'no';

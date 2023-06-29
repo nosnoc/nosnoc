@@ -193,6 +193,9 @@ classdef NosnocModel < handle
 
         % flags
         friction_exists
+        general_inclusion = 0
+        there_exist_free_x0 = 0
+        time_freezing_model_exists = 0
 
         % time freezing
         a_n

@@ -491,7 +491,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                     all_pairs = [all_pairs;fe.all_comp_pairs];
                 end
             end
-            all_products = apply_psi(all_pairs, @(x,y,t) x*y, 0);
+            all_products = apply_psi(all_pairs, @(x,y,t) x.*y, 0);
 
             obj.comp_res = Function('comp_res', {obj.w, obj.p}, {max(all_products)});
 
@@ -736,12 +736,14 @@ classdef NosnocMPCC < NosnocFormulationObject
             end
 
             fprintf(fileID, "\nCross Complementarity Pairs\n");
-            fprintf(fileID, "\na \t\t b\n");
+            fprintf(fileID, "\na \t\t\t\t\t\t b\n");
 
             for stage=obj.stages
                 for fe=stage.stage
                     for ii=1:size(fe.all_comp_pairs, 1)
-                        fprintf(fileID, "%s\t\t%s\n",fe.all_comp_pairs(ii,1), fe.all_comp_pairs(ii,2));
+                        a_str = pad(formattedDisplayText(fe.all_comp_pairs(ii,1)), 20);
+                        b_str = pad(formattedDisplayText(fe.all_comp_pairs(ii,2)), 20);
+                        fprintf(fileID, "%s\t\t\t\t%s\n", a_str, b_str);
                     end
                 end
             end

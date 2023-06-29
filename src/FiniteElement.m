@@ -88,7 +88,7 @@ classdef FiniteElement < NosnocFormulationObject
         ind_comp
 
         cross_comp_pairs
-        general_comp_pairs
+        all_comp_pairs
         n_comp_components
         
 
@@ -1301,7 +1301,7 @@ classdef FiniteElement < NosnocFormulationObject
             
             cross_comp_pairs = obj.getCrossCompPairs();
 
-            obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_pairs);
+            obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, vertcat(cross_comp_pairs{:}));
         end
 
         function stepEquilibration(obj, sigma_p, rho_h_p)

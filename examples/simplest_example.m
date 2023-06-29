@@ -10,7 +10,6 @@ settings.print_level = 3;
 
 model = NosnocModel();
 x1 = SX.sym('x1');
-model.p_time_var = SX.sym('t_var',1);
 model.x = x1;
 model.c = [x1];
 model.S = [-1; 1];
@@ -28,7 +27,7 @@ model.dims.n_s = 2;
 model.verify_and_backfill(settings);
 model.generate_variables(settings);
 model.generate_equations(settings);
-settings.preprocess()
+settings.preprocess();
 
 mpcc = NosnocMPCC(settings, model.dims, model);
 
