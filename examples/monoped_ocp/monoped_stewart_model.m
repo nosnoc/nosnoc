@@ -16,17 +16,18 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     settings = NosnocOptions();
     model = NosnocModel();
     %%
-    settings.print_level = 3;
+    settings.print_level = 5;
     settings.irk_scheme = IRKSchemes.RADAU_IIA;
     settings.dcs_mode = DcsMode.Stewart;
     settings.n_s = 2;
     %% homotopy settings
-    settings.cross_comp_mode = 3;
+    settings.cross_comp_mode = 1;
     settings.opts_casadi_nlp.ipopt.max_iter = 10000;
     %settings.opts_casadi_nlp.ipopt.max_iter = 1000;
-    settings.N_homotopy = 5;
+    settings.N_homotopy = 11;
+    settins.sigma_0 = 1;
     % settings.homotopy_update_rule = 'superlinear';
-    settings.homotopy_update_slope = 0.1;
+    settings.homotopy_update_slope = 0.4;
     settings.opts_casadi_nlp.ipopt.tol = 1e-5;
     settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
     settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
@@ -37,14 +38,15 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     %settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
     %% time-freezing
-    settings.s_sot_max = 10;
+    settings.s_sot_max = 100;
     settings.s_sot_min = 0.99;
     settings.rho_sot = 0.00;
     settings.time_freezing = 0;
     settings.pss_lift_step_functions = 0;
-    settings.stagewise_clock_constraint = 1;
+    settings.stagewise_clock_constraint = 0;
 
     %% Discretization
+    T = 3.0;
     model.T = 3.0;
     settings.N_stages = N_stages;
     settings.N_finite_elements = 3;
@@ -106,6 +108,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
 
     sot = SX.sym('sot',1);
     t = SX.sym('t',1);
+    t_ref = SX.sym('t_ref',1);
 
     u = [u_hip;u_knee];
     q = [qx;qz;phi_hip;phi_knee];
@@ -115,6 +118,10 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     model.q = q;
     model.v = v;
     model.u = [u;sot];
+    model.p_time_var = t_ref;
+    t_stages = linspace(0, T, N_stages+1);
+    model.p_time_var_val = t_stages(2:end);
+    
 
     n_q = length(q);
     
@@ -211,23 +218,22 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     R = 1e-1*eye(2);
 
     % Generate reference trajectory
-    x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/model.T;0;0;0];
-    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/model.T;0;0;0];
-    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/model.T;0;0;0];
+    x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/T;0;0;0;T/4];
+    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/T;0;0;0;2*T/4];
+    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/T;0;0;0;3*T/4];
 
     % accorbatic refference
     % x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/model.T;0;0;0];
     x_target = [q_target;zeros(4,1)];
-    x_ref = interp1([0 0.25 0.5 0.75 1],[model.x0,x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,settings.N_stages),'spline')'; %spline
+    x_ref = interp1([0 0.25 0.5 0.75 1],[[model.x0;0],x_mid_1,x_mid_2,x_mid_3,[x_target;T]]',linspace(0,1,settings.N_stages),'spline')'; %spline
 
-    model.lsq_x = {x, x_ref, Q}; % TODO also do trajectory
+    model.lsq_x = {x, x_ref(1:(end-1),:), Q}; % TODO also do trajectory
     model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
     model.lsq_T = {x, x_target, Q_terminal};
     %% terminal constraint and/or costs
     %model.g_terminal = q(1:length(q_target))-q_target;
 
     %%hand crafted time freezing :)
-    a_n = 100;
     f_ode = sot * vertcat(v, invM*f_v, 1);
 
     v_normal = J_normal'*v;
@@ -253,6 +259,15 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     model.ubx = [model.ubx;inf];
     model.u0 = [0;0;1];
     model.x0 = [model.x0;0];
+
+    %
+    model.g_terminal = [t - T];
+    model.g_path = [model.g_path; t - t_ref];
+    model.g_path_lb = [model.g_path_lb; 0];
+    model.g_path_ub = [model.g_path_ub; 0];
+
+    %
+    settings.initial_theta = 0.11;
 
     %% Solve OCP with NOSNOC
 

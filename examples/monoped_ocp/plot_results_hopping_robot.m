@@ -1,9 +1,10 @@
 import casadi.*
 close all;
 %%
-LineWidth = 2;
-make_animation = 1;
+LineWidth = 3;
+make_animation = 0;
 plot_kinematics = 0;
+label_fontsize = 24;
 %% visualization
 h = 0.1;
 qx = results.x(1,:);
@@ -38,7 +39,7 @@ end
 
 %% Make gif animation
 ymin = min(p_foot_res(2,:))-0.1;
-ymax = max(qz)+0.5;
+ymax = max(qz)+0.1;
 xmin = min(qx)-0.5;
 xmax = max(qx)+0.5;
 xx = xmin:0.1:xmax;
@@ -89,7 +90,7 @@ if make_animation
     end
 end
 %% Severla frames of the solution
-frame_skip = 1;
+frame_skip = 4;
 figure('Renderer', 'painters', 'Position', [100 100 1200 500])
 if plot_kinematics
     subplot(1,7,[2:7])
@@ -104,28 +105,34 @@ if hole_constraint
     end
 end
 hold on
-xlabel('$x$','interpreter','latex');
-ylabel('$z$','interpreter','latex');
+%xlabel('$x$','interpreter','latex');
+%ylabel('$z$','interpreter','latex');
 plot_head = 1;
 for ii = 1:frame_skip:length(qz)
     % thigh
-    plot([qx(ii),p_knee_res(1,ii)],[qz(ii),p_knee_res(2,ii)],'k','linewidth',6);
+    plot([qx(ii),p_knee_res(1,ii)],[qz(ii),p_knee_res(2,ii)],'k','linewidth',8);
     hold on
     % shank
-    plot([p_knee_res(1,ii),p_foot_res(1,ii)],[p_knee_res(2,ii),p_foot_res(2,ii)],'k','linewidth',3);
+    plot([p_knee_res(1,ii),p_foot_res(1,ii)],[p_knee_res(2,ii),p_foot_res(2,ii)],'k','linewidth',4);
     % knee
-    plot([p_knee_res(1,ii)],[p_knee_res(2,ii)],'ro','markersize',4,'markerfacecolor','r');
+    plot([p_knee_res(1,ii)],[p_knee_res(2,ii)],'ro','markersize',5,'markerfacecolor','r');
     % foot
     hold on
     % head - base
-    plot([p_head_res(1,ii),qx(ii)],[p_head_res(2,ii),qz(ii)],'k','linewidth',13);
+    plot([p_head_res(1,ii),qx(ii)],[p_head_res(2,ii),qz(ii)],'k','linewidth',16);
     % base
-    plot([qx(ii)],[qz(ii)],'ro','markersize',7,'markerfacecolor','r');
+    plot([qx(ii)],[qz(ii)],'ro','markersize',10,'markerfacecolor','r');
 end
 
 axis equal
+%axis tight
 xlim([xmin+0.2 xmax-0.2]);
 ylim([ymin ymax]);
+set(gca,'YTickLabel',[]);
+set(gca,'XTickLabel',[]);
+set(gca,'YTick',[]);
+set(gca,'XTick',[]);
+%set(gca,'LooseInset',get(gca,'TightInset'));
 % static plot of kinemtics
 if plot_kinematics
     plot_robot_kinematics
@@ -134,7 +141,7 @@ if save_figure
     set(gcf,'Units','inches');
     screenposition = get(gcf,'Position');
     set(gcf,'PaperPosition',[0 0 screenposition(3:4)*2],'PaperSize',[screenposition(3:4)*2]);
-    eval(['print -dpdf -painters ' [filename '_key_frames'] ])
+    exportgraphics(gca,[filename '_key_frames.pdf'],'BackgroundColor','none')
 end
 
 %% states
@@ -144,8 +151,8 @@ subplot(221);
 plot(t_opt,qx,'Color',0.5*ones(3,1),'LineWidth',LineWidth);
 hold on
 plot(t_opt,qz,'k','LineWidth',LineWidth);
-xlabel('$t$','interpreter','latex');
-ylabel('Position of the base','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('Position of the base','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$x_{\textrm{base}}$','$z_{\textrm{base}}$'},'interpreter','latex','Location','best');
 grid on
 subplot(223);
@@ -155,16 +162,16 @@ plot(t_opt,q_phi_knee,'Color',0.5*ones(3,1),'LineWidth',LineWidth);
 ylim([[min([q_phi_hip,q_phi_knee])]-1  [max([q_phi_hip,q_phi_knee])]+1  ])
 % plot(tt,0*q_knee(ind)-pi/2*1.05,'r');
 % plot(tt,0*q_knee(ind)+pi/2*1.05,'r');
-xlabel('$t$','interpreter','latex');
-ylabel('$\phi$','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('$\phi$','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$\phi_{\textrm{hip}}$','$\phi_{\textrm{knee}}$'},'interpreter','latex','Location','best');
 grid on
 subplot(222);
 plot(t_opt,vx,'Color',0.5*ones(3,1),'LineWidth',LineWidth);
 hold on
 plot(t_opt,vz,'k','LineWidth',LineWidth);
-xlabel('$t$','interpreter','latex');
-ylabel('Velocity of the base','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('Velocity of the base','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$v^x_{\textrm{base}}$','$v^z_{\textrm{base}}$'},'interpreter','latex','Location','best');
 grid on
 subplot(224);
@@ -172,8 +179,8 @@ plot(t_opt,omega_hip,'k','LineWidth',LineWidth);
 hold on
 plot(t_opt,omega_knee,'Color',0.5*ones(3,1),'LineWidth',LineWidth);
 ylim([[min([omega_knee,omega_hip])]-1  [max([omega_knee,omega_hip])]+1  ])
-xlabel('$t$','interpreter','latex');
-ylabel('$\omega$','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('$\omega$','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$\omega_{\textrm{hip}}$','$\omega_{\textrm{knee}}$'},'interpreter','latex','Location','best');
 grid on
 %% knee and foot
@@ -182,8 +189,8 @@ subplot(221);
 plot(t_opt,p_knee_res(1,:),'Color',0.5*ones(3,1),'LineWidth',LineWidth);
 hold on
 plot(t_opt,p_foot_res(1,:),'k','LineWidth',LineWidth);
-xlabel('$t$','interpreter','latex');
-ylabel('Horizontal Positions','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('Horizontal Positions','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$p^x_{\mathrm{knee}}$','$p^x_{\mathrm{foot}}$'},'interpreter','latex','location','best');
 grid on
 
@@ -191,8 +198,8 @@ subplot(222);
 plot(t_opt,p_knee_res(2,:),'Color',0.5*ones(3,1),'LineWidth',LineWidth);
 hold on
 plot(t_opt,p_foot_res(2,:),'k','LineWidth',LineWidth);
-xlabel('$t$','interpreter','latex');
-ylabel('Vertical Positions','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('Vertical Positions','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$p^y_{\mathrm{knee}}$','$p^y_{\mathrm{foot}}$'},'interpreter','latex','location','best');
 grid on
 
@@ -200,8 +207,8 @@ subplot(223);
 plot(t_opt,v_knee_res(1,:),'Color',0.5*ones(3,1),'LineWidth',LineWidth);
 hold on
 plot(t_opt,v_foot_res(1,:),'k','LineWidth',LineWidth);
-xlabel('$t$','interpreter','latex');
-ylabel('Horizontal Velocities','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('Horizontal Velocities','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$v_{\mathrm{knee}}$','$v_{\mathrm{foot}}$'},'interpreter','latex','location','best');
 grid on
 
@@ -209,51 +216,51 @@ subplot(224);
 plot(t_opt,v_knee_res(2,:),'Color',0.5*ones(3,1),'LineWidth',LineWidth);
 hold on
 plot(t_opt,v_foot_res(2,:),'k','LineWidth',LineWidth);
-xlabel('$t$','interpreter','latex');
-ylabel('Vertical Velocities','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('Vertical Velocities','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$v^y_{\mathrm{knee}}$','$v^y_{\mathrm{foot}}$'},'interpreter','latex','location','best');
 grid on
 
 if save_figure
     set(gcf,'Units','inches');
     screenposition = get(gcf,'Position');
-    set(gcf,'PaperPosition',[0 0 screenposition(3:4)*2],'PaperSize',[screenposition(3:4)*2]);
-    eval(['print -dpdf -painters ' [filename '_kinematics'] ])
+    set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+    exportgraphics(gcf,[filename '_kinematics.pdf'],'BackgroundColor','none')
 end
 LineWidth = LineWidth+0.5;
 %% Plot controls
 if model.dims.n_u > 0
     % refine control;
-    figure('Renderer', 'painters', 'Position', [100 100 650 200])
+    figure('Renderer', 'painters')
     t_grid_u = results.t_grid_u;
     u_opt = results.u;
     stairs(t_grid_u,[u_opt(1,:),nan],"Color",'k','LineWidth',LineWidth);
     hold on
     stairs(t_grid_u,[u_opt(2,:),nan],"Color",0.5*ones(3,1),'LineWidth',LineWidth);
-    xlabel('$t$','interpreter','latex');
-    ylabel('$u(t)$','interpreter','latex');
+    xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+    ylabel('$u(t)$','interpreter','latex', 'Fontsize', label_fontsize);
     grid on
     legend({'$u_{\mathrm{hip}}(t)$','$u_{\mathrm{knee}}(t)$'},'interpreter','latex','location','best');
     xlim([0 t_grid_u(end)+1e-6]);
     if save_figure
         set(gcf,'Units','inches');
         screenposition = get(gcf,'Position');
-        set(gcf,'PaperPosition',[0 0 screenposition(3:4)*2],'PaperSize',[screenposition(3:4)*2]);
-        eval(['print -dpdf -painters ' [filename '_controls'] ])
+        set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+        exportgraphics(gcf,[filename '_controls.pdf'],'BackgroundColor','none')
     end
 
     try
         figure
         s_sot = results.w(model.ind_sot)';
         stairs(t_grid_u,[s_sot,nan],"Color",0.2*ones(3,1),'LineWidth',LineWidth);
-        xlabel('$t$','interpreter','latex');
-        ylabel('$s(t)$','interpreter','latex');
+        xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+        ylabel('$s(t)$','interpreter','latex', 'Fontsize', label_fontsize);
         xlim([0 t_grid_u(end)]);
         grid on
         set(gcf,'Units','inches');
         screenposition = get(gcf,'Position');
-        set(gcf,'PaperPosition',[0 0 screenposition(3:4)*2],'PaperSize',[screenposition(3:4)*2]);
-        eval(['print -dpdf -painters ' [filename '_sot'] ])
+        set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
+        exportgraphics(gcf,[filename '_sot.pdf'],'BackgroundColor','none')
     catch
     end
 end
@@ -282,26 +289,26 @@ ylim([-0.1 max(constraint_drift(2,:))+0.1]);
 xlim([0 T]);
 
 grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$f_c(q)$','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('$f_c(q)$','interpreter','latex', 'Fontsize', label_fontsize);
 subplot(312)
 plot(t_opt,constraint_drift(1,:),'k','LineWidth',LineWidth);
 grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$n(q)^\top v$','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('$n(q)^\top v$','interpreter','latex', 'Fontsize', label_fontsize);
 xlim([0 T]);
 ylim([ min(constraint_drift(1,:))-0.1 max(constraint_drift(1,:))+0.1]);
 subplot(313)
 plot(t_opt,constraint_drift(3,:),'k','LineWidth',LineWidth);
 grid on
-xlabel('$t$','interpreter','latex');
-ylabel('$t_1(q)^\top v$','interpreter','latex');
+xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('$t_1(q)^\top v$','interpreter','latex', 'Fontsize', label_fontsize);
 ylim([min(constraint_drift(3,:))-0.1 max(constraint_drift(3,:))+0.1]);
 xlim([0 T]);
 if save_figure
     set(gcf,'Units','inches');
     screenposition = get(gcf,'Position');
     set(gcf,'PaperPosition',[0 0 screenposition(3:4)*2],'PaperSize',[screenposition(3:4)*2]);
-    eval(['print -dpdf -painters ' [filename '_drifts'] ])
+    exportgraphics(gcf,[filename '_drifts.pdf'],'BackgroundColor','none')
 end
 

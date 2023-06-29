@@ -15,8 +15,8 @@ v_knee_res = full(v_knee_fun(diff_states));
 xx = -0.25:0.5:0.25;
 subplot(1,7,1)
 hold on
-xlabel('$x$','interpreter','latex');
-ylabel('$z$','interpreter','latex');
+xlabel('$x$','interpreter','latex', 'Fontsize', label_fontsize);
+ylabel('$z$','interpreter','latex', 'Fontsize', label_fontsize);
 
 text([qx(1)+0.02],[qz(1)+0.02],'$(q_x,q_z)$','FontSize',FontSize ,'Interpreter','latex')
 % thigh

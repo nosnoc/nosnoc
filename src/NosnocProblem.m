@@ -539,7 +539,7 @@ classdef NosnocProblem < NosnocFormulationObject
             end
 
             if dims.n_p_time_var > 0
-                obj.p0 = [obj.p0; model.p_time_var_val];
+                obj.p0 = [obj.p0; model.p_time_var_val(:)];
             end
             obj.w0_original = obj.w0;
 
