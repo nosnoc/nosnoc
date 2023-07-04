@@ -448,7 +448,7 @@ classdef NosnocModel < handle
                 for ii = 1:dims.n_sys
                     ii_str = num2str(ii);
                     % define alpha (selection of a set valued step function)
-                    if ~settings.general_inclusion
+                    if ~obj.general_inclusion
                         obj.alpha_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],obj.dims.n_c_sys(ii));
                         obj.alpha = [obj.alpha;obj.alpha_sys{ii}];
                     else
@@ -467,7 +467,7 @@ classdef NosnocModel < handle
                 % TODO allow for custom beta lifting
                 % Theta collects the vector for dot_x = F(x)Theta,
                 % terms or theta_step from lifting;
-                if ~settings.general_inclusion
+                if ~obj.general_inclusion
                     for ii = 1:dims.n_sys
                         theta_temp = [];
                         ii_str = num2str(ii);
@@ -1261,7 +1261,7 @@ classdef NosnocModel < handle
             if isequal(settings.dcs_mode,'Step') || isequal(settings.dcs_mode,'Stewart')
                 if isempty(obj.F)
                     % Don't need F
-                    if ~settings.general_inclusion
+                    if ~obj.general_inclusion
                         error('nosnoc: Matrix F (or matrices F_i) with PSS modes not provided.');
                     else
                         % TODO Implement more subsystems.
@@ -1279,7 +1279,7 @@ classdef NosnocModel < handle
 
                 if isempty(obj.S)
                     % if we are using general inclusions we dont need S.
-                    if ~settings.general_inclusion
+                    if ~obj.general_inclusion
                         % if the matrix S is not provided, maybe the g_ind are available
                         % directly?
                         if isequal(settings.dcs_mode,'Stewart')
@@ -1384,7 +1384,7 @@ classdef NosnocModel < handle
                     end
                 end
 
-                if ~settings.general_inclusion
+                if ~obj.general_inclusion
                     dims.n_f_sys = arrayfun(@(sys) size(obj.F{sys},2),1:dims.n_sys);
                 else
                     dims.n_f_sys = [size(obj.f_x,1)];

@@ -98,7 +98,6 @@ classdef NosnocMPCC < NosnocFormulationObject
         w0_original
 
         % Algorithmic parameters
-        sigma_p
         rho_h_p
         rho_sot_p
 
@@ -234,15 +233,13 @@ classdef NosnocMPCC < NosnocFormulationObject
 
             obj.stages = [];
 
-            sigma_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'sigma_p');
-            obj.sigma_p = sigma_p;
             rho_sot_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_sot_p');
             obj.rho_sot_p = rho_sot_p;
             rho_h_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_h_p');
             obj.rho_h_p = rho_h_p;
             rho_terminal_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_terminal_p');
             T_ctrl_p  = define_casadi_symbolic(settings.casadi_symbolic_mode, 'T_ctrl_p');
-            obj.p = [sigma_p;rho_sot_p;rho_h_p;rho_terminal_p;T_ctrl_p];
+            obj.p = [rho_sot_p;rho_h_p;rho_terminal_p;T_ctrl_p];
 
             % Populate parameter indices
             if dims.n_p_global > 0
@@ -440,29 +437,6 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
             obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
 
-            % Process elastic costs
-            if settings.elasticity_mode == ElasticityMode.ELL_INF
-                if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*obj.s_elastic;
-                else
-                    obj.cost = sigma_p*obj.cost + obj.s_elastic;
-                end
-            end
-            if settings.elasticity_mode == ElasticityMode.ELL_1
-                sum_s_elastic = 0;
-                for k=1:settings.N_stages
-                    stage=obj.stages(k);
-                    for fe=stage.stage
-                        sum_s_elastic = sum_s_elastic + fe.sumElastic;
-                    end
-                end
-                if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*sum_s_elastic;
-                else
-                    obj.cost = sigma_p*obj.cost + sum_s_elastic;
-                end
-            end
-
             if settings.time_optimal_problem
                 % Add to the vector of unknowns
                 obj.addVariable(T_final, 't_final', settings.T_final_min, settings.T_final_max, T_final_guess);
@@ -512,7 +486,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
             obj.g_fun = Function('g_fun', {obj.w, obj.p}, {obj.g});
 
-            obj.p0 = [settings.sigma_0; settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
+            obj.p0 = [settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
 
             if dims.n_p_global > 0
                 obj.p0 = [obj.p0; model.p_global_val];
@@ -567,21 +541,9 @@ classdef NosnocMPCC < NosnocFormulationObject
                 end
             end
 
-            if obj.settings.elasticity_mode == ElasticityMode.ELL_INF
-                s_elastic = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_elastic',1);
-                obj.s_elastic = s_elastic;
-                if obj.settings.elastic_scholtes
-                    obj.settings.s_elastic_max = inf;
-                    obj.addConstraint(s_elastic-obj.sigma_p,-inf,0);
-                end
-                obj.addVariable(s_elastic, 'elastic', obj.settings.s_elastic_min, obj.settings.s_elastic_max, obj.settings.s_elastic_0);
-            else
-                s_elastic = [];
-            end
-
             for ii=1:obj.settings.N_stages
                 % TODO: maybe this should be a function
-                stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.sigma_p, obj.rho_h_p, obj.rho_sot_p, s_elastic);
+                stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.rho_h_p, obj.rho_sot_p);
                 obj.stages = [obj.stages, stage];
 
                 obj.addControlStage(stage);

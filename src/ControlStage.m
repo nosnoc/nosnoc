@@ -92,7 +92,7 @@ classdef ControlStage < NosnocFormulationObject
     methods
         % TODO: This probably should take less arguments somehow. Maybe a store of "global_variables" to be
         % added along with v_global. This will likely be done when I get around to cleaning up the `model` struct.
-        function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, s_sot, T_final, sigma_p, rho_h_p, rho_sot_p, s_elastic)
+        function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, s_sot, T_final, rho_h_p, rho_sot_p)
             import casadi.*
             obj@NosnocFormulationObject();
             
@@ -131,10 +131,10 @@ classdef ControlStage < NosnocFormulationObject
                 fe.forwardSimulation(obj.ocp, obj.Uk, s_sot, p_stage);
 
                 % 2) Complementarity Constraints
-                fe.createComplementarityConstraints(sigma_p, s_elastic, p_stage);
+                fe.createComplementarityConstraints(p_stage);
 
                 % 3) Step Equilibration
-                fe.stepEquilibration(sigma_p, rho_h_p);
+                fe.stepEquilibration(rho_h_p);
 
                 % 4) add finite element variables
                 obj.addFiniteElement(fe);

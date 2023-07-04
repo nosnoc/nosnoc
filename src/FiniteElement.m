@@ -1209,7 +1209,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
         end
 
-        function createComplementarityConstraints(obj, sigma_p, s_elastic, p_stage)
+        function createComplementarityConstraints(obj, p_stage)
             import casadi.*
             model = obj.model;
             settings = obj.settings;
@@ -1304,7 +1304,7 @@ classdef FiniteElement < NosnocFormulationObject
             obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, vertcat(cross_comp_pairs{:}));
         end
 
-        function stepEquilibration(obj, sigma_p, rho_h_p)
+        function stepEquilibration(obj, rho_h_p)
             import casadi.*
             model = obj.model;
             settings = obj.settings;
@@ -1334,12 +1334,13 @@ classdef FiniteElement < NosnocFormulationObject
                 obj.cost = obj.cost + rho_h_p * nu * delta_h_ki.^2
             elseif settings.step_equilibration == StepEquilibrationMode.direct
                 obj.addConstraint(nu*delta_h_ki, 0, 0);
+                % TODO: how to do this if it is not part of the mpcc.
             elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy
-                obj.addConstraint([nu*delta_h_ki-sigma_p;-nu*delta_h_ki-sigma_p],...
+                obj.addConstraint([nu*delta_h_ki-rho_h_p;-nu*delta_h_ki-rho_h_p],...
                     [-inf;-inf],...
                     [0;0]);
             elseif settings.step_equilibration == StepEquilibrationMode.direct_homotopy_lift
-                obj.addConstraint([obj.nu_lift-nu;obj.nu_lift*delta_h_ki-sigma_p;-obj.nu_lift*delta_h_ki-sigma_p],...
+                obj.addConstraint([obj.nu_lift-nu;obj.nu_lift*delta_h_ki-rho_h_p;-obj.nu_lift*delta_h_ki-rho_h_p],...
                     [0;-inf;-inf],...
                     [0;0;0]);
             else

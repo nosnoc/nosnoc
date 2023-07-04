@@ -24,57 +24,13 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef NosnocOptions < handle
+classdef NosnocSolverOptions < handle
 % TODO clean up much of the work here.
     properties
         % General
         solver_name {mustBeTextScalar} = 'nosnoc_solver'
         nlpsol = 'ipopt'
-        use_fesd(1,1) logical = 1
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
-
-        % descritization
-        N_stages(1,1) {mustBeInteger, mustBePositive} = 1;
-        N_finite_elements {mustBeInteger, mustBePositive} = 2;
-
-        % Integrator settings
-        real_time_plot(1,1) logical = 0
-        break_simulation_if_infeasible(1,1) logical = 1
-
-        % IRK and FESD Settings
-        n_s(1,1) {mustBeInteger, mustBeInRange(n_s, 1, 9)} = 2
-        irk_scheme(1,1) IRKSchemes = IRKSchemes.RADAU_IIA
-        irk_representation IrkRepresentation = IrkRepresentation.integral;
-        cross_comp_mode {mustBeInRange(cross_comp_mode, 1, 12)}= 3
-        gamma_h(1,1) double {mustBeReal, mustBeInRange(gamma_h, 0, 1)} = 1
-        dcs_mode DcsMode = DcsMode.Stewart
-
-        % Initialization - Stewart
-        lp_initialization(1,1) logical = 0
-        initial_theta(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_mu(1,1) double {mustBeReal, mustBeFinite} = 1
-
-        % Initialization - Step
-        initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda_0(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda_1(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_beta(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1
-
-        % Step theta lifting
-        pss_lift_step_functions(1,1) logical = 0
-        n_depth_step_lifting(1,1) {mustBeInteger, mustBeGreaterThanOrEqual(n_depth_step_lifting, 2)} = 2
-
-        %General NLP/OCP Settings
-        g_path_at_fe(1,1) logical = 0 % evaluate nonlinear path constraint at every finte element boundary
-        g_path_at_stg(1,1) logical = 0 % evaluate nonlinear path constraint at every stage
-
-        x_box_at_fe(1,1) logical = 1 % evaluate box constraint for diff states at every finite element boundary point
-        x_box_at_stg(1,1) logical = 1 % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
-
-        time_optimal_problem(1,1) = 0
-        simple_v0_guess(1,1) = 0 % TODO what is this
 
         % MPCC and Homotopy Settings
         comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
@@ -97,98 +53,30 @@ classdef NosnocOptions < handle
         polishing_step(1,1) logical = 0 % heuristic for fixing active set, yet exerimental, not recommended to use.
         polishing_derivative_test(1,1) logical = 0 % check in sliding mode also the derivative of switching functions
 
-        % Step equilibration
-        rho_h(1,1) double {mustBeReal, mustBePositive} = 1
-        step_equilibration(1,1) StepEquilibrationMode = StepEquilibrationMode.heuristic_mean % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
-        step_equilibration_sigma(1,1) double {mustBeReal, mustBePositive} = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
-
-        % Multiple shooting type discretization
-        equidistant_control_grid(1,1) logical = 1
-
-        % Time-Setting & Time-Freezing
-        time_freezing(1,1) logical = 0
-        time_freezing_inelastic(1,1) logical = 0
-        % for time optimal problems and equidistant control grids in physical time
-        use_speed_of_time_variables(1,1) logical = 0
-        local_speed_of_time_variable(1,1) logical = 0
-        stagewise_clock_constraint(1,1) logical = 1
-        impose_terminal_phyisical_time(1,1) logical = 1
-        s_sot0(1,1) double {mustBeReal, mustBePositive} = 1
-        s_sot_max(1,1) double {mustBeReal, mustBePositive} = 25
-        s_sot_min(1,1) double {mustBeReal, mustBePositive} = 1
-        S_sot_nominal(1,1) double {mustBeReal, mustBePositive} = 1
-        rho_sot(1,1) double {mustBeReal, mustBeNonnegative} = 0
-
-        T_final_max(1,1) double {mustBeReal, mustBePositive} = 1e2
-        T_final_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
-        time_freezing_reduced_model(1,1) logical = 0 % analytic reduction of lifter formulation, less algebraic variables (experimental)
-        time_freezing_hysteresis(1,1) logical = 0 % do not do automatic time freezing generation for hysteresis, it is not supported yet.
-        time_freezing_nonlinear_friction_cone(1,1) logical = 1 % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
-
-        time_freezing_quadrature_state(1,1) logical = 0 % make a nonsmooth quadrature state to integrate only if physical time is running
-        time_freezing_lift_forces(1,1) logical = 0 % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0
-
-        % exerimental expert options
-        nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
-        % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
-        stabilizing_q_dynamics(1,1) logical = 0
-        kappa_stabilizing_q_dynamics(1,1) double {mustBeReal, mustBePositive} = 1e-5
         % Verbose
         print_level = 3
         print_details_if_infeasible = 0;
         pause_homotopy_solver_if_infeasible = 0;
 
-        % Settings specific to CLS
-        friction_model (1,1) FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
-        conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
-        kappa_friction_reg (1,1) double {mustBeReal, mustBeNonnegative} = 0; % reg. term in friction equations to avoid large multipliers if no contact happens.
-        lift_velocity_state(1,1) logical = 0; % define auxliary algebraic vairable, dot{v} = z_v, to avoid symbolic inversion of the inertia matrix;
-        eps_cls double = 1e-3 % constraint: enforce f_c at Euler step with h * eps_cls
-
         % IPOPT Settings
         tol_ipopt(1,1) double {mustBeReal, mustBePositive} = 1e-16
         opts_casadi_nlp
-
-        % Relaxation of terminal constraint
-        relax_terminal_constraint(1,1) {mustBeInteger, mustBeInRange(relax_terminal_constraint, 0, 3)} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
-        relax_terminal_constraint_from_above(1,1) logical = 0
-        rho_terminal(1,1) double {mustBeReal, mustBePositive} = 1e2
-        relax_terminal_constraint_homotopy(1,1) logical = 0 % terminal penalty is governed by homotopy parameter
 
         % Integrator Specific
         use_previous_solution_as_initial_guess(1,1) logical = 0
         simulation_problem(1,1) logical = 0
 
-        % Misc TODO these should probably live in model
-        general_inclusion(1,1) logical = 0
-        there_exist_free_x0(1,1) logical = 0
-        time_freezing_model_exists(1,1) logical = 0
-
         % TODO: make proper multiple solver class.
         multiple_solvers(1,1) logical = 0
 
-        % Experimental:
-        no_initial_impacts(1,1) logical = 0
-
         % All NLP parameters
-        T_val(1,1) double {mustBeReal, mustBePositive} = 1
         p_val
-
-        % Butcher Tableu
-        A_irk double
-        B_irk double
-        b_irk double
-        C_irk double
-        D_irk double
-        c_irk double
 
         % psi func
         psi_fun_type CFunctionType = CFunctionType.BILINEAR
         relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
         elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
         psi_fun
-
-        right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
 
         % Output options
         store_integrator_step_results(1,1) logical = 0
@@ -201,7 +89,7 @@ classdef NosnocOptions < handle
     end
 
     methods
-        function obj = NosnocOptions()
+        function obj = NosnocProblemOptions()
 
             default_tol = 1e-12;
 
@@ -235,39 +123,6 @@ classdef NosnocOptions < handle
                 obj.opts_casadi_nlp.ipopt.sb= 'no';
             else
                 obj.opts_casadi_nlp.ipopt.print_level = 5;
-            end
-
-            % check irk scheme compatibility
-            if ismember(obj.irk_scheme, IRKSchemes.differential_only)
-                if obj.print_level >=1
-                    fprintf(['Info: The user provided RK scheme: ' char(obj.irk_scheme) ' is only available in the differential representation.\n']);
-                end
-                obj.irk_representation = 'differential';
-            end
-
-            % check impacts mode
-            if obj.dcs_mode == DcsMode.CLS && obj.time_freezing == 1
-                if obj.print_level >=1
-                    fprintf(['nosnoc: User uses dcs_mode.CLS and time_freezing = true at the same time. Defaulting to time freezing as it is currently more competitive\n']);
-                end
-                obj.time_freezing = 1;
-                obj.dcs_mode = DcsMode.Step;
-            end
-
-            if obj.time_freezing
-                obj.use_speed_of_time_variables = 1;
-                obj.local_speed_of_time_variable = 1;
-            end
-
-            % N finite elements shape 
-            if isscalar(obj.N_finite_elements)
-                obj.N_finite_elements = obj.N_finite_elements*ones(obj.N_stages,1);
-            else
-                if length(obj.N_finite_elements) == obj.N_stages
-                    obj.N_finite_elements = obj.N_finite_elements;
-                else
-                    error('settings.N_finite_elements must be length 1 or N_stages');
-                end
             end
 
             % MPCC mode setup
@@ -324,24 +179,6 @@ classdef NosnocOptions < handle
                     obj.elasticity_mode = ElasticityMode.ELL_1;
             end
 
-            if ~obj.time_rescaling
-                if obj.print_level >= 1 && obj.use_speed_of_time_variables
-                    warning('nosnoc:NosnocOptions:erroneous_use_speed_of_time_variables', "use_speed_of_time_variables erroneously set to true even though we are not rescaling time, this likely means your settings are somehow faulty. Using use_speed_of_time_variables = false")
-                end
-                obj.use_speed_of_time_variables = 0;
-            end
-
-            if ~obj.use_speed_of_time_variables
-                if obj.print_level >= 1 && obj.local_speed_of_time_variable
-                    warning('nosnoc:NosnocOptions:erroneous_local_speed_of_time_variable',"local_speed_of_time_variable erroneously set to true even though we are not using speed of time variales, this likely means your settings are somehow faulty. Using local_speed_of_time_variable = false")
-                end
-                obj.local_speed_of_time_variable = 0;
-            end
-
-            if obj.nonlinear_sigma_rho_constraint
-                obj.convex_sigma_rho_constraint = 1;
-            end
-
             % psi function
             a = define_casadi_symbolic(obj.casadi_symbolic_mode,'a',1);
             b = define_casadi_symbolic(obj.casadi_symbolic_mode,'b',1);
@@ -391,40 +228,7 @@ classdef NosnocOptions < handle
             end
 
             obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
-
-            % create Butcher tableau
-            % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
-            switch obj.irk_representation
-              case IrkRepresentation.integral
-                [B, C, D, tau_root] = generate_butcher_tableu_integral(obj.n_s, obj.irk_scheme);
-                if tau_root(end) == 1
-                    right_boundary_point_explicit  = 1;
-                else
-                    right_boundary_point_explicit  = 0;
-                end
-                obj.B_irk = B;
-                obj.C_irk = C;
-                obj.D_irk = D;
-                % also get time steps
-                [~, ~, c_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
-                obj.c_irk = c_irk;
-
-              case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
-                [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
-                if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
-                    right_boundary_point_explicit  = 1;
-                else
-                    right_boundary_point_explicit  = 0;
-                end
-                obj.A_irk = A_irk;
-                obj.b_irk = b_irk;
-                obj.c_irk = c_irk;
-            end
-            obj.right_boundary_point_explicit = right_boundary_point_explicit;
         end
 
-        function time_rescaling = get.time_rescaling(obj)
-            time_rescaling = (obj.time_freezing && obj.impose_terminal_phyisical_time) || obj.time_optimal_problem;
-        end
     end
 end

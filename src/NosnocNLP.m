@@ -37,63 +37,7 @@
 
 classdef NosnocNLP < NosnocFormulationObject
     properties
-        % Index vectors
-        ind_x
-        ind_x0
-        ind_u
-        ind_v
-        ind_z
-        % Stewart
-        ind_theta
-        ind_lam
-        ind_mu
-        % Step
-        ind_alpha
-        ind_lambda_n
-        ind_lambda_p
-        ind_theta_step
-        ind_beta
-        % Speficif to CLS representation
-        ind_lambda_normal
-        ind_lambda_tangent
-        ind_y_gap
-        % friction multipliers and lifting
-        % conic
-        ind_gamma
-        ind_beta_conic
-        % poly
-        ind_gamma_d
-        ind_beta_d
-        ind_delta_d
-        % variables related to conic
-        ind_p_vt
-        ind_n_vt
-        ind_alpha_vt
-        % variables only at element boundary
-        ind_x_left_bp
-        ind_Y_gap
-        ind_Lambda_normal
-        ind_Lambda_tangent
-        ind_Gamma
-        ind_Gamma_d
-        ind_Beta_conic
-        ind_Beta_d
-        ind_Delta_d
-%         ind_P_vn
-%         ind_N_vn
-        ind_L_vn
-        ind_P_vt
-        ind_N_vt
-
-        ind_Alpha_vt
-        % misc
-        ind_nu_lift
-        ind_h
         ind_elastic
-        ind_sot % index for speed of time variable
-        ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
-        ind_v_global
-        ind_s_terminal
 
         % Parameter index variables
         ind_p_x0
@@ -101,35 +45,21 @@ classdef NosnocNLP < NosnocFormulationObject
         ind_p_time_var
 
         % Problem data
-        model
-        settings
-        dims
-        ocp
+        mpcc
+        problem_options
 
         % original initialization
         w0_original
 
         % Algorithmic parameters
         sigma_p
-        rho_h_p
-        rho_sot_p
 
         % Algorithmic global variables (time independent)
         s_elastic
-        T_final
 
         % Parameters
         p
         p0
-
-        % Problem components
-        fe0 % Zeroth finite element (contains X0, lambda00)
-        stages % control stages
-
-        % complementarity residual functions
-        comp_res
-        comp_std
-        comp_fesd
 
         % Problem cost function
         cost_fun
@@ -165,90 +95,15 @@ classdef NosnocNLP < NosnocFormulationObject
     end
 
     methods
-        function obj = NosnocProblem(settings, dims, model)
+        function obj = NosnocNLP(solver_options, dims, mpcc)
             import casadi.*
             obj@NosnocFormulationObject();
 
-            if settings.right_boundary_point_explicit || settings.dcs_mode == DcsMode.CLS
-                rbp_allowance = 0;
-            else
-                rbp_allowance = 1;
-            end
-
-            if settings.dcs_mode == "CLS" && ~settings.right_boundary_point_explicit
-                rbp_x_only = 1;
-            else
-                rbp_x_only = 0;
-            end
-
-            right_ygap = 0;
-            if settings.dcs_mode == "CLS" && ~settings.right_boundary_point_explicit
-                right_ygap = 1;
-            end
-
-            obj.ind_u = [];
-            obj.ind_x0 = [];
-            obj.ind_x = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance+rbp_x_only);
-            obj.ind_v = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s);
-            obj.ind_z = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            % Stewart
-            obj.ind_theta = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lam = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_mu = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            % Step
-            obj.ind_alpha = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_n = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_p = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_theta_step = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            % CLS
-            obj.ind_lambda_normal = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_tangent = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_y_gap = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+right_ygap+rbp_allowance);
-            % friction multipliers and lifting
-            % conic
-            obj.ind_gamma =  cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta_conic = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            % poly
-            obj.ind_gamma_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_delta_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            % variables related to conic
-            obj.ind_p_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_n_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_alpha_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-
-            % Impulse
-            obj.ind_x_left_bp = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Y_gap = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Lambda_normal = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Lambda_tangent = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Gamma = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Beta_conic = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Gamma_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Beta_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Delta_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_L_vn = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_P_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_N_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Alpha_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
-
-            
-            % misc
-            obj.ind_nu_lift = {};
-            obj.ind_h = {};
-            obj.ind_sot = {};
-            obj.ind_v_global = [];
-
-            obj.ind_s_terminal = [];
-
-            obj.settings = settings;
-            obj.model = model;
-            obj.dims = dims;
+            obj.mpcc = mpcc;
+            obj.solver_options = solver_options;
             obj.ocp = []; % TODO create ocp objects
 
-            obj.stages = [];
-
+            
             sigma_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'sigma_p');
             obj.sigma_p = sigma_p;
             rho_sot_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_sot_p');
