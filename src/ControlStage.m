@@ -82,11 +82,22 @@ classdef ControlStage < NosnocFormulationObject
         % Index of this control stage.
         ctrl_idx
 
+        % Control stage g.
+        ind_g_stage
+        
         % Problem data
         model
         settings
         dims
         ocp
+    end
+
+    properties(Dependent, SetAccess=private, Hidden)
+        % Properties generated on the fly.
+
+        % casadi symbolics/expresions for u, sot
+        u
+        sot
     end
 
     methods
@@ -241,6 +252,20 @@ classdef ControlStage < NosnocFormulationObject
             obj.lbw = vertcat(obj.lbw, lb);
             obj.ubw = vertcat(obj.ubw, ub);
             obj.w0 = vertcat(obj.w0, initial);
+        end
+        
+        function [u, lbu, ubu, u0] = get.u(obj)
+            u = obj.w(ind_u);
+            lbu = obj.lbw(ind_u);
+            ubu = obj.ubw(ind_u);
+            u0 = obj.w0(ind_u);
+        end
+
+        function [sot, lbsot, ubsot, sot0] = get.sot(obj)
+            sot = obj.w(ind_sot);
+            lbsot = obj.lbw(ind_sot);
+            ubsot = obj.ubw(ind_sot);
+            sot0 = obj.w0(ind_sot);
         end
     end
 end
