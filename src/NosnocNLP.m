@@ -143,6 +143,7 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.nabla_J_fun = nabla_J_fun;
         end
 
+        % TODO deduplicate 
         function mpcc_to_nlp(obj, sigma_p)
             import casadi.*
             mpcc = obj.mpcc;
@@ -155,6 +156,12 @@ classdef NosnocNLP < NosnocFormulationObject
                 fe0.ubw(fe0.ind_x{1}),...
                 fe0.w0(fe0.ind_x{1}));
             obj.addConstraint(fe0.g, fe0.lbg, fe0.ubg);
+
+            % Add global vars
+            obj.addPrimalVector(mpcc.w(mpcc.ind_v_global),...
+                mpcc.lbw(mpcc.ind_v_global),...
+                mpcc.ubw(mpcc.ind_v_global),...
+                mpcc.w0(mpcc.ind_v_global));
 
             % Add elastic variable if ell_inf mode
             if obj.solver_options.elasticity_mode == ElasticityMode.ELL_INF
@@ -192,6 +199,18 @@ classdef NosnocNLP < NosnocFormulationObject
                     obj.relax_complementarity_constraints(fe);
                 end
             end
+            % Add s_terminal
+            % Add global vars
+            obj.addPrimalVector(mpcc.w(mpcc.ind_s_terminal),...
+                mpcc.lbw(mpcc.ind_s_terminal),...
+                mpcc.ubw(mpcc.ind_s_terminal),...
+                mpcc.w0(mpcc.ind_s_terminal));
+
+            % Add t final
+            obj.addPrimalVector(mpcc.w(mpcc.ind_t_final),...
+                mpcc.lbw(mpcc.ind_t_final),...
+                mpcc.ubw(mpcc.ind_t_final),...
+                mpcc.w0(mpcc.ind_t_final));
         end
 
         function relax_complementarity_constraints(obj, component)
