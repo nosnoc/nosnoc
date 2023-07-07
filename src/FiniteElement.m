@@ -1301,6 +1301,8 @@ classdef FiniteElement < NosnocFormulationObject
             
             cross_comp_pairs = obj.getCrossCompPairs();
 
+            % TODO think about cross complementarity aggregation mode.
+
             obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, vertcat(cross_comp_pairs{:}));
         end
 
