@@ -83,21 +83,13 @@ classdef ControlStage < NosnocFormulationObject
         ctrl_idx
 
         % Control stage g.
-        ind_g_stage
+        ind_stage
         
         % Problem data
         model
         settings
         dims
         ocp
-    end
-
-    properties(Dependent, SetAccess=private, Hidden)
-        % Properties generated on the fly.
-
-        % casadi symbolics/expresions for u, sot
-        u
-        sot
     end
 
     methods
@@ -171,21 +163,21 @@ classdef ControlStage < NosnocFormulationObject
             % TODO: combine this into a function
             if settings.use_fesd && settings.equidistant_control_grid
                 if ~settings.time_optimal_problem
-                    obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h);
+                    obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h, 'type', 'stage');
                 elseif ~settings.time_freezing
                     if settings.use_speed_of_time_variables
-                        obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h)
-                        obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/settings.N_stages);
+                        obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h, 'type', 'stage')
+                        obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/settings.N_stages, 'type', 'stage');
                     else
-                        obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/settings.N_stages);
+                        obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/settings.N_stages, 'type', 'stage');
                     end
                 end
             end
             if settings.time_freezing && settings.stagewise_clock_constraint
                 if settings.time_optimal_problem
-                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/settings.N_stages) + model.x0(end));
+                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/settings.N_stages) + model.x0(end), 'type', 'stage');
                 else
-                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end));
+                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end), 'type', 'stage');
                 end
             end
         end
@@ -254,18 +246,24 @@ classdef ControlStage < NosnocFormulationObject
             obj.w0 = vertcat(obj.w0, initial);
         end
         
-        function [u, lbu, ubu, u0] = get.u(obj)
-            u = obj.w(ind_u);
-            lbu = obj.lbw(ind_u);
-            ubu = obj.ubw(ind_u);
-            u0 = obj.w0(ind_u);
+        function [u, lbu, ubu, u0] = u(obj)
+            u = obj.w(obj.ind_u);
+            lbu = obj.lbw(obj.ind_u);
+            ubu = obj.ubw(obj.ind_u);
+            u0 = obj.w0(obj.ind_u);
         end
 
-        function [sot, lbsot, ubsot, sot0] = get.sot(obj)
-            sot = obj.w(ind_sot);
-            lbsot = obj.lbw(ind_sot);
-            ubsot = obj.ubw(ind_sot);
-            sot0 = obj.w0(ind_sot);
+        function [sot, lbsot, ubsot, sot0] = sot(obj)
+            sot = obj.w(obj.ind_sot);
+            lbsot = obj.lbw(obj.ind_sot);
+            ubsot = obj.ubw(obj.ind_sot);
+            sot0 = obj.w0(obj.ind_sot);
+        end
+
+        function [g_stage, lbg_stage, ubg_stage] = g_stage(obj)
+            g_stage = obj.g(obj.ind_stage);
+            lbg_stage = obj.lbg(obj.ind_stage);
+            ubg_stage = obj.ubg(obj.ind_stage);
         end
     end
 end

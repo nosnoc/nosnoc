@@ -55,7 +55,6 @@ classdef NosnocNLP < NosnocFormulationObject
         sigma_p
 
         % Algorithmic global variables (time independent)
-        ind_elastic
         s_elastic_inf
         s_elastic_1
 
@@ -97,15 +96,14 @@ classdef NosnocNLP < NosnocFormulationObject
     end
 
     methods
-        function obj = NosnocNLP(solver_options, dims, mpcc)
+        function obj = NosnocNLP(solver_options, mpcc)
             import casadi.*
             obj@NosnocFormulationObject();
 
             obj.mpcc = mpcc;
             obj.solver_options = solver_options;
-            obj.ocp = []; % TODO create ocp objects
             
-            sigma_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'sigma_p');
+            sigma_p = define_casadi_symbolic(mpcc.settings.casadi_symbolic_mode, 'sigma_p');
             obj.sigma_p = sigma_p;
             obj.p = [sigma_p;mpcc.p];
 
@@ -159,10 +157,10 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.addConstraint(fe0.g, fe0.lbg, fe0.ubg);
 
             % Add elastic variable if ell_inf mode
-            if obj.problem_options.elasticity_mode == ElasticityMode.ELL_INF
+            if obj.solver_options.elasticity_mode == ElasticityMode.ELL_INF
                 s_elastic = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_elastic',1);
-                obj.s_elastic = s_elastic;
-                if obj.setting.elastic_scholtes
+                obj.s_elastic_inf = s_elastic;
+                if obj.solver_options.elastic_scholtes
                     obj.solver_options.s_elastic_max = inf;
                     obj.addConstraint(s_elastic-obj.sigma_p,-inf,0);
                 end
@@ -185,8 +183,12 @@ classdef NosnocNLP < NosnocFormulationObject
                 obj.addPrimalVector(u, lbu, ubu, u0);
                 [sot, lbsot, ubsot, sot0] = stage.sot;
                 obj.addPrimalVector(sot, lbsot, ubsot, sot0);
+
+                [g_stage, lbg_stage, ubg_stage] = stage.g_stage;
+                obj.addConstraint(g_stage, lbg_stage, ubg_stage);
                 for fe=stage.stage
                     obj.addPrimalVector(fe.w, fe.lbw, fe.ubw, fe.w0);
+                    obj.addConstraint(fe.g, fe.lbg, fe.ubg);
                     obj.relax_complementarity_constraints(fe);
                 end
             end
@@ -194,23 +196,22 @@ classdef NosnocNLP < NosnocFormulationObject
 
         function relax_complementarity_constraints(obj, component)
             sigma_p = obj.sigma_p;
-            s_elastic = obj.s_elastic;
 
             psi_fun = obj.solver_options.psi_fun;
 
             if obj.solver_options.elasticity_mode == ElasticityMode.NONE
                 sigma = sigma_p;
-            elseif obj.solver_options.elasticity_mode = ElasticityMode.ELL_INF
-                sigma = s_elastic;
-            elseif 
+            elseif obj.solver_options.elasticity_mode == ElasticityMode.ELL_INF
+                sigma = obj.s_elastic_inf;
+            else
             end
             
-            comp_pairs = obj.all_comp_pairs;
-            n_comp_pairs = size(1, comp_pairs);
+            comp_pairs = component.all_comp_pairs;
+            n_comp_pairs = size(comp_pairs, 1);
             
             for ii=1:n_comp_pairs
                 expr = psi_fun(comp_pairs(ii,1), comp_pairs(ii,2), sigma);
-                [lb, ub, _] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
+                [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
                 obj.addConstraint(expr, lb, ub);
             end
         end
@@ -228,6 +229,31 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.lbw = vertcat(obj.lbw, lb);
             obj.ubw = vertcat(obj.ubw, ub);
             obj.w0 = vertcat(obj.w0, initial);
+        end
+
+        function print(obj,filename)
+            if exist('filename')
+                delete(filename);
+                fileID = fopen(filename, 'w');
+            else
+                fileID = 1;
+            end
+            fprintf(fileID, "i\tlbg\t\t ubg\t\t g_expr\n");
+            for i = 1:length(obj.lbg)
+                expr_str = formattedDisplayText(obj.g(i));
+                fprintf(fileID, "%d\t%.2e\t%.2e\t%s\n", i, obj.lbg(i), obj.ubg(i), expr_str);
+            end
+
+            fprintf(fileID, "\nw\t\t\tw0\t\tlbw\t\tubw\n");
+            for i = 1:length(obj.lbw)
+                % keyboard
+                expr_str = pad(formattedDisplayText(obj.w(i)), 20);
+                lb_str = pad(sprintf('%.2e', obj.lbw(i)), 10);
+                fprintf(fileID, "%s\t%.2e\t%s\t%.2e\t\n", expr_str, obj.w0(i), lb_str, obj.ubw(i));
+            end
+
+            fprintf(fileID, '\nobjective\n');
+            fprintf(fileID, strcat(formattedDisplayText(obj.cost), '\n'));
         end
     end
 end
