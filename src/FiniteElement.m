@@ -1238,7 +1238,7 @@ classdef FiniteElement < NosnocFormulationObject
             % TODO: do this cleaner
             if (~isempty(model.g_path) &&...
                     (obj.fe_idx == settings.N_finite_elements(obj.ctrl_idx) || settings.g_path_at_fe))
-                obj.addConstraint(model.g_path_fun(X_k0,Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
+                obj.addConstraint(model.g_path_fun(obj.x{end},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-settings.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.

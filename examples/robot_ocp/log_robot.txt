@@ -1,5 +1,5 @@
 ---------------------------------------
-Scenario:robot_ocp.
-Complementarity residual 1.23e-02 
-CPU time 0.269 min. 
+Scenario:robot_ocp_plain.
+Complementarity residual 2.19e-02 
+CPU time 1.731 min. 
 ---------------------------------------

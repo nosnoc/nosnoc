@@ -39,3 +39,5 @@ qt_temp*
 *.mp4
 *.mat
 *~
+
+examples/*/*.pdf
