@@ -39,6 +39,9 @@ classdef NosnocProblemOptions < handle
         n_s(1,1) {mustBeInteger, mustBeInRange(n_s, 1, 9)} = 2
         irk_scheme(1,1) IRKSchemes = IRKSchemes.RADAU_IIA
         irk_representation IrkRepresentation = IrkRepresentation.integral;
+
+        cross_comp_output_type = 'SCALAR';
+        cross_comp_type = CrossCompType.STAGE_STAGE;
         cross_comp_mode {mustBeInRange(cross_comp_mode, 1, 12)}= 3
         gamma_h(1,1) double {mustBeReal, mustBeInRange(gamma_h, 0, 1)} = 1
         dcs_mode DcsMode = DcsMode.Stewart
@@ -67,7 +70,7 @@ classdef NosnocProblemOptions < handle
 
         x_box_at_fe(1,1) logical = 1 % evaluate box constraint for diff states at every finite element boundary point
         x_box_at_stg(1,1) logical = 1 % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
-
+        lift_all_complementarities(1,1) logical = 1
         time_optimal_problem(1,1) = 0
 
         % Step equilibration

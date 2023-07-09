@@ -1301,9 +1301,65 @@ classdef FiniteElement < NosnocFormulationObject
             
             cross_comp_pairs = obj.getCrossCompPairs();
 
-            % TODO think about cross complementarity aggregation mode.
+            cross_comp_aggregated = [];
 
-            obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, vertcat(cross_comp_pairs{:}));
+            sigma_scale = 1; % TODO scale properly
+                             % apply psi
+            g_cross_comp = [];
+            lbg_cross_comp = [];
+            ubg_cross_comp = [];
+            if settings.cross_comp_mode == 1
+                cross_comp_aggregated = vertcat(cross_comp_pairs{:});
+            elseif settings.cross_comp_mode == 2
+                error('TODO: unsupported');
+            elseif settings.cross_comp_mode == 3
+                a = [];
+                b = [];
+                for j=1:obj.n_cont
+                    for r=1:obj.n_indep
+                        pairs = cross_comp_pairs(j, :, r);
+                        cont = pairs{1,1}(:,1);
+                        discont = cellfun(@(pair) pair(:,2), pairs, 'uni', false);
+                        b = [b;sum2([discont{:}])];
+                        a = [a;cont];
+                    end
+                end
+                cross_comp_aggregated = [a,b];
+            elseif settings.cross_comp_mode == 4
+                a = [];
+                b = [];
+                for jj=1:obj.n_discont
+                    for r=1:obj.n_indep
+                        pairs = cross_comp_pairs(:, jj, r);
+                        discont = pairs{1,1}(:,2);
+                        cont = cellfun(@(pair) pair(:,1), pairs, 'uni', false);
+                        b = [b;discont];
+                        a = [a;sum2([cont{:}])];
+                    end
+                end
+                cross_comp_aggregated = [a,b];
+            elseif settings.cross_comp_mode == 5
+                error('TODO: unsupported');
+            elseif settings.cross_comp_mode == 6
+                error('TODO: unsupported');
+            elseif settings.cross_comp_mode == 7
+                a = [];
+                b = [];
+                for r=1:obj.n_indep
+                    pairs = cross_comp_pairs(:, :, r);
+                    cont = cellfun(@(pair) pair(:,1), pairs(:,1), 'uni', false);
+                    discont = cellfun(@(pair) pair(:,2), pairs(1,:), 'uni', false);
+                    b = [b;sum2([discont{:}])];
+                    a = [a;sum2([cont{:}])];
+                end
+                cross_comp_aggregated = [a,b];
+            elseif settings.cross_comp_mode == 8
+                error('TODO: unsupported');
+            elseif settings.cross_comp_mode > 8
+                error('TODO: unsupported');
+            end
+
+            obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_aggregated);
         end
 
         function stepEquilibration(obj, rho_h_p)

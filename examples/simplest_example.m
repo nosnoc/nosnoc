@@ -21,6 +21,7 @@ model.x0 = -1;
 model.T = pi/4;
 problem_options.N_stages = 1;
 problem_options.N_finite_elements = 2;
+problem_options.cross_comp_mode = 7;
 model.dims.n_s = 2;
 
 model.verify_and_backfill(problem_options);
