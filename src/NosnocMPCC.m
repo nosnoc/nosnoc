@@ -151,6 +151,7 @@ classdef NosnocMPCC < NosnocFormulationObject
     methods        
         function obj = NosnocMPCC(settings, dims, model)
             import casadi.*
+            tic;
             obj@NosnocFormulationObject();
 
             if settings.right_boundary_point_explicit || settings.dcs_mode == DcsMode.CLS
@@ -506,6 +507,11 @@ classdef NosnocMPCC < NosnocFormulationObject
             nabla_J_fun = Function('nabla_J_fun', {obj.w,obj.p},{nabla_J});
             obj.nabla_J = nabla_J;
             obj.nabla_J_fun = nabla_J_fun;
+
+            mpcc_generating_time = toc;
+            if problem_options.print_level >=2
+                fprintf('MPCC generated in in %2.2f s. \n',mpcc_generating_time);
+            end
         end
 
         % TODO this should be private

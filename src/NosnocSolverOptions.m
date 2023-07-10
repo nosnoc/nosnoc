@@ -29,13 +29,13 @@ classdef NosnocSolverOptions < handle
     properties
         % General
         solver_name {mustBeTextScalar} = 'nosnoc_solver'
-        nlpsol = 'ipopt'
+        solver_type = 'RELAXATION_HOMOTOPY' % TODO: enum
+        solver = 'ipopt'
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
 
         % MPCC and Homotopy Settings
         comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
-        mpcc_mode(1,1) MpccMode = MpccMode.Scholtes_ineq % 'direct', 'Scholtes_eq', 'Scholtes_ineq', 'ell_1_penalty', 'elastic_ineq', 'elastic_eq' , 'elastic_two_sided',
-                                           % 'elastic_ell_1_ineq', 'elastic_ell_1_eq', 'elastic_ell_1_two_sided'
+        mpcc_mode(1,1) MpccMode = MpccMode.Scholtes_ineq 
         objective_scaling_direct(1,1) logical = 1
         sigma_0(1,1) double {mustBeReal, mustBePositive} = 1
         sigma_N(1,1) double {mustBeReal, mustBePositive} = 1e-9
