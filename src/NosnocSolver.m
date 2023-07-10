@@ -25,6 +25,7 @@
 
 % This file is part of NOSNOC.
 
+% TODO prehaps it is necessary to have a separate NLP relaxation and direct mpcc solver class.
 classdef NosnocSolver < handle
     properties
         mpcc     % Nosnoc Mpcc
@@ -112,12 +113,269 @@ classdef NosnocSolver < handle
         end
 
         function [results,stats] = solve(obj)
+            if obj.solver_options.solver_type == 'RELAXATION_HOMOTOPY'
+                [results,stats] = obj.solve_relaxation_homotopy();
+            elseif obj.solver_options.solver_type == 'DIRECT'
+                [results,stats] = obj.solve_direct();
+            end
+        end
+
+        function violation = compute_constraint_violation(obj, w)
+        % TODO also handle direct solver
+            nlp = obj.nlp;
+            ubw_violation = max(max(w - nlp.ubw), 0);
+            lbw_violation = max(max(nlp.lbw - w), 0);
+            g_val = full(nlp.g_fun(w, obj.p_val));
+            ubg_violation = max(max(g_val - nlp.ubg), 0);
+            lbg_violation = max(max(nlp.lbg - g_val), 0);
+            violation = max([lbg_violation, ubg_violation, lbw_violation, ubw_violation]);
+        end
+
+        function converged = is_converged(obj, stats)
+            if strcmp(obj.solver_options.solver, 'ipopt')
+                last_stats = stats.solver_stats(end);
+                converged = 0;
+                if isfield(last_stats, 'iterations')
+                    inf_pr = last_stats.iterations.inf_pr(end);
+                    inf_du = last_stats.iterations.inf_du(end);
+                    if inf_pr < obj.solver_options.opts_casadi_nlp.ipopt.tol && inf_du < obj.solver_options.opts_casadi_nlp.ipopt.tol ...
+                            && stats.complementarity_stats(end) < 10 * obj.solver_options.comp_tol
+                        converged = 1;
+                    end
+                else
+                    converged = 0;
+                end
+            else
+                % TODO..
+                converged = [];
+            end
+        end
+
+        function printInfeasibility(obj, results)
+            % warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
+            if obj.solver_options.print_details_if_infeasible
+                print_problem_details(results,obj.model,obj.problem, []);
+            end
+            if obj.solver_options.pause_homotopy_solver_if_infeasible
+                %             error('nosnoc: infeasible problem encounterd - stopping for debugging.')
+                keyboard
+            end
+        end
+
+        function compute_initial_parameters(obj)
+            model = obj.mpcc.model;
+            solver_options = obj.solver_options;
+
+            x0 = obj.nlp.w0(1:model.dims.n_x);
+            lambda00 = [];
+            gamma_00 = [];
+            p_vt_00 = [];
+            n_vt_00  = [];
+            gamma_d00 = [];
+            delta_d00 = [];
+            y_gap00 = [];
+            switch obj.mpcc.problem_options.dcs_mode
+              case 'Stewart'
+                lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+              case 'Step'
+                lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+              case 'CLS'
+                % TODO: reconsider this if 0th element has an impulse
+                y_gap00 = max(0, model.f_c_fun(x0));
+                if model.friction_exists
+                    switch solver_options.friction_model
+                      case 'Polyhedral'
+                        v0 = x0(model.dims.n_q+1:end);
+                        D_tangent_0 = model.D_tangent_fun(x0);
+                        v_t0 = D_tangent_0'*v0;
+                        for ii = 1:model.dims.n_contacts
+                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                            gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dims.n_t];
+                            delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v0+gamma_d00(ii)];
+                        end
+                      case 'Conic'
+                        v0 = x0(model.dims.n_q+1:end);
+                        v_t0 = model.J_tangent_fun(x0)'*v0;
+                        for ii = 1:model.dims.n_contacts
+                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                            v_ti0 = v0(ind_temp);
+                            gamma_00 = [gamma_00;norm(v_ti0)];
+                            switch solver_options.conic_model_switch_handling
+                              case 'Plain'
+                                % no extra vars
+                              case {'Abs','Lp'}
+                                p_vt_00 = [p_vt_00; max(v_ti0,0)];
+                                n_vt_00 = [n_vt_00; max(-v_ti0,0)];
+                            end
+                        end
+                    end
+                end
+            end
+            obj.p_val = [obj.nlp.p0(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
+        end
+
+        function printNLPIterInfo(obj, stats)
+            solver_stats = stats.solver_stats(end);
+            ii = size(stats.solver_stats, 2);
+
+            if strcmp(obj.solver_options.solver, 'ipopt')
+                if isfield(solver_stats, 'iterations')
+                    inf_pr = solver_stats.iterations.inf_pr(end);
+                    inf_du = solver_stats.iterations.inf_du(end);
+                    objective = solver_stats.iterations.obj(end);
+                else
+                    inf_pr = nan;
+                    inf_du = nan;
+                    objective = nan;
+                end
+                fprintf('%d\t%6.2e\t %6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.3f \t %d \t %s \n',...
+                    ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
+                    objective, stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
+            elseif strcmp(obj.solver_options.solver, 'snopt')
+                % TODO: Findout snopt prim du inf log!
+                inf_pr = nan;
+                inf_du = nan;
+                fprintf('%d\t%6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.2e \t %6.3f \t %s \t %s \n',...
+                    ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
+                    stats.objective(end), stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
+                % TODO: add missing log information
+            end
+        end
+
+        function print_iterate(obj, iterate, only_violations, filename)
+            if exist('filename')
+                delete(filename);
+                fileID = fopen(filename, 'w');
+            else
+                fileID = 1;
+            end
+            if ~exist('only_violations')
+                only_violations = 0;
+            end
+            fileID = 1;
+            fprintf(fileID, "\nw\t\t\tlbw\t\tubw\titerate\n");
+            for i = 1:length(obj.problem.lbw)
+                if ~only_violations || (iterate(i) < obj.problem.lbw(i) || iterate(i) > obj.problem.ubw(i))
+                    expr_str = pad(formattedDisplayText(obj.problem.w(i)), 20);
+                    lb_str = pad(sprintf('%.2e', obj.problem.lbw(i)), 10);
+                    ub_str = pad(sprintf('%.2e', obj.problem.ubw(i)), 10);
+                    iterate_str = pad(sprintf('%.2e', iterate(i)), 10);
+                    fprintf(fileID, "%s\t%s\t%s\t%s\n", expr_str, lb_str, ub_str, iterate_str);
+                end
+            end
+
+            % constraints
+            g_val = full(obj.problem.g_fun(iterate, obj.p_val));
+            fprintf(fileID, "\ni\tlbg\t\t ubg\t\t g_val\t\tg_expr\n");
+            for i = 1:length(obj.problem.lbg)
+                if ~only_violations || (g_val(i) < obj.problem.lbg(i) || g_val(i) > obj.problem.ubg(i))
+                    expr_str = formattedDisplayText(obj.problem.g(i));
+                    lb_str = pad(sprintf('%.2e', obj.problem.lbg(i)), 12);
+                    ub_str = pad(sprintf('%.2e', obj.problem.ubg(i)), 12);
+                    fprintf(fileID, "%d\t%s\t%s\t%.2e\t%s\n", i, lb_str, ub_str, g_val(i), expr_str);
+                end
+            end
+        end
+
+        function  print_solver_stats(obj, results, stats)
+            % model = obj.model;
+            % dims = model.dims;
+            % solver_options = obj.solver_options;
+
+            % fprintf('\n---------------------------------------------- Stats summary--------------------------\n');
+            % if stats.cpu_time_total < 60
+            %     fprintf('H. iters\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter \tComp. res.\n');
+            %     fprintf('%d\t\t\t\t%2.2f\t\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t%2.2e\t\t\t\t%2.2e\n',...
+            %         stats.homotopy_iterations, stats.cpu_time_total, max(stats.cpu_time),min(stats.cpu_time), stats.complementarity_stats(end));
+            % else
+            %     fprintf('H. iters\t CPU Time (m)\t Max. CPU (m)/iter\tMin. CPU (m)/iter \tComp. res.\n');
+            %     fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e \n',...
+            %         stats.homotopy_iterations,stats.cpu_time_total/60, max(stats.cpu_time)/60, min(stats.cpu_time)/60, stats.complementarity_stats(end));
+            % end
+            % fprintf('\n');
+        end
+    end
+
+    methods(Access=private)
+        function obj = construct_relaxation_homotopy(obj)
+            import casadi.*
+            mpcc = obj.mpcc;
+            solver_options = obj.solver_options;
+            % calculate homotopy
+            if solver_options.N_homotopy == 0
+                solver_options.N_homotopy = ceil(abs(log(solver_options.sigma_N / solver_options.sigma_0) / log(solver_options.homotopy_update_slope)));
+                % TODO: compute
+                if ~strcmp(solver_options.homotopy_update_rule, 'linear')
+                    warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
+                end
+            end
+
+            nlp = NosnocNLP(solver_options, mpcc);
+            obj.nlp = nlp;
+
+            w = nlp.w;
+            g = nlp.g;
+            p = nlp.p;
+            if ~isempty(solver_options.ipopt_callback)
+                solver_options.opts_casadi_nlp.iteration_callback = NosnocIpoptCallback('a_callback', model, nlp, solver_options, length(w),length(g),length(p));
+            end
+
+            casadi_nlp = struct('f', nlp.cost, 'x', w, 'g', g, 'p', p);
+
+            % TODO: Possible issue raise to casadi: allow unknown fields in options passed
+            if strcmp(solver_options.solver, 'ipopt')
+                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
+            elseif strcmp(solver_options.solver, 'snopt')
+                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'ipopt');
+            end
+
+            if ~solver_options.multiple_solvers
+                solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
+            else
+                solver = {};
+                sigma_k = solver_options.sigma_0;
+                for k = 1:solver_options.N_homotopy
+                    opts_casadi_nlp.ipopt.mu_init = sigma_k * 1e-1;
+                    opts_casadi_nlp.ipopt.mu_target = sigma_k * 1e-1;
+                    opts_casadi_nlp.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
+                    opts_casadi_nlp.ipopt.mu_strategy = 'monotone';
+                    if k == 1
+                        opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                        opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-4 * sigma_k;
+                        opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-4 * sigma_k;
+                    end
+                    solver{k} = nlpsol(solver_options.solver_name, 'ipopt', casadi_nlp, opts_casadi_nlp);
+                    % TODO: make homotopy update function and reuse here.
+                    sigma_k = solver_options.homotopy_update_slope*sigma_k;
+                end
+            end
+            obj.solver = solver;
+
+            if ~isempty(solver_options.ipopt_callback)
+                solver_options.opts_casadi_nlp.iteration_callback.solver = solver;
+            end
+
+            if solver_options.print_level > 5
+                nlp.print();
+            end
+
+            solver_generating_time = toc;
+            if solver_options.print_level >=2
+                fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
+            end
+        end
+
+        function obj = construct_direct(obj)
+            error('TODO: not yet implemented')
+        end
+
+        function [results, stats] = solve_relaxation_homotopy(obj)
             solver = obj.solver;
-            model = obj.model;
+            mpcc = obj.mpcc;
             solver_options = obj.solver_options;
             nlp = obj.nlp;
 
-            comp_res = nlp.comp_res;
+            comp_res = mpcc.comp_res;
 
             % Initial conditions
             sigma_k = solver_options.sigma_0;
@@ -134,7 +392,7 @@ classdef NosnocSolver < handle
             stats.homotopy_iterations = [];
             stats.solver_stats = [];
             stats.objective = [];
-            stats.complementarity_stats = [full(comp_res(w0, obj.p_val))];
+            stats.complementarity_stats = [full(comp_res(w0, obj.p_val(2:end)))];
 
 
             % Initialize Results struct
@@ -218,9 +476,9 @@ classdef NosnocSolver < handle
                 w0 = w_opt;
 
                 % update complementarity and objective stats
-                complementarity_iter = full(comp_res(w_opt, obj.p_val));
+                complementarity_iter = full(comp_res(w_opt, obj.p_val(2:end)));
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
-                objective = full(obj.problem.objective_fun(w_opt, obj.p_val));
+                objective = full(obj.nlp.objective_fun(w_opt, obj.p_val));
                 stats.objective = [stats.objective, objective];
 
                 % update counter
@@ -243,7 +501,7 @@ classdef NosnocSolver < handle
             % number of iterations
             stats.homotopy_iterations = ii;
 
-            results = extract_results_from_solver(model,problem,solver_options,results);
+            results = obj.extract_results_nlp(results);
 
             % check if solved to required accuracy
             stats.converged = obj.is_converged(stats);
@@ -252,259 +510,98 @@ classdef NosnocSolver < handle
             obj.print_solver_stats(results,stats);
         end
 
-        function violation = compute_constraint_violation(obj, w)
-            problem = obj.problem;
-            ubw_violation = max(max(w - problem.ubw), 0);
-            lbw_violation = max(max(problem.lbw - w), 0);
-            g_val = full(obj.problem.g_fun(w, obj.p_val));
-            ubg_violation = max(max(g_val - problem.ubg), 0);
-            lbg_violation = max(max(problem.lbg - g_val), 0);
-            violation = max([lbg_violation, ubg_violation, lbw_violation, ubw_violation]);
-        end
-
-        function converged = is_converged(obj, stats)
-            if strcmp(obj.solver_options.nlpsol, 'ipopt')
-                last_stats = stats.solver_stats(end);
-                converged = 0;
-                if isfield(last_stats, 'iterations')
-                    inf_pr = last_stats.iterations.inf_pr(end);
-                    inf_du = last_stats.iterations.inf_du(end);
-                    if inf_pr < obj.solver_options.opts_casadi_nlp.ipopt.tol && inf_du < obj.solver_options.opts_casadi_nlp.ipopt.tol ...
-                            && stats.complementarity_stats(end) < 10 * obj.solver_options.comp_tol
-                        converged = 1;
-                    end
-                else
-                    converged = 0;
-                end
-            else
-                % TODO..
-                converged = [];
-            end
-        end
-
-        function printInfeasibility(obj, results)
-            % warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
-            if obj.solver_options.print_details_if_infeasible
-                print_problem_details(results,obj.model,obj.problem, []);
-            end
-            if obj.solver_options.pause_homotopy_solver_if_infeasible
-                %             error('nosnoc: infeasible problem encounterd - stopping for debugging.')
-                keyboard
-            end
-        end
-
-        function compute_initial_parameters(obj)
-            model = obj.model;
-            solver_options = obj.solver_options;
-
-            x0 = obj.problem.w0(1:model.dims.n_x);
-            lambda00 = [];
-            gamma_00 = [];
-            p_vt_00 = [];
-            n_vt_00  = [];
-            gamma_d00 = [];
-            delta_d00 = [];
-            y_gap00 = [];
-            switch solver_options.dcs_mode
-              case 'Stewart'
-                lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-              case 'Step'
-                lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-              case 'CLS'
-                % TODO: reconsider this if 0th element has an impulse
-                y_gap00 = max(0, model.f_c_fun(x0));
-                if model.friction_exists
-                    switch solver_options.friction_model
-                      case 'Polyhedral'
-                        v0 = x0(model.dims.n_q+1:end);
-                        D_tangent_0 = model.D_tangent_fun(x0);
-                        v_t0 = D_tangent_0'*v0;
-                        for ii = 1:model.dims.n_contacts
-                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
-                            gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dims.n_t];
-                            delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v0+gamma_d00(ii)];
-                        end
-                      case 'Conic'
-                        v0 = x0(model.dims.n_q+1:end);
-                        v_t0 = model.J_tangent_fun(x0)'*v0;
-                        for ii = 1:model.dims.n_contacts
-                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
-                            v_ti0 = v0(ind_temp);
-                            gamma_00 = [gamma_00;norm(v_ti0)];
-                            switch solver_options.conic_model_switch_handling
-                              case 'Plain'
-                                % no extra vars
-                              case {'Abs','Lp'}
-                                p_vt_00 = [p_vt_00; max(v_ti0,0)];
-                                n_vt_00 = [n_vt_00; max(-v_ti0,0)];
-                            end
-                        end
-                    end
-                end
-            end
-            obj.p_val = [obj.problem.p0(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
-        end
-
-        function printNLPIterInfo(obj, stats)
-            solver_stats = stats.solver_stats(end);
-            ii = size(stats.solver_stats, 2);
-
-            if strcmp(obj.solver_options.nlpsol, 'ipopt')
-                if isfield(solver_stats, 'iterations')
-                    inf_pr = solver_stats.iterations.inf_pr(end);
-                    inf_du = solver_stats.iterations.inf_du(end);
-                    objective = solver_stats.iterations.obj(end);
-                else
-                    inf_pr = nan;
-                    inf_du = nan;
-                    objective = nan;
-                end
-                fprintf('%d\t%6.2e\t %6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.3f \t %d \t %s \n',...
-                    ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
-                    objective, stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
-            elseif strcmp(obj.solver_options.nlpsol, 'snopt')
-                % TODO: Findout snopt prim du inf log!
-                inf_pr = nan;
-                inf_du = nan;
-                fprintf('%d\t%6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.2e \t %6.3f \t %s \t %s \n',...
-                    ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
-                    stats.objective(end), stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
-                % TODO: add missing log information
-            end
-        end
-
-        function print_iterate(obj, iterate, only_violations, filename)
-            if exist('filename')
-                delete(filename);
-                fileID = fopen(filename, 'w');
-            else
-                fileID = 1;
-            end
-            if ~exist('only_violations')
-                only_violations = 0;
-            end
-            fileID = 1;
-            fprintf(fileID, "\nw\t\t\tlbw\t\tubw\titerate\n");
-            for i = 1:length(obj.problem.lbw)
-                if ~only_violations || (iterate(i) < obj.problem.lbw(i) || iterate(i) > obj.problem.ubw(i))
-                    expr_str = pad(formattedDisplayText(obj.problem.w(i)), 20);
-                    lb_str = pad(sprintf('%.2e', obj.problem.lbw(i)), 10);
-                    ub_str = pad(sprintf('%.2e', obj.problem.ubw(i)), 10);
-                    iterate_str = pad(sprintf('%.2e', iterate(i)), 10);
-                    fprintf(fileID, "%s\t%s\t%s\t%s\n", expr_str, lb_str, ub_str, iterate_str);
-                end
-            end
-
-            % constraints
-            g_val = full(obj.problem.g_fun(iterate, obj.p_val));
-            fprintf(fileID, "\ni\tlbg\t\t ubg\t\t g_val\t\tg_expr\n");
-            for i = 1:length(obj.problem.lbg)
-                if ~only_violations || (g_val(i) < obj.problem.lbg(i) || g_val(i) > obj.problem.ubg(i))
-                    expr_str = formattedDisplayText(obj.problem.g(i));
-                    lb_str = pad(sprintf('%.2e', obj.problem.lbg(i)), 12);
-                    ub_str = pad(sprintf('%.2e', obj.problem.ubg(i)), 12);
-                    fprintf(fileID, "%d\t%s\t%s\t%.2e\t%s\n", i, lb_str, ub_str, g_val(i), expr_str);
-                end
-            end
-        end
-
-        function  print_solver_stats(obj, results, stats)
-            % model = obj.model;
-            % dims = model.dims;
-            % solver_options = obj.solver_options;
-
-            % fprintf('\n---------------------------------------------- Stats summary--------------------------\n');
-            % if stats.cpu_time_total < 60
-            %     fprintf('H. iters\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter \tComp. res.\n');
-            %     fprintf('%d\t\t\t\t%2.2f\t\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t%2.2e\t\t\t\t%2.2e\n',...
-            %         stats.homotopy_iterations, stats.cpu_time_total, max(stats.cpu_time),min(stats.cpu_time), stats.complementarity_stats(end));
-            % else
-            %     fprintf('H. iters\t CPU Time (m)\t Max. CPU (m)/iter\tMin. CPU (m)/iter \tComp. res.\n');
-            %     fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e \n',...
-            %         stats.homotopy_iterations,stats.cpu_time_total/60, max(stats.cpu_time)/60, min(stats.cpu_time)/60, stats.complementarity_stats(end));
-            % end
-            % fprintf('\n');
-        end
-    end
-
-    methods(Access=private)
-        function obj = construct_relaxation_homotopy(obj)
-            solver_options = obj.solver_options;
-            % calculate homotopy
-            if solver_options.N_homotopy == 0
-                solver_options.N_homotopy = ceil(abs(log(solver_options.sigma_N / solver_options.sigma_0) / log(solver_options.homotopy_update_slope)));
-                % TODO: compute
-                if ~strcmp(solver_options.homotopy_update_rule, 'linear')
-                    warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
-                end
-            end
-
-           
-
-            nlp = NosnocNLP(solver_options, mpcc);
-            obj.nlp = nlp;
-
-            w = nlp.w;
-            g = nlp.g;
-            p = nlp.p;
-            if ~isempty(solver_options.ipopt_callback)
-                solver_options.opts_casadi_nlp.iteration_callback = NosnocIpoptCallback('a_callback', model, nlp, solver_options, length(w),length(g),length(p));
-            end
-
-            casadi_nlp = struct('f', nlp.cost, 'x', w, 'g', g, 'p', p);
-
-            % TODO: Possible issue raise to casadi: allow unknown fields in options passed
-            if strcmp(solver_options.solver, 'ipopt')
-                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
-            elseif strcmp(solver_options.solver, 'snopt')
-                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'ipopt');
-            end
-
-            if ~solver_options.multiple_solvers
-                solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
-            else
-                solver = {};
-                sigma_k = solver_options.sigma_0;
-                for k = 1:solver_options.N_homotopy
-                    opts_casadi_nlp.ipopt.mu_init = sigma_k * 1e-1;
-                    opts_casadi_nlp.ipopt.mu_target = sigma_k * 1e-1;
-                    opts_casadi_nlp.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
-                    opts_casadi_nlp.ipopt.mu_strategy = 'monotone';
-                    if k == 1
-                        opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                        opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-4 * sigma_k;
-                        opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-4 * sigma_k;
-                    end
-                    solver{k} = nlpsol(solver_options.solver_name, 'ipopt', casadi_nlp, opts_casadi_nlp);
-                    % TODO: make homotopy update function and reuse here.
-                    sigma_k = solver_options.homotopy_update_slope*sigma_k;
-                end
-            end
-            obj.solver = solver;
-
-            if ~isempty(solver_options.ipopt_callback)
-                solver_options.opts_casadi_nlp.iteration_callback.solver = solver;
-            end
-
-            if solver_options.print_level > 5
-                nlp.print();
-            end
-
-            solver_generating_time = toc;
-            if solver_options.print_level >=2
-                fprintf('Solver generated in in %2.2f s. \n',solver_generating_time);
-            end
-        end
-
-        function obj = construct_direct(obj)
+        function obj = solve_direct(obj)
             error('TODO: not yet implemented')
         end
 
-        function [results, stats] = solve_relaxation_homotopy
-        end
+        function results = extract_results_nlp(obj, results)
+            import casadi.*
+            mpcc = obj.mpcc;
+            % Store differential states
+            w_opt = full(results.nlp_results(end).x);
+            results.w = w_opt;
 
-        function obj = solve_direct(obj)
+            w_mpcc = w_opt;
+            w_mpcc(obj.nlp.ind_elastic) = [];
 
+            names = get_result_names_from_settings(obj.mpcc.problem_options);
+            % populate outputs
+            for name=names
+                results = form_structured_output(mpcc, w_mpcc, name, results);
+            end
+
+            % handle x0 properly
+            x0 = w_mpcc(mpcc.ind_x0);
+            results.x = [x0, results.x];
+            results.extended.x = [x0, results.extended.x];
+
+            u = w_mpcc([mpcc.ind_u{:}]);
+            u = reshape(u,obj.mpcc.model.dims.n_u,obj.mpcc.problem_options.N_stages);
+
+            results.u = u;
+
+            if mpcc.problem_options.time_optimal_problem
+                T_opt = w_mpcc(mpcc.ind_t_final);
+            else
+                T_opt = mpcc.model.T;
+            end
+            results.T = T_opt;
+
+            if obj.mpcc.problem_options.use_fesd
+                h_opt = w_mpcc(flatten_ind(mpcc.ind_h))';
+            else
+                h_opt = [];
+                % if settings.time_optimal_problem && ~settings.use_speed_of_time_variables
+                %     T = T_opt;
+                % end
+                for ii = 1:obj.mpcc.problem_options.N_stages
+                    h_opt = [h_opt,obj.mpcc.model.T/(obj.mpcc.problem_options.N_stages*obj.mpcc.problem_options.N_finite_elements(ii))*ones(1, obj.mpcc.problem_options.N_finite_elements(ii))];
+                end
+            end
+            results.h = h_opt;
+
+            t_grid = cumsum([0,h_opt]);
+
+            %% Adapt the grid in case of time optimal problems
+            if obj.mpcc.problem_options.time_optimal_problem
+                if obj.mpcc.problem_options.use_speed_of_time_variables
+                    s_sot = w_mpcc(flatten_ind(mpcc.ind_sot));
+                    if ~obj.mpcc.problem_options.local_speed_of_time_variable
+                        s_sot = s_sot*ones(obj.mpcc.problem_options.N_stages,1);
+                    end
+                    results.s_sot = s_sot;
+                    h_rescaled = [];
+                    ind_prev = 1;
+                    for ii = 1:obj.mpcc.problem_options.N_stages
+                        h_rescaled = [h_rescaled,h_opt(ind_prev:obj.mpcc.problem_options.N_finite_elements(ii)+ind_prev-1).*s_sot(ii)];
+                        ind_prev = ind_prev+obj.mpcc.problem_options.N_finite_elements(ii);
+                    end
+                    t_grid = cumsum([0,h_rescaled]);
+                else
+                    t_grid = cumsum([0,h_opt]);
+                end
+            end
+            ind_t_grid_u = cumsum([1; obj.mpcc.problem_options.N_finite_elements]);
+
+            if obj.mpcc.problem_options.dcs_mode == DcsMode.CLS
+                x_with_impulse = x0;
+                t_with_impulse = kron(t_grid, ones(2,1));
+                for ii=1:size(results.structured.x,1)
+                    for jj=1:size(results.structured.x,2)
+                        x_with_impulse = [x_with_impulse,results.structured.x_left_bp{ii,jj}];
+                        x_with_impulse = [x_with_impulse,results.structured.x{ii,jj}];
+                    end
+                end
+                results.x_with_impulse = x_with_impulse;
+                results.t_with_impulse = t_with_impulse(1:end-1);
+            end
+
+
+            results.t_grid = t_grid;
+            results.t_grid_u = t_grid(ind_t_grid_u);
+
+            results.f = full(results.nlp_results(end).f);
+            results.g = full(results.nlp_results(end).g);
         end
     end
 end

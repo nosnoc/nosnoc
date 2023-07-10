@@ -89,7 +89,7 @@ classdef NosnocSolverOptions < handle
     end
 
     methods
-        function obj = NosnocProblemOptions()
+        function obj = NosnocSolverOptions()
 
             default_tol = 1e-12;
 
@@ -107,7 +107,7 @@ classdef NosnocSolverOptions < handle
             obj.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
             obj.opts_casadi_nlp.snopt = struct();
 
-            obj.p_val = [obj.sigma_0,obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
+            obj.p_val = [obj.sigma_0];
         end
 
         function [] = preprocess(obj)
@@ -136,12 +136,6 @@ classdef NosnocSolverOptions < handle
                 obj.sigma_0 = 1e-12;
                 obj.sigma_N = 1e-12;
                 obj.mpcc_mode = MpccMode.Scholtes_ineq;
-            end
-            if obj.mpcc_mode == MpccMode.ell_1_penalty
-                if obj.print_level >= 1
-                    fprintf('Info: Setting cross_comp_mode to 12 in ell_1_penalty mode.\n')
-                end
-                obj.cross_comp_mode = 12;
             end
 
             switch obj.mpcc_mode

@@ -90,7 +90,7 @@ classdef NosnocMPCC < NosnocFormulationObject
 
         % Problem data
         model
-        settings
+        problem_options
         dims
         ocp
 
@@ -149,74 +149,79 @@ classdef NosnocMPCC < NosnocFormulationObject
     end
 
     methods        
-        function obj = NosnocMPCC(settings, dims, model)
+        function obj = NosnocMPCC(problem_options, dims, model)
             import casadi.*
             tic;
             obj@NosnocFormulationObject();
 
-            if settings.right_boundary_point_explicit || settings.dcs_mode == DcsMode.CLS
+            model.verify_and_backfill(problem_options);
+            model.generate_variables(problem_options);
+            model.generate_equations(problem_options);
+            problem_options.preprocess();
+            
+            if problem_options.right_boundary_point_explicit || problem_options.dcs_mode == DcsMode.CLS
                 rbp_allowance = 0;
             else
                 rbp_allowance = 1;
             end
 
-            if settings.dcs_mode == "CLS" && ~settings.right_boundary_point_explicit
+            if problem_options.dcs_mode == "CLS" && ~problem_options.right_boundary_point_explicit
                 rbp_x_only = 1;
             else
                 rbp_x_only = 0;
             end
 
             right_ygap = 0;
-            if settings.dcs_mode == "CLS" && ~settings.right_boundary_point_explicit
+            if problem_options.dcs_mode == "CLS" && ~problem_options.right_boundary_point_explicit
                 right_ygap = 1;
             end
 
             obj.ind_u = [];
             obj.ind_x0 = [];
-            obj.ind_x = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance+rbp_x_only);
-            obj.ind_v = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s);
-            obj.ind_z = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_x = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance+rbp_x_only);
+            obj.ind_v = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s);
+            obj.ind_z = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
             % Stewart
-            obj.ind_theta = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lam = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_mu = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_theta = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lam = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_mu = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
             % Step
-            obj.ind_alpha = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_n = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_p = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_theta_step = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_alpha = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_n = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_p = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_theta_step = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
             % CLS
-            obj.ind_lambda_normal = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_lambda_tangent = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_y_gap = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+right_ygap+rbp_allowance);
+            obj.ind_lambda_normal = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_lambda_tangent = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_y_gap = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+right_ygap+rbp_allowance);
             % friction multipliers and lifting
             % conic
-            obj.ind_gamma =  cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta_conic = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_gamma =  cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta_conic = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
             % poly
-            obj.ind_gamma_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_beta_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_delta_d = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_gamma_d = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_beta_d = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_delta_d = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
             % variables related to conic
-            obj.ind_p_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_n_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
-            obj.ind_alpha_vt = cell(settings.N_stages,settings.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_p_vt = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_n_vt = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
+            obj.ind_alpha_vt = cell(problem_options.N_stages,problem_options.N_finite_elements(1),dims.n_s+rbp_allowance);
 
             % Impulse
-            obj.ind_x_left_bp = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Y_gap = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Lambda_normal = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Lambda_tangent = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Gamma = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Beta_conic = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Gamma_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Beta_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Delta_d = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_L_vn = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_P_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_N_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
-            obj.ind_Alpha_vt = cell(settings.N_stages,settings.N_finite_elements(1),1);
+            obj.ind_x_left_bp = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Y_gap = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Lambda_normal = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Lambda_tangent = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Gamma = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Beta_conic = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Gamma_d = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Beta_d = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Delta_d = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_L_vn = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_P_vt = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_N_vt = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
+            obj.ind_Alpha_vt = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
 
             
             % misc
@@ -227,19 +232,19 @@ classdef NosnocMPCC < NosnocFormulationObject
 
             obj.ind_s_terminal = [];
 
-            obj.settings = settings;
+            obj.problem_options = problem_options;
             obj.model = model;
             obj.dims = dims;
             obj.ocp = []; % TODO create ocp objects
 
             obj.stages = [];
 
-            rho_sot_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_sot_p');
+            rho_sot_p = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'rho_sot_p');
             obj.rho_sot_p = rho_sot_p;
-            rho_h_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_h_p');
+            rho_h_p = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'rho_h_p');
             obj.rho_h_p = rho_h_p;
-            rho_terminal_p = define_casadi_symbolic(settings.casadi_symbolic_mode, 'rho_terminal_p');
-            T_ctrl_p  = define_casadi_symbolic(settings.casadi_symbolic_mode, 'T_ctrl_p');
+            rho_terminal_p = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'rho_terminal_p');
+            T_ctrl_p  = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'T_ctrl_p');
             obj.p = [rho_sot_p;rho_h_p;rho_terminal_p;T_ctrl_p];
 
             % Populate parameter indices
@@ -250,12 +255,12 @@ classdef NosnocMPCC < NosnocFormulationObject
             end
             if dims.n_p_time_var > 0;
                 n_p = length(obj.p);
-                obj.ind_p_time_var = arrayfun(@(s) (n_p+(s*dims.n_p_time_var)+1):(n_p+(s*dims.n_p_time_var)+dims.n_p_time_var) , 0:settings.N_stages-1);
+                obj.ind_p_time_var = arrayfun(@(s) (n_p+(s*dims.n_p_time_var)+1):(n_p+(s*dims.n_p_time_var)+dims.n_p_time_var) , 0:problem_options.N_stages-1);
                 obj.p = [obj.p; model.p_time_var_stages(:)];
             end
-            if settings.time_optimal_problem
+            if problem_options.time_optimal_problem
                 % the final time in time optimal control problems
-                T_final = define_casadi_symbolic(settings.casadi_symbolic_mode, 'T_final', 1);
+                T_final = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'T_final', 1);
                 obj.T_final = T_final;
                 T_final_guess = model.T;
             end
@@ -278,31 +283,31 @@ classdef NosnocMPCC < NosnocFormulationObject
 
             % terminal numerical and physical time
             % TODO: clean this up (sum_h/intergal_clock_state need to be functions probabaly)
-            if settings.time_freezing
+            if problem_options.time_freezing
                 % Terminal Phyisical Time (Possible terminal constraint on the clock state if time freezing is active).
-                if settings.time_optimal_problem
+                if problem_options.time_optimal_problem
                     obj.addConstraint(last_fe.x{end}(end)-T_final);
                 else
-                    if settings.impose_terminal_phyisical_time && ~settings.stagewise_clock_constraint
+                    if problem_options.impose_terminal_phyisical_time && ~problem_options.stagewise_clock_constraint
                         obj.addConstraint(last_fe.x{end}(end)-T_ctrl_p);
                     else
                         % no terminal constraint on the numerical time
                     end
                 end
-                if settings.equidistant_control_grid && ~settings.stagewise_clock_constraint
-                    if ~settings.time_optimal_problem
+                if problem_options.equidistant_control_grid && ~problem_options.stagewise_clock_constraint
+                    if ~problem_options.time_optimal_problem
                         obj.addConstraint(last_fe.x{end}(end)-model.T);
                     end
                 end
             else
-                if ~settings.use_fesd
-                    if settings.time_optimal_problem
+                if ~problem_options.use_fesd
+                    if problem_options.time_optimal_problem
                         % if time_freezing is on, everything is done via the clock state.
-                        if settings.use_speed_of_time_variables
+                        if problem_options.use_speed_of_time_variables
                             integral_clock_state = 0;
-                            for k=1:settings.N_stages
+                            for k=1:problem_options.N_stages
                                 stage = obj.stages(k);
-                                if settings.local_speed_of_time_variable
+                                if problem_options.local_speed_of_time_variable
                                     s_sot = obj.sot{k};
                                 else
                                     s_sot = obj.sot{1};
@@ -320,27 +325,27 @@ classdef NosnocMPCC < NosnocFormulationObject
                     % if equidistant_control_grid = true all time constraint are added in
                     % the main control loop for every control stage k and the code
                     % below is skipped
-                    if  ~settings.equidistant_control_grid
+                    if  ~problem_options.equidistant_control_grid
                         % T_num = T_phy = T_final =  T.
                         % all step sizes add up to prescribed time T.
                         % if use_speed_of_time_variables = true, numerical time is decupled from the sot scaling (no mather if local or not):
                         sum_h_all = 0;
-                        for k=1:settings.N_stages
+                        for k=1:problem_options.N_stages
                             stage=obj.stages(k);
                             for fe=stage.stage
                                 sum_h_all = sum_h_all+fe.h;
                             end
                         end
-                        if ~settings.time_optimal_problem
+                        if ~problem_options.time_optimal_problem
                             obj.addConstraint(sum_h_all-model.T, 0, 0);
                         else
-                            if ~settings.use_speed_of_time_variables
+                            if ~problem_options.use_speed_of_time_variables
                                 obj.addConstraint(sum_h_all-T_final, 0, 0);
                             else
                                 integral_clock_state = 0;
-                                for k=1:settings.N_stages
+                                for k=1:problem_options.N_stages
                                     stage = obj.stages(k);
-                                    if settings.local_speed_of_time_variable
+                                    if problem_options.local_speed_of_time_variable
                                         s_sot = obj.sot{k};
                                     else
                                         s_sot = obj.sot{1};
@@ -360,27 +365,27 @@ classdef NosnocMPCC < NosnocFormulationObject
 
             % Process terminal constraint.
             if ~isempty(model.g_terminal)
-                if settings.relax_terminal_constraint_homotopy
+                if problem_options.relax_terminal_constraint_homotopy
                     rho_terminal_p = 1/sigma_p;
                 end
                 X_end = last_fe.x{end};
                 g_terminal = model.g_terminal_fun(X_end, model.p_global, model.v_global);
                 n_terminal = length(g_terminal);
                 if ~isequal(model.g_terminal_lb,model.g_terminal_ub)
-                    settings.relax_terminal_constraint = 0;
-                    if settings.print_level >2
+                    problem_options.relax_terminal_constraint = 0;
+                    if problem_options.print_level >2
                         fprintf('Info: Only terminal-equality constraint relaxation is supported, you have an inequality constraint.\n')
                     end
                 end
-                switch settings.relax_terminal_constraint % TODO name these.
+                switch problem_options.relax_terminal_constraint % TODO name these.
                   case 0 % hard constraint
-                    if settings.relax_terminal_constraint_from_above
+                    if problem_options.relax_terminal_constraint_from_above
                         obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1));
                     else
                         obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub);
                     end
                   case 1 % l_1
-                    s_terminal_ell_1 = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
+                    s_terminal_ell_1 = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
                     obj.addVariable(s_terminal_ell_1,...
                         's_terminal',...
                         1e3*ones(n_terminal,1),...
@@ -398,7 +403,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                   case 2 % l_2
                     obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-g_terminal_lb);
                   case 3 % l_inf
-                    s_terminal_ell_inf = define_casadi_symbolic(settings.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
+                    s_terminal_ell_inf = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
                     obj.addVariable(s_terminal_ell_inf,...
                         's_terminal',...
                         1e3,...
@@ -414,9 +419,9 @@ classdef NosnocMPCC < NosnocFormulationObject
 
                     obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
                   case 4 % l_inf, relaxed
-                    if ismember(settings.mpcc_mode, MpccMode.elastic)
+                    if ismember(problem_options.mpcc_mode, MpccMode.elastic)
                         elastic = s_elastic*ones(n_terminal,1);
-                    elseif ismemeber(settings.mpcc_mode, MpccMode.elastic_ell_1)
+                    elseif ismemeber(problem_options.mpcc_mode, MpccMode.elastic_ell_1)
                         elastic = last_fe.elastic{end};
                     else
                         error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
@@ -438,9 +443,9 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
             obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
 
-            if settings.time_optimal_problem
+            if problem_options.time_optimal_problem
                 % Add to the vector of unknowns
-                obj.addVariable(T_final, 't_final', settings.T_final_min, settings.T_final_max, T_final_guess);
+                obj.addVariable(T_final, 't_final', problem_options.T_final_min, problem_options.T_final_max, T_final_guess);
                 obj.cost = obj.cost + T_final;
                 obj.objective = obj.objective + T_final;
             end
@@ -448,7 +453,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             % Calculate standard complementarities.
             J_comp_std = 0;
             J_comp_std_infty = 0;
-            for k=1:settings.N_stages
+            for k=1:problem_options.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
                     for j=1:dims.n_s
@@ -460,7 +465,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             % calculate complementarity residual via vector of all complementarities
             all_pairs = [];
             all_products = [];
-            for k=1:settings.N_stages
+            for k=1:problem_options.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
                     all_pairs = [all_pairs;fe.all_comp_pairs];
@@ -471,7 +476,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.comp_res = Function('comp_res', {obj.w, obj.p}, {max(all_products)});
 
             % Scalar-valued complementairity residual
-            if settings.use_fesd
+            if problem_options.use_fesd
                 J_comp_fesd = max(obj.cc_vector);
                 J_comp = J_comp_fesd;
             else
@@ -487,7 +492,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
             obj.g_fun = Function('g_fun', {obj.w, obj.p}, {obj.g});
 
-            obj.p0 = [settings.rho_sot; settings.rho_h; settings.rho_terminal; model.T];
+            obj.p0 = [problem_options.rho_sot; problem_options.rho_h; problem_options.rho_terminal; model.T];
 
             if dims.n_p_global > 0
                 obj.p0 = [obj.p0; model.p_global_val];
@@ -517,7 +522,7 @@ classdef NosnocMPCC < NosnocFormulationObject
         % TODO this should be private
         function create_primal_variables(obj)
             import casadi.*
-            fe0 = FiniteElementZero(obj.settings, obj.dims, obj.model);
+            fe0 = FiniteElementZero(obj.problem_options, obj.dims, obj.model);
             obj.fe0 = fe0;
 
             %             obj.p = vertcat(obj.p, fe0.x0, fe0.lambda{1,:},fe0.y_gap{1,:},fe0.gamma{1,:},fe0.gamma_d{1,:},fe0.delta_d{1,:},fe0.p_vt{1,:},fe0.n_vt{1,:});
@@ -533,23 +538,23 @@ classdef NosnocMPCC < NosnocFormulationObject
             prev_fe = fe0;
 
             s_sot = [];
-            if obj.settings.time_rescaling && obj.settings.use_speed_of_time_variables
-                if ~obj.settings.local_speed_of_time_variable
-                    s_sot = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_sot', 1);
+            if obj.problem_options.time_rescaling && obj.problem_options.use_speed_of_time_variables
+                if ~obj.problem_options.local_speed_of_time_variable
+                    s_sot = define_casadi_symbolic(obj.problem_options.casadi_symbolic_mode, 's_sot', 1);
                     obj.addVariable(s_sot,...
                         'sot',...
-                        obj.settings.s_sot_min,...
-                        obj.settings.s_sot_max,...
-                        obj.settings.s_sot0);
-                    if obj.settings.time_freezing
+                        obj.problem_options.s_sot_min,...
+                        obj.problem_options.s_sot_max,...
+                        obj.problem_options.s_sot0);
+                    if obj.problem_options.time_freezing
                         obj.cost = obj.cost + obj.rho_sot_p*(s_sot-1)^2;
                     end
                 end
             end
 
-            for ii=1:obj.settings.N_stages
+            for ii=1:obj.problem_options.N_stages
                 % TODO: maybe this should be a function
-                stage = ControlStage(prev_fe, obj.settings, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.rho_h_p, obj.rho_sot_p);
+                stage = ControlStage(prev_fe, obj.problem_options, obj.model, obj.dims, ii, s_sot, obj.T_final, obj.rho_h_p, obj.rho_sot_p);
                 obj.stages = [obj.stages, stage];
 
                 obj.addControlStage(stage);
@@ -646,7 +651,7 @@ classdef NosnocMPCC < NosnocFormulationObject
 
         function nu_vector = get.nu_vector(obj)
             nu_vector = [];
-            for k=obj.settings.N_stages
+            for k=obj.problem_options.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
                     nu_vector = vertcat(nu_vector,fe.nu_vector);

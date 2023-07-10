@@ -103,7 +103,7 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.mpcc = mpcc;
             obj.solver_options = solver_options;
             
-            sigma_p = define_casadi_symbolic(mpcc.settings.casadi_symbolic_mode, 'sigma_p');
+            sigma_p = define_casadi_symbolic(mpcc.problem_options.casadi_symbolic_mode, 'sigma_p');
             obj.sigma_p = sigma_p;
             obj.p = [sigma_p;mpcc.p];
 
@@ -227,11 +227,17 @@ classdef NosnocNLP < NosnocFormulationObject
             
             comp_pairs = component.all_comp_pairs;
             n_comp_pairs = size(comp_pairs, 1);
-            
-            for ii=1:n_comp_pairs
-                expr = psi_fun(comp_pairs(ii,1), comp_pairs(ii,2), sigma);
-                [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
-                obj.addConstraint(expr, lb, ub);
+
+            if obj.solver_options.mpcc_mode == MpccMode.ell_1_penalty
+                for ii=1:n_comp_pairs
+                    obj.cost = obj.cost + comp_pairs(ii,1).*comp_pairs(ii,2);
+                end
+            else                
+                for ii=1:n_comp_pairs
+                    expr = psi_fun(comp_pairs(ii,1), comp_pairs(ii,2), sigma);
+                    [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
+                    obj.addConstraint(expr, lb, ub);
+                end
             end
         end
         
