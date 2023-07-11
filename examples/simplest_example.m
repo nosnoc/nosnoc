@@ -29,7 +29,7 @@ mpcc = NosnocMPCC(problem_options, model.dims, model);
 solver_options = NosnocSolverOptions();
 %solver_options.mpcc_mode = MpccMode.elastic_ineq;
 solver_options.psi_fun_type = CFunctionType.NATURAL_RESIDUAL;
-%solver_options.elasticity_mode = ElasticityMode.ELL_INF;
+solver_options.elasticity_mode = ElasticityMode.ELL_1;
 
 solver = NosnocSolver(mpcc, solver_options);
 
