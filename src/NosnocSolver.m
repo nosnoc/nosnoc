@@ -380,6 +380,8 @@ classdef NosnocSolver < handle
             % Initial conditions
             sigma_k = solver_options.sigma_0;
             w0 = nlp.w0;
+            w0_mpcc = w0;
+            w0_mpcc(nlp.ind_elastic) = [];
             lbw = nlp.lbw; ubw = nlp.ubw;
             lbg = nlp.lbg; ubg = nlp.ubg;
             obj.compute_initial_parameters();
@@ -392,7 +394,7 @@ classdef NosnocSolver < handle
             stats.homotopy_iterations = [];
             stats.solver_stats = [];
             stats.objective = [];
-            stats.complementarity_stats = [full(comp_res(w0, obj.p_val(2:end)))];
+            stats.complementarity_stats = [full(comp_res(w0_mpcc, obj.p_val(2:end)))];
 
 
             % Initialize Results struct
@@ -472,11 +474,13 @@ classdef NosnocSolver < handle
 
                 % update results output.
                 w_opt = full(nlp_results.x);
+                w_opt_mpcc = w_opt;
+                w_opt_mpcc(nlp.ind_elastic) = [];
                 results.W = [results.W,w_opt]; % all homotopy iterations
                 w0 = w_opt;
 
                 % update complementarity and objective stats
-                complementarity_iter = full(comp_res(w_opt, obj.p_val(2:end)));
+                complementarity_iter = full(comp_res(w_opt_mpcc, obj.p_val(2:end)));
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                 objective = full(obj.nlp.objective_fun(w_opt, obj.p_val));
                 stats.objective = [stats.objective, objective];

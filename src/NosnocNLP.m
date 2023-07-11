@@ -120,7 +120,7 @@ classdef NosnocNLP < NosnocFormulationObject
                 end
             end
             if solver_options.elasticity_mode == ElasticityMode.ELL_1
-                sum_s_elastic = sum1(obj.w(ind_elastic));
+                sum_s_elastic = sum1(obj.w(obj.ind_elastic));
                 if solver_options.objective_scaling_direct
                     obj.cost = obj.cost + (1/sigma_p)*sum_s_elastic;
                 else
@@ -165,7 +165,7 @@ classdef NosnocNLP < NosnocFormulationObject
 
             % Add elastic variable if ell_inf mode
             if obj.solver_options.elasticity_mode == ElasticityMode.ELL_INF
-                s_elastic = define_casadi_symbolic(obj.settings.casadi_symbolic_mode, 's_elastic',1);
+                s_elastic = define_casadi_symbolic(mpcc.problem_options.casadi_symbolic_mode, 's_elastic',1);
                 obj.s_elastic_inf = s_elastic;
                 if obj.solver_options.elastic_scholtes
                     obj.solver_options.s_elastic_max = inf;
@@ -234,6 +234,21 @@ classdef NosnocNLP < NosnocFormulationObject
                 end
             else                
                 for ii=1:n_comp_pairs
+                    if obj.solver_options.elasticity_mode == ElasticityMode.ELL_1
+                        n_pairs = length(comp_pairs(ii,1));
+                        s_elastic = define_casadi_symbolic(obj.mpcc.problem_options.casadi_symbolic_mode, 's_elastic',n_pairs);
+                        sigma = s_elastic;
+                        
+                        if obj.solver_options.elastic_scholtes
+                            obj.solver_options.s_elastic_max = inf;
+                            obj.addConstraint(s_elastic-obj.sigma_p,-inf,0);
+                        end
+                        obj.addVariable(s_elastic,...
+                            'elastic',...
+                            obj.solver_options.s_elastic_min,...
+                            obj.solver_options.s_elastic_max,...
+                            obj.solver_options.s_elastic_0);
+                    end
                     expr = psi_fun(comp_pairs(ii,1), comp_pairs(ii,2), sigma);
                     [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
                     obj.addConstraint(expr, lb, ub);

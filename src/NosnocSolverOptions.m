@@ -35,7 +35,7 @@ classdef NosnocSolverOptions < handle
 
         % MPCC and Homotopy Settings
         comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
-        mpcc_mode(1,1) MpccMode = MpccMode.Scholtes_ineq 
+        mpcc_mode(1,1) MpccMode = MpccMode.custom
         objective_scaling_direct(1,1) logical = 1
         sigma_0(1,1) double {mustBeReal, mustBePositive} = 1
         sigma_N(1,1) double {mustBeReal, mustBePositive} = 1e-9
@@ -212,7 +212,7 @@ classdef NosnocSolverOptions < handle
                 b1 = b-sigma;
                 psi_mpcc  = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
 
-              case CFunctionType.LIN_FUKUSHIMAgs
+              case CFunctionType.LIN_FUKUSHIMA
                 psi_mpcc1 = [a*b-sigma];
                 psi_mpcc2 = [-((a-sigma)*(b-sigma)-sigma^2)];
                 psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
