@@ -42,34 +42,33 @@ import casadi.*
 delete hopper_simple.gif
 
 %%
-[settings] = NosnocOptions();
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;  % number of stages in IRK methods
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;  % number of stages in IRK methods
+problem_options.use_fesd = 1;
+problem_options.cross_comp_mode = 1;
+problem_options.time_freezing = 1;
+% problem_options.s_sot_max = 2;
+problem_options.s_sot_min = 1;
+problem_options.equidistant_control_grid = 1;
+problem_options.pss_lift_step_functions = 1;
+problem_options.stagewise_clock_constraint = 1;
+problem_options.g_path_at_fe = 1; % evaluate path constraint on every integration step
+problem_options.g_path_at_stg = 1; % evaluate path constraint on every stage point
+problem_options.nonsmooth_switching_fun = 0;
 
-settings.use_fesd = 1;
-
-settings.N_homotopy = 6;
-settings.opts_casadi_nlp.ipopt.tol = 1e-6;
-settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
-settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-
-settings.cross_comp_mode = 1;
-settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
-settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.comp_tol = 1e-9;
-settings.time_freezing = 1;
-% settings.s_sot_max = 2;
-settings.s_sot_min = 1;
-settings.equidistant_control_grid = 1;
-settings.pss_lift_step_functions = 1;
-settings.stagewise_clock_constraint = 1;
-settings.g_path_at_fe = 1; % evaluate path constraint on every integration step
-settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
-settings.nonsmooth_switching_fun = 0;
-settings.print_level = 5;
+solver_options.N_homotopy = 6;
+solver_options.sigma_0 = 1;
+solver_options.opts_casadi_nlp.ipopt.tol = 1e-6;
+solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.comp_tol = 1e-9;
+solver_options.print_level = 5;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretization
 T = 1; % prediction horizon
@@ -147,8 +146,8 @@ x_ref = interp1([0 0.5 1],[x0,x_mid,x_end]',linspace(0,1,N_stg),'spline')'; %spl
 %% Populate model
 model = NosnocModel();
 model.T = T;
-settings.N_stages = N_stg;
-settings.N_finite_elements  = N_FE;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
@@ -177,7 +176,8 @@ model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model.dims, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
@@ -252,9 +252,9 @@ for ii = 1:length(x_head)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
     end
 
     if ii~=length(x_head)

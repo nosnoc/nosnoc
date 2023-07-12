@@ -463,6 +463,10 @@ classdef NosnocModel < handle
                     obj.lambda_p = [obj.lambda_p;obj.lambda_p_sys{ii}];
                 end
 
+                if obj.general_inclusion % unpack alpha in this case
+                    obj.alpha = vertcat(obj.alpha{:});
+                end
+
                 % Define already here lifting variables and functions
                 % TODO allow for custom beta lifting
                 % Theta collects the vector for dot_x = F(x)Theta,
@@ -1089,7 +1093,7 @@ classdef NosnocModel < handle
             %% Check path complementarity constraints
             g_comp_path_constraint  = 0;
             if size(obj.g_comp_path, 1) ~= 0
-                g_comp_path_constraint  = 1;
+                g_comp_path_constraint = 1;
                 if size(obj.g_comp_path, 2) ~= 2
                     error('g_comp_path must be of size (m, 2)')
                 end
@@ -1694,7 +1698,7 @@ classdef NosnocModel < handle
                 end
 
                 %% Settings updates
-                settings.time_freezing_model_exists = 1;
+                obj.time_freezing_model_exists = 1;
                 obj.dims.n_dim_contact = 2;
             end
         end

@@ -41,25 +41,26 @@ filename = 'hopper_long.gif';
 delete hopper_long.gif
 
 %%
-[settings] = NosnocOptions();
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;  % number of stages in IRK methods
-settings.N_homotopy = 5;
-settings.cross_comp_mode = 1;
-settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.opts_casadi_nlp.ipopt.tol = 1e-6;
-settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
-settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-settings.time_freezing = 1;
-settings.s_sot_min = 1;
-settings.equidistant_control_grid = 1;
-settings.pss_lift_step_functions = 0;
-settings.stagewise_clock_constraint = 1;
-settings.g_path_at_fe = 1; % evaluate path constraint on every integration step
-settings.g_path_at_stg = 1; % evaluate path constraint on every stage point
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;  % number of stages in IRK methods
+problem_options.cross_comp_mode = 1;
+problem_options.time_freezing = 1;
+problem_options.s_sot_min = 1;
+problem_options.equidistant_control_grid = 1;
+problem_options.pss_lift_step_functions = 0;
+problem_options.stagewise_clock_constraint = 1;
+problem_options.g_path_at_fe = 1; % evaluate path constraint on every integration step
+problem_options.g_path_at_stg = 1; % evaluate path constraint on every stage point
+solver_options.N_homotopy = 5;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.opts_casadi_nlp.ipopt.tol = 1e-6;
+solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 % The methods and time-freezing refomulation are detailed in https://arxiv.org/abs/2111.06759
 %% discretizatioon
@@ -109,7 +110,7 @@ f_c = q(2) - q(4)*cos(q(3));
 ubu= [50; 50; 100];
 lbu= [-50; -50; 0];
 
-g_comp_path = 0.01*[v_tangent*u(3);f_c*u(3)];
+g_comp_path = 0.01*[v_tangent,u(3);f_c,u(3)];
 
 x0 = [0.1; 0.5; 0; 0.5; 0; 0; 0; 0];
 ubx = [2; 1.5; pi; 0.5; 10; 10; 5; 5];
@@ -133,9 +134,10 @@ x_ref2 = interp1([0 0.5 1],[x_mid2,x_mid3,x_end]',linspace(0,1,ceil(N_stg/2)),'s
 x_ref = [x_ref1,x_ref2];
 
 %% Fill in model
+model = NosnocModel();
 model.T = T;
-settings.N_stages = N_stg;
-settings.N_finite_elements  = N_FE;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
@@ -163,19 +165,21 @@ model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model.dims, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 
 %% read and plot results
-unfold_struct(results,'base');
-q_opt = x_opt(1:4,:);
-v_opt = x_opt(5:8,:);
-t_opt = x_opt(9,:);
+x_opt = results.x;
+u_opt = results.u;
+q_opt = results.x(1:4,:);
+v_opt = results.x(5:8,:);
+t_opt = results.x(9,:);
 % gap function, normal and tangential velocity
 c_eval = [];
 for ii = 1:length(q_opt)
     % Note: Empty parameter argument as there are no global/time_varying params.
-    c_eval = [c_eval,full(model.c_fun(x_opt(:,ii),[]))];
+    c_eval = [c_eval,full(model.c_fun(results.x(:,ii),[]))];
 end
 
 %%  plots
@@ -238,9 +242,9 @@ for ii = 1:length(q_opt)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
     end
 
     if ii~=length(q_opt)

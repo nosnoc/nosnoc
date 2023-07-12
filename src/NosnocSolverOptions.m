@@ -67,6 +67,7 @@ classdef NosnocSolverOptions < handle
         use_previous_solution_as_initial_guess(1,1) logical = 0
         simulation_problem(1,1) logical = 0
         real_time_plot(1,1) logical = 0
+        break_simulation_if_infeasible(1,1) logical = 0
 
         % TODO: make proper multiple solver class.
         multiple_solvers(1,1) logical = 0

@@ -13,44 +13,45 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     q_target = [3;0.4;0;0];
 
     %% Default settings NOSNOC
-    settings = NosnocOptions();
+    problem_options = NosnocProblemOptions();
+    solver_options = NosnocSolverOptions();
     model = NosnocModel();
     %%
-    settings.print_level = 5;
-    settings.irk_scheme = IRKSchemes.RADAU_IIA;
-    settings.n_s = 2;
+    solver_options.print_level = 5;
+    problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+    problem_options.n_s = 2;
     %% homotopy settings
-    settings.cross_comp_mode = 1;
-    settings.opts_casadi_nlp.ipopt.max_iter = 10000;
-    %settings.opts_casadi_nlp.ipopt.max_iter = 1000;
-    settings.N_homotopy = 3;
-    settings.sigma_0 = 1;
-    % settings.homotopy_update_rule = 'superlinear';
-    settings.homotopy_update_slope = 0.005;
-    settings.opts_casadi_nlp.ipopt.tol = 1e-5;
-    settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
-    settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-    settings.comp_tol = 1e-5;
-    settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
-    % settings.nlpsol = 'snopt';
-    % settings.opts_casadi_nlp.snopt.Major_iterations_limit = 100000;
-    % settings.opts_casadi_nlp.snopt.Minor_iterations_limit = 10000;
-    settings.initial_alpha = 0.5;
-    %settings.opts_casadi_nlp.ipopt.ma57_pre_alloc = 2.0;
-    %settings.opts_casadi_nlp.ipopt.ma57_automatic_scaling = 'yes';
+    problem_options.cross_comp_mode = 1;
+    solver_options.opts_casadi_nlp.ipopt.max_iter = 10000;
+    %solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
+    solver_options.N_homotopy = 3;
+    solver_options.sigma_0 = 1;
+    % solver_options.homotopy_update_rule = 'superlinear';
+    solver_options.homotopy_update_slope = 0.005;
+    solver_options.opts_casadi_nlp.ipopt.tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+    solver_options.comp_tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+    % solver_options.nlpsol = 'snopt';
+    % solver_options.opts_casadi_nlp.snopt.Major_iterations_limit = 100000;
+    % solver_options.opts_casadi_nlp.snopt.Minor_iterations_limit = 10000;
+    problem_options.initial_alpha = 0.5;
+    %solver_options.opts_casadi_nlp.ipopt.ma57_pre_alloc = 2.0;
+    %solver_options.opts_casadi_nlp.ipopt.ma57_automatic_scaling = 'yes';
 
     %% time-freezing
-    settings.s_sot_max = 100;
-    settings.s_sot_min = 0.99;
-    settings.rho_sot = 0.00;
-    settings.time_freezing = 1;
-    settings.pss_lift_step_functions = 1;
-    settings.stagewise_clock_constraint = 1;
+    problem_options.s_sot_max = 100;
+    problem_options.s_sot_min = 0.99;
+    problem_options.rho_sot = 0.00;
+    problem_options.time_freezing = 1;
+    problem_options.pss_lift_step_functions = 1;
+    problem_options.stagewise_clock_constraint = 1;
 
     %% Discretization
     model.T = 3.0;
-    settings.N_stages = N_stages;
-    settings.N_finite_elements = 3;
+    problem_options.N_stages = N_stages;
+    problem_options.N_finite_elements = 3;
 
     %% friction cone parameters
     model.e = 0;
@@ -214,7 +215,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/model.T;0;0;0];
 
     x_target = [q_target;zeros(4,1)];
-    x_ref = interp1([0 0.25 0.5 0.75 1],[model.x0,x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,settings.N_stages),'spline')'; %spline
+    x_ref = interp1([0 0.25 0.5 0.75 1],[model.x0,x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,problem_options.N_stages),'spline')'; %spline
 
     model.lsq_x = {x, x_ref, Q}; % TODO also do trajectory
     model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
@@ -223,11 +224,11 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     %model.g_terminal = q(1:length(q_target))-q_target;
 
     %% Solve OCP with NOSNOC
-
-    solver = NosnocSolver(model, settings);
+    mpcc = NosnocMPCC(problem_options, model.dims, model);
+    solver = NosnocSolver(mpcc, solver_options);
     if initialize_with_ref
         x_guess = {};
-        for ii = 1:settings.N_stages
+        for ii = 1:problem_options.N_stages
             x_guess{ii} = x_ref(:,ii);
         end
         solver.set('x', x_guess');

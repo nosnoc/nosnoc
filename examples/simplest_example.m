@@ -24,14 +24,11 @@ problem_options.N_finite_elements = 2;
 problem_options.cross_comp_mode = 1;
 model.dims.n_s = 2;
 
-mpcc = NosnocMPCC(problem_options, model.dims, model);
-
 solver_options = NosnocSolverOptions();
 %solver_options.mpcc_mode = MpccMode.elastic_ineq;
 solver_options.psi_fun_type = CFunctionType.NATURAL_RESIDUAL;
 solver_options.elasticity_mode = ElasticityMode.ELL_1;
 
+mpcc = NosnocMPCC(problem_options, model.dims, model);
 solver = NosnocSolver(mpcc, solver_options);
-
-%solver = NosnocSolver(model, settings);
 [results,stats] = solver.solve();
