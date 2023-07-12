@@ -36,25 +36,27 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontaneous switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-switching_case = 'leave_sliding_mode'; 
+switching_case = 'crossing'; 
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
 %% NOSNOC settings
-settings = NosnocOptions();  %% Optionally call this function to have an overview of all options.
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 
-settings.n_s = 2;
-settings.homotopy_update_slope = 0.1;
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+problem_options.n_s = 2;
+solver_options.homotopy_update_slope = 0.1;
+problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 % settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.irk_representation= 'differential';
-settings.print_level = 2;
+problem_options.irk_representation= 'differential';
+solver_options.print_level = 3;
+solver_options.store_integrator_step_results = 1;
 % discretization parameters
 N_sim = 16;
 T_sim = 1.5;
 
 
 model.N_sim = N_sim;
-settings.N_finite_elements = 2;
+problem_options.N_finite_elements = 2;
 model.T_sim = T_sim;
 
 switch switching_case
@@ -67,8 +69,9 @@ switch switching_case
         model.S = [-1; 1];
         f_1 = [2]; f_2 = [0.2];
         model.F = [f_1 f_2];
-        settings.use_previous_solution_as_initial_guess = 1;
-        [results,stats] = integrator_fesd(model,settings);
+        solver_options.use_previous_solution_as_initial_guess = 1;
+        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+        [results,stats] = integrator.solve();
         %
         figure
         plot(results.t_grid,results.x)
@@ -85,7 +88,8 @@ switch switching_case
         model.S = [-1; 1];
         f_1 = [1]; f_2 = [-1];
         model.F = [f_1 f_2];
-        [results,stats] = integrator_fesd(model,settings);
+        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+        [results,stats] = integrator.solve();
         %
         figure
         plot(results.t_grid,results.x)
@@ -104,11 +108,12 @@ switch switching_case
         model.F = [f_1 f_2];
         % implcit methods more accurate, explicit Euler enables "random"
         % leaving
-        settings.irk_scheme = 'EXPLICIT_RK';
-        settings.n_s = 1;
-        settings.N_finite_elements = 3; % set 4, 5 for different outcomes
-        settings.use_previous_solution_as_initial_guess = 1;
-        [results,stats] = integrator_fesd(model,settings);
+        problem_options.irk_scheme = 'EXPLICIT_RK';
+        problem_options.n_s = 1;
+        problem_options.N_finite_elements = 3; % set 4, 5 for different outcomes
+        solver_options.use_previous_solution_as_initial_guess = 1;
+        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+        [results,stats] = integrator.solve();
         %
         figure
         plot(results.t_grid,results.x)
@@ -128,8 +133,9 @@ switch switching_case
         model.S = [-1; 1];
         f_1 = [1+t;1]; f_2 = [-1+t;1];
         model.F = [f_1 f_2];
-        settings.use_previous_solution_as_initial_guess = 1;
-        [results,stats] = integrator_fesd(model,settings);
+        solver_options.use_previous_solution_as_initial_guess = 1;
+        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+        [results,stats] = integrator.solve();
         %
         figure
         plot(results.t_grid,results.x(1,:))

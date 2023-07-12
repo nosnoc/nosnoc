@@ -56,6 +56,8 @@ classdef NosnocSolver < handle
         end
 
         function set(obj, type, val)
+            nlp = obj.nlp;
+            mpcc = obj.mpcc;
             if strcmp(type, 'w0')
                 if length(obj.nlp.w0) == length(val)
                     obj.nlp.w0 = val;
@@ -65,7 +67,7 @@ classdef NosnocSolver < handle
             else
                 % This line uses the index sets collected during the creation of the NosnocProblem and automatically gets
                 % the one of the form 'ind_<type>'. This makes this set generic for all variable types.
-                ind = obj.nlp.(strcat('ind_', type));
+                ind = obj.mpcc.(strcat('ind_', type));
                 if iscell(ind)
                     flat_ind = sort([ind{:}]);
                 else
@@ -75,25 +77,25 @@ classdef NosnocSolver < handle
 
                 if iscell(val)
                     % If the passed value is an N_stage by 1 cell array we assume this initialization is done stage wise
-                    if ismatrix(val) && size(val, 1) == obj.solver_options.N_stages && size(val,2) == 1
-                        for ii=1:obj.solver_options.N_stages
+                    if ismatrix(val) && size(val, 1) == mpcc.problem_options.N_stages && size(val,2) == 1
+                        for ii=1:mpcc.problem_options.N_stages
                             % All variables of each stage are set to the same value
                             for v=ind(ii,:,:)
                                 % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, etc.)
                                 if ~isempty(v) && length(v{1}) == length(val{ii})
-                                    obj.nlp.w0(v{1}) = val{ii};
+                                    obj.nlp.w0(nlp.ind_map(v{1})) = val{ii};
                                 end
                             end
                         end
                     % Otherwise if we have an initialization of the form N_stages-by-N_fe we do the same but finite-element-wise
-                    elseif ismatrix(val) && size(val, 1) == obj.solver_options.N_stages && size(val, 2) == obj.solver_options.N_finite_elements
-                        for ii=1:obj.solver_options.N_stages
-                            for jj=1:obj.solver_options.N_finite_elements
+                    elseif ismatrix(val) && size(val, 1) == mpcc.problem_options.N_stages && size(val, 2) == mpcc.problem_options.N_finite_elements
+                        for ii=1:mpcc.problem_options.N_stages
+                            for jj=1:mpcc.problem_options.N_finite_elements
                                 % All variables of each finite element are set to the same value
                                 for v=ind(ii,jj,:)
                                     % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, cls, etc.)
                                     if ~isempty(v) && length(v{1}) == length(val{ii,jj})
-                                        obj.nlp.w0(v{1}) = val{ii,jj};
+                                        obj.nlp.w0(nlp.ind_map(v{1})) = val{ii,jj};
                                     end
                                 end
                             end
@@ -104,7 +106,7 @@ classdef NosnocSolver < handle
                     % Otherwise we assume that we are initializing via a flat array and we simply check for the same length
                 else
                     if ismatrix(val) && length(val) == length(flat_ind)
-                        obj.nlp.w0(flat_ind) = val;
+                        obj.nlp.w0(nlp.ind_map(flat_ind)) = val;
                     else
                         error('nosnoc: set should be a cell array or a flat array')
                     end

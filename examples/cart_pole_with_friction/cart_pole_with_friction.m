@@ -43,20 +43,21 @@ end
 
 %% Build problem
 import casadi.*
-[settings] = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 % Choosing the Runge - Kutta Method and number of stages
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;
-settings.N_homotopy = 8;
-settings.homotopy_update_rule = 'superlinear';
-settings.dcs_mode = 'Step';
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;
+solver_options.N_homotopy = 8;
+solver_options.homotopy_update_rule = 'superlinear';
+problem_options.dcs_mode = 'Step';
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better performance:
 % settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% Discretization parameters
 model = NosnocModel();
-settings.N_stages = 30; % number of control intervals
-settings.N_finite_elements = 2; % number of finite element on every control intevral
+problem_options.N_stages = 30; % number of control intervals
+problem_options.N_finite_elements = 2; % number of finite element on every control intevral
 model.T = 4;    % Time horizon
 
 %% Model parameters and defintion
@@ -135,9 +136,9 @@ else
     model.lsq_T = {x,x_ref,Q_terminal};
 end
 %% Solve OCP
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model.dims, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
-model = solver.model;
 %% plots
 % unfold structure to workspace of this script
 q1_opt = results.x(1,:);
@@ -198,9 +199,9 @@ for ii = 1:length(q1_opt)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime', solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime', model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime', solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime', model.h_k(1));
     end
 
     if ii~=length(q1_opt)

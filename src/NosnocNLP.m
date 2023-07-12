@@ -76,6 +76,9 @@ classdef NosnocNLP < NosnocFormulationObject
 
         nabla_J
         nabla_J_fun
+
+        % mapping mpcc indices to nlp indices
+        ind_map
     end
     % remaining list of TODOs
     % TODO: cleanup/add properties (in all components)
@@ -215,6 +218,12 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.addConstraint(mpcc.g(mpcc.ind_g_mpcc),...
                 mpcc.lbg(mpcc.ind_g_mpcc),...
                 mpcc.ubg(mpcc.ind_g_mpcc));
+
+            % Generate index map
+            % TODO solver should handle this for clean interface.
+            ind_map = 1:length(obj.w);
+            ind_map(obj.ind_elastic) = [];
+            obj.ind_map = ind_map;
         end
 
         function relax_complementarity_constraints(obj, component)

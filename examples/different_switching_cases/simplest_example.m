@@ -33,14 +33,15 @@ import casadi.*
 switching_case = 'sliding_mode';
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode',
 %% NOSNOC settings
-[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
-settings.n_s = 1;
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.n_s = 1;
 settings.homotopy_update_slope = 0.1;
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.irk_representation= 'differential';
-settings.irk_representation= 'integral';
-settings.dcs_mode = 'Step';
+problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.irk_representation= 'differential';
+problem_options.irk_representation= 'integral';
+problem_options.dcs_mode = 'Step';
 
 % discretization parameters
 N_sim = 1;
@@ -48,7 +49,7 @@ T_sim = 0.75;
 
 model = NosnocModel();
 model.N_sim = N_sim;
-settings.N_finite_elements = 2;
+problem_options.N_finite_elements = 2;
 model.T_sim = T_sim;
 
 model.x0 = -0.50;
@@ -58,7 +59,9 @@ model.c = x;
 model.S = [-1; 1];
 f_1 = [1]; f_2 = [-1];
 model.F = [f_1 f_2];
-[results,stats,solver] = integrator_fesd(model,settings);
+
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %
 figure
 plot(results.t_grid,results.x)

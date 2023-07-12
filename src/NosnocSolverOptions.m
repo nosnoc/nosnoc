@@ -63,8 +63,10 @@ classdef NosnocSolverOptions < handle
         opts_casadi_nlp
 
         % Integrator Specific
+        % TODO: Maybe a 3rd options set specifically for integrators :)
         use_previous_solution_as_initial_guess(1,1) logical = 0
         simulation_problem(1,1) logical = 0
+        real_time_plot(1,1) logical = 0
 
         % TODO: make proper multiple solver class.
         multiple_solvers(1,1) logical = 0
@@ -117,7 +119,7 @@ classdef NosnocSolverOptions < handle
                 obj.opts_casadi_nlp.ipopt.print_level=0;
                 obj.opts_casadi_nlp.print_time=0;
                 obj.opts_casadi_nlp.ipopt.sb= 'yes';
-            elseif print_level == 4
+            elseif obj.print_level == 4
                 obj.opts_casadi_nlp.ipopt.print_level=0;
                 obj.opts_casadi_nlp.print_time=1;
                 obj.opts_casadi_nlp.ipopt.sb= 'no';
