@@ -88,6 +88,9 @@ classdef NosnocMPCC < NosnocFormulationObject
         ind_p_global
         ind_p_time_var
 
+        % g at mpcc level
+        ind_g_mpcc
+
         % Problem data
         model
         problem_options
@@ -286,17 +289,17 @@ classdef NosnocMPCC < NosnocFormulationObject
             if problem_options.time_freezing
                 % Terminal Phyisical Time (Possible terminal constraint on the clock state if time freezing is active).
                 if problem_options.time_optimal_problem
-                    obj.addConstraint(last_fe.x{end}(end)-T_final);
+                    obj.addConstraint(last_fe.x{end}(end)-T_final, 'type', 'g_mpcc');
                 else
                     if problem_options.impose_terminal_phyisical_time && ~problem_options.stagewise_clock_constraint
-                        obj.addConstraint(last_fe.x{end}(end)-T_ctrl_p);
+                        obj.addConstraint(last_fe.x{end}(end)-T_ctrl_p, 'type', 'g_mpcc');
                     else
                         % no terminal constraint on the numerical time
                     end
                 end
                 if problem_options.equidistant_control_grid && ~problem_options.stagewise_clock_constraint
                     if ~problem_options.time_optimal_problem
-                        obj.addConstraint(last_fe.x{end}(end)-model.T);
+                        obj.addConstraint(last_fe.x{end}(end)-model.T, 'type', 'g_mpcc');
                     end
                 end
             else
@@ -316,7 +319,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                                     integral_clock_state = integral_clock_state + fe.h*s_sot;
                                 end
                             end
-                            obj.addConstraint(integral_clock_state-T_final, 0, 0);
+                            obj.addConstraint(integral_clock_state-T_final, 0, 0, 'type', 'g_mpcc');
                         else
                             % otherwise treated via variable h_ki, i.e.,  h_ki =  T_final/(N_stages*N_FE)
                         end
@@ -337,10 +340,10 @@ classdef NosnocMPCC < NosnocFormulationObject
                             end
                         end
                         if ~problem_options.time_optimal_problem
-                            obj.addConstraint(sum_h_all-model.T, 0, 0);
+                            obj.addConstraint(sum_h_all-model.T, 0, 0, 'type', 'g_mpcc');
                         else
                             if ~problem_options.use_speed_of_time_variables
-                                obj.addConstraint(sum_h_all-T_final, 0, 0);
+                                obj.addConstraint(sum_h_all-T_final, 0, 0, 'type', 'g_mpcc');
                             else
                                 integral_clock_state = 0;
                                 for k=1:problem_options.N_stages
@@ -355,8 +358,8 @@ classdef NosnocMPCC < NosnocFormulationObject
                                     end
                                 end
                                 % T_num = T_phy = T_final \neq T.
-                                obj.addConstraint(sum_h_all-model.T, 0, 0);
-                                obj.addConstraint(integral_clock_state-T_final, 0, 0);
+                                obj.addConstraint(sum_h_all-model.T, 0, 0, 'type', 'g_mpcc');
+                                obj.addConstraint(integral_clock_state-T_final, 0, 0, 'type', 'g_mpcc');
                             end
                         end
                     end
@@ -380,9 +383,9 @@ classdef NosnocMPCC < NosnocFormulationObject
                 switch problem_options.relax_terminal_constraint % TODO name these.
                   case 0 % hard constraint
                     if problem_options.relax_terminal_constraint_from_above
-                        obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1));
+                        obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1), 'type', 'g_mpcc');
                     else
-                        obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub);
+                        obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub, 'type', 'g_mpcc');
                     end
                   case 1 % l_1
                     s_terminal_ell_1 = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
@@ -394,10 +397,10 @@ classdef NosnocMPCC < NosnocFormulationObject
 
                     obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_1,...
                         -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1));
+                        zeros(n_terminal,1), 'type', 'g_mpcc');
                     obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_1,...
                         -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1));
+                        zeros(n_terminal,1), 'type', 'g_mpcc');
 
                     obj.cost = obj.cost + rho_terminal_p*sum(s_terminal_ell_1);
                   case 2 % l_2
@@ -412,10 +415,10 @@ classdef NosnocMPCC < NosnocFormulationObject
 
                     obj.addConstraint(g_terminal-g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
                         -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1));
+                        zeros(n_terminal,1), 'type', 'g_mpcc');
                     obj.addConstraint(-(g_terminal-g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
                         -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1));
+                        zeros(n_terminal,1), 'type', 'g_mpcc');
 
                     obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
                   case 4 % l_inf, relaxed
@@ -428,10 +431,10 @@ classdef NosnocMPCC < NosnocFormulationObject
                     end
                     obj.addConstraint(g_terminal-g_terminal_lb-elastic,...
                         -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1));
+                        zeros(n_terminal,1), 'type', 'g_mpcc');
                     obj.addConstraint(-(g_terminal-g_terminal_lb)-elastic,...
                         -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1));
+                        zeros(n_terminal,1), 'type', 'g_mpcc');
                 end
             end
 
