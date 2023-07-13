@@ -44,20 +44,21 @@ T_sim = 10;
 N_sim  = 200;
 
 %% init nosnoc 
-settings = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %% settings
-settings.use_fesd = 1;
-settings.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
-settings.print_level = 2;
-settings.n_s = 2;
-settings.dcs_mode = 'Stewart'; % 'Step;
-settings.comp_tol = 1e-9;
-settings.homotopy_update_rule = 'superlinear';
+problem_options.use_fesd = 1;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
+solver_options.print_level = 2;
+problem_options.n_s = 2;
+problem_options.dcs_mode = 'Stewart'; % 'Step;
+solver_options.comp_tol = 1e-9;
+solver_options.homotopy_update_rule = 'superlinear';
 %% Time settings
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 %% Model
 model.x0 = [0;-0.001;-0.02];
 % Variable defintion
@@ -84,14 +85,15 @@ model.S = [-1;1];
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 
 %% Plot results
 x1 = results.x(1,:);
 x2 = results.x(2,:);
 x3 = results.x(3,:);
 
-if isequal(settings.dcs_mode,'Stewart')
+if isequal(problem_options.dcs_mode,'Stewart')
     theta = results.theta;
 else
     alpha = results.alpha;
@@ -126,7 +128,7 @@ legend({'$x_1(t)$','$x_2(t)$','$x_3(t)$'},'Interpreter','latex');
 
 %%
 figure
-if isequal(settings.dcs_mode,'Stewart')
+if isequal(problem_options.dcs_mode,'Stewart')
     plot(t_grid,[[nan;nan],theta])
     xlabel('$t$','Interpreter','latex');
     ylabel('$\theta(t)$','Interpreter','latex');

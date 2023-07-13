@@ -186,7 +186,7 @@ classdef NosnocSolverOptions < handle
                 psi_mpcc = a.*b-sigma;
                 
               case CFunctionType.BILINEAR_TWO_SIDED
-                psi_mpcc = [a*b-sigma,a*b+sigma];
+                psi_mpcc = [a*b-sigma;a*b+sigma];
                 
               case CFunctionType.FISCHER_BURMEISTER
                 psi_mpcc = a+b-sqrt(a^2+b^2+sigma^2);

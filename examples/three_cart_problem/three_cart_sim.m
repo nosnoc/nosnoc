@@ -24,22 +24,23 @@ lbx = [-15; -15; -10; -5; -5; -5];
 x0 = [-3; 0; 3; 0; 0; 0];
 
 %%
-[settings] = NosnocOptions();  
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;
-settings.mpcc_mode = 'elastic_ineq';
-settings.opts_casadi_nlp.ipopt.max_iter = 5e2;
-settings.print_level = 2;
-settings.N_homotopy = 12;
-settings.cross_comp_mode = 8;
-settings.time_freezing = 1;
-settings.pss_lift_step_functions = 1;
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 1;
+solver_options.mpcc_mode = 'elastic_ineq';
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e2;
+solver_options.print_level = 2;
+solver_options.N_homotopy = 12;
+problem_options.cross_comp_mode = 7;
+problem_options.time_freezing = 1;
+problem_options.pss_lift_step_functions = 1;
 
-settings.impose_terminal_phyisical_time = 1;
-settings.local_speed_of_time_variable = 1;
-settings.stagewise_clock_constraint = 0;
+problem_options.impose_terminal_phyisical_time = 1;
+problem_options.local_speed_of_time_variable = 1;
+problem_options.stagewise_clock_constraint = 0;
 
-% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %%
 % Symbolic variables and bounds
@@ -65,11 +66,12 @@ N_FE = 2;
 T_sim = 3;
 N_sim = 60;
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+problem_options.N_finite_elements = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 1;
+solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %% read and plot results
 unfold_struct(results,'base');
 p1 = results.x(1,:);
@@ -141,7 +143,7 @@ for ii = 1:length(p1)
     axis equal
     xlim([x_min x_max])
     ylim([-0.75 2.5])
-    pause(solver.model.h_k);
+    pause(model.h_k);
     clf
 end
 

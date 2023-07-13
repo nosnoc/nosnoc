@@ -184,8 +184,11 @@ classdef NosnocNLP < NosnocFormulationObject
             end
 
             
-            if length(mpcc.sot) == 1
-                [sot, lbsot, ubsot, sot0] = mpcc.sot;
+            if ~mpcc.problem_options.local_speed_of_time_variable
+                sot = mpcc.w(mpcc.ind_sot);
+                lbsot = mpcc.lbw(mpcc.ind_sot);
+                ubsot = mpcc.ubw(mpcc.ind_sot);
+                sot0 = mpcc.w0(mpcc.ind_sot);
                 obj.addPrimalVector(sot, lbsot, ubsot, sot0);
             end
             for stage=obj.mpcc.stages

@@ -13,6 +13,12 @@ qy_opt = results.x(2,:);
 vx_opt = results.x(3,:);
 vy_opt = results.x(4,:);
 t_opt = results.x(5,:);
+
+R = 1;
+alpha0 = pi/4;
+qx_c = 0.0;
+qy_c = 0.0;
+v_target = 5;
 %%
 
 figure('Renderer', 'painters', 'Position', [100 100 800 200])
@@ -25,10 +31,10 @@ plot(0:0.1:t_fin,0:0.1:t_fin,'r-')
 xlabel('Numerical time - $\tau$','Interpreter','latex');
 ylabel('Physical time - $t$','Interpreter','latex');
 hold on
-for ii= 1:settings.N_finite_elements(1):length(t_grid)
+for ii= 1:problem_options.N_finite_elements(1):length(t_grid)
     xline(t_grid(ii),'k--')
 end
-s_sot_opt = results.w(solver.problem.ind_sot);
+s_sot_opt = results.s_sot;
 subplot(122)
 stairs(t_grid_u,[nan;s_sot_opt],'k','linewidth',1.5);
 ylim([0.0 max(s_sot_opt)+1])
@@ -44,7 +50,7 @@ eval(['print -dpdf -painters ' file_name1])
 %% 
 linewidth = 1.5;
 ind_t = diff(t_opt)/h>0.2;
-ind_t = [1,theta_opt(1,:)]>0.2;
+ind_t = [1,results.theta(1,:)]>0.2;
 figure('Renderer', 'painters', 'Position', [100 100 700 850])
 subplot(321)
 plot(t_grid,qx_opt,'linewidth',linewidth)
@@ -110,10 +116,10 @@ xlim([0 t_opt(end)])
 ylim ([-11 11])
 
 subplot(326)
-stairs(t_opt(1:settings.N_finite_elements(1):end),[nan,results.u(1,:)],'linewidth',linewidth)
+stairs(t_opt(1:problem_options.N_finite_elements(1):end),[nan,results.u(1,:)],'linewidth',linewidth)
 hold on
 grid on
-stairs(t_opt(1:settings.N_finite_elements(1):end),[nan,results.u(2,:)],'linewidth',linewidth)
+stairs(t_opt(1:problem_options.N_finite_elements(1):end),[nan,results.u(2,:)],'linewidth',linewidth)
 xlabel('$t$','Interpreter','latex');
 ylabel('$u(t)$','Interpreter','latex');
 legend({'$u_1(t)$','$u_2(t)$'},'Interpreter','latex','location','north');

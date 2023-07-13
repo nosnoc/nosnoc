@@ -568,6 +568,14 @@ classdef NosnocSolver < handle
 
             t_grid = cumsum([0,h_opt]);
 
+            if obj.mpcc.problem_options.use_speed_of_time_variables
+                s_sot = w_mpcc(flatten_ind(mpcc.ind_sot));
+                if ~obj.mpcc.problem_options.local_speed_of_time_variable
+                    s_sot = s_sot*ones(obj.mpcc.problem_options.N_stages,1);
+                end
+                results.s_sot = s_sot;
+            end
+            
             %% Adapt the grid in case of time optimal problems
             if obj.mpcc.problem_options.time_optimal_problem
                 if obj.mpcc.problem_options.use_speed_of_time_variables

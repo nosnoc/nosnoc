@@ -42,26 +42,27 @@ R_osc  = 1;
 
 %% Init
 % collocation settings
-settings = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %% settings
-settings.use_fesd = 1;       % switch detection method on/off
-settings.irk_scheme = IRKSchemes.RADAU_IIA; %'Gauss-Legendre';
-settings.print_level = 2;
-settings.n_s = 4;
-settings.dcs_mode = 'Step'; % 'Step;
-settings.mpcc_mode = MpccMode.Scholtes_ineq;  % Scholtes regularization
+problem_options.use_fesd = 1;       % switch detection method on/off
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA; %'Gauss-Legendre';
+solver_options.print_level = 2;
+problem_options.n_s = 4;
+problem_options.dcs_mode = 'Step'; % 'Step;
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq;  % Scholtes regularization
 
 % Penalty/Relaxation paraemetr
-settings.comp_tol = 1e-9;
-settings.cross_comp_mode = 1;
+solver_options.comp_tol = 1e-9;
+problem_options.cross_comp_mode = 1;
 
 %% Time settings
 x_star = [exp(1);0];
 T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 smooth_model = 0; % if 1, use model without switch for a sanity check
@@ -88,11 +89,12 @@ f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %% numerical error
 x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
+fprintf(['Numerical error with h = %2.3f and ' char(problem_options.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,problem_options.n_s,error_x);
 %% plot_solution_trajectory
 t_star = R_osc; % eact switching time
 x_res = results.x;
@@ -142,7 +144,6 @@ end
 
 %% plot_continious_time_sol
 if plot_continious_time_sol
-    unfold_struct(settings,'caller')
     x_res_extended = results.extended.x;
     tgrid_long = results.extended.t_grid;
 
@@ -151,9 +152,9 @@ if plot_continious_time_sol
     x2_very_fine = [];
     tgrid_very_fine = [];
     figure
-    for ii =  1:settings.N_stages*settings.N_finite_elements*N_sim
+    for ii =  1:problem_options.N_stages*problem_options.N_finite_elements*N_sim
         % read
-        ind_now = 1+(ii-1)*(n_s):(ii)*(n_s)+1;
+        ind_now = 1+(ii-1)*(problem_options.n_s):(ii)*(problem_options.n_s)+1;
         tt = tgrid_long(ind_now);
         xx1 = x_res_extended(1,ind_now);
         xx2 = x_res_extended(2,ind_now);

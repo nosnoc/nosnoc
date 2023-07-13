@@ -7,19 +7,21 @@ close all
 % Baumrucker, Brian T., and Lorenz T. Biegler. "MPEC strategies for optimization of a class of hybrid dynamic systems." Journal of Process Control 19.8 (2009): 1248-1256.
 
 %% settings
-settings = NosnocOptions();
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;   
-settings.n_s = 1;                
-% settings.N_homotopy = 8;
-settings.homotopy_update_rule = 'superlinear';
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;   
+problem_options.n_s = 1;                
+% solver_options.N_homotopy = 8;
+solver_options.homotopy_update_rule = 'superlinear';
 %% Generate Model
 model = tank_cascade();
 %% Discretization parameters
-settings.N_stages = 100; % number of control intervals
-settings.N_finite_elements = 2; % number of finite element on every control intevral
+problem_options.N_stages = 100; % number of control intervals
+problem_options.N_finite_elements = 2; % number of finite element on every control intevral
 model.T = 100;    % yime horizon
 %% Solve OCP via nosnoc
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model.dims, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 %% Read and plot Result 
 figure

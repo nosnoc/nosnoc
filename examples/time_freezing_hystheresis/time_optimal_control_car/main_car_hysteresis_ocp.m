@@ -31,43 +31,49 @@ close all
 import casadi.*
 
 %% Settings
-[settings] = NosnocOptions();
-settings.n_s = 2;                       
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.n_s = 1;
 %% Time settings
-settings.time_freezing = 1;
-settings.time_freezing_hysteresis  = 1;
-settings.time_optimal_problem = 1;
+problem_options.time_freezing = 1;
+problem_options.time_freezing_hysteresis = 1;
+problem_options.time_optimal_problem = 1;
 % Time-freezing scaling / speed of time
-settings.s_sot_max = 10;
-settings.s_sot_min = 0.9;
-settings.rho_sot = 1e-1;
-settings.use_speed_of_time_variables = 1; 
-settings.local_speed_of_time_variable = 1;
-settings.stagewise_clock_constraint = 1;
-settings.relax_terminal_constraint = 1;
+problem_options.s_sot_max = 10;
+problem_options.s_sot_min = 0.9;
+problem_options.rho_sot = 1e-1;
+problem_options.use_speed_of_time_variables = 1; 
+problem_options.local_speed_of_time_variable = 1;
+problem_options.stagewise_clock_constraint = 1;
+problem_options.relax_terminal_constraint = 0;
 % solver settings
-settings.comp_tol = 1e-8;
-settings.cross_comp_mode = 1;
-% settings.homotopy_update_slope = 0.2;
-settings.homotopy_update_rule = 'superlinear';
-%settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
-%settings.elasticity_mode = ElasticityMode.ELL_INF;
-settings.opts_casadi_nlp.ipopt.max_iter = 1e4;
-settings.sigma_0 = 100;
+solver_options.comp_tol = 1e-8;
+problem_options.cross_comp_mode = 1;
+% solver_options.homotopy_update_slope = 0.2;
+%solver_options.homotopy_update_rule = 'superlinear';
+%solver_options.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
+%solver_options.elasticity_mode = ElasticityMode.ELL_INF;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e4;
+solver_options.opts_casadi_nlp.ipopt.tol = 1e-7;
+solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
+solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+solver_options.sigma_0 = 0.01;
+solver_options.N_homotopy = 7;
+solver_options.print_level = 5;
 
 %% Model Settings
-model.fuel_cost_on = 0;
-settings.N_finite_elements = 5;
-settings.N_stages = 10;
-model.T = 1;
+problem_options.N_finite_elements = 3;
+problem_options.N_stages = 10;
 %% solve OCP
-model = car_hystheresis_model_voronoi(model);
-solver = NosnocSolver(model, settings);
+model = car_hystheresis_model_voronoi();
+model.T = 1;
+mpcc = NosnocMPCC(problem_options, model.dims, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 %% Read and plot Result
-plot_results_car_hysteresis(results,settings,model,stats)   
+plot_results_car_hysteresis(results,problem_options,model,stats)   
 %%
-T_opt = results.T_opt;
-N_stages = settings.N_stages;
-u_opt = results.u_opt;
+T_opt = results.T;
+N_stages = problem_options.N_stages;
+u_opt = results.u;
 [tout,yout,error] = car_hysteresis_sim(u_opt,T_opt,N_stages);
