@@ -37,29 +37,30 @@ import casadi.*
 
 filename = 'discs_switch_position_obstacle.gif';
 %%
-settings = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %%
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;  % number of stages in IRK methods
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;  % number of stages in IRK methods
 
-settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
-settings.use_fesd = 1;
-settings.N_homotopy = 7;
-settings.dcs_mode = 'CLS';
-settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.g_path_at_fe = 1;
+solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
+problem_options.use_fesd = 1;
+solver_options.N_homotopy = 7;
+problem_options.dcs_mode = 'CLS';
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+problem_options.g_path_at_fe = 1;
 % 
-settings.mpcc_mode = 'Scholtes_ineq';
-settings.homotopy_update_slope = 0.1;
-settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 7;
-settings.g_path_at_fe = 0;
-settings.sigma_0 = 1e1;
-settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
-settings.gamma_h = 0.995;
+solver_options.mpcc_mode = 'Scholtes_ineq';
+solver_options.homotopy_update_slope = 0.1;
+solver_options.homotopy_update_rule = 'superlinear';
+solver_options.N_homotopy = 7;
+problem_options.g_path_at_fe = 0;
+solver_options.sigma_0 = 1e1;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 2e3;
+problem_options.gamma_h = 0.995;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 25; % control intervals
@@ -105,8 +106,8 @@ v2 = v(3:4);
 
 x = [q;v];
 model.T = T;
-settings.N_stages = N_stg;
-settings.N_finite_elements  = N_FE;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 1*0;
@@ -142,7 +143,8 @@ model.ubx = ubx;
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 %% Call nosnoc solver
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model.dims, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 %% read and plot results
 unfold_struct(results,'base');
@@ -195,9 +197,9 @@ for ii = 1:length(p1)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
     end
     if ii~=length(p1)
         clf;
@@ -293,10 +295,10 @@ set(gcf,'Units','inches');
 
 
 subplot(3,2,6)
-stem(results.t_grid(1:settings.n_s-1:end),[nan,Lambda_normal]','LineWidth',1.5);
+stem(results.t_grid(1:problem_options.n_s-1:end),[nan,Lambda_normal]','LineWidth',1.5);
 grid on
 hold on
-% plot(results.t_grid(1:settings.n_s-1:end),[nan,lambda_normal]','LineWidth',1.5);
+% plot(results.t_grid(1:problem_options.n_s-1:end),[nan,lambda_normal]','LineWidth',1.5);
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
 xlim([0 T]);

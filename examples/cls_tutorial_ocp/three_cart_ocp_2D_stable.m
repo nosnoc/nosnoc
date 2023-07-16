@@ -33,44 +33,44 @@ import casadi.*
 
 %%
 play_animation = 1;
-
 %%
-settings = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %%
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;  % number of stages in IRK methods
-settings.dcs_mode = 'CLS';
-settings.cross_comp_mode = 1;
-settings.friction_model = "Polyhedral";
-settings.print_level = 3;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;  % number of stages in IRK methods
+problem_options.dcs_mode = 'CLS';
+problem_options.cross_comp_mode = 1;
+problem_options.friction_model = "Polyhedral";
+solver_options.print_level = 3;
 
-settings.gamma_h = 0.8;
-settings.sigma_0 = 1e0;
-settings.mpcc_mode = "Scholtes_ineq";
-settings.homotopy_update_slope = 0.2;
-settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 7;
+problem_options.gamma_h = 0.8;
+solver_options.sigma_0 = 1e0;
+solver_options.mpcc_mode = "Scholtes_ineq";
+solver_options.homotopy_update_slope = 0.2;
+solver_options.homotopy_update_rule = 'superlinear';
+solver_options.N_homotopy = 7;
 
 % NLP solver settings;
 default_tol = 1e-8;
-settings.comp_tol = 1e-8;
-settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.opts_casadi_nlp.ipopt.tol = default_tol;
-settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-settings.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-settings.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+solver_options.comp_tol = 1e-8;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.opts_casadi_nlp.ipopt.tol = default_tol;
+solver_options.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+solver_options.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+solver_options.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
 
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
 N_stg = 15; % control intervals
 N_FE = 2;  % integration steps per control intevral
 T = 6;
 
-settings.N_stages = N_stg;
-settings.N_finite_elements  = N_FE;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
 model.T = T;
 
 %% model parameters
@@ -178,7 +178,8 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 
 %% Call nosnoc solver
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model.dims, model);
+solver = NosnocSolver(mpcc, solver_options);
 lambda_normal_guess = {};
 for ii = 1:N_stg
     lambda_normal_guess{ii} = [0;0;g;g;g];
@@ -253,16 +254,16 @@ if play_animation
         axis equal
         xlim([x_min x_max])
         ylim([-0.75 3.5])
-        pause(solver.model.h_k);
+        pause(model.h_k);
 
         frame = getframe(1);
         im = frame2im(frame);
 
         [imind,cm] = rgb2ind(im,256);
         if ii == 1;
-            imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
+            imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
         else
-            imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
+            imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
         end
 
         if ii~=length(p1x)

@@ -184,7 +184,7 @@ classdef NosnocNLP < NosnocFormulationObject
             end
 
             
-            if ~mpcc.problem_options.local_speed_of_time_variable
+            if ~mpcc.problem_options.local_speed_of_time_variable && mpcc.problem_options.use_speed_of_time_variables
                 sot = mpcc.w(mpcc.ind_sot);
                 lbsot = mpcc.lbw(mpcc.ind_sot);
                 ubsot = mpcc.ubw(mpcc.ind_sot);

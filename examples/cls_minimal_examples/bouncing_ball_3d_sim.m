@@ -2,25 +2,26 @@ clear all;
 clear all;
 clc;
 import casadi.*
-%% init model and settings
-settings = NosnocOptions();  
+%% init model and settings)
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %%
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
-settings.print_level = 3;
-settings.N_homotopy = 10;
-settings.use_fesd = 1;
-settings.dcs_mode = 'CLS';
-settings.friction_model = "Polyhedral";
-settings.conic_model_switch_handling = "Abs";
-settings.pss_lift_step_functions= 0;
-settings.impose_terminal_phyisical_time  = 1;
-settings.stagewise_clock_constraint = 0;
-settings.nonsmooth_switching_fun = 0;
-settings.pss_lift_step_functions = 0;
-settings.cross_comp_mode = 1;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
+solver_options.print_level = 3;
+solver_options.N_homotopy = 10;
+problem_options.use_fesd = 1;
+problem_options.dcs_mode = 'CLS';
+problem_options.friction_model = "Polyhedral";
+problem_options.conic_model_switch_handling = "Abs";
+problem_options.pss_lift_step_functions= 0;
+problem_options.impose_terminal_phyisical_time  = 1;
+problem_options.stagewise_clock_constraint = 0;
+problem_options.nonsmooth_switching_fun = 0;
+problem_options.pss_lift_step_functions = 0;
+problem_options.cross_comp_mode = 1;
 %%
 g = 10;
 % Symbolic variables and bounds
@@ -44,11 +45,12 @@ N_finite_elements = 10;
 T_sim = 2;
 N_sim = 1;
 model.T_sim = T_sim;
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
+solver_options.use_previous_solution_as_initial_guess = 0;
 %% Call FESD Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);

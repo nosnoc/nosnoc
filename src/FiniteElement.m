@@ -1318,8 +1318,12 @@ classdef FiniteElement < NosnocFormulationObject
                 for j=1:obj.n_cont
                     for r=1:obj.n_indep
                         pairs = cross_comp_pairs(j, :, r);
-                        cont = pairs{1,1}(:,1);
-                        discont = cellfun(@(pair) pair(:,2), pairs, 'uni', false);
+                        if all(cellfun(@isempty, pairs))
+                            continue
+                        end
+                        cont = pairs{1,end}(:,1);
+                        discont = cellfun(@(pair) vertcat(pair, zeros(length(cont) - length(pair),2)),pairs, 'uni', false);
+                        discont = cellfun(@(pair) pair(:,2), discont, 'uni', false);
                         b = [b;sum2([discont{:}])];
                         a = [a;cont];
                     end
@@ -1331,8 +1335,12 @@ classdef FiniteElement < NosnocFormulationObject
                 for jj=1:obj.n_discont
                     for r=1:obj.n_indep
                         pairs = cross_comp_pairs(:, jj, r);
-                        discont = pairs{1,1}(:,2);
-                        cont = cellfun(@(pair) pair(:,1), pairs, 'uni', false);
+                        if all(cellfun(@isempty, pairs))
+                            continue
+                        end
+                        discont = pairs{1,end}(:,2);
+                        cont = cellfun(@(pair) vertcat(pair, zeros(length(discont) - length(pair),2)),pairs, 'uni', false);
+                        cont = cellfun(@(pair) pair(:,1), cont, 'uni', false);
                         b = [b;discont];
                         a = [a;sum2([cont{:}])];
                     end
@@ -1347,8 +1355,14 @@ classdef FiniteElement < NosnocFormulationObject
                 b = [];
                 for r=1:obj.n_indep
                     pairs = cross_comp_pairs(:, :, r);
-                    cont = cellfun(@(pair) pair(:,1), pairs(:,1), 'uni', false);
-                    discont = cellfun(@(pair) pair(:,2), pairs(1,:), 'uni', false);
+                    if all(cellfun(@isempty, pairs))
+                        continue
+                    end
+                    n_pair = size(pairs{end,end}, 1);
+                    cont = cellfun(@(pair) vertcat(pair, zeros(n_pair - length(pair),2)),pairs(:,end), 'uni', false);
+                    cont = cellfun(@(pair) pair(:,1), cont, 'uni', false);
+                    discont = cellfun(@(pair) vertcat(pair, zeros(n_pair - length(pair),2)),pairs(end,:), 'uni', false);
+                    discont = cellfun(@(pair) pair(:,2), discont, 'uni', false);
                     b = [b;sum2([discont{:}])];
                     a = [a;sum2([cont{:}])];
                 end

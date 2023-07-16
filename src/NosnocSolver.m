@@ -185,7 +185,7 @@ classdef NosnocSolver < handle
                 % TODO: reconsider this if 0th element has an impulse
                 y_gap00 = max(0, model.f_c_fun(x0));
                 if model.friction_exists
-                    switch solver_options.friction_model
+                    switch obj.mpcc.problem_options.friction_model
                       case 'Polyhedral'
                         v0 = x0(model.dims.n_q+1:end);
                         D_tangent_0 = model.D_tangent_fun(x0);
@@ -202,7 +202,7 @@ classdef NosnocSolver < handle
                             ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
                             v_ti0 = v0(ind_temp);
                             gamma_00 = [gamma_00;norm(v_ti0)];
-                            switch solver_options.conic_model_switch_handling
+                            switch obj.mpcc.problem_options.conic_model_switch_handling
                               case 'Plain'
                                 % no extra vars
                               case {'Abs','Lp'}

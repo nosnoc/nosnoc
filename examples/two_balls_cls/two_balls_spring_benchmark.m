@@ -34,29 +34,30 @@ for irk_scheme = IRK_SCHEMES
                     model.f_v = [-m*g+k*(q(2)-q(1)-l);-m*g-k*(q(2)-q(1)-l)];
                     model.f_c = q(1)-R;
                     % settings
-                    settings = NosnocOptions();
-                    settings.irk_scheme = irk_scheme;
-                    % settings.irk_representation = 'differential';
-                    settings.n_s = n_s;
-                    settings.print_level = 3;
-                    settings.cross_comp_mode = 1;
-                    settings.dcs_mode = DcsMode.CLS;
-                    settings.multiple_solvers = 0;
-                    settings.no_initial_impacts = 1;
-                    settings.print_details_if_infeasible = 0;
-                    settings.pause_homotopy_solver_if_infeasible = 0;
-                    % settings.opts_ipopt.ipopt.linear_solver = 'ma97';
-                    settings.comp_tol  = 1e-13;
-                    settings.sigma_N = 1e-13;
-                    settings.mpcc_mode = "elastic_ineq";
-                    settings.elastic_scholtes = 1;
-                    settings.sigma_0 = 1e0;
-                    settings.homotopy_update_slope = 0.2;
-                    settings.opts_casadi_nlp.ipopt.max_iter = 1500;
-                    settings.use_previous_solution_as_initial_guess  = 1;
+                    problem_options = NosnocProblemOptions();
+                    solver_options = NosnocSolverOptions();
+                    problem_options.irk_scheme = irk_scheme;
+                    % problem_options.irk_representation = 'differential';
+                    problem_options.n_s = n_s;
+                    solver_options.print_level = 3;
+                    problem_options.cross_comp_mode = 1;
+                    problem_options.dcs_mode = DcsMode.CLS;
+                    solver_options.multiple_solvers = 0;
+                    problem_options.no_initial_impacts = 1;
+                    solver_options.print_details_if_infeasible = 0;
+                    solver_options.pause_homotopy_solver_if_infeasible = 0;
+                    % solver_options.opts_ipopt.ipopt.linear_solver = 'ma97';
+                    solver_options.comp_tol  = 1e-13;
+                    solver_options.sigma_N = 1e-13;
+                    solver_options.mpcc_mode = "elastic_ineq";
+                    solver_options.elastic_scholtes = 1;
+                    solver_options.sigma_0 = 1e0;
+                    solver_options.homotopy_update_slope = 0.2;
+                    solver_options.opts_casadi_nlp.ipopt.max_iter = 1500;
+                    solver_options.use_previous_solution_as_initial_guess  = 1;
                     %% Simulation settings
                     model.T_sim = T_sim;
-                    settings.N_finite_elements = N_FE;
+                    problem_options.N_finite_elements = N_FE;
                     model.N_sim = N_sim;
 
                     %% Call nosnoc Integrator
@@ -67,13 +68,15 @@ for irk_scheme = IRK_SCHEMES
 
                     if with_guess
                         % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
-                        [results, stats, solver] = integrator_fesd(model, settings, [], initial_guess);
+                        integrator = NosnocIntegrator(model, problem_options, solver_options, [], initial_guess);
+                        [results,stats] = integrator.solve();
                     else
-                        [results, stats, solver] = integrator_fesd(model, settings, []);
+                        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+                        [results,stats] = integrator.solve();
                     end
 
-                    results_filename = get_results_filename(n_s, N_sim, N_FE, settings.irk_scheme, with_guess);
-                    save(results_filename, 'results', 'stats', 'settings')
+                    results_filename = get_results_filename(n_s, N_sim, N_FE, problem_options.irk_scheme, with_guess);
+                    save(results_filename, 'results', 'stats', 'problem_options', 'solver_options')
 
                     clear model solver
                 end
