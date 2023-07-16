@@ -1,4 +1,4 @@
-function [results,stats,model,settings] = test_integrator(use_fesd, irk_representation, irk_scheme, dcs_mode)
+function [results,stats,model,problem_options] = test_integrator(use_fesd, irk_representation, irk_scheme, dcs_mode)
 import casadi.*
 % discretization settings
 N_finite_elements = 2;
@@ -9,25 +9,26 @@ R_osc  = 1;
 
 fprintf('use_fesd\tirk_representation\tirk_scheme\tdcs_mode\n')
 fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, irk_representation, irk_scheme, dcs_mode);
-settings = NosnocOptions();
-settings.use_fesd = use_fesd;
-settings.irk_representation = irk_representation;
-settings.irk_scheme = irk_scheme;
-settings.real_time_plot = 0;
-settings.print_level = 2;
-settings.n_s = 4;
-settings.dcs_mode = dcs_mode;
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.use_fesd = use_fesd;
+problem_options.irk_representation = irk_representation;
+problem_options.irk_scheme = irk_scheme;
+solver_options.real_time_plot = 0;
+solver_options.print_level = 2;
+problem_options.n_s = 4;
+problem_options.dcs_mode = dcs_mode;
 % 'Stewart'; % 'Step;
-settings.comp_tol = 1e-9;
-settings.cross_comp_mode  = 3;
-settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 7;
+solver_options.comp_tol = 1e-9;
+problem_options.cross_comp_mode  = 3;
+solver_options.homotopy_update_rule = 'superlinear';
+solver_options.N_homotopy = 7;
 % Model
 x_star = [exp(1);0];
 x_star = [exp(T_sim-1)*cos(2*pi*(T_sim-1));-exp((T_sim-1))*sin(2*pi*(T_sim-1))];
 
 model = NosnocModel();
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 omega = -2*pi;
@@ -50,9 +51,10 @@ f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
 % Call integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 % numerical error
 x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-fprintf(['Numerical error with h = %2.3f and ' char(settings.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,settings.n_s,error_x);
+fprintf(['Numerical error with h = %2.3f and ' char(problem_options.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,problem_options.n_s,error_x);
 end

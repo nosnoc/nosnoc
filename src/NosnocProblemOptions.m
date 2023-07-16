@@ -42,9 +42,13 @@ classdef NosnocProblemOptions < handle
 
         cross_comp_output_type = 'SCALAR';
         cross_comp_type = CrossCompType.STAGE_STAGE;
-        cross_comp_mode {mustBeInRange(cross_comp_mode, 1, 12)}= 3
+        cross_comp_mode {mustBeInRange(cross_comp_mode, 1, 12)} = 3
         gamma_h(1,1) double {mustBeReal, mustBeInRange(gamma_h, 0, 1)} = 1
         dcs_mode DcsMode = DcsMode.Stewart
+
+        % lift complementarities
+        lift_complementarities(1,1) logical = 0
+        lower_bound_comp_lift(1,1) logical = 1
 
         % TODO: Initialization is really a solver concern, but there is not really a good extraction approach yet.
         % Initialization - Stewart

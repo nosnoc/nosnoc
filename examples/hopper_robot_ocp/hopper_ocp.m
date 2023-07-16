@@ -57,6 +57,7 @@ problem_options.stagewise_clock_constraint = 1;
 problem_options.g_path_at_fe = 1; % evaluate path constraint on every integration step
 problem_options.g_path_at_stg = 1; % evaluate path constraint on every stage point
 problem_options.nonsmooth_switching_fun = 0;
+problem_options.lift_complementarities = 1;
 
 solver_options.N_homotopy = 6;
 solver_options.sigma_0 = 1;

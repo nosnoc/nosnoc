@@ -21,13 +21,14 @@ model.x0 = -1;
 model.T = pi/4;
 problem_options.N_stages = 1;
 problem_options.N_finite_elements = 2;
-problem_options.cross_comp_mode = 1;
+problem_options.cross_comp_mode = 3;
+problem_options.lift_complementarities = 1;
 model.dims.n_s = 2;
 
 solver_options = NosnocSolverOptions();
 %solver_options.mpcc_mode = MpccMode.elastic_ineq;
-solver_options.psi_fun_type = CFunctionType.NATURAL_RESIDUAL;
-solver_options.elasticity_mode = ElasticityMode.ELL_1;
+%solver_options.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
+%solver_options.elasticity_mode = ElasticityMode.ELL_1;
 
 mpcc = NosnocMPCC(problem_options, model.dims, model);
 solver = NosnocSolver(mpcc, solver_options);

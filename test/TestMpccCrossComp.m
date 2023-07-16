@@ -2,7 +2,7 @@ classdef TestMpccCrossComp < matlab.unittest.TestCase
     %TESTSETTINGS Summary of this class goes here
     %   Detailed explanation goes here
     properties (TestParameter)
-        cross_comp = {1,2,3};
+        cross_comp = {1,3,4,7};
         mpcc_mode = {'direct','Scholtes_eq','Scholtes_ineq','ell_1_penalty',...
              'elastic_ineq','elastic_eq','elastic_two_sided',...
              };
