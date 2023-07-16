@@ -1310,31 +1310,6 @@ classdef FiniteElement < NosnocFormulationObject
             lbg_cross_comp = [];
             ubg_cross_comp = [];
             if problem_options.cross_comp_mode == 1
-                % if problem_options.lift_complementarities && problem_options.dcs_mode == DcsMode.Step
-                %     tmp = vertcat(cross_comp_pairs{:});
-                %     for ii=1:length(tmp)
-                %         if is_leaf(tmp(ii,2))
-                %             cross_comp_aggregated = vertcat(cross_comp_aggregated,tmp(ii,:));
-                %         else
-                %             z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'z_comp', 1);
-                %             if problem_options.lower_bound_comp_lift
-                %                 lb = 0;
-                %             else
-                %                 lb = -inf;
-                %             end
-                %             obj.addVariable(z_comp,...
-                %                 'comp_lift',...
-                %                 lb,...
-                %                 inf,...
-                %                 1);
-                %             g_comp_lift = z_comp - tmp(ii, 2);
-                %             obj.addConstraint(g_comp_lift);
-                %             cross_comp_aggregated = vertcat(cross_comp_aggregated,[tmp(ii,1), z_comp]);
-                %         end
-                %     end
-                % else
-                %     cross_comp_aggregated = vertcat(cross_comp_pairs{:});
-                % end
                 cross_comp_aggregated = vertcat(cross_comp_pairs{:});
             elseif problem_options.cross_comp_mode == 2
                 error('TODO: unsupported');
@@ -1352,27 +1327,6 @@ classdef FiniteElement < NosnocFormulationObject
                         cont = pairs{1,idx}(:,1);
                         discont = cellfun(@(pair) vertcat(pair, zeros(n_pair - length(pair),2)),pairs, 'uni', false);
                         discont = cellfun(@(pair) pair(:,2), discont, 'uni', false);
-
-                        % if problem_options.lift_complementarities
-                        %     z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'z_comp', n_pair);
-                        %     if problem_options.lower_bound_comp_lift
-                        %         lb = zeros(n_pair,1);
-                        %     else
-                        %         lb = -inf*ones(n_pair,1);
-                        %     end
-                        %     obj.addVariable(z_comp,...
-                        %         'comp_lift',...
-                        %         lb,...
-                        %         inf*ones(n_pair, 1),...
-                        %         ones(n_pair, 1));
-                        %     g_comp_lift = z_comp - sum2([discont{:}]);
-                        %     obj.addConstraint(g_comp_lift);
-                        %     b = [b;z_comp];
-                        %     a = [a;cont];
-                        % else
-                        %     b = [b;sum2([discont{:}])];
-                        %     a = [a;cont];
-                        % end
                         b = [b;sum2([discont{:}])];
                         a = [a;cont];
                     end
@@ -1392,27 +1346,6 @@ classdef FiniteElement < NosnocFormulationObject
                         discont = pairs{1,idx}(:,2);
                         cont = cellfun(@(pair) vertcat(pair, zeros(n_pair - length(pair),2)),pairs, 'uni', false);
                         cont = cellfun(@(pair) pair(:,1), cont, 'uni', false);
-
-                        % if problem_options.lift_complementarities
-                        %     z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'z_comp', n_pair);
-                        %     if problem_options.lower_bound_comp_lift
-                        %         lb = zeros(n_pair,1);
-                        %     else
-                        %         lb = -inf*ones(n_pair,1);
-                        %     end
-                        %     obj.addVariable(z_comp,...
-                        %         'comp_lift',...
-                        %         lb,...
-                        %         inf*ones(n_pair, 1),...
-                        %         ones(n_pair, 1));
-                        %     g_comp_lift = z_comp - sum2([cont{:}]);
-                        %     obj.addConstraint(g_comp_lift);
-                        %     b = [b;discont];
-                        %     a = [a;z_comp];
-                        % else
-                        %     b = [b;discont];
-                        %     a = [a;sum2([cont{:}])];
-                        % end
                         b = [b;discont];
                         a = [a;sum2([cont{:}])];
                     end
@@ -1435,27 +1368,6 @@ classdef FiniteElement < NosnocFormulationObject
                     cont = cellfun(@(pair) pair(:,1), cont, 'uni', false);
                     discont = cellfun(@(pair) vertcat(pair, zeros(n_pair - length(pair),2)),pairs(end,:), 'uni', false);
                     discont = cellfun(@(pair) pair(:,2), discont, 'uni', false);
-
-                    % if problem_options.lift_complementarities
-                    %     z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'z_comp', 2*n_pair);
-                    %     if problem_options.lower_bound_comp_lift
-                    %         lb = zeros(2*n_pair,1);
-                    %     else
-                    %         lb = -inf*ones(2*n_pair,1);
-                    %     end
-                    %     obj.addVariable(z_comp,...
-                    %         'comp_lift',...
-                    %         lb,...
-                    %         inf*ones(2*n_pair, 1),...
-                    %         ones(2*n_pair, 1));
-                    %     g_comp_lift = z_comp - vertcat(sum2([cont{:}]), sum2([discont{:}]));
-                    %     obj.addConstraint(g_comp_lift);
-                    %     b = [b;z_comp(n_pair+1:2*n_pair)];
-                    %     a = [a;z_comp(1:n_pair)];
-                    % else
-                    %     b = [b;sum2([discont{:}])];
-                    %     a = [a;sum2([cont{:}])];
-                    % end
                     b = [b;sum2([discont{:}])];
                     a = [a;sum2([cont{:}])];
                 end
