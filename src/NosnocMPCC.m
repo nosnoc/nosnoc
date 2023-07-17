@@ -112,6 +112,9 @@ classdef NosnocMPCC < NosnocFormulationObject
         p
         p0
 
+        % cross comps
+        cross_comps
+
         % Problem components
         fe0 % Zeroth finite element (contains X0, lambda00)
         stages % control stages
@@ -474,6 +477,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                     all_pairs = [all_pairs;fe.all_comp_pairs];
                 end
             end
+            obj.cross_comps = all_pairs;
             all_products = apply_psi(all_pairs, @(x,y,t) x.*y, 0);
 
             obj.comp_res = Function('comp_res', {obj.w, obj.p}, {max(all_products)});
