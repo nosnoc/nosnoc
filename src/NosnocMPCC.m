@@ -731,5 +731,24 @@ classdef NosnocMPCC < NosnocFormulationObject
             fprintf(fileID, '\nobjective\n');
             fprintf(fileID, strcat(formattedDisplayText(obj.cost), '\n'));
         end
+
+        function json = jsonencode(obj,varargin)
+            import casadi.*
+            mpcc_struct = struct(obj);
+
+            mpcc_struct.model = obj.model;
+            mpcc_struct.problem_options = obj.problem_options
+
+            json = jsonencode(mpcc_struct);
+        end
+    end
+
+    methods(Static)
+        function obj = from_json(json)
+            mpcc_struct = jsondecode(json);
+            model = NosnocModel.from_struct(mpcc_struct.model);
+            problem_options = NosnocProblemOptions.from_struct(mpcc_struct.problem_options);
+            obj = NosnocMpcc(problem_options, model.dims, model);
+        end
     end
 end

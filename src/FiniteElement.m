@@ -1324,7 +1324,7 @@ classdef FiniteElement < NosnocFormulationObject
                             continue
                         end
                         idx = find(~cellfun(@isempty,pairs),1);
-                        cont = pairs{1,idx}(:,1);
+                        cont = pairs{idx}(:,1);
                         discont = cellfun(@(pair) vertcat(pair, zeros(n_pair - length(pair),2)),pairs, 'uni', false);
                         discont = cellfun(@(pair) pair(:,2), discont, 'uni', false);
                         b = [b;sum2([discont{:}])];
@@ -1343,7 +1343,7 @@ classdef FiniteElement < NosnocFormulationObject
                             continue
                         end
                         idx = find(~cellfun(@isempty,pairs),1);
-                        discont = pairs{1,idx}(:,2);
+                        discont = pairs{idx}(:,2);
                         cont = cellfun(@(pair) vertcat(pair, zeros(n_pair - length(pair),2)),pairs, 'uni', false);
                         cont = cellfun(@(pair) pair(:,1), cont, 'uni', false);
                         b = [b;discont];
@@ -1402,9 +1402,11 @@ classdef FiniteElement < NosnocFormulationObject
                     lb,...
                     inf*ones(n_lift_comp, 1),...
                     ones(n_lift_comp, 1));
-                g_comp_lift = z_comp - tmp(ind_lift_comp);
-                obj.addConstraint(g_comp_lift);
-                obj.all_comp_pairs(ind_lift_comp) = z_comp;
+                if length(ind_lift_comp)
+                    g_comp_lift = z_comp - tmp(ind_lift_comp);
+                    obj.addConstraint(g_comp_lift);
+                    obj.all_comp_pairs(ind_lift_comp) = z_comp;
+                end
             end
         end
 
@@ -1450,6 +1452,17 @@ classdef FiniteElement < NosnocFormulationObject
             else
                 error("Step equilibration mode not implemented");
             end
+        end
+
+        function json = jsonencode(obj, varargin)
+            import casadi.*
+            fe_struct = struct(obj);
+
+            fe_struct = rmfield(fe_struct, 'prev_fe');
+            fe_struct = rmfield(fe_struct, 'model');
+            fe_struct = rmfield(fe_struct, 'dims');
+            fe_struct = rmfield(fe_struct, 'problem_options');
+            json = jsonencode(fe_struct);
         end
     end
 end

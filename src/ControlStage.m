@@ -87,7 +87,7 @@ classdef ControlStage < NosnocFormulationObject
         
         % Problem data
         model
-        settings
+        problem_options
         dims
         ocp
     end
@@ -95,31 +95,31 @@ classdef ControlStage < NosnocFormulationObject
     methods
         % TODO: This probably should take less arguments somehow. Maybe a store of "global_variables" to be
         % added along with v_global. This will likely be done when I get around to cleaning up the `model` struct.
-        function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, s_sot, T_final, rho_h_p, rho_sot_p)
+        function obj = ControlStage(prev_fe, problem_options, model, dims, ctrl_idx, s_sot, T_final, rho_h_p, rho_sot_p)
             import casadi.*
             obj@NosnocFormulationObject();
             
-            obj.settings = settings;
+            obj.problem_options = problem_options;
             obj.model = model;
             obj.dims = dims;
 
             obj.ctrl_idx = ctrl_idx;
             
-            obj.Uk = define_casadi_symbolic(settings.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
+            obj.Uk = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
             obj.addVariable(obj.Uk, 'u', obj.model.lbu, obj.model.ubu,...
                             zeros(obj.dims.n_u,1));
 
             p_stage = vertcat(model.p_global, model.p_time_var_stages(:, ctrl_idx));
-            if settings.time_rescaling && settings.use_speed_of_time_variables
-                if settings.local_speed_of_time_variable
+            if problem_options.time_rescaling && problem_options.use_speed_of_time_variables
+                if problem_options.local_speed_of_time_variable
                     % at every stage
-                    s_sot = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_sot_' num2str(ctrl_idx)], 1);
+                    s_sot = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['s_sot_' num2str(ctrl_idx)], 1);
                     obj.addVariable(s_sot,...
                                     'sot',...
-                                    settings.s_sot_min,...
-                                    settings.s_sot_max,...
-                                    settings.s_sot0);
-                    if settings.time_freezing
+                                    problem_options.s_sot_min,...
+                                    problem_options.s_sot_max,...
+                                    problem_options.s_sot0);
+                    if problem_options.time_freezing
                         obj.cost = obj.cost + rho_sot_p*(s_sot-1)^2;
                     end
                 end
@@ -128,8 +128,8 @@ classdef ControlStage < NosnocFormulationObject
             end
             
             obj.stage = [];
-            for ii=1:obj.settings.N_finite_elements
-                fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii, T_final);
+            for ii=1:obj.problem_options.N_finite_elements
+                fe = FiniteElement(prev_fe, obj.problem_options, obj.model, obj.dims, ctrl_idx, ii, T_final);
                 % 1) Runge-Kutta discretization
                 fe.forwardSimulation(obj.ocp, obj.Uk, s_sot, p_stage);
 
@@ -153,29 +153,29 @@ classdef ControlStage < NosnocFormulationObject
             end
 
             % least squares cost
-            obj.cost = obj.cost + (model.T/settings.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
-            obj.objective = obj.objective + (model.T/settings.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.cost = obj.cost + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.objective = obj.objective + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             if dims.n_u > 0
-                obj.cost = obj.cost + (model.T/settings.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
-                obj.objective = obj.objective + (model.T/settings.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.cost = obj.cost + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.objective = obj.objective + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
             end
             
             % TODO: combine this into a function
-            if settings.use_fesd && settings.equidistant_control_grid
-                if ~settings.time_optimal_problem
+            if problem_options.use_fesd && problem_options.equidistant_control_grid
+                if ~problem_options.time_optimal_problem
                     obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h, 'type', 'stage');
-                elseif ~settings.time_freezing
-                    if settings.use_speed_of_time_variables
+                elseif ~problem_options.time_freezing
+                    if problem_options.use_speed_of_time_variables
                         obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h, 'type', 'stage')
-                        obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/settings.N_stages, 'type', 'stage');
+                        obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/problem_options.N_stages, 'type', 'stage');
                     else
-                        obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/settings.N_stages, 'type', 'stage');
+                        obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/problem_options.N_stages, 'type', 'stage');
                     end
                 end
             end
-            if settings.time_freezing && settings.stagewise_clock_constraint
-                if settings.time_optimal_problem
-                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/settings.N_stages) + model.x0(end), 'type', 'stage');
+            if problem_options.time_freezing && problem_options.stagewise_clock_constraint
+                if problem_options.time_optimal_problem
+                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/problem_options.N_stages) + model.x0(end), 'type', 'stage');
                 else
                     obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end), 'type', 'stage');
                 end
@@ -264,6 +264,16 @@ classdef ControlStage < NosnocFormulationObject
             g_stage = obj.g(obj.ind_stage);
             lbg_stage = obj.lbg(obj.ind_stage);
             ubg_stage = obj.ubg(obj.ind_stage);
+        end
+
+        function json = jsonencode(obj, varargin)
+            import casadi.*
+            stage_struct = struct(obj);
+
+            stage_struct = rmfield(stage_struct, 'model');
+            stage_struct = rmfield(stage_struct, 'dims');
+            stage_struct = rmfield(stage_struct, 'problem_options');
+            json = jsonencode(stage_struct);
         end
     end
 end

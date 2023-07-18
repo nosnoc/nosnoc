@@ -1,6 +1,7 @@
 classdef NosnocModel < handle
 
     properties
+        model_name = 'nosnoc_model'
         %----- basic user input -----
         % state
         x
@@ -200,6 +201,11 @@ classdef NosnocModel < handle
         % time freezing
         a_n
         k_aux
+
+        % flags
+        verified
+        vars_exist
+        equations_exist
         
         % Dimensions
         dims
@@ -214,6 +220,10 @@ classdef NosnocModel < handle
             import casadi.*
             dims = obj.dims;
             dcs_mode = settings.dcs_mode;
+
+            if obj.equations_exist
+                return
+            end
             
             %% Model functions of the DCS mode
             % if f_x doesnt exist we generate it from F
@@ -405,6 +415,8 @@ classdef NosnocModel < handle
                 obj.f_lsq_u_fun = Function('f_lsq_u_fun',{obj.u,obj.u_ref,obj.p},{obj.f_lsq_u});
             end
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{obj.x,obj.x_ref_end,obj.p_global},{obj.f_lsq_T});
+
+            obj.equations_exist = 1;
         end
         
         function generate_variables(obj,settings)
@@ -412,6 +424,10 @@ classdef NosnocModel < handle
             casadi_symbolic_mode = settings.casadi_symbolic_mode;
             dcs_mode = settings.dcs_mode;
             dims = obj.dims;
+
+            if obj.vars_exist
+                return
+            end
             g_lift_theta_step = [];
             g_lift_beta = [];
             switch dcs_mode
@@ -755,6 +771,8 @@ classdef NosnocModel < handle
             end
             %% Add user provided algebraic
             obj.z_all = vertcat(obj.z_all,obj.z);
+
+            obj.vars_exist = 1;
         end
         
         function verify_and_backfill(obj, settings)
@@ -1226,9 +1244,6 @@ classdef NosnocModel < handle
                     fprintf('nosnoc: normal contact Jacobian not provided, but it is computed from the gap functions.\n');
                     J_normal_exists = 1;
                 end
-%                 if is_zero(obj.J_normal)
-%                     error('nosnoc: The normal vector should have at least one non-zero entry.')
-%                 end
 
                 % Tangent Contact Jacobian
                 if obj.friction_exists
@@ -1394,10 +1409,6 @@ classdef NosnocModel < handle
                     dims.n_f_sys = [size(obj.f_x,1)];
                 end
             end
-
-            % populate functions that can already be generated
-            obj.c_fun = Function('c_fun',{obj.x,obj.p},{c_all});
-            obj.g_Stewart_fun = Function('g_Stewart_fun',{obj.x,obj.p},{vertcat(obj.g_Stewart{:})});
 
             % populate dims
             obj.dims.n_s = settings.n_s;
@@ -1702,5 +1713,25 @@ classdef NosnocModel < handle
                 obj.dims.n_dim_contact = 2;
             end
         end
+
+        function json = jsonencode(obj, varargin)
+            import casadi.*
+            model_struct = struct(obj);
+            names = fieldnames(model_struct);
+            for ii=1:numel(names)
+                name = names{ii};
+                if startsWith(class(model_struct.(name)), "casadi.")
+                    model_struct.(name) = model_struct.(name).serialize();
+                end
+            end
+            json = jsonencode(model_struct);
+        end
     end  % methods
+
+    methods(Static)
+        function model = from_struct(model_struct)
+            model = NosnocModel();
+            
+        end
+    end
 end % NosnocModel
