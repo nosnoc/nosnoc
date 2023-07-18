@@ -74,7 +74,6 @@ classdef NosnocProblemOptions < handle
 
         x_box_at_fe(1,1) logical = 1 % evaluate box constraint for diff states at every finite element boundary point
         x_box_at_stg(1,1) logical = 1 % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
-        lift_all_complementarities(1,1) logical = 1
         time_optimal_problem(1,1) = 0
 
         % Step equilibration
