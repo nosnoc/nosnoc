@@ -83,6 +83,8 @@ classdef NosnocSolverOptions < handle
         % Output options
         store_integrator_step_results(1,1) logical = 0
         ipopt_callback = [] % This should be a function handle that takes (model,problem,settings,ipopt_solver,results)
+
+        timeout_cpu(1,1) {mustBeReal, mustBeNonnegative} = 0;
     end
 
     properties(Dependent)
