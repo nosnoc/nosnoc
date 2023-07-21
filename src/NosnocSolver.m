@@ -550,7 +550,7 @@ classdef NosnocSolver < handle
             results = obj.extract_results_nlp(results);
 
             % check if solved to required accuracy
-            stats.converged = obj.is_converged(stats) && ~last_iter_failed;
+            stats.converged = obj.is_converged(stats) && ~last_iter_failed && ~timeout;
             stats.constraint_violation = obj.compute_constraint_violation(results.w);
 
             obj.print_solver_stats(results,stats);
