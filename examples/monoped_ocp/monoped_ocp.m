@@ -24,37 +24,38 @@ q_target = [3;0.4;0;0];
 %q_target = [0.2;0.4;pi;0];
 
 %% Default settings NOSNOC
-settings = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %%
-settings.print_level = 5;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;
+solver_options.print_level = 5;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;
 %% homotopy settings
-settings.cross_comp_mode = 3;
-settings.opts_casadi_nlp.ipopt.max_iter = 10000;
-%settings.opts_casadi_nlp.ipopt.max_iter = 1000;
-settings.N_homotopy = 5;
-% settings.homotopy_update_rule = 'superlinear';
-settings.homotopy_update_slope = 0.1;
-settings.opts_casadi_nlp.ipopt.tol = 1e-8;
-settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
-settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-settings.comp_tol = 1e-6;
-%settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+problem_options.cross_comp_mode = 3;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 10000;
+%solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
+solver_options.N_homotopy = 5;
+% solver_options.homotopy_update_rule = 'superlinear';
+solver_options.homotopy_update_slope = 0.1;
+solver_options.opts_casadi_nlp.ipopt.tol = 1e-8;
+solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
+solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+solver_options.comp_tol = 1e-6;
+%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% time-freezing
-settings.s_sot_max = 10;
-settings.s_sot_min = 0.99;
-settings.rho_sot = 0.00;
-settings.time_freezing = 1;
-settings.pss_lift_step_functions = 0;
-settings.stagewise_clock_constraint = 1;
+problem_options.s_sot_max = 10;
+problem_options.s_sot_min = 0.99;
+problem_options.rho_sot = 0.00;
+problem_options.time_freezing = 1;
+problem_options.pss_lift_step_functions = 0;
+problem_options.stagewise_clock_constraint = 1;
 
 %% Discretization
 model.T = 3.0;
-settings.N_stages = 50;
-settings.N_finite_elements = 3;
+problem_options.N_stages = 50;
+problem_options.N_finite_elements = 3;
 
 %% friction cone parameters
 model.e = 0;
@@ -235,7 +236,7 @@ x_mid = [q_target(1)/2; 0.6;0;0;q_target(1)/model.T;0;0;0];
 % accorbatic refference
 % x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/model.T;0;0;0];
 x_target = [q_target;zeros(4,1)];
-x_ref = interp1([0 0.5 1],[model.x0,x_mid,x_target]',linspace(0,1,settings.N_stages),'spline')'; %spline
+x_ref = interp1([0 0.5 1],[model.x0,x_mid,x_target]',linspace(0,1,problem_options.N_stages),'spline')'; %spline
 
 model.lsq_x = {x, x_ref, Q}; % TODO also do trajectory
 model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
@@ -245,7 +246,9 @@ model.lsq_T = {x, x_target, Q_terminal};
 
 %% Solve OCP with NOSNOC
 
-    solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
+[results,stats] = solver.solve();
 %     x_guess = {};
 %     for ii = 1:settings.N_stages
 %         x_guess{ii} = x_ref(:,ii);

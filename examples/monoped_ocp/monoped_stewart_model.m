@@ -13,43 +13,44 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     q_target = [3;0.4;0;0];
 
     %% Default settings NOSNOC
-    settings = NosnocOptions();
+    problem_options = NosnocProblemOptions();
+    solver_options = NosnocSolverOptions();
     model = NosnocModel();
     %%
-    settings.print_level = 5;
-    settings.irk_scheme = IRKSchemes.RADAU_IIA;
-    settings.dcs_mode = DcsMode.Stewart;
-    settings.n_s = 2;
+    solver_options.print_level = 5;
+    problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+    problem_options.dcs_mode = DcsMode.Stewart;
+    problem_options.n_s = 2;
     %% homotopy settings
-    settings.cross_comp_mode = 1;
-    settings.opts_casadi_nlp.ipopt.max_iter = 10000;
-    %settings.opts_casadi_nlp.ipopt.max_iter = 1000;
-    settings.N_homotopy = 11;
-    settins.sigma_0 = 1;
-    % settings.homotopy_update_rule = 'superlinear';
-    settings.homotopy_update_slope = 0.4;
-    settings.opts_casadi_nlp.ipopt.tol = 1e-5;
-    settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
-    settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-    settings.comp_tol = 1e-5;
-    settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
-    %settings.opts_casadi_nlp.ipopt.ma97_print_level = 0;
-    %settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
-    %settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+    problem_options.cross_comp_mode = 1;
+    solver_options.opts_casadi_nlp.ipopt.max_iter = 10000;
+    %solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
+    solver_options.N_homotopy = 11;
+    solver_options.sigma_0 = 1;
+    % solver_options.homotopy_update_rule = 'superlinear';
+    solver_options.homotopy_update_slope = 0.4;
+    solver_options.opts_casadi_nlp.ipopt.tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+    solver_options.comp_tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+    %solver_options.opts_casadi_nlp.ipopt.ma97_print_level = 0;
+    %solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+    %solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
     %% time-freezing
-    settings.s_sot_max = 100;
-    settings.s_sot_min = 0.99;
-    settings.rho_sot = 0.00;
-    settings.time_freezing = 0;
-    settings.pss_lift_step_functions = 0;
-    settings.stagewise_clock_constraint = 0;
+    problem_options.s_sot_max = 100;
+    problem_options.s_sot_min = 0.99;
+    problem_options.rho_sot = 0.00;
+    problem_options.time_freezing = 0;
+    problem_options.pss_lift_step_functions = 0;
+    problem_options.stagewise_clock_constraint = 0;
 
     %% Discretization
     T = 3.0;
     model.T = 3.0;
-    settings.N_stages = N_stages;
-    settings.N_finite_elements = 3;
+    problem_options.N_stages = N_stages;
+    problem_options.N_finite_elements = 3;
 
     %% friction cone parameters
     model.e = 0;
@@ -156,8 +157,8 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     % Objective and constraints
     % box constraints
     u_max = 100;
-    model.lbu = [-u_max*ones(2,1); settings.s_sot_min];
-    model.ubu = [u_max*ones(2,1); settings.s_sot_max];
+    model.lbu = [-u_max*ones(2,1); problem_options.s_sot_min];
+    model.ubu = [u_max*ones(2,1); problem_options.s_sot_max];
     % Sanity constraints
     model.lbx = [-0.5;0;-pi;-pi;-100*ones(4,1)];
     model.ubx = [q_target(1)+0.5; 10;pi;pi;100*ones(4,1)];
@@ -225,7 +226,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     % accorbatic refference
     % x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/model.T;0;0;0];
     x_target = [q_target;zeros(4,1)];
-    x_ref = interp1([0 0.25 0.5 0.75 1],[[model.x0;0],x_mid_1,x_mid_2,x_mid_3,[x_target;T]]',linspace(0,1,settings.N_stages),'spline')'; %spline
+    x_ref = interp1([0 0.25 0.5 0.75 1],[[model.x0;0],x_mid_1,x_mid_2,x_mid_3,[x_target;T]]',linspace(0,1,problem_options.N_stages),'spline')'; %spline
 
     model.lsq_x = {x, x_ref(1:(end-1),:), Q}; % TODO also do trajectory
     model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
@@ -267,14 +268,14 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     model.g_path_ub = [model.g_path_ub; 0];
 
     %
-    settings.initial_theta = 0.11;
+    problem_options.initial_theta = 0.11;
 
     %% Solve OCP with NOSNOC
-
-    solver = NosnocSolver(model, settings);
+    mpcc = NosnocMPCC(problem_options, model);
+    solver = NosnocSolver(mpcc, solver_options);
     if initialize_with_ref
         x_guess = {};
-        for ii = 1:settings.N_stages
+        for ii = 1:problem_options.N_stages
             x_guess{ii} = x_ref(:,ii);
         end
         solver.set('x', x_guess');

@@ -11,21 +11,22 @@ clear all;
 close all;
 %% Build problem
 import casadi.*
-[settings] = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 % Choosing the Runge - Kutta Method and number of stages
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;
-% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 % MPCC Method
-settings.N_homotopy = 7;
-settings.homotopy_update_rule = 'superlinear';
-settings.opts_casadi_nlp.ipopt.max_iter = 1000;
+solver_options.N_homotopy = 7;
+solver_options.homotopy_update_rule = 'superlinear';
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
 % Discretization parameters
-settings.N_stages = 30; % number of control intervals
-settings.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+problem_options.N_stages = 30; % number of control intervals
+problem_options.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 0.09;    % Time horizon
-settings.time_optimal_problem = 1;
+problem_options.time_optimal_problem = 1;
 
 %% The Model
 % Parameters
@@ -98,7 +99,8 @@ model.g_terminal = x-x_target;
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 
 %% plots

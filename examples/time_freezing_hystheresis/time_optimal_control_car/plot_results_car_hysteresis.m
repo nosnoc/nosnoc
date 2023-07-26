@@ -105,11 +105,7 @@ catch
 end
 
 %%
-if mpcc_mode == 4
-    ind_t = find([1;theta1_opt]>1e-2);
-else
-    ind_t = find(diff([nan,results.x(5,:),nan])>1e-5);
-end
+ind_t = find(diff([nan,results.x(5,:),nan])>1e-5);
 time_physical_full = results.x(5,:);
 time_physical = time_physical_full(ind_t);
 

@@ -41,29 +41,30 @@ lifting = true;
 %% Discretization
 N_finite_elements = 3;
 T_sim = 1000;
-N_sim = 1;
+N_sim = 2000;
 
 %% Settings
-settings = NosnocOptions();
-settings.use_fesd = 1;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
-settings.print_level = 2;
-settings.n_s = 2;
-settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
-settings.comp_tol = 1e-5;
-settings.homotopy_update_rule = 'superlinear';
-settings.cross_comp_mode = 12;
-settings.general_inclusion = 1;
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.use_fesd = 1;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.print_level = 2;
+problem_options.n_s = 2;
+problem_options.dcs_mode = 'Step'; % General inclusions only possible in step mode.
+problem_options.cross_comp_mode = 3;
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
+solver_options.homotopy_update_rule = 'superlinear';
+solver_options.comp_tol = 1e-5;
 
 % Generate model
 model = irma_model(switch_on, lifting);
 % Time
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
 
-[results,stats,solver] = integrator_fesd(model,settings);
 
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 
 plot_irma(results);

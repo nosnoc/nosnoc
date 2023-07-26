@@ -3,22 +3,23 @@ clear all;
 import casadi.*
 close all
 %% init nosnoc settings and model
-settings = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %%
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.n_s = 1;
-settings.print_level = 3;
-settings.cross_comp_mode = 1;
-settings.dcs_mode = DcsMode.CLS;
-settings.no_initial_impacts = 1;
+problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+problem_options.n_s = 1;
+solver_options.print_level = 3;
+problem_options.cross_comp_mode = 1;
+problem_options.dcs_mode = DcsMode.CLS;
+problem_options.no_initial_impacts = 1;
 
 % elasic mode with decreasing bounds for the elstaic slacks
-settings.mpcc_mode = "elastic_ineq";
-settings.elastic_scholtes = 1;
+solver_options.mpcc_mode = "elastic_ineq";
+solver_options.elastic_scholtes = 1;
 
-settings.sigma_0 = 1e0;
-settings.homotopy_update_slope = 0.1;
+solver_options.sigma_0 = 1e0;
+solver_options.homotopy_update_slope = 0.1;
 
 %% model defintion
 g = 9.81;
@@ -40,7 +41,7 @@ N_sim = 10;
 
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-settings.N_finite_elements = N_FE;
+problem_options.N_finite_elements = N_FE;
 
 %% Analytic solution
 
@@ -70,7 +71,8 @@ else
 end
 
 %% Call nosnoc Integrator
-[results,stats,solver] = integrator_fesd(model, settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 
 %% read and plot results
 qx = results.x(1,:);
@@ -98,7 +100,7 @@ grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 subplot(313)
-if settings.no_initial_impacts == 1
+if problem_options.no_initial_impacts == 1
     Lm = [];
     for ii=0:length(results.Lambda_normal)-1
         if mod(ii,N_FE-1) == 0

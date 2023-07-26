@@ -3,7 +3,7 @@ import casadi.*
 if nargin == 1
     unfold_struct(varargin{1},'caller')
 else
-    fuel_cost_on = 1;
+    fuel_cost_on = 0;
     fuel_cost_same = 0;
 end
 model = NosnocModel();
@@ -75,6 +75,7 @@ model.F = [f_1 f_2 f_3 f_4];
 model.f_q = fuel_cost_on*L;
 % terminal constraint
 model.g_terminal = [q-q_goal;v-v_goal];
+%model.a_n = 1000;
 % g_terminal_lb = zeros(2,1);
 % g_terminal_ub = zeros(2,1);
 % f_q_T = 1e3*[q-q_goal;v-v_goal]'*[q-q_goal;v-v_goal];

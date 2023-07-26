@@ -8,19 +8,23 @@ J = 1; % no frictioinal impulse
 J = 1/32; % frictional impulse apperas
 above_ground = 0.1;
 %% init nosnoc
-settings = NosnocOptions();  
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %% settings
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;
-settings.dcs_mode = 'Step';
-settings.pss_lift_step_functions= 1;
-settings.opts_casadi_nlp.ipopt.max_iter = 3e2;
-settings.print_level = 2;
-settings.N_homotopy = 10;
-settings.cross_comp_mode = 1;
-settings.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
-settings.time_freezing = 1;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 1;
+problem_options.dcs_mode = 'Step';
+problem_options.pss_lift_step_functions= 1;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 3e2;
+solver_options.print_level = 2;
+solver_options.N_homotopy = 10;
+problem_options.cross_comp_mode = 1;
+solver_options.psi_fun_type = CFunctionType.BILINEAR;
+problem_options.time_freezing = 1;
+problem_options.impose_terminal_phyisical_time = 1;
+problem_options.stagewise_clock_constraint = 0;
+
 %%
 
 model.e = 0;
@@ -29,12 +33,12 @@ model.dims.n_dim_contact = 2;
 %% the dynamics
 
 model.a_n = 100;
-qx = MX.sym('qx',1);
-qy = MX.sym('qy',1);
-qtheta = MX.sym('qtheta',1);
-vx = MX.sym('vx',1);
-vy = MX.sym('vy',1);
-omega = MX.sym('omega',1);
+qx = SX.sym('qx',1);
+qy = SX.sym('qy',1);
+qtheta = SX.sym('qtheta',1);
+vx = SX.sym('vx',1);
+vy = SX.sym('vy',1);
+omega = SX.sym('omega',1);
 q = [qx;qy;qtheta];
 v = [vx;vy;omega];
 model.x = [q;v];
@@ -60,14 +64,14 @@ N_finite_elements = 3;
 T_sim = 0.6;
 N_sim = 40;
 model.T_sim = T_sim;
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 1;
+solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-% [model,settings] = time_freezing_reformulation(model,settings);
-settings.use_speed_of_time_variables = 0;
-settings.local_speed_of_time_variable = 0;
-[results,stats,solver] = integrator_fesd(model,settings);
+problem_options.use_speed_of_time_variables = 0;
+problem_options.local_speed_of_time_variable = 0;
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);
@@ -83,7 +87,7 @@ for ii = 1:length(qx)
     yc_res  = [yc_res,qy(ii)-l/2*cos(qtheta(ii))];
 end
 %%
-h = solver.model.h_k;
+h = model.h_k;
 figure
 for ii = 1:length(qx)
     plot([qx(ii)+l/2*sin(qtheta(ii)) xc_res(ii)],[qy(ii)+l/2*cos(qtheta(ii)) yc_res(ii)],'k','LineWidth',1.5)

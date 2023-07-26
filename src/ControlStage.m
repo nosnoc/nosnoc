@@ -69,8 +69,6 @@ classdef ControlStage < NosnocFormulationObject
         ind_Beta_conic
         ind_Beta_d
         ind_Delta_d
-%         ind_P_vn
-%         ind_N_vn
         ind_L_vn
         ind_P_vt
         ind_N_vt
@@ -84,9 +82,12 @@ classdef ControlStage < NosnocFormulationObject
         % Index of this control stage.
         ctrl_idx
 
+        % Control stage g.
+        ind_stage
+        
         % Problem data
         model
-        settings
+        problem_options
         dims
         ocp
     end
@@ -94,31 +95,31 @@ classdef ControlStage < NosnocFormulationObject
     methods
         % TODO: This probably should take less arguments somehow. Maybe a store of "global_variables" to be
         % added along with v_global. This will likely be done when I get around to cleaning up the `model` struct.
-        function obj = ControlStage(prev_fe, settings, model, dims, ctrl_idx, s_sot, T_final, sigma_p, rho_h_p, rho_sot_p, s_elastic)
+        function obj = ControlStage(prev_fe, problem_options, model, dims, ctrl_idx, s_sot, T_final, rho_h_p, rho_sot_p)
             import casadi.*
             obj@NosnocFormulationObject();
             
-            obj.settings = settings;
+            obj.problem_options = problem_options;
             obj.model = model;
             obj.dims = dims;
 
             obj.ctrl_idx = ctrl_idx;
             
-            obj.Uk = define_casadi_symbolic(settings.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
+            obj.Uk = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
             obj.addVariable(obj.Uk, 'u', obj.model.lbu, obj.model.ubu,...
                             zeros(obj.dims.n_u,1));
 
             p_stage = vertcat(model.p_global, model.p_time_var_stages(:, ctrl_idx));
-            if settings.time_rescaling && settings.use_speed_of_time_variables
-                if settings.local_speed_of_time_variable
+            if problem_options.time_rescaling && problem_options.use_speed_of_time_variables
+                if problem_options.local_speed_of_time_variable
                     % at every stage
-                    s_sot = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_sot_' num2str(ctrl_idx)], 1);
+                    s_sot = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['s_sot_' num2str(ctrl_idx)], 1);
                     obj.addVariable(s_sot,...
                                     'sot',...
-                                    settings.s_sot_min,...
-                                    settings.s_sot_max,...
-                                    settings.s_sot0);
-                    if settings.time_freezing
+                                    problem_options.s_sot_min,...
+                                    problem_options.s_sot_max,...
+                                    problem_options.s_sot0);
+                    if problem_options.time_freezing
                         obj.cost = obj.cost + rho_sot_p*(s_sot-1)^2;
                     end
                 end
@@ -127,16 +128,16 @@ classdef ControlStage < NosnocFormulationObject
             end
             
             obj.stage = [];
-            for ii=1:obj.settings.N_finite_elements
-                fe = FiniteElement(prev_fe, obj.settings, obj.model, obj.dims, ctrl_idx, ii, T_final);
+            for ii=1:obj.problem_options.N_finite_elements
+                fe = FiniteElement(prev_fe, obj.problem_options, obj.model, obj.dims, ctrl_idx, ii, T_final);
                 % 1) Runge-Kutta discretization
                 fe.forwardSimulation(obj.ocp, obj.Uk, s_sot, p_stage);
 
                 % 2) Complementarity Constraints
-                fe.createComplementarityConstraints(sigma_p, s_elastic, p_stage);
+                fe.createComplementarityConstraints(p_stage);
 
                 % 3) Step Equilibration
-                fe.stepEquilibration(sigma_p, rho_h_p);
+                fe.stepEquilibration(rho_h_p);
 
                 % 4) add finite element variables
                 obj.addFiniteElement(fe);
@@ -151,34 +152,32 @@ classdef ControlStage < NosnocFormulationObject
                 prev_fe = fe;
             end
 
-            obj.createComplementarityConstraints(sigma_p, s_elastic);
-
             % least squares cost
-            obj.cost = obj.cost + (model.T/settings.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
-            obj.objective = obj.objective + (model.T/settings.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.cost = obj.cost + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.objective = obj.objective + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             if dims.n_u > 0
-                obj.cost = obj.cost + (model.T/settings.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
-                obj.objective = obj.objective + (model.T/settings.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.cost = obj.cost + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.objective = obj.objective + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
             end
             
             % TODO: combine this into a function
-            if settings.use_fesd && settings.equidistant_control_grid
-                if ~settings.time_optimal_problem
-                    obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h);
-                elseif ~settings.time_freezing
-                    if settings.use_speed_of_time_variables
-                        obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h)
-                        obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/settings.N_stages);
+            if problem_options.use_fesd && problem_options.equidistant_control_grid
+                if ~problem_options.time_optimal_problem
+                    obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h, 'type', 'stage');
+                elseif ~problem_options.time_freezing
+                    if problem_options.use_speed_of_time_variables
+                        obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h, 'type', 'stage')
+                        obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/problem_options.N_stages, 'type', 'stage');
                     else
-                        obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/settings.N_stages);
+                        obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/problem_options.N_stages, 'type', 'stage');
                     end
                 end
             end
-            if settings.time_freezing && settings.stagewise_clock_constraint
-                if settings.time_optimal_problem
-                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/settings.N_stages) + model.x0(end));
+            if problem_options.time_freezing && problem_options.stagewise_clock_constraint
+                if problem_options.time_optimal_problem
+                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/problem_options.N_stages) + model.x0(end), 'type', 'stage');
                 else
-                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end));
+                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end), 'type', 'stage');
                 end
             end
         end
@@ -224,8 +223,6 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_Gamma_d = [obj.ind_Gamma_d; transpose(flatten_sys(increment_indices(fe.ind_Gamma_d, w_len)))];
             obj.ind_Beta_d = [obj.ind_Beta_d; transpose(flatten_sys(increment_indices(fe.ind_Beta_d, w_len)))];
             obj.ind_Delta_d = [obj.ind_Delta_d; transpose(flatten_sys(increment_indices(fe.ind_Delta_d, w_len)))];
-%             obj.ind_P_vn = [obj.ind_P_vn; transpose(flatten_sys(increment_indices(fe.ind_P_vn, w_len)))];
-%             obj.ind_N_vn = [obj.ind_N_vn; transpose(flatten_sys(increment_indices(fe.ind_N_vn, w_len)))];
             obj.ind_L_vn = [obj.ind_L_vn; transpose(flatten_sys(increment_indices(fe.ind_L_vn, w_len)))];
             obj.ind_P_vt = [obj.ind_P_vt; transpose(flatten_sys(increment_indices(fe.ind_P_vt, w_len)))];
             obj.ind_N_vt = [obj.ind_N_vt; transpose(flatten_sys(increment_indices(fe.ind_N_vt, w_len)))];
@@ -249,123 +246,34 @@ classdef ControlStage < NosnocFormulationObject
             obj.w0 = vertcat(obj.w0, initial);
         end
         
-        function createComplementarityConstraints(obj, sigma_p, s_elastic)
-            import casadi.*           
-            model = obj.model;
-            settings = obj.settings;
-            dims = obj.dims;
+        function [u, lbu, ubu, u0] = u(obj)
+            u = obj.w(obj.ind_u);
+            lbu = obj.lbw(obj.ind_u);
+            ubu = obj.ubw(obj.ind_u);
+            u0 = obj.w0(obj.ind_u);
+        end
 
-            psi_fun = settings.psi_fun;
+        function [sot, lbsot, ubsot, sot0] = sot(obj)
+            sot = obj.w(obj.ind_sot);
+            lbsot = obj.lbw(obj.ind_sot);
+            ubsot = obj.ubw(obj.ind_sot);
+            sot0 = obj.w0(obj.ind_sot);
+        end
 
-            % Generate the s_elastic variable if necessary.
-            if ismember(settings.mpcc_mode, MpccMode.elastic_ell_1)
-                s_elastic = define_casadi_symbolic(settings.casadi_symbolic_mode, ['s_elastic_' num2str(obj.ctrl_idx)], n_comp);
-                obj.addVariable(s_elastic,...
-                                'elastic',...
-                                settings.s_elastic_min*ones(n_comp,1),...
-                                settings.s_elastic_max*ones(n_comp,1),...
-                                settings.s_elastic_0*ones(n_comp,1));
-            end
+        function [g_stage, lbg_stage, ubg_stage] = g_stage(obj)
+            g_stage = obj.g(obj.ind_stage);
+            lbg_stage = obj.lbg(obj.ind_stage);
+            ubg_stage = obj.ubg(obj.ind_stage);
+        end
 
-            if settings.elasticity_mode == ElasticityMode.NONE
-                sigma = sigma_p;
-            else
-                sigma = s_elastic;
-            end
-            
-            g_cross_comp = [];
-            if ~settings.use_fesd || settings.cross_comp_mode < 9 || settings.cross_comp_mode > 10
-                % Do nothing, handled at the FE level
-                % along with modes 1-8
-                return                
-            elseif settings.cross_comp_mode == 9
-                for r=1:dims.n_sys
-                    g_r = 0;
-                    nz_r = [];
-                    for fe=obj.stage
-                        pairs = fe.cross_comp_pairs(:, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma), pairs, 'uni', false);
-                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                        if size([expr_cell{:}], 1) == 0
-                            exprs= [];
-                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                            nonzeros = [sum([nonzeros_p{:}], 2),sum([nonzeros_n{:}], 2)]';
-                            exprs = [sum2([exprs_p{:}]),sum2([exprs_n{:}])]';
-                            exprs = exprs(:);
-                        else
-                            nonzeros = sum([nonzeros{:}], 2);
-                            exprs = sum2([expr_cell{:}]);
-                        end
-                        if isempty(nz_r)
-                            nz_r = zeros(size(nonzeros));
-                        end
-                        idx = exprs.sparsity().find();
-                        if numel(idx) == 0
-                            idx = [];
-                        end
-                        g_r = g_r + exprs(idx);
-                        nz_r = nz_r + nonzeros;
-                    end
-                    g_r = scale_sigma(g_r, sigma, nz_r);
-                    g_cross_comp = vertcat(g_cross_comp, g_r);
-                end
-            elseif settings.cross_comp_mode == 10
-                for r=1:dims.n_sys
-                    g_r = 0;
-                    nz_r = [];
-                    for fe=obj.stage
-                        pairs = fe.cross_comp_pairs(:, :, r);
-                        expr_cell = cellfun(@(pair) apply_psi(pair, psi_fun, sigma), pairs, 'uni', false);
-                        nonzeros = cellfun(@(x) vector_is_zero(x), expr_cell, 'uni', 0);
-                        if size([expr_cell{:}], 1) == 0
-                            exprs= [];
-                        elseif settings.relaxation_method == RelaxationMode.TWO_SIDED
-                            exprs_p = cellfun(@(c) c(:,1), expr_cell, 'uni', false);
-                            exprs_n = cellfun(@(c) c(:,2), expr_cell, 'uni', false);
-                            nonzeros_p = cellfun(@(x) vector_is_zero(x), exprs_p, 'uni', 0);
-                            nonzeros_n = cellfun(@(x) vector_is_zero(x), exprs_n, 'uni', 0);
-                            nonzeros = [sum(sum([nonzeros_p{:}], 2), 1),sum(sum([nonzeros_n{:}], 2), 1)]';
-                            exprs = [sum1(sum2([exprs_p{:}])),sum1(sum2([exprs_n{:}]))]';
-                            exprs = exprs(:);
-                        else
-                            nonzeros = sum(sum([nonzeros{:}], 2),1);
-                            exprs = sum1(sum2([expr_cell{:}]));
-                        end
-                        idx = exprs.sparsity().find();
-                        if numel(idx) == 0
-                            idx = [];
-                        end
-                        g_r = g_r + exprs(idx);
-                        if isempty(nz_r)
-                            nz_r = zeros(size(nonzeros));
-                        end
-                        nz_r = nz_r + nonzeros;
-                    end
-                    g_r = scale_sigma(g_r, sigma, nz_r);
-                    g_cross_comp = vertcat(g_cross_comp, g_r);
-                end
-            end
+        function json = jsonencode(obj, varargin)
+            import casadi.*
+            stage_struct = struct(obj);
 
-            g_comp = g_cross_comp;
-            n_comp = length(g_cross_comp);
-
-            [g_comp_lb, g_comp_ub, g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings);
-            
-            obj.addConstraint(g_comp, g_comp_lb, g_comp_ub);
-
-            % TODO handle ell_1_penalty at top level.
-            % If We need to add a cost from the reformulation do that.
-            if settings.mpcc_mode == MpccMode.ell_1_penalty
-                if settings.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*cost;
-                else
-                    obj.cost = sigma_p*obj.cost + cost;
-                end
-            end
+            stage_struct = rmfield(stage_struct, 'model');
+            stage_struct = rmfield(stage_struct, 'dims');
+            stage_struct = rmfield(stage_struct, 'problem_options');
+            json = jsonencode(stage_struct);
         end
     end
 end

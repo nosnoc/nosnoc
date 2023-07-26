@@ -38,24 +38,25 @@ terminal_constraint = 1;
 linear_control = 1;
 
 %% NOSNOC settings and model
-settings = NosnocOptions();  %% Optionally call this function to have an overview of all options.
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %%
-settings.n_s = 3;
+problem_options.n_s = 3;
 N_finite_elements = 3;
 
-settings.irk_representation = 'integral';
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
-settings.cross_comp_mode = 1;
+problem_options.irk_representation = 'integral';
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+solver_options.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
+problem_options.cross_comp_mode = 1;
 
-settings.print_level = 3;
-settings.use_fesd = 1;
-settings.comp_tol = 1e-9;
-settings.equidistant_control_grid = 1;
+solver_options.print_level = 3;
+problem_options.use_fesd = 1;
+solver_options.comp_tol = 1e-9;
+problem_options.equidistant_control_grid = 1;
 
-settings.step_equilibration = 'heuristic_mean';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
-settings.rho_h = 1e2;
+problem_options.step_equilibration = 'heuristic_mean';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
+problem_options.rho_h = 1e2;
 
 %% model equations
 
@@ -102,8 +103,8 @@ model.x0 = [2*pi/3;pi/3;v0];
 model.x = x;
 model.T = 4;
 
-settings.N_stages = 6;
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_stages = 6;
+problem_options.N_finite_elements = N_finite_elements;
 
 % Switching Functions
 p = 2; a = 0.15; a1 = 0;
@@ -134,7 +135,8 @@ else
 end
 
 %% Solve and plot
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 
 u_opt = results.u;
@@ -157,57 +159,26 @@ x_res_integrator = [];
 t_grid_integrator = [];
 t_end = 0;
 
-if 0
-    model.T_sim = 4/6;
-    model.N_sim = 12;
-    settings.N_stages = 1;
-    settings.N_finite_elements = 2;
-    model.g_terminal = [];
-    model.g_terminal_lb = [];
-    model.g_terminal_ub = [];
-    settings.mpcc_mode = 5;
-    settings.irk_scheme = IRKSchemes.RADAU_IIA;
-    settings.n_s = 3;
-    settings.use_fesd = 1;
-    settings.print_level = 2;
 
-    for ii =  1:6
-        model.lbu = u_opt(:,ii);
-        model.ubu = u_opt(:,ii);
-        model.u0 = u_opt(:,ii);
-        [results_integrator,stats,solver] = integrator_fesd(model,settings);
-        model.x0 = results_integrator.x(:,end);
-        x_res_integrator = [x_res_integrator,results_integrator.x];
-        t_grid_integrator = [t_grid_integrator, results_integrator.t_grid+t_end];
-        t_end = t_grid_integrator(end);
-    end
+tspan = [0 4/6];
+y0 = [2*pi/3;pi/3;0;0];
+sigma_int = solver_options.comp_tol;
+tol = sigma_int/10;
+options = odeset('RelTol', tol, 'AbsTol', tol/10);
+x_res_integrator = [];
+t_grid_integrator = [];
+for ii = 1:6
+    [t,y_res] = ode15s(@(t,y) ...
+        ((0.5*(1+tanh((y(1)+a*(y(2)-a1)^p)/sigma_int))))*([-1+y(3);0;u_opt(1,ii);u_opt(2,ii)])+(1-(0.5*(1+tanh((y(1)+a*(y(2)-a1)^p)/sigma_int))))*([1+y(3);0;u_opt(1,ii);u_opt(2,ii)])+...
+        ((0.5*(1+tanh((y(2)+b*y(1)^q)/sigma_int))))*([0;-1+y(4);u_opt(1,ii);u_opt(2,ii)])+(1-(0.5*(1+tanh((y(2)+b*y(1)^q)/sigma_int))))*([0;1+y(4);u_opt(1,ii);u_opt(2,ii)])...
+        ,tspan, y0,options);
 
-    x_end = x_res_integrator(:,end);
-    if linear_control
-        x_end = x_end(1:2);
-    end
-    fprintf('Error %2.4e \n',norm(x_target - x_end));
-else
-    tspan = [0 4/6];
-    y0 = [2*pi/3;pi/3;0;0];
-    sigma_int = settings.comp_tol;
-    tol = sigma_int/10;
-    options = odeset('RelTol', tol, 'AbsTol', tol/10);
-    x_res_integrator = [];
-    t_grid_integrator = [];
-    for ii = 1:6
-        [t,y_res] = ode15s(@(t,y) ...
-            ((0.5*(1+tanh((y(1)+a*(y(2)-a1)^p)/sigma_int))))*([-1+y(3);0;u_opt(1,ii);u_opt(2,ii)])+(1-(0.5*(1+tanh((y(1)+a*(y(2)-a1)^p)/sigma_int))))*([1+y(3);0;u_opt(1,ii);u_opt(2,ii)])+...
-            ((0.5*(1+tanh((y(2)+b*y(1)^q)/sigma_int))))*([0;-1+y(4);u_opt(1,ii);u_opt(2,ii)])+(1-(0.5*(1+tanh((y(2)+b*y(1)^q)/sigma_int))))*([0;1+y(4);u_opt(1,ii);u_opt(2,ii)])...
-            ,tspan, y0,options);
-
-        y0 = y_res(end,:)';
-        x_res_integrator = [x_res_integrator,y_res'];
-        t_grid_integrator = [t_grid_integrator,t'+(ii-1)*4/6];
-    end
-    x_end = x_res_integrator(1:2,end);
-    fprintf('Error %2.4e \n',norm(x_target - x_end));
+    y0 = y_res(end,:)';
+    x_res_integrator = [x_res_integrator,y_res'];
+    t_grid_integrator = [t_grid_integrator,t'+(ii-1)*4/6];
 end
+x_end = x_res_integrator(1:2,end);
+fprintf('Error %2.4e \n',norm(x_target - x_end));
 
 %%
 if 1

@@ -39,18 +39,19 @@ import casadi.*
 %%
 filename = 'discs_manipulation.gif';
 %% init
-settings = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 % settings
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;  % number of stages in IRK methods
-settings.mpcc_mode = MpccMode.elastic_ineq;
-settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 7;
-settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.time_freezing = 1;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 1;  % number of stages in IRK methods
+problem_options.time_freezing = 1;
+solver_options.mpcc_mode = MpccMode.elastic_ineq;
+solver_options.homotopy_update_rule = 'superlinear';
+solver_options.N_homotopy = 7;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 % IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 %% discretizatioon
 N_stg = 10; % control intervals
 N_FE = 5;  % integration steps per control intevral
@@ -92,8 +93,8 @@ q2 = q(3:4);
 
 x = [q;v];
 model.T = T;
-settings.N_stages = N_stg;
-settings.N_finite_elements  = N_FE;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
@@ -121,7 +122,8 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 
 %% Call nosnoc solver
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 
 %% read and plot results
@@ -168,9 +170,9 @@ for ii = 1:length(p1)
     im = frame2im(frame);
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
     end
 
     if ii~=length(p1)

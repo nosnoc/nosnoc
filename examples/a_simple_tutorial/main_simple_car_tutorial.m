@@ -1,21 +1,22 @@
 clear all
 import casadi.*
-[settings] = NosnocOptions();  
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+
 % Choosing the Runge - Kutta Method and number of stages
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.cross_comp_mode = 1;
-settings.n_s = 2;
-settings.psi_fun_type = CFunctionType.BILINEAR;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.cross_comp_mode = 1;
+problem_options.n_s = 2;
 % Time-settings  - Solve an time optimal control problem
-settings.time_optimal_problem = 1;
+problem_options.time_optimal_problem = 1;
 
 % settings.nlpsol = 'snopt';  % Note: requires installing.
 
 % Model - define all problem functions and
 % Discretization parameters
 model = NosnocModel();
-settings.N_stages = 10; % number of control intervals
-settings.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+problem_options.N_stages = 10; % number of control intervals
+problem_options.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
 model.T = 1;    % Time horizon
 % Symbolic variables and bounds
 q = SX.sym('q'); v = SX.sym('v'); 
@@ -36,7 +37,8 @@ model.c = v-10;
 % Add terminal constraint
 model.g_terminal = [q-200;v-0];
 % Solve OCP
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 
 %% Plot

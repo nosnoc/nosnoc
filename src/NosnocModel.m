@@ -1,6 +1,7 @@
 classdef NosnocModel < handle
 
     properties
+        model_name = 'nosnoc_model'
         %----- basic user input -----
         % state
         x
@@ -193,10 +194,18 @@ classdef NosnocModel < handle
 
         % flags
         friction_exists
+        general_inclusion = 0
+        there_exist_free_x0 = 0
+        time_freezing_model_exists = 0
 
         % time freezing
         a_n
         k_aux
+
+        % flags
+        verified
+        vars_exist
+        equations_exist
         
         % Dimensions
         dims
@@ -208,6 +217,9 @@ classdef NosnocModel < handle
         end
 
         function generate_equations(obj, settings)
+            if obj.equations_exist
+                return
+            end
             import casadi.*
             dims = obj.dims;
             dcs_mode = settings.dcs_mode;
@@ -402,13 +414,19 @@ classdef NosnocModel < handle
                 obj.f_lsq_u_fun = Function('f_lsq_u_fun',{obj.u,obj.u_ref,obj.p},{obj.f_lsq_u});
             end
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{obj.x,obj.x_ref_end,obj.p_global},{obj.f_lsq_T});
+
+            obj.equations_exist = 1;
         end
         
         function generate_variables(obj,settings)
+            if obj.vars_exist
+                return
+            end
             import casadi.*
             casadi_symbolic_mode = settings.casadi_symbolic_mode;
             dcs_mode = settings.dcs_mode;
             dims = obj.dims;
+
             g_lift_theta_step = [];
             g_lift_beta = [];
             switch dcs_mode
@@ -445,7 +463,7 @@ classdef NosnocModel < handle
                 for ii = 1:dims.n_sys
                     ii_str = num2str(ii);
                     % define alpha (selection of a set valued step function)
-                    if ~settings.general_inclusion
+                    if ~obj.general_inclusion
                         obj.alpha_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],obj.dims.n_c_sys(ii));
                         obj.alpha = [obj.alpha;obj.alpha_sys{ii}];
                     else
@@ -460,11 +478,15 @@ classdef NosnocModel < handle
                     obj.lambda_p = [obj.lambda_p;obj.lambda_p_sys{ii}];
                 end
 
+                if obj.general_inclusion % unpack alpha in this case
+                    obj.alpha = vertcat(obj.alpha{:});
+                end
+
                 % Define already here lifting variables and functions
                 % TODO allow for custom beta lifting
                 % Theta collects the vector for dot_x = F(x)Theta,
                 % terms or theta_step from lifting;
-                if ~settings.general_inclusion
+                if ~obj.general_inclusion
                     for ii = 1:dims.n_sys
                         theta_temp = [];
                         ii_str = num2str(ii);
@@ -748,6 +770,8 @@ classdef NosnocModel < handle
             end
             %% Add user provided algebraic
             obj.z_all = vertcat(obj.z_all,obj.z);
+
+            obj.vars_exist = 1;
         end
         
         function verify_and_backfill(obj, settings)
@@ -1086,7 +1110,7 @@ classdef NosnocModel < handle
             %% Check path complementarity constraints
             g_comp_path_constraint  = 0;
             if size(obj.g_comp_path, 1) ~= 0
-                g_comp_path_constraint  = 1;
+                g_comp_path_constraint = 1;
                 if size(obj.g_comp_path, 2) ~= 2
                     error('g_comp_path must be of size (m, 2)')
                 end
@@ -1219,9 +1243,6 @@ classdef NosnocModel < handle
                     fprintf('nosnoc: normal contact Jacobian not provided, but it is computed from the gap functions.\n');
                     J_normal_exists = 1;
                 end
-%                 if is_zero(obj.J_normal)
-%                     error('nosnoc: The normal vector should have at least one non-zero entry.')
-%                 end
 
                 % Tangent Contact Jacobian
                 if obj.friction_exists
@@ -1258,7 +1279,7 @@ classdef NosnocModel < handle
             if isequal(settings.dcs_mode,'Step') || isequal(settings.dcs_mode,'Stewart')
                 if isempty(obj.F)
                     % Don't need F
-                    if ~settings.general_inclusion
+                    if ~obj.general_inclusion
                         error('nosnoc: Matrix F (or matrices F_i) with PSS modes not provided.');
                     else
                         % TODO Implement more subsystems.
@@ -1276,7 +1297,7 @@ classdef NosnocModel < handle
 
                 if isempty(obj.S)
                     % if we are using general inclusions we dont need S.
-                    if ~settings.general_inclusion
+                    if ~obj.general_inclusion
                         % if the matrix S is not provided, maybe the g_ind are available
                         % directly?
                         if isequal(settings.dcs_mode,'Stewart')
@@ -1381,16 +1402,12 @@ classdef NosnocModel < handle
                     end
                 end
 
-                if ~settings.general_inclusion
+                if ~obj.general_inclusion
                     dims.n_f_sys = arrayfun(@(sys) size(obj.F{sys},2),1:dims.n_sys);
                 else
                     dims.n_f_sys = [size(obj.f_x,1)];
                 end
             end
-
-            % populate functions that can already be generated
-            obj.c_fun = Function('c_fun',{obj.x,obj.p},{c_all});
-            obj.g_Stewart_fun = Function('g_Stewart_fun',{obj.x,obj.p},{vertcat(obj.g_Stewart{:})});
 
             % populate dims
             obj.dims.n_s = settings.n_s;
@@ -1691,9 +1708,29 @@ classdef NosnocModel < handle
                 end
 
                 %% Settings updates
-                settings.time_freezing_model_exists = 1;
+                obj.time_freezing_model_exists = 1;
                 obj.dims.n_dim_contact = 2;
             end
         end
+
+        function json = jsonencode(obj, varargin)
+            import casadi.*
+            model_struct = struct(obj);
+            names = fieldnames(model_struct);
+            for ii=1:numel(names)
+                name = names{ii};
+                if startsWith(class(model_struct.(name)), "casadi.")
+                    model_struct.(name) = model_struct.(name).serialize();
+                end
+            end
+            json = jsonencode(model_struct);
+        end
     end  % methods
+
+    methods(Static)
+        function model = from_struct(model_struct)
+            model = NosnocModel();
+            
+        end
+    end
 end % NosnocModel

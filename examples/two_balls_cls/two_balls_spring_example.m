@@ -3,33 +3,34 @@ clc;
 import casadi.*
 close all
 %%
-settings = NosnocOptions();
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-% settings.irk_representation = 'differential';
-settings.n_s = 3;
-settings.print_level = 3;
-% settings.N_homotopy = 8;
-settings.cross_comp_mode = 1;
-settings.dcs_mode = DcsMode.CLS;
-settings.multiple_solvers = 0;
-settings.mpcc_mode = "Scholtes_ineq";
-% settings.elasticity_mode = ElasticityMode.ELL_INF;
-% settings.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
-% settings.relaxation_method = RelaxationMode.TWO_SIDED;
-settings.no_initial_impacts = 1;
-settings.print_details_if_infeasible = 0;
-settings.pause_homotopy_solver_if_infeasible = 0;
-% settings.opts_ipopt.ipopt.linear_solver = 'ma97';
-settings.sigma_0 = 5;
-settings.homotopy_update_slope = 0.1;
-settings.real_time_plot = 0;
-settings.comp_tol  = 1e-13;
-settings.sigma_N = 1e-13;
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+% problem_options.irk_representation = 'differential';
+problem_options.n_s = 3;
+solver_options.print_level = 3;
+% solver_options.N_homotopy = 8;
+problem_options.cross_comp_mode = 1;
+problem_options.dcs_mode = DcsMode.CLS;
+solver_options.multiple_solvers = 0;
+solver_options.mpcc_mode = "Scholtes_ineq";
+% solver_options.elasticity_mode = ElasticityMode.ELL_INF;
+% solver_options.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
+% solver_options.relaxation_method = RelaxationMode.TWO_SIDED;
+problem_options.no_initial_impacts = 1;
+solver_options.print_details_if_infeasible = 0;
+solver_options.pause_homotopy_solver_if_infeasible = 0;
+% solver_options.opts_ipopt.ipopt.linear_solver = 'ma97';
+solver_options.sigma_0 = 5;
+solver_options.homotopy_update_slope = 0.1;
+solver_options.real_time_plot = 0;
+solver_options.comp_tol  = 1e-13;
+solver_options.sigma_N = 1e-13;
 
-settings.mpcc_mode = "elastic_ineq";
-settings.elastic_scholtes = 1;
-settings.sigma_0 = 1e0;
-settings.homotopy_update_slope = 0.2;
+solver_options.mpcc_mode = "elastic_ineq";
+solver_options.elastic_scholtes = 1;
+solver_options.sigma_0 = 1e0;
+solver_options.homotopy_update_slope = 0.2;
 %%
 g = 9.81;
 R = 0.2;
@@ -54,11 +55,11 @@ N_FE = 2;
 T_sim = 1;
 N_sim = 200;
 model.T_sim = T_sim;
-settings.N_finite_elements = N_FE;
+problem_options.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 
 %% MATLAB solution
-settings.use_previous_solution_as_initial_guess = 1;
+solver_options.use_previous_solution_as_initial_guess = 1;
 [t_grid_matlab, x_traj_matlab, n_bounces, lambda_normal_guess] = two_balls_spring_matlab(T_sim,x0,model.e,1e-13);
 
 
@@ -69,8 +70,8 @@ initial_guess.t_grid = t_grid_matlab;
 initial_guess.lambda_normal_traj = lambda_normal_guess;
 
 % [results,stats,solver] = integrator_fesd(model, settings, [], initial_guess);
-[results,stats,solver] = integrator_fesd(model, settings);
-
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %%
 plot_two_ball_traj(results);
 

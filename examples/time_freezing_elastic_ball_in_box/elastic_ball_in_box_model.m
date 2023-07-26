@@ -2,8 +2,6 @@ function [model] = elastic_ball_in_box_model(omega)
 import casadi.*
 %% Discretization parameters
 model = NosnocModel();
-settings.N_stages = 40;
-settings.N_finite_elements = 4;
 N_periods = 2;
 alpha0 = pi/4; % inital angle
 model.T = N_periods*(2*pi/abs(omega));

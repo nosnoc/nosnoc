@@ -3,24 +3,25 @@ clc;
 import casadi.*
 close all
 %% init
-settings = NosnocOptions();
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %% settings
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;
-settings.print_level = 3;
-settings.N_homotopy = 7;
-settings.cross_comp_mode = 3;
-settings.dcs_mode = DcsMode.CLS;
-settings.no_initial_impacts = 1;
-settings.comp_tol = 1e-6;
-%settings.friction_model = "Polyhedral";
-settings.friction_model = "Conic"; % "Conic"
-settings.conic_model_switch_handling = "Abs";
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;
+solver_options.print_level = 3;
+solver_options.N_homotopy = 7;
+problem_options.cross_comp_mode = 7;
+problem_options.dcs_mode = DcsMode.CLS;
+problem_options.no_initial_impacts = 1;
+solver_options.comp_tol = 1e-6;
+%problem_options.friction_model = "Polyhedral";
+problem_options.friction_model = "Conic"; % "Conic"
+problem_options.conic_model_switch_handling = "Abs";
 % settings.mpcc_mode = MpccMode.elastic_ineq;
-% settings.nlpsol = 'snopt';
-% settings.psi_fun_type = CFunctionType.KANZOW_SCHWARTZ;
-settings.use_previous_solution_as_initial_guess = 1;
+% solver_options.nlpsol = 'snopt';
+% solver_options.psi_fun_type = CFunctionType.KANZOW_SCHWARTZ;
+solver_options.use_previous_solution_as_initial_guess = 1;
 %%
 g = 9.81;
 % Symbolic variables and bounds
@@ -48,11 +49,12 @@ N_FE = 2;
 T_sim = 1.7;
 N_sim = 10;
 model.T_sim = T_sim;
-settings.N_finite_elements = N_FE;
+problem_options.N_finite_elements = N_FE;
 model.N_sim = N_sim;
 
 %% Call nosnoc Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

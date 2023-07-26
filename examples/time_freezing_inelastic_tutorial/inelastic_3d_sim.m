@@ -3,22 +3,23 @@ clear all;
 clc;
 import casadi.*
 %% init nosnoc
-settings = NosnocOptions();  
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();  
 model = NosnocModel();
 %% settings
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
-settings.print_level = 2;
-settings.N_homotopy = 6;
-settings.use_fesd = 1;
-settings.time_freezing = 1;
-settings.pss_lift_step_functions= 1;
-settings.impose_terminal_phyisical_time  = 1;
-settings.stagewise_clock_constraint = 0;
-settings.nonsmooth_switching_fun = 1;
-settings.pss_lift_step_functions = 0;
-settings.use_previous_solution_as_initial_guess = 0;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 1;
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
+solver_options.print_level = 3;
+solver_options.N_homotopy = 6;
+problem_options.use_fesd = 1;
+problem_options.time_freezing = 1;
+problem_options.pss_lift_step_functions= 1;
+problem_options.impose_terminal_phyisical_time  = 1;
+problem_options.stagewise_clock_constraint = 0;
+problem_options.nonsmooth_switching_fun = 1;
+problem_options.pss_lift_step_functions = 0;
+solver_options.use_previous_solution_as_initial_guess = 0;
 %%
 g = 10;
 % Symbolic variables and bounds
@@ -41,10 +42,11 @@ T_sim = 3;
 N_sim = 20;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 
 %% Call FESD Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);
@@ -81,7 +83,7 @@ lambda0 = results.lambda_n;
 lambda1 = results.lambda_p;
 alpha = results.alpha;
 
-if settings.time_freezing_nonlinear_friction_cone
+if problem_options.time_freezing_nonlinear_friction_cone
 theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
 theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:));
 theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:));

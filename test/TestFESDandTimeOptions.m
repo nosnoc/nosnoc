@@ -16,7 +16,7 @@ classdef TestFESDandTimeOptions < matlab.unittest.TestCase
             % Expected warning due to nonsensical settings being handled
             warning('off', 'nosnoc:NosnocOptions:erroneous_use_speed_of_time_variables')
             warning('off', 'nosnoc:NosnocOptions:erroneous_local_speed_of_time_variable')
-            issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 4);
+            issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 5);
             testCase.verifyThat(@() test_fesd_and_time_options(use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable), issuesNoWarningsConstraint);
         end
     end 

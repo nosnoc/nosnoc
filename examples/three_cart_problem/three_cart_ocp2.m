@@ -41,16 +41,17 @@ import casadi.*
 delete three_carts2.gif
 
 %%
-settings = NosnocOptions();  
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;  % number of stages in IRK methods
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 1;  % number of stages in IRK methods
 
-settings.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
-settings.N_homotopy = 6;
-settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.time_freezing = 1;
+solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
+solver_options.N_homotopy = 6;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+problem_options.time_freezing = 1;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 N_stg = 30; % control intervals
@@ -87,8 +88,8 @@ u = SX.sym('u',1);
 x = [q;v];
 model = NosnocModel();
 model.T = T;
-settings.N_stages = N_stg;
-settings.N_finite_elements  = N_FE;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
@@ -117,7 +118,8 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 % model.g_terminal = [x-x_ref];
 %% Call nosnoc solver
-solver = NosnocSolver(model, settings);
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 % [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k); % (experimental, projects and fixes active set at solution and solves NLP)
 %% read and plot results
@@ -186,16 +188,16 @@ for ii = 1:length(p1)
     axis equal
     xlim([x_min x_max])
     ylim([-0.75 3.5])
-    pause(solver.model.h_k);
+    pause(model.h_k);
    
     frame = getframe(1);
     im = frame2im(frame);
 
     [imind,cm] = rgb2ind(im,256);
     if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
     else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
     end
 
     if ii~=length(p1)

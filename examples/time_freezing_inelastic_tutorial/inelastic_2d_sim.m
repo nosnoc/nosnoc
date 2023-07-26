@@ -4,20 +4,21 @@ clc;
 import casadi.*
 close all
 %% init nosnoc
-settings = NosnocOptions();  
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %%
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.print_level = 3;
-settings.N_homotopy = 15;
-settings.cross_comp_mode = 3;
-settings.time_freezing = 1;
-settings.impose_terminal_phyisical_time = 1;
-settings.local_speed_of_time_variable = 1;
-settings.stagewise_clock_constraint = 0;
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
-settings.comp_tol = 1e-6;
-settings.pss_lift_step_functions = 0;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+solver_options.print_level = 3;
+solver_options.N_homotopy = 15;
+problem_options.cross_comp_mode = 3;
+problem_options.time_freezing = 1;
+problem_options.impose_terminal_phyisical_time = 1;
+problem_options.local_speed_of_time_variable = 1;
+problem_options.stagewise_clock_constraint = 0;
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
+solver_options.comp_tol = 1e-6;
+problem_options.pss_lift_step_functions = 0;
 %%
 g = 10;
 vertical_force = 0;
@@ -41,11 +42,12 @@ N_FE = 5;
 T_sim = 2.5;
 N_sim = 5;
 model.T_sim = T_sim;
-settings.N_finite_elements = N_FE;
+problem_options.N_finite_elements = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
+solver_options.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

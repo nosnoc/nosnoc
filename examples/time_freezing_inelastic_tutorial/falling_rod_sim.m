@@ -6,20 +6,21 @@ import casadi.*
 %%
 plot_results = 1;
 %%
-settings = NosnocOptions();  
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
 model = NosnocModel();
 %%
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;
-settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.print_level = 3;
-settings.N_homotopy = 15;
-settings.use_fesd = 1;
-settings.time_freezing = 1;
-settings.comp_tol = 1e-9;
-settings.stagewise_clock_constraint = 0;
-settings.impose_terminal_phyisical_time = 0;
-settings.pss_lift_step_functions = 0;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 1;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.print_level = 3;
+solver_options.N_homotopy = 15;
+problem_options.use_fesd = 1;
+problem_options.time_freezing = 1;
+solver_options.comp_tol = 1e-5;
+problem_options.stagewise_clock_constraint = 0;
+problem_options.impose_terminal_phyisical_time = 1;
+problem_options.pss_lift_step_functions = 0;
 %% model prameters
 n_dim_contact  = 2;
 g = 9.81;
@@ -62,11 +63,12 @@ T_sim = 0.8;
 N_sim = 30;
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-settings.N_finite_elements = N_FE;
+problem_options.N_finite_elements = N_FE;
 
-settings.use_previous_solution_as_initial_guess = 0;
+solver_options.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

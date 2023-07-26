@@ -12,25 +12,25 @@ N_finite_elements = 3;
 run_animation = 1;
 video_speed_up = 0.25;
 %% nosnoc settings
-[settings] = NosnocOptions();
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 1;
-settings.print_level = 2;
-settings.N_homotopy = 5;
-settings.time_freezing = 1;
-settings.impose_terminal_phyisical_time = 1;
-settings.local_speed_of_time_variable = 1;
-settings.stagewise_clock_constraint = 0;
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
-settings.pss_lift_step_functions = 0;
-settings.break_simulation_if_infeasible = 0;
-settings.print_level = 2
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 1;
+solver_options.print_level = 3;
+solver_options.N_homotopy = 5;
+problem_options.time_freezing = 1;
+problem_options.impose_terminal_phyisical_time = 1;
+problem_options.local_speed_of_time_variable = 1;
+problem_options.stagewise_clock_constraint = 0;
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
+problem_options.pss_lift_step_functions = 0;
+solver_options.break_simulation_if_infeasible = 0;
 %% integrator settings
 model = NosnocModel();
 model.T_sim = T_sim;
 model.N_sim = N_sim;
-settings.N_finite_elements = N_finite_elements;
-settings.use_previous_solution_as_initial_guess = 1;
+problem_options.N_finite_elements = N_finite_elements;
+solver_options.use_previous_solution_as_initial_guess = 1;
 
 %% model
 % dimensoon
@@ -101,7 +101,8 @@ model.f_v = f_v;
 model.x0 = x0;
 model.f_c = f_c;
 %% Call nosnoc Integrator
-[results,stats,model,settings,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %% velocity plot
 q = results.x(1:n_q,:);
 v = results.x(n_q+1:end-1,:);
@@ -142,12 +143,14 @@ for ii = 1:N_frames
     ylim([wall_down-0.5 6])
     xlabel('$x$','Interpreter','latex');
     ylabel('$y$','Interpreter','latex');
-    f = getframe(gcf);
+    frame = gcf;
+    set(frame,'Position',[15 15 width height])
+    f = getframe(frame);
     frames_video{ii} = f;
     if ii == 1
-        [frames_gif(:,:,1,ii), cmap] = rgb2ind(f.cdata, 256, 'nodither');
+        [frames_gif(:,:,1,ii), cmap] = imresize(rgb2ind(f.cdata, 256, 'nodither'), [height, width]);
     else
-        frames_gif(:,:,1,ii) = rgb2ind(f.cdata, cmap, 'nodither');
+        frames_gif(:,:,1,ii) = imresize(rgb2ind(f.cdata, cmap, 'nodither'), [height, width]);
     end
     if ii~=N_frames
         clf;

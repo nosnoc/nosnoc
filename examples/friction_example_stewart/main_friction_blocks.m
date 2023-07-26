@@ -39,21 +39,22 @@ import casadi.*
 % generalization of the FESD scheme presented in the NOSNOC software parep
 %% settings
 % collocation settings
-[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
-settings.n_s = 2;                            
-settings.irk_scheme = IRKSchemes.RADAU_IIA;     
-% settings.irk_representation = IrkRepresentation.differential_lift_x;
-settings.print_level = 2;
-settings.use_fesd = 1;
-settings.mpcc_mode = 'Scholtes_ineq';
-settings.sigma_0 = 1;
-settings.s_elastic_max = 1e1;                    
-settings.cross_comp_mode = 3;
-settings.comp_tol = 1e-9;
-settings.N_homotopy = 10;
-% settings.homotopy_update_rule = 'superlinear';
-% settings.homotopy_update_slope = 0.2;
-% settings.homotopy_update_exponent = 2.5;
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.n_s = 2;                            
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;     
+% problem_options.irk_representation = IrkRepresentation.differential_lift_x;
+problem_options.use_fesd = 1;
+problem_options.cross_comp_mode = 3;
+solver_options.mpcc_mode = 'Scholtes_ineq';
+solver_options.print_level = 2;
+solver_options.s_elastic_max = 1e1;                    
+solver_options.sigma_0 = 1;
+solver_options.comp_tol = 1e-9;
+solver_options.N_homotopy = 10;
+% solver_options.homotopy_update_rule = 'superlinear';
+% solver_options.homotopy_update_slope = 0.2;
+% solver_options.homotopy_update_exponent = 2.5;
 %% Generate Model
 model = blocks_with_friction();
 %% Simulation settings
@@ -61,19 +62,20 @@ N_finite_elements = 3;
 T_sim = 12;
 N_sim = 85;
 
-settings.dcs_mode = 'Stewart';
-% settings.dcs_mode = 'Step';
+problem_options.dcs_mode = 'Stewart';
+% problem_options.dcs_mode = 'Step';
 
 model.T_sim = T_sim;
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
 
-settings.use_previous_solution_as_initial_guess = 1;
+solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %% Get variables into main workspace
 unfold_struct(model,'base');
-unfold_struct(settings,'base');
+unfold_struct(problem_options,'base');
 unfold_struct(results,'base');
 plot_results_friction_blocks
 

@@ -8,7 +8,7 @@ u_opt=results.u;
 
 T = results.T;
 
-if settings.time_optimal_problem
+if problem_options.time_optimal_problem
     fprintf('Final time: %2.4f s.\n',T)
 else
     fprintf('Objective value time: %2.4f s.\n',results.f)

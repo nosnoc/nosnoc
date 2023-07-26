@@ -101,7 +101,7 @@ classdef NosnocFormulationObject < handle
             addRequired(p, 'symbolic');
             addOptional(p, 'lb', []);
             addOptional(p, 'ub', []);
-            addOptional(p, 'type', []);
+            addParameter(p, 'type', []);
             parse(p, obj, symbolic, varargin{:});
 
             n = length(symbolic);
@@ -135,7 +135,7 @@ classdef NosnocFormulationObject < handle
             if ~ismember('type', p.UsingDefaults)
                 new_indices = (n_g+1):(n_g+n);
 
-                obj.(strcat('ind_', type)) = [obj.(strcat('ind_', type)), new_indices];
+                obj.(strcat('ind_', p.Results.type)) = [obj.(strcat('ind_', p.Results.type)), new_indices];
             end
         end
     end

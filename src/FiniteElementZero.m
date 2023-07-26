@@ -105,7 +105,7 @@ classdef FiniteElementZero < NosnocFormulationObject
             X0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'X0', dims.n_x); % variable
             obj.x0 = define_casadi_symbolic(settings.casadi_symbolic_mode, 'x0', dims.n_x); % Param
 
-            if settings.there_exist_free_x0
+            if model.there_exist_free_x0
                 for i=1:dims.n_x
                     if ~ismember(i, model.ind_free_x0)
                         obj.addConstraint(X0(i) - obj.x0(i),0,0);

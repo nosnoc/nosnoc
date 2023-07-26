@@ -7,23 +7,24 @@ import casadi.*
 J = 1; % no frictioinal impulse
 J = 1/32; % frictional impulse apperas
 above_ground = 0.1;
-%%
-[settings] = NosnocOptions();  
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.n_s = 2;
-settings.dcs_mode = 'CLS';
-settings.friction_model = "Polyhedral";
-settings.friction_model = "Conic";
-settings.conic_model_switch_handling = "Abs";
-settings.pss_lift_step_functions= 0;
-settings.opts_casadi_nlp.ipopt.max_iter = 3e2;
-settings.print_level = 3;
-settings.N_homotopy = 10;
-settings.cross_comp_mode = 1;
-settings.sigma_0 = 1e0;
-settings.comp_tol = 1e-5;
-settings.print_details_if_infeasible = 0;
-settings.break_simulation_if_infeasible = 0;
+%%)
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;
+problem_options.dcs_mode = 'CLS';
+problem_options.friction_model = "Polyhedral";
+problem_options.friction_model = "Conic";
+problem_options.conic_model_switch_handling = "Abs";
+problem_options.pss_lift_step_functions= 0;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 3e3;
+solver_options.print_level = 3;
+solver_options.N_homotopy = 10;
+problem_options.cross_comp_mode = 1;
+solver_options.sigma_0 = 1e0;
+solver_options.comp_tol = 1e-5;
+solver_options.print_details_if_infeasible = 0;
+solver_options.break_simulation_if_infeasible = 0;
 %%
 model = NosnocModel();
 model.e = 0;
@@ -73,15 +74,12 @@ T_sim = 1;
 N_sim = 10;
 
 model.T_sim = T_sim;
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_finite_elements = N_finite_elements;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 1;
+solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-if settings.time_freezing
-    [model,settings] = time_freezing_reformulation(model,settings);
-    settings.time_freezing = 0;
-end
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);
@@ -89,7 +87,7 @@ qtheta = results.x(3,:);
 vx = results.x(4,:);
 vy = results.x(5,:);
 omega = results.x(6,:);
-if settings.time_freezing
+if problem_options.time_freezing
     t = results.x(7,:);
 else
     t = results.t_grid;
@@ -102,7 +100,7 @@ for ii = 1:length(qx)
     yc_res  = [yc_res,qy(ii)-l/2*cos(qtheta(ii))];
 end
 %%
-h = solver.model.h_k;
+h = model.h_k;
 figure
 for ii = 1:length(qx)
     plot([qx(ii)+l/2*sin(qtheta(ii)) xc_res(ii)],[qy(ii)+l/2*cos(qtheta(ii)) yc_res(ii)],'k','LineWidth',1.5)

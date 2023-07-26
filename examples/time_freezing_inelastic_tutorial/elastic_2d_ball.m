@@ -4,18 +4,22 @@ clc;
 import casadi.*
 close all
 %%
-[settings] = NosnocOptions();  
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-settings.n_s = 3;
-settings.print_level = 2;
-settings.use_fesd = 1;
-settings.comp_tol = 1e-7;
-settings.time_freezing = 1;
-settings.pss_lift_step_functions = 1;
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+problem_options.dcs_mode = DcsMode.Step;
+problem_options.n_s = 3;
+problem_options.cross_comp_mode = 1;
+solver_options.print_level = 2;
+problem_options.use_fesd = 1;
+solver_options.comp_tol = 1e-5;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e4;
+problem_options.time_freezing = 1;
+problem_options.pss_lift_step_functions = 0;
 
-settings.impose_terminal_phyisical_time = 1;
-settings.local_speed_of_time_variable = 1;
-settings.stagewise_clock_constraint = 0;
+problem_options.impose_terminal_phyisical_time = 1;
+problem_options.local_speed_of_time_variable = 0;
+problem_options.stagewise_clock_constraint = 0;
 
 %%
 g = 10;
@@ -35,11 +39,12 @@ N_FE = 3;
 T_sim = 3;
 N_sim = 60;
 model.T_sim = T_sim;
-model.N_FE = N_FE;
+problem_options.N_finite_elements = N_FE;
 model.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
+solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

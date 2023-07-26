@@ -43,15 +43,15 @@ T_sim = 1;
 N_sim = 20;
 
 %% Settings
-settings = NosnocOptions();
-settings.use_fesd = 1;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
-settings.print_level = 1;
-settings.n_s = 2;
-settings.dcs_mode = 'Step'; % General inclusions only possible in step mode.
-settings.mpcc_mode = MpccMode.Scholtes_ineq; %MpccMode.elastic_ineq;
-settings.homotopy_update_rule = 'superlinear';
-settings.general_inclusion = 1;
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.use_fesd = 1;
+problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.n_s = 2;
+problem_options.dcs_mode = 'Step'; % General inclusions only possible in step mode.
+solver_options.print_level = 3;
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq; %MpccMode.elastic_ineq;
+solver_options.homotopy_update_rule = 'superlinear';
 
 %% Generate different trajectories
 results = [];
@@ -62,11 +62,12 @@ for x1 = 3:3:12
         % Generate model
         model = two_gene_model(x0, lifting);
         % Time
-        settings.N_finite_elements = N_finite_elements;
+        problem_options.N_finite_elements = N_finite_elements;
         model.T_sim = T_sim;
         model.N_sim = N_sim;
 
-        [result,stats,solver] = integrator_fesd(model,settings);
+        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+        [result,stats] = integrator.solve();
         results = [results,result];
     end
 end
