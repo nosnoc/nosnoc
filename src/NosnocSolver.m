@@ -329,6 +329,8 @@ classdef NosnocSolver < handle
                 opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
                 if solver_options.timeout_cpu
                     opts_casadi_nlp.ipopt.max_cpu_time = solver_options.timeout_cpu;
+                elseif solver_options.timeout_wall
+                    opts_casadi_nlp.ipopt.max_wall_time = solver_options.timeout_wall;
                 end
             elseif strcmp(solver_options.solver, 'snopt')
                 opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'ipopt');
@@ -395,7 +397,9 @@ classdef NosnocSolver < handle
             % Initialize Stats struct
             stats = struct();
             stats.cpu_time = [];
+            stats.wall_time = [];
             stats.cpu_time_total = 0;
+            stats.wall_time_total = 0;
             stats.sigma_k = sigma_k;
             stats.homotopy_iterations = [];
             stats.solver_stats = [];
@@ -441,7 +445,8 @@ classdef NosnocSolver < handle
 
                 % Using multi-solver
                 if iscell(solver)
-                    start = cputime
+                    start = cputime;
+                    tic;
                     nlp_results = solver{ii+1}('x0', w0,...
                         'lbx', lbw,...
                         'ubx', ubw,...
@@ -449,6 +454,7 @@ classdef NosnocSolver < handle
                         'ubg', ubg,...
                         'p',obj.p_val);
                     cpu_time_iter = cputime - start;
+                    wall_time_iter = toc;
                     stats.solver_stats = [stats.solver_stats, solver{ii+1}.stats];
                 else
                     if ii ~= 0
@@ -460,6 +466,15 @@ classdef NosnocSolver < handle
                             if strcmp(solver_options.solver, 'ipopt')
                                 opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
                                 opts_casadi_nlp.ipopt.max_cpu_time = solver_options.timeout_cpu - stats.cpu_time_total;
+                            elseif strcmp(solver_options.solver, 'snopt')
+                                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'ipopt');
+                            end
+                            solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
+                        elseif obj.solver_options.timeout_wall
+                            casadi_nlp = struct('f', obj.nlp.cost, 'x', obj.nlp.w, 'g', obj.nlp.g, 'p', obj.nlp.p);
+                            if strcmp(solver_options.solver, 'ipopt')
+                                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
+                                opts_casadi_nlp.ipopt.max_wall_time = solver_options.timeout_wall - stats.wall_time_total;
                             elseif strcmp(solver_options.solver, 'snopt')
                                 opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'ipopt');
                             end
@@ -476,8 +491,8 @@ classdef NosnocSolver < handle
                             'p',obj.p_val);
                             %'lam_x0', nlp_results.lam_x,...
                             %'lam_g0', nlp_results.lam_g);
-                        wall_time_iter = toc;
                         cpu_time_iter = cputime - start;
+                        wall_time_iter = toc;
                     else
                         start = cputime;
                         tic;
@@ -506,6 +521,10 @@ classdef NosnocSolver < handle
                     obj.printInfeasibility(results);
                     last_iter_failed = 1;
                 end
+                if isequal(stats.solver_stats(end).return_status,'Maximum_WallTime_Exceeded')
+                    timeout = 1;
+                    last_iter_failed = 1;
+                end
                 if isequal(stats.solver_stats(end).return_status,'Maximum_CpuTime_Exceeded')
                     timeout = 1;
                     last_iter_failed = 1;
@@ -517,8 +536,14 @@ classdef NosnocSolver < handle
                 % update timing stats
                 stats.cpu_time = [stats.cpu_time,cpu_time_iter];
                 stats.cpu_time_total = stats.cpu_time_total + cpu_time_iter;
+                stats.wall_time = [stats.wall_time, wall_time_iter];
+                stats.wall_time_total = stats.wall_time_total + wall_time_iter
 
                 if solver_options.timeout_cpu && (stats.cpu_time_total > solver_options.timeout_cpu)
+                    timeout = 1;
+                    last_iter_failed = 1;
+                end
+                if solver_options.timeout_wall && (stats.wall_time_total > solver_options.timeout_wall)
                     timeout = 1;
                     last_iter_failed = 1;
                 end
