@@ -1309,11 +1309,9 @@ classdef FiniteElement < NosnocFormulationObject
             g_cross_comp = [];
             lbg_cross_comp = [];
             ubg_cross_comp = [];
-            if problem_options.cross_comp_mode == 1
+            if problem_options.cross_comp_mode == CrossCompMode.STAGE_STAGE
                 cross_comp_aggregated = vertcat(cross_comp_pairs{:});
-            elseif problem_options.cross_comp_mode == 2
-                error('TODO: unsupported');
-            elseif problem_options.cross_comp_mode == 3
+            elseif problem_options.cross_comp_mode == CrossCompMode.FE_STAGE
                 a = [];
                 b = [];
                 for j=1:obj.n_cont
@@ -1332,7 +1330,7 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                 end
                 cross_comp_aggregated = [a,b];
-            elseif problem_options.cross_comp_mode == 4
+            elseif problem_options.cross_comp_mode == CrossCompMode.STAGE_FE
                 a = [];
                 b = [];
                 for jj=1:obj.n_discont
@@ -1351,11 +1349,7 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                 end
                 cross_comp_aggregated = [a,b];
-            elseif problem_options.cross_comp_mode == 5
-                error('TODO: unsupported');
-            elseif problem_options.cross_comp_mode == 6
-                error('TODO: unsupported');
-            elseif problem_options.cross_comp_mode == 7
+            elseif problem_options.cross_comp_mode == CrossCompMode.FE_FE
                 a = [];
                 b = [];
                 for r=1:obj.n_indep
@@ -1372,10 +1366,6 @@ classdef FiniteElement < NosnocFormulationObject
                     a = [a;sum2([cont{:}])];
                 end
                 cross_comp_aggregated = [a,b];
-            elseif problem_options.cross_comp_mode == 8
-                error('TODO: unsupported');
-            elseif problem_options.cross_comp_mode > 8
-                error('TODO: unsupported');
             end
 
             obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_aggregated);

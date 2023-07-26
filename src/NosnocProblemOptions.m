@@ -40,9 +40,7 @@ classdef NosnocProblemOptions < handle
         irk_scheme(1,1) IRKSchemes = IRKSchemes.RADAU_IIA
         irk_representation IrkRepresentation = IrkRepresentation.integral;
 
-        cross_comp_output_type = 'SCALAR';
-        cross_comp_type = CrossCompType.STAGE_STAGE;
-        cross_comp_mode {mustBeInRange(cross_comp_mode, 1, 12)} = 3
+        cross_comp_mode(1,1) CrossCompMode = CrossCompMode.FE_STAGE
         gamma_h(1,1) double {mustBeReal, mustBeInRange(gamma_h, 0, 1)} = 1
         dcs_mode DcsMode = DcsMode.Stewart
 

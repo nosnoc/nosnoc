@@ -59,7 +59,6 @@ classdef NosnocSolverOptions < handle
         pause_homotopy_solver_if_infeasible = 0;
 
         % IPOPT Settings
-        tol_ipopt(1,1) double {mustBeReal, mustBePositive} = 1e-16
         opts_casadi_nlp
 
         % Integrator Specific

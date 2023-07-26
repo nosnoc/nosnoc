@@ -217,13 +217,12 @@ classdef NosnocModel < handle
         end
 
         function generate_equations(obj, settings)
-            import casadi.*
-            dims = obj.dims;
-            dcs_mode = settings.dcs_mode;
-
             if obj.equations_exist
                 return
             end
+            import casadi.*
+            dims = obj.dims;
+            dcs_mode = settings.dcs_mode;
             
             %% Model functions of the DCS mode
             % if f_x doesnt exist we generate it from F
@@ -420,14 +419,14 @@ classdef NosnocModel < handle
         end
         
         function generate_variables(obj,settings)
+            if obj.vars_exist
+                return
+            end
             import casadi.*
             casadi_symbolic_mode = settings.casadi_symbolic_mode;
             dcs_mode = settings.dcs_mode;
             dims = obj.dims;
 
-            if obj.vars_exist
-                return
-            end
             g_lift_theta_step = [];
             g_lift_beta = [];
             switch dcs_mode
