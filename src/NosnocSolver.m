@@ -137,7 +137,7 @@ classdef NosnocSolver < handle
             if strcmp(obj.solver_options.solver, 'ipopt')
                 last_stats = stats.solver_stats(end);
                 converged = 0;
-                if isfield(last_stats, 'iterations')
+                if isfield(last_stats, 'iterations') && ~isempty(last_stats.iterations)
                     inf_pr = last_stats.iterations.inf_pr(end);
                     inf_du = last_stats.iterations.inf_du(end);
                     if inf_pr < obj.solver_options.opts_casadi_nlp.ipopt.tol && inf_du < obj.solver_options.opts_casadi_nlp.ipopt.tol ...
@@ -221,7 +221,7 @@ classdef NosnocSolver < handle
             ii = size(stats.solver_stats, 2);
 
             if strcmp(obj.solver_options.solver, 'ipopt')
-                if isfield(solver_stats, 'iterations')
+                if isfield(solver_stats, 'iterations') && ~isempty(solver_stats.iterations)
                     inf_pr = solver_stats.iterations.inf_pr(end);
                     inf_du = solver_stats.iterations.inf_du(end);
                     objective = solver_stats.iterations.obj(end);
@@ -467,6 +467,7 @@ classdef NosnocSolver < handle
                         end % HACK ENDS HERE
                         
                         start = cputime;
+                        tic;
                         nlp_results = solver('x0', w0,...
                             'lbx', lbw,...
                             'ubx', ubw,...
@@ -475,9 +476,11 @@ classdef NosnocSolver < handle
                             'p',obj.p_val);
                             %'lam_x0', nlp_results.lam_x,...
                             %'lam_g0', nlp_results.lam_g);
+                        wall_time_iter = toc;
                         cpu_time_iter = cputime - start;
                     else
                         start = cputime;
+                        tic;
                         nlp_results = solver('x0', w0,...
                             'lbx', lbw,...
                             'ubx', ubw,...
@@ -485,8 +488,13 @@ classdef NosnocSolver < handle
                             'ubg', ubg,...
                             'p',obj.p_val);
                         cpu_time_iter = cputime - start;
+                        wall_time_iter = toc;
                     end
-                    stats.solver_stats = [stats.solver_stats, solver.stats];
+                    solver_stats = solver.stats;
+                    if ~isfield(solver_stats, 'iterations')
+                        solver_stats.iterations = [];
+                    end
+                    stats.solver_stats = [stats.solver_stats, solver_stats];
                 end
                 results.nlp_results = [results.nlp_results, nlp_results];
 
