@@ -271,7 +271,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     problem_options.initial_theta = 0.11;
 
     %% Solve OCP with NOSNOC
-    mpcc = NosnocMPCC(problem_options, model.dims, model);
+    mpcc = NosnocMPCC(problem_options, model);
     solver = NosnocSolver(mpcc, solver_options);
     if initialize_with_ref
         x_guess = {};

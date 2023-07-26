@@ -155,7 +155,7 @@ classdef NosnocMPCC < NosnocFormulationObject
     end
 
     methods        
-        function obj = NosnocMPCC(problem_options, dims, model)
+        function obj = NosnocMPCC(problem_options, model)
             import casadi.*
             tic;
             obj@NosnocFormulationObject();
@@ -164,7 +164,8 @@ classdef NosnocMPCC < NosnocFormulationObject
             model.verify_and_backfill(problem_options);
             model.generate_variables(problem_options);
             model.generate_equations(problem_options);
-            
+
+            dims = model.dims;
             if problem_options.right_boundary_point_explicit || problem_options.dcs_mode == DcsMode.CLS
                 rbp_allowance = 0;
             else

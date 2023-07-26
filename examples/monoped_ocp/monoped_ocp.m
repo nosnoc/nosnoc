@@ -246,7 +246,7 @@ model.lsq_T = {x, x_target, Q_terminal};
 
 %% Solve OCP with NOSNOC
 
-mpcc = NosnocMPCC(problem_options, model.dims, model);
+mpcc = NosnocMPCC(problem_options, model);
 solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 %     x_guess = {};

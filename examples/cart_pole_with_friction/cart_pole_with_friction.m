@@ -136,7 +136,7 @@ else
     model.lsq_T = {x,x_ref,Q_terminal};
 end
 %% Solve OCP
-mpcc = NosnocMPCC(problem_options, model.dims, model);
+mpcc = NosnocMPCC(problem_options, model);
 solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 %% plots

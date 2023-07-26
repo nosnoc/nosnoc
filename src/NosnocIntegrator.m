@@ -50,7 +50,7 @@ classdef NosnocIntegrator < handle
             problem_options.equidistant_control_grid = 0;
 
             % Generate required components for the integrator
-            obj.mpcc = NosnocMPCC(problem_options, model.dims, model);
+            obj.mpcc = NosnocMPCC(problem_options, model);
             obj.solver = NosnocSolver(obj.mpcc, solver_options);
             
             dims = model.dims;

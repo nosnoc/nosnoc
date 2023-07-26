@@ -20,7 +20,7 @@ problem_options.N_stages = 100; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control intevral
 model.T = 100;    % yime horizon
 %% Solve OCP via nosnoc
-mpcc = NosnocMPCC(problem_options, model.dims, model);
+mpcc = NosnocMPCC(problem_options, model);
 solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 %% Read and plot Result 

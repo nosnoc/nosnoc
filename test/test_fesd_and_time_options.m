@@ -53,7 +53,7 @@ else
     model.f_q = u^2;
 end
 % Solve OCP
-mpcc = NosnocMPCC(problem_options, model.dims, model);
+mpcc = NosnocMPCC(problem_options, model);
 solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 if ~isempty(results.T) && results.T < 1e-2

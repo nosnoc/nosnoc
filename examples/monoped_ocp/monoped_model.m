@@ -224,7 +224,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     %model.g_terminal = q(1:length(q_target))-q_target;
 
     %% Solve OCP with NOSNOC
-    mpcc = NosnocMPCC(problem_options, model.dims, model);
+    mpcc = NosnocMPCC(problem_options, model);
     solver = NosnocSolver(mpcc, solver_options);
     if initialize_with_ref
         x_guess = {};

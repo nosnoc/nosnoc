@@ -99,7 +99,7 @@ model.g_terminal = x-x_target;
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-mpcc = NosnocMPCC(problem_options, model.dims, model);
+mpcc = NosnocMPCC(problem_options, model);
 solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 

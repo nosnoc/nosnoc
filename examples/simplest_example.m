@@ -30,6 +30,6 @@ solver_options = NosnocSolverOptions();
 %solver_options.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 %solver_options.elasticity_mode = ElasticityMode.ELL_1;
 
-mpcc = NosnocMPCC(problem_options, model.dims, model);
+mpcc = NosnocMPCC(problem_options, model);
 solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();

@@ -165,7 +165,7 @@ model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model.dims, model);
+mpcc = NosnocMPCC(problem_options, model);
 solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 
