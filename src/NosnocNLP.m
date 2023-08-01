@@ -110,7 +110,8 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.sigma_p = sigma_p;
             obj.p = [sigma_p;mpcc.p];
 
-            obj.cost = mpcc.cost;            
+            obj.cost = mpcc.cost;
+            obj.objective = mpcc.objective;
 
             obj.mpcc_to_nlp(sigma_p);
             
