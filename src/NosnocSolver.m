@@ -689,6 +689,7 @@ classdef NosnocSolver < handle
 
             results.f = full(results.nlp_results(end).f);
             results.g = full(results.nlp_results(end).g);
+            results.objective = full(obj.nlp.objective_fun(w_opt,obj.p_val));
         end
     end
 end
