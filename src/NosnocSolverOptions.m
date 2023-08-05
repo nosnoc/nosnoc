@@ -211,7 +211,7 @@ classdef NosnocSolverOptions < handle
                 psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+nsigma^2));
               case CFunctionType.CHEN_CHEN_KANZOW
                 alpha = 0.5;
-                if obj.normalize_homotopy_updatey
+                if obj.normalize_homotopy_update
                     psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+2*sigma))+(1-alpha)*(a*b-sigma);
                 else
                     psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+sigma^2))+(1-alpha)*(a*b-sigma);
