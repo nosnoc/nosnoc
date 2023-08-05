@@ -86,6 +86,10 @@ classdef NosnocSolverOptions < handle
 
         timeout_cpu(1,1) {mustBeReal, mustBeNonnegative} = 0;
         timeout_wall(1,1) {mustBeReal, mustBeNonnegative} = 0;
+
+        % Experimental
+        normalize_homotopy_update(1,1) logical = 0
+        norm_function
     end
 
     properties(Dependent)
@@ -186,44 +190,72 @@ classdef NosnocSolverOptions < handle
             switch obj.psi_fun_type
               case CFunctionType.BILINEAR
                 psi_mpcc = a.*b-sigma;
-                
+                norm = sigma;
               case CFunctionType.BILINEAR_TWO_SIDED
                 psi_mpcc = [a*b-sigma;a*b+sigma];
-                
+                norm = sigma;
               case CFunctionType.FISCHER_BURMEISTER
-                psi_mpcc = a+b-sqrt(a^2+b^2+sigma^2);
-
+                if obj.normalize_homotopy_update
+                    nsigma = sqrt(2*sigma);
+                else
+                    nsigma = sigma;
+                end
+                psi_mpcc = a+b-sqrt(a^2+b^2+nsigma^2);
+                
               case CFunctionType.NATURAL_RESIDUAL
-                psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+sigma^2));
-
+                if obj.normalize_homotopy_update
+                    nsigma = sqrt(4*sigma);
+                else
+                    nsigma = sigma;
+                end
+                psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+nsigma^2));
               case CFunctionType.CHEN_CHEN_KANZOW
                 alpha = 0.5;
-                psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+sigma^2))+(1-alpha)*(a*b-sigma);
-
-              case CFunctionType.STEFFENSON_ULBRICH
+                if obj.normalize_homotopy_updatey
+                    psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+2*sigma))+(1-alpha)*(a*b-sigma);
+                else
+                    psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+sigma^2))+(1-alpha)*(a*b-sigma);
+                end
+             case CFunctionType.STEFFENSON_ULBRICH
+                if obj.normalize_homotopy_update
+                    nsigma = 2/((2/pi)*sin(3*pi/2)+1)*sqrt(sigma);
+                else
+                    nsigma = sigma;
+                end
                 x = a-b;
-                z = x/sigma;
-                y_sin = sigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
-                psi_mpcc = a+b-if_else(abs(x)>=sigma,abs(x),y_sin);
-
+                z = x/nsigma;
+                y_sin = nsigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
+                psi_mpcc = a+b-if_else(abs(x)>=nsigma,abs(x),y_sin);
               case  CFunctionType.STEFFENSON_ULBRICH_POLY
+                if obj.normalize_homotopy_update
+                    nsigma = (16/3)*sqrt(sigma);
+                else
+                    nsigma = sigma;
+                end
                 x = a-b;
-                z = x/sigma;
-                y_pol = sigma*(1/8*(-z^4+6*z^2+3));
-                psi_mpcc  =a+b- if_else(abs(x)>=sigma,abs(x),y_pol);
-
+                z = x/nsigma;
+                y_pol = nsigma*(1/8*(-z^4+6*z^2+3));
+                psi_mpcc = a+b- if_else(abs(x)>=nsigma,abs(x),y_pol);
               case CFunctionType.KANZOW_SCHWARTZ
-                a1 = a-sigma;
-                b1 = b-sigma;
-                psi_mpcc  = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
-
+                if obj.normalize_homotopy_update
+                    nsigma = sqrt(sigma);
+                else
+                    nsigma = sigma;
+                end 
+                a1 = a-nsigma;
+                b1 = b-nsigma;
+                psi_mpcc = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
               case CFunctionType.LIN_FUKUSHIMA
                 psi_mpcc1 = [a*b-sigma];
                 psi_mpcc2 = [-((a-sigma)*(b-sigma)-sigma^2)];
                 psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
-
               case CFunctionType.KADRANI
-                psi_mpcc = (a-sigma)*(b-sigma);
+                if obj.normalize_homotopy_update
+                    nsigma = sqrt(sigma);
+                else
+                    nsigma = sigma;
+                end
+                psi_mpcc = (a-nsigma)*(b-nsigma);
             end
 
             obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
