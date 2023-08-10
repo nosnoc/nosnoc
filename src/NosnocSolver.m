@@ -536,7 +536,7 @@ classdef NosnocSolver < handle
                 stats.cpu_time = [stats.cpu_time,cpu_time_iter];
                 stats.cpu_time_total = stats.cpu_time_total + cpu_time_iter;
                 stats.wall_time = [stats.wall_time, wall_time_iter];
-                stats.wall_time_total = stats.wall_time_total + wall_time_iter
+                stats.wall_time_total = stats.wall_time_total + wall_time_iter;
 
                 if solver_options.timeout_cpu && (stats.cpu_time_total > solver_options.timeout_cpu)
                     timeout = 1;
