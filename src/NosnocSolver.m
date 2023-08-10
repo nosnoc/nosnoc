@@ -140,8 +140,7 @@ classdef NosnocSolver < handle
                 if isfield(last_stats, 'iterations') && ~isempty(last_stats.iterations)
                     inf_pr = last_stats.iterations.inf_pr(end);
                     inf_du = last_stats.iterations.inf_du(end);
-                    if inf_pr < obj.solver_options.opts_casadi_nlp.ipopt.tol && inf_du < obj.solver_options.opts_casadi_nlp.ipopt.tol ...
-                            && stats.complementarity_stats(end) < 10 * obj.solver_options.comp_tol
+                    if stats.complementarity_stats(end) < 10 * obj.solver_options.comp_tol
                         converged = 1;
                     end
                 else

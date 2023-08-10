@@ -112,6 +112,7 @@ classdef NosnocSolverOptions < handle
             obj.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
             obj.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
             obj.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+            obj.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
             obj.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
             obj.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
             obj.opts_casadi_nlp.snopt = struct();
