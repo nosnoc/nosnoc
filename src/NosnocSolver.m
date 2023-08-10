@@ -34,6 +34,8 @@ classdef NosnocSolver < handle
 
         solver % CasADi solver function
 
+        plugin % Plugin object handling specific solver types
+
         p_val % parameter values (homotopy parameters + problem parameters)
     end
 
@@ -46,6 +48,17 @@ classdef NosnocSolver < handle
             
             obj.mpcc = mpcc;
             obj.solver_options = solver_options;
+
+            switch solver_options.solver
+                case 'ipopt'
+                    obj.plugin = NosnocIpopt();
+                case 'snopt'
+                    obj.plugin = NosnocSNOPT();
+                case 'worhp'
+                    obj.plugin = NosnocWORHP();
+                case 'uno'
+                    obj.plugin = NosnocUNO();
+            end
             
             if solver_options.solver_type == 'RELAXATION_HOMOTOPY'
                 obj = obj.construct_relaxation_homotopy();
@@ -123,7 +136,7 @@ classdef NosnocSolver < handle
         end
 
         function violation = compute_constraint_violation(obj, w)
-        % TODO also handle direct solver
+            % TODO also handle direct solver
             nlp = obj.nlp;
             ubw_violation = max(max(w - nlp.ubw), 0);
             lbw_violation = max(max(nlp.lbw - w), 0);
@@ -133,26 +146,15 @@ classdef NosnocSolver < handle
             violation = max([lbg_violation, ubg_violation, lbw_violation, ubw_violation]);
         end
 
-        function converged = is_converged(obj, stats)
-            if strcmp(obj.solver_options.solver, 'ipopt')
-                last_stats = stats.solver_stats(end);
-                converged = 0;
-                if isfield(last_stats, 'iterations') && ~isempty(last_stats.iterations)
-                    inf_pr = last_stats.iterations.inf_pr(end);
-                    inf_du = last_stats.iterations.inf_du(end);
-                    if stats.complementarity_stats(end) < 10 * obj.solver_options.comp_tol
-                        converged = 1;
-                    end
-                else
-                    converged = 0;
-                end
-            else
-                % TODO..
-                converged = [];
+        function converged = comp_tol_met(obj, stats)
+            last_stats = stats.solver_stats(end);
+            converged = 0;
+            if stats.complementarity_stats(end) < 10 * obj.solver_options.comp_tol
+                converged = 1;
             end
         end
 
-        function printInfeasibility(obj, results)
+        function print_infeasibility(obj, results)
             % warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
             if obj.solver_options.print_details_if_infeasible
                 print_problem_details(results,obj.model,obj.problem, []);
@@ -215,7 +217,7 @@ classdef NosnocSolver < handle
             obj.p_val = [obj.nlp.p0(:);x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
         end
 
-        function printNLPIterInfo(obj, stats)
+        function print_nlp_iter_info(obj, stats)
             solver_stats = stats.solver_stats(end);
             ii = size(stats.solver_stats, 2);
 
@@ -302,6 +304,7 @@ classdef NosnocSolver < handle
             import casadi.*
             mpcc = obj.mpcc;
             solver_options = obj.solver_options;
+            tic;
             % calculate homotopy
             if solver_options.N_homotopy == 0
                 solver_options.N_homotopy = ceil(abs(log(solver_options.sigma_N / solver_options.sigma_0) / log(solver_options.homotopy_update_slope)));
@@ -312,50 +315,16 @@ classdef NosnocSolver < handle
             end
 
             nlp = NosnocNLP(solver_options, mpcc);
-            obj.nlp = nlp;
 
+            obj.nlp = nlp;
             w = nlp.w;
             g = nlp.g;
             p = nlp.p;
             if ~isempty(solver_options.ipopt_callback)
                 solver_options.opts_casadi_nlp.iteration_callback = NosnocIpoptCallback('a_callback', model, nlp, solver_options, length(w),length(g),length(p));
             end
-
-            casadi_nlp = struct('f', nlp.augmented_objective, 'x', w, 'g', g, 'p', p);
-
-            % TODO: Possible issue raise to casadi: allow unknown fields in options passed
-            if strcmp(solver_options.solver, 'ipopt')
-                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
-                if solver_options.timeout_cpu
-                    opts_casadi_nlp.ipopt.max_cpu_time = solver_options.timeout_cpu;
-                elseif solver_options.timeout_wall
-                    opts_casadi_nlp.ipopt.max_wall_time = solver_options.timeout_wall;
-                end
-            elseif strcmp(solver_options.solver, 'snopt')
-                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'ipopt');
-            end
-
-            if ~solver_options.multiple_solvers
-                solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
-            else
-                solver = {};
-                sigma_k = solver_options.sigma_0;
-                for k = 1:solver_options.N_homotopy
-                    opts_casadi_nlp.ipopt.mu_init = sigma_k * 1e-1;
-                    opts_casadi_nlp.ipopt.mu_target = sigma_k * 1e-1;
-                    opts_casadi_nlp.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
-                    opts_casadi_nlp.ipopt.mu_strategy = 'monotone';
-                    if k == 1
-                        opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                        opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-4 * sigma_k;
-                        opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-4 * sigma_k;
-                    end
-                    solver{k} = nlpsol(solver_options.solver_name, 'ipopt', casadi_nlp, opts_casadi_nlp);
-                    % TODO: make homotopy update function and reuse here.
-                    sigma_k = solver_options.homotopy_update_slope*sigma_k;
-                end
-            end
-            obj.solver = solver;
+            
+            obj.solver = obj.plugin.construct_solver(nlp, solver_options);
 
             if ~isempty(solver_options.ipopt_callback)
                 solver_options.opts_casadi_nlp.iteration_callback.solver = solver;
@@ -381,6 +350,7 @@ classdef NosnocSolver < handle
             mpcc = obj.mpcc;
             solver_options = obj.solver_options;
             nlp = obj.nlp;
+            plugin = obj.plugin;
 
             comp_res = mpcc.comp_res;
 
@@ -418,7 +388,6 @@ classdef NosnocSolver < handle
             timeout = 0;
 
             if solver_options.print_level >= 3
-                %     fprintf('\niter\t\tsigma\t\tcompl_res\tobjective\tCPU time\tNLP iters\tstatus \t inf_pr \t inf_du \n')
                 fprintf('\niter\t sigma \t\t compl_res\t inf_pr \t inf_du \t objective \t CPU time \t NLP iter\t status \n')
             end
 
@@ -461,23 +430,9 @@ classdef NosnocSolver < handle
                         % TODO(Anton) Lets push on casadi devs to allow for changing of options after construction
                         %             (or maybe do it ourselves) and then remove this hack
                         if obj.solver_options.timeout_cpu
-                            casadi_nlp = struct('f', obj.nlp.augmented_objective, 'x', obj.nlp.w, 'g', obj.nlp.g, 'p', obj.nlp.p);
-                            if strcmp(solver_options.solver, 'ipopt')
-                                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
-                                opts_casadi_nlp.ipopt.max_cpu_time = solver_options.timeout_cpu - stats.cpu_time_total;
-                            elseif strcmp(solver_options.solver, 'snopt')
-                                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'ipopt');
-                            end
-                            solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
+                            solver = plugin.construct_solver(nlp, solver_options, solver_options.timeout_cpu - stats.cpu_time_total);
                         elseif obj.solver_options.timeout_wall
-                            casadi_nlp = struct('f', obj.nlp.augmented_objective, 'x', obj.nlp.w, 'g', obj.nlp.g, 'p', obj.nlp.p);
-                            if strcmp(solver_options.solver, 'ipopt')
-                                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
-                                opts_casadi_nlp.ipopt.max_wall_time = solver_options.timeout_wall - stats.wall_time_total;
-                            elseif strcmp(solver_options.solver, 'snopt')
-                                opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'ipopt');
-                            end
-                            solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
+                            solver = plugin.construct_solver(nlp, solver_options, solver_options.timeout_wall - stats.wall_time_total);
                         end % HACK ENDS HERE
                         
                         start = cputime;
@@ -504,32 +459,18 @@ classdef NosnocSolver < handle
                         cpu_time_iter = cputime - start;
                         wall_time_iter = toc;
                     end
-                    solver_stats = solver.stats;
-                    if ~isfield(solver_stats, 'iterations')
-                        solver_stats.iterations = [];
-                    end
+                    solver_stats = plugin.cleanup_solver_stats(solver.stats);
+                    
                     stats.solver_stats = [stats.solver_stats, solver_stats];
                 end
+
                 results.nlp_results = [results.nlp_results, nlp_results];
 
-                if isequal(stats.solver_stats(end).return_status,'Infeasible_Problem_Detected')
-                    obj.printInfeasibility(results);
-                    last_iter_failed = 1;
-                end
-                if isequal(stats.solver_stats(end).return_status,'Restoration_Failed')
-                    obj.printInfeasibility(results);
-                    last_iter_failed = 1;
-                end
-                if isequal(stats.solver_stats(end).return_status,'Maximum_WallTime_Exceeded')
-                    timeout = 1;
-                    last_iter_failed = 1;
-                end
-                if isequal(stats.solver_stats(end).return_status,'Maximum_CpuTime_Exceeded')
-                    timeout = 1;
-                    last_iter_failed = 1;
-                end
-                if isequal(stats.solver_stats(end).return_status,'Maximum_Iterations_Exceeded')
-                    last_iter_failed = 1;
+                last_iter_failed = plugin.check_iteration_failed(stats);
+                timeout = plugin.check_timeout(stats);
+
+                if last_iter_failed
+                    obj.print_infeasibility();
                 end
 
                 % update timing stats
@@ -547,7 +488,7 @@ classdef NosnocSolver < handle
                     last_iter_failed = 1;
                 end
                 % update results output.
-                w_opt = full(nlp_results.x);
+                w_opt = plugin.w_opt_from_results(nlp_results);
                 w_opt_mpcc = w_opt;
                 w_opt_mpcc(nlp.ind_elastic) = [];
                 results.W = [results.W,w_opt]; % all homotopy iterations
@@ -563,7 +504,7 @@ classdef NosnocSolver < handle
                 ii = ii+1;
                 % Verbose
                 if solver_options.print_level >= 3
-                    obj.printNLPIterInfo(stats)
+                    obj.print_nlp_iter_info(stats)
                 end
             end
 
@@ -582,7 +523,7 @@ classdef NosnocSolver < handle
             results = obj.extract_results_nlp(results);
 
             % check if solved to required accuracy
-            stats.converged = obj.is_converged(stats) && ~last_iter_failed && ~timeout;
+            stats.converged = obj.comp_tol_met(stats) && ~last_iter_failed && ~timeout;
             stats.constraint_violation = obj.compute_constraint_violation(results.w);
 
             obj.print_solver_stats(results,stats);
@@ -595,8 +536,9 @@ classdef NosnocSolver < handle
         function results = extract_results_nlp(obj, results)
             import casadi.*
             mpcc = obj.mpcc;
+            plugin = obj.plugin;
             % Store differential states
-            w_opt = full(results.nlp_results(end).x);
+            w_opt = plugin.w_opt_from_results(results.nlp_results(end));
             results.w = w_opt;
 
             w_mpcc = w_opt;

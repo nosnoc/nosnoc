@@ -115,6 +115,10 @@ classdef NosnocSolverOptions < handle
             obj.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
             obj.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
             obj.opts_casadi_nlp.snopt = struct();
+            obj.opts_casadi_nlp.snopt.Minor_print_level = 0;
+            
+            obj.opts_casadi_nlp.worhp = struct();
+            obj.opts_casadi_nlp.uno = struct();
 
             obj.p_val = [obj.sigma_0];
         end
