@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-classdef NosnocIpopt < handle % TODO maybe handle not necessary, revisit.
+classdef NosnocWORHP < handle % TODO maybe handle not necessary, revisit.
     properties
 
     end
@@ -41,43 +41,17 @@ classdef NosnocIpopt < handle % TODO maybe handle not necessary, revisit.
 
             % TODO: Possible issue raise to casadi: allow unknown fields in options passed
             opts_casadi_nlp = solver_options.opts_casadi_nlp;
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'ipopt');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'snopt');
-            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'worhp');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'uno');
-            if solver_options.timeout_cpu
+            if solver_options.timeout_wall
                 if exist('time_remaining')
-                    opts_casadi_nlp.ipopt.max_cpu_time = time_remaining;
+                    opts_casadi_nlp.worhp.Timeout = time_remaining;
                 else
-                    opts_casadi_nlp.ipopt.max_cpu_time = solver_options.timeout_cpu;
-                end
-            elseif solver_options.timeout_wall
-                if exist('time_remaining')
-                    opts_casadi_nlp.ipopt.max_wall_time = time_remaining;
-                else
-                    opts_casadi_nlp.ipopt.max_wall_time = solver_options.timeout_wall;
+                    opts_casadi_nlp.worhp.Timeout = solver_options.timeout_wall;
                 end
             end
-
-            if ~solver_options.multiple_solvers
-                solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
-            else
-                solver = {};
-                sigma_k = solver_options.sigma_0;
-                for k = 1:solver_options.N_homotopy
-                    opts_casadi_nlp.ipopt.mu_init = sigma_k * 1e-1;
-                    opts_casadi_nlp.ipopt.mu_target = sigma_k * 1e-1;
-                    opts_casadi_nlp.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
-                    opts_casadi_nlp.ipopt.mu_strategy = 'monotone';
-                    if k == 1
-                        opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                        opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-4 * sigma_k;
-                        opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-4 * sigma_k;
-                    end
-                    solver{k} = nlpsol(solver_options.solver_name, 'ipopt', casadi_nlp, opts_casadi_nlp);
-                    % TODO: make homotopy update function and reuse here.
-                    sigma_k = solver_options.homotopy_update_slope*sigma_k;
-                end
-            end
+            solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
         end
 
         function solver_stats = cleanup_solver_stats(obj, solver_stats)
@@ -88,7 +62,15 @@ classdef NosnocIpopt < handle % TODO maybe handle not necessary, revisit.
 
         function failed = check_iteration_failed(obj, stats)
             switch stats.solver_stats(end).return_status
-                case {'Solve_Succeeded', 'Solved_To_Acceptable_Level'}
+                case {'OptimalSolution',
+                    'OptimalSolutionConstantF',
+                    'AcceptableSolution',
+                    'AcceptablePrevious',
+                    'AcceptableSolutionConstantF',
+                    'AcceptablePreviousConstantF',
+                    'AcceptableSolutionSKKT',
+                    'AcceptableSolutionScaled',
+                    'AcceptablePreviousScaled'}
                     failed = false;
                 otherwise
                     failed = true;
@@ -97,7 +79,7 @@ classdef NosnocIpopt < handle % TODO maybe handle not necessary, revisit.
 
         function timeout = check_timeout(obj, stats)
             switch stats.solver_stats(end).return_status
-                case {'Maximum_WallTime_Exceeded', 'Maximum_CpuTime_Exceeded'}
+                case {'Timeout'}
                     timeout = 1;
                 otherwise
                     timeout = 0;
@@ -108,32 +90,23 @@ classdef NosnocIpopt < handle % TODO maybe handle not necessary, revisit.
             w_opt = full(nlp_results.x);
         end
         function f = f_from_results(obj, nlp_results)
-            f = nlp_results.f;
-        end        
+            f = full(nlp_results.f);
+        end
         function g = g_from_results(obj, nlp_results)
-            g = nlp_results.g;
+            g = full(nlp_results.g);
         end
 
         function print_nlp_iter_header(obj)
-            fprintf('\niter\t sigma \t\t compl_res\t inf_pr \t inf_du \t objective \t CPU time \t NLP iter\t status \n');
+            fprintf('\niter\t sigma \t\t compl_res\t objective \t CPU time \t NLP iter\t status \n');
         end
         
         function print_nlp_iter_info(obj, stats)
             solver_stats = stats.solver_stats(end);
             ii = size(stats.solver_stats, 2);
 
-            if isfield(solver_stats, 'iterations') && ~isempty(solver_stats.iterations)
-                inf_pr = solver_stats.iterations.inf_pr(end);
-                inf_du = solver_stats.iterations.inf_du(end);
-                objective = solver_stats.iterations.obj(end);
-            else
-                inf_pr = nan;
-                inf_du = nan;
-                objective = nan;
-            end
-            fprintf('%d\t%6.2e\t %6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.3f \t %d \t %s \n',...
-                ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
-                objective, stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
+            fprintf('%d\t%6.2e\t %6.2e\t %6.2e \t %6.3f \t %s \n',...
+                    ii, stats.sigma_k(end), stats.complementarity_stats(end), ...
+                    stats.objective(end), stats.cpu_time(end), solver_stats.return_status);
         end
     end
 end

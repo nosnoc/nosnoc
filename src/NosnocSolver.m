@@ -388,7 +388,7 @@ classdef NosnocSolver < handle
             timeout = 0;
 
             if solver_options.print_level >= 3
-                fprintf('\niter\t sigma \t\t compl_res\t inf_pr \t inf_du \t objective \t CPU time \t NLP iter\t status \n')
+                plugin.print_nlp_iter_header();
             end
 
             while ((complementarity_iter) > solver_options.comp_tol || last_iter_failed) &&...
@@ -504,7 +504,7 @@ classdef NosnocSolver < handle
                 ii = ii+1;
                 % Verbose
                 if solver_options.print_level >= 3
-                    obj.print_nlp_iter_info(stats)
+                    plugin.print_nlp_iter_info(stats)
                 end
             end
 

@@ -83,12 +83,24 @@ classdef NosnocSNOPT < handle % TODO maybe handle not necessary, revisit.
         function w_opt = w_opt_from_results(obj, nlp_results)
             w_opt = full(nlp_results.x);
         end
-
         function f = f_from_results(obj, nlp_results)
             f = full(nlp_results.f);
         end
         function g = g_from_results(obj, nlp_results)
             g = full(nlp_results.g);
+        end
+
+        function print_nlp_iter_header(obj)
+            fprintf('\niter\t sigma \t\t compl_res\t objective \t CPU time \t NLP iter\t secondary_status\t status \n');
+        end
+        
+        function print_nlp_iter_info(obj, stats)
+            solver_stats = stats.solver_stats(end);
+            ii = size(stats.solver_stats, 2);
+
+            fprintf('%d\t%6.2e\t %6.2e\t %6.2e \t %6.3f \t %s \t %s \n',...
+                    ii, stats.sigma_k(end), stats.complementarity_stats(end), ...
+                    stats.objective(end), stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
         end
     end
 end
