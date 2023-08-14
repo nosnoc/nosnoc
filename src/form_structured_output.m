@@ -33,7 +33,8 @@ function [results]= form_structured_output(problem, w_opt, name, results)
     
     lens = cellfun(@(c) length(c), opt_s);
     if all(lens==0)
-        % leave and do nothing
+        % TODO this is needed for gauss-legendre but causes some problems elsewhere
+        %opt_s = cellfun(@(idx) w_opt(idx), ind(:,:,end-1), 'uni', 0);
         return
     end
 
