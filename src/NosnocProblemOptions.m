@@ -54,7 +54,7 @@ classdef NosnocProblemOptions < handle
 
         % lift complementarities
         lift_complementarities(1,1) logical = 1
-        lower_bound_comp_lift(1,1) logical = 1
+        lower_bound_comp_lift(1,1) logical = 0
 
         % TODO: Initialization is really a solver concern, but there is not really a good extraction approach yet.
         % Initialization - Stewart

@@ -137,6 +137,7 @@ classdef NosnocSolverOptions < handle
                 
                 
                 obj.opts_casadi_nlp.worhp.NLPprint = -1;
+                obj.opts_casadi_nlp.uno.statistics_print_header_every_iterations = '10000';
                 
             elseif obj.print_level == 4
                 obj.opts_casadi_nlp.ipopt.print_level=0;

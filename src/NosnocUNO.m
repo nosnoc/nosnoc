@@ -46,32 +46,12 @@ classdef NosnocUNO < handle % TODO maybe handle not necessary, revisit.
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'ipopt');
             if solver_options.timeout_wall
                 if exist('time_remaining')
-                    opts_casadi_nlp.uno.time_limit = time_remaining;
+                    opts_casadi_nlp.uno.time_limit = char(string(time_remaining));
                 else
-                    opts_casadi_nlp.uno.time_limit = solver_options.timeout_wall;
+                    opts_casadi_nlp.uno.time_limit = char(string(solver_options.timeout_wall));
                 end
             end
-
-            if ~solver_options.multiple_solvers
-                solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
-            else
-                solver = {};
-                sigma_k = solver_options.sigma_0;
-                for k = 1:solver_options.N_homotopy
-                    opts_casadi_nlp.ipopt.mu_init = sigma_k * 1e-1;
-                    opts_casadi_nlp.ipopt.mu_target = sigma_k * 1e-1;
-                    opts_casadi_nlp.ipopt.bound_relax_factor = sigma_k^2 * 1e-2;
-                    opts_casadi_nlp.ipopt.mu_strategy = 'monotone';
-                    if k == 1
-                        opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                        opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-4 * sigma_k;
-                        opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-4 * sigma_k;
-                    end
-                    solver{k} = nlpsol(solver_options.solver_name, 'ipopt', casadi_nlp, opts_casadi_nlp);
-                    % TODO: make homotopy update function and reuse here.
-                    sigma_k = solver_options.homotopy_update_slope*sigma_k;
-                end
-            end
+            solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
         end
 
         function solver_stats = cleanup_solver_stats(obj, solver_stats)
