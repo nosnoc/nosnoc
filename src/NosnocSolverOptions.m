@@ -75,7 +75,7 @@ classdef NosnocSolverOptions < handle
         p_val
 
         % psi func
-        psi_fun_type CFunctionType = CFunctionType.BILINEAR
+        psi_fun_type CFunctionType = CFunctionType.SCHOLTES
         relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
         elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
         psi_fun
@@ -150,35 +150,35 @@ classdef NosnocSolverOptions < handle
 
             switch obj.mpcc_mode
                 case MpccMode.Scholtes_ineq
-                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.psi_fun_type = CFunctionType.SCHOLTES;
                     obj.relaxation_method = RelaxationMode.INEQ;
                     obj.elasticity_mode = ElasticityMode.NONE;
                 case MpccMode.Scholtes_eq
-                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.psi_fun_type = CFunctionType.SCHOLTES;
                     obj.relaxation_method = RelaxationMode.EQ;
                     obj.elasticity_mode = ElasticityMode.NONE;
                 case MpccMode.elastic_ineq
-                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.psi_fun_type = CFunctionType.SCHOLTES;
                     obj.relaxation_method = RelaxationMode.INEQ;
                     obj.elasticity_mode = ElasticityMode.ELL_INF;
                 case MpccMode.elastic_eq
-                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.psi_fun_type = CFunctionType.SCHOLTES;
                     obj.relaxation_method = RelaxationMode.EQ;
                     obj.elasticity_mode = ElasticityMode.ELL_INF;
                 case MpccMode.elastic_two_sided
-                    obj.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
+                    obj.psi_fun_type = CFunctionType.SCHOLTES_TWO_SIDED;
                     obj.relaxation_method = RelaxationMode.TWO_SIDED;
                     obj.elasticity_mode = ElasticityMode.ELL_INF;
                 case MpccMode.elastic_ell_1_ineq
-                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.psi_fun_type = CFunctionType.SCHOLTES;
                     obj.relaxation_method = RelaxationMode.INEQ;
                     obj.elasticity_mode = ElasticityMode.ELL_1;
                 case MpccMode.elastic_ell_1_eq
-                    obj.psi_fun_type = CFunctionType.BILINEAR;
+                    obj.psi_fun_type = CFunctionType.SCHOLTES;
                     obj.relaxation_method = RelaxationMode.EQ;
                     obj.elasticity_mode = ElasticityMode.ELL_1;
                 case MpccMode.elastic_ell_1_two_sided
-                    obj.psi_fun_type = CFunctionType.BILINEAR_TWO_SIDED;
+                    obj.psi_fun_type = CFunctionType.SCHOLTES_TWO_SIDED;
                     obj.relaxation_method = RelaxationMode.TWO_SIDED;
                     obj.elasticity_mode = ElasticityMode.ELL_1;
             end
@@ -189,10 +189,10 @@ classdef NosnocSolverOptions < handle
             sigma = define_casadi_symbolic(obj.casadi_symbolic_mode,'sigma',1);
 
             switch obj.psi_fun_type
-              case CFunctionType.BILINEAR
+              case CFunctionType.SCHOLTES
                 psi_mpcc = a.*b-sigma;
                 norm = sigma;
-              case CFunctionType.BILINEAR_TWO_SIDED
+              case CFunctionType.SCHOLTES_TWO_SIDED
                 psi_mpcc = [a*b-sigma;a*b+sigma];
                 norm = sigma;
               case CFunctionType.FISCHER_BURMEISTER
