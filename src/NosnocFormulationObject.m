@@ -36,8 +36,8 @@ classdef NosnocFormulationObject < handle
         g
         lbg
         ubg
-        % Cost
-        cost
+        % Augmented_Objective
+        augmented_objective
         % Objective
         objective
     end
@@ -57,8 +57,8 @@ classdef NosnocFormulationObject < handle
             obj.lbg = [];
             obj.ubg = [];
 
-            % Cost
-            obj.cost = 0;
+            % Augmented_Objective
+            obj.augmented_objective = 0;
 
             % Objective
             obj.objective = 0;

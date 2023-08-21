@@ -197,19 +197,19 @@ classdef NosnocSolverOptions < handle
                 norm = sigma;
               case CFunctionType.FISCHER_BURMEISTER
                 if obj.normalize_homotopy_update
-                    nsigma = sqrt(2*sigma);
+                    normalized_sigma = sqrt(2*sigma);
                 else
-                    nsigma = sigma;
+                    normalized_sigma = sigma;
                 end
-                psi_mpcc = a+b-sqrt(a^2+b^2+nsigma^2);
+                psi_mpcc = a+b-sqrt(a^2+b^2+normalized_sigma^2);
                 
               case CFunctionType.NATURAL_RESIDUAL
                 if obj.normalize_homotopy_update
-                    nsigma = sqrt(4*sigma);
+                    normalized_sigma = sqrt(4*sigma);
                 else
-                    nsigma = sigma;
+                    normalized_sigma = sigma;
                 end
-                psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+nsigma^2));
+                psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+normalized_sigma^2));
               case CFunctionType.CHEN_CHEN_KANZOW
                 alpha = 0.5;
                 if obj.normalize_homotopy_update
@@ -219,32 +219,32 @@ classdef NosnocSolverOptions < handle
                 end
              case CFunctionType.STEFFENSON_ULBRICH
                 if obj.normalize_homotopy_update
-                    nsigma = 2/((2/pi)*sin(3*pi/2)+1)*sqrt(sigma);
+                    normalized_sigma = 2/((2/pi)*sin(3*pi/2)+1)*sqrt(sigma);
                 else
-                    nsigma = sigma;
+                    normalized_sigma = sigma;
                 end
                 x = a-b;
-                z = x/nsigma;
-                y_sin = nsigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
-                psi_mpcc = a+b-if_else(abs(x)>=nsigma,abs(x),y_sin);
+                z = x/normalized_sigma;
+                y_sin = normalized_sigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
+                psi_mpcc = a+b-if_else(abs(x)>=normalized_sigma,abs(x),y_sin);
               case  CFunctionType.STEFFENSON_ULBRICH_POLY
                 if obj.normalize_homotopy_update
-                    nsigma = (16/3)*sqrt(sigma);
+                    normalized_sigma = (16/3)*sqrt(sigma);
                 else
-                    nsigma = sigma;
+                    normalized_sigma = sigma;
                 end
                 x = a-b;
-                z = x/nsigma;
-                y_pol = nsigma*(1/8*(-z^4+6*z^2+3));
-                psi_mpcc = a+b- if_else(abs(x)>=nsigma,abs(x),y_pol);
+                z = x/normalized_sigma;
+                y_pol = normalized_sigma*(1/8*(-z^4+6*z^2+3));
+                psi_mpcc = a+b- if_else(abs(x)>=normalized_sigma,abs(x),y_pol);
               case CFunctionType.KANZOW_SCHWARTZ
                 if obj.normalize_homotopy_update
-                    nsigma = sqrt(sigma);
+                    normalized_sigma = sqrt(sigma);
                 else
-                    nsigma = sigma;
+                    normalized_sigma = sigma;
                 end 
-                a1 = a-nsigma;
-                b1 = b-nsigma;
+                a1 = a-normalized_sigma;
+                b1 = b-normalized_sigma;
                 psi_mpcc = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
               case CFunctionType.LIN_FUKUSHIMA
                 psi_mpcc1 = [a*b-sigma];
@@ -252,11 +252,11 @@ classdef NosnocSolverOptions < handle
                 psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
               case CFunctionType.KADRANI
                 if obj.normalize_homotopy_update
-                    nsigma = sqrt(sigma);
+                    normalized_sigma = sqrt(sigma);
                 else
-                    nsigma = sigma;
+                    normalized_sigma = sigma;
                 end
-                psi_mpcc = (a-nsigma)*(b-nsigma);
+                psi_mpcc = (a-normalized_sigma)*(b-normalized_sigma);
             end
 
             obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});

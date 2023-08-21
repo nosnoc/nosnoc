@@ -120,7 +120,7 @@ classdef ControlStage < NosnocFormulationObject
                                     problem_options.s_sot_max,...
                                     problem_options.s_sot0);
                     if problem_options.time_freezing
-                        obj.cost = obj.cost + rho_sot_p*(s_sot-1)^2;
+                        obj.augmented_objective = obj.augmented_objective + rho_sot_p*(s_sot-1)^2;
                     end
                 end
             else
@@ -142,8 +142,8 @@ classdef ControlStage < NosnocFormulationObject
                 % 4) add finite element variables
                 obj.addFiniteElement(fe);
                 
-                % 5) add cost, objective and, constraints from FE to problem
-                obj.cost = obj.cost + fe.cost;
+                % 5) add augmented_objective, objective and, constraints from FE to problem
+                obj.augmented_objective = obj.augmented_objective + fe.augmented_objective;
                 obj.objective = obj.objective + fe.objective;
                 
                 obj.addConstraint(fe.g, fe.lbg, fe.ubg);
@@ -153,10 +153,10 @@ classdef ControlStage < NosnocFormulationObject
             end
 
             % least squares cost
-            obj.cost = obj.cost + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.augmented_objective = obj.augmented_objective + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             obj.objective = obj.objective + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             if dims.n_u > 0
-                obj.cost = obj.cost + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.augmented_objective = obj.augmented_objective + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
                 obj.objective = obj.objective + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
             end
             

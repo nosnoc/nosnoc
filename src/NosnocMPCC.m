@@ -125,7 +125,7 @@ classdef NosnocMPCC < NosnocFormulationObject
         comp_fesd
 
         % Problem cost function
-        cost_fun
+        augmented_objective_fun
 
         % Problem objective function
         objective_fun
@@ -406,9 +406,9 @@ classdef NosnocMPCC < NosnocFormulationObject
                         -inf*ones(n_terminal,1),...
                         zeros(n_terminal,1), 'type', 'g_mpcc');
 
-                    obj.cost = obj.cost + rho_terminal_p*sum(s_terminal_ell_1);
+                    obj.augmented_objective = obj.augmented_objective + rho_terminal_p*sum(s_terminal_ell_1);
                   case 2 % l_2
-                    obj.cost = obj.cost + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-model.g_terminal_lb);
+                    obj.augmented_objective = obj.augmented_objective + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-model.g_terminal_lb);
                   case 3 % l_inf
                     s_terminal_ell_inf = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
                     obj.addVariable(s_terminal_ell_inf,...
@@ -424,7 +424,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                         -inf*ones(n_terminal,1),...
                         zeros(n_terminal,1), 'type', 'g_mpcc');
 
-                    obj.cost = obj.cost + rho_terminal_p*s_terminal_ell_inf;
+                    obj.augmented_objective = obj.augmented_objective + rho_terminal_p*s_terminal_ell_inf;
                   case 4 % l_inf, relaxed
                     if ismember(problem_options.mpcc_mode, MpccMode.elastic)
                         elastic = s_elastic*ones(n_terminal,1);
@@ -443,17 +443,17 @@ classdef NosnocMPCC < NosnocFormulationObject
             end
 
             % terminal least squares
-            obj.cost = obj.cost + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
+            obj.augmented_objective = obj.augmented_objective + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
             obj.objective = obj.objective + model.f_lsq_T_fun(last_fe.x{end}, model.x_ref_end_val, model.p_global);
 
             % Process terminal costs
-            obj.cost = obj.cost + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
+            obj.augmented_objective = obj.augmented_objective + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
             obj.objective = obj.objective + model.f_q_T_fun(last_fe.x{end}, model.p_global, model.v_global);
 
             if problem_options.time_optimal_problem
                 % Add to the vector of unknowns
                 obj.addVariable(T_final, 't_final', problem_options.T_final_min, problem_options.T_final_max, T_final_guess);
-                obj.cost = obj.cost + T_final;
+                obj.augmented_objective = obj.augmented_objective + T_final;
                 obj.objective = obj.objective + T_final;
             end
 
@@ -496,7 +496,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             %obj.comp_res = Function('comp_res', {obj.w, obj.p}, {J_comp});
             obj.comp_std = Function('comp_std', {obj.w, obj.p}, {J_comp_std});
             obj.comp_fesd = Function('comp_fesd', {obj.w, obj.p}, {J_comp_fesd});
-            obj.cost_fun = Function('cost_fun', {obj.w, obj.p}, {obj.cost});
+            obj.augmented_objective_fun = Function('augmented_objective_fun', {obj.w, obj.p}, {obj.augmented_objective});
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
             obj.g_fun = Function('g_fun', {obj.w, obj.p}, {obj.g});
 
@@ -516,7 +516,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.nu_fun = nu_fun;
             
             % create CasADi function for objective gradient.
-            nabla_J = obj.cost.jacobian(obj.w);
+            nabla_J = obj.augmented_objective.jacobian(obj.w);
             nabla_J_fun = Function('nabla_J_fun', {obj.w,obj.p},{nabla_J});
             obj.nabla_J = nabla_J;
             obj.nabla_J_fun = nabla_J_fun;
@@ -555,7 +555,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                         obj.problem_options.s_sot_max,...
                         obj.problem_options.s_sot0);
                     if obj.problem_options.time_freezing
-                        obj.cost = obj.cost + obj.rho_sot_p*(s_sot-1)^2;
+                        obj.augmented_objective = obj.augmented_objective + obj.rho_sot_p*(s_sot-1)^2;
                     end
                 end
             end
@@ -566,7 +566,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                 obj.stages = [obj.stages, stage];
 
                 obj.addControlStage(stage);
-                obj.cost = obj.cost + stage.cost;
+                obj.augmented_objective = obj.augmented_objective + stage.augmented_objective;
                 obj.objective = obj.objective + stage.objective;
                 prev_fe = stage.stage(end);
             end
@@ -729,8 +729,8 @@ classdef NosnocMPCC < NosnocFormulationObject
                 end
             end
 
-            fprintf(fileID, '\nobjective\n');
-            fprintf(fileID, strcat(formattedDisplayText(obj.cost), '\n'));
+            fprintf(fileID, '\naugmented objective\n');
+            fprintf(fileID, strcat(formattedDisplayText(obj.augmented_objective), '\n'));
         end
 
         function json = jsonencode(obj,varargin)

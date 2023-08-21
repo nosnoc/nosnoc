@@ -321,7 +321,7 @@ classdef NosnocSolver < handle
                 solver_options.opts_casadi_nlp.iteration_callback = NosnocIpoptCallback('a_callback', model, nlp, solver_options, length(w),length(g),length(p));
             end
 
-            casadi_nlp = struct('f', nlp.cost, 'x', w, 'g', g, 'p', p);
+            casadi_nlp = struct('f', nlp.augmented_objective, 'x', w, 'g', g, 'p', p);
 
             % TODO: Possible issue raise to casadi: allow unknown fields in options passed
             if strcmp(solver_options.solver, 'ipopt')
@@ -461,7 +461,7 @@ classdef NosnocSolver < handle
                         % TODO(Anton) Lets push on casadi devs to allow for changing of options after construction
                         %             (or maybe do it ourselves) and then remove this hack
                         if obj.solver_options.timeout_cpu
-                            casadi_nlp = struct('f', obj.nlp.cost, 'x', obj.nlp.w, 'g', obj.nlp.g, 'p', obj.nlp.p);
+                            casadi_nlp = struct('f', obj.nlp.augmented_objective, 'x', obj.nlp.w, 'g', obj.nlp.g, 'p', obj.nlp.p);
                             if strcmp(solver_options.solver, 'ipopt')
                                 opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
                                 opts_casadi_nlp.ipopt.max_cpu_time = solver_options.timeout_cpu - stats.cpu_time_total;
@@ -470,7 +470,7 @@ classdef NosnocSolver < handle
                             end
                             solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
                         elseif obj.solver_options.timeout_wall
-                            casadi_nlp = struct('f', obj.nlp.cost, 'x', obj.nlp.w, 'g', obj.nlp.g, 'p', obj.nlp.p);
+                            casadi_nlp = struct('f', obj.nlp.augmented_objective, 'x', obj.nlp.w, 'g', obj.nlp.g, 'p', obj.nlp.p);
                             if strcmp(solver_options.solver, 'ipopt')
                                 opts_casadi_nlp = rmfield(solver_options.opts_casadi_nlp, 'snopt');
                                 opts_casadi_nlp.ipopt.max_wall_time = solver_options.timeout_wall - stats.wall_time_total;

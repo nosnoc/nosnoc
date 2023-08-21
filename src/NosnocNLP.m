@@ -63,7 +63,7 @@ classdef NosnocNLP < NosnocFormulationObject
         p0
 
         % Problem cost function
-        cost_fun
+        augmented_objective_fun
 
         % Problem objective function
         objective_fun
@@ -110,7 +110,7 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.sigma_p = sigma_p;
             obj.p = [sigma_p;mpcc.p];
 
-            obj.cost = mpcc.cost;
+            obj.augmented_objective = mpcc.augmented_objective;
             obj.objective = mpcc.objective;
 
             obj.mpcc_to_nlp(sigma_p);
@@ -118,21 +118,21 @@ classdef NosnocNLP < NosnocFormulationObject
             % Process elastic costs
             if solver_options.elasticity_mode == ElasticityMode.ELL_INF
                 if solver_options.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*obj.s_elastic_inf;
+                    obj.augmented_objective = obj.augmented_objective + (1/sigma_p)*obj.s_elastic_inf;
                 else
-                    obj.cost = sigma_p*obj.cost + obj.s_elastic_inf;
+                    obj.augmented_objective = sigma_p*obj.augmented_objective + obj.s_elastic_inf;
                 end
             end
             if solver_options.elasticity_mode == ElasticityMode.ELL_1
                 sum_s_elastic = sum1(obj.w(obj.ind_elastic));
                 if solver_options.objective_scaling_direct
-                    obj.cost = obj.cost + (1/sigma_p)*sum_s_elastic;
+                    obj.augmented_objective = obj.augmented_objective + (1/sigma_p)*sum_s_elastic;
                 else
-                    obj.cost = sigma_p*obj.cost + sum_s_elastic;
+                    obj.augmented_objective = sigma_p*obj.augmented_objective + sum_s_elastic;
                 end
             end
 
-            obj.cost_fun = Function('cost_fun', {obj.w, obj.p}, {obj.cost});
+            obj.augmented_objective_fun = Function('augmented_objective_fun', {obj.w, obj.p}, {obj.augmented_objective});
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
             obj.g_fun = Function('g_fun', {obj.w, obj.p}, {obj.g});
 
@@ -141,7 +141,7 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.w0_original = obj.w0;
            
             % create CasADi function for cost gradient.
-            nabla_J = obj.cost.jacobian(obj.w);
+            nabla_J = obj.augmented_objective.jacobian(obj.w);
             nabla_J_fun = Function('nabla_J_fun', {obj.w,obj.p},{nabla_J});
             obj.nabla_J = nabla_J;
             obj.nabla_J_fun = nabla_J_fun;
@@ -247,7 +247,7 @@ classdef NosnocNLP < NosnocFormulationObject
 
             if obj.solver_options.mpcc_mode == MpccMode.ell_1_penalty
                 for ii=1:n_comp_pairs
-                    obj.cost = obj.cost + comp_pairs(ii,1).*comp_pairs(ii,2);
+                    obj.augmented_objective = obj.augmented_objective + comp_pairs(ii,1).*comp_pairs(ii,2);
                 end
             else                
                 for ii=1:n_comp_pairs
@@ -309,8 +309,8 @@ classdef NosnocNLP < NosnocFormulationObject
                 fprintf(fileID, "%s\t%.2e\t%s\t%.2e\t\n", expr_str, obj.w0(i), lb_str, obj.ubw(i));
             end
 
-            fprintf(fileID, '\nobjective\n');
-            fprintf(fileID, strcat(formattedDisplayText(obj.cost), '\n'));
+            fprintf(fileID, '\naugmented objective\n');
+            fprintf(fileID, strcat(formattedDisplayText(obj.augmented_objective), '\n'));
         end
     end
 end
