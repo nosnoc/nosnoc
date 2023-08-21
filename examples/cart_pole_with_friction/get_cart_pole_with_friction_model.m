@@ -25,9 +25,13 @@
 
 % This file is part of NOSNOC.
 
-function model = get_cart_pole_with_friction_model()
+function model = get_cart_pole_with_friction_model(nosnoc)
     import casadi.*
-    model = NosnocModel();
+    if nosnoc
+        model = NosnocModel();
+    else
+        model = struct();
+    end
     model.T = 4;    % Time horizon
 
     % fixed values
@@ -42,11 +46,6 @@ function model = get_cart_pole_with_friction_model()
     x = [q;v];
     u = SX.sym('u', 1); % control
 
-    % switching function c: cart velocity
-    c = v(1);
-    % Sign matrix % f_1 for c>0, f_2 for c<0
-    S = [1; -1];
-
     % Inertia matrix
     M = [m1 + m2, m2*link_length*cos(q(2));...
         m2 *link_length*cos(q(2)),  m2*link_length^2];
@@ -60,13 +59,26 @@ function model = get_cart_pole_with_friction_model()
     % all forces = Gravity + Control + Coriolis (+Friction)
     f_all = [0; -m2*g*link_length*sin(x(2))] + [u; 0] - C*v;
 
-    % Dynamics forv > 0
-    f_1 = [v;...
-            inv(M)*(f_all-[F_friction;0])];
-    % Dynamics for v<0
-    f_2 = [v;...
-            inv(M)*(f_all+[F_friction;0])];
-    F = [f_1, f_2];
+    if nosnoc
+        % switching function c: cart velocity
+        model.c = v(1);
+        % Sign matrix % f_1 for c>0, f_2 for c<0
+        model.S = [1; -1];
+    
+        % Dynamics forv > 0
+        f_1 = [v;...
+                inv(M)*(f_all-[F_friction;0])];
+        % Dynamics for v<0
+        f_2 = [v;...
+                inv(M)*(f_all+[F_friction;0])];
+        model.F = [f_1, f_2];
+    else
+        sigma = SX.sym('sigma');
+        model.p = sigma;
+        model.f_expl_ode = [v; inv(M)*(f_all - [F_friction*tanh(v(1)/ sigma);0])];
+    end
+
+
 
     % specify initial and end state, cost ref and weight matrix
     x0 = [1; 0/180*pi; 0; 0]; % start downwards
@@ -78,8 +90,6 @@ function model = get_cart_pole_with_friction_model()
     u_max = 30;
     u_ref = 0;
     
-    model.F = F;
-    model.c = c;
     model.lbx = lbx;
     model.ubx = ubx;
     model.x = x;
@@ -87,7 +97,6 @@ function model = get_cart_pole_with_friction_model()
     model.u = u;
     model.lbu = -u_max;
     model.ubu = u_max;
-    model.S = S;
     
     % Stage cost
     Q = diag([1; 100; 1; 1]);

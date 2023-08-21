@@ -29,20 +29,7 @@
 import casadi.*
 
 %% model stuff
-% % Fixed friction force
-% F_friction = 2;
-% c = v(1);
-% xdot = [v;inv(M)*(f_all - [F_friction*tanh(c/sigma);0])];
-% 
-
-sigma = SX.sym('sigma',1);
-
-model = get_cart_pole_with_friction_model();
-coeff_0 = (1+tanh(model.c/sigma)) / 2;
-coeff_1 = 1 - coeff_0;
-
-model = struct(model);
-model.xdot_smoothened = coeff_0 * model.F(:, 1) + coeff_1 * model.F(:, 2);
+model = get_cart_pole_with_friction_model(0);
 
 %%
 n_s = 2;
@@ -50,14 +37,12 @@ N = 30; % number of control intervals
 x_ref = [0; 180/180*pi; 0; 0]; % target position
 
 %% NLP formulation & solver creation
-nlp = setup_collocation_nlp(model, sigma, n_s, N);
-
+nlp = setup_collocation_nlp(model, n_s, N);
 casadi_nlp = struct('f', nlp.f, 'x', nlp.w, 'p', nlp.p, 'g', nlp.g);
-
 solver = nlpsol('solver', 'ipopt', casadi_nlp);
 
 %% solve nlp
-sigma0 = 1e-3;
+sigma0 = 1e-1;
 % Solve the NLP
 sol = solver('x0', nlp.w0, 'lbx', nlp.lbw, 'ubx', nlp.ubw,...
     'lbg', nlp.lbg, 'ubg', nlp.ubg, 'p', sigma0);
@@ -78,7 +63,7 @@ results.t_grid = linspace(0, model.T, N+1);
 results.t_grid_u = linspace(0, model.T, N+1);
 results.u = u_opt;
 
-model.h_k = model.T / (N * n_s);
+model.h_k = model.T / N;
 plot_cart_pole_trajecetory(results, model, x_ref);
 
 %%
@@ -110,9 +95,7 @@ plot_cart_pole_trajecetory(results, model, x_ref);
 % semilogx(sigma_vec,f_opt)
 % grid on
 
-
-
-function nlp = setup_collocation_nlp(model, sigma, n_s, N)
+function nlp = setup_collocation_nlp(model, n_s, N)
     import casadi.*
     %% collocation using casadi
     % Get collocation points
@@ -158,7 +141,7 @@ function nlp = setup_collocation_nlp(model, sigma, n_s, N)
     n_u = length(model.u);
 
     % Continuous time dynamics
-    f = Function('f', {model.x, model.u, sigma}, {model.xdot_smoothened, L});
+    f = Function('f', {model.x, model.u, model.p}, {model.f_expl_ode, L});
     f_terminal = Function('f', {model.x,}, {model.f_q_T});
 
     % Control discretization
@@ -211,7 +194,7 @@ function nlp = setup_collocation_nlp(model, sigma, n_s, N)
             end
     
             % Append collocation equations
-            [fj, qj] = f(Xkj{j},Uk, sigma);
+            [fj, qj] = f(Xkj{j}, Uk, model.p);
             g = {g{:}, h*fj - xp};
             lbg = [lbg; zeros(n_x,1)];
             ubg = [ubg; zeros(n_x,1)];
@@ -244,7 +227,7 @@ function nlp = setup_collocation_nlp(model, sigma, n_s, N)
     nlp.w0 = w0;
     nlp.lbw = lbw;
     nlp.ubw = ubw;
-    nlp.p = sigma;
+    nlp.p = model.p;
     nlp.g = vertcat(g{:});
     nlp.lbg = lbg;
     nlp.ubg = ubg;
