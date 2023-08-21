@@ -18,7 +18,7 @@ problem_options.time_optimal_problem = 1;
 % Discretization parameters
 model = NosnocModel();
 problem_options.N_stages = 10; % number of control intervals
-problem_options.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
 model.T = 1;    % Time horizon
 % Symbolic variables and bounds
 q = SX.sym('q'); v = SX.sym('v'); 

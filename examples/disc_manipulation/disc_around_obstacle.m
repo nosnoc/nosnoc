@@ -56,7 +56,7 @@ solver_options.N_homotopy = 7;
 
 %% discretizatioon
 N_stg = 25; % control intervals
-N_FE = 3;  % integration steps per control intevral
+N_FE = 3;  % integration steps per control interval
 T = 5;
 
 %% model parameters

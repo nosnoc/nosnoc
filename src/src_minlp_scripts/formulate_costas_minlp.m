@@ -55,7 +55,7 @@ end
 
 % Formulate the NLP
 for k = 1:N_stages
-    % define binary variables for stages / stage intevrals
+    % define binary variables for stages / stage intervals
     if hybrid_dynamics
         Yk = opti.variable(n_y,1);
         ind_y = [ind_y,ind_total(end)+1:ind_total(end)+n_y];
