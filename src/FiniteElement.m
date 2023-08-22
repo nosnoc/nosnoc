@@ -843,7 +843,8 @@ classdef FiniteElement < NosnocFormulationObject
             
             switch problem_options.dcs_mode
                 case DcsMode.Stewart
-                    n_cont = dims.n_s+1;
+                    rbp_allowance = ~problem_options.right_boundary_point_explicit;
+                    n_cont = dims.n_s+1+rbp_allowance;
                     n_discont = dims.n_s;
                     n_indep = dims.n_sys;
                     cross_comp_pairs = cell(n_cont, n_discont, n_indep);
@@ -871,7 +872,8 @@ classdef FiniteElement < NosnocFormulationObject
                         end
                     end
                 case DcsMode.Step
-                    n_cont = dims.n_s+1;
+                    rbp_allowance = ~problem_options.right_boundary_point_explicit;
+                    n_cont = dims.n_s+1+rbp_allowance;
                     n_discont = dims.n_s;
                     n_indep = dims.n_sys;
                     cross_comp_pairs = cell(n_cont, n_discont, n_indep);
