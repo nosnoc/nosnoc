@@ -415,6 +415,16 @@ classdef NosnocModel < handle
             end
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{obj.x,obj.x_ref_end,obj.p_global},{obj.f_lsq_T});
 
+            if size(obj.g_terminal,1) ~= 0
+                obj.g_terminal_fun  = Function('g_terminal_fun',{obj.x,obj.p_global,obj.v_global},{obj.g_terminal});
+            end
+            if size(obj.g_path,1) ~= 0
+                obj.g_path_fun  = Function('g_path_fun',{obj.x,obj.u,obj.p,obj.v_global},{obj.g_path});
+            end
+            if size(obj.g_comp_path,1) ~= 0
+                obj.g_comp_path_fun  = Function('g_comp_path_fun',{obj.x,obj.u,obj.p,obj.v_global},{obj.g_comp_path});
+            end
+
             obj.equations_exist = 1;
         end
         
@@ -1098,7 +1108,6 @@ classdef NosnocModel < handle
                 else
                     obj.g_path_ub =  0*ones(n_g_path,1);
                 end
-                obj.g_path_fun  = Function('g_path_fun',{obj.x,obj.u,obj.p,obj.v_global},{obj.g_path});
             else
                 n_g_path = 0;
                 g_path_constraint  = 0;
@@ -1114,7 +1123,6 @@ classdef NosnocModel < handle
                 if size(obj.g_comp_path, 2) ~= 2
                     error('g_comp_path must be of size (m, 2)')
                 end
-                obj.g_comp_path_fun  = Function('g_comp_path_fun',{obj.x,obj.u,obj.p,obj.v_global},{obj.g_comp_path});
             else
                 g_comp_path_constraint = 0;
                 if settings.print_level >=1
@@ -1125,7 +1133,7 @@ classdef NosnocModel < handle
             if size(obj.g_terminal, 1) ~= 0
                 n_g_terminal = length(obj.g_terminal);
                 if size(obj.g_terminal_lb, 1) ~= 0
-                    if length(g_terminal_lb)~=n_g_terminal
+                    if length(obj.g_terminal_lb)~=n_g_terminal
                         error('nosnoc: The provided vector g_terminal_lb has the wrong size.')
                     end
                 else
@@ -1133,13 +1141,12 @@ classdef NosnocModel < handle
                 end
 
                 if size(obj.g_terminal_ub, 1) ~= 0
-                    if length(g_terminal_ub)~=n_g_terminal
+                    if length(obj.g_terminal_ub)~=n_g_terminal
                         error('nosnoc: The provided vector g_terminal_ub has the wrong size.')
                     end
                 else
                     obj.g_terminal_ub =  0*ones(n_g_terminal,1);
                 end
-                obj.g_terminal_fun  = Function('g_terminal_fun',{obj.x,obj.p_global,obj.v_global},{obj.g_terminal});
             else
                 n_g_terminal = 0;
                 if settings.print_level >=1

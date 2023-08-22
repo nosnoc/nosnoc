@@ -1165,12 +1165,12 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                     Xk_end = Xk_end + problem_options.D_irk(j+1) * X_ki{j};
                     obj.addConstraint(obj.h * fj - xj);
-                    obj.cost = obj.cost + problem_options.B_irk(j+1) * obj.h * qj;
+                    obj.augmented_objective = obj.augmented_objective + problem_options.B_irk(j+1) * obj.h * qj;
                     obj.objective = obj.objective + problem_options.B_irk(j+1) * obj.h * qj;
                 else
                     Xk_end = Xk_end + obj.h * problem_options.b_irk(j) * obj.v{j};
                     obj.addConstraint(fj - obj.v{j});
-                    obj.cost = obj.cost + problem_options.b_irk(j) * obj.h * qj;
+                    obj.augmented_objective = obj.augmented_objective + problem_options.b_irk(j) * obj.h * qj;
                     obj.objective = obj.objective + problem_options.b_irk(j) * obj.h * qj;
                 end
             end
@@ -1413,7 +1413,7 @@ classdef FiniteElement < NosnocFormulationObject
             % only heuristic mean is done for first finite element
             if problem_options.step_equilibration == StepEquilibrationMode.heuristic_mean
                 h_fe = model.T / (sum(problem_options.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
-                obj.cost = obj.cost + rho_h_p * (obj.h - h_fe).^2;
+                obj.augmented_objective = obj.augmented_objective + rho_h_p * (obj.h - h_fe).^2;
                 return;
             elseif obj.fe_idx <= 1
                 return;
@@ -1423,11 +1423,11 @@ classdef FiniteElement < NosnocFormulationObject
             nu = obj.nu_vector;
             delta_h_ki = obj.h - obj.prev_fe.h;
             if problem_options.step_equilibration ==  StepEquilibrationMode.heuristic_diff
-                obj.cost = obj.cost + rho_h_p * delta_h_ki.^2;
+                obj.augmented_objective = obj.augmented_objective + rho_h_p * delta_h_ki.^2;
             elseif problem_options.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
-                obj.cost = obj.cost + rho_h_p * tanh(nu/problem_options.step_equilibration_sigma) * delta_h_ki.^2;
+                obj.augmented_objective = obj.augmented_objective + rho_h_p * tanh(nu/problem_options.step_equilibration_sigma) * delta_h_ki.^2;
             elseif problem_options.step_equilibration == StepEquilibrationMode.l2_relaxed
-                obj.cost = obj.cost + rho_h_p * nu * delta_h_ki.^2
+                obj.augmented_objective = obj.augmented_objective + rho_h_p * nu * delta_h_ki.^2
             elseif problem_options.step_equilibration == StepEquilibrationMode.direct
                 obj.addConstraint(nu*delta_h_ki, 0, 0);
                 % TODO: how to do this if it is not part of the mpcc.
