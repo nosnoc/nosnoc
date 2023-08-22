@@ -82,13 +82,19 @@ xlabel('$t$', 'Interpreter', 'latex')
 legend('smoothed friction forces', 'controls')
 
 %% objective experiment
+warm_starting = 1;
+
 n_sigmas = 15;
 sigma_values = logspace(1, -8, n_sigmas);
 f_opt = [];
+w0 = nlp.w0;
 for sigma = sigma_values
-    sol = solver('x0', nlp.w0, 'lbx', nlp.lbw, 'ubx', nlp.ubw,...
+    sol = solver('x0', w0, 'lbx', nlp.lbw, 'ubx', nlp.ubw,...
         'lbg', nlp.lbg, 'ubg', nlp.ubg, 'p', sigma);
     f_opt = [f_opt, full(sol.f)];
+    if warm_starting
+        w0 = full(sol.x);
+    end
 end
 
 % plot
