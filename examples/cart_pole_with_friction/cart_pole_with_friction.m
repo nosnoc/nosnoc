@@ -25,8 +25,11 @@
 
 % This file is part of NOSNOC.
 
+% Fixed friction force
+F_friction = 2;
+
 % model
-model = get_cart_pole_with_friction_model();
+model = get_cart_pole_with_friction_model(1, F_friction);
 x_ref = [0; 180/180*pi; 0; 0]; % target position
 
 % Discretization options

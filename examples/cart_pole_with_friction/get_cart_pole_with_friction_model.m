@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-function model = get_cart_pole_with_friction_model(nosnoc)
+function model = get_cart_pole_with_friction_model(nosnoc, F_friction)
     import casadi.*
     if nosnoc
         model = NosnocModel();
@@ -53,9 +53,6 @@ function model = get_cart_pole_with_friction_model(nosnoc)
     C = [0, -m2 * link_length*v(2)*sin(q(2));...
         0,   0];
 
-    % Fixed friction force
-    F_friction = 2;
-
     % all forces = Gravity + Control + Coriolis (+Friction)
     f_all = [0; -m2*g*link_length*sin(x(2))] + [u; 0] - C*v;
 
@@ -64,8 +61,8 @@ function model = get_cart_pole_with_friction_model(nosnoc)
         model.c = v(1);
         % Sign matrix % f_1 for c>0, f_2 for c<0
         model.S = [1; -1];
-    
-        % Dynamics forv > 0
+
+        % Dynamics for v > 0
         f_1 = [v;...
                 inv(M)*(f_all-[F_friction;0])];
         % Dynamics for v<0
@@ -75,21 +72,26 @@ function model = get_cart_pole_with_friction_model(nosnoc)
     else
         sigma = SX.sym('sigma');
         model.p = sigma;
-        model.f_expl_ode = [v; inv(M)*(f_all - [F_friction*tanh(v(1)/ sigma);0])];
+        model.f_expl_ode = [v; inv(M) * (f_all - [F_friction*tanh(v(1)/ sigma); 0])];
     end
 
-
-
-    % specify initial and end state, cost ref and weight matrix
+    % specify initial and desired state
     x0 = [1; 0/180*pi; 0; 0]; % start downwards
     x_ref = [0; 180/180*pi; 0; 0]; % end upwards
-    
+
     % bounds
     ubx = [5; 240/180*pi; 20; 20];
     lbx = [-0.0; -240/180*pi; -20; -20];
     u_max = 30;
     u_ref = 0;
-    
+
+    % cost
+    Q = diag([1; 100; 1; 1]);
+    Q_terminal = diag([100; 100; 10; 10]);
+    R = 1;
+    model.f_q = (x-x_ref)'*Q*(x-x_ref)+ (u-u_ref)'*R*(u-u_ref);
+    model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
+
     model.lbx = lbx;
     model.ubx = ubx;
     model.x = x;
@@ -97,11 +99,4 @@ function model = get_cart_pole_with_friction_model(nosnoc)
     model.u = u;
     model.lbu = -u_max;
     model.ubu = u_max;
-    
-    % Stage cost
-    Q = diag([1; 100; 1; 1]);
-    Q_terminal = diag([100; 100; 10; 10]);
-    R = 1;
-    model.f_q = (x-x_ref)'*Q*(x-x_ref)+ (u-u_ref)'*R*(u-u_ref);
-    model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 end

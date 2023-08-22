@@ -57,7 +57,7 @@ function plot_cart_pole_trajecetory(results, model, x_ref)
         xp = [q1_opt(ii)-cart_width1/2 q1_opt(ii)+cart_height/2 q1_opt(ii)+cart_height/2 q1_opt(ii)-cart_width1/2];
         yp = [0 0 cart_height  cart_height];
         patch(xp,yp,'k','FaceAlpha',0.8)
-    
+
         % targent
         % pole
         plot([x_ref(1),x_ref(1)+(link_length)*cos(x_ref(2)-pi/2)],...
@@ -66,12 +66,12 @@ function plot_cart_pole_trajecetory(results, model, x_ref)
         xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
         yp = [0 0 cart_height  cart_height];
         patch(xp,yp,'k','FaceAlpha',0.1)
-    
+
         % ground
         xp = [x_min x_max x_max x_min ];
         yp = [-2 -2 0 0];
         patch(xp,yp,0*ones(1,3),'FaceAlpha',0.1,'EdgeColor','none');
-    
+
         axis equal
         xlim([x_min x_max])
         ylim([-1 2])
@@ -85,12 +85,12 @@ function plot_cart_pole_trajecetory(results, model, x_ref)
         else
             imwrite(imind,cm,filename,'gif', 'WriteMode', 'append','DelayTime', model.h_k(1));
         end
-    
+
         if ii<length(q1_opt)
             clf;
         end
     end
-    
+
     %% states
     figure
     subplot(311)
