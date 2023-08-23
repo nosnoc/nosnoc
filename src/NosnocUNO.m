@@ -37,7 +37,7 @@ classdef NosnocUNO < handle % TODO maybe handle not necessary, revisit.
             g = nlp.g;
             p = nlp.p;
 
-            casadi_nlp = struct('f', nlp.cost, 'x', w, 'g', g, 'p', p);
+            casadi_nlp = struct('f', nlp.augmented_objective, 'x', w, 'g', g, 'p', p);
 
             % TODO: Possible issue raise to casadi: allow unknown fields in options passed
             opts_casadi_nlp = solver_options.opts_casadi_nlp;
