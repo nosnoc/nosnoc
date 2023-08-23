@@ -34,12 +34,13 @@ F_friction = 2;
 model = get_cart_pole_with_friction_model(0, F_friction);
 
 %%
-n_s = 2;
+n_s = 1;
 N = 30; % number of control intervals
+N_FE = 2; % number of integration steps = Finite elements, without switch detections
 x_ref = [0; 180/180*pi; 0; 0]; % target position
 
 %% NLP formulation & solver creation
-nlp = setup_collocation_nlp(model, n_s, N);
+nlp = setup_collocation_nlp(model, n_s, N, N_FE);
 casadi_nlp = struct('f', nlp.f, 'x', nlp.w, 'p', nlp.p, 'g', nlp.g);
 solver = nlpsol('solver', 'ipopt', casadi_nlp);
 
@@ -53,11 +54,13 @@ w_opt = full(sol.x);
 %% extract results
 n_x = length(model.x);
 n_u = length(model.u);
-q1_opt = w_opt(1:(n_x+n_u)+n_x*(n_s):end)';
-q2_opt = w_opt(2:(n_x+n_u)+n_x*(n_s):end)';
-v1_opt = w_opt(3:(n_x+n_u)+n_x*(n_s):end)';
-v2_opt = w_opt(4:(n_x+n_u)+n_x*(n_s):end)';
-u_opt = w_opt(5:(n_x+n_u)+n_x*(n_s):end)';
+
+idx_diff = n_u + n_x * (n_s * N_FE) + (N_FE)*n_x; % between x values at shooting nodes
+q1_opt = w_opt(1:idx_diff:end)';
+q2_opt = w_opt(2:idx_diff:end)';
+v1_opt = w_opt(3:idx_diff:end)';
+v2_opt = w_opt(4:idx_diff:end)';
+u_opt = w_opt(5:idx_diff:end)';
 
 results = struct();
 results.x = [q1_opt; q2_opt; v1_opt; v2_opt];
@@ -66,7 +69,7 @@ results.t_grid_u = linspace(0, model.T, N+1);
 results.u = u_opt;
 
 model.h_k = model.T / N;
-% plot_cart_pole_trajecetory(results, model, x_ref);
+plot_cart_pole_trajectory(results, model, x_ref);
 
 %%
 figure;
@@ -82,7 +85,8 @@ xlabel('$t$', 'Interpreter', 'latex')
 legend('smoothed friction forces', 'controls')
 
 %% objective experiment
-warm_starting = 1;
+if 0
+warm_starting = 0;
 
 n_sigmas = 15;
 sigma_values = logspace(1, -8, n_sigmas);
@@ -103,8 +107,9 @@ semilogx(sigma_values, f_opt)
 grid on
 xlabel('$\sigma$ smoothing', 'Interpreter', 'latex')
 ylabel('objective', 'Interpreter', 'latex')
+end
 
-function nlp = setup_collocation_nlp(model, n_s, N)
+function [nlp, idx_x_shooting_nodes] = setup_collocation_nlp(model, n_s, N, N_FE)
     import casadi.*
     %% collocation using casadi
     % Get collocation points
@@ -154,7 +159,7 @@ function nlp = setup_collocation_nlp(model, n_s, N)
     f_terminal = Function('f', {model.x,}, {model.f_q_T});
 
     % Control discretization
-    h = model.T/N;
+    h = model.T/(N*N_FE);
     x0 = model.x0;
 
     %% Casadi NLP formulation
@@ -183,52 +188,56 @@ function nlp = setup_collocation_nlp(model, n_s, N)
         ubw = [ubw; model.ubu];
         w0 = [w0;  0];
 
-        % State at collocation points
-        Xkj = {};
-        for j=1:n_s
-            Xkj{j} = SX.sym(['X_' num2str(k) '_' num2str(j)], n_x);
-            w = {w{:}, Xkj{j}};
+        % Loop over integration steps / finite elements
+        for i=1:N_FE
+            Xk_end = D(1)*Xk;
+
+            % State at collocation points
+            Xkj = {};
+            for j=1:n_s
+                Xkj{j} = SX.sym(['X_' num2str(k) '_' num2str(i) '_' num2str(j)], n_x);
+                w = {w{:}, Xkj{j}};
+                lbw = [lbw; model.lbx];
+                ubw = [ubw; model.ubx];
+                w0 = [w0; x0];
+            end
+            % Loop over collocation points
+            for j=1:n_s
+                % Expression for the state derivative at the collocation point
+                xp = C(1,j+1)*Xk;
+                for r=1:n_s
+                    xp = xp + C(r+1,j+1)*Xkj{r};
+                end
+
+                % Append collocation equations
+                [fj, qj] = f(Xkj{j}, Uk, model.p);
+                g = {g{:}, h*fj - xp};
+                lbg = [lbg; zeros(n_x,1)];
+                ubg = [ubg; zeros(n_x,1)];
+
+                % Add contribution to the end state
+                Xk_end = Xk_end + D(j+1)*Xkj{j};
+
+                % Add contribution to quadrature function
+                objective = objective + B(j+1)*qj*h;
+            end
+
+            % New NLP variable for state at end of interval
+            Xk = SX.sym(['X_' num2str(k+1)], n_x);
+            w = {w{:}, Xk};
             lbw = [lbw; model.lbx];
             ubw = [ubw; model.ubx];
             w0 = [w0; x0];
-        end
 
-        % Loop over collocation points
-        Xk_end = D(1)*Xk;
-        for j=1:n_s
-            % Expression for the state derivative at the collocation point
-            xp = C(1,j+1)*Xk;
-            for r=1:n_s
-                xp = xp + C(r+1,j+1)*Xkj{r};
-            end
-
-            % Append collocation equations
-            [fj, qj] = f(Xkj{j}, Uk, model.p);
-            g = {g{:}, h*fj - xp};
+            % Add equality constraint
+            g = {g{:}, Xk_end-Xk};
             lbg = [lbg; zeros(n_x,1)];
             ubg = [ubg; zeros(n_x,1)];
-
-            % Add contribution to the end state
-            Xk_end = Xk_end + D(j+1)*Xkj{j};
-
-            % Add contribution to quadrature function
-            objective = objective + B(j+1)*qj*h;
         end
-
-        % New NLP variable for state at end of interval
-        Xk = SX.sym(['X_' num2str(k+1)], n_x);
-        w = {w{:}, Xk};
-        lbw = [lbw; model.lbx];
-        ubw = [ubw; model.ubx];
-        w0 = [w0; x0];
-
-        % Add equality constraint
-        g = {g{:}, Xk_end-Xk};
-        lbg = [lbg; zeros(n_x,1)];
-        ubg = [ubg; zeros(n_x,1)];
+        n_w = length(vertcat(w{:}));
     end
 
-    objective = objective + f_terminal(Xk_end);
+    objective = objective + f_terminal(Xk);
 
     nlp = struct();
     nlp.f = objective;

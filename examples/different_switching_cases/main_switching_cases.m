@@ -26,9 +26,8 @@
 % This file is part of NOSNOC.
 
 clear all
-clc
-close all
 import casadi.*
+
 %% Info
 % The goal of this example is to illustrate the 4 different cases of switching that can occur in a PSS, on some simple examples.
 % by chosing example_num from 1 to 4 below one can see a case of
@@ -36,28 +35,22 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontaneous switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-switching_case = 'crossing'; 
+switching_case = 'leave_sliding_mode';
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
 %% NOSNOC settings
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+
 model = NosnocModel();
 
-problem_options.n_s = 2;
-solver_options.homotopy_update_slope = 0.1;
-problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
-% settings.irk_scheme = IRKSchemes.RADAU_IIA;
-problem_options.irk_representation= 'differential';
-solver_options.print_level = 3;
-solver_options.store_integrator_step_results = 1;
 % discretization parameters
-N_sim = 16;
-T_sim = 1.5;
+% TODO: these should be problem_options
+model.N_sim = 7;
+model.T_sim = 1.5;
 
-
-model.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
-model.T_sim = T_sim;
+problem_options.n_s = 2;
+problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+problem_options.irk_representation= 'differential';
 
 switch switching_case
     case 'crossing'
@@ -69,16 +62,6 @@ switch switching_case
         model.S = [-1; 1];
         f_1 = [2]; f_2 = [0.2];
         model.F = [f_1 f_2];
-        solver_options.use_previous_solution_as_initial_guess = 1;
-        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-        [results,stats] = integrator.solve();
-        %
-        figure
-        plot(results.t_grid,results.x)
-        grid on
-        xlabel('$t$','Interpreter','latex')
-        ylabel('$x(t)$','Interpreter','latex')
-        grid on
     case 'sliding_mode'
         %% Sliding mode
         model.x0 = -0.5;
@@ -88,15 +71,6 @@ switch switching_case
         model.S = [-1; 1];
         f_1 = [1]; f_2 = [-1];
         model.F = [f_1 f_2];
-        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-        [results,stats] = integrator.solve();
-        %
-        figure
-        plot(results.t_grid,results.x)
-        grid on
-        xlabel('$t$','Interpreter','latex')
-        ylabel('$x(t)$','Interpreter','latex')
-        grid on
     case 'spontaneous_switch'
         %% spontaneous switch
         model.x0 = 0;
@@ -106,23 +80,11 @@ switch switching_case
         model.S = [-1; 1];
         f_1 = [-1]; f_2 = [1];
         model.F = [f_1 f_2];
-        % implcit methods more accurate, explicit Euler enables "random"
+        % implicit methods more accurate, explicit Euler enables "random"
         % leaving
         problem_options.irk_scheme = 'EXPLICIT_RK';
         problem_options.n_s = 1;
         problem_options.N_finite_elements = 3; % set 4, 5 for different outcomes
-        solver_options.use_previous_solution_as_initial_guess = 1;
-        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-        [results,stats] = integrator.solve();
-        %
-        figure
-        plot(results.t_grid,results.x)
-        grid on
-        xlabel('$t$','Interpreter','latex')
-        ylabel('$x(t)$','Interpreter','latex')
-        ylim([-1 1])
-        grid on
-
     case 'leave_sliding_mode'
         %% leaving sliding mode in a unique way
         model.x0 = [0;0];
@@ -133,19 +95,22 @@ switch switching_case
         model.S = [-1; 1];
         f_1 = [1+t;1]; f_2 = [-1+t;1];
         model.F = [f_1 f_2];
-        solver_options.use_previous_solution_as_initial_guess = 1;
-        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-        [results,stats] = integrator.solve();
-        %
-        figure
-        plot(results.t_grid,results.x(1,:))
-        grid on
-        xlabel('$t$','Interpreter','latex')
-        ylabel('$x(t)$','Interpreter','latex')
-        grid on
     otherwise
         error('pick a value for example_num between 1 and 4.')
 end
 
+solver_options = NosnocSolverOptions();
+solver_options.print_level = 3;
+solver_options.store_integrator_step_results = 1;
 
+integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+[results,stats] = integrator.solve();
+
+figure
+latexify_plot()
+plot(results.t_grid,results.x(1,:))
+grid on
+xlabel('$t$')
+ylabel('$x(t)$')
+grid on
 

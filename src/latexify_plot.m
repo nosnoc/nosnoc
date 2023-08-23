@@ -25,41 +25,14 @@
 
 % This file is part of NOSNOC.
 
-% Fixed friction force
-F_friction = 2;
 
-% model
-model = get_cart_pole_with_friction_model(1, F_friction);
-x_ref = [0; 180/180*pi; 0; 0]; % target position
+% https://www.mathworks.com/matlabcentral/answers/183311-setting-default-interpreter-to-latex
 
-% Discretization options
-problem_options = NosnocProblemOptions();
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
-problem_options.n_s = 3;
-problem_options.dcs_mode = 'Stewart';
-problem_options.N_stages = 20; % number of control intervals
-problem_options.N_finite_elements = 2; % number of finite element on every control interval
-
-% solver options
-solver_options = NosnocSolverOptions();
-solver_options.N_homotopy = 8;
-solver_options.homotopy_update_rule = 'superlinear';
-
-% other linear solvers require installation, check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions
-% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
-
-% Setup mathematical program with complementarity constraints (MPCC)
-mpcc = NosnocMPCC(problem_options, model);
-
-% Create solver
-solver = NosnocSolver(mpcc, solver_options);
-
-% Solve the problem
-[results, stats] = solver.solve();
-
-% evaluate
-distance_to_target = abs(x_ref-results.x(:,end));
-disp(['final difference to desired angle: ', num2str(distance_to_target(2), '%.3e'), ' rad'])
-
-% visualtize
-plot_cart_pole_trajectory(results, model, x_ref)
+function [] = latexify_plot()
+    list_factory = fieldnames(get(groot,'factory'));
+    index_interpreter = find(contains(list_factory,'Interpreter'));
+    for i = 1:length(index_interpreter)
+        default_name = strrep(list_factory{index_interpreter(i)},'factory','default');
+        set(groot, default_name,'latex');
+    end
+end
