@@ -22,7 +22,7 @@ problem_options.n_s = 2;
 solver_options.N_homotopy = 10;
 % Discretization parameters
 problem_options.N_stages = 30; % number of control intervals
-problem_options.N_finite_elements = 3; % number of finite element on every control intevral (optionally a vector might be passed)
+problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
 model.T = 0.08;    % Time horizon
 
 %% The Model

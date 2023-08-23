@@ -61,7 +61,7 @@ settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
 N_stg = 10; % control intervals
-N_FE = 2;  % integration steps per control intevral
+N_FE = 2;  % integration steps per control interval
 T = 3;
 
 %% model parameters

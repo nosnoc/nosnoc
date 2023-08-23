@@ -946,9 +946,6 @@ classdef NosnocModel < handle
                 dims.n_p_global = 0;
                 obj.p_global = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
                 obj.p_global_val = [];
-                if settings.print_level >= 1
-                    fprintf('nosnoc: No global parameters given. \n')
-                end
             end
 
             if size(obj.p_time_var, 1) ~= 0
@@ -971,9 +968,6 @@ classdef NosnocModel < handle
                 obj.p_time_var = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
                 obj.p_time_var_stages = define_casadi_symbolic(settings.casadi_symbolic_mode,'', [0, settings.N_stages]);
                 obj.p_time_var_val = double.empty(0,settings.N_stages);
-                if settings.print_level >= 1
-                    fprintf('nosnoc: No time varying parameters given. \n')
-                end
             end
 
             obj.p = vertcat(obj.p_global,obj.p_time_var);
@@ -1016,7 +1010,7 @@ classdef NosnocModel < handle
                     obj.lsq_x{2} = repmat(obj.lsq_x{2},1,settings.N_stages);
                 else
                     fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,settings.N_stages)
-                    error('nosnoc: Please provide x_ref in lsq_x{1} with an appropaite size.')
+                    error('nosnoc: Please provide x_ref in lsq_x{1} with an appropriate size.')
                 end
                 obj.x_ref_val = obj.lsq_x{2};
                 obj.x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',n_x_ref_rows);
@@ -1048,7 +1042,7 @@ classdef NosnocModel < handle
                     obj.lsq_u{2} = repmat(obj.lsq_u{2},1,settings.N_stages);
                 else
                     fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,settings.N_stages)
-                    error('nosnoc: Please provide u_ref in lsq_u{2} with an appropaite size.')
+                    error('nosnoc: Please provide u_ref in lsq_u{2} with an appropriate size.')
                 end
                 obj.u_ref_val = obj.lsq_u{2};
                 obj.u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',n_u_ref_rows);
@@ -1079,7 +1073,7 @@ classdef NosnocModel < handle
                     fprintf('nosnoc: the provided reference for the terminal cost is ok. \n');
                 else
                     fprintf('nosnoc: The reference in lsq_T has to be a vector of length %d. \n',length(obj.lsq_T{1}));
-                    error('nosnoc: Please provide a reference vector in lsq_T{2} with an appropaite size.')
+                    error('nosnoc: Please provide a reference vector in lsq_T{2} with an appropriate size.')
                 end
                 obj.x_ref_end_val = obj.lsq_T{2};
                 obj.x_ref_end = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
@@ -1112,9 +1106,6 @@ classdef NosnocModel < handle
             else
                 n_g_path = 0;
                 g_path_constraint  = 0;
-                if settings.print_level >=1
-                    fprintf('nosnoc: No path constraints are provided. \n')
-                end
             end
 
             %% Check path complementarity constraints
@@ -1126,9 +1117,6 @@ classdef NosnocModel < handle
                 end
             else
                 g_comp_path_constraint = 0;
-                if settings.print_level >=1
-                    fprintf('nosnoc: No path complementarity constraints are provided. \n')
-                end
             end
             %% Terminal constraints
             if size(obj.g_terminal, 1) ~= 0
@@ -1150,9 +1138,6 @@ classdef NosnocModel < handle
                 end
             else
                 n_g_terminal = 0;
-                if settings.print_level >=1
-                    fprintf('nosnoc: No terminal constraints are provided. \n')
-                end
             end
 
             obj.g_Stewart = {};
@@ -1192,7 +1177,7 @@ classdef NosnocModel < handle
 
                 % coefficent of restiution check
                 if isempty(obj.e)
-                    error('nosnoc:  Please provide a coefficient of restitution via model.e')
+                    error('nosnoc: Please provide a coefficient of restitution via model.e')
                 else
                     if length(obj.e) ~= 1 && length(obj.e) ~= dims.n_contacts
                         error('The length of model.e has to be one or match the length of model.f_c')

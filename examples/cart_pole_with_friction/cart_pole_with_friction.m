@@ -25,215 +25,41 @@
 
 % This file is part of NOSNOC.
 
-%
-%
+% Fixed friction force
+F_friction = 2;
 
-%% Pendulum swing up with friction
-% example taken from https://github.com/KY-Lin22/NIPOCPEC
-%% Clear and import CasADi
-clear all;
-close all;
-clc;
-import casadi.*
+% model
+model = get_cart_pole_with_friction_model(1, F_friction);
+x_ref = [0; 180/180*pi; 0; 0]; % target position
 
-% delete old gif
-if exist('cart_pole_with_friction.gif')
-    delete cart_pole_with_friction.gif
-end
-
-%% Build problem
-import casadi.*
+% Discretization options
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
-% Choosing the Runge - Kutta Method and number of stages
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
-problem_options.n_s = 2;
+problem_options.n_s = 3;
+problem_options.dcs_mode = 'Stewart';
+problem_options.N_stages = 20; % number of control intervals
+problem_options.N_finite_elements = 2; % number of finite element on every control interval
+
+% solver options
+solver_options = NosnocSolverOptions();
 solver_options.N_homotopy = 8;
 solver_options.homotopy_update_rule = 'superlinear';
-problem_options.dcs_mode = 'Step';
-%% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better performance:
+
+% other linear solvers require installation, check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions
 % settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
-%% Discretization parameters
-model = NosnocModel();
-problem_options.N_stages = 30; % number of control intervals
-problem_options.N_finite_elements = 2; % number of finite element on every control intevral
-model.T = 4;    % Time horizon
-
-%% Model parameters and defintion
-q = SX.sym('q', 2);
-v = SX.sym('v', 2);
-x = [q;v];
-u = SX.sym('u', 1); % control
-
-m1 = 1; % cart
-m2 = 0.1; % link
-link_length = 1;
-g = 9.81;
-% Inertia matrix
-M = [m1 + m2, m2*link_length*cos(q(2));...
-    m2 *link_length*cos(q(2)),  m2*link_length^2];
-% Coriolis force
-C = [0, -m2 * link_length*v(2)*sin(q(2));...
-    0,   0];
-
-% f_all (all forces) = Gravity+Control+Coriolis (+Friction)
-f_all = [0;-m2*g*link_length*sin(x(2))]+[u;0]-C*v;
-
-% there is friction between cart and ground
-F_friction = 2;
-% Dynamics with $ v > 0$
-f_1 = [v;...
-        inv(M)*(f_all-[F_friction;0])];
-% Dynamics with $ v < 0$
-f_2 = [v;...
-        inv(M)*(f_all+[F_friction;0])];
-F = [f_1, f_2];
-% switching function (cart velocity)
-c = v(1);
-% Sign matrix % f_1 for c=v>0, f_2 for c=v<0
-S = [1; -1];
-
-% specify initial and end state, cost ref and weight matrix
-x0 = [1; 0/180*pi; 0; 0]; % start downwards
-x_ref = [0; 180/180*pi; 0; 0]; % end upwards
-
-Q = diag([1; 100; 1; 1]);
-% Q_terminal = diag([10; 100; 10; 20]);
-Q_terminal = diag([100; 100; 10; 10]);
-% Q_terminal = 10*Q;
-R = 1;
-
-% bounds
-ubx = [5; 240/180*pi; 20; 20];
-lbx = [-0.0; -240/180*pi; -20; -20];
-u_max = 30;
-u_ref = 0;
-
-%% fill in model
-model.F = F;
-model.c = c;
-model.lbx = lbx;
-model.ubx = ubx;
-model.x = x;
-model.x0 =  x0;
-model.u = u;
-model.lbu = -u_max;
-model.ubu = u_max;
-model.S = S;
-
-% Stage cost
-if 1
-    % directly via generic stage and terminal costs
-    model.f_q = (x-x_ref)'*Q*(x-x_ref)+ (u-u_ref)'*R*(u-u_ref);
-    % terminal cost
-    model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
-    % model.g_terminal = x-x_target;
-else
-    % via least squares cost interace (makes time variable reference possible)
-    model.lsq_x = {x,x_ref,Q};
-    model.lsq_u = {u,u_ref,R};
-    model.lsq_T = {x,x_ref,Q_terminal};
-end
-%% Solve OCP
+% Setup mathematical program with complementarity constraints (MPCC)
 mpcc = NosnocMPCC(problem_options, model);
+
+% Create solver
 solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
-%% plots
-% unfold structure to workspace of this script
-q1_opt = results.x(1,:);
-q2_opt = results.x(2,:);
-v1_opt = results.x(3,:);
-v2_opt = results.x(4,:);
-t_grid = results.t_grid;
-t_grid_u = results.t_grid_u;
-u_opt = results.u;
 
+% Solve the problem
+[results, stats] = solver.solve();
 
-%% Animation
-filename = 'cart_pole_with_friction.gif';
-figure('Renderer', 'painters', 'Position', [100 100 1200 600])
-cart_center = 0.125;
-cart_width1 = 0.25;
-cart_height = cart_center*2;
-pole_X = [q1_opt',q1_opt'+(link_length)*cos(q2_opt'-pi/2)];
-pole_Y = [cart_center+0*q1_opt',cart_center+link_length*sin(q2_opt'-pi/2)];
-x_min =-3;
-x_max = 3;
-for ii = 1:length(q1_opt)
-    % pole
-    plot(pole_X(ii,:),pole_Y(ii,:),'k','LineWidth',3);
-    hold on
-    % tail
-    plot(pole_X(1:ii,2),pole_Y(1:ii,2),'color',[1 0 0 0.5],'LineWidth',0.5);
-    hold on
-    % cart
-    xp = [q1_opt(ii)-cart_width1/2 q1_opt(ii)+cart_height/2 q1_opt(ii)+cart_height/2 q1_opt(ii)-cart_width1/2];
-    yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'k','FaceAlpha',0.8)
+% evaluate
+distance_to_target = abs(x_ref-results.x(:,end));
+disp(['final difference to desired angle: ', num2str(distance_to_target(2), '%.3e'), ' rad'])
 
-    % targent
-    % pole
-    plot([x_ref(1),x_ref(1)+(link_length)*cos(x_ref(2)-pi/2)],[cart_center+0,cart_center+link_length*sin(x_ref(2)-pi/2)],'color',[0 0 0 0.1],'LineWidth',3);
-    % cart
-    xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
-    yp = [0 0 cart_height  cart_height];
-    patch(xp,yp,'k','FaceAlpha',0.1)
-
-    % ground
-    xp = [x_min x_max x_max x_min ];
-    yp = [-2 -2 0 0];
-    patch(xp,yp,0*ones(1,3),'FaceAlpha',0.1,'EdgeColor','none');
-
-    axis equal
-    xlim([x_min x_max])
-    ylim([-1 2])
-    text(-1.5,1.5,['Time: ' num2str(t_grid(ii),'%.2f') ' s'],'interpreter','latex','fontsize',15)
-    %     try
-    %         exportgraphics(gcf,'cart_pole_with_friction.gif','Append',true);
-    %     catch
-    %         disp('the simple gif function is avilable for MATLAB2022a and newer.')
-    %     end
-
-    frame = getframe(1);
-    im = frame2im(frame);
-    [imind,cm] = rgb2ind(im,256);
-    if ii == 1
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime', model.h_k(1));
-    else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime', model.h_k(1));
-    end
-
-    if ii~=length(q1_opt)
-        clf;
-    end
-end
-
-%% states
-
-figure
-subplot(311)
-plot(t_grid,q1_opt)
-hold on
-plot(t_grid,q2_opt)
-yline(pi,'k--');
-ylabel('$q(t)$','Interpreter','latex')
-xlabel('$t$','Interpreter','latex')
-grid on
-legend({'$q_1(t)$ - cart ','$q_2(t)$ - pole'},'Interpreter','latex','Location','best')
-subplot(312)
-plot(t_grid,v1_opt)
-hold on
-plot(t_grid,v2_opt)
-yline(0,'k--');
-ylabel('$v(t)$','Interpreter','latex')
-xlabel('$t$','Interpreter','latex')
-grid on
-legend({'$v_1(t)$ - cart ','$v_2(t)$ - pole'},'Interpreter','latex','Location','best')
-% t_grid_u = t_grid_u';
-subplot(313)
-stairs(t_grid_u,[u_opt,nan]);
-ylabel('$u(t)$','Interpreter','latex')
-xlabel('$t$','Interpreter','latex')
-grid on
-xlim([0 model.T])
+% visualtize
+plot_cart_pole_trajecetory(results, model, x_ref)

@@ -55,7 +55,7 @@ problem_options.time_freezing = 1;
 
 %% discretizatioon
 N_stg = 30; % control intervals
-N_FE = 3;  % integration steps per control intevral
+N_FE = 3;  % integration steps per control interval
 T = 6;
 
 %% model parameters

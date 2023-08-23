@@ -66,7 +66,7 @@ solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 %% discretizatioon
 T = 2; % prediction horizon
 N_stg = 30; % control intervals
-N_FE = 3;  % integration steps per control intevral
+N_FE = 3;  % integration steps per control interval
 
 %% Hopper model
 q = SX.sym('q', 4);

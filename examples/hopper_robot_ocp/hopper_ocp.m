@@ -74,7 +74,7 @@ solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 %% discretization
 T = 1; % prediction horizon
 N_stg = 20; % control intervals
-N_FE = 3;  % integration steps per control intevral
+N_FE = 3;  % integration steps per control interval
 
 v_slip_bound = 0.001;
 full_comp = 1;

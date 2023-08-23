@@ -54,7 +54,7 @@ solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 %% discretizatioon
 N_stg = 10; % control intervals
-N_FE = 5;  % integration steps per control intevral
+N_FE = 5;  % integration steps per control interval
 T = 2;
 
 %% model parameters
