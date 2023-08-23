@@ -62,4 +62,4 @@ distance_to_target = abs(x_ref-results.x(:,end));
 disp(['final difference to desired angle: ', num2str(distance_to_target(2), '%.3e'), ' rad'])
 
 % visualtize
-plot_cart_pole_trajecetory(results, model, x_ref)
+plot_cart_pole_trajectory(results, model, x_ref)
