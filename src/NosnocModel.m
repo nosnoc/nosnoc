@@ -386,6 +386,7 @@ classdef NosnocModel < handle
             g_lp = [g_switching;g_convex;obj.g_lift];
             g_z_all = [g_lp; obj.g_z; g_alg_cls];
             n_algebraic_constraints = length(g_z_all);
+            obj.g_z_all = g_z_all;
 
             %% CasADi functions for indicator and region constraint functions
             % model equations
