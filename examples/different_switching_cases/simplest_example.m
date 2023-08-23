@@ -31,7 +31,6 @@ close all
 import casadi.*
 %%
 switching_case = 'sliding_mode';
-%  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode',
 %% NOSNOC settings
 problem_options = NosnocProblemOptions();
 solver_options = NosnocSolverOptions();
