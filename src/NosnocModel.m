@@ -376,6 +376,7 @@ classdef NosnocModel < handle
             g_lp = [g_switching;g_convex;obj.g_lift];
             g_z_all = [g_lp; obj.g_z; g_alg_cls];
             n_algebraic_constraints = length(g_z_all);
+            obj.g_switching = g_switching;
             obj.g_z_all = g_z_all;
 
             %% CasADi functions for indicator and region constraint functions
@@ -410,10 +411,10 @@ classdef NosnocModel < handle
                 obj.g_terminal_fun  = Function('g_terminal_fun',{obj.x,obj.p_global,obj.v_global},{obj.g_terminal});
             end
             if size(obj.g_path,1) ~= 0
-                obj.g_path_fun  = Function('g_path_fun',{obj.x,obj.u,obj.p,obj.v_global},{obj.g_path});
+                obj.g_path_fun  = Function('g_path_fun',{obj.x,obj.z_all,obj.u,obj.p,obj.v_global},{obj.g_path});
             end
             if size(obj.g_comp_path,1) ~= 0
-                obj.g_comp_path_fun  = Function('g_comp_path_fun',{obj.x,obj.u,obj.p,obj.v_global},{obj.g_comp_path});
+                obj.g_comp_path_fun  = Function('g_comp_path_fun',{obj.x,obj.z_all,obj.u,obj.p,obj.v_global},{obj.g_comp_path});
             end
 
             obj.equations_exist = 1;
@@ -461,22 +462,54 @@ classdef NosnocModel < handle
                 dims.n_theta = n_theta;
                 dims.n_lambda = n_lambda;
 
-                for ii = 1:dims.n_sys
-                    ii_str = num2str(ii);
-                    % define alpha (selection of a set valued step function)
-                    if ~obj.general_inclusion
+                % alpha
+                if isempty(obj.alpha)
+                    for ii=1:dims.n_sys
+                        ii_str = num2str(ii);
+                        % define alpha (selection of a set valued step function)
                         obj.alpha_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],obj.dims.n_c_sys(ii));
                         obj.alpha = [obj.alpha;obj.alpha_sys{ii}];
-                    else
-                        % TODO this needs to change if subsystems.
-                        obj.alpha_sys{ii} = obj.alpha{ii};
                     end
-                    % define lambda_n_i (Lagrange multipler of alpha >= 0;)
-                    obj.lambda_n_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['lambda_n_' ii_str],obj.dims.n_c_sys(ii));
-                    obj.lambda_n = [obj.lambda_n;obj.lambda_n_sys{ii}];
-                    % define lambda_p_i (Lagrange multipler of alpha <= 1;)
-                    obj.lambda_p_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['lambda_p_' ii_str],obj.dims.n_c_sys(ii));
-                    obj.lambda_p = [obj.lambda_p;obj.lambda_p_sys{ii}];
+                else
+                    idx = 1;
+                    for ii=1:dims.n_sys
+                        end_idx = idx + obj.dims.n_c_sys(ii)-1;
+                        obj.alpha_sys{ii} = obj.alpha(idx:end_idx);
+                        idx = end_idx+1;
+                    end
+                end
+                
+
+                if isempty(obj.lambda_n)
+                    for ii=1:dims.n_sys
+                        ii_str = num2str(ii);
+                        % define lambda_n_i (Lagrange multipler of alpha >= 0;)
+                        obj.lambda_n_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['lambda_n_' ii_str],obj.dims.n_c_sys(ii));
+                        obj.lambda_n = [obj.lambda_n;obj.lambda_n_sys{ii}];
+                    end
+                else
+                    idx = 1;
+                    for ii=1:dims.n_sys
+                        end_idx = idx + obj.dims.n_c_sys(ii)-1;
+                        obj.lambda_n_sys{ii} = obj.lambda_n(idx:end_idx);
+                        idx = end_idx+1;
+                    end
+                end
+
+                if isempty(obj.lambda_p)
+                    for ii=1:dims.n_sys
+                        ii_str = num2str(ii);
+                        % define lambda_p_i (Lagrange multipler of alpha <= 1;)
+                        obj.lambda_p_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['lambda_p_' ii_str],obj.dims.n_c_sys(ii));
+                        obj.lambda_p = [obj.lambda_p;obj.lambda_p_sys{ii}];
+                    end
+                else
+                    idx = 1;
+                    for ii=1:dims.n_sys
+                        end_idx = idx + obj.dims.n_c_sys(ii)-1;
+                        obj.lambda_p_sys{ii} = obj.lambda_p(idx:end_idx);
+                        idx = end_idx+1;
+                    end
                 end
 
                 if obj.general_inclusion % unpack alpha in this case

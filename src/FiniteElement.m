@@ -1179,13 +1179,14 @@ classdef FiniteElement < NosnocFormulationObject
             % nonlinear inequality.
             % TODO: do this cleaner
             if (~isempty(model.g_path) &&...
-                    (obj.fe_idx == problem_options.N_finite_elements(obj.ctrl_idx) || problem_options.g_path_at_fe))
-                obj.addConstraint(model.g_path_fun(obj.x{end},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
+                (obj.fe_idx == problem_options.N_finite_elements(obj.ctrl_idx) || problem_options.g_path_at_fe))
+                endidx = dims.n_s + ~problem_options.right_boundary_point_explicit;
+                obj.addConstraint(model.g_path_fun(obj.x{end},obj.rkStageZ(endidx),Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
             end
             for j=1:dims.n_s-problem_options.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if ~isempty(model.g_path) && problem_options.g_path_at_stg
-                    obj.addConstraint(model.g_path_fun(X_ki{j},Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
+                    obj.addConstraint(model.g_path_fun(X_ki{j},obj.rkStageZ(j),Uk,p_stage,model.v_global), model.g_path_lb, model.g_path_ub);
                 end
             end
 
@@ -1222,13 +1223,15 @@ classdef FiniteElement < NosnocFormulationObject
             % path complementarities
             if (~isempty(model.g_comp_path) &&...
                 (obj.fe_idx == problem_options.N_finite_elements(obj.ctrl_idx) || problem_options.g_path_at_fe))
-                pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.u, p_stage, model.v_global);
+                endidx = dims.n_s + ~problem_options.right_boundary_point_explicit;
+                pairs = model.g_comp_path_fun(obj.prev_fe.x{end}, obj.rkStageZ(endidx), obj.u, p_stage, model.v_global);
                 g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
             end
             for j=1:dims.n_s-problem_options.right_boundary_point_explicit
                 % TODO: there has to be a better way to do this.
                 if ~isempty(model.g_comp_path) && problem_options.g_path_at_stg
-                    pairs = model.g_comp_path_fun(obj.x{j}, obj.u, p_stage, model.v_global);
+                    % FIXME this actually doesn't work for pure differential mode.
+                    pairs = model.g_comp_path_fun(obj.x{j}, obj.rkStageZ(j), obj.u, p_stage, model.v_global);
                     g_path_comp_pairs = vertcat(g_path_comp_pairs, pairs);
                 end
             end
