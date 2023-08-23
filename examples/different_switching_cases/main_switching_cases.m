@@ -72,13 +72,6 @@ switch switching_case
         solver_options.use_previous_solution_as_initial_guess = 1;
         integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
         [results,stats] = integrator.solve();
-        %
-        figure
-        plot(results.t_grid,results.x)
-        grid on
-        xlabel('$t$','Interpreter','latex')
-        ylabel('$x(t)$','Interpreter','latex')
-        grid on
     case 'sliding_mode'
         %% Sliding mode
         model.x0 = -0.5;
@@ -90,13 +83,6 @@ switch switching_case
         model.F = [f_1 f_2];
         integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
         [results,stats] = integrator.solve();
-        %
-        figure
-        plot(results.t_grid,results.x)
-        grid on
-        xlabel('$t$','Interpreter','latex')
-        ylabel('$x(t)$','Interpreter','latex')
-        grid on
     case 'spontaneous_switch'
         %% spontaneous switch
         model.x0 = 0;
@@ -114,15 +100,6 @@ switch switching_case
         solver_options.use_previous_solution_as_initial_guess = 1;
         integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
         [results,stats] = integrator.solve();
-        %
-        figure
-        plot(results.t_grid,results.x)
-        grid on
-        xlabel('$t$','Interpreter','latex')
-        ylabel('$x(t)$','Interpreter','latex')
-        ylim([-1 1])
-        grid on
-
     case 'leave_sliding_mode'
         %% leaving sliding mode in a unique way
         model.x0 = [0;0];
@@ -136,16 +113,15 @@ switch switching_case
         solver_options.use_previous_solution_as_initial_guess = 1;
         integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
         [results,stats] = integrator.solve();
-        %
-        figure
-        plot(results.t_grid,results.x(1,:))
-        grid on
-        xlabel('$t$','Interpreter','latex')
-        ylabel('$x(t)$','Interpreter','latex')
-        grid on
     otherwise
         error('pick a value for example_num between 1 and 4.')
 end
 
-
+figure
+latexify_plot()
+plot(results.t_grid,results.x(1,:))
+grid on
+xlabel('$t$')
+ylabel('$x(t)$')
+grid on
 
