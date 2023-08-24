@@ -186,15 +186,13 @@ classdef NosnocModel < handle
         general_inclusion = 0
         there_exist_free_x0 = 0
         time_freezing_model_exists = 0
+        verified = 0
+        vars_exist = 0
+        equations_exist = 0
 
         % time freezing
         a_n
         k_aux
-
-        % flags
-        verified
-        vars_exist
-        equations_exist
 
         % Dimensions
         dims
