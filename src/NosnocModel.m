@@ -186,6 +186,7 @@ classdef NosnocModel < handle
         general_inclusion = 0
         there_exist_free_x0 = 0
         time_freezing_model_exists = 0
+        custom_time_freezing = 0
         verified = 0
         vars_exist = 0
         equations_exist = 0
@@ -1412,6 +1413,9 @@ classdef NosnocModel < handle
         function time_freezing(obj,problem_options)
             import casadi.*
             dims = obj.dims;
+            if obj.custom_time_freezing
+                return;
+            end
             if ~isempty(obj.F)
                 fprintf('nosnoc: model.F provided, the automated model reformulation will be not performed. \n')
                 time_freezing_model_exists = 1;
