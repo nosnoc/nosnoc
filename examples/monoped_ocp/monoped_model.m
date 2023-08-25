@@ -49,7 +49,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     problem_options.stagewise_clock_constraint = 1;
 
     %% Discretization
-    model.T = 3.0;
+    problem_options.T = 3.0;
     problem_options.N_stages = N_stages;
     problem_options.N_finite_elements = 3;
 
@@ -210,9 +210,9 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     R = 1e-1*eye(2);
 
     % Generate reference trajectory
-    x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/model.T;0;0;0];
-    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/model.T;0;0;0];
-    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/model.T;0;0;0];
+    x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0];
+    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/problem_options.T;0;0;0];
+    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0];
 
     x_target = [q_target;zeros(4,1)];
     x_ref = interp1([0 0.25 0.5 0.75 1],[model.x0,x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,problem_options.N_stages),'spline')'; %spline

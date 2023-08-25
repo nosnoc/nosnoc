@@ -12,7 +12,7 @@ settings.s_sot_min =	1/25;
 
 settings.N_stages = 10; 
 settings.N_finite_elements = 3; 
-model.T = 1;    
+problem_options.T = 1;    
 q = SX.sym('q'); v = SX.sym('v'); 
 model.x = [q;v]; model.x0 = [0;0]; 
 model.lbx = [-inf;-25]; model.ubx = [inf;25];

@@ -54,9 +54,9 @@ model.f_c = q(1)-R;
 N_FE = 2;
 T_sim = 1;
 N_sim = 200;
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_FE;
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 
 %% MATLAB solution
 solver_options.use_previous_solution_as_initial_guess = 1;

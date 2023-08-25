@@ -61,8 +61,8 @@ model.dims.n_dim_contact = n_dim_contact ;
 N_FE = 2;
 T_sim = 0.8;
 N_sim = 30;
-model.T_sim = T_sim;
-model.N_sim = N_sim;
+problem_options.T_sim = T_sim;
+problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_FE;
 
 solver_options.use_previous_solution_as_initial_guess = 0;
@@ -98,7 +98,7 @@ if plot_results
         grid on
         xlabel('$q_x$','interpreter','latex');
         ylabel('$q_y$','interpreter','latex');
-        pause(model.h*2)
+        pause(problem_options.h*2)
         if ii~=length(qx)
             clf
         end

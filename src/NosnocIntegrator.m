@@ -114,7 +114,7 @@ classdef NosnocIntegrator < handle
 
 
             %% Main simulation loop
-            for ii = 1:model.N_sim
+            for ii = 1:problem_options.N_sim
 
                 %% set problem parameters, controls
                 solver.set("x0", x0);
@@ -132,7 +132,7 @@ classdef NosnocIntegrator < handle
                 solver.set('x', {x0})
                 solver.set('x_left_bp', {x0})
                 if exist('initial_guess', 'var')
-                    t_guess = t_current + cumsum([0; model.h_k * ones(problem_options.N_finite_elements, 1)]);
+                    t_guess = t_current + cumsum([0; problem_options.h_k * ones(problem_options.N_finite_elements, 1)]);
                     x_guess = interp1(initial_guess.t_grid, initial_guess.x_traj, t_guess,'makima');
                     lambda_normal_guess = interp1(initial_guess.t_grid, initial_guess.lambda_normal_traj, t_guess(2:end-1), 'makima');
                     %
@@ -188,7 +188,7 @@ classdef NosnocIntegrator < handle
                     end
                 elseif solver_options.print_level >=2
                     fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
-                        ii, model.N_sim, t_current, model.T_sim, solver_stats.cpu_time_total);
+                        ii, problem_options.N_sim, t_current, problem_options.T_sim, solver_stats.cpu_time_total);
                 end
 
                 %% gather results
@@ -253,10 +253,10 @@ classdef NosnocIntegrator < handle
 
                 %% update inital value
                 x0 = res.x(:,end);
-                t_current = t_current + model.T;
+                t_current = t_current + problem_options.T;
                 % update clock state
                 if problem_options.impose_terminal_phyisical_time
-                    solver.nlp.p0(end) = solver.nlp.p0(end)+model.T;
+                    solver.nlp.p0(end) = solver.nlp.p0(end)+problem_options.T;
                 end
             end
 
@@ -271,7 +271,7 @@ classdef NosnocIntegrator < handle
             end
             fprintf('---------------- Stats summary ----------------------------\n');
             fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');
-            fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', model.N_sim, model.h_sim, problem_options.N_stages, problem_options.N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
+            fprintf('%d\t\t\t%2.3f\t\t%d\t\t%d\t\t%2.3f\t\t\t\t%2.3f\t\t\t%2.3f\t\t\t\t%2.2e\t%2.2e\n', problem_options.N_sim, problem_options.h_sim, problem_options.N_stages, problem_options.N_finite_elements(1), total_time, max(time_per_iter), min(time_per_iter), max(complementarity_stats), min(complementarity_stats));
             fprintf('-----------------------------------------------------------------\n\n');
 
             %% Output

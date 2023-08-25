@@ -108,9 +108,9 @@ grid on
 
 %
 h_opt =results.h_opt;
-h_bar = model.h*2;
+h_bar = problem_options.h*2;
 h_bar = max(results.h_opt);
-h_nominal = model.h/N_finite_elements;
+h_nominal = problem_options.h/N_finite_elements;
 % figure
 subplot(132)
 stairs(h_opt,'LineWidth',1.5)

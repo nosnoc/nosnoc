@@ -44,9 +44,9 @@ model.D_tangent = [1,-1,0,0;
 N_finite_elements = 10;
 T_sim = 2;
 N_sim = 1;
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 solver_options.use_previous_solution_as_initial_guess = 0;
 %% Call FESD Integrator
 integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);

@@ -47,9 +47,9 @@ model.c = v-10;
 % Add terminal constraint
 model.g_terminal = [q-200;v-0];
 if time_optimal_problem
-    model.T = 1;    
+    problem_options.T = 1;    
 else
-    model.T = 25;   
+    problem_options.T = 25;   
     model.f_q = u^2;
 end
 % Solve OCP

@@ -64,11 +64,11 @@ u_opt = w_opt(5:idx_diff:end)';
 
 results = struct();
 results.x = [q1_opt; q2_opt; v1_opt; v2_opt];
-results.t_grid = linspace(0, model.T, N+1);
-results.t_grid_u = linspace(0, model.T, N+1);
+results.t_grid = linspace(0, problem_options.T, N+1);
+results.t_grid_u = linspace(0, problem_options.T, N+1);
 results.u = u_opt;
 
-model.h_k = model.T / N;
+problem_options.h_k = problem_options.T / N;
 plot_cart_pole_trajectory(results, model, x_ref);
 
 %%
@@ -159,7 +159,7 @@ function [nlp, idx_x_shooting_nodes] = setup_collocation_nlp(model, n_s, N, N_FE
     f_terminal = Function('f', {model.x,}, {model.f_q_T});
 
     % Control discretization
-    h = model.T/(N*N_FE);
+    h = problem_options.T/(N*N_FE);
     x0 = model.x0;
 
     %% Casadi NLP formulation

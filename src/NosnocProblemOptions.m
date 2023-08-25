@@ -25,11 +25,19 @@
 
 % This file is part of NOSNOC.
 classdef NosnocProblemOptions < handle
-% TODO clean up much of the work here.
     properties
         % General
         use_fesd(1,1) logical = 1
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
+
+        % In case of simulation problem
+        T_sim
+        N_sim
+        h_sim
+
+        h % Step size
+        h_k % Finite element step size
+        T = 1.0 % Terminal time % TODO: why is there also T_val, do we need both?
 
         % descritization
         N_stages(1,1) {mustBeInteger, mustBePositive} = 1;
@@ -142,21 +150,34 @@ classdef NosnocProblemOptions < handle
         D_irk double
         c_irk double
 
-        right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
+        right_boundary_point_explicit(1,1) logical
     end
 
     properties(Dependent)
-        time_rescaling 
+        time_rescaling
     end
 
     methods
         function obj = NosnocProblemOptions()
 
-            obj.p_val = [obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
+            obj.p_val = [obj.rho_sot, obj.rho_h, obj.rho_terminal, obj.T_val];
         end
 
         function [] = preprocess(obj)
             import casadi.*
+
+            % time grid
+            if ~isempty(obj.N_sim) && ~isempty(obj.T_sim)
+                obj.T = obj.T_sim/obj.N_sim;
+                obj.h_sim = obj.T_sim/(obj.N_sim*obj.N_stages*obj.N_finite_elements);
+                if obj.print_level >= 2 && exist("h_sim")
+                    fprintf('Info: N_sim is given, so the h_sim provided by the user is overwritten.\n')
+                end
+            elseif ~isempty(obj.N_sim) || ~isempty(obj.T_sim)
+                error('Provide both N_sim and T_sim for the integration.')
+            end
+            obj.h = obj.T/obj.N_stages;
+            obj.h_k = obj.h./obj.N_finite_elements;
 
             % check irk scheme compatibility
             if ismember(obj.irk_scheme, IRKSchemes.differential_only)

@@ -40,8 +40,8 @@ model.J_tangent = [1 0;0 1; 0 0];
 N_finite_elements = 3;
 T_sim = 3;
 N_sim = 20;
-model.T_sim = T_sim;
-model.N_sim = N_sim;
+problem_options.T_sim = T_sim;
+problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_finite_elements;
 
 %% Call FESD Integrator

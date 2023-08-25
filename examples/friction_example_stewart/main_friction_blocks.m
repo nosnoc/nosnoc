@@ -65,9 +65,9 @@ N_sim = 85;
 problem_options.dcs_mode = 'Stewart';
 % problem_options.dcs_mode = 'Step';
 
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator

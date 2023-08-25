@@ -47,9 +47,9 @@ N_sim = 1;
 T_sim = 0.75;
 
 model = NosnocModel();
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 
 model.x0 = -0.50;
 x = SX.sym('x',1);

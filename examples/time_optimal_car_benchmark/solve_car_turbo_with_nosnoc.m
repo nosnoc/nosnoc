@@ -63,7 +63,7 @@ model.S = [-1;1];
 
 % Objective
 if ~settings.time_optimal_problem
-    % note that if q_goal is increased, model.T should be increased as
+    % note that if q_goal is increased, problem_options.T should be increased as
     % otherwise the problem might become infeasible
     % for time optimal problems we do not have to provide an objective
     model.f_q = u^2;

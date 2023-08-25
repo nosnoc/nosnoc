@@ -621,7 +621,7 @@ classdef NosnocSolver < handle
             if mpcc.problem_options.time_optimal_problem
                 T_opt = w_mpcc(mpcc.ind_t_final);
             else
-                T_opt = mpcc.model.T;
+                T_opt = mpcc.problem_options.T;
             end
             results.T = T_opt;
 
@@ -633,7 +633,7 @@ classdef NosnocSolver < handle
                 %     T = T_opt;
                 % end
                 for ii = 1:obj.mpcc.problem_options.N_stages
-                    h_opt = [h_opt,obj.mpcc.model.T/(obj.mpcc.problem_options.N_stages*obj.mpcc.problem_options.N_finite_elements(ii))*ones(1, obj.mpcc.problem_options.N_finite_elements(ii))];
+                    h_opt = [h_opt,obj.mpcc.problem_options.T/(obj.mpcc.problem_options.N_stages*obj.mpcc.problem_options.N_finite_elements(ii))*ones(1, obj.mpcc.problem_options.N_finite_elements(ii))];
                 end
             end
             results.h = h_opt;

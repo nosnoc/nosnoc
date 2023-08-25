@@ -32,7 +32,7 @@ function model = get_cart_pole_with_friction_model(nosnoc, F_friction)
     else
         model = struct();
     end
-    model.T = 5;    % Time horizon
+    problem_options.T = 5;    % Time horizon
 
     % fixed values
     m1 = 1; % cart

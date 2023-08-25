@@ -21,7 +21,7 @@ stairs(t_grid(1:N_finite_elements(1):end),[u2_opt,nan])
 xlabel('$t$','interpreter','latex');
 ylabel('$u(t)$','interpreter','latex');
 grid on
-xlim([0 model.T])
+xlim([0 problem_options.T])
 ylim([-u_max*1.1 u_max*1.1])
 %%
 
@@ -37,7 +37,7 @@ if linear_control
         xline(ii*h,'k--')
     end
     grid on
-    xlim([0 model.T])
+    xlim([0 problem_options.T])
     ylim([-3 3])
     subplot(212)
     stairs(t_grid(1:N_finite_elements(1):end),[u1_opt,nan])
@@ -46,7 +46,7 @@ if linear_control
     xlabel('$t$','interpreter','latex');
     ylabel('$u(t)$','interpreter','latex');
     grid on
-    xlim([0 model.T])
+    xlim([0 problem_options.T])
 
 end
 %% plots
@@ -72,7 +72,7 @@ end
 % grid on
 axis equal
 legend({'$x_1(t)$','$x_2(t)$','Control Intervals'},'interpreter','latex');
-xlim([0 model.T])
+xlim([0 problem_options.T])
 %%
 figure
 plot(x1_opt,x2_opt,'LineWidth',2);

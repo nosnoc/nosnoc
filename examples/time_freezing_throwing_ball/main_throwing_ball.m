@@ -43,7 +43,7 @@ settings.step_equilibration = 'direct_homotopy';
 q_target = [4;0.5];
 
 model = NosnocModel();
-model.T = 4; 
+problem_options.T = 4; 
 settings.N_stages = 20; 
 settings.N_finite_elements = 3;
 % model equations

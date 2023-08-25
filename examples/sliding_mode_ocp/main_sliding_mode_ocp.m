@@ -101,7 +101,7 @@ else
 end
 model.x0 = [2*pi/3;pi/3;v0];
 model.x = x;
-model.T = 4;
+problem_options.T = 4;
 
 problem_options.N_stages = 6;
 problem_options.N_finite_elements = N_finite_elements;

@@ -25,7 +25,7 @@ solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
 % Discretization parameters
 problem_options.N_stages = 30; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
-model.T = 0.09;    % Time horizon
+problem_options.T = 0.09;    % Time horizon
 problem_options.time_optimal_problem = 1;
 
 %% The Model
@@ -143,4 +143,4 @@ ylabel('$u(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
 % ylim([-1.1 1.1])
-xlim([0 model.T])
+xlim([0 problem_options.T])

@@ -37,10 +37,10 @@ model.D_tangent = [model.J_tangent -model.J_tangent] ;
 N_FE = 5;
 T_sim = 1;
 N_sim = 1;
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 
 settings.N_finite_elements = N_FE;
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
 [results,stats,solver] = integrator_fesd(model,settings);

@@ -56,8 +56,8 @@ problem_options.cross_comp_mode  = 3;
 solver_options.homotopy_update_rule = 'superlinear';
 problem_options.pss_lift_step_functions = 0;
 %% Time settings
-model.T_sim = T_sim;
-model.N_sim = N_sim;
+problem_options.T_sim = T_sim;
+problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_finite_elements;
 %% model
 model.x0 = [0.04;-0.01;-0.02];

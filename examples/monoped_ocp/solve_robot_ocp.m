@@ -172,7 +172,7 @@ Q = diag([1.0, 1.0, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8]);
 Q_terminal = 100*diag([1.0, 1.0, 1e-8, 1e-8, 1.0, 1.0, 1.0, 1.0]);
 
 % Generate reference trajectory
-x_mid = [q_target(1)/2; 0.4;0;0;q_target(1)/model.T;0;0;0];
+x_mid = [q_target(1)/2; 0.4;0;0;q_target(1)/problem_options.T;0;0;0];
 x_target = [q_target;zeros(4,1)];
 x_ref = interp1([0 0.5 1],[model.x0,x_mid,x_target]',linspace(0,1,settings.N_stages),'spline')' %spline
 

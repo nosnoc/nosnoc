@@ -56,6 +56,6 @@ end
 
 t_grid = linspace(0, Tsim, Nsim+1);
 results = struct('x', simX, 't_grid', t_grid, 't_grid_u', t_grid, 'u', p_traj(1, :));
-model.h_k = h;
+problem_options.h_k = h;
 x_ref = zeros(4, 1);
 plot_cart_pole_trajectory(results, model, x_ref);

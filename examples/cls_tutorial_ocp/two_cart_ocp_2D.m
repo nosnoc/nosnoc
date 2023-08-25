@@ -102,7 +102,7 @@ q1 = q(1:2);
 q2 = q(3:4);
 
 model = NosnocModel();
-model.T = T;
+problem_options.T = T;
 model.N_stages = N_stg;
 model.N_finite_elements  = N_FE;
 model.x = x;
@@ -249,16 +249,16 @@ if play_animation
         axis equal
         xlim([x_min x_max])
         ylim([-0.75 3.5])
-        pause(solver.model.h_k);
+        pause(solver.problem_options.h_k);
 
         frame = getframe(1);
         im = frame2im(frame);
 
         [imind,cm] = rgb2ind(im,256);
         if ii == 1;
-            imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.model.h_k(1));
+            imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.problem_options.h_k(1));
         else
-            imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.model.h_k(1));
+            imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.problem_options.h_k(1));
         end
 
         if ii~=length(p1x)
