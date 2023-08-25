@@ -32,7 +32,7 @@ function model = get_cart_pole_with_friction_model(nosnoc, F_friction)
     else
         model = struct();
     end
-    model.T = 4;    % Time horizon
+    model.T = 5;    % Time horizon
 
     % fixed values
     m1 = 1; % cart
@@ -41,38 +41,45 @@ function model = get_cart_pole_with_friction_model(nosnoc, F_friction)
     link_length = 1;
 
     % symbolics
-    q = SX.sym('q', 2);
-    v = SX.sym('v', 2);
-    x = [q;v];
-    u = SX.sym('u', 1); % control
+    px = SX.sym('px');
+    theta = SX.sym('theta');
+    q = vertcat(px, theta);
+
+    v = SX.sym('v');
+    theta_dot = SX.sym('theta_dot');
+    q_dot = vertcat(v, theta_dot);
+
+    x = vertcat(q, q_dot);
+
+    u = SX.sym('u'); % control
 
     % Inertia matrix
-    M = [m1 + m2, m2*link_length*cos(q(2));...
-        m2 *link_length*cos(q(2)),  m2*link_length^2];
+    M = [m1 + m2, m2*link_length*cos(theta);...
+        m2 *link_length*cos(theta),  m2*link_length^2];
     % Coriolis force
-    C = [0, -m2 * link_length*v(2)*sin(q(2));...
+    C = [0, -m2 * link_length*theta_dot*sin(theta);...
         0,   0];
 
     % all forces = Gravity + Control + Coriolis (+Friction)
-    f_all = [0; -m2*g*link_length*sin(x(2))] + [u; 0] - C*v;
+    f_all = [0; -m2*g*link_length*sin(theta)] + [u; 0] - C*q_dot;
 
     if nosnoc
         % switching function c: cart velocity
-        model.c = v(1);
+        model.c = v;
         % Sign matrix % f_1 for c>0, f_2 for c<0
         model.S = [1; -1];
 
         % Dynamics for v > 0
-        f_1 = [v;...
-                inv(M)*(f_all-[F_friction;0])];
+        f_1 = [q_dot;...
+                inv(M)*(f_all-[F_friction; 0])];
         % Dynamics for v<0
-        f_2 = [v;...
-                inv(M)*(f_all+[F_friction;0])];
+        f_2 = [q_dot;...
+                inv(M)*(f_all+[F_friction; 0])];
         model.F = [f_1, f_2];
     else
         sigma = SX.sym('sigma');
         model.p = sigma;
-        model.f_expl_ode = [v; inv(M) * (f_all - [F_friction*tanh(v(1)/ sigma); 0])];
+        model.f_expl_ode = [q_dot; inv(M) * (f_all - [F_friction*tanh(v/ sigma); 0])];
     end
 
     % specify initial and desired state
@@ -80,16 +87,17 @@ function model = get_cart_pole_with_friction_model(nosnoc, F_friction)
     x_ref = [0; 180/180*pi; 0; 0]; % end upwards
 
     % bounds
-    ubx = [5; 240/180*pi; 20; 20];
-    lbx = [-0.0; -240/180*pi; -20; -20];
+    ubx = [5; inf; inf; inf];
+    lbx = [-5; -inf; -inf; -inf];
     u_max = 30;
-    u_ref = 0;
 
     % cost
-    Q = diag([1; 100; 1; 1]);
-    Q_terminal = diag([100; 100; 10; 10]);
+    Q = diag([10; 100; 1; 1]);
     R = 1;
-    model.f_q = (x-x_ref)'*Q*(x-x_ref)+ (u-u_ref)'*R*(u-u_ref);
+    model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
+
+    % terminal cost could be added
+    Q_terminal = diag([500; 100; 10; 10]);
     model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 
     model.lbx = lbx;
