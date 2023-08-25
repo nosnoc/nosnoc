@@ -37,7 +37,7 @@ classdef NosnocProblemOptions < handle
 
         h % Step size
         h_k % Finite element step size
-        T = 1.0 % Terminal time % TODO: why is there also T_val, do we need both?
+        T % Terminal time % TODO: why is there also T_val, do we need both?
 
         % descritization
         N_stages(1,1) {mustBeInteger, mustBePositive} = 1;
@@ -167,6 +167,14 @@ classdef NosnocProblemOptions < handle
             import casadi.*
 
             % time grid
+            if numel(obj.T) ~= 1 && ~obj.time_optimal_problem
+                error('terminal numerical time T must be provided if time_optimal_problem is False.');
+            elseif numel(obj.T) == 0 && ~obj.time_optimal_problem
+                obj.T = 1;
+            elseif numel(obj.T) ~= 1
+                error('terminal time T must be a positive scalar.');
+            end
+
             if ~isempty(obj.N_sim) && ~isempty(obj.T_sim)
                 obj.T = obj.T_sim/obj.N_sim;
                 obj.h_sim = obj.T_sim/(obj.N_sim*obj.N_stages*obj.N_finite_elements);
