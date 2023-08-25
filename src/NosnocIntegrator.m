@@ -55,6 +55,7 @@ classdef NosnocIntegrator < handle
             
             dims = model.dims;
             
+            % TODO: u_sim is for sure broken. Just remove it and only use parameters? Dont need to be more convenient than casadi.
             % check does the provided u_sim has correct dims
             if dims.n_u > 0
                 if ~exist('u_sim','var')
