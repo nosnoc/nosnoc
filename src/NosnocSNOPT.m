@@ -64,7 +64,7 @@ classdef NosnocSNOPT < handle % TODO maybe handle not necessary, revisit.
 
         function failed = check_iteration_failed(obj, stats)
             switch stats.solver_stats(end).return_status
-                case {'Solve_Succeeded', 'Solved_To_Acceptable_Level'}
+                case {'Finished successfully'}
                     failed = false;
                 otherwise
                     failed = true;
@@ -73,8 +73,12 @@ classdef NosnocSNOPT < handle % TODO maybe handle not necessary, revisit.
 
         function timeout = check_timeout(obj, stats)
             switch stats.solver_stats(end).return_status
-                case {'Maximum_WallTime_Exceeded', 'Maximum_CpuTime_Exceeded'}
-                    timeout = 1;
+                case {'Resource limit error'}
+                    if strcmp(stats.solver_stats(end).secondary_return_status, 'time limit reached');
+                        timeout = 1;
+                    else
+                        timeout = 0;
+                    end
                 otherwise
                     timeout = 0;
             end
