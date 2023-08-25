@@ -34,6 +34,7 @@ x_ref = [0; 180/180*pi; 0; 0]; % target position
 
 % Discretization options
 problem_options = NosnocProblemOptions();
+problem_options.T = 5;  % Time horizon
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 3;
 problem_options.dcs_mode = 'Stewart';
@@ -62,4 +63,4 @@ distance_to_target = abs(x_ref-results.x(:,end));
 disp(['final difference to desired angle: ', num2str(distance_to_target(2), '%.3e'), ' rad'])
 
 % visualtize
-plot_cart_pole_trajectory(results, model, x_ref)
+plot_cart_pole_trajectory(results, problem_options.h_k(1), x_ref)

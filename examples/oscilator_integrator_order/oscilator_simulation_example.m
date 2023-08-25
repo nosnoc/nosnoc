@@ -63,8 +63,8 @@ T = T_sim;
 x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
 
 problem_options.N_finite_elements = N_finite_elements;
-model.T_sim = T_sim;
-model.N_sim = N_sim;
+problem_options.T_sim = T_sim;
+problem_options.N_sim = N_sim;
 smooth_model = 0; % if 1, use model without switch for a sanity check
 omega = -2*pi;
 A1 = [1 omega;...
@@ -94,7 +94,7 @@ integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
 %% numerical error
 x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-fprintf(['Numerical error with h = %2.3f and ' char(problem_options.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],model.h_sim,problem_options.n_s,error_x);
+fprintf(['Numerical error with h = %2.3f and ' char(problem_options.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],problem_options.h_sim,problem_options.n_s,error_x);
 %% plot_solution_trajectory
 t_star = R_osc; % eact switching time
 x_res = results.x;

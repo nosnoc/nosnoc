@@ -20,7 +20,7 @@ settings.time_optimal_problem = 1;
 settings.n_s = 2;
 % model data
 settings.N_finite_elements = 3;
-model.T = 1;
+problem_options.T = 1;
 
 %% results
 % time

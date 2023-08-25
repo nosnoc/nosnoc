@@ -43,7 +43,7 @@ settings.pss_lift_step_functions = 1;
 settings.stagewise_clock_constraint = 0;
 
 %% Discretization
-model.T = 2.5;
+problem_options.T = 2.5;
 settings.N_stages = 20;
 settings.n_s = 2;
 settings.N_finite_elements = 3;

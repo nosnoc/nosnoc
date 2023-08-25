@@ -60,8 +60,8 @@ solver_options.comp_tol = 1e-5;
 model = irma_model(switch_on, lifting);
 % Time
 problem_options.N_finite_elements = N_finite_elements;
-model.T_sim = T_sim;
-model.N_sim = N_sim;
+problem_options.T_sim = T_sim;
+problem_options.N_sim = N_sim;
 
 
 integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);

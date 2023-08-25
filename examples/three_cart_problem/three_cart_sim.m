@@ -65,9 +65,9 @@ model.dims.n_dim_contact = 2;
 N_FE = 2;
 T_sim = 3;
 N_sim = 60;
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_FE;
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
 integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
@@ -143,7 +143,7 @@ for ii = 1:length(p1)
     axis equal
     xlim([x_min x_max])
     ylim([-0.75 2.5])
-    pause(model.h_k);
+    pause(problem_options.h_k);
     clf
 end
 

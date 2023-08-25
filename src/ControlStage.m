@@ -153,20 +153,20 @@ classdef ControlStage < NosnocFormulationObject
             end
 
             % least squares cost
-            obj.augmented_objective = obj.augmented_objective + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
-            obj.objective = obj.objective + (model.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.augmented_objective = obj.augmented_objective + (problem_options.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
+            obj.objective = obj.objective + (problem_options.T/problem_options.N_stages)*model.f_lsq_x_fun(obj.stage(end).x{end},model.x_ref_val(:,obj.ctrl_idx), p_stage);
             if dims.n_u > 0
-                obj.augmented_objective = obj.augmented_objective + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
-                obj.objective = obj.objective + (model.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.augmented_objective = obj.augmented_objective + (problem_options.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
+                obj.objective = obj.objective + (problem_options.T/problem_options.N_stages)*model.f_lsq_u_fun(obj.Uk,model.u_ref_val(:,obj.ctrl_idx), p_stage);
             end
             
             % TODO: combine this into a function
             if problem_options.use_fesd && problem_options.equidistant_control_grid
                 if ~problem_options.time_optimal_problem
-                    obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h, 'type', 'stage');
+                    obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h, 'type', 'stage');
                 elseif ~problem_options.time_freezing
                     if problem_options.use_speed_of_time_variables
-                        obj.addConstraint(sum(vertcat(obj.stage.h)) - model.h, 'type', 'stage')
+                        obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h, 'type', 'stage')
                         obj.addConstraint(sum(s_sot*vertcat(obj.stage.h)) - T_final/problem_options.N_stages, 'type', 'stage');
                     else
                         obj.addConstraint(sum(vertcat(obj.stage.h)) - T_final/problem_options.N_stages, 'type', 'stage');
@@ -177,7 +177,7 @@ classdef ControlStage < NosnocFormulationObject
                 if problem_options.time_optimal_problem
                     obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/problem_options.N_stages) + model.x0(end), 'type', 'stage');
                 else
-                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*model.h + model.x0(end), 'type', 'stage');
+                    obj.addConstraint(fe.x{end}(end) - ctrl_idx*problem_options.h + model.x0(end), 'type', 'stage');
                 end
             end
         end

@@ -154,7 +154,7 @@ classdef NosnocMPCC < NosnocFormulationObject
         ind_x_all
     end
 
-    methods        
+    methods
         function obj = NosnocMPCC(problem_options, model)
             import casadi.*
             tic;
@@ -269,7 +269,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                 % the final time in time optimal control problems
                 T_final = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'T_final', 1);
                 obj.T_final = T_final;
-                T_final_guess = model.T;
+                T_final_guess = problem_options.T;
             end
 
             % Add global vars
@@ -303,7 +303,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                 end
                 if problem_options.equidistant_control_grid && ~problem_options.stagewise_clock_constraint
                     if ~problem_options.time_optimal_problem
-                        obj.addConstraint(last_fe.x{end}(end)-model.T, 'type', 'g_mpcc');
+                        obj.addConstraint(last_fe.x{end}(end)-problem_options.T, 'type', 'g_mpcc');
                     end
                 end
             else
@@ -344,7 +344,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                             end
                         end
                         if ~problem_options.time_optimal_problem
-                            obj.addConstraint(sum_h_all-model.T, 0, 0, 'type', 'g_mpcc');
+                            obj.addConstraint(sum_h_all-problem_options.T, 0, 0, 'type', 'g_mpcc');
                         else
                             if ~problem_options.use_speed_of_time_variables
                                 obj.addConstraint(sum_h_all-T_final, 0, 0, 'type', 'g_mpcc');
@@ -362,7 +362,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                                     end
                                 end
                                 % T_num = T_phy = T_final \neq T.
-                                obj.addConstraint(sum_h_all-model.T, 0, 0, 'type', 'g_mpcc');
+                                obj.addConstraint(sum_h_all-problem_options.T, 0, 0, 'type', 'g_mpcc');
                                 obj.addConstraint(integral_clock_state-T_final, 0, 0, 'type', 'g_mpcc');
                             end
                         end
@@ -500,7 +500,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
             obj.g_fun = Function('g_fun', {obj.w, obj.p}, {obj.g});
 
-            obj.p0 = [problem_options.rho_sot; problem_options.rho_h; problem_options.rho_terminal; model.T];
+            obj.p0 = [problem_options.rho_sot; problem_options.rho_h; problem_options.rho_terminal; problem_options.T];
 
             if dims.n_p_global > 0
                 obj.p0 = [obj.p0; model.p_global_val];

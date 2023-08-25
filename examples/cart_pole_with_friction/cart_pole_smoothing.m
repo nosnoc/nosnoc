@@ -36,11 +36,12 @@ model = get_cart_pole_with_friction_model(0, F_friction);
 %%
 n_s = 1;
 N = 30; % number of control intervals
+T = 5; % time horizon
 N_FE = 2; % number of integration steps = Finite elements, without switch detections
 x_ref = [0; 180/180*pi; 0; 0]; % target position
 
 %% NLP formulation & solver creation
-nlp = setup_collocation_nlp(model, n_s, N, N_FE);
+nlp = setup_collocation_nlp(model, T, N, n_s, N_FE);
 casadi_nlp = struct('f', nlp.f, 'x', nlp.w, 'p', nlp.p, 'g', nlp.g);
 solver = nlpsol('solver', 'ipopt', casadi_nlp);
 
@@ -64,12 +65,11 @@ u_opt = w_opt(5:idx_diff:end)';
 
 results = struct();
 results.x = [q1_opt; q2_opt; v1_opt; v2_opt];
-results.t_grid = linspace(0, model.T, N+1);
-results.t_grid_u = linspace(0, model.T, N+1);
+results.t_grid = linspace(0, T, N+1);
+results.t_grid_u = linspace(0, T, N+1);
 results.u = u_opt;
 
-model.h_k = model.T / N;
-plot_cart_pole_trajectory(results, model, x_ref);
+plot_cart_pole_trajectory(results, T/N, x_ref);
 
 %%
 figure;
@@ -109,45 +109,9 @@ xlabel('$\sigma$ smoothing', 'Interpreter', 'latex')
 ylabel('objective', 'Interpreter', 'latex')
 end
 
-function [nlp, idx_x_shooting_nodes] = setup_collocation_nlp(model, n_s, N, N_FE)
+function nlp = setup_collocation_nlp(model, T, N, n_s, N_FE)
     import casadi.*
-    %% collocation using casadi
-    % Get collocation points
-    tau_root = [0 collocation_points(n_s, 'radau')];
-
-    % Coefficients of the collocation equation
-    C = zeros(n_s+1,n_s+1);
-
-    % Coefficients of the continuity equation
-    D = zeros(n_s+1, 1);
-
-    % Coefficients of the quadrature function
-    B = zeros(n_s+1, 1);
-
-    % Construct polynomial basis
-    for j=1:n_s+1
-        % Construct Lagrange polynomials to get the polynomial basis at the collocation point
-        coeff = 1;
-        for r=1:n_s+1
-            if r ~= j
-                coeff = conv(coeff, [1, -tau_root(r)]);
-                coeff = coeff / (tau_root(j)-tau_root(r));
-            end
-        end
-        % Evaluate the polynomial at the final time to get the coefficients of the continuity equation
-        D(j) = polyval(coeff, 1.0);
-
-        % Evaluate the time derivative of the polynomial at all collocation points to get the coefficients of the continuity equation
-        pder = polyder(coeff);
-        for r=1:n_s+1
-            C(j,r) = polyval(pder, tau_root(r));
-        end
-
-        % Evaluate the integral of the polynomial to get the coefficients of the quadrature function
-        pint = polyint(coeff);
-        B(j) = polyval(pint, 1.0);
-    end
-
+    [B, C, D] = generate_collocation_coefficients(n_s);
 
     %% Extract from model
     L = model.f_q;
@@ -159,7 +123,7 @@ function [nlp, idx_x_shooting_nodes] = setup_collocation_nlp(model, n_s, N, N_FE
     f_terminal = Function('f', {model.x,}, {model.f_q_T});
 
     % Control discretization
-    h = model.T/(N*N_FE);
+    h = T/(N*N_FE);
     x0 = model.x0;
 
     %% Casadi NLP formulation
@@ -234,7 +198,6 @@ function [nlp, idx_x_shooting_nodes] = setup_collocation_nlp(model, n_s, N, N_FE
             lbg = [lbg; zeros(n_x,1)];
             ubg = [ubg; zeros(n_x,1)];
         end
-        n_w = length(vertcat(w{:}));
     end
 
     objective = objective + f_terminal(Xk);
@@ -249,4 +212,45 @@ function [nlp, idx_x_shooting_nodes] = setup_collocation_nlp(model, n_s, N, N_FE
     nlp.g = vertcat(g{:});
     nlp.lbg = lbg;
     nlp.ubg = ubg;
+end
+
+
+function [B, C, D] = generate_collocation_coefficients(n_s)
+    import casadi.*
+    %% collocation using casadi
+    % Get collocation points
+    tau_root = [0 collocation_points(n_s, 'radau')];
+
+    % Coefficients of the collocation equation
+    C = zeros(n_s+1,n_s+1);
+
+    % Coefficients of the continuity equation
+    D = zeros(n_s+1, 1);
+
+    % Coefficients of the quadrature function
+    B = zeros(n_s+1, 1);
+
+    % Construct polynomial basis
+    for j=1:n_s+1
+        % Construct Lagrange polynomials to get the polynomial basis at the collocation point
+        coeff = 1;
+        for r=1:n_s+1
+            if r ~= j
+                coeff = conv(coeff, [1, -tau_root(r)]);
+                coeff = coeff / (tau_root(j)-tau_root(r));
+            end
+        end
+        % Evaluate the polynomial at the final time to get the coefficients of the continuity equation
+        D(j) = polyval(coeff, 1.0);
+
+        % Evaluate the time derivative of the polynomial at all collocation points to get the coefficients of the continuity equation
+        pder = polyder(coeff);
+        for r=1:n_s+1
+            C(j,r) = polyval(pder, tau_root(r));
+        end
+
+        % Evaluate the integral of the polynomial to get the coefficients of the quadrature function
+        pint = polyint(coeff);
+        B(j) = polyval(pint, 1.0);
+    end
 end

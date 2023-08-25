@@ -90,7 +90,6 @@ classdef FiniteElement < NosnocFormulationObject
         cross_comp_pairs
         all_comp_pairs
         n_comp_components
-        
 
         ctrl_idx
         fe_idx
@@ -256,7 +255,7 @@ classdef FiniteElement < NosnocFormulationObject
             
             if problem_options.use_fesd
                 h = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['h_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1)]);
-                h_ctrl_stage = model.T/problem_options.N_stages;
+                h_ctrl_stage = problem_options.T/problem_options.N_stages;
                 h0 = h_ctrl_stage / problem_options.N_finite_elements(ctrl_idx);
                 ubh = (1 + problem_options.gamma_h) * h0;
                 lbh = (1 - problem_options.gamma_h) * h0;
@@ -1013,7 +1012,7 @@ classdef FiniteElement < NosnocFormulationObject
             elseif obj.problem_options.time_optimal_problem && ~obj.problem_options.use_speed_of_time_variables
                 h = obj.T_final/(obj.problem_options.N_stages*obj.problem_options.N_finite_elements(obj.ctrl_idx));
             else
-                h = obj.model.T/(obj.problem_options.N_stages*obj.problem_options.N_finite_elements(obj.ctrl_idx));
+                h = obj.problem_options.T/(obj.problem_options.N_stages*obj.problem_options.N_finite_elements(obj.ctrl_idx));
             end
         end
 
@@ -1414,7 +1413,7 @@ classdef FiniteElement < NosnocFormulationObject
 
             % only heuristic mean is done for first finite element
             if problem_options.step_equilibration == StepEquilibrationMode.heuristic_mean
-                h_fe = model.T / (sum(problem_options.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
+                h_fe = problem_options.T / (sum(problem_options.N_finite_elements)); % TODO this may be a bad idea if using different N_fe. may want to issue warning in that case
                 obj.augmented_objective = obj.augmented_objective + rho_h_p * (obj.h - h_fe).^2;
                 return;
             elseif obj.fe_idx <= 1

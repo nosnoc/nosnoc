@@ -71,7 +71,7 @@ T = 6;
 
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;
-model.T = T;
+problem_options.T = T;
 
 %% model parameters
 m1 = 1;
@@ -254,16 +254,16 @@ if play_animation
         axis equal
         xlim([x_min x_max])
         ylim([-0.75 3.5])
-        pause(model.h_k);
+        pause(problem_options.h_k);
 
         frame = getframe(1);
         im = frame2im(frame);
 
         [imind,cm] = rgb2ind(im,256);
         if ii == 1;
-            imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',model.h_k(1));
+            imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',problem_options.h_k(1));
         else
-            imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',model.h_k(1));
+            imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',problem_options.h_k(1));
         end
 
         if ii~=length(p1x)

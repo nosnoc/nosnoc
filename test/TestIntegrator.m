@@ -7,7 +7,7 @@ classdef TestIntegrator < matlab.unittest.TestCase
         irk_scheme = {IRKSchemes.RADAU_IIA,IRKSchemes.GAUSS_LEGENDRE};
         dcs_mode = {'Step','Stewart'};
     end
-    
+
     methods (Test)
     end
     methods (Test, ParameterCombination = 'exhaustive')

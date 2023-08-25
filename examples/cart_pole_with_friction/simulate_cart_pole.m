@@ -24,47 +24,40 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-
-%
-%
 clear all
-clc
-close all
-import casadi.*
-%% model parameters
-e = 0.9; u_max = 9; beta = 0.0; 
-%% NOSNOC settings
-[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
-settings.time_freezing = 1; 
-settings.n_s = 3; 
-settings.mpcc_mode = 'Scholtes_ineq';
-settings.homotopy_update_rule = 'superlinear';
-settings.step_equilibration = 'direct_homotopy';
-q_target = [4;0.5];
+% simple simulation
+F_friction = 2.0;
+model = get_cart_pole_with_friction_model(0, F_friction);
 
-model = NosnocModel();
-problem_options.T = 4; 
-settings.N_stages = 20; 
-settings.N_finite_elements = 3;
-% model equations
-q = SX.sym('q',2);
-v = SX.sym('v',2); 
-u = SX.sym('u',2);
-model.x0 = [0;0.5;0;0];
-model.x = [q;v]; model.u = u; model.e = e ;
-model.f_c = q(2);
-model.f_v = [u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)]; 
-% Objective and constraints
-model.f_q = u'*u; model.f_q_T = 100*v'*v;
-model.g_path = u'*u-u_max^2;
-model.g_terminal = q-[q_target];
-solver = NosnocSolver(model, settings);
-[results,stats] = solver.solve();
-%%
-plot_result_ball(model,settings,results,stats)
-fprintf('Objective values is: %2.4f \n',full(results.f_opt));
-fprintf('Final time is: %2.4f \n',full(results.T_opt));
-if isempty(results.T_opt)
-    results.T_opt = results.t_grid(end);
+Nsim = 30;
+Tsim = 5;
+h = Tsim/Nsim;
+
+%% create casadi integrator
+import casadi.*
+p_integrator = vertcat(model.u, model.p);
+ode = struct('x', model.x, 'p', p_integrator, 'ode', model.f_expl_ode);
+Phi = integrator('F', 'idas', ode, struct('tf', h));
+
+nx = length(model.x);
+% define parameters
+p_val = ones(length(p_integrator), 1);
+p_traj = repmat(p_val, 1, Nsim);
+p_traj(1, Nsim/2:end) = -2;
+
+% x trajectory
+xcurrent = zeros(nx, 1);
+simX = zeros(nx, Nsim+1);
+simX(:, 1) = xcurrent;
+% simulation loop
+for i = 1:Nsim
+    out = Phi('x0', xcurrent, 'p', p_traj(:, i));
+    xcurrent = full(out.xf);
+    simX(:, i+1) = xcurrent;
 end
-[tout,yout,error] = bouncing_ball_sim(results.u_opt,results.T_opt,settings.N_stages,model.x0(1:4),beta,0.9,q_target);
+
+% plot
+t_grid = linspace(0, Tsim, Nsim+1);
+results = struct('x', simX, 't_grid', t_grid, 't_grid_u', t_grid, 'u', p_traj(1, :));
+x_ref = zeros(4, 1);
+plot_cart_pole_trajectory(results, h, x_ref);

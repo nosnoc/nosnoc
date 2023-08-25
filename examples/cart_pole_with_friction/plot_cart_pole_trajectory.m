@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-function plot_cart_pole_trajecetory(results, model, x_ref)
+function plot_cart_pole_trajectory(results, time_step, x_ref)
     link_length = 1;
 
     % extract results
@@ -81,9 +81,9 @@ function plot_cart_pole_trajecetory(results, model, x_ref)
         im = frame2im(frame);
         [imind,cm] = rgb2ind(im,256);
         if ii == 1
-            imwrite(imind,cm,filename,'gif', 'Loopcount', inf,'DelayTime', model.h_k(1));
+            imwrite(imind,cm,filename,'gif', 'Loopcount', inf,'DelayTime', time_step);
         else
-            imwrite(imind,cm,filename,'gif', 'WriteMode', 'append','DelayTime', model.h_k(1));
+            imwrite(imind,cm,filename,'gif', 'WriteMode', 'append','DelayTime', time_step);
         end
 
         if ii<length(q1_opt)
@@ -116,5 +116,4 @@ function plot_cart_pole_trajecetory(results, model, x_ref)
     ylabel('$u(t)$','Interpreter','latex')
     xlabel('$t$','Interpreter','latex')
     grid on
-    xlim([0 model.T])
 end

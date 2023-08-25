@@ -18,7 +18,7 @@ f_12 = 1;
 model.F = [f_11, f_12];
 model.x0 = -1;
 
-model.T = pi/4;
+problem_options.T = pi/4;
 problem_options.N_stages = 1;
 problem_options.N_finite_elements = 2;
 problem_options.cross_comp_mode = 3;

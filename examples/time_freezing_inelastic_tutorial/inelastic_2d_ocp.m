@@ -30,7 +30,7 @@ u = SX.sym('u');
 x = [q;v];
 
 model = NosnocModel();
-model.T = 2;
+problem_options.T = 2;
 settings.N_stages = N_stg;
 settings.N_finite_elements  = N_FE;
 model.x = x;

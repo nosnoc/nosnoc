@@ -10,8 +10,8 @@ settings.n_s = 1;
 settings.N_finite_elements = 2;
 
 % Generate Model
-model.N_sim = 30;
-model.T_sim = 0.2;
+problem_options.N_sim = 30;
+problem_options.T_sim = 0.2;
 model.x0 = -0.1;
 % Variable defintion
 x = SX.sym('x');

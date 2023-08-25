@@ -63,9 +63,9 @@ model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
 N_finite_elements = 3;
 T_sim = 0.6;
 N_sim = 40;
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 problem_options.use_speed_of_time_variables = 0;
@@ -87,7 +87,7 @@ for ii = 1:length(qx)
     yc_res  = [yc_res,qy(ii)-l/2*cos(qtheta(ii))];
 end
 %%
-h = model.h_k;
+h = problem_options.h_k;
 figure
 for ii = 1:length(qx)
     plot([qx(ii)+l/2*sin(qtheta(ii)) xc_res(ii)],[qy(ii)+l/2*cos(qtheta(ii)) yc_res(ii)],'k','LineWidth',1.5)

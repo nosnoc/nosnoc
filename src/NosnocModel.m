@@ -44,12 +44,9 @@ classdef NosnocModel < handle
         S         % Sign matrix
         g_Stewart % Stewart indicator functions
         g_ind
-        
+
         f_q        % Stage cost
         f_q_T      % Terminal cost
-
-        h % Step size
-        h_k % Finite element step size
 
         % least squares
         lsq_x
@@ -76,14 +73,6 @@ classdef NosnocModel < handle
         g_terminal_fun
         g_terminal_lb
         g_terminal_ub
-
-        % Terminal time
-        T = 1.0
-
-        % Sim
-        T_sim
-        N_sim
-        h_sim
 
         %----- DCS/time_freezing mode user input -----
         f_c  % Gap functions
@@ -216,14 +205,14 @@ classdef NosnocModel < handle
             obj.dims = NosnocDimensions();
         end
 
-        function generate_equations(obj, settings)
+        function generate_equations(obj, problem_options)
             if obj.equations_exist
                 return
             end
             import casadi.*
             dims = obj.dims;
-            dcs_mode = settings.dcs_mode;
-            
+            dcs_mode = problem_options.dcs_mode;
+
             %% Model functions of the DCS mode
             % if f_x doesnt exist we generate it from F
             % if it does we are in expert mode. TODO name.
@@ -238,9 +227,9 @@ classdef NosnocModel < handle
                       case 'Step'
                         obj.f_x = obj.f_x + obj.F{ii}*obj.theta_step_sys{ii};
                       case 'CLS'
-                        if ~settings.lift_velocity_state
+                        if ~problem_options.lift_velocity_state
                             if obj.friction_exists
-                                switch settings.friction_model
+                                switch problem_options.friction_model
                                   case 'Conic'
                                     F_v = inv(obj.M)*(obj.f_v+obj.J_normal*obj.lambda_normal+obj.J_tangent*obj.lambda_tangent);
                                   case 'Polyhedral'
@@ -253,7 +242,7 @@ classdef NosnocModel < handle
                         else
                             obj.f_x = [v;obj.z_v];
                             if obj.friction_exists
-                                switch settings.friction_model
+                                switch problem_options.friction_model
                                   case 'Conic'
                                     g_lift_v = obj.M*obj.z_v -(obj.f_v +obj.J_normal*obj.lambda_normal + obj.J_tangent*obj.lambda_tangent);
                                   case 'Polyhedral'
@@ -304,8 +293,8 @@ classdef NosnocModel < handle
                     lambda00_expr = [lambda00_expr; -min(obj.c{ii}, 0); max(obj.c{ii},0)];
                   case 'CLS'
                     % dumy variables for impact quations:
-                    v_post_impact = define_casadi_symbolic(settings.casadi_symbolic_mode,'v_post_impact',dims.n_q);
-                    v_pre_impact = define_casadi_symbolic(settings.casadi_symbolic_mode,'v_pre_impact',dims.n_q);
+                    v_post_impact = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'v_post_impact',dims.n_q);
+                    v_pre_impact = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'v_pre_impact',dims.n_q);
                     g_alg_cls = [g_alg_cls; obj.y_gap - obj.f_c];
                     g_impulse = [g_impulse; obj.M*(v_post_impact-v_pre_impact)-obj.J_normal*obj.Lambda_normal]; % TODO: can this be relaxed? velocity junction
                     g_impulse = [g_impulse; obj.Y_gap-obj.f_c];
@@ -315,7 +304,7 @@ classdef NosnocModel < handle
                         g_impulse = [g_impulse; obj.L_vn(ii) - obj.J_normal(:,ii)'*(v_post_impact+obj.e(ii)*v_pre_impact)];
                     end
                     if obj.friction_exists
-                        switch settings.friction_model
+                        switch problem_options.friction_model
                           case 'Conic'
                             g_impulse(1:dims.n_q) =  obj.M*(v_post_impact-v_pre_impact)-obj.J_normal*obj.Lambda_normal-obj.J_tangent*obj.Lambda_tangent;
                             % algebraic and friction equations
@@ -327,7 +316,7 @@ classdef NosnocModel < handle
                                     -obj.J_tangent(:,ind_temp)'*v_post_impact - 2*obj.Gamma(ii)*obj.Lambda_tangent(ind_temp);...
                                     obj.Beta - ((obj.mu_f(ii)*obj.Lambda_normal(ii))^2- norm(obj.Lambda_tangent(ind_temp))^2)];
 
-                                if ~isequal(settings.conic_model_switch_handling,'Plain')
+                                if ~isequal(problem_options.conic_model_switch_handling,'Plain')
                                     % equality constraints for pos and neg parts of the tangetial velocity
                                     g_alg_cls  = [g_alg_cls;obj.J_tangent(:,ind_temp)'*obj.v-(obj.p_vt(ind_temp)-obj.n_vt(ind_temp))];
                                     g_impulse = [g_impulse;obj.J_tangent(:,ind_temp)'*v_post_impact - (obj.P_vt(ind_temp)-obj.N_vt(ind_temp))];
@@ -351,7 +340,7 @@ classdef NosnocModel < handle
                     obj.f_c_fun = Function('f_c_fun', {obj.x}, {obj.f_c});
                     obj.J_normal_fun = Function('J_normal_fun', {obj.x}, {obj.J_normal});
                     if obj.friction_exists
-                        if isequal(settings.friction_model,'Conic')
+                        if isequal(problem_options.friction_model,'Conic')
                             obj.J_tangent_fun = Function('J_tangent_fun', {obj.x}, {obj.J_tangent});
                         else
                             obj.D_tangent_fun = Function('D_tangent_fun', {obj.x}, {obj.D_tangent});
@@ -429,13 +418,13 @@ classdef NosnocModel < handle
             obj.equations_exist = 1;
         end
         
-        function generate_variables(obj,settings)
+        function generate_variables(obj,problem_options)
             if obj.vars_exist
                 return
             end
             import casadi.*
-            casadi_symbolic_mode = settings.casadi_symbolic_mode;
-            dcs_mode = settings.dcs_mode;
+            casadi_symbolic_mode = problem_options.casadi_symbolic_mode;
+            dcs_mode = problem_options.dcs_mode;
             dims = obj.dims;
 
             g_lift_theta_step = [];
@@ -502,10 +491,10 @@ classdef NosnocModel < handle
                         theta_temp = [];
                         ii_str = num2str(ii);
                         S_temp = obj.S{ii};
-                        if settings.pss_lift_step_functions
+                        if problem_options.pss_lift_step_functions
                             % TODO implement automatic lifting
                         else
-                            if ~settings.time_freezing_inelastic
+                            if ~problem_options.time_freezing_inelastic
                                 for j = 1:size(S_temp,1)
                                     alpha_ij = 1;
                                     for k = 1:size(S_temp,2)
@@ -523,7 +512,7 @@ classdef NosnocModel < handle
                 end
 
                 %% time-freezing inelastic impacts (exploit structure with taiolored formulae)
-                if settings.time_freezing_inelastic
+                if problem_options.time_freezing_inelastic
                     % theta_step are the lifting variables that enter the ODE r.h.s.
                       if any(obj.mu_f > 0)
                         obj.friction_exists = 1;
@@ -531,7 +520,7 @@ classdef NosnocModel < handle
                         obj.friction_exists = 0;
                       end
                       
-                    if ~settings.nonsmooth_switching_fun
+                    if ~problem_options.nonsmooth_switching_fun
                         alpha_q = obj.alpha(1:dims.n_contacts);
                         alpha_v_normal = obj.alpha(dims.n_contacts+1:2*dims.n_contacts);
                         if obj.friction_exists
@@ -558,9 +547,9 @@ classdef NosnocModel < handle
                     beta_prod_expr = [];
                     beta_prod_expr_guess = []; % extra expresion to make depend only on alpha (the one above depens on both and alpha and beta) - needed for eval. of inital guess
 
-                    if settings.pss_lift_step_functions
+                    if problem_options.pss_lift_step_functions
                         % lift bilinear terms in product terms for free flight ode % (alpha_q*alpha_v)
-                        if ~settings.nonsmooth_switching_fun
+                        if ~problem_options.nonsmooth_switching_fun
                             beta_bilinear_ode = define_casadi_symbolic(casadi_symbolic_mode,'beta_bilinear_ode',dims.n_contacts);
                             beta_bilinear_ode_expr = eval([casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) ',1);']);
                             if obj.friction_exists
@@ -581,9 +570,9 @@ classdef NosnocModel < handle
                     % expresions for theta's and lifting
                     %% Filippov multipliers
                     alpha_ode = 1; % initalized product for free flight multiplier
-                    if ~settings.pss_lift_step_functions
+                    if ~problem_options.pss_lift_step_functions
                         for ii = 1:dims.n_contacts
-                            if settings.nonsmooth_switching_fun
+                            if problem_options.nonsmooth_switching_fun
                                 alpha_ode = alpha_ode*alpha_qv(ii);
                                 if obj.friction_exists
                                     theta_step_expr(ii+1) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
@@ -604,7 +593,7 @@ classdef NosnocModel < handle
                         theta_step_expr(1) = alpha_ode;
                     else
                         % lift and have bilinear terms
-                        if settings.nonsmooth_switching_fun
+                        if problem_options.nonsmooth_switching_fun
                             if dims.n_contacts <= 2
                                 for ii = 1:dims.n_contacts
                                     alpha_ode = alpha_ode*alpha_qv(ii);
@@ -689,7 +678,7 @@ classdef NosnocModel < handle
                     obj.lambda_tangent = define_casadi_symbolic(casadi_symbolic_mode,'lambda_tangent',dims.n_tangents);
                     % Impulse varaibles
                     obj.Lambda_tangent = define_casadi_symbolic(casadi_symbolic_mode,'Lambda_tangent',dims.n_tangents);
-                    if isequal(settings.friction_model,'Polyhedral')
+                    if isequal(problem_options.friction_model,'Polyhedral')
                         obj.gamma_d = define_casadi_symbolic(casadi_symbolic_mode,'gamma_d',dims.n_contacts);
                         obj.beta_d = define_casadi_symbolic(casadi_symbolic_mode,'beta_d',dims.n_contacts); % lift friction cone bound
                         obj.delta_d = define_casadi_symbolic(casadi_symbolic_mode,'delta_d',dims.n_tangents); % lift lagrangian
@@ -698,13 +687,13 @@ classdef NosnocModel < handle
                         obj.Beta_d = define_casadi_symbolic(casadi_symbolic_mode,'Beta_d',dims.n_contacts); % lift friction cone bound
                         obj.Delta_d = define_casadi_symbolic(casadi_symbolic_mode,'Delta_d',dims.n_tangents); % lift lagrangian
                     end
-                    if isequal(settings.friction_model,'Conic')
+                    if isequal(problem_options.friction_model,'Conic')
                         obj.gamma = define_casadi_symbolic(casadi_symbolic_mode,'gamma',dims.n_contacts);
                         obj.beta = define_casadi_symbolic(casadi_symbolic_mode,'beta',dims.n_contacts);
                         % Impulse variables;
                         obj.Gamma = define_casadi_symbolic(casadi_symbolic_mode,'Gamma',dims.n_contacts);
                         obj.Beta = define_casadi_symbolic(casadi_symbolic_mode,'Beta',dims.n_contacts);
-                        switch settings.conic_model_switch_handling
+                        switch problem_options.conic_model_switch_handling
                           case 'Plain'
                             % no extra constraints
                           case 'Abs'
@@ -749,18 +738,18 @@ classdef NosnocModel < handle
                     % Impulse
                     obj.z_impulse = [obj.z_impulse;obj.Lambda_tangent]; % only for dcs_mode = cls, note that they are evaluated only at left boundary point of at FE
                     % friction aux multipliers
-                    if isequal(settings.friction_model,'Polyhedral')
+                    if isequal(problem_options.friction_model,'Polyhedral')
                         % polyhedral friction model algebaric variables
                         obj.z_all = [obj.z_all;obj.gamma_d;obj.beta_d;obj.delta_d];
                         % Polyhedral friction - collect impulse variables
                         obj.z_impulse = [obj.z_impulse;obj.Gamma_d;obj.Beta_d;obj.Delta_d];
                     end
-                    if isequal(settings.friction_model,'Conic')
+                    if isequal(problem_options.friction_model,'Conic')
                         % conic friction model algebaric variables
                         obj.z_all = [obj.z_all;obj.gamma;obj.beta];
                         % Conic impulse
                         obj.z_impulse = [obj.z_impulse;obj.Gamma;obj.Beta];
-                        switch settings.conic_model_switch_handling
+                        switch problem_options.conic_model_switch_handling
                           case 'Plain'
                             % no extra constraints
                           case 'Abs'
@@ -774,7 +763,7 @@ classdef NosnocModel < handle
                         end
                     end
                 end
-                if settings.lift_velocity_state
+                if problem_options.lift_velocity_state
                     obj.z_v = define_casadi_symbolic(casadi_symbolic_mode,['z_v'],dims.n_q);
                     obj.z_all = [obj.z_all;obj.z_v];
                 end
@@ -784,26 +773,14 @@ classdef NosnocModel < handle
 
             obj.vars_exist = 1;
         end
-        
-        function verify_and_backfill(obj, settings)
+
+        function verify_and_backfill(obj, problem_options)
             import casadi.*
-            if settings.time_freezing
-                obj.time_freezing(settings);
+            if problem_options.time_freezing
+                obj.time_freezing(problem_options);
             end
             dims = obj.dims;
 
-            if ~isempty(obj.N_sim) && ~isempty(obj.T_sim)
-                obj.T = obj.T_sim/obj.N_sim;
-                obj.h_sim = obj.T_sim/(obj.N_sim*settings.N_stages*settings.N_finite_elements);
-                if settings.print_level >= 2 && exist("h_sim")
-                    fprintf('Info: N_sim is given, so the h_sim provided by the user is overwritten.\n')
-                end
-            elseif ~isempty(obj.N_sim) || ~isempty(obj.T_sim)
-                error('Provide both N_sim and T_sim for the integration.')
-            end
-            obj.h = obj.T/settings.N_stages;
-            obj.h_k = obj.h./settings.N_finite_elements;
-            
             if size(obj.x, 1) ~= 0
                 dims.n_x = length(obj.x);
                 % check  lbx
@@ -825,7 +802,7 @@ classdef NosnocModel < handle
             else
                 error('nosnoc: Please provide the state vector x, a CasADi symbolic variable.');
             end
-            settings.casadi_symbolic_mode = ['casadi.' obj.x(1).type_name()];
+            problem_options.casadi_symbolic_mode = ['casadi.' obj.x(1).type_name()];
 
             %% Check is u provided
             if size(obj.u, 1) ~= 0
@@ -855,10 +832,10 @@ classdef NosnocModel < handle
                     obj.u0 = 0*ones(dims.n_u,1);
                 end
             else
-                obj.u = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
+                obj.u = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'',0);
                 obj.u0 = [];
                 dims.n_u = 0;
-                if settings.print_level >=1
+                if problem_options.print_level >=1
                     fprintf('nosnoc: No control vector u is provided. \n')
                 end
                 obj.lbu = [];
@@ -896,7 +873,7 @@ classdef NosnocModel < handle
                 obj.z0 = [];
                 obj.lbz = [];
                 obj.ubz = [];
-                obj.z = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
+                obj.z = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'',0);
             end
             %% Global vars (i.e., variables that do not change with time)
             if size(obj.v_global, 1) ~= 0
@@ -926,7 +903,7 @@ classdef NosnocModel < handle
                 end
             else
                 n_v_global = 0;
-                obj.v_global = define_casadi_symbolic(settings.casadi_symbolic_mode, '', 0);
+                obj.v_global = define_casadi_symbolic(problem_options.casadi_symbolic_mode, '', 0);
                 obj.v0_global = [];
                 obj.lbv_global = [];
                 obj.ubv_global = [];
@@ -944,48 +921,42 @@ classdef NosnocModel < handle
                 end
             else
                 dims.n_p_global = 0;
-                obj.p_global = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
+                obj.p_global = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'',0);
                 obj.p_global_val = [];
             end
 
             if size(obj.p_time_var, 1) ~= 0
                 dims.n_p_time_var = size(obj.p_time_var, 1);
                 if size(obj.p_time_var_val, 1) ~= 0
-                    if size(obj.p_time_var_val) ~= [dims.n_p_time_var, settings.N_stages]
+                    if size(obj.p_time_var_val) ~= [dims.n_p_time_var, problem_options.N_stages]
                         error('nosnoc: User provided p_global_val has the wrong size.')
                     end
                 else
-                    obj.p_time_var_val = zeros(dims.n_p_time_var, settings.N_stages);
+                    obj.p_time_var_val = zeros(dims.n_p_time_var, problem_options.N_stages);
                 end
 
                 obj.p_time_var_stages = [];
-                for ii=1:settings.N_stages
-                    var_full = define_casadi_symbolic(settings.casadi_symbolic_mode, ['p_time_var_' num2str(ii)], dims.n_p_time_var);
+                for ii=1:problem_options.N_stages
+                    var_full = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['p_time_var_' num2str(ii)], dims.n_p_time_var);
                     obj.p_time_var_stages = horzcat(obj.p_time_var_stages, var_full);
                 end
             else
                 dims.n_p_time_var = 0;
-                obj.p_time_var = define_casadi_symbolic(settings.casadi_symbolic_mode,'',0);
-                obj.p_time_var_stages = define_casadi_symbolic(settings.casadi_symbolic_mode,'', [0, settings.N_stages]);
-                obj.p_time_var_val = double.empty(0,settings.N_stages);
+                obj.p_time_var = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'',0);
+                obj.p_time_var_stages = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'', [0, problem_options.N_stages]);
+                obj.p_time_var_val = double.empty(0,problem_options.N_stages);
             end
 
             obj.p = vertcat(obj.p_global,obj.p_time_var);
 
             %% Stage and terminal costs check
             if ~size(obj.f_q, 1) ~= 0
-                if settings.print_level >=1
-                    fprintf('nosnoc: No stage cost is provided. \n')
-                end
                 obj.f_q = 0;
             end
 
             if size(obj.f_q_T, 1) ~= 0
                 terminal_cost = 1;
             else
-                if settings.print_level >=1
-                    fprintf('nosnoc: No terminal cost is provided. \n')
-                end
                 obj.f_q_T = 0;
             end
             %% Least squares objective terms with variables references
@@ -1002,23 +973,23 @@ classdef NosnocModel < handle
 
                 n_x_ref_rows = size(obj.lsq_x{2},1);
                 n_x_ref_cols = size(obj.lsq_x{2},2);
-                if n_x_ref_cols == settings.N_stages
+                if n_x_ref_cols == problem_options.N_stages
                     fprintf('nosnoc: the provided reference for the differential states is time variable. \n');
                 elseif n_x_ref_cols == 1
                     % replaciate
                     fprintf('nosnoc: the provided reference for the differential states is constant over time. \n');
-                    obj.lsq_x{2} = repmat(obj.lsq_x{2},1,settings.N_stages);
+                    obj.lsq_x{2} = repmat(obj.lsq_x{2},1,problem_options.N_stages);
                 else
-                    fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,settings.N_stages)
+                    fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time vriables. \n',1,problem_options.N_stages)
                     error('nosnoc: Please provide x_ref in lsq_x{1} with an appropriate size.')
                 end
                 obj.x_ref_val = obj.lsq_x{2};
-                obj.x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',n_x_ref_rows);
+                obj.x_ref = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'x_ref',n_x_ref_rows);
                 obj.f_lsq_x = (obj.lsq_x{1}-obj.x_ref)'*obj.lsq_x{3}*(obj.lsq_x{1}-obj.x_ref);
             else
-                obj.x_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref',1);
+                obj.x_ref = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'x_ref',1);
                 obj.f_lsq_x = 0;
-                obj.x_ref_val = zeros(1,settings.N_stages);
+                obj.x_ref_val = zeros(1,problem_options.N_stages);
             end
 
             % least square terms for control inputs
@@ -1034,23 +1005,23 @@ classdef NosnocModel < handle
                 end
                 n_u_ref_rows = size(obj.lsq_u{2},1);
                 n_u_ref_cols = size(obj.lsq_u{2},2);
-                if n_u_ref_cols == settings.N_stages
+                if n_u_ref_cols == problem_options.N_stages
                     fprintf('nosnoc: the provided reference for the control inputs is time variable. \n');
                 elseif n_u_ref_cols == 1
                     % replaciate
                     fprintf('nosnoc: the provided reference for the control inputs is constant over time. \n');
-                    obj.lsq_u{2} = repmat(obj.lsq_u{2},1,settings.N_stages);
+                    obj.lsq_u{2} = repmat(obj.lsq_u{2},1,problem_options.N_stages);
                 else
-                    fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,settings.N_stages)
+                    fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time vriables. \n',1,problem_options.N_stages)
                     error('nosnoc: Please provide u_ref in lsq_u{2} with an appropriate size.')
                 end
                 obj.u_ref_val = obj.lsq_u{2};
-                obj.u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',n_u_ref_rows);
+                obj.u_ref = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'u_ref',n_u_ref_rows);
                 obj.f_lsq_u = (obj.lsq_u{1}-obj.u_ref)'*obj.lsq_u{3}*(obj.lsq_u{1}-obj.u_ref);
             else
-                obj.u_ref = define_casadi_symbolic(settings.casadi_symbolic_mode,'u_ref',1);
+                obj.u_ref = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'u_ref',1);
                 obj.f_lsq_u = 0;
-                obj.u_ref_val = zeros(1,settings.N_stages);
+                obj.u_ref_val = zeros(1,problem_options.N_stages);
             end
 
 
@@ -1076,10 +1047,10 @@ classdef NosnocModel < handle
                     error('nosnoc: Please provide a reference vector in lsq_T{2} with an appropriate size.')
                 end
                 obj.x_ref_end_val = obj.lsq_T{2};
-                obj.x_ref_end = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
+                obj.x_ref_end = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
                 obj.f_lsq_T = (obj.lsq_T{1}-obj.x_ref_end)'*obj.lsq_T{3}*(obj.lsq_T{1}-obj.x_ref_end);
             else
-                obj.x_ref_end  = define_casadi_symbolic(settings.casadi_symbolic_mode,'x_ref_end',1);
+                obj.x_ref_end  = define_casadi_symbolic(problem_options.casadi_symbolic_mode,'x_ref_end',1);
                 obj.f_lsq_T = 0;
                 obj.x_ref_end_val = 0;
             end
@@ -1144,7 +1115,7 @@ classdef NosnocModel < handle
             c_all = [];
             obj.friction_exists = 0;
 
-            if isequal(settings.dcs_mode,'CLS')
+            if isequal(problem_options.dcs_mode,'CLS')
                 % TODO: there is some repetition to the time_freezing check, this should be unified!!!!
                 % Check existence of relevant functions
                 dims.n_sys = 1; % always one subystem in CLS (only loops over n_contacts later)
@@ -1239,7 +1210,7 @@ classdef NosnocModel < handle
 
                 % Tangent Contact Jacobian
                 if obj.friction_exists
-                    if isequal(settings.friction_model,'Conic')
+                    if isequal(problem_options.friction_model,'Conic')
                         if size(obj.J_tangent, 1) ~= 0
                             if size(obj.J_tangent,1)~=dims.n_q
                                 error('nosnoc: J_tangent has the wrong size.')
@@ -1249,7 +1220,7 @@ classdef NosnocModel < handle
                         end
                     end
 
-                    if isequal(settings.friction_model,'Polyhedral')
+                    if isequal(problem_options.friction_model,'Polyhedral')
                         if isempty(obj.D_tangent)
                             error('nosnoc: please provide the polyhedral tangent Jacobian in model.D_tangent, e.g., using the conic tangent Jacobian model.J_tangent: D_tangent = [J_tangent(q_0),-J_tangent(q_0)].')
                         end
@@ -1258,9 +1229,9 @@ classdef NosnocModel < handle
                 % Dimension of tangents
                 dims.n_t = 0;
                 if obj.friction_exists
-                    if isequal(settings.friction_model,'Polyhedral')
+                    if isequal(problem_options.friction_model,'Polyhedral')
                         dims.n_t = size(obj.D_tangent,2)/dims.n_contacts; % number of tanget multipliers for a single contactl
-                    elseif isequal(settings.friction_model,'Conic')
+                    elseif isequal(problem_options.friction_model,'Conic')
                         dims.n_t = size(obj.J_tangent,2)/dims.n_contacts; % number of tanget multipliers for a single contactl
                     end
                     dims.n_tangents = dims.n_t*dims.n_contacts; % number tangent forces for all multpliers
@@ -1269,7 +1240,7 @@ classdef NosnocModel < handle
                 end
             end
 
-            if isequal(settings.dcs_mode,'Step') || isequal(settings.dcs_mode,'Stewart')
+            if isequal(problem_options.dcs_mode,'Step') || isequal(problem_options.dcs_mode,'Stewart')
                 if isempty(obj.F)
                     % Don't need F
                     if ~obj.general_inclusion
@@ -1293,7 +1264,7 @@ classdef NosnocModel < handle
                     if ~obj.general_inclusion
                         % if the matrix S is not provided, maybe the g_ind are available
                         % directly?
-                        if isequal(settings.dcs_mode,'Stewart')
+                        if isequal(problem_options.dcs_mode,'Stewart')
                             if ~isempty(obj.g_ind)
                                 if ~iscell(obj.g_ind)
                                     obj.g_ind = {obj.g_ind};
@@ -1302,15 +1273,15 @@ classdef NosnocModel < handle
                                 for ii = 1:dims.n_sys
                                     % discriminant functions
                                     obj.g_Stewart{ii} = obj.g_ind{ii};
-                                    obj.c{ii} = zeros(1,settings.casadi_symbolic_mode);
-                                    c_all = [c_all; zeros(1,settings.casadi_symbolic_mode)];
+                                    obj.c{ii} = zeros(1,problem_options.casadi_symbolic_mode);
+                                    c_all = [c_all; zeros(1,problem_options.casadi_symbolic_mode)];
                                 end
                             else
                                 error(['nosnoc: Neither the sign matrix S nor the indicator functions g_ind for regions are provided. ' ...
                                         'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
                             end
                         else
-                            error(['nosnoc: The user uses settings.dcs_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
+                            error(['nosnoc: The user uses problem_options.dcs_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
                         end
                     else
                         if isempty(obj.c)
@@ -1351,13 +1322,13 @@ classdef NosnocModel < handle
                     end
 
                     % check are the matrices dense
-                    if isequal(settings.dcs_mode,'Stewart')
+                    if isequal(problem_options.dcs_mode,'Stewart')
                         for ii = 1:dims.n_sys
                             if any(sum(abs(obj.S{ii}),2)<size(obj.S{ii},2))
                                 if dims.n_sys == 1
-                                    error('nosnoc: The matrix S is not dense. Either provide a dense matrix or use settings.mode = ''Step''.');
+                                    error('nosnoc: The matrix S is not dense. Either provide a dense matrix or use problem_options.mode = ''Step''.');
                                 else
-                                    error(['The matrix S{' num2str(ii) '} of the provided matrices is not dense. Either provide all dense matrices or use settings.mode = ''Step''.']);
+                                    error(['The matrix S{' num2str(ii) '} of the provided matrices is not dense. Either provide all dense matrices or use problem_options.mode = ''Step''.']);
                                 end
                             end
                         end
@@ -1369,7 +1340,7 @@ classdef NosnocModel < handle
                         end
 
                         % discrimnant functions
-                        switch settings.dcs_mode
+                        switch problem_options.dcs_mode
                             case 'Stewart'
                                 % Create Stewart's indicator functions g_ind_ii
                                 obj.g_Stewart{ii} = -obj.S{ii}*obj.c{ii};
@@ -1388,10 +1359,10 @@ classdef NosnocModel < handle
                     dims.n_c_sys = 0;
                 end
 
-                if max(dims.n_c_sys) < 2 && isequal(settings.dcs_mode,'Step')
+                if max(dims.n_c_sys) < 2 && isequal(problem_options.dcs_mode,'Step')
                     pss_lift_step_functions = 0;
-                    if settings.print_level >=1
-                        fprintf('nosnoc: settings.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
+                    if problem_options.print_level >=1
+                        fprintf('nosnoc: problem_options.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
                     end
                 end
 
@@ -1403,10 +1374,10 @@ classdef NosnocModel < handle
             end
 
             % populate dims
-            obj.dims.n_s = settings.n_s;
+            obj.dims.n_s = problem_options.n_s;
         end
 
-        function time_freezing(obj,settings)
+        function time_freezing(obj,problem_options)
             import casadi.*
             dims = obj.dims;
             if ~isempty(obj.F)
@@ -1546,7 +1517,7 @@ classdef NosnocModel < handle
 
                 % qudrature state
                 dims.n_quad  = 0;
-                if settings.time_freezing_quadrature_state
+                if problem_options.time_freezing_quadrature_state
                     % define quadrature state
                     L = define_casadi_symbolic(casadi_symbolic_mode,'L',1);
                     if ~isempty(obj.lbx)
@@ -1606,11 +1577,11 @@ classdef NosnocModel < handle
                 end
                 %% Time-freezing reformulation
                 if obj.e == 0
-                    % Basic settings
-                    settings.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
-                    settings.dcs_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
+                    % Basic problem_options
+                    problem_options.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
+                    problem_options.dcs_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
                     %% switching function
-                    if settings.nonsmooth_switching_fun
+                    if problem_options.nonsmooth_switching_fun
                         obj.c = [max_smooth_fun(obj.f_c,v_normal,0);v_tangent];
                     else
                         if dims.n_dim_contact == 2
@@ -1637,8 +1608,8 @@ classdef NosnocModel < handle
                     f_aux_pos = []; % matrix wit all aux tan dyn
                     f_aux_neg = [];
                     % time freezing dynamics
-                    if settings.stabilizing_q_dynamics
-                        f_q_dynamics = -settings.kappa_stabilizing_q_dynamics*obj.J_normal*diag(obj.f_c);
+                    if problem_options.stabilizing_q_dynamics
+                        f_q_dynamics = -problem_options.kappa_stabilizing_q_dynamics*obj.J_normal*diag(obj.f_c);
                     else
                         f_q_dynamics = zeros(dims.n_q,dims.n_contacts);
                     end
@@ -1680,7 +1651,7 @@ classdef NosnocModel < handle
                     dcs_mode = 'Step';
                     if isempty(obj.k_aux)
                         obj.k_aux = 10;
-                        if settings.print_level > 1
+                        if problem_options.print_level > 1
                             fprintf('nosnoc: Setting default value for k_aux = 10.\n')
                         end
                     end

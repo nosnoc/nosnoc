@@ -37,7 +37,7 @@ else
     v0 = [];
 end
 model.x0 = [2*pi/3;pi/3;v0];
-model.T = 4;
+problem_options.T = 4;
 settings.N_stages = 6;
 settings.N_finite_elements = N_finite_elements;
 % Variable defintion
@@ -141,8 +141,8 @@ if estimate_terminal_error
     x_target = [-pi/6;-pi/3];
 
     if ~use_matlab_integrator
-        model.T_sim = 4/6;
-        model.N_sim = 32;
+        problem_options.T_sim = 4/6;
+        problem_options.N_sim = 32;
         settings.N_stages = 1;
         settings.N_finite_elements = 2;
         model.g_terminal = [];

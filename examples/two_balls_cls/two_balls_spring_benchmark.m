@@ -56,9 +56,9 @@ for irk_scheme = IRK_SCHEMES
                     solver_options.opts_casadi_nlp.ipopt.max_iter = 1500;
                     solver_options.use_previous_solution_as_initial_guess  = 1;
                     %% Simulation settings
-                    model.T_sim = T_sim;
+                    problem_options.T_sim = T_sim;
                     problem_options.N_finite_elements = N_FE;
-                    model.N_sim = N_sim;
+                    problem_options.N_sim = N_sim;
 
                     %% Call nosnoc Integrator
                     initial_guess = struct();

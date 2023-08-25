@@ -53,7 +53,7 @@ problem_options.pss_lift_step_functions = 0;
 problem_options.stagewise_clock_constraint = 1;
 
 %% Discretization
-model.T = 3.0;
+problem_options.T = 3.0;
 problem_options.N_stages = 50;
 problem_options.N_finite_elements = 3;
 
@@ -229,12 +229,12 @@ u_ref = [0;0];
 R = 1e-1*eye(2);
 
 % Generate reference trajectory
-x_mid = [q_target(1)/2; 0.6;0;0;q_target(1)/model.T;0;0;0];
-%x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/model.T;0;0;0];
-%x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/model.T;0;0;0];
+x_mid = [q_target(1)/2; 0.6;0;0;q_target(1)/problem_options.T;0;0;0];
+%x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/problem_options.T;0;0;0];
+%x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0];
 
 % accorbatic refference
-% x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/model.T;0;0;0];
+% x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/problem_options.T;0;0;0];
 x_target = [q_target;zeros(4,1)];
 x_ref = interp1([0 0.5 1],[model.x0,x_mid,x_target]',linspace(0,1,problem_options.N_stages),'spline')'; %spline
 

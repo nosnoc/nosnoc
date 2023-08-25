@@ -48,7 +48,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
 
     %% Discretization
     T = 3.0;
-    model.T = 3.0;
+    problem_options.T = 3.0;
     problem_options.N_stages = N_stages;
     problem_options.N_finite_elements = 3;
 
@@ -224,7 +224,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/T;0;0;0;3*T/4];
 
     % accorbatic refference
-    % x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/model.T;0;0;0];
+    % x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/problem_options.T;0;0;0];
     x_target = [q_target;zeros(4,1)];
     x_ref = interp1([0 0.25 0.5 0.75 1],[[model.x0;0],x_mid_1,x_mid_2,x_mid_3,[x_target;T]]',linspace(0,1,problem_options.N_stages),'spline')'; %spline
 

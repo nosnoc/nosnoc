@@ -36,9 +36,9 @@ model.f_c = [q(1);q(2)];
 N_FE = 3;
 T_sim = 1.5;
 N_sim = 40;
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 settings.N_finite_elements = N_FE;
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
 [results,stats,solver] = integrator_fesd(model,settings);

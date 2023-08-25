@@ -97,8 +97,8 @@ for i = 1:length(n_s_vec)
         
         
         % update step size
-        model.T_sim = T_sim;
-        model.N_sim = N_sim;
+        problem_options.T_sim = T_sim;
+        problem_options.N_sim = N_sim;
         % generate new model with updated settings;
         model = oscilator(model);
         [results,stats,solver] = integrator_fesd(model,settings);

@@ -48,9 +48,9 @@ model.D_tangent = [1,-1;0,0];
 N_FE = 2;
 T_sim = 1.7;
 N_sim = 10;
-model.T_sim = T_sim;
+problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_FE;
-model.N_sim = N_sim;
+problem_options.N_sim = N_sim;
 
 %% Call nosnoc Integrator
 integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);

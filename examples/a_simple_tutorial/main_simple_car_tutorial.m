@@ -17,7 +17,7 @@ problem_options.time_optimal_problem = 1;
 model = NosnocModel();
 problem_options.N_stages = 10; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
-model.T = 1;    % Time horizon
+problem_options.T = 1;    % Time horizon
 % Symbolic variables and bounds
 q = SX.sym('q'); v = SX.sym('v'); 
 model.x = [q;v]; % add all important data to the struct model,

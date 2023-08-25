@@ -50,7 +50,7 @@ settings.time_optimal_problem = 1;
 % Discretization parameters
 settings.N_stages = 10; % number of control intervals
 settings.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
-model.T = 1;    % Time horizon
+problem_options.T = 1;    % Time horizon
 
 % Symbolic variables and bounds
 q = SX.sym('q'); % position
@@ -81,7 +81,7 @@ model.S = [-1;1];
 
 % Objective
 if ~settings.time_optimal_problem
-    % note that if q_goal is increased, model.T should be increased as
+    % note that if q_goal is increased, problem_options.T should be increased as
     % otherwise the problem might become infeasible
     % for time optimal problems we do not have to provide an objective
     model.f_q = u^2;

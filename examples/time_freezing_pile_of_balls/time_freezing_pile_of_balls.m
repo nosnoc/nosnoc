@@ -27,8 +27,8 @@ problem_options.pss_lift_step_functions = 0;
 solver_options.break_simulation_if_infeasible = 0;
 %% integrator settings
 model = NosnocModel();
-model.T_sim = T_sim;
-model.N_sim = N_sim;
+problem_options.T_sim = T_sim;
+problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_finite_elements;
 solver_options.use_previous_solution_as_initial_guess = 1;
 

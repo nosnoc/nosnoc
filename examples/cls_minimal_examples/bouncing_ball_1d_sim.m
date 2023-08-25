@@ -39,8 +39,8 @@ N_FE = 2;
 T_sim = 3;
 N_sim = 10;
 
-model.T_sim = T_sim;
-model.N_sim = N_sim;
+problem_options.T_sim = T_sim;
+problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_FE;
 
 %% Analytic solution

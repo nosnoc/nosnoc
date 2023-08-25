@@ -25,11 +25,19 @@
 
 % This file is part of NOSNOC.
 classdef NosnocProblemOptions < handle
-% TODO clean up much of the work here.
     properties
         % General
         use_fesd(1,1) logical = 1
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
+
+        % In case of simulation problem
+        T_sim
+        N_sim
+        h_sim
+
+        h % Step size
+        h_k % Finite element step size
+        T % Terminal time % TODO: why is there also T_val, do we need both?
 
         % descritization
         N_stages(1,1) {mustBeInteger, mustBePositive} = 1;
@@ -75,9 +83,9 @@ classdef NosnocProblemOptions < handle
         time_optimal_problem(1,1) = 0
 
         % Step equilibration
-        rho_h(1,1) double {mustBeReal, mustBePositive} = 1
+        rho_h(1,1) double {mustBePositive} = 1
         step_equilibration(1,1) StepEquilibrationMode = StepEquilibrationMode.heuristic_mean % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
-        step_equilibration_sigma(1,1) double {mustBeReal, mustBePositive} = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
+        step_equilibration_sigma(1,1) double {mustBePositive} = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
 
         % Multiple shooting type discretization
         equidistant_control_grid(1,1) logical = 1
@@ -90,13 +98,13 @@ classdef NosnocProblemOptions < handle
         local_speed_of_time_variable(1,1) logical = 0
         stagewise_clock_constraint(1,1) logical = 1
         impose_terminal_phyisical_time(1,1) logical = 1
-        s_sot0(1,1) double {mustBeReal, mustBePositive} = 1
-        s_sot_max(1,1) double {mustBeReal, mustBePositive} = 25
-        s_sot_min(1,1) double {mustBeReal, mustBePositive} = 1
-        S_sot_nominal(1,1) double {mustBeReal, mustBePositive} = 1
+        s_sot0(1,1) double {mustBePositive} = 1
+        s_sot_max(1,1) double {mustBePositive} = 25
+        s_sot_min(1,1) double {mustBePositive} = 1
+        S_sot_nominal(1,1) double {mustBePositive} = 1
         rho_sot(1,1) double {mustBeReal, mustBeNonnegative} = 0
 
-        T_final_max(1,1) double {mustBeReal, mustBePositive} = 1e2
+        T_final_max(1,1) double {mustBePositive} = 1e2
         T_final_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
         time_freezing_reduced_model(1,1) logical = 0 % analytic reduction of lifter formulation, less algebraic variables (experimental)
         time_freezing_hysteresis(1,1) logical = 0 % do not do automatic time freezing generation for hysteresis, it is not supported yet.
@@ -109,7 +117,7 @@ classdef NosnocProblemOptions < handle
         nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
         % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
         stabilizing_q_dynamics(1,1) logical = 0
-        kappa_stabilizing_q_dynamics(1,1) double {mustBeReal, mustBePositive} = 1e-5
+        kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5
         % Verbose
         print_level = 3
 
@@ -124,14 +132,14 @@ classdef NosnocProblemOptions < handle
         % Relaxation of terminal constraint
         relax_terminal_constraint(1,1) {mustBeInteger, mustBeInRange(relax_terminal_constraint, 0, 3)} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
         relax_terminal_constraint_from_above(1,1) logical = 0
-        rho_terminal(1,1) double {mustBeReal, mustBePositive} = 1e2
+        rho_terminal(1,1) double {mustBePositive} = 1e2
         relax_terminal_constraint_homotopy(1,1) logical = 0 % terminal penalty is governed by homotopy parameter
 
         % Experimental:
         no_initial_impacts(1,1) logical = 0
 
         % All MPCC parameters
-        T_val(1,1) double {mustBeReal, mustBePositive} = 1
+        T_val(1,1) double {mustBePositive} = 1
         p_val
 
         % Butcher Tableu
@@ -142,21 +150,43 @@ classdef NosnocProblemOptions < handle
         D_irk double
         c_irk double
 
-        right_boundary_point_explicit(1,1) logical % TODO this shoud live in model probably
+        right_boundary_point_explicit(1,1) logical
     end
 
     properties(Dependent)
-        time_rescaling 
+        time_rescaling
     end
 
     methods
         function obj = NosnocProblemOptions()
 
-            obj.p_val = [obj.rho_sot,obj.rho_h,obj.rho_terminal,obj.T_val];
+            obj.p_val = [obj.rho_sot, obj.rho_h, obj.rho_terminal, obj.T_val];
         end
 
         function [] = preprocess(obj)
             import casadi.*
+
+            % time grid
+            % TODO: merge T_sim and T?
+            if ~isempty(obj.N_sim) && ~isempty(obj.T_sim)
+                obj.T = obj.T_sim/obj.N_sim;
+                obj.h_sim = obj.T_sim/(obj.N_sim*obj.N_stages*obj.N_finite_elements);
+                if obj.print_level >= 2 && exist("h_sim")
+                    fprintf('Info: N_sim is given, so the h_sim provided by the user is overwritten.\n')
+                end
+            elseif ~isempty(obj.N_sim) || ~isempty(obj.T_sim)
+                error('Provide both N_sim and T_sim for the integration.')
+            end
+
+            if numel(obj.T) ~= 1 && ~obj.time_optimal_problem
+                error('terminal numerical time T must be provided if time_optimal_problem is False.');
+            elseif numel(obj.T) == 0 && ~obj.time_optimal_problem
+                obj.T = 1;
+            elseif numel(obj.T) ~= 1
+                error('terminal time T must be a positive scalar.');
+            end
+            obj.h = obj.T/obj.N_stages;
+            obj.h_k = obj.h./obj.N_finite_elements;
 
             % check irk scheme compatibility
             if ismember(obj.irk_scheme, IRKSchemes.differential_only)

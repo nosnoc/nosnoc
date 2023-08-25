@@ -35,7 +35,7 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontaneous switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-switching_case = 'leave_sliding_mode';
+switching_case = 'crossing';
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
 %% NOSNOC settings
 problem_options = NosnocProblemOptions();
@@ -44,8 +44,8 @@ model = NosnocModel();
 
 % discretization parameters
 % TODO: these should be problem_options
-model.N_sim = 7;
-model.T_sim = 1.5;
+problem_options.N_sim = 7;
+problem_options.T_sim = 1.5;
 
 problem_options.N_finite_elements = 2;
 problem_options.n_s = 2;

@@ -4,7 +4,7 @@ import casadi.*
 model = NosnocModel();
 N_periods = 2;
 alpha0 = pi/4; % inital angle
-model.T = N_periods*(2*pi/abs(omega));
+problem_options.T = N_periods*(2*pi/abs(omega));
 %% Model Parameters
 time_var_reference = 1;
 qx_c = 0.0;

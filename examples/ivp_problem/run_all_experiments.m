@@ -44,7 +44,7 @@ settings.n_s = 2;
 settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 settings.equidistant_control_grid = 0;
 %% Generate Model
-model.T = 2;
+problem_options.T = 2;
 settings.N_stages = 1;
 settings.N_finite_elements = 25;
 model.x0 = -1;
