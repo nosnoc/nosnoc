@@ -951,18 +951,12 @@ classdef NosnocModel < handle
 
             %% Stage and terminal costs check
             if ~size(obj.f_q, 1) ~= 0
-                if problem_options.print_level >=1
-                    fprintf('nosnoc: No stage cost is provided. \n')
-                end
                 obj.f_q = 0;
             end
 
             if size(obj.f_q_T, 1) ~= 0
                 terminal_cost = 1;
             else
-                if problem_options.print_level >=1
-                    fprintf('nosnoc: No terminal cost is provided. \n')
-                end
                 obj.f_q_T = 0;
             end
             %% Least squares objective terms with variables references
