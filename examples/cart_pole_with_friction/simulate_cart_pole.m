@@ -24,7 +24,7 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-
+clear all
 % simple simulation
 F_friction = 2.0;
 model = get_cart_pole_with_friction_model(0, F_friction);
@@ -39,23 +39,25 @@ p_integrator = vertcat(model.u, model.p);
 ode = struct('x', model.x, 'p', p_integrator, 'ode', model.f_expl_ode);
 Phi = integrator('F', 'idas', ode, struct('tf', h));
 
-%% simulation loop
 nx = length(model.x);
+% define parameters
 p_val = ones(length(p_integrator), 1);
 p_traj = repmat(p_val, 1, Nsim);
 p_traj(1, Nsim/2:end) = -2;
+
+% x trajectory
 xcurrent = zeros(nx, 1);
 simX = zeros(nx, Nsim+1);
-
 simX(:, 1) = xcurrent;
+% simulation loop
 for i = 1:Nsim
     out = Phi('x0', xcurrent, 'p', p_traj(:, i));
     xcurrent = full(out.xf);
     simX(:, i+1) = xcurrent;
 end
 
+% plot
 t_grid = linspace(0, Tsim, Nsim+1);
 results = struct('x', simX, 't_grid', t_grid, 't_grid_u', t_grid, 'u', p_traj(1, :));
-problem_options.h_k = h;
 x_ref = zeros(4, 1);
-plot_cart_pole_trajectory(results, model, x_ref);
+plot_cart_pole_trajectory(results, h, x_ref);
