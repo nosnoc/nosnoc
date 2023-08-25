@@ -167,14 +167,7 @@ classdef NosnocProblemOptions < handle
             import casadi.*
 
             % time grid
-            if numel(obj.T) ~= 1 && ~obj.time_optimal_problem
-                error('terminal numerical time T must be provided if time_optimal_problem is False.');
-            elseif numel(obj.T) == 0 && ~obj.time_optimal_problem
-                obj.T = 1;
-            elseif numel(obj.T) ~= 1
-                error('terminal time T must be a positive scalar.');
-            end
-
+            % TODO: merge T_sim and T?
             if ~isempty(obj.N_sim) && ~isempty(obj.T_sim)
                 obj.T = obj.T_sim/obj.N_sim;
                 obj.h_sim = obj.T_sim/(obj.N_sim*obj.N_stages*obj.N_finite_elements);
@@ -183,6 +176,14 @@ classdef NosnocProblemOptions < handle
                 end
             elseif ~isempty(obj.N_sim) || ~isempty(obj.T_sim)
                 error('Provide both N_sim and T_sim for the integration.')
+            end
+
+            if numel(obj.T) ~= 1 && ~obj.time_optimal_problem
+                error('terminal numerical time T must be provided if time_optimal_problem is False.');
+            elseif numel(obj.T) == 0 && ~obj.time_optimal_problem
+                obj.T = 1;
+            elseif numel(obj.T) ~= 1
+                error('terminal time T must be a positive scalar.');
             end
             obj.h = obj.T/obj.N_stages;
             obj.h_k = obj.h./obj.N_finite_elements;
