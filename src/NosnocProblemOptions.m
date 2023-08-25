@@ -83,9 +83,9 @@ classdef NosnocProblemOptions < handle
         time_optimal_problem(1,1) = 0
 
         % Step equilibration
-        rho_h(1,1) double {mustBeReal, mustBePositive} = 1
+        rho_h(1,1) double {mustBePositive} = 1
         step_equilibration(1,1) StepEquilibrationMode = StepEquilibrationMode.heuristic_mean % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
-        step_equilibration_sigma(1,1) double {mustBeReal, mustBePositive} = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
+        step_equilibration_sigma(1,1) double {mustBePositive} = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
 
         % Multiple shooting type discretization
         equidistant_control_grid(1,1) logical = 1
@@ -98,13 +98,13 @@ classdef NosnocProblemOptions < handle
         local_speed_of_time_variable(1,1) logical = 0
         stagewise_clock_constraint(1,1) logical = 1
         impose_terminal_phyisical_time(1,1) logical = 1
-        s_sot0(1,1) double {mustBeReal, mustBePositive} = 1
-        s_sot_max(1,1) double {mustBeReal, mustBePositive} = 25
-        s_sot_min(1,1) double {mustBeReal, mustBePositive} = 1
-        S_sot_nominal(1,1) double {mustBeReal, mustBePositive} = 1
+        s_sot0(1,1) double {mustBePositive} = 1
+        s_sot_max(1,1) double {mustBePositive} = 25
+        s_sot_min(1,1) double {mustBePositive} = 1
+        S_sot_nominal(1,1) double {mustBePositive} = 1
         rho_sot(1,1) double {mustBeReal, mustBeNonnegative} = 0
 
-        T_final_max(1,1) double {mustBeReal, mustBePositive} = 1e2
+        T_final_max(1,1) double {mustBePositive} = 1e2
         T_final_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
         time_freezing_reduced_model(1,1) logical = 0 % analytic reduction of lifter formulation, less algebraic variables (experimental)
         time_freezing_hysteresis(1,1) logical = 0 % do not do automatic time freezing generation for hysteresis, it is not supported yet.
@@ -117,7 +117,7 @@ classdef NosnocProblemOptions < handle
         nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
         % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
         stabilizing_q_dynamics(1,1) logical = 0
-        kappa_stabilizing_q_dynamics(1,1) double {mustBeReal, mustBePositive} = 1e-5
+        kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5
         % Verbose
         print_level = 3
 
@@ -132,14 +132,14 @@ classdef NosnocProblemOptions < handle
         % Relaxation of terminal constraint
         relax_terminal_constraint(1,1) {mustBeInteger, mustBeInRange(relax_terminal_constraint, 0, 3)} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
         relax_terminal_constraint_from_above(1,1) logical = 0
-        rho_terminal(1,1) double {mustBeReal, mustBePositive} = 1e2
+        rho_terminal(1,1) double {mustBePositive} = 1e2
         relax_terminal_constraint_homotopy(1,1) logical = 0 % terminal penalty is governed by homotopy parameter
 
         % Experimental:
         no_initial_impacts(1,1) logical = 0
 
         % All MPCC parameters
-        T_val(1,1) double {mustBeReal, mustBePositive} = 1
+        T_val(1,1) double {mustBePositive} = 1
         p_val
 
         % Butcher Tableu
