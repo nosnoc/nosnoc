@@ -42,7 +42,7 @@ classdef NosnocSolverOptions < handle
         homotopy_update_rule = 'linear' % 'linear' sigma_k = homotopy_update_slope*sigma_N
                                         % 'superlinear' - sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent))
                                         % TODO enum
-        homotopy_update_slope(1,1) double {mustBeReal, mustBeInRange(homotopy_update_slope, 0, 1, 'exclusive')} = 0.1
+        homotopy_update_slope(1,1) double {mustBeReal} = 0.1
         homotopy_update_exponent(1,1) double {mustBeReal, mustBePositive} = 1.5 % the exponent in the superlinear rule
         N_homotopy = 0 % 0 -> set automatically
         s_elastic_max(1,1) double {mustBeReal, mustBePositive} = 1e1
@@ -94,7 +94,6 @@ classdef NosnocSolverOptions < handle
 
     properties(Dependent)
         time_rescaling
-        
     end
 
     methods
@@ -123,7 +122,7 @@ classdef NosnocSolverOptions < handle
         function [] = preprocess(obj)
             import casadi.*
             % automatically set up casadi opts
-            if obj.print_level < 4 
+            if obj.print_level < 4
                 obj.opts_casadi_nlp.ipopt.print_level=0;
                 obj.opts_casadi_nlp.print_time=0;
                 obj.opts_casadi_nlp.ipopt.sb= 'yes';
@@ -133,6 +132,10 @@ classdef NosnocSolverOptions < handle
                 obj.opts_casadi_nlp.ipopt.sb= 'no';
             else
                 obj.opts_casadi_nlp.ipopt.print_level = 5;
+            end
+
+            if obj.homotopy_update_slope >= 1 || obj.homotopy_update_rule <= 0.0
+                error('homotopy_update_slope must be in (0, 1)');
             end
 
             % MPCC mode setup

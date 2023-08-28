@@ -1,11 +1,11 @@
 # NOSNOC
-**NOSNOC** is an open-source software package for NOnSmooth Numerical Optimal Control.
-
-You can use **NOSNOC**  from `MATLAB` or `python`.
+**NOSNOC** is an open-source `MATLAB` software package for NOnSmooth Numerical Optimal Control.
+The `Python` package `nosnoc_py` with similar functionality is available as well.
 
 ## General
-**NOSNOC** is a tool for numerically solving optimal control problems with nonsmooth dynamical systems with switches and/or state jumps. 
+**NOSNOC** is a tool for numerically solving optimal control problems with nonsmooth dynamical systems with switches and/or state jumps.
 It supports:
+
 1. Automatic discretization via the FESD method - high accuracy and correct sensitivities. Note that classical time-stepping methods only have first-order accuracy and wrong sensitivities even when they appear to be differentiable.
 
 2. Automatic reformulations of systems with state jumps (e.g. contact problems) via time-freezing into Filippov systems/PSS.
@@ -14,41 +14,33 @@ It supports:
 3. Solving the nonsmooth nonlinear programs via homotopy methods. Enables the use of off-the-shelf solvers like IPOPT and SNOPT.
 
 
-
 **NOSNOC** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of systems with switches and jumps.
-It enables the treatment of a broad class of nonsmooth systems in a unified way. 
-
+It enables the treatment of a broad class of nonsmooth systems in a unified way.
 
 NOSNOC offers several ways to treat switched systems, piecewise smooth systems, Filippov systems, hybrid systems, rigid body models with impacts and friction in simulation, and optimal control.
-It discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting mathematical program with complementarity constraints (MPCCs). 
+It discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting mathematical program with complementarity constraints (MPCCs).
 The MPCCs are solved in a homotopy loop with a standard solver like IPOPT or SNOPT.
 The user may directly provide a DCS or define the different modes of a Filippov system and the reformulation is automated.
 
-With NOSNOC one can simulate and solve optimal control problems subject to different kinds of nonsmooth systems, by declaring the `dcs_mode`: 
-1. `settings.dcs_mode = 'Stewart'` - for treating Filippov systems via Stewart's reformulation 
+With NOSNOC one can simulate and solve optimal control problems subject to different kinds of nonsmooth systems, by declaring the `dcs_mode`:
+1. `settings.dcs_mode = 'Stewart'` - for treating Filippov systems via Stewart's reformulation
 2. `settings.dcs_mode = 'Step'` - for treating nonsmooth systems via set valued step functions (covers also all Filippov systems that are treated with Stewart's).
 3. `settings.dcs_mode = 'CLS'` - for rigid bodies with friction and impact (also called complementarity Lagrangian systems (CLS)) - uses FESD tailored to CLS.
 4. `settings.time_freezing = 1` - and using for the `dcs_mode = Step`, the CLS is reformulated into an equivalent Filippov system and treated with FESD.
 
 ## Installation
 
-**NOSNOC** requires `CasADi` version 3.5.5.
+**NOSNOC** requires `CasADi` version 3.5.5 and Matlab version R2021b or later.
 
- 
 ### Installation for MATLAB
 
-
 1.  Install  `CasADi` and make sure it is added to your `MATLAB` path.
+For `CasADi` installation instructions follow visit: https://web.casadi.org/get/
 
-     For `CasADi` installation instructions follow this [link](https://web.casadi.org/get/).
-   
-    
 2.   Clone this repository and add it to your `MATLAB` path:
-
-     ```
-     git clone https://github.com/nurkanovic/nosnoc.git
-     ```
-	 
+```
+git clone https://github.com/nurkanovic/nosnoc.git
+```
 
 Note that `IPOPT` is shipped with `CasADi`. More information including detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
 
@@ -72,17 +64,14 @@ source env/bin/activate
 ```
 pip install -e .
 ```
-	 
+
 ## Using NOSNOC
 
-The interface of **NOSNOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).  
+The interface of **NOSNOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).
 User inputs should be given as `CasADi` expressions.
 
-To get started we recommend you look into our example libraries for 
-[MATLAB](https://github.com/nurkanovic/nosnoc/tree/main/examples/matlab) or [python](https://github.com/FreyJo/nosnoc_py/tree/main/examples).  
-
-In case you need help, feel free to contact us! 
-
+To get started we recommend you look into our example libraries for
+[MATLAB](https://github.com/nurkanovic/nosnoc/tree/main/examples/matlab) or [python](https://github.com/FreyJo/nosnoc_py/tree/main/examples).
 
 ## Literature - theory and algorithms
 
@@ -152,6 +141,6 @@ Mathematical programming, 2006
 
 Feel free to contact one of the main developers directly: Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
 Jonathan Frey [jonathan.frey@imtek.uni-freiburg.de](mailto:jonathan.frey@imtek.uni-freiburg.de)
-If you have got questions, remarks, or comments, you are strongly encouraged to report them by creating a new issue on this github page.
+If you have questions, remarks, or comments, you are strongly encouraged to report them by creating a new issue on this Github page.
 Success stories and source code contributions are very welcome.
 
