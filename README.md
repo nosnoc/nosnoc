@@ -37,12 +37,17 @@ With NOSNOC one can simulate and solve optimal control problems subject to diffe
 1.  Install  `CasADi` and make sure it is added to your `MATLAB` path.
 For `CasADi` installation instructions follow visit: https://web.casadi.org/get/
 
-2.   Clone this repository and add it to your `MATLAB` path:
+2.   Clone this repository
 ```
 git clone https://github.com/nurkanovic/nosnoc.git
 ```
 
-Note that `IPOPT` is shipped with `CasADi`. More information including detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ ) 
+3. Open the `NOSNOC` folder in Matlab and add it with subdirectories to the path by running:
+```
+>> addpath(genpath(pwd))
+```
+
+Note that `IPOPT` is shipped with `CasADi`. More information including detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ )
 
 ### Installation for python
 

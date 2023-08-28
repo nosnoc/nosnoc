@@ -134,7 +134,7 @@ classdef NosnocSolverOptions < handle
                 obj.opts_casadi_nlp.ipopt.print_level = 5;
             end
 
-            if obj.homotopy_update_slope >= 1 || obj.homotopy_update_rule <= 0.0
+            if any([obj.homotopy_update_slope >= 1, obj.homotopy_update_rule <= 0.0])
                 error('homotopy_update_slope must be in (0, 1)');
             end
 
