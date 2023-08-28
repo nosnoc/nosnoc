@@ -153,37 +153,37 @@ function nlp = setup_collocation_nlp(model, T, N, n_s, N_FE)
         w0 = [w0;  0];
 
         % Loop over integration steps / finite elements
-        for i=1:N_FE
+        for i_fe=1:N_FE
             Xk_end = D(1)*Xk;
 
             % State at collocation points
-            Xkj = {};
-            for j=1:n_s
-                Xkj{j} = SX.sym(['X_' num2str(k) '_' num2str(i) '_' num2str(j)], n_x);
-                w = {w{:}, Xkj{j}};
+            Xki = {};
+            for i=1:n_s
+                Xki{i} = SX.sym(['X_' num2str(k) '_' num2str(i_fe) '_' num2str(i)], n_x);
+                w = {w{:}, Xki{i}};
                 lbw = [lbw; model.lbx];
                 ubw = [ubw; model.ubx];
                 w0 = [w0; x0];
             end
             % Loop over collocation points
-            for j=1:n_s
+            for i=1:n_s
                 % Expression for the state derivative at the collocation point
-                xp = C(1,j+1)*Xk;
+                xp = C(1,i+1)*Xk;
                 for r=1:n_s
-                    xp = xp + C(r+1,j+1)*Xkj{r};
+                    xp = xp + C(r+1,i+1)*Xki{r};
                 end
 
                 % Append collocation equations
-                [fj, qj] = f(Xkj{j}, Uk, model.p);
-                g = {g{:}, h*fj - xp};
+                [fi, qi] = f(Xki{i}, Uk, model.p);
+                g = {g{:}, h*fi - xp};
                 lbg = [lbg; zeros(n_x,1)];
                 ubg = [ubg; zeros(n_x,1)];
 
                 % Add contribution to the end state
-                Xk_end = Xk_end + D(j+1)*Xkj{j};
+                Xk_end = Xk_end + D(i+1)*Xki{i};
 
                 % Add contribution to quadrature function
-                objective = objective + B(j+1)*qj*h;
+                objective = objective + B(i+1)*qi*h;
             end
 
             % New NLP variable for state at end of interval
