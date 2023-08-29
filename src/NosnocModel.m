@@ -96,9 +96,9 @@ classdef NosnocModel < handle
         % switching, only for step and stewart
         z_switching
 
-        % mipusls only for cls
+        % impulse only for cls
         z_impulse
-        
+
         % Stewart
         theta
         theta_sys
@@ -176,7 +176,7 @@ classdef NosnocModel < handle
         lambda00_fun
         g_lift_beta_fun
         g_lift_theta_step_fun
-        
+
         % params
         p_time_var_stages
         p_dyn
@@ -195,13 +195,14 @@ classdef NosnocModel < handle
         verified
         vars_exist
         equations_exist
-        
+
         % Dimensions
         dims
     end
 
     methods
         function obj = NosnocModel()
+            check_matlab_requirement()
             obj.dims = NosnocDimensions();
         end
 
@@ -417,7 +418,7 @@ classdef NosnocModel < handle
 
             obj.equations_exist = 1;
         end
-        
+
         function generate_variables(obj,problem_options)
             if obj.vars_exist
                 return
@@ -459,7 +460,7 @@ classdef NosnocModel < handle
                 dims.n_lambda_p = n_lambda_p;
                 dims.n_theta = n_theta;
                 dims.n_lambda = n_lambda;
-                
+
                 for ii = 1:dims.n_sys
                     ii_str = num2str(ii);
                     % define alpha (selection of a set valued step function)
@@ -519,7 +520,7 @@ classdef NosnocModel < handle
                     else
                         obj.friction_exists = 0;
                       end
-                      
+
                     if ~problem_options.nonsmooth_switching_fun
                         alpha_q = obj.alpha(1:dims.n_contacts);
                         alpha_v_normal = obj.alpha(dims.n_contacts+1:2*dims.n_contacts);
@@ -1694,7 +1695,7 @@ classdef NosnocModel < handle
     methods(Static)
         function model = from_struct(model_struct)
             model = NosnocModel();
-            
+
         end
     end
 end % NosnocModel

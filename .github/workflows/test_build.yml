@@ -2,7 +2,7 @@ name: NOSNOC Test suite
 
 on:
   pull_request:
-    
+
 jobs:
   # Main job that runs all the tests for NOSNOC in matlab.
   test_nosnoc:

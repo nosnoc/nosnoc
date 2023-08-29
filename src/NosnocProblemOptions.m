@@ -44,12 +44,12 @@ classdef NosnocProblemOptions < handle
         N_finite_elements {mustBeInteger, mustBePositive} = 2;
 
         % IRK and FESD Settings
-        n_s(1,1) {mustBeInteger, mustBeInRange(n_s, 1, 9)} = 2
+        n_s(1,1) {mustBeInteger} = 2
         irk_scheme(1,1) IRKSchemes = IRKSchemes.RADAU_IIA
         irk_representation IrkRepresentation = IrkRepresentation.integral;
 
         cross_comp_mode(1,1) CrossCompMode = CrossCompMode.FE_STAGE
-        gamma_h(1,1) double {mustBeReal, mustBeInRange(gamma_h, 0, 1)} = 1
+        gamma_h(1,1) double {mustBeReal} = 1
         dcs_mode DcsMode = DcsMode.Stewart
 
         % lift complementarities
@@ -130,7 +130,7 @@ classdef NosnocProblemOptions < handle
 
 
         % Relaxation of terminal constraint
-        relax_terminal_constraint(1,1) {mustBeInteger, mustBeInRange(relax_terminal_constraint, 0, 3)} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
+        relax_terminal_constraint(1,1) {mustBeInteger} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
         relax_terminal_constraint_from_above(1,1) logical = 0
         rho_terminal(1,1) double {mustBePositive} = 1e2
         relax_terminal_constraint_homotopy(1,1) logical = 0 % terminal penalty is governed by homotopy parameter
@@ -159,7 +159,7 @@ classdef NosnocProblemOptions < handle
 
     methods
         function obj = NosnocProblemOptions()
-
+            check_matlab_requirement()
             obj.p_val = [obj.rho_sot, obj.rho_h, obj.rho_terminal, obj.T_val];
         end
 
@@ -195,6 +195,18 @@ classdef NosnocProblemOptions < handle
                 end
                 obj.irk_representation = 'differential';
             end
+            if obj.n_s < 1 || obj.n_s > 9
+                error("n_s must be in [1, 9]");
+            end
+
+
+            %
+            if obj.relax_terminal_constraint > 3 || obj.relax_terminal_constraint < 0
+                error("relax_terminal_constraint must be in [0, 3]");
+            end
+            if obj.gamma_h < 0 || obj.gamma_h > 1
+                error("gamma_h must be in [0, 1]");
+            end
 
             % check impacts mode
             if obj.dcs_mode == DcsMode.CLS && obj.time_freezing == 1
@@ -210,7 +222,7 @@ classdef NosnocProblemOptions < handle
                 obj.local_speed_of_time_variable = 1;
             end
 
-            % N finite elements shape 
+            % N finite elements shape \
             if isscalar(obj.N_finite_elements)
                 obj.N_finite_elements = obj.N_finite_elements*ones(obj.N_stages,1);
             else
