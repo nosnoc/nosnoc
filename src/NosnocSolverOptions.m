@@ -262,7 +262,7 @@ classdef NosnocSolverOptions < handle
                 psi_mpcc = a+b- if_else(abs(x)>=normalized_sigma,abs(x),y_pol);
               case CFunctionType.KANZOW_SCHWARTZ
                 if obj.normalize_homotopy_update
-                    normalized_sigma = sqrt(sigma);
+                    normalized_sigma = sigma;
                 else
                     normalized_sigma = sigma;
                 end 
@@ -275,7 +275,7 @@ classdef NosnocSolverOptions < handle
                 psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
               case CFunctionType.KADRANI
                 if obj.normalize_homotopy_update
-                    normalized_sigma = sqrt(sigma);
+                    normalized_sigma = sigma;
                 else
                     normalized_sigma = sigma;
                 end
