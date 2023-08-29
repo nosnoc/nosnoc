@@ -59,14 +59,9 @@ classdef NosnocProblemOptions < handle
         % TODO: Initialization is really a solver concern, but there is not really a good extraction approach yet.
         % Initialization - Stewart
         lp_initialization(1,1) logical = 0
-        initial_theta(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_mu(1,1) double {mustBeReal, mustBeFinite} = 1
 
         % Initialization - Step
         initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda_0(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_lambda_1(1,1) double {mustBeReal, mustBeFinite} = 1
         initial_beta(1,1) double {mustBeReal, mustBeFinite} = 1
         initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1
 
