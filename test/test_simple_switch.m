@@ -18,9 +18,9 @@ function [results,stats,model,problem_options, solver_options] = test_simple_swi
     T_sim = 1.5;
 
 
-    model.N_sim = N_sim;
+    problem_options.N_sim = N_sim;
     problem_options.N_finite_elements = 2;
-    model.T_sim = T_sim;
+    problem_options.T_sim = T_sim;
 
     model.x0 = -1;
     x = SX.sym('x',1);
