@@ -290,7 +290,7 @@ classdef NosnocMPCC < NosnocFormulationObject
 
             % terminal numerical and physical time
             % TODO: clean this up (sum_h/intergal_clock_state need to be functions probabaly)
-            if problem_options.time_freezing || ~isempty(model.physical_time_index)
+            if problem_options.time_freezing
                 % Terminal Phyisical Time (Possible terminal constraint on the clock state if time freezing is active).
                 if problem_options.time_optimal_problem
                     obj.addConstraint(last_fe.x{end}(end)-T_final, 'type', 'g_mpcc');
