@@ -162,10 +162,7 @@ classdef ControlStage < NosnocFormulationObject
             
             % TODO: combine this into a function
             if problem_options.use_fesd && problem_options.equidistant_control_grid
-                if ~isempty(model.physical_time_index)
-                    obj.addConstraint(fe.x{end}(model.physical_time_index) - ctrl_idx*problem_options.h + model.x0(model.physical_time_index), 'type', 'stage');
-                    obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h, 'type', 'stage');
-                elseif ~problem_options.time_optimal_problem
+                if ~problem_options.time_optimal_problem
                     obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h, 'type', 'stage');
                 elseif ~problem_options.time_freezing
                     if problem_options.use_speed_of_time_variables
@@ -183,7 +180,6 @@ classdef ControlStage < NosnocFormulationObject
                     obj.addConstraint(fe.x{end}(end) - ctrl_idx*problem_options.h + model.x0(end), 'type', 'stage');
                 end
             end
-
         end
 
         % TODO this should be private

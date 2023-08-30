@@ -296,11 +296,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                     obj.addConstraint(last_fe.x{end}(end)-T_final, 'type', 'g_mpcc');
                 else
                     if problem_options.impose_terminal_phyisical_time && ~problem_options.stagewise_clock_constraint
-                        if ~isempty(model.physical_time_index)
-                            obj.addConstraint(last_fe.x{end}(model.physical_time_index)-T_ctrl_p, 'type', 'g_mpcc');
-                        else
-                            obj.addConstraint(last_fe.x{end}(end)-T_ctrl_p, 'type', 'g_mpcc');
-                        end
+                        obj.addConstraint(last_fe.x{end}(end)-T_ctrl_p, 'type', 'g_mpcc');
                     else
                         % no terminal constraint on the numerical time
                     end
