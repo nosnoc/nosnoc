@@ -155,12 +155,10 @@ classdef NosnocSolver < handle
         end
 
         function print_infeasibility(obj, results)
-            % warning('nosnoc:homotopy_solver:NLP_infeasible', 'NLP infeasible: try different mpcc_mode or check problem functions.');
             if obj.solver_options.print_details_if_infeasible
                 print_problem_details(results,obj.model,obj.problem, []);
             end
             if obj.solver_options.pause_homotopy_solver_if_infeasible
-                %             error('nosnoc: infeasible problem encounterd - stopping for debugging.')
                 keyboard
             end
         end
@@ -257,24 +255,24 @@ classdef NosnocSolver < handle
             end
             fileID = 1;
             fprintf(fileID, "\nw\t\t\tlbw\t\tubw\titerate\n");
-            for i = 1:length(obj.problem.lbw)
-                if ~only_violations || (iterate(i) < obj.problem.lbw(i) || iterate(i) > obj.problem.ubw(i))
-                    expr_str = pad(formattedDisplayText(obj.problem.w(i)), 20);
-                    lb_str = pad(sprintf('%.2e', obj.problem.lbw(i)), 10);
-                    ub_str = pad(sprintf('%.2e', obj.problem.ubw(i)), 10);
+            for i = 1:length(obj.nlp.lbw)
+                if ~only_violations || (iterate(i) < obj.nlp.lbw(i) || iterate(i) > obj.nlp.ubw(i))
+                    expr_str = pad(formattedDisplayText(obj.nlp.w(i)), 20);
+                    lb_str = pad(sprintf('%.2e', obj.nlp.lbw(i)), 10);
+                    ub_str = pad(sprintf('%.2e', obj.nlp.ubw(i)), 10);
                     iterate_str = pad(sprintf('%.2e', iterate(i)), 10);
                     fprintf(fileID, "%s\t%s\t%s\t%s\n", expr_str, lb_str, ub_str, iterate_str);
                 end
             end
 
             % constraints
-            g_val = full(obj.problem.g_fun(iterate, obj.p_val));
+            g_val = full(obj.nlp.g_fun(iterate, obj.p_val));
             fprintf(fileID, "\ni\tlbg\t\t ubg\t\t g_val\t\tg_expr\n");
-            for i = 1:length(obj.problem.lbg)
-                if ~only_violations || (g_val(i) < obj.problem.lbg(i) || g_val(i) > obj.problem.ubg(i))
-                    expr_str = formattedDisplayText(obj.problem.g(i));
-                    lb_str = pad(sprintf('%.2e', obj.problem.lbg(i)), 12);
-                    ub_str = pad(sprintf('%.2e', obj.problem.ubg(i)), 12);
+            for i = 1:length(obj.nlp.lbg)
+                if ~only_violations || (g_val(i) < obj.nlp.lbg(i) || g_val(i) > obj.nlp.ubg(i))
+                    expr_str = formattedDisplayText(obj.nlp.g(i));
+                    lb_str = pad(sprintf('%.2e', obj.nlp.lbg(i)), 12);
+                    ub_str = pad(sprintf('%.2e', obj.nlp.ubg(i)), 12);
                     fprintf(fileID, "%d\t%s\t%s\t%.2e\t%s\n", i, lb_str, ub_str, g_val(i), expr_str);
                 end
             end
