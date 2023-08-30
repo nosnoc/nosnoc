@@ -71,9 +71,9 @@ classdef CFunctionType
                 case CFunctionType.SCHOLTES_TWO_SIDED
                     acronym = 'Scholtes 2-sided$';
                 case CFunctionType.FISCHER_BURMEISTER
-                    acronym = '$FB$';
+                    acronym = 'FB';
                 case CFunctionType.NATURAL_RESIDUAL
-                    acronym = '$NR$';
+                    acronym = 'NR';
                 case CFunctionType.CHEN_CHEN_KANZOW
                     acronym = 'CCK';
                 case CFunctionType.STEFFENSON_ULBRICH
