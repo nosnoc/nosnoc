@@ -39,7 +39,6 @@ classdef NosnocIpopt < handle % TODO maybe handle not necessary, revisit.
 
             casadi_nlp = struct('f', nlp.augmented_objective, 'x', w, 'g', g, 'p', p);
 
-            % TODO: Possible issue raise to casadi: allow unknown fields in options passed
             opts_casadi_nlp = solver_options.opts_casadi_nlp;
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'snopt');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'worhp');
