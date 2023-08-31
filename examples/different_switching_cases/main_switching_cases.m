@@ -35,7 +35,7 @@ import casadi.*
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontaneous switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-switching_case = 'crossing';
+switching_case = 'spontaneous_switch';
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
 %% NOSNOC settings
 problem_options = NosnocProblemOptions();
@@ -82,7 +82,7 @@ switch switching_case
         model.F = [f_1 f_2];
         % implicit methods more accurate, explicit Euler enables "random"
         % leaving
-        problem_options.irk_scheme = 'EXPLICIT_RK';
+        problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
         problem_options.n_s = 1;
         problem_options.N_finite_elements = 3; % set 4, 5 for different outcomes
     case 'leave_sliding_mode'
@@ -104,6 +104,8 @@ solver_options.print_level = 3;
 solver_options.store_integrator_step_results = 1;
 
 integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+integrator.solver.set('theta', [0;1;0;1;0;1]);
+%integrator.solver.set('lam', [0;1;0;1;0;1;0;1;0;1;0;1]);
 [results,stats] = integrator.solve();
 
 figure
