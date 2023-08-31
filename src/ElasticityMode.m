@@ -29,5 +29,18 @@ classdef ElasticityMode
         NONE
         ELL_1
         ELL_INF
-    end  
+    end
+
+    methods
+        function latex = to_latex(obj)
+            switch obj
+                case ElasticityMode.NONE
+                    latex = 'Standard';
+                case ElasticityMode.ELL_1
+                    latex = '$\ell_1$';
+                case ElasticityMode.ELL_INF
+                    latex = '$\ell_{\infty}$'
+            end
+        end
+    end
 end

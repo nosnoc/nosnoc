@@ -642,9 +642,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             cc_vector = [];
             for stage=obj.stages
                 for fe=stage.stage
-                    for ic = 1:size(fe.all_comp_pairs, 1)
-                        cc_vector = vertcat(cc_vector, fe.all_comp_pairs(ic, 1) * fe.all_comp_pairs(ic, 2));
-                    end
+                    cc_vector = vertcat(cc_vector, fe.all_comp_pairs .* fe.all_comp_pairs);
                 end
             end
         end

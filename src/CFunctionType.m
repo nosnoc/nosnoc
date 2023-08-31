@@ -37,4 +37,81 @@ classdef CFunctionType
         LIN_FUKUSHIMA
         KADRANI
     end
+
+    methods
+        function latex = to_latex(obj)
+            switch obj
+                case CFunctionType.SCHOLTES
+                    latex = '$\phi_{\textrm{scholtes}}$';
+                case CFunctionType.SCHOLTES_TWO_SIDED
+                    latex = '$\phi_{\textrm{two-sided}}$';
+                case CFunctionType.FISCHER_BURMEISTER
+                    latex = '$\phi_{\textrm{fb}}$';
+                case CFunctionType.NATURAL_RESIDUAL
+                    latex = '$\phi_{\textrm{nr}}$';
+                case CFunctionType.CHEN_CHEN_KANZOW
+                    latex = '$\phi_{\textrm{cck}}$';
+                case CFunctionType.STEFFENSON_ULBRICH
+                    latex = '$\phi_{\textrm{su1}}$';
+                case CFunctionType.STEFFENSON_ULBRICH_POLY
+                    latex = '$\phi_{\textrm{su2}}$';
+                case CFunctionType.KANZOW_SCHWARTZ
+                    latex = '$\phi_{\textrm{ks}}$';
+                case CFunctionType.LIN_FUKUSHIMA
+                    latex = '$\phi_{\textrm{lf}}$';
+                case CFunctionType.KADRANI
+                    latex = '$\phi_{\textrm{ns}}$';
+            end
+        end
+
+        function acronym = acronym(obj)
+            switch obj
+                case CFunctionType.SCHOLTES
+                    acronym = 'Scholtes';
+                case CFunctionType.SCHOLTES_TWO_SIDED
+                    acronym = 'Scholtes 2-sided$';
+                case CFunctionType.FISCHER_BURMEISTER
+                    acronym = 'FB';
+                case CFunctionType.NATURAL_RESIDUAL
+                    acronym = 'NR';
+                case CFunctionType.CHEN_CHEN_KANZOW
+                    acronym = 'CCK';
+                case CFunctionType.STEFFENSON_ULBRICH
+                    acronym = 'SU1';
+                case CFunctionType.STEFFENSON_ULBRICH_POLY
+                    acronym = 'SU2';
+                case CFunctionType.KANZOW_SCHWARTZ
+                    acronym = 'KS';
+                case CFunctionType.LIN_FUKUSHIMA
+                    acronym = 'LF';
+                case CFunctionType.KADRANI
+                    acronym = 'Kadrani';
+            end
+        end
+
+        function full = full(obj)
+            switch obj
+                case CFunctionType.SCHOLTES
+                    full = 'Scholtes';
+                case CFunctionType.SCHOLTES_TWO_SIDED
+                    full = 'Scholtes 2-sided';
+                case CFunctionType.FISCHER_BURMEISTER
+                    full = 'Fischer-Burmeister';
+                case CFunctionType.NATURAL_RESIDUAL
+                    full = 'Natural Residual';
+                case CFunctionType.CHEN_CHEN_KANZOW
+                    full = 'Chen-Chen-Kanzow';
+                case CFunctionType.STEFFENSON_ULBRICH
+                    full = 'Steffenson-Ulbrich Trigonometric';
+                case CFunctionType.STEFFENSON_ULBRICH_POLY
+                    full = 'Steffenson-Ulbrich Polynomial';
+                case CFunctionType.KANZOW_SCHWARTZ
+                    full = 'Kanzow-Schwartz';
+                case CFunctionType.LIN_FUKUSHIMA
+                    full = 'Lin-Fukushima';
+                case CFunctionType.KADRANI
+                    full = 'Kadrani';
+            end
+        end
+    end
 end

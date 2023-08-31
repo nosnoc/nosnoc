@@ -115,6 +115,9 @@ classdef NosnocSolverOptions < handle
             obj.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
             obj.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
             obj.opts_casadi_nlp.snopt = struct();
+            
+            obj.opts_casadi_nlp.worhp = struct();
+            obj.opts_casadi_nlp.uno = struct();
 
             obj.p_val = [obj.sigma_0];
         end
@@ -126,12 +129,29 @@ classdef NosnocSolverOptions < handle
                 obj.opts_casadi_nlp.ipopt.print_level=0;
                 obj.opts_casadi_nlp.print_time=0;
                 obj.opts_casadi_nlp.ipopt.sb= 'yes';
+                obj.opts_casadi_nlp.snopt.Minor_print_level = 0;
+                obj.opts_casadi_nlp.snopt.Major_print_level = 0;
+                %obj.opts_casadi_nlp.snopt.Solution = 'no';
+                %obj.opts_casadi_nlp.snopt.Suppress_options_listings = 'no';
+                %obj.opts_casadi_nlp.snopt.Summary_file = 0;
+                
+                
+                obj.opts_casadi_nlp.worhp.NLPprint = -1;
+                obj.opts_casadi_nlp.uno.statistics_print_header_every_iterations = '10000';
+                
             elseif obj.print_level == 4
                 obj.opts_casadi_nlp.ipopt.print_level=0;
                 obj.opts_casadi_nlp.print_time=1;
                 obj.opts_casadi_nlp.ipopt.sb= 'no';
+                obj.opts_casadi_nlp.snopt.Minor_print_level = 1;
+                obj.opts_casadi_nlp.snopt.Major_print_level = 1;
+                obj.opts_casadi_nlp.worhp.NLPprint = 1;
             else
                 obj.opts_casadi_nlp.ipopt.print_level = 5;
+                obj.opts_casadi_nlp.worhp.NLPprint = 4;
+                obj.opts_casadi_nlp.snopt.Minor_print_level = 11;
+                obj.opts_casadi_nlp.snopt.Major_print_level = 1;
+
             end
 
             if any([obj.homotopy_update_slope >= 1, obj.homotopy_update_rule <= 0.0])
@@ -242,7 +262,7 @@ classdef NosnocSolverOptions < handle
                 psi_mpcc = a+b- if_else(abs(x)>=normalized_sigma,abs(x),y_pol);
               case CFunctionType.KANZOW_SCHWARTZ
                 if obj.normalize_homotopy_update
-                    normalized_sigma = sqrt(sigma);
+                    normalized_sigma = sigma;
                 else
                     normalized_sigma = sigma;
                 end 
@@ -255,7 +275,7 @@ classdef NosnocSolverOptions < handle
                 psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
               case CFunctionType.KADRANI
                 if obj.normalize_homotopy_update
-                    normalized_sigma = sqrt(sigma);
+                    normalized_sigma = sigma;
                 else
                     normalized_sigma = sigma;
                 end
