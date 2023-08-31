@@ -104,9 +104,14 @@ solver_options.print_level = 3;
 solver_options.store_integrator_step_results = 1;
 
 integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-integrator.solver.set('theta', [0;1;0;1;0;1]);
-%integrator.solver.set('lam', [0;1;0;1;0;1;0;1;0;1;0;1]);
+
+if strcmp('spontaneous_switch', switching_case)
+    % initialize solver
+    theta_init = {[1, 0]};
+    integrator.solver.set('theta', theta_init);
+end
 [results,stats] = integrator.solve();
+
 
 figure
 latexify_plot()
