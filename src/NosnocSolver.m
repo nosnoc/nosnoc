@@ -146,11 +146,11 @@ classdef NosnocSolver < handle
             violation = max([lbg_violation, ubg_violation, lbw_violation, ubw_violation]);
         end
 
-        function converged = comp_tol_met(obj, stats)
+        function met = complementarity_tol_met(obj, stats)
             last_stats = stats.solver_stats(end);
-            converged = 0;
+            met = 0;
             if stats.complementarity_stats(end) < 10 * obj.solver_options.comp_tol
-                converged = 1;
+                met = 1;
             end
         end
 
@@ -523,7 +523,7 @@ classdef NosnocSolver < handle
             results = obj.extract_results_nlp(results);
 
             % check if solved to required accuracy
-            stats.converged = obj.comp_tol_met(stats) && ~last_iter_failed && ~timeout;
+            stats.converged = obj.complementarity_tol_met(stats) && ~last_iter_failed && ~timeout;
             stats.constraint_violation = obj.compute_constraint_violation(results.w);
 
             obj.print_solver_stats(results,stats);
