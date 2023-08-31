@@ -42,9 +42,9 @@ For `CasADi` installation instructions follow visit: https://web.casadi.org/get/
 git clone https://github.com/nurkanovic/nosnoc.git
 ```
 
-3. Open the `NOSNOC` folder in Matlab and add it with subdirectories to the path by running:
+3. Open the `NOSNOC` folder in Matlab and add `src` with subdirectories to the path by running:
 ```
->> addpath(genpath(pwd))
+>> addpath(genpath(fullfile(pwd, 'src')))
 ```
 
 Note that `IPOPT` is shipped with `CasADi`. More information including detailed documentation can be found on its [homepage](https://coin-or.github.io/Ipopt/ )
