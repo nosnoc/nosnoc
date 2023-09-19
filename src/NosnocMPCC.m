@@ -539,6 +539,56 @@ classdef NosnocMPCC < NosnocFormulationObject
             end
         end
 
+        function init_params = compute_initial_parameters(obj, x0)
+            model = obj.model;
+
+            lambda00 = [];
+            gamma_00 = [];
+            p_vt_00 = [];
+            n_vt_00  = [];
+            gamma_d00 = [];
+            delta_d00 = [];
+            y_gap00 = [];
+            switch obj.problem_options.dcs_mode
+              case 'Stewart'
+                lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+              case 'Step'
+                lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+              case 'CLS'
+                % TODO: reconsider this if 0th element has an impulse
+                y_gap00 = max(0, model.f_c_fun(x0));
+                if model.friction_exists
+                    switch obj.problem_options.friction_model
+                      case 'Polyhedral'
+                        v0 = x0(model.dims.n_q+1:end);
+                        D_tangent_0 = model.D_tangent_fun(x0);
+                        v_t0 = D_tangent_0'*v0;
+                        for ii = 1:model.dims.n_contacts
+                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                            gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dims.n_t];
+                            delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v0+gamma_d00(ii)];
+                        end
+                      case 'Conic'
+                        v0 = x0(model.dims.n_q+1:end);
+                        v_t0 = model.J_tangent_fun(x0)'*v0;
+                        for ii = 1:model.dims.n_contacts
+                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                            v_ti0 = v0(ind_temp);
+                            gamma_00 = [gamma_00;norm(v_ti0)];
+                            switch obj.problem_options.conic_model_switch_handling
+                              case 'Plain'
+                                % no extra vars
+                              case {'Abs','Lp'}
+                                p_vt_00 = [p_vt_00; max(v_ti0,0)];
+                                n_vt_00 = [n_vt_00; max(-v_ti0,0)];
+                            end
+                        end
+                    end
+                end
+            end
+            init_params = [x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
+        end
+        
         % TODO this should be private
         function create_primal_variables(obj)
             import casadi.*
@@ -754,6 +804,34 @@ classdef NosnocMPCC < NosnocFormulationObject
 
             json = jsonencode(mpcc_struct);
         end
+
+        function mpcc = to_serialized_casadi_mpcc(obj)
+            import casadi.*
+            mpcc = struct();
+            mpcc.w = obj.w.serialize();
+            mpcc.w0 = obj.w0;
+            mpcc.lbw = obj.lbw;
+            mpcc.ubw = obj.ubw;
+            mpcc.p = obj.p.serialize();
+            mpcc.p0 = [obj.p0;obj.compute_initial_parameters(obj.model.x0)];
+            mpcc.g_fun = obj.g_fun.serialize();
+            mpcc.lbg = obj.lbg;
+            mpcc.ubg = obj.ubg;
+
+            pairs = [];
+            for stage=obj.stages
+                for fe=stage.stage
+                    pairs = vertcat(pairs, fe.all_comp_pairs);
+                end
+            end
+            G_fun = Function('G_fun', {obj.w, obj.p}, {pairs(:,1)});
+            H_fun = Function('H_fun', {obj.w, obj.p}, {pairs(:,2)});
+            mpcc.G_fun = G_fun.serialize();
+            mpcc.H_fun = H_fun.serialize();
+            
+            mpcc.augmented_objective_fun = obj.augmented_objective_fun.serialize();
+            mpcc.objective_fun = obj.objective_fun.serialize();
+        end
     end
 
     methods(Static)
@@ -762,6 +840,29 @@ classdef NosnocMPCC < NosnocFormulationObject
             model = NosnocModel.from_struct(mpcc_struct.model);
             problem_options = NosnocProblemOptions.from_struct(mpcc_struct.problem_options);
             obj = NosnocMpcc(problem_options, model.dims, model);
+        end
+
+        function mpcc = from_serialized_casadi(json)
+            import casadi.*
+            raw_struct = jsondecode(json);
+
+            % TODO also handle MX
+            mpcc.w = SX.deserialize(raw_struct.w);
+            mpcc.w0 = raw_struct.w0;
+            mpcc.lbw = raw_struct.lbw;
+            mpcc.ubw = raw_struct.ubw;
+            mpcc.p = SX.deserialize(raw_struct.p);
+            mpcc.p0 = raw_struct.p0;
+            mpcc.g_fun = Function.deserialize(raw_struct.g_fun);
+            mpcc.g = mpcc.g_fun(mpcc.w, mpcc.p);
+            mpcc.lbg = raw_struct.lbg;
+            mpcc.ubg = raw_struct.ubg;
+            mpcc.G_fun = Function.deserialize(raw_struct.G_fun);
+            mpcc.G = mpcc.G_fun(mpcc.w, mpcc.p);
+            mpcc.H_fun = Function.deserialize(raw_struct.H_fun);
+            mpcc.H = mpcc.H_fun(mpcc.w, mpcc.p);
+            mpcc.augmented_objective_fun = Function.deserialize(raw_struct.augmented_objective_fun);
+            mpcc.objective_fun = Function.deserialize(raw_struct.objective_fun);
         end
     end
 end
