@@ -1037,19 +1037,29 @@ classdef FiniteElement < NosnocFormulationObject
         function nu_vector = get.nu_vector(obj)
             import casadi.*
 
+            % TODO handle independent subsystems?
             if obj.problem_options.use_fesd && obj.fe_idx > 1
-                pairs_fe = vertcat(obj.cross_comp_pairs{:});
-                pairs_prev_fe = vertcat(obj.prev_fe.cross_comp_pairs{:});
-    
-                cont_fe = pairs_fe(1,:);
-                discont_fe = pairs_fe(2,:);
-    
-                cont_prev_fe = pairs_prev_fe(1,:);
-                discont_prev_fe = pairs_prev_fe(2,:);
-                eta_k = sum(discont_prev_fe) * sum(discont_fe) + sum(cont_prev_fe) * sum(cont_fe);
+                switch obj.problem_options.dcs_mode
+                    case DcsMode.Stewart
+                        lam_F = cellfun(@(x) obj.w(x), obj.ind_lam, 'uni', false);
+                        lam_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lam, 'uni', false);
+                        theta_F = cellfun(@(x) obj.w(x), obj.ind_theta, 'uni', false);
+                        theta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_theta, 'uni', false);
+                        sigma_cont_F = sum2(horzcat(lam_F{:}));
+                        sigma_cont_B = sum2(horzcat(lam_B{:}));
+                        sigma_discont_F = sum2(horzcat(theta_F{:}));
+                        sigma_discont_B = sum2(horzcat(theta_B{:}));
+                    case DcsMode.Step
+                        % TODO step
+                    case DcsMode.CLS
+                end
+                pi_cont = sigma_cont_B .* sigma_cont_F;
+                pi_discont = sigma_discont_B .* sigma_discont_F;
+                nu = pi_cont + pi_discont;
+                
                 nu_vector = 1;
-                for jjj=1:length(eta_k)
-                    nu_vector = nu_vector * eta_k(jjj);
+                for jjj=1:length(nu)
+                    nu_vector = nu_vector * nu(jjj);
                 end
             else
                 nu_vector = [];
