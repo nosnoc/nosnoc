@@ -1049,6 +1049,10 @@ classdef FiniteElement < NosnocFormulationObject
                         sigma_cont_B = sum2(horzcat(lam_B{:}));
                         sigma_discont_F = sum2(horzcat(theta_F{:}));
                         sigma_discont_B = sum2(horzcat(theta_B{:}));
+
+                        pi_cont = sigma_cont_B .* sigma_cont_F;
+                        pi_discont = sigma_discont_B .* sigma_discont_F;
+                        nu = pi_cont + pi_discont;
                     case DcsMode.Step
                         lam_p_F = cellfun(@(x) obj.w(x), obj.ind_lambda_p, 'uni', false);
                         lam_p_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_p, 'uni', false);
@@ -1061,11 +1065,32 @@ classdef FiniteElement < NosnocFormulationObject
                         sigma_cont_B = vertcat(sum2(horzcat(lam_n_B{:})), sum2(horzcat(lam_p_B{:})));
                         sigma_discont_F = vertcat(sum2(horzcat(alpha_F{:})), sum2(1-horzcat(alpha_F{:})));
                         sigma_discont_B = vertcat(sum2(horzcat(alpha_B{:})), sum2(1-horzcat(alpha_B{:})));
+
+                        pi_cont = sigma_cont_B .* sigma_cont_F;
+                        pi_discont = sigma_discont_B .* sigma_discont_F;
+                        nu = pi_cont + pi_discont;
                     case DcsMode.CLS
+                        f_c_F = cellfun(@(x) obj.model.f_c_fun(obj.w(x)), obj.ind_x, 'uni', false);
+                        f_c_B = cellfun(@(x) obj.model.f_c_fun(obj.prev_fe.w(x)), obj.prev_fe.ind_x, 'uni', false);
+                        l_n_F = cellfun(@(x) obj.w(x), obj.ind_lambda_normal, 'uni', false);
+                        l_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_normal, 'uni', false);
+
+                        sigma_f_c_F = sum2(horzcat(f_c_F{:}));
+                        sigma_f_c_B = sum2(horzcat(f_c_B{:}));
+                        sigma_l_n_F = sum2(horzcat(l_n_F{:}));
+                        sigma_l_n_B = sum2(horzcat(l_n_B{:}));
+
+                        pi_f_c = obj.model.f_c_fun(obj.w(obj.ind_x_left_bp{1})).*sigma_f_c_F.*sigma_f_c_B;
+                        pi_l_n = sigma_l_n_F .* sigma_l_n_B;
+                        kappa_n = pi_f_c + pi_l_n;
+                        % TODO: fix case were only some contacts have friction
+                        if obj.model.friction_exists
+                            % Go one by one for each contact (TODO vectorize)
+                        else
+                            nu = kappa_n;
+                        end
                 end
-                pi_cont = sigma_cont_B .* sigma_cont_F;
-                pi_discont = sigma_discont_B .* sigma_discont_F;
-                nu = pi_cont + pi_discont;
+                
                  
                 nu_vector = 1;
                 for jjj=1:length(nu)
