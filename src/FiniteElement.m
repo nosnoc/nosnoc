@@ -1050,13 +1050,23 @@ classdef FiniteElement < NosnocFormulationObject
                         sigma_discont_F = sum2(horzcat(theta_F{:}));
                         sigma_discont_B = sum2(horzcat(theta_B{:}));
                     case DcsMode.Step
-                        % TODO step
+                        lam_p_F = cellfun(@(x) obj.w(x), obj.ind_lambda_p, 'uni', false);
+                        lam_p_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_p, 'uni', false);
+                        lam_n_F = cellfun(@(x) obj.w(x), obj.ind_lambda_n, 'uni', false);
+                        lam_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_n, 'uni', false);
+                        alpha_F = cellfun(@(x) obj.w(x), obj.ind_alpha, 'uni', false);
+                        alpha_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_alpha, 'uni', false);
+
+                        sigma_cont_F = vertcat(sum2(horzcat(lam_n_F{:})), sum2(horzcat(lam_p_F{:})));
+                        sigma_cont_B = vertcat(sum2(horzcat(lam_n_B{:})), sum2(horzcat(lam_p_B{:})));
+                        sigma_discont_F = vertcat(sum2(horzcat(alpha_F{:})), sum2(1-horzcat(alpha_F{:})));
+                        sigma_discont_B = vertcat(sum2(horzcat(alpha_B{:})), sum2(1-horzcat(alpha_B{:})));
                     case DcsMode.CLS
                 end
                 pi_cont = sigma_cont_B .* sigma_cont_F;
                 pi_discont = sigma_discont_B .* sigma_discont_F;
                 nu = pi_cont + pi_discont;
-                
+                 
                 nu_vector = 1;
                 for jjj=1:length(nu)
                     nu_vector = nu_vector * nu(jjj);
