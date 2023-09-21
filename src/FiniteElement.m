@@ -1074,9 +1074,14 @@ classdef FiniteElement < NosnocFormulationObject
                         f_c_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_y_gap, 'uni', false);
                         l_n_F = cellfun(@(x) obj.w(x), obj.ind_lambda_normal, 'uni', false);
                         l_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_normal, 'uni', false);
-
-                        sigma_f_c_F = sum2(horzcat(f_c_F{:}));
-                        sigma_f_c_B = sum2(horzcat(f_c_B{:}));
+                        
+                        sigma_f_c_F = obj.w(obj.ind_Y_gap{1})+sum2(horzcat(f_c_F{:}));
+                        % If we don't have an old Y gap due to no initial impacts ignore it in backward sum
+                        if isempty(obj.prev_fe.ind_Y_gap{1})
+                            sigma_f_c_B = sum2(horzcat(f_c_B{:}));
+                        else
+                            sigma_f_c_B = obj.prev_fe.w(obj.prev_fe.ind_Y_gap{1})+sum2(horzcat(f_c_B{:}));
+                        end
                         sigma_l_n_F = sum2(horzcat(l_n_F{:}));
                         sigma_l_n_B = sum2(horzcat(l_n_B{:}));
 
@@ -1088,25 +1093,48 @@ classdef FiniteElement < NosnocFormulationObject
                             zeta = SX.ones(obj.model.dims.n_contacts, 1);
                             for ii=1:obj.model.dims.n_contacts
                                 if obj.model.mu_f(ii)
-                                    xi_p_F = cellfun(@(x) obj.w(x), obj.ind_p_vt, 'uni', false);
-                                    xi_p_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_p_vt, 'uni', false);
-                                    xi_n_F = cellfun(@(x) obj.w(x), obj.ind_n_vt, 'uni', false);
-                                    xi_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_n_vt, 'uni', false);
-                                    beta_F = cellfun(@(x) obj.w(x), obj.ind_beta_conic, 'uni', false);
-                                    beta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_beta_conic, 'uni', false);
+                                    if strcmp(obj.problem_options.friction_model, 'Conic')
+                                        xi_p_F = cellfun(@(x) obj.w(x), obj.ind_p_vt, 'uni', false);
+                                        xi_p_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_p_vt, 'uni', false);
+                                        xi_n_F = cellfun(@(x) obj.w(x), obj.ind_n_vt, 'uni', false);
+                                        xi_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_n_vt, 'uni', false);
+                                        beta_F = cellfun(@(x) obj.w(x), obj.ind_beta_conic, 'uni', false);
+                                        beta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_beta_conic, 'uni', false);
 
-                                    sigma_xi_p_F = sum2(horzcat(xi_p_F{:}));
-                                    sigma_xi_p_B = sum2(horzcat(xi_p_B{:}));
-                                    sigma_xi_n_F = sum2(horzcat(xi_n_F{:}));
-                                    sigma_xi_n_B = sum2(horzcat(xi_n_B{:}));
-                                    sigma_beta_F = sum2(horzcat(beta_F{:}));
-                                    sigma_beta_B = sum2(horzcat(beta_B{:}));
+                                        sigma_xi_p_F = obj.w(obj.ind_P_vt{1})+sum2(horzcat(xi_p_F{:}));
+                                        sigma_xi_n_F = obj.w(obj.ind_N_vt{1})+sum2(horzcat(xi_n_F{:}));
+                                        if isempty(obj.prev_fe.ind_P_vt{1})
+                                            sigma_xi_p_B = sum2(horzcat(xi_p_B{:}));
+                                            sigma_xi_n_B = sum2(horzcat(xi_n_B{:}));
+                                        else
+                                            sigma_xi_p_B = obj.prev_fe.w(obj.prev_fe.ind_P_vt{1})+sum2(horzcat(xi_p_B{:}));
+                                            sigma_xi_n_B = obj.prev_fe.w(obj.prev_fe.ind_N_vt{1})+sum2(horzcat(xi_n_B{:}));
+                                        end
+                                        sigma_beta_F = sum2(horzcat(beta_F{:}));
+                                        sigma_beta_B = sum2(horzcat(beta_B{:}));
 
-                                    pi_xi_p = sigma_xi_p_F .* sigma_xi_p_B;
-                                    pi_xi_n = sigma_xi_n_F .* sigma_xi_n_B;
-                                    pi_beta = sigma_beta_F .* sigma_beta_B;
+                                        pi_xi_p = sigma_xi_p_F .* sigma_xi_p_B;
+                                        pi_xi_n = sigma_xi_n_F .* sigma_xi_n_B;
+                                        pi_beta = sigma_beta_F .* sigma_beta_B;
 
-                                    zeta(ii) = (sigma_f_c_B + sigma_f_c_F) + (sum(pi_xi_p + pi_xi_n) + pi_beta);
+                                        zeta(ii) = (sigma_f_c_B + sigma_f_c_F) + (sum(pi_xi_p + pi_xi_n) + pi_beta);
+                                    else
+                                        % TODO: Verify
+                                        gamma_F = cellfun(@(x) obj.w(x), obj.ind_gamma_d, 'uni', false);
+                                        gamma_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_p_vt, 'uni', false);
+                                        beta_F = cellfun(@(x) obj.w(x), obj.ind_beta_d, 'uni', false);
+                                        beta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_beta_d, 'uni', false);
+
+                                        sigma_gamma_F = sum2(horzcat(gamma_F{:}));
+                                        sigma_gamma_B = sum2(horzcat(gamma_B{:}));;
+                                        sigma_beta_F = sum2(horzcat(beta_F{:}));;
+                                        sigma_beta_B = sum2(horzcat(bet_B{:}));;
+                                        
+                                        pi_gamma = sigma_gamma_F.*sigma_gamma_B;
+                                        pi_beta = sigma_beta_F.*sigma_beta_B;
+
+                                        zeta(ii) = (sigma_f_c_B + sigma_f_c_F) + (sum(pi_gamma) + pi_beta);
+                                    end
                                 end
                             end
                             nu = kappa.*zeta;
