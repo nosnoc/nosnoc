@@ -1070,8 +1070,8 @@ classdef FiniteElement < NosnocFormulationObject
                         pi_discont = sigma_discont_B .* sigma_discont_F;
                         nu = pi_cont + pi_discont;
                     case DcsMode.CLS
-                        f_c_F = cellfun(@(x) obj.model.f_c_fun(obj.w(x)), obj.ind_x, 'uni', false);
-                        f_c_B = cellfun(@(x) obj.model.f_c_fun(obj.prev_fe.w(x)), obj.prev_fe.ind_x, 'uni', false);
+                        f_c_F = cellfun(@(x) obj.w(x), obj.ind_y_gap, 'uni', false);
+                        f_c_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_y_gap, 'uni', false);
                         l_n_F = cellfun(@(x) obj.w(x), obj.ind_lambda_normal, 'uni', false);
                         l_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_normal, 'uni', false);
 
@@ -1080,18 +1080,41 @@ classdef FiniteElement < NosnocFormulationObject
                         sigma_l_n_F = sum2(horzcat(l_n_F{:}));
                         sigma_l_n_B = sum2(horzcat(l_n_B{:}));
 
-                        pi_f_c = obj.model.f_c_fun(obj.w(obj.ind_x_left_bp{1})).*sigma_f_c_F.*sigma_f_c_B;
+                        pi_f_c = obj.w(obj.ind_Y_gap{1}).*sigma_f_c_F.*sigma_f_c_B;
                         pi_l_n = sigma_l_n_F .* sigma_l_n_B;
-                        kappa_n = pi_f_c + pi_l_n;
-                        % TODO: fix case were only some contacts have friction
+                        kappa = pi_f_c + pi_l_n;
                         if obj.model.friction_exists
                             % Go one by one for each contact (TODO vectorize)
+                            zeta = SX.ones(obj.model.dims.n_contacts, 1);
+                            for ii=1:obj.model.dims.n_contacts
+                                if obj.model.mu_f(ii)
+                                    xi_p_F = cellfun(@(x) obj.w(x), obj.ind_p_vt, 'uni', false);
+                                    xi_p_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_p_vt, 'uni', false);
+                                    xi_n_F = cellfun(@(x) obj.w(x), obj.ind_n_vt, 'uni', false);
+                                    xi_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_n_vt, 'uni', false);
+                                    beta_F = cellfun(@(x) obj.w(x), obj.ind_beta_conic, 'uni', false);
+                                    beta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_beta_conic, 'uni', false);
+
+                                    sigma_xi_p_F = sum2(horzcat(xi_p_F{:}));
+                                    sigma_xi_p_B = sum2(horzcat(xi_p_B{:}));
+                                    sigma_xi_n_F = sum2(horzcat(xi_n_F{:}));
+                                    sigma_xi_n_B = sum2(horzcat(xi_n_B{:}));
+                                    sigma_beta_F = sum2(horzcat(beta_F{:}));
+                                    sigma_beta_B = sum2(horzcat(beta_B{:}));
+
+                                    pi_xi_p = sigma_xi_p_F .* sigma_xi_p_B;
+                                    pi_xi_n = sigma_xi_n_F .* sigma_xi_n_B;
+                                    pi_beta = sigma_beta_F .* sigma_beta_B;
+
+                                    zeta(ii) = (sigma_f_c_B + sigma_f_c_F) + (sum(pi_xi_p + pi_xi_n) + pi_beta);
+                                end
+                            end
+                            nu = kappa.*zeta;
                         else
-                            nu = kappa_n;
+                            nu = kappa;
                         end
                 end
                 
-                 
                 nu_vector = 1;
                 for jjj=1:length(nu)
                     nu_vector = nu_vector * nu(jjj);
