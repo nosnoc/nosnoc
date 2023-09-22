@@ -25,10 +25,9 @@
 
 % This file is part of NOSNOC.
 
-function [varargout] = plot_result_ball(model,settings,results,stats)
+function [varargout] = plot_result_ball(model,problem_options,solver_options,results,stats)
 
 unfold_struct(model,'caller');
-unfold_struct(settings,'caller')
 d = 3;
 
 obj = full(results.f);
@@ -40,17 +39,13 @@ red = [0.8500 0.3250 0.0980];
 organe = [0.9290 0.6940 0.1250];
 grey = [0.85 0.85 0.85];
 %%
-n = n_x+n_u;
+n = 4+2;
 nn = n-1;
-tgrid = linspace(0, T, N_stages+1);
-tgrid_z = linspace(0, T, N_stages);
+tgrid = linspace(0, problem_options.T, problem_options.N_stages+1);
+tgrid_z = linspace(0, problem_options.T, problem_options.N_stages);
 
 %%
-if strcmp(mpcc_mode, 'Sholtes_eq')
-    ind_t = find([1;theta1_opt]>1e-2);
-else
-    ind_t = find(diff([nan;results.st.x_i_opt{1};nan])>1e-5);
-end
+ind_t = find([1,results.theta(1,:)]>1e-2);
 
 % TODO: fix this
 if 0
@@ -88,15 +83,15 @@ if 0
     legend({'$v_1(t)$','$v_2(t)$'},'interpreter','latex');
     xlim([0 T]);
     subplot(122)
-    stairs(x5_opt(1:N_finite_elements:end),[u1_opt;nan],'color',matlab_blue,'linewidth',1.2,'LineStyle','--');
+    stairs(x5_opt(1:N_finite_elements:end),[results.u(:,1);nan],'color',matlab_blue,'linewidth',1.2,'LineStyle','--');
     hold on
-    stairs(x5_opt(1:N_finite_elements:end),[u2_opt;nan],'color',matlab_red,'linewidth',1.2);
+    stairs(x5_opt(1:N_finite_elements:end),[results.u(:,2);nan],'color',matlab_red,'linewidth',1.2);
     grid on
     xlabel('$t$','interpreter','latex');
     ylabel('$u(t)$','interpreter','latex');
     grid on
     legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
-    xlim([0 T]);
+    xlim([0 problem_options.T]);
     %
     saveas(gcf,'velocity_and_control')
 end
@@ -115,47 +110,47 @@ x = [0 x_target x_target 0];
 y = [0 0 -1 -1];
 patch(x,y,'k','FaceAlpha',0.2)
 hold on
-plot(results.st.x_i_opt{1}(ind_t),results.st.x_i_opt{2}(ind_t),'linewidth',1.2,'color',0*ones(3,1));
+plot(results.x(1,ind_t),results.x(2,ind_t),'linewidth',1.2,'color',0*ones(3,1));
 grid on
 hold on
 xlabel('$q_1$','interpreter','latex');
 ylabel('$q_2$','interpreter','latex');
 % axis equal
-ylim([-0.4 max(results.st.x_i_opt{2})*1.15])
+ylim([-0.4 max(results.x(2))*1.15])
 xlim([0.0 x_target])
 subplot(132)
-plot(results.st.x_i_opt{5},results.st.x_i_opt{3},'linewidth',1.2,'color',matlab_blue);
+plot(results.x(5,:),results.x(3,:),'linewidth',1.2,'color',matlab_blue);
 hold on
-plot(results.st.x_i_opt{5},results.st.x_i_opt{4},'linewidth',1.2,'color',matlab_red);
+plot(results.x(5,:),results.x(4,:),'linewidth',1.2,'color',matlab_red);
 xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$','interpreter','latex');
 grid on
 legend({'$v_1(t)$','$v_2(t)$'},'interpreter','latex','NumColumns',2);
-xlim([0 T]);
+xlim([0 problem_options.T]);
 ylim([-6 6])
 subplot(133)
-stairs(results.st.x_i_opt{5}(1:N_finite_elements:end),[u1_opt;nan],'color',matlab_blue,'linewidth',1.2);
+stairs(results.x(5,1:problem_options.N_finite_elements:end),[results.u(1,:),nan],'color',matlab_blue,'linewidth',1.2);
 hold on
-stairs(results.st.x_i_opt{5}(1:N_finite_elements:end),[u2_opt;nan],'color',matlab_red,'linewidth',1.2);
+stairs(results.x(5,1:problem_options.N_finite_elements:end),[results.u(2,:),nan],'color',matlab_red,'linewidth',1.2);
 grid on
 xlabel('$t$','interpreter','latex');
 ylabel('$u(t)$','interpreter','latex');
 grid on
 legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex','NumColumns',2);
-xlim([0 T]);
+xlim([0 problem_options.T]);
 ylim([-10 10])
 %%
 
 %% spee of time plots
 if 0
     if use_fesd
-        h_opt_stagewise = reshape(h_opt,N_finite_elements(1),N_stages);
+        h_opt_stagewise = reshape(h_opt,problem_options.N_finite_elements(1),problem_options.N_stages);
         if length(ind_tf)>1
             s_sot = w_opt(ind_tf);
         elseif length(ind_tf) == 0
-            s_sot = ones(N_stages,1);
+            s_sot = ones(problem_options.N_stages,1);
         else
-            s_sot = w_opt(ind_tf)*ones(N_stages,1);
+            s_sot = w_opt(ind_tf)*ones(problem_options.N_stages,1);
         end
         t_control_grid_pseudo = cumsum([0,sum(h_opt_stagewise)]);
         t_control_grid_pseudo_streched = cumsum([0,sum(h_opt_stagewise).*s_sot']);
@@ -163,7 +158,7 @@ if 0
     %%
     if use_fesd
         figure
-        stairs(tgrid(1:N_finite_elements:end),[s_sot;nan],'linewidth',1.2)
+        stairs(tgrid(1:problem_options.N_finite_elements:end),[s_sot;nan],'linewidth',1.2)
         xlabel('$\tau$','interpreter','latex');
         ylabel('$s(\tau)$','interpreter','latex');
         grid on
@@ -171,21 +166,21 @@ if 0
     end
 
     figure
-    tt = linspace(0,T,N_stages*N_finite_elements(1)+1);
+    tt = linspace(0,problem_options.T,problem_options.N_stages*problem_options.N_finite_elements(1)+1);
     plot(tt,x5_opt,'linewidth',1.2)
     hold on
     plot(tt,x5_opt,'.','color',blue,'MarkerSize',7)
-    plot(tt(1:N_finite_elements:end),x5_opt(1:N_finite_elements:end),'k.','MarkerSize',9)
+    plot(tt(1:problem_options.N_finite_elements:end),x5_opt(1:problem_options.N_finite_elements:end),'k.','MarkerSize',9)
     plot(tt,tt,'k:')
     % grid on
-    h = T/N_stages;
-    for ii = 0:N_stages+1
+    h = problem_options.T/problem_options.N_stages;
+    for ii = 0:problem_options.N_stages+1
         xline(h*ii,'k--')
     end
 
     axis equal
-    xlim([0 T])
-    ylim([0 T])
+    xlim([0 problem_options.T])
+    ylim([0 problem_options.T])
     xlabel('$\tau$ [Numerical Time]','interpreter','latex');
     ylabel('$t(\tau)$ [Phyisical Time]','interpreter','latex');
 end

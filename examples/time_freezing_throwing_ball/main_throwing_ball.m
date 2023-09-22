@@ -34,18 +34,20 @@ import casadi.*
 %% model parameters
 e = 0.9; u_max = 9; beta = 0.0; 
 %% NOSNOC settings
-[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
-settings.time_freezing = 1; 
-settings.n_s = 3; 
-settings.mpcc_mode = 'Scholtes_ineq';
-settings.homotopy_update_rule = 'superlinear';
-settings.step_equilibration = 'direct_homotopy';
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+problem_options.time_freezing = 1; 
+problem_options.n_s = 3; 
+solver_options.mpcc_mode = 'Scholtes_ineq';
+solver_options.homotopy_update_rule = 'superlinear';
+%solver_options.print_level=1;
+%problem_options.step_equilibration = 'direct_homotopy';
 q_target = [4;0.5];
 
 model = NosnocModel();
 problem_options.T = 4; 
-settings.N_stages = 20; 
-settings.N_finite_elements = 3;
+problem_options.N_stages = 20; 
+problem_options.N_finite_elements = 3;
 % model equations
 q = SX.sym('q',2);
 v = SX.sym('v',2); 
@@ -58,13 +60,15 @@ model.f_v = [u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)];
 model.f_q = u'*u; model.f_q_T = 100*v'*v;
 model.g_path = u'*u-u_max^2;
 model.g_terminal = q-[q_target];
-solver = NosnocSolver(model, settings);
+
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
 [results,stats] = solver.solve();
 %%
-plot_result_ball(model,settings,results,stats)
-fprintf('Objective values is: %2.4f \n',full(results.f_opt));
-fprintf('Final time is: %2.4f \n',full(results.T_opt));
-if isempty(results.T_opt)
+plot_result_ball(model,problem_options,solver_options,results,stats)
+fprintf('Objective values is: %2.4f \n',full(results.f));
+fprintf('Final time is: %2.4f \n',full(results.T));
+if isempty(results.T)
     results.T_opt = results.t_grid(end);
 end
-[tout,yout,error] = bouncing_ball_sim(results.u_opt,results.T_opt,settings.N_stages,model.x0(1:4),beta,0.9,q_target);
+[tout,yout,error] = bouncing_ball_sim(results.u,results.T,problem_options.N_stages,model.x0(1:4),beta,0.9,q_target);
