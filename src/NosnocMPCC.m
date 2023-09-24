@@ -82,6 +82,7 @@ classdef NosnocMPCC < NosnocFormulationObject
         ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
         ind_v_global
         ind_s_terminal
+        ind_comp_lift
 
         % Parameter index variables
         ind_p_x0

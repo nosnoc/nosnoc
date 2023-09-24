@@ -78,6 +78,7 @@ classdef ControlStage < NosnocFormulationObject
         ind_nu_lift
         ind_elastic
         ind_sot
+        ind_comp_lift
 
         % Index of this control stage.
         ctrl_idx
@@ -229,6 +230,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_Alpha_vt = [obj.ind_Alpha_vt; transpose(flatten_sys(increment_indices(fe.ind_Alpha_vt, w_len)))];
             
             obj.ind_nu_lift = [obj.ind_nu_lift, {fe.ind_nu_lift+w_len}];
+            obj.ind_comp_lift = [obj.ind_nu_lift, {fe.ind_comp_lift+w_len}];
         end
 
         function addPrimalVector(obj, symbolic, lb, ub, initial)
