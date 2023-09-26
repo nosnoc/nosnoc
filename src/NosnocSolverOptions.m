@@ -108,6 +108,8 @@ classdef NosnocSolverOptions < handle
             obj.opts_casadi_nlp.verbose = false;
             obj.opts_casadi_nlp.ipopt.max_iter = 500;
             obj.opts_casadi_nlp.ipopt.bound_relax_factor = 0;
+            %obj.opts_casadi_nlp.ipopt.bound_relax_factor = 1e-8;
+            %obj.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
             obj.opts_casadi_nlp.ipopt.tol = default_tol;
             obj.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
             obj.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
