@@ -44,13 +44,17 @@ delete three_carts.gif
 problem_options = NosnocProblemOptions();
 solver_options = NosnocSolverOptions();
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
-problem_options.n_s = 1;  % number of stages in IRK methods
+problem_options.n_s = 2;  % number of stages in IRK methods
+problem_options.cross_comp_mode = 7;
+problem_options.lift_complementarities = 1;
 
-solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
-solver_options.N_homotopy = 7;
+%solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
+solver_options.homotopy_update_slope = 0.5;
+solver_options.N_homotopy = 100;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
-solver_options.print_level = 3;
-solver_options.comp_tol = 1e-9;
+solver_options.comp_tol = 1e-6;
+solver_options.print_level = 5;
 problem_options.time_freezing = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
@@ -95,14 +99,14 @@ q = SX.sym('q',3); v = SX.sym('v',3);
 u = SX.sym('u',3);
 x = [q;v];
 model = NosnocModel();
-problem_options.T = 4;
+problem_options.T = 5;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
 model.mu_f = 0.0;
-model.a_n = 20;
+model.a_n = 100;
 model.x0 = x0; 
 
 % model.f = [1/m1*(u(1)-c_damping*v(1)-k1*q(1));...

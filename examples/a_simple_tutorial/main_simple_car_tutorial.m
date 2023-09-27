@@ -11,14 +11,14 @@ problem_options.n_s = 2;
 % Time-settings  - Solve an time optimal control problem
 problem_options.time_optimal_problem = 1;
 
-solver_options.psi_fun_type = CFunctionType.KANZOW_SCHWARTZ;
+solver_options.psi_fun_type = CFunctionType.SCHOLTES;
 
 % settings.nlpsol = 'snopt';  % Note: requires installing.
 
 % Model - define all problem functions and
 % Discretization parameters
 model = NosnocModel();
-problem_options.N_stages = 11; % number of control intervals
+problem_options.N_stages = 10; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 1;    % Time horizon
 % Symbolic variables and bounds
