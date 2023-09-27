@@ -299,117 +299,154 @@ classdef NosnocSolver < handle
             import casadi.*
             stationarity_type = 0;
             % TODO do projection here if necessary
-            % construct direct nlp to estimate multipliers nu/xi
-            direct_options = NosnocSolverOptions();
-            direct_options.mpcc_mode = MpccMode.Scholtes_ineq;
-            direct_options.print_level = 5;
-            direct_options.opts_casadi_nlp.ipopt.max_iter = 5000;
-            direct_options.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-            %direct_options.opts_casadi_nlp.ipopt.nlp_scaling_method = 'none';
-            direct_options.opts_casadi_nlp.ipopt.bound_relax_factor = 1;
-            direct_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-            %direct_options.opts_casadi_nlp.ipopt.alpha_for_y = 'safer-min-dual-infeas';
-            direct_options.preprocess();
-            direct_nlp = NosnocNLP(direct_options, obj.mpcc);
-            %direct_nlp.p0(1) = 1e-8;
-            % construct solver
-            % TODO maybe match solver to existing one?
-            direct_solver = NosnocIpopt().construct_solver(direct_nlp, direct_options);
-
-            % preprocess results in case of elastic modes to match the indices
+            % construct tnlp nlp to estimate multipliers nu/xi
+            tnlp_options = NosnocSolverOptions();
+            tnlp_options.mpcc_mode = MpccMode.Scholtes_ineq;
+            tnlp_options.print_level = 5;
+            tnlp_options.opts_casadi_nlp.ipopt.max_iter = 5000;
+            tnlp_options.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+            tnlp_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
+            tnlp_options.opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+            tnlp_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+            tnlp_options.preprocess();
+            tnlp = NosnocNLP(tnlp_options, obj.mpcc);
+            
             w_init = results.w;
             w_init(obj.nlp.ind_elastic) = [];
-
-            bound_tol = 1e-1;
-            % get correct params and bounds
-            p_val = obj.p_val;
-            lbw = direct_nlp.lbw; ubw = direct_nlp.ubw;
-            lbg = direct_nlp.lbg; ubg = direct_nlp.ubg;
-
-            % small polehedra around found solution
-            lbw = max(lbw,w_init-bound_tol); ubw = min(ubw,w_init+bound_tol);
-            lbg = direct_nlp.lbg; ubg = direct_nlp.ubg;
             
+            G = obj.mpcc.cross_comps(:,1);
+            H = obj.mpcc.cross_comps(:,2);
+            n_comp = length(G);
+            ind_G = zeros(n_comp, 1);
+            ind_H = zeros(n_comp, 1);
+            for ii = 1:n_comp
+                ind_Gi = Function('ind_G',{tnlp.w},{tnlp.w.jacobian(G(ii))});
+                [ind_Gi,~] = find(sparse(ind_Gi(w_init))==1);
+                ind_Hi = Function('ind_H',{tnlp.w},{tnlp.w.jacobian(H(ii))});
+                [ind_Hi,~] = find(sparse(ind_Hi(w_init))==1);
+
+                ind_G(ii) = ind_Gi;
+                ind_H(ii) = ind_Hi;
+            end
+            ind_GH = tnlp.ind_g_comp;
+
+            % get nlp compontens
+            w_tnlp = tnlp.w;
+            f_tnlp = tnlp.augmented_objective;
+            g_tnlp = tnlp.g;
+            p_tnlp = tnlp.p;
+            lbw = tnlp.lbw;ubw = tnlp.ubw;
+            lbg = tnlp.lbg;ubg = tnlp.ubg;
+            p_val = obj.p_val;
+            p_val(1) = 0;
+            lam_x = full(results.nlp_results(end).lam_x);
+            lam_g = full(results.nlp_results(end).lam_g);
+
+            % remove the bilinear constraints from g
+            % NOTE this is destructive to the tnlp.g object
+            g_tnlp.remove(ind_GH-1,[]);
+            lbg(ind_GH) = [];
+            ubg(ind_GH) = [];
+            lam_g(ind_GH) = [];
+
+            % get active sets
+            a_tol = 1e-6;
+            % TODO elastic mode breaks this
+            G_res_old = full(results.w(ind_G));
+            H_res_old = full(results.w(ind_H));
+            ind_00 = G_res_old<a_tol & H_res_old<a_tol;
+            n_biactive = sum(ind_00)
+            ind_0p = G_res_old<a_tol & ~ind_00;
+            ind_p0 = H_res_old<a_tol & ~ind_00;
+
+            if 1
+                lbw(ind_G(ind_0p)) = 0;
+                ubw(ind_G(ind_0p)) = 0;
+                lbw(ind_H(ind_0p)) = 0;
+                ubw(ind_H(ind_0p)) = inf;
+
+                lbw(ind_G(ind_p0)) = 0;
+                ubw(ind_G(ind_p0)) = inf;
+                lbw(ind_H(ind_p0)) = 0;
+                ubw(ind_H(ind_p0)) = 0;
+                
+                lbw(ind_G(ind_00)) = 0;
+                ubw(ind_G(ind_00)) = 0;
+                lbw(ind_H(ind_00)) = 0;
+                ubw(ind_H(ind_00)) = 0;
+            else
+                lbw(ind_G(ind_0p)) = 0;
+                ubw(ind_G(ind_0p)) = 0;
+                lbw(ind_H(ind_0p)) = 0;
+                ubw(ind_H(ind_0p)) = inf;
+
+                lbw(ind_G(ind_p0)) = 0;
+                ubw(ind_G(ind_p0)) = inf;
+                lbw(ind_H(ind_p0)) = 0;
+                ubw(ind_H(ind_p0)) = 0;
+                
+                lbw(ind_G(ind_00)) = 0;
+                ubw(ind_G(ind_00)) = inf;
+                lbw(ind_H(ind_00)) = 0;
+                ubw(ind_H(ind_00)) = inf;
+            end
+
+            casadi_nlp = struct('f', f_tnlp , 'x', w_tnlp, 'g', g_tnlp, 'p', p_tnlp);
+
+            opts_casadi_nlp = tnlp_options.opts_casadi_nlp;
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'snopt');
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'worhp');
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'uno');
+
+            tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
             %
-            direct_results = direct_solver('x0', w_init,...
+            tnlp_results = tnlp_solver('x0', w_init,...
                 'lbx', lbw,...
                 'ubx', ubw,...
                 'lbg', lbg,...
                 'ubg', ubg,...
-                'lam_g0', results.nlp_results(end).lam_g,...
-                'lam_x0', results.nlp_results(end).lam_x,...
+                'lam_g0', lam_g,...
+                'lam_x0', lam_x,...
                 'p',obj.p_val);
-
-            boundary_idx = abs(full(direct_results.x - w_init))==bound_tol;
-            sum(abs(full(direct_results.x - w_init)))
-            direct_results.x(end)
-
-            if sum(boundary_idx) == 0
+            %'lam_g0', lam_g,...
+            %'lam_x0', lam_x,...
                 
-                % TODO assumes vertical mode, calculate and store the idx sets in NLP to avoid this.
-                G = obj.mpcc.cross_comps(:,1);
-                H = obj.mpcc.cross_comps(:,2);
-                n_comp = length(G);
-                ind_G = zeros(n_comp, 1);
-                ind_H = zeros(n_comp, 1);
-                for ii = 1:n_comp
-                    ind_Gi = Function('ind_G',{direct_nlp.w},{direct_nlp.w.jacobian(G(ii))});
-                    [ind_Gi,~] = find(sparse(ind_Gi(w_init))==1);
-                    ind_Hi = Function('ind_H',{direct_nlp.w},{direct_nlp.w.jacobian(H(ii))});
-                    [ind_Hi,~] = find(sparse(ind_Hi(w_init))==1);
+            % TODO assumes vertical mode, calculate and store the idx sets in NLP to avoid this.
+           
+            w_init - full(tnlp_results.x)
 
-                    ind_G(ii) = ind_Gi;
-                    ind_H(ii) = ind_Hi;
+            lam_G0 = -full(tnlp_results.lam_x(ind_G));
+            lam_H0 = -full(tnlp_results.lam_x(ind_H));
+
+            nu = -full(tnlp_results.lam_x(ind_G));
+            xi = -full(tnlp_results.lam_x(ind_H));
+
+            type_tol = 1e-8;
+            if n_biactive
+                nu_biactive = nu(ind_00);
+                xi_biactive = xi(ind_00);
+                bound = 1.1*max(abs([nu_biactive;xi_biactive]));
+
+                figure()
+                scatter(nu_biactive, xi_biactive, 150);
+                xline(0,'k-.');
+                yline(0,'k-.');
+                xlim([-bound,bound]);
+                ylim([-bound,bound]);
+                
+                grid on;
+
+                if  all(nu_biactive > -type_tol & xi_biactive > -type_tol)
+                    stationarity_type = 0;
+                elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
+                    stationarity_type = 1;
+                elseif all(nu_biactive.*xi_biactive > -type_tol)
+                    stationarity_type = 2;
+                elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
+                    stationarity_type = 3;
+                else
+                    stationarity_type = 4;
                 end
-                ind_GH = direct_nlp.ind_g_comp;
-
-                lam_G0 = -full(direct_results.lam_x(ind_G));
-                lam_H0 = -full(direct_results.lam_x(ind_H));
-                lam_GH = full(direct_results.lam_g(ind_GH));
-
-                a_tol = 1e-3;
-                G_res = full(direct_results.x(ind_G));
-                H_res = full(direct_results.x(ind_H));
-                ind_00 = G_res<a_tol & H_res<a_tol;
-                G_res_old = full(w_init(ind_G));
-                H_res_old = full(w_init(ind_H));
-                ind_00_old = G_res_old<a_tol & H_res_old<a_tol;
-                n_biactive = sum(ind_00)
-                ind_0p = G_res<a_tol & ~ind_00;
-                ind_p0 = H_res<a_tol & ~ind_00;
-
-                nu = lam_G0 - lam_GH.*H_res;
-                xi = lam_H0 - lam_GH.*G_res;
-
-                type_tol = 1e-8;
-                if n_biactive
-                    nu_biactive = nu(ind_00);
-                    xi_biactive = xi(ind_00);
-                    bound = 1.1*abs(max([nu_biactive;xi_biactive]));
-
-                    figure()
-                    scatter(nu_biactive, xi_biactive, 150);
-                    xline(0,'k-.');
-                    yline(0,'k-.');
-                    xlim([-bound,bound]);
-                    ylim([-bound,bound]);
-                    
-                    grid on;
-
-                    if  all(nu_biactive > -type_tol & xi_biactive > -type_tol)
-                        stationarity_type = 0;
-                    elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
-                        stationarity_type = 1;
-                    elseif all(nu_biactive.*xi_biactive > -type_tol)
-                        stationarity_type = 2;
-                    elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
-                        stationarity_type = 3;
-                    else
-                        stationarity_type = 4;
-                    end
-                end
-            else
-                stationarity_type = 5;
             end
             if stationarity_type == 0
                 disp('Converged to S-stationary point')
@@ -423,6 +460,13 @@ classdef NosnocSolver < handle
                 disp('Converged to W-stationary point, or something has gone wrong')
             else
                 disp('Auxiliary NLP escaped to boundary, cannot calculate stationarity')
+            end
+            if 1
+                for ii=1:length(w_tnlp)
+                    fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w_tnlp(ii)))
+                end
+                cc = horzcat(G,H);
+                cc(find(ind_00),:)
             end
         end
 
