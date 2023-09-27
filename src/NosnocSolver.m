@@ -305,9 +305,9 @@ classdef NosnocSolver < handle
             tnlp_options.print_level = 5;
             tnlp_options.opts_casadi_nlp.ipopt.max_iter = 5000;
             tnlp_options.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-            tnlp_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
-            tnlp_options.opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
-            tnlp_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+            tnlp_options.opts_casadi_nlp.ipopt.tol = sqrt(obj.solver_options.comp_tol);
+            %tnlp_options.opts_casadi_nlp.ipopt.fixed_variable_treatment = 'make_parameter';
+            %tnlp_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
             tnlp_options.preprocess();
             tnlp = NosnocNLP(tnlp_options, obj.mpcc);
             
@@ -350,7 +350,7 @@ classdef NosnocSolver < handle
             lam_g(ind_GH) = [];
 
             % get active sets
-            a_tol = 1e-6;
+            a_tol = sqrt(obj.solver_options.comp_tol);
             % TODO elastic mode breaks this
             G_res_old = full(results.w(ind_G));
             H_res_old = full(results.w(ind_H));
@@ -413,7 +413,8 @@ classdef NosnocSolver < handle
                 
             % TODO assumes vertical mode, calculate and store the idx sets in NLP to avoid this.
            
-            w_init - full(tnlp_results.x)
+            max(abs(w_init - full(tnlp_results.x)))
+            %w_init - full(tnlp_results.x)
 
             lam_G0 = -full(tnlp_results.lam_x(ind_G));
             lam_H0 = -full(tnlp_results.lam_x(ind_H));
@@ -421,7 +422,7 @@ classdef NosnocSolver < handle
             nu = -full(tnlp_results.lam_x(ind_G));
             xi = -full(tnlp_results.lam_x(ind_H));
 
-            type_tol = 1e-8;
+            type_tol = a_tol;
             if n_biactive
                 nu_biactive = nu(ind_00);
                 xi_biactive = xi(ind_00);
@@ -461,9 +462,15 @@ classdef NosnocSolver < handle
             else
                 disp('Auxiliary NLP escaped to boundary, cannot calculate stationarity')
             end
-            if 1
+            if 0
+                fprintf('lbw\tubw\ttnlp_x\t-lam_x\tw\n')
                 for ii=1:length(w_tnlp)
                     fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w_tnlp(ii)))
+                end
+
+                fprintf('lbg\tubg\tg\n')
+                for ii=1:length(g_tnlp)
+                    fprintf('%.4f\t%.4f\t%s\n', lbg(ii), ubg(ii), formattedDisplayText(g_tnlp(ii)))
                 end
                 cc = horzcat(G,H);
                 cc(find(ind_00),:)
@@ -650,6 +657,8 @@ classdef NosnocSolver < handle
                             'ubx', ubw,...
                             'lbg', lbg,...
                             'ubg', ubg,...
+                            'lam_x0', nlp_results.lam_x,...
+                            'lam_g0', nlp_results.lam_g,...
                             'p',obj.p_val);
                             %'lam_x0', nlp_results.lam_x,...
                             %'lam_g0', nlp_results.lam_g);

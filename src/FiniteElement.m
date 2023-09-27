@@ -1482,7 +1482,7 @@ classdef FiniteElement < NosnocFormulationObject
                         ind_lift_comp = [ind_lift_comp, ii];
                     end
                 end
-                z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'z_comp', n_lift_comp);
+                z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['z_comp_' num2str(obj.ctrl_idx-1) '_' num2str(obj.fe_idx-1)], n_lift_comp);
                 if problem_options.lower_bound_comp_lift
                     lb = zeros(n_lift_comp,1);
                 else

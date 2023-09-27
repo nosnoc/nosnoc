@@ -104,6 +104,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.model = model;
             obj.dims = dims;
 
+            obj.ind_comp_lift = cell(1, problem_options.N_finite_elements(ctrl_idx));
             obj.ctrl_idx = ctrl_idx;
             
             obj.Uk = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
@@ -230,7 +231,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_Alpha_vt = [obj.ind_Alpha_vt; transpose(flatten_sys(increment_indices(fe.ind_Alpha_vt, w_len)))];
             
             obj.ind_nu_lift = [obj.ind_nu_lift, {fe.ind_nu_lift+w_len}];
-            obj.ind_comp_lift = [obj.ind_nu_lift, {fe.ind_comp_lift+w_len}];
+            obj.ind_comp_lift{fe.fe_idx} = fe.ind_comp_lift+w_len;
         end
 
         function addPrimalVector(obj, symbolic, lb, ub, initial)

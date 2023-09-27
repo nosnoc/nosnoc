@@ -237,6 +237,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.ind_h = {};
             obj.ind_sot = {};
             obj.ind_v_global = [];
+            obj.ind_comp_lift = {};
 
             obj.ind_s_terminal = [];
 
@@ -620,6 +621,8 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.ind_P_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_P_vt, w_len);
             obj.ind_N_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_N_vt, w_len);
             obj.ind_Alpha_vt(stage.ctrl_idx, :) = increment_indices(stage.ind_Alpha_vt, w_len);
+
+            obj.ind_comp_lift = [obj.ind_comp_lift; increment_indices(stage.ind_comp_lift,w_len)];
 
             obj.addConstraint(stage.g, stage.lbg, stage.ubg);
         end
