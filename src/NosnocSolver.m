@@ -306,9 +306,9 @@ classdef NosnocSolver < handle
             tnlp_options.opts_casadi_nlp.ipopt.max_iter = 5000;
             tnlp_options.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
             tnlp_options.opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
-            tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-16;
-            tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-16;
-            tnlp_options.opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-16;
+            tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+            tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+            tnlp_options.opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
             tnlp_options.opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
             tnlp_options.opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
             tnlp_options.opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
@@ -369,6 +369,7 @@ classdef NosnocSolver < handle
             if 1
                 lbw(ind_G(ind_0p)) = 0;
                 ubw(ind_G(ind_0p)) = 0;
+                %w_init(ind_G(ind_0p)) = 0;
                 lbw(ind_H(ind_0p)) = 0;
                 ubw(ind_H(ind_0p)) = inf;
 
@@ -376,10 +377,13 @@ classdef NosnocSolver < handle
                 ubw(ind_G(ind_p0)) = inf;
                 lbw(ind_H(ind_p0)) = 0;
                 ubw(ind_H(ind_p0)) = 0;
+                %w_init(ind_H(ind_p0)) = 0;
                 
                 lbw(ind_G(ind_00)) = 0;
                 ubw(ind_G(ind_00)) = 0;
+                %w_init(ind_G(ind_00)) = 0;
                 lbw(ind_H(ind_00)) = 0;
+                %w_init(ind_H(ind_00)) = 0;
                 ubw(ind_H(ind_00)) = 0;
             else
                 lbw(ind_G(ind_0p)) = 0;
@@ -451,7 +455,7 @@ classdef NosnocSolver < handle
             % rank of cc constraints at this point
             rank_cc = rank(full(vertcat(G_jac_star(I_G,:),H_jac_star(I_H,:))));
 
-            type_tol = a_tol;
+            type_tol = sqrt(a_tol);
             if n_biactive
                 nu_biactive = nu(ind_00);
                 xi_biactive = xi(ind_00);
