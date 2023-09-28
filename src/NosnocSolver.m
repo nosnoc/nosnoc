@@ -305,9 +305,16 @@ classdef NosnocSolver < handle
             tnlp_options.print_level = 5;
             tnlp_options.opts_casadi_nlp.ipopt.max_iter = 5000;
             tnlp_options.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-            tnlp_options.opts_casadi_nlp.ipopt.tol = sqrt(obj.solver_options.comp_tol);
-            %tnlp_options.opts_casadi_nlp.ipopt.fixed_variable_treatment = 'make_parameter';
-            %tnlp_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+            tnlp_options.opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+            tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-16;
+            tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-16;
+            tnlp_options.opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-16;
+            tnlp_options.opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
+            tnlp_options.opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
+            tnlp_options.opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
+            tnlp_options.opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+            tnlp_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+            tnlp_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
             tnlp_options.preprocess();
             tnlp = NosnocNLP(tnlp_options, obj.mpcc);
             
@@ -330,7 +337,7 @@ classdef NosnocSolver < handle
             end
             ind_GH = tnlp.ind_g_comp;
 
-            % get nlp compontens
+            % get nlp components
             w_tnlp = tnlp.w;
             f_tnlp = tnlp.augmented_objective;
             g_tnlp = tnlp.g;
@@ -412,15 +419,37 @@ classdef NosnocSolver < handle
             %'lam_x0', lam_x,...
                 
             % TODO assumes vertical mode, calculate and store the idx sets in NLP to avoid this.
-           
-            max(abs(w_init - full(tnlp_results.x)))
-            %w_init - full(tnlp_results.x)
-
-            lam_G0 = -full(tnlp_results.lam_x(ind_G));
-            lam_H0 = -full(tnlp_results.lam_x(ind_H));
+            w_star = full(tnlp_results.x);
+            max(abs(w_init - w_star))
+            [~,sort_idx] = sort(abs(w_init - w_star)); % sorted by difference from original stationary point
 
             nu = -full(tnlp_results.lam_x(ind_G));
             xi = -full(tnlp_results.lam_x(ind_H));
+
+            % Debug values
+            f_jac = Function('f_jac',{w_tnlp, p_tnlp}, {f_tnlp.jacobian(w_tnlp)});
+            g_jac = Function('f_jac',{w_tnlp, p_tnlp}, {g_tnlp.jacobian(w_tnlp)});
+            G_jac = Function('G_jac',{w_tnlp, p_tnlp}, {G.jacobian(w_tnlp)});
+            H_jac = Function('G_jac',{w_tnlp, p_tnlp}, {H.jacobian(w_tnlp)});
+
+            % Index sets
+            I_G = find(ind_0p+ind_00);
+            I_H = find(ind_p0+ind_00);
+
+            % values at w_star
+            f_jac_star = f_jac(w_star, p_val);
+            g_jac_star = g_jac(w_star, p_val);
+            G_jac_star = G_jac(w_star, p_val);
+            H_jac_star = H_jac(w_star, p_val);
+
+            % multipliers (nu, xi already calculated above)
+            lam_x_star = tnlp_results.lam_x;
+            lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+            lam_x_star(ind_H) = 0; % box constraints
+            lam_g_star = tnlp_results.lam_g;
+
+            % rank of cc constraints at this point
+            rank_cc = rank(full(vertcat(G_jac_star(I_G,:),H_jac_star(I_H,:))));
 
             type_tol = a_tol;
             if n_biactive
@@ -429,7 +458,7 @@ classdef NosnocSolver < handle
                 bound = 1.1*max(abs([nu_biactive;xi_biactive]));
 
                 figure()
-                scatter(nu_biactive, xi_biactive, 150);
+                scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
                 xline(0,'k-.');
                 yline(0,'k-.');
                 xlim([-bound,bound]);
@@ -463,14 +492,14 @@ classdef NosnocSolver < handle
                 disp('Auxiliary NLP escaped to boundary, cannot calculate stationarity')
             end
             if 0
-                fprintf('lbw\tubw\ttnlp_x\t-lam_x\tw\n')
+                fprintf('lbw\tubw\ttnlp_x\tw_init\t-lam_x\tw\n')
                 for ii=1:length(w_tnlp)
-                    fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w_tnlp(ii)))
+                    fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), w_init(ii), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w_tnlp(ii)))
                 end
 
-                fprintf('lbg\tubg\tg\n')
+                fprintf('lbg\tubg\tlam_g\tg\n')
                 for ii=1:length(g_tnlp)
-                    fprintf('%.4f\t%.4f\t%s\n', lbg(ii), ubg(ii), formattedDisplayText(g_tnlp(ii)))
+                    fprintf('%.4f\t%.4f\t%.4f\t%s\n', lbg(ii), ubg(ii), full(tnlp_results.lam_g(ii)), formattedDisplayText(g_tnlp(ii)))
                 end
                 cc = horzcat(G,H);
                 cc(find(ind_00),:)

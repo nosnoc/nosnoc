@@ -1499,6 +1499,60 @@ classdef FiniteElement < NosnocFormulationObject
                     obj.all_comp_pairs(ind_lift_comp) = z_comp;
                 end
             end
+
+            if problem_options.experimental_supervertical_form
+                % lift G
+                n_lift_comp = 0;
+                ind_lift_comp = [];
+                tmp = obj.all_comp_pairs(:,1);
+                % figure out what we need to lift
+                for ii=1:length(tmp)
+                    n_lift_comp = n_lift_comp+1;
+                    ind_lift_comp = [ind_lift_comp, ii];
+                end
+                z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['z_G_' num2str(obj.ctrl_idx-1) '_' num2str(obj.fe_idx-1)], n_lift_comp);
+                if problem_options.lower_bound_comp_lift
+                    lb = zeros(n_lift_comp,1);
+                else
+                    lb = -inf*ones(n_lift_comp,1);
+                end
+                obj.addVariable(z_comp,...
+                    'comp_lift',...
+                    lb,...
+                    inf*ones(n_lift_comp, 1),...
+                    ones(n_lift_comp, 1));
+                if length(ind_lift_comp)
+                    g_comp_lift = z_comp - tmp(ind_lift_comp);
+                    obj.addConstraint(g_comp_lift);
+                    obj.all_comp_pairs(ind_lift_comp,1) = z_comp;
+                end
+
+                % lift H
+                n_lift_comp = 0;
+                ind_lift_comp = [];
+                tmp = obj.all_comp_pairs(:,2);
+                % figure out what we need to lift
+                for ii=1:length(tmp)
+                    n_lift_comp = n_lift_comp+1;
+                    ind_lift_comp = [ind_lift_comp, ii];
+                end
+                z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['z_H_' num2str(obj.ctrl_idx-1) '_' num2str(obj.fe_idx-1)], n_lift_comp);
+                if problem_options.lower_bound_comp_lift
+                    lb = zeros(n_lift_comp,1);
+                else
+                    lb = -inf*ones(n_lift_comp,1);
+                end
+                obj.addVariable(z_comp,...
+                    'comp_lift',...
+                    lb,...
+                    inf*ones(n_lift_comp, 1),...
+                    ones(n_lift_comp, 1));
+                if length(ind_lift_comp)
+                    g_comp_lift = z_comp - tmp(ind_lift_comp);
+                    obj.addConstraint(g_comp_lift);
+                    obj.all_comp_pairs(ind_lift_comp,2) = z_comp;
+                end
+            end
         end
 
         function stepEquilibration(obj, rho_h_p)

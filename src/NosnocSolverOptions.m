@@ -89,7 +89,7 @@ classdef NosnocSolverOptions < handle
         timeout_wall(1,1) {mustBeReal, mustBeNonnegative} = 0;
 
         % Experimental
-        normalize_homotopy_update(1,1) logical = 0
+        normalize_homotopy_update(1,1) logical = 1
         norm_function
     end
 
