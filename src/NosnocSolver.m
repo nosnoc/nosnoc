@@ -455,7 +455,7 @@ classdef NosnocSolver < handle
             % rank of cc constraints at this point
             rank_cc = rank(full(vertcat(G_jac_star(I_G,:),H_jac_star(I_H,:))));
 
-            type_tol = sqrt(a_tol);
+            type_tol = a_tol;
             if n_biactive
                 nu_biactive = nu(ind_00);
                 xi_biactive = xi(ind_00);
