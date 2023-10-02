@@ -5,7 +5,9 @@ solver_options = NosnocSolverOptions();
 
 % Choosing the Runge - Kutta Method and number of stages
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
-problem_options.cross_comp_mode = 1;
+problem_options.cross_comp_mode = 4;
+%problem_options.lift_complementarities = 1;.
+problem_options.experimental_supervertical_form = 1;
 problem_options.n_s = 2;
 % Time-settings  - Solve an time optimal control problem
 problem_options.time_optimal_problem = 1;

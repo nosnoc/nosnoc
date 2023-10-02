@@ -79,6 +79,7 @@ classdef NosnocSolverOptions < handle
         relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
         elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
         psi_fun
+        lower_bound_relaxation(1,1) logical = 0
 
         % Output options
         store_integrator_step_results(1,1) logical = 0
@@ -218,6 +219,7 @@ classdef NosnocSolverOptions < handle
               case CFunctionType.SCHOLTES_TWO_SIDED
                 psi_mpcc = [a*b-sigma;a*b+sigma];
                 norm = sigma;
+                obj.lower_bound_relaxation = 1;
               case CFunctionType.FISCHER_BURMEISTER
                 if obj.normalize_homotopy_update
                     normalized_sigma = sqrt(2*sigma);
@@ -270,16 +272,21 @@ classdef NosnocSolverOptions < handle
                 b1 = b-normalized_sigma;
                 psi_mpcc = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
               case CFunctionType.LIN_FUKUSHIMA
-                psi_mpcc1 = [a*b-sigma];
-                psi_mpcc2 = [-((a-sigma)*(b-sigma)-sigma^2)];
+                psi_mpcc1 = [a*b-sigma^2];
+                psi_mpcc2 = [((a+sigma)*(b+sigma)-sigma^2)];
                 psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
+                obj.lower_bound_relaxation = 1;
               case CFunctionType.KADRANI
                 if obj.normalize_homotopy_update
                     normalized_sigma = sigma;
                 else
                     normalized_sigma = sigma;
                 end
-                psi_mpcc = (a-normalized_sigma)*(b-normalized_sigma);
+                psi_mpcc1 = (a-normalized_sigma)*(b-normalized_sigma);
+                psi_mpcc2 = -sigma - a;
+                psi_mpcc3 = -sigma - b;
+                psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2, psi_mpcc3)
+                obj.lower_bound_relaxation = 1;
             end
 
             obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});

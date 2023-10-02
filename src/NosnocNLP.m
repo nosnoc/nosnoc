@@ -201,7 +201,9 @@ classdef NosnocNLP < NosnocFormulationObject
                 [g_stage, lbg_stage, ubg_stage] = stage.g_stage;
                 obj.addConstraint(g_stage, lbg_stage, ubg_stage);
                 for fe=stage.stage
-                    obj.addPrimalVector(fe.w, fe.lbw, fe.ubw, fe.w0);
+                    [lbw,ubw] = obj.relax_complementarity_var_bounds(fe);
+                    
+                    obj.addPrimalVector(fe.w, lbw, ubw, fe.w0);
                     obj.addConstraint(fe.g, fe.lbg, fe.ubg);
                     obj.relax_complementarity_constraints(fe);
                 end
@@ -230,6 +232,31 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.ind_map = ind_map;
         end
 
+        function [lbw,ubw] = relax_complementarity_var_bounds(obj, fe)
+            lbw = fe.lbw;
+            ubw = fe.ubw;
+            if ~obj.solver_options.lower_bound_relaxation
+                return;
+            end
+
+            switch obj.mpcc.problem_options.dcs_mode
+              case DcsMode.Stewart
+                lbw([fe.ind_lam{:}]) = -inf;
+                lbw([fe.ind_theta{:}]) = -inf;
+                ubw([fe.ind_lam{:}]) = inf;
+                ubw([fe.ind_theta{:}]) = inf;
+              case DcsMode.Step
+                lbw([fe.ind_lambda_n{:}]) = -inf;
+                lbw([fe.ind_lambda_p{:}]) = -inf;
+                lbw([fe.ind_alpha{:}]) = -inf;
+                ubw([fe.ind_lambda_n{:}]) = inf;
+                ubw([fe.ind_lambda_p{:}]) = inf;
+                ubw([fe.ind_alpha{:}]) = 1;
+              case DcsMode.CLS
+                %TODO
+            end
+        end
+        
         function relax_complementarity_constraints(obj, component)
             sigma_p = obj.sigma_p;
 
