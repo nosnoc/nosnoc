@@ -22,7 +22,8 @@ problem_options.T = pi/4;
 problem_options.N_stages = 1;
 problem_options.N_finite_elements = 2;
 problem_options.cross_comp_mode = 1;
-problem_options.lift_complementarities = 1;
+%problem_options.lift_complementarities = 1;
+problem_options.experimental_supervertical_form = 1;
 problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 problem_options.n_s = 2;
 
