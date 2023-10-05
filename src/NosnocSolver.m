@@ -314,7 +314,7 @@ classdef NosnocSolver < handle
             tnlp_options.opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
             tnlp_options.opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
             tnlp_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-            tnlp_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+            tnlp_options.opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
             tnlp_options.preprocess();
             tnlp = NosnocNLP(tnlp_options, obj.mpcc);
             
@@ -542,12 +542,13 @@ classdef NosnocSolver < handle
                 ylim([-0.1,1.1*max(H_res_old)])
                 hold off;
             end
-            if 0
+            if 1
                 fprintf('lbw\tubw\ttnlp_x\tw_init\t-lam_x\tw\n')
                 for ii=1:length(w_tnlp)
                     fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), w_init(ii), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w_tnlp(ii)))
                 end
-
+            end
+            if 0
                 fprintf('lbg\tubg\tlam_g\tg\n')
                 for ii=1:length(g_tnlp)
                     fprintf('%.4f\t%.4f\t%.4f\t%s\n', lbg(ii), ubg(ii), full(tnlp_results.lam_g(ii)), formattedDisplayText(g_tnlp(ii)))
