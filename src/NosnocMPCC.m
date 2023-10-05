@@ -115,6 +115,7 @@ classdef NosnocMPCC < NosnocFormulationObject
 
         % cross comps
         cross_comps
+        ind_std_comp
 
         % Problem components
         fe0 % Zeroth finite element (contains X0, lambda00)
@@ -474,12 +475,15 @@ classdef NosnocMPCC < NosnocFormulationObject
             % calculate complementarity residual via vector of all complementarities
             all_pairs = [];
             all_products = [];
+            std_indices = [];
             for k=1:problem_options.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
                     all_pairs = [all_pairs;fe.all_comp_pairs];
+                    std_indices = [std_indices;fe.ind_std_comp];
                 end
             end
+            obj.ind_std_comp = std_indices;
             obj.cross_comps = all_pairs;
             all_products = apply_psi(all_pairs, @(x,y,t) x.*y, 0);
 

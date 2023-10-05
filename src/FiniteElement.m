@@ -90,6 +90,7 @@ classdef FiniteElement < NosnocFormulationObject
         cross_comp_pairs
         all_comp_pairs
         n_comp_components
+        ind_std_comp      % NOTE: EXPERIMENTAL, doesn't work for CLS, or c_n != 1 integration schemes
 
         ctrl_idx
         fe_idx
@@ -835,6 +836,26 @@ classdef FiniteElement < NosnocFormulationObject
             end
         end
 
+        function std_comp_pairs = getStdCompPairs(obj)
+            import casadi.*
+            model = obj.model;
+            problem_options = obj.problem_options;
+            dims = obj.dims;
+            warning("This method is experimental and does not work in all cases");
+            switch problem_options.dcs_mode
+                case DcsMode.Stewart
+                    rbp_allowance = ~problem_options.right_boundary_point_explicit;
+                    n_cont = dims.n_s+1+rbp_allowance;
+                    n_discont = dims.n_s;
+                    n_indep = dims.n_sys;
+                    cross_comp_pairs = [];
+                    
+                case DcsMode.Step
+                    cross_comp_pairs{1,jj,r} = [prev_fe.w(prev_fe.ind_lam{end,r}), obj.w(obj.ind_theta{jj,r})];
+                case DcsMode.CLS
+            end
+        end
+        
         function cross_comp_pairs = getCrossCompPairs(obj)
             import casadi.*
             model = obj.model;
@@ -1404,6 +1425,7 @@ classdef FiniteElement < NosnocFormulationObject
             cross_comp_pairs = obj.getCrossCompPairs();
 
             cross_comp_aggregated = [];
+            ind_std_comp = [];
 
             sigma_scale = 1; % TODO scale properly
                              % apply psi
@@ -1411,6 +1433,14 @@ classdef FiniteElement < NosnocFormulationObject
             lbg_cross_comp = [];
             ubg_cross_comp = [];
             if problem_options.cross_comp_mode == CrossCompMode.STAGE_STAGE || ~problem_options.use_fesd
+                % NOTE: this is a hack.
+                bool_cells = cellfun(@(x) false(size(x,1),1), cross_comp_pairs, 'uni', false);
+                for ii=1:obj.n_discont
+                    for r=1:obj.n_indep
+                        bool_cells{1+ii, ii,r} = ~bool_cells{1+ii, ii,r};
+                    end
+                end
+                obj.ind_std_comp = vertcat(bool_cells{:});
                 cross_comp_aggregated = vertcat(cross_comp_pairs{:});
             elseif problem_options.cross_comp_mode == CrossCompMode.FE_STAGE
                 a = [];
@@ -1468,7 +1498,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
                 cross_comp_aggregated = [a,b];
             end
-
+            obj.ind_std_comp = vertcat(true(size(g_path_comp_pairs,1),1),true(size(impulse_pairs,1),1), obj.ind_std_comp);
             obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_aggregated);
 
             if problem_options.lift_complementarities
