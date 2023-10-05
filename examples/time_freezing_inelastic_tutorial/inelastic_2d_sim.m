@@ -10,16 +10,17 @@ model = NosnocModel();
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 solver_options.print_level = 3;
 problem_options.cross_comp_mode = 1;
-problem_options.lift_complementarities = 1;
+%problem_options.lift_complementarities = 1;
 problem_options.time_freezing = 1;
 problem_options.impose_terminal_phyisical_time = 1;
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 0;
 problem_options.experimental_supervertical_form = 1;
 solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
-solver_options.comp_tol = 1e-7;
-solver_options.sigma_N = 1e-7;
+solver_options.comp_tol = 1e-10;
+solver_options.sigma_N = 1e-10;
 solver_options.N_homotopy = 16;
+%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 problem_options.pss_lift_step_functions = 0;
 %%
