@@ -295,7 +295,7 @@ classdef NosnocSolver < handle
             % fprintf('\n');
         end
 
-        function calculate_stationarity_type(obj, results)
+        function res_out = calculate_stationarity_type(obj, results)
             import casadi.*
             stationarity_type = 0;
             % TODO do projection here if necessary
@@ -337,6 +337,27 @@ classdef NosnocSolver < handle
             end
             ind_GH = tnlp.ind_g_comp;
 
+            % for stage = obj.mpcc.stages
+            %     for fe = stage.stage
+            %         G = fe.all_comp_pairs(:,1);
+            %         H = fe.all_comp_pairs(:,2);
+            %         n_comp = length(G);
+            %         ind_G = zeros(n_comp, 1);
+            %         ind_H = zeros(n_comp, 1);
+            %         for ii = 1:n_comp
+            %             ind_Gi = Function('ind_G',{tnlp.w},{tnlp.w.jacobian(G(ii))});
+            %             [ind_Gi,~] = find(sparse(ind_Gi(w_init))==1);
+            %             ind_Hi = Function('ind_H',{tnlp.w},{tnlp.w.jacobian(H(ii))});
+            %             [ind_Hi,~] = find(sparse(ind_Hi(w_init))==1);
+
+            %             ind_G(ii) = ind_Gi;
+            %             ind_H(ii) = ind_Hi;
+            %         end
+
+            %         G_res_old = full(results.w(ind_G));
+            %         H_res_old = full(results.w(ind_H));
+            %     end
+            % end
             % get nlp components
             w_tnlp = tnlp.w;
             f_tnlp = tnlp.augmented_objective;
@@ -347,8 +368,8 @@ classdef NosnocSolver < handle
             p_val = obj.p_val;
             p_val(1) = 0;
             lam_x = full(results.nlp_results(end).lam_x);
+            lam_x(obj.nlp.ind_elastic) = [];
             lam_g = full(results.nlp_results(end).lam_g);
-
             % remove the bilinear constraints from g
             % NOTE this is destructive to the tnlp.g object
             g_tnlp.remove(ind_GH-1,[]);
@@ -357,7 +378,7 @@ classdef NosnocSolver < handle
             lam_g(ind_GH) = [];
 
             % get active sets
-            a_tol = sqrt(obj.solver_options.comp_tol);
+            a_tol = 3*sqrt(obj.solver_options.comp_tol);
             % TODO elastic mode breaks this
             G_res_old = full(results.w(ind_G));
             H_res_old = full(results.w(ind_H));
@@ -365,11 +386,12 @@ classdef NosnocSolver < handle
             n_biactive = sum(ind_00)
             ind_0p = G_res_old<a_tol & ~ind_00;
             ind_p0 = H_res_old<a_tol & ~ind_00;
+            find(ind_00)
 
             if 1
                 lbw(ind_G(ind_0p)) = 0;
                 ubw(ind_G(ind_0p)) = 0;
-                %w_init(ind_G(ind_0p)) = 0;
+                w_init(ind_G(ind_0p)) = 0;
                 lbw(ind_H(ind_0p)) = 0;
                 ubw(ind_H(ind_0p)) = inf;
 
@@ -377,13 +399,13 @@ classdef NosnocSolver < handle
                 ubw(ind_G(ind_p0)) = inf;
                 lbw(ind_H(ind_p0)) = 0;
                 ubw(ind_H(ind_p0)) = 0;
-                %w_init(ind_H(ind_p0)) = 0;
+                w_init(ind_H(ind_p0)) = 0;
                 
                 lbw(ind_G(ind_00)) = 0;
                 ubw(ind_G(ind_00)) = 0;
-                %w_init(ind_G(ind_00)) = 0;
+                w_init(ind_G(ind_00)) = 0;
                 lbw(ind_H(ind_00)) = 0;
-                %w_init(ind_H(ind_00)) = 0;
+                w_init(ind_H(ind_00)) = 0;
                 ubw(ind_H(ind_00)) = 0;
             else
                 lbw(ind_G(ind_0p)) = 0;
@@ -459,7 +481,7 @@ classdef NosnocSolver < handle
             if n_biactive
                 nu_biactive = nu(ind_00);
                 xi_biactive = xi(ind_00);
-                bound = 1.1*max(abs([nu_biactive;xi_biactive]));
+                bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
 
                 figure()
                 scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
@@ -494,6 +516,31 @@ classdef NosnocSolver < handle
                 disp('Converged to W-stationary point, or something has gone wrong')
             else
                 disp('Auxiliary NLP escaped to boundary, cannot calculate stationarity')
+            end
+            % output tnlp results
+            res_out.nlp_results = tnlp_results;
+            res_out = obj.extract_results_nlp(obj.mpcc, res_out);
+            if 1
+                figure;
+                hold on;
+                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,100*a_tol])
+                scatter(G_res_old, H_res_old)
+                xline(a_tol)
+                yline(a_tol)
+                xlim([-a_tol,10*a_tol])
+                ylim([-a_tol,10*a_tol])
+                axis square;
+                hold off;
+
+                figure;
+                hold on;
+                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,1.1*max(max(G_res_old),max(H_res_old))])
+                scatter(G_res_old, H_res_old)
+                xline(a_tol)
+                yline(a_tol)
+                xlim([-0.1,1.1*max(G_res_old)])
+                ylim([-0.1,1.1*max(H_res_old)])
+                hold off;
             end
             if 0
                 fprintf('lbw\tubw\ttnlp_x\tw_init\t-lam_x\tw\n')
@@ -770,7 +817,7 @@ classdef NosnocSolver < handle
             % number of iterations
             stats.homotopy_iterations = ii;
 
-            results = obj.extract_results_nlp(results);
+            results = obj.extract_results_nlp(obj.mpcc, results);
 
             % check if solved to required accuracy
             stats.converged = obj.complementarity_tol_met(stats) && ~last_iter_failed && ~timeout;
@@ -783,9 +830,8 @@ classdef NosnocSolver < handle
             error('TODO: not yet implemented')
         end
 
-        function results = extract_results_nlp(obj, results)
+        function results = extract_results_nlp(obj, mpcc, results)
             import casadi.*
-            mpcc = obj.mpcc;
             plugin = obj.plugin;
             % Store differential states
             w_opt = plugin.w_opt_from_results(results.nlp_results(end));
