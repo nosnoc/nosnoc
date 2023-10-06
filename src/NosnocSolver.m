@@ -303,7 +303,7 @@ classdef NosnocSolver < handle
             tnlp_options = NosnocSolverOptions();
             tnlp_options.mpcc_mode = MpccMode.Scholtes_ineq;
             tnlp_options.print_level = 5;
-            tnlp_options.opts_casadi_nlp.ipopt.max_iter = 5000;
+            tnlp_options.opts_casadi_nlp.ipopt.max_iter = 1000;
             tnlp_options.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
             tnlp_options.opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
             tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
@@ -324,6 +324,7 @@ classdef NosnocSolver < handle
             G = obj.mpcc.cross_comps(:,1);
             H = obj.mpcc.cross_comps(:,2);
             n_comp = length(G);
+            ind_std_comp = logical(obj.nlp.mpcc.ind_std_comp);
             ind_G = zeros(n_comp, 1);
             ind_H = zeros(n_comp, 1);
             for ii = 1:n_comp
@@ -337,27 +338,11 @@ classdef NosnocSolver < handle
             end
             ind_GH = tnlp.ind_g_comp;
 
-            % for stage = obj.mpcc.stages
-            %     for fe = stage.stage
-            %         G = fe.all_comp_pairs(:,1);
-            %         H = fe.all_comp_pairs(:,2);
-            %         n_comp = length(G);
-            %         ind_G = zeros(n_comp, 1);
-            %         ind_H = zeros(n_comp, 1);
-            %         for ii = 1:n_comp
-            %             ind_Gi = Function('ind_G',{tnlp.w},{tnlp.w.jacobian(G(ii))});
-            %             [ind_Gi,~] = find(sparse(ind_Gi(w_init))==1);
-            %             ind_Hi = Function('ind_H',{tnlp.w},{tnlp.w.jacobian(H(ii))});
-            %             [ind_Hi,~] = find(sparse(ind_Hi(w_init))==1);
+            % update index sets to only handle "true" complementarities
+            ind_G = ind_G(ind_std_comp);
+            ind_H = ind_H(ind_std_comp);
+            ind_GH = ind_GH(ind_std_comp);
 
-            %             ind_G(ii) = ind_Gi;
-            %             ind_H(ii) = ind_Hi;
-            %         end
-
-            %         G_res_old = full(results.w(ind_G));
-            %         H_res_old = full(results.w(ind_H));
-            %     end
-            % end
             % get nlp components
             w_tnlp = tnlp.w;
             f_tnlp = tnlp.augmented_objective;
@@ -378,10 +363,10 @@ classdef NosnocSolver < handle
             lam_g(ind_GH) = [];
 
             % get active sets
-            a_tol = 3*sqrt(obj.solver_options.comp_tol);
+            a_tol = 1*sqrt(obj.solver_options.comp_tol);
             % TODO elastic mode breaks this
-            G_res_old = full(results.w(ind_G));
-            H_res_old = full(results.w(ind_H));
+            G_res_old = full(w_init(ind_G));
+            H_res_old = full(w_init(ind_H));
             ind_00 = G_res_old<a_tol & H_res_old<a_tol;
             n_biactive = sum(ind_00)
             ind_0p = G_res_old<a_tol & ~ind_00;
@@ -477,7 +462,7 @@ classdef NosnocSolver < handle
             % rank of cc constraints at this point
             rank_cc = rank(full(vertcat(G_jac_star(I_G,:),H_jac_star(I_H,:))));
 
-            type_tol = a_tol;
+            type_tol = a_tol^2;
             if n_biactive
                 nu_biactive = nu(ind_00);
                 xi_biactive = xi(ind_00);
@@ -519,7 +504,7 @@ classdef NosnocSolver < handle
             end
             % output tnlp results
             res_out.nlp_results = tnlp_results;
-            res_out = obj.extract_results_nlp(obj.mpcc, res_out);
+            %res_out = obj.extract_results_nlp(obj.mpcc, res_out);
             if 1
                 figure;
                 hold on;
@@ -548,7 +533,7 @@ classdef NosnocSolver < handle
                     fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), w_init(ii), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w_tnlp(ii)))
                 end
             end
-            if 0
+            if 1
                 fprintf('lbg\tubg\tlam_g\tg\n')
                 for ii=1:length(g_tnlp)
                     fprintf('%.4f\t%.4f\t%.4f\t%s\n', lbg(ii), ubg(ii), full(tnlp_results.lam_g(ii)), formattedDisplayText(g_tnlp(ii)))

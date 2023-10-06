@@ -1460,6 +1460,7 @@ classdef FiniteElement < NosnocFormulationObject
                         a = [a;cont];
                     end
                 end
+                obj.ind_std_comp = true(size(a)); % TODO This may be wrong
                 cross_comp_aggregated = [a,b];
             elseif problem_options.cross_comp_mode == CrossCompMode.STAGE_FE
                 a = [];
@@ -1479,6 +1480,7 @@ classdef FiniteElement < NosnocFormulationObject
                         a = [a;sum2([cont{:}])];
                     end
                 end
+                obj.ind_std_comp = true(size(a)); % TODO This may be wrong
                 cross_comp_aggregated = [a,b];
             elseif problem_options.cross_comp_mode == CrossCompMode.FE_FE
                 a = [];
@@ -1496,6 +1498,7 @@ classdef FiniteElement < NosnocFormulationObject
                     b = [b;sum2([discont{:}])];
                     a = [a;sum2([cont{:}])];
                 end
+                obj.ind_std_comp = true(size(a));
                 cross_comp_aggregated = [a,b];
             end
             obj.ind_std_comp = vertcat(true(size(g_path_comp_pairs,1),1),true(size(impulse_pairs,1),1), obj.ind_std_comp);
