@@ -37,7 +37,7 @@ classdef NosnocSolverOptions < handle
         comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
         mpcc_mode(1,1) MpccMode = MpccMode.custom
         objective_scaling_direct(1,1) logical = 1
-        sigma_0(1,1) double {mustBeReal, mustBePositive} = 1
+        sigma_0(1,1) double {mustBeReal, mustBeNonnegative} = 1
         sigma_N(1,1) double {mustBeReal, mustBePositive} = 1e-9
         homotopy_update_rule = 'linear' % 'linear' sigma_k = homotopy_update_slope*sigma_N
                                         % 'superlinear' - sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent))
