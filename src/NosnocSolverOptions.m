@@ -289,7 +289,7 @@ classdef NosnocSolverOptions < handle
                     end
                     psi_mpcc1 = (a-normalized_sigma)*(b-normalized_sigma);
                     psi_mpcc2 = -normalized_sigma - a;
-                    psi_mpcc3 = -normalize_sigma - b;
+                    psi_mpcc3 = -normalized_sigma - b;
                     psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2, psi_mpcc3)
                     obj.lower_bound_relaxation = 1;
             end
