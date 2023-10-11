@@ -39,7 +39,18 @@ classdef ElasticityMode
                 case ElasticityMode.ELL_1
                     latex = '$\ell_1$';
                 case ElasticityMode.ELL_INF
-                    latex = '$\ell_{\infty}$'
+                    latex = '$\ell_{\infty}$';
+            end
+        end
+
+        function plain = to_plain(obj)
+            switch obj
+                case ElasticityMode.NONE
+                    plain = 'standard';
+                case ElasticityMode.ELL_1
+                    plain = 'ell_1';
+                case ElasticityMode.ELL_INF
+                    plain = 'ell_inf';
             end
         end
     end

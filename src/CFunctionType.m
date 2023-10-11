@@ -102,9 +102,9 @@ classdef CFunctionType
                 case CFunctionType.CHEN_CHEN_KANZOW
                     full = 'Chen-Chen-Kanzow';
                 case CFunctionType.STEFFENSON_ULBRICH
-                    full = 'Steffenson-Ulbrich Trigonometric';
+                    full = 'Steffensen-Ulbrich Trigonometric';
                 case CFunctionType.STEFFENSON_ULBRICH_POLY
-                    full = 'Steffenson-Ulbrich Polynomial';
+                    full = 'Steffensen-Ulbrich Polynomial';
                 case CFunctionType.KANZOW_SCHWARTZ
                     full = 'Kanzow-Schwartz';
                 case CFunctionType.LIN_FUKUSHIMA
