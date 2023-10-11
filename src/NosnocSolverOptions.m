@@ -277,8 +277,8 @@ classdef NosnocSolverOptions < handle
                     else
                         normalized_sigma = sigma;
                     end
-                    psi_mpcc1 = [a*b-sigma^2];
-                    psi_mpcc2 = [((a+sigma)*(b+sigma)-sigma^2)];
+                    psi_mpcc1 = [a*b-normalized_sigma^2];
+                    psi_mpcc2 = [((a+normalized_sigma)*(b+normalized_sigma)-normalized_sigma^2)];
                     psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
                     obj.lower_bound_relaxation = 1;
                 case CFunctionType.KADRANI
