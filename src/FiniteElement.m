@@ -1121,19 +1121,19 @@ classdef FiniteElement < NosnocFormulationObject
                                     else
                                         % TODO: Verify
                                         gamma_F = cellfun(@(x) obj.w(x), obj.ind_gamma_d, 'uni', false);
-                                        gamma_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_p_vt, 'uni', false);
+                                        gamma_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_gamma_d, 'uni', false);
                                         beta_F = cellfun(@(x) obj.w(x), obj.ind_beta_d, 'uni', false);
                                         beta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_beta_d, 'uni', false);
 
                                         sigma_gamma_F = sum2(horzcat(gamma_F{:}));
-                                        sigma_gamma_B = sum2(horzcat(gamma_B{:}));;
-                                        sigma_beta_F = sum2(horzcat(beta_F{:}));;
-                                        sigma_beta_B = sum2(horzcat(bet_B{:}));;
+                                        sigma_gamma_B = sum2(horzcat(gamma_B{:}));
+                                        sigma_beta_F = sum2(horzcat(beta_F{:}));
+                                        sigma_beta_B = sum2(horzcat(beta_B{:}));
                                         
                                         pi_gamma = sigma_gamma_F.*sigma_gamma_B;
                                         pi_beta = sigma_beta_F.*sigma_beta_B;
 
-                                        zeta(ii) = (sigma_f_c_B + sigma_f_c_F) + (sum(pi_gamma) + pi_beta);
+                                        zeta(ii) = 1;%(sigma_f_c_B + sigma_f_c_F) + (sum(pi_gamma) + sum(pi_beta));
                                     end
                                 end
                             end
