@@ -1037,19 +1037,115 @@ classdef FiniteElement < NosnocFormulationObject
         function nu_vector = get.nu_vector(obj)
             import casadi.*
 
+            % TODO handle independent subsystems?
             if obj.problem_options.use_fesd && obj.fe_idx > 1
-                pairs_fe = vertcat(obj.cross_comp_pairs{:});
-                pairs_prev_fe = vertcat(obj.prev_fe.cross_comp_pairs{:});
-    
-                cont_fe = pairs_fe(1,:);
-                discont_fe = pairs_fe(2,:);
-    
-                cont_prev_fe = pairs_prev_fe(1,:);
-                discont_prev_fe = pairs_prev_fe(2,:);
-                eta_k = sum(discont_prev_fe) * sum(discont_fe) + sum(cont_prev_fe) * sum(cont_fe);
+                switch obj.problem_options.dcs_mode
+                    case DcsMode.Stewart
+                        lam_F = cellfun(@(x) obj.w(x), obj.ind_lam, 'uni', false);
+                        lam_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lam, 'uni', false);
+                        theta_F = cellfun(@(x) obj.w(x), obj.ind_theta, 'uni', false);
+                        theta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_theta, 'uni', false);
+                        sigma_cont_F = sum2(horzcat(lam_F{:}));
+                        sigma_cont_B = sum2(horzcat(lam_B{:}));
+                        sigma_discont_F = sum2(horzcat(theta_F{:}));
+                        sigma_discont_B = sum2(horzcat(theta_B{:}));
+
+                        pi_cont = sigma_cont_B .* sigma_cont_F;
+                        pi_discont = sigma_discont_B .* sigma_discont_F;
+                        nu = pi_cont + pi_discont;
+                    case DcsMode.Step
+                        lam_p_F = cellfun(@(x) obj.w(x), obj.ind_lambda_p, 'uni', false);
+                        lam_p_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_p, 'uni', false);
+                        lam_n_F = cellfun(@(x) obj.w(x), obj.ind_lambda_n, 'uni', false);
+                        lam_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_n, 'uni', false);
+                        alpha_F = cellfun(@(x) obj.w(x), obj.ind_alpha, 'uni', false);
+                        alpha_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_alpha, 'uni', false);
+
+                        sigma_cont_F = vertcat(sum2(horzcat(lam_n_F{:})), sum2(horzcat(lam_p_F{:})));
+                        sigma_cont_B = vertcat(sum2(horzcat(lam_n_B{:})), sum2(horzcat(lam_p_B{:})));
+                        sigma_discont_F = vertcat(sum2(horzcat(alpha_F{:})), sum2(1-horzcat(alpha_F{:})));
+                        sigma_discont_B = vertcat(sum2(horzcat(alpha_B{:})), sum2(1-horzcat(alpha_B{:})));
+
+                        pi_cont = sigma_cont_B .* sigma_cont_F;
+                        pi_discont = sigma_discont_B .* sigma_discont_F;
+                        nu = pi_cont + pi_discont;
+                    case DcsMode.CLS
+                        f_c_F = cellfun(@(x) obj.w(x), obj.ind_y_gap, 'uni', false);
+                        f_c_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_y_gap, 'uni', false);
+                        l_n_F = cellfun(@(x) obj.w(x), obj.ind_lambda_normal, 'uni', false);
+                        l_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_normal, 'uni', false);
+                        
+                        sigma_f_c_F = obj.w(obj.ind_Y_gap{1})+sum2(horzcat(f_c_F{:}));
+                        % If we don't have an old Y gap due to no initial impacts ignore it in backward sum
+                        if isempty(obj.prev_fe.ind_Y_gap{1})
+                            sigma_f_c_B = sum2(horzcat(f_c_B{:}));
+                        else
+                            sigma_f_c_B = obj.prev_fe.w(obj.prev_fe.ind_Y_gap{1})+sum2(horzcat(f_c_B{:}));
+                        end
+                        sigma_l_n_F = sum2(horzcat(l_n_F{:}));
+                        sigma_l_n_B = sum2(horzcat(l_n_B{:}));
+
+                        pi_f_c = obj.w(obj.ind_Y_gap{1}).*sigma_f_c_F.*sigma_f_c_B;
+                        pi_l_n = sigma_l_n_F .* sigma_l_n_B;
+                        kappa = pi_f_c + pi_l_n;
+                        if obj.model.friction_exists
+                            % Go one by one for each contact (TODO vectorize)
+                            zeta = SX.ones(obj.model.dims.n_contacts, 1);
+                            for ii=1:obj.model.dims.n_contacts
+                                if obj.model.mu_f(ii)
+                                    if strcmp(obj.problem_options.friction_model, 'Conic')
+                                        xi_p_F = cellfun(@(x) obj.w(x), obj.ind_p_vt, 'uni', false);
+                                        xi_p_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_p_vt, 'uni', false);
+                                        xi_n_F = cellfun(@(x) obj.w(x), obj.ind_n_vt, 'uni', false);
+                                        xi_n_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_n_vt, 'uni', false);
+                                        beta_F = cellfun(@(x) obj.w(x), obj.ind_beta_conic, 'uni', false);
+                                        beta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_beta_conic, 'uni', false);
+
+                                        sigma_xi_p_F = obj.w(obj.ind_P_vt{1})+sum2(horzcat(xi_p_F{:}));
+                                        sigma_xi_n_F = obj.w(obj.ind_N_vt{1})+sum2(horzcat(xi_n_F{:}));
+                                        if isempty(obj.prev_fe.ind_P_vt{1})
+                                            sigma_xi_p_B = sum2(horzcat(xi_p_B{:}));
+                                            sigma_xi_n_B = sum2(horzcat(xi_n_B{:}));
+                                        else
+                                            sigma_xi_p_B = obj.prev_fe.w(obj.prev_fe.ind_P_vt{1})+sum2(horzcat(xi_p_B{:}));
+                                            sigma_xi_n_B = obj.prev_fe.w(obj.prev_fe.ind_N_vt{1})+sum2(horzcat(xi_n_B{:}));
+                                        end
+                                        sigma_beta_F = sum2(horzcat(beta_F{:}));
+                                        sigma_beta_B = sum2(horzcat(beta_B{:}));
+
+                                        pi_xi_p = sigma_xi_p_F .* sigma_xi_p_B;
+                                        pi_xi_n = sigma_xi_n_F .* sigma_xi_n_B;
+                                        pi_beta = sigma_beta_F .* sigma_beta_B;
+
+                                        zeta(ii) = (sigma_f_c_B + sigma_f_c_F) + (sum(pi_xi_p + pi_xi_n) + pi_beta);
+                                    else
+                                        % TODO: Verify
+                                        gamma_F = cellfun(@(x) obj.w(x), obj.ind_gamma_d, 'uni', false);
+                                        gamma_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_gamma_d, 'uni', false);
+                                        beta_F = cellfun(@(x) obj.w(x), obj.ind_beta_d, 'uni', false);
+                                        beta_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_beta_d, 'uni', false);
+
+                                        sigma_gamma_F = sum2(horzcat(gamma_F{:}));
+                                        sigma_gamma_B = sum2(horzcat(gamma_B{:}));
+                                        sigma_beta_F = sum2(horzcat(beta_F{:}));
+                                        sigma_beta_B = sum2(horzcat(beta_B{:}));
+                                        
+                                        pi_gamma = sigma_gamma_F.*sigma_gamma_B;
+                                        pi_beta = sigma_beta_F.*sigma_beta_B;
+
+                                        zeta(ii) = 1;%(sigma_f_c_B + sigma_f_c_F) + (sum(pi_gamma) + sum(pi_beta));
+                                    end
+                                end
+                            end
+                            nu = kappa.*zeta;
+                        else
+                            nu = kappa;
+                        end
+                end
+                
                 nu_vector = 1;
-                for jjj=1:length(eta_k)
-                    nu_vector = nu_vector * eta_k(jjj);
+                for jjj=1:length(nu)
+                    nu_vector = nu_vector * nu(jjj);
                 end
             else
                 nu_vector = [];
