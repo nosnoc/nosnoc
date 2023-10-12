@@ -1410,7 +1410,7 @@ classdef FiniteElement < NosnocFormulationObject
             g_cross_comp = [];
             lbg_cross_comp = [];
             ubg_cross_comp = [];
-            if problem_options.cross_comp_mode == CrossCompMode.STAGE_STAGE
+            if problem_options.cross_comp_mode == CrossCompMode.STAGE_STAGE || ~problem_options.use_fesd
                 cross_comp_aggregated = vertcat(cross_comp_pairs{:});
             elseif problem_options.cross_comp_mode == CrossCompMode.FE_STAGE
                 a = [];
