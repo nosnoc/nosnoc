@@ -37,7 +37,7 @@ classdef NosnocSolverOptions < handle
         comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
         mpcc_mode(1,1) MpccMode = MpccMode.custom
         objective_scaling_direct(1,1) logical = 1
-        sigma_0(1,1) double {mustBeReal, mustBePositive} = 1
+        sigma_0(1,1) double {mustBeReal, mustBeNonnegative} = 1
         sigma_N(1,1) double {mustBeReal, mustBePositive} = 1e-9
         homotopy_update_rule = 'linear' % 'linear' sigma_k = homotopy_update_slope*sigma_N
                                         % 'superlinear' - sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent))
@@ -79,6 +79,7 @@ classdef NosnocSolverOptions < handle
         relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
         elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
         psi_fun
+        lower_bound_relaxation(1,1) logical = 0
 
         % Output options
         store_integrator_step_results(1,1) logical = 0
@@ -212,74 +213,85 @@ classdef NosnocSolverOptions < handle
             sigma = define_casadi_symbolic(obj.casadi_symbolic_mode,'sigma',1);
 
             switch obj.psi_fun_type
-              case CFunctionType.SCHOLTES
-                psi_mpcc = a.*b-sigma;
-                norm = sigma;
-              case CFunctionType.SCHOLTES_TWO_SIDED
-                psi_mpcc = [a*b-sigma;a*b+sigma];
-                norm = sigma;
-              case CFunctionType.FISCHER_BURMEISTER
-                if obj.normalize_homotopy_update
-                    normalized_sigma = sqrt(2*sigma);
-                else
-                    normalized_sigma = sigma;
-                end
-                psi_mpcc = a+b-sqrt(a^2+b^2+normalized_sigma^2);
-                
-              case CFunctionType.NATURAL_RESIDUAL
-                if obj.normalize_homotopy_update
-                    normalized_sigma = sqrt(4*sigma);
-                else
-                    normalized_sigma = sigma;
-                end
-                psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+normalized_sigma^2));
-              case CFunctionType.CHEN_CHEN_KANZOW
-                alpha = 0.5;
-                if obj.normalize_homotopy_update
-                    psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+2*sigma))+(1-alpha)*(a*b-sigma);
-                else
-                    psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+sigma^2))+(1-alpha)*(a*b-sigma);
-                end
-             case CFunctionType.STEFFENSON_ULBRICH
-                if obj.normalize_homotopy_update
-                    normalized_sigma = 2/((2/pi)*sin(3*pi/2)+1)*sqrt(sigma);
-                else
-                    normalized_sigma = sigma;
-                end
-                x = a-b;
-                z = x/normalized_sigma;
-                y_sin = normalized_sigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
-                psi_mpcc = a+b-if_else(abs(x)>=normalized_sigma,abs(x),y_sin);
-              case  CFunctionType.STEFFENSON_ULBRICH_POLY
-                if obj.normalize_homotopy_update
-                    normalized_sigma = (16/3)*sqrt(sigma);
-                else
-                    normalized_sigma = sigma;
-                end
-                x = a-b;
-                z = x/normalized_sigma;
-                y_pol = normalized_sigma*(1/8*(-z^4+6*z^2+3));
-                psi_mpcc = a+b- if_else(abs(x)>=normalized_sigma,abs(x),y_pol);
-              case CFunctionType.KANZOW_SCHWARTZ
-                if obj.normalize_homotopy_update
-                    normalized_sigma = sigma;
-                else
-                    normalized_sigma = sigma;
-                end 
-                a1 = a-normalized_sigma;
-                b1 = b-normalized_sigma;
-                psi_mpcc = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
-              case CFunctionType.LIN_FUKUSHIMA
-                psi_mpcc1 = [a*b-sigma];
-                psi_mpcc2 = [-((a-sigma)*(b-sigma)-sigma^2)];
-                psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
-              case CFunctionType.KADRANI
-                if obj.normalize_homotopy_update
-                    normalized_sigma = sigma;
-                else
-                    normalized_sigma = sigma;
-                end
-                psi_mpcc = (a-normalized_sigma)*(b-normalized_sigma);
+                case CFunctionType.SCHOLTES
+                    psi_mpcc = a.*b-sigma;
+                    norm = sigma;
+                case CFunctionType.SCHOLTES_TWO_SIDED
+                    psi_mpcc = [a*b-sigma;a*b+sigma];
+                    norm = sigma;
+                    obj.lower_bound_relaxation = 1;
+                case CFunctionType.FISCHER_BURMEISTER
+                    if obj.normalize_homotopy_update
+                        normalized_sigma = sqrt(2*sigma);
+                    else
+                        normalized_sigma = sigma;
+                    end
+                    psi_mpcc = a+b-sqrt(a^2+b^2+normalized_sigma^2);
+                    
+                case CFunctionType.NATURAL_RESIDUAL
+                    if obj.normalize_homotopy_update
+                        normalized_sigma = sqrt(4*sigma);
+                    else
+                        normalized_sigma = sigma;
+                    end
+                    psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+normalized_sigma^2));
+                case CFunctionType.CHEN_CHEN_KANZOW
+                    alpha = 0.5;
+                    if obj.normalize_homotopy_update
+                        psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+2*sigma))+(1-alpha)*(a*b-sigma);
+                    else
+                        psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+sigma^2))+(1-alpha)*(a*b-sigma);
+                    end
+                case CFunctionType.STEFFENSEN_ULBRICH
+                    if obj.normalize_homotopy_update
+                        normalized_sigma = 2/((2/pi)*sin(3*pi/2)+1)*sqrt(sigma);
+                    else
+                        normalized_sigma = sigma;
+                    end
+                    x = a-b;
+                    z = x/normalized_sigma;
+                    y_sin = normalized_sigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
+                    psi_mpcc = a+b-if_else(abs(x)>=normalized_sigma,abs(x),y_sin);
+                case  CFunctionType.STEFFENSEN_ULBRICH_POLY
+                    if obj.normalize_homotopy_update
+                        normalized_sigma = (16/3)*sqrt(sigma);
+                    else
+                        normalized_sigma = sigma;
+                    end
+                    x = a-b;
+                    z = x/normalized_sigma;
+                    y_pol = normalized_sigma*(1/8*(-z^4+6*z^2+3));
+                    psi_mpcc = a+b- if_else(abs(x)>=normalized_sigma,abs(x),y_pol);
+                case CFunctionType.KANZOW_SCHWARTZ
+                    if obj.normalize_homotopy_update
+                        normalized_sigma = sqrt(sigma);
+                    else
+                        normalized_sigma = sigma;
+                    end 
+                    a1 = a-normalized_sigma;
+                    b1 = b-normalized_sigma;
+                    psi_mpcc = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
+                case CFunctionType.LIN_FUKUSHIMA
+                    if obj.normalize_homotopy_update
+                        normalized_sigma = sqrt(sigma);
+                    else
+                        normalized_sigma = sigma;
+                    end
+                    psi_mpcc1 = [a*b-normalized_sigma^2];
+                    psi_mpcc2 = [((a+normalized_sigma)*(b+normalized_sigma)-normalized_sigma^2)];
+                    psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
+                    obj.lower_bound_relaxation = 1;
+                case CFunctionType.KADRANI
+                    if obj.normalize_homotopy_update
+                        normalized_sigma = sqrt(sigma);
+                    else
+                        normalized_sigma = sigma;
+                    end
+                    psi_mpcc1 = (a-normalized_sigma)*(b-normalized_sigma);
+                    psi_mpcc2 = -normalized_sigma - a;
+                    psi_mpcc3 = -normalized_sigma - b;
+                    psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2, psi_mpcc3)
+                    obj.lower_bound_relaxation = 1;
             end
 
             obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});

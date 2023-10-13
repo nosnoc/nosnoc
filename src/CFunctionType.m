@@ -31,8 +31,8 @@ classdef CFunctionType
         FISCHER_BURMEISTER
         NATURAL_RESIDUAL
         CHEN_CHEN_KANZOW
-        STEFFENSON_ULBRICH
-        STEFFENSON_ULBRICH_POLY
+        STEFFENSEN_ULBRICH
+        STEFFENSEN_ULBRICH_POLY
         KANZOW_SCHWARTZ
         LIN_FUKUSHIMA
         KADRANI
@@ -51,9 +51,9 @@ classdef CFunctionType
                     latex = '$\phi_{\textrm{nr}}$';
                 case CFunctionType.CHEN_CHEN_KANZOW
                     latex = '$\phi_{\textrm{cck}}$';
-                case CFunctionType.STEFFENSON_ULBRICH
+                case CFunctionType.STEFFENSEN_ULBRICH
                     latex = '$\phi_{\textrm{su1}}$';
-                case CFunctionType.STEFFENSON_ULBRICH_POLY
+                case CFunctionType.STEFFENSEN_ULBRICH_POLY
                     latex = '$\phi_{\textrm{su2}}$';
                 case CFunctionType.KANZOW_SCHWARTZ
                     latex = '$\phi_{\textrm{ks}}$';
@@ -76,9 +76,9 @@ classdef CFunctionType
                     acronym = 'NR';
                 case CFunctionType.CHEN_CHEN_KANZOW
                     acronym = 'CCK';
-                case CFunctionType.STEFFENSON_ULBRICH
+                case CFunctionType.STEFFENSEN_ULBRICH
                     acronym = 'SU1';
-                case CFunctionType.STEFFENSON_ULBRICH_POLY
+                case CFunctionType.STEFFENSEN_ULBRICH_POLY
                     acronym = 'SU2';
                 case CFunctionType.KANZOW_SCHWARTZ
                     acronym = 'KS';
@@ -101,10 +101,10 @@ classdef CFunctionType
                     full = 'Natural Residual';
                 case CFunctionType.CHEN_CHEN_KANZOW
                     full = 'Chen-Chen-Kanzow';
-                case CFunctionType.STEFFENSON_ULBRICH
-                    full = 'Steffenson-Ulbrich Trigonometric';
-                case CFunctionType.STEFFENSON_ULBRICH_POLY
-                    full = 'Steffenson-Ulbrich Polynomial';
+                case CFunctionType.STEFFENSEN_ULBRICH
+                    full = 'Steffensen-Ulbrich Trigonometric';
+                case CFunctionType.STEFFENSEN_ULBRICH_POLY
+                    full = 'Steffensen-Ulbrich Polynomial';
                 case CFunctionType.KANZOW_SCHWARTZ
                     full = 'Kanzow-Schwartz';
                 case CFunctionType.LIN_FUKUSHIMA

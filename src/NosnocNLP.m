@@ -192,6 +192,8 @@ classdef NosnocNLP < NosnocFormulationObject
                 sot0 = mpcc.w0(mpcc.ind_sot{1});
                 obj.addPrimalVector(sot, lbsot, ubsot, sot0);
             end
+
+            sum_penalty = 0;
             for stage=obj.mpcc.stages
                 [u, lbu, ubu, u0] = stage.u;
                 obj.addPrimalVector(u, lbu, ubu, u0);
@@ -200,10 +202,31 @@ classdef NosnocNLP < NosnocFormulationObject
 
                 [g_stage, lbg_stage, ubg_stage] = stage.g_stage;
                 obj.addConstraint(g_stage, lbg_stage, ubg_stage);
+                
+
                 for fe=stage.stage
-                    obj.addPrimalVector(fe.w, fe.lbw, fe.ubw, fe.w0);
+                    [lbw,ubw] = obj.relax_complementarity_var_bounds(fe);
+
+                    obj.addPrimalVector(fe.w, lbw, ubw, fe.w0);
                     obj.addConstraint(fe.g, fe.lbg, fe.ubg);
-                    obj.relax_complementarity_constraints(fe);
+
+                    if obj.solver_options.mpcc_mode == MpccMode.ell_1_penalty
+                        
+                        comp_pairs = fe.all_comp_pairs;
+                        n_comp_pairs = size(comp_pairs,1);
+                        for ii=1:n_comp_pairs
+                            sum_penalty = sum_penalty+ comp_pairs(ii,1).*comp_pairs(ii,2);
+                        end
+                    else
+                        obj.relax_complementarity_constraints(fe);
+                    end
+                end
+            end
+            if obj.solver_options.mpcc_mode == MpccMode.ell_1_penalty
+                if obj.solver_options.objective_scaling_direct
+                    obj.augmented_objective = obj.augmented_objective + (1/sigma_p)*sum_penalty;
+                else
+                    obj.augmented_objective = sigma_p*obj.augmented_objective + sum_penalty;
                 end
             end
             % Add s_terminal
@@ -230,6 +253,31 @@ classdef NosnocNLP < NosnocFormulationObject
             obj.ind_map = ind_map;
         end
 
+        function [lbw,ubw] = relax_complementarity_var_bounds(obj, fe)
+            lbw = fe.lbw;
+            ubw = fe.ubw;
+            if ~obj.solver_options.lower_bound_relaxation
+                return;
+            end
+
+            switch obj.mpcc.problem_options.dcs_mode
+                case DcsMode.Stewart
+                    lbw([fe.ind_lam{:}]) = -inf;
+                    lbw([fe.ind_theta{:}]) = -inf;
+                    ubw([fe.ind_lam{:}]) = inf;
+                    ubw([fe.ind_theta{:}]) = inf;
+                case DcsMode.Step
+                    lbw([fe.ind_lambda_n{:}]) = -inf;
+                    lbw([fe.ind_lambda_p{:}]) = -inf;
+                    lbw([fe.ind_alpha{:}]) = -inf;
+                    ubw([fe.ind_lambda_n{:}]) = inf;
+                    ubw([fe.ind_lambda_p{:}]) = inf;
+                    ubw([fe.ind_alpha{:}]) = 1;
+                case DcsMode.CLS
+                    %TODO
+            end
+        end
+
         function relax_complementarity_constraints(obj, component)
             sigma_p = obj.sigma_p;
 
@@ -241,35 +289,30 @@ classdef NosnocNLP < NosnocFormulationObject
                 sigma = obj.s_elastic_inf;
             else
             end
-            
+
             comp_pairs = component.all_comp_pairs;
             n_comp_pairs = size(comp_pairs, 1);
 
-            if obj.solver_options.mpcc_mode == MpccMode.ell_1_penalty
-                for ii=1:n_comp_pairs
-                    obj.augmented_objective = obj.augmented_objective + comp_pairs(ii,1).*comp_pairs(ii,2);
-                end
-            else                
-                for ii=1:n_comp_pairs
-                    if obj.solver_options.elasticity_mode == ElasticityMode.ELL_1
-                        n_pairs = length(comp_pairs(ii,1));
-                        s_elastic = define_casadi_symbolic(obj.mpcc.problem_options.casadi_symbolic_mode, 's_elastic',n_pairs);
-                        sigma = s_elastic;
-                        
-                        if obj.solver_options.elastic_scholtes
-                            obj.solver_options.s_elastic_max = inf;
-                            obj.addConstraint(s_elastic-obj.sigma_p,-inf,0);
-                        end
-                        obj.addVariable(s_elastic,...
-                            'elastic',...
-                            obj.solver_options.s_elastic_min,...
-                            obj.solver_options.s_elastic_max,...
-                            obj.solver_options.s_elastic_0);
+
+            for ii=1:n_comp_pairs
+                if obj.solver_options.elasticity_mode == ElasticityMode.ELL_1
+                    n_pairs = length(comp_pairs(ii,1));
+                    s_elastic = define_casadi_symbolic(obj.mpcc.problem_options.casadi_symbolic_mode, 's_elastic',n_pairs);
+                    sigma = s_elastic;
+
+                    if obj.solver_options.elastic_scholtes
+                        obj.solver_options.s_elastic_max = inf;
+                        obj.addConstraint(s_elastic-obj.sigma_p,-inf,0);
                     end
-                    expr = psi_fun(comp_pairs(ii,1), comp_pairs(ii,2), sigma);
-                    [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
-                    obj.addConstraint(expr, lb, ub);
+                    obj.addVariable(s_elastic,...
+                        'elastic',...
+                        obj.solver_options.s_elastic_min,...
+                        obj.solver_options.s_elastic_max,...
+                        obj.solver_options.s_elastic_0);
                 end
+                expr = psi_fun(comp_pairs(ii,1), comp_pairs(ii,2), sigma);
+                [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
+                obj.addConstraint(expr, lb, ub);
             end
         end
         
