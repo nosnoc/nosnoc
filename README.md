@@ -2,7 +2,7 @@
 **NOSNOC** is an open-source `MATLAB` software package for NOnSmooth Numerical Optimal Control.
 The `Python` package `nosnoc_py` with similar functionality is available as well.
 
-A detailed overview of the theory and methods behind NOSNOC can be found in the course materail of the
+A detailed overview of the theory and methods behind NOSNOC can be found in the course material of the
 [Summer School on Direct Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/teaching/ss2023/summer-school-direct-methods-optimal-control-nonsmooth-systems).
 
 
