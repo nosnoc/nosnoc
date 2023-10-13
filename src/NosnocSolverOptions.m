@@ -242,7 +242,7 @@ classdef NosnocSolverOptions < handle
                     else
                         psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+sigma^2))+(1-alpha)*(a*b-sigma);
                     end
-                case CFunctionType.STEFFENSON_ULBRICH
+                case CFunctionType.STEFFENSEN_ULBRICH
                     if obj.normalize_homotopy_update
                         normalized_sigma = 2/((2/pi)*sin(3*pi/2)+1)*sqrt(sigma);
                     else
@@ -252,7 +252,7 @@ classdef NosnocSolverOptions < handle
                     z = x/normalized_sigma;
                     y_sin = normalized_sigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
                     psi_mpcc = a+b-if_else(abs(x)>=normalized_sigma,abs(x),y_sin);
-                case  CFunctionType.STEFFENSON_ULBRICH_POLY
+                case  CFunctionType.STEFFENSEN_ULBRICH_POLY
                     if obj.normalize_homotopy_update
                         normalized_sigma = (16/3)*sqrt(sigma);
                     else

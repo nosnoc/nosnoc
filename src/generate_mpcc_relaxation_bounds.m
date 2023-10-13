@@ -43,7 +43,7 @@ function [lb,ub,g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings)
             lb = -inf*ones(n_comp, 1);
             ub = zeros(n_comp, 1);
         end
-      case CFunctionType.STEFFENSON_ULBRICH
+      case CFunctionType.STEFFENSEN_ULBRICH
         switch settings.relaxation_method
           case 'EQ'
             lb = zeros(n_comp, 1);
@@ -52,7 +52,7 @@ function [lb,ub,g_comp] = generate_mpcc_relaxation_bounds(g_comp, settings)
             lb = -inf*ones(n_comp, 1);
             ub = zeros(n_comp, 1);
         end
-      case CFunctionType.STEFFENSON_ULBRICH_POLY
+      case CFunctionType.STEFFENSEN_ULBRICH_POLY
         switch settings.relaxation_method
           case 'EQ'
             lb = zeros(n_comp, 1);
