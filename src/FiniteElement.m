@@ -1528,7 +1528,7 @@ classdef FiniteElement < NosnocFormulationObject
             elseif problem_options.step_equilibration == StepEquilibrationMode.l2_relaxed_scaled
                 obj.augmented_objective = obj.augmented_objective + rho_h_p * tanh(nu/problem_options.step_equilibration_sigma) * delta_h_ki.^2;
             elseif problem_options.step_equilibration == StepEquilibrationMode.l2_relaxed
-                obj.augmented_objective = obj.augmented_objective + rho_h_p * nu * delta_h_ki.^2
+                obj.augmented_objective = obj.augmented_objective + rho_h_p * nu * delta_h_ki.^2;
             elseif problem_options.step_equilibration == StepEquilibrationMode.direct
                 obj.addConstraint(nu*delta_h_ki, 0, 0);
                 % TODO: how to do this if it is not part of the mpcc.
