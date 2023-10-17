@@ -91,6 +91,7 @@ classdef NosnocSolverOptions < handle
         % Experimental
         normalize_homotopy_update(1,1) logical = 1
         norm_function
+        calculate_stationarity_type(1,1) logical = 0;
     end
 
     properties(Dependent)

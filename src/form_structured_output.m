@@ -29,7 +29,8 @@ function [results]= form_structured_output(problem, w_opt, name, results)
     ind = problem.(strcat('ind_', name));
 
     % generate structured output
-    opt_s = cellfun(@(idx) w_opt(idx), ind(:,:,end), 'uni', 0);
+    opt_s = cellfun(@(idx) w_opt(idx), ind(:,:,:), 'uni', 0);
+    opt_s_end = cellfun(@(idx) w_opt(idx), ind(:,:,end), 'uni', 0);
     
     lens = cellfun(@(c) length(c), opt_s);
     if all(lens==0)
@@ -37,10 +38,17 @@ function [results]= form_structured_output(problem, w_opt, name, results)
         %opt_s = cellfun(@(idx) w_opt(idx), ind(:,:,end-1), 'uni', 0);
         return
     end
+    opt_s_concat = opt_s(:,:,end);
+    for ii=2:size(opt_s,3)
+        for jj=1:size(opt_s,1)
+            for kk=1:size(opt_s,2)
+                opt_s_concat{jj,kk} = horzcat(opt_s_concat{jj,kk}, opt_s{jj,kk,ii});
+            end
+        end
+    end
+    results.structured.(name) = opt_s_concat;
 
-    results.structured.(name) = opt_s;
-
-    temp = opt_s';
+    temp = opt_s_end';
     flat = horzcat(temp{:});
     results.(name) = flat;
 

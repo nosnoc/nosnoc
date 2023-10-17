@@ -135,6 +135,10 @@ classdef NosnocMPCC < NosnocFormulationObject
         % Problem constraint function
         g_fun
 
+        %
+        G_fun
+        H_fun
+
         % switch indicator function
         nu_fun
 
@@ -505,6 +509,8 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.augmented_objective_fun = Function('augmented_objective_fun', {obj.w, obj.p}, {obj.augmented_objective});
             obj.objective_fun = Function('objective_fun', {obj.w, obj.p}, {obj.objective});
             obj.g_fun = Function('g_fun', {obj.w, obj.p}, {obj.g});
+            obj.G_fun = Function('G_fun', {obj.w}, {obj.cross_comps(:,1)});
+            obj.H_fun = Function('H_fun', {obj.w}, {obj.cross_comps(:,2)});
 
             obj.p0 = [problem_options.rho_sot; problem_options.rho_h; problem_options.rho_terminal; problem_options.T];
 

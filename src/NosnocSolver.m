@@ -295,6 +295,259 @@ classdef NosnocSolver < handle
             % fprintf('\n');
         end
 
+        function [polished_w, res_out, stat_type] = calculate_stationarity(obj, results)
+            import casadi.*
+            stationarity_type = 0;
+            nlp = obj.nlp;
+            mpcc = obj.mpcc;
+            
+            w_init = results.x(nlp.ind_map);
+            lam_x = full(results.lam_x(nlp.ind_map));
+            lam_g = full(results.lam_g);
+            lam_g(nlp.ind_g_comp) = []; % TODO: also elastic scholtes constraint
+
+            G = mpcc.G_fun(mpcc.w);
+            H = mpcc.H_fun(mpcc.w);
+            G_old = full(mpcc.G_fun(w_init));
+            H_old = full(mpcc.H_fun(w_init));
+            a_tol = 1*sqrt(obj.solver_options.comp_tol);
+            %a_tol = obj.solver_options.comp_tol^2;
+            %a_tol = 1e-7;
+            ind_00 = G_old<a_tol & H_old<a_tol;
+            n_biactive = sum(ind_00)
+            ind_0p = G_old<a_tol & ~ind_00;
+            ind_p0 = H_old<a_tol & ~ind_00;
+
+            w = mpcc.w; lbw = mpcc.lbw; ubw = mpcc.ubw;
+            f = mpcc.augmented_objective;
+
+            ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
+            g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
+            p = mpcc.p;
+
+            % Debug
+            jac_f = Function('jac_f', {mpcc.w, mpcc.p}, {mpcc.augmented_objective.jacobian(mpcc.w)});
+            jac_g = Function('jac_g', {mpcc.w, mpcc.p}, {g.jacobian(mpcc.w)});
+            jac_G = Function('jac_G', {mpcc.w}, {G.jacobian(mpcc.w)});
+            jac_H = Function('jac_H', {mpcc.w}, {H.jacobian(mpcc.w)});
+
+            nabla_f = jac_f(w_init, obj.p_val(2:end));
+            nabla_g = jac_g(w_init, obj.p_val(2:end));
+            nabla_G = jac_G(w_init);
+            nabla_H = jac_H(w_init);
+            
+            mode=2;
+            switch mode
+              case 1 % just do the dumb thing, this does not work for obvious reasons :)
+                G_active = G(find(ind_00 | ind_0p));
+                G_inactive = G(find(~(ind_00 | ind_0p)));
+                H_active = H(find(ind_00 | ind_p0));
+                H_inactive = H(find(~(ind_00 | ind_p0)));
+                tightened_constraints = vertcat(G_active,G_inactive,H_active, H_inactive);
+                
+                g = vertcat(g,tightened_constraints);
+                lbg = vertcat(lbg,zeros(size(tightened_constraints)));
+                ubg = vertcat(ubg,zeros(size(G_active)), inf*ones(size(G_inactive)), zeros(size(H_active)), inf*ones(size(H_inactive))); % I think in some cases this leads to too many constraints :(
+                lam_g = vertcat(lam_g, zeros(size(tightened_constraints)));
+                
+                casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
+                opts_casadi_nlp.ipopt.max_iter = 1000;
+                opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+                opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
+                opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
+                opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
+                opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
+                
+                tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
+                tnlp_results = tnlp_solver('x0', w_init,...
+                    'lbx', lbw,...
+                    'ubx', ubw,...
+                    'lbg', lbg,...
+                    'ubg', ubg,...
+                    'lam_g0', lam_g,...
+                    'lam_x0', lam_x,...
+                    'p',obj.p_val(2:end));
+                res_out = tnlp_results;
+              case 2 % Slightly less dumb? try lifting everything
+                lift_G = SX.sym('lift_G', length(G));
+                lift_H = SX.sym('lift_H', length(H));
+                g_lift = vertcat(lift_G - G, lift_H - H);
+                
+                w = vertcat(w, lift_G, lift_H);
+                lblift_G = zeros(size(lift_G));
+                ublift_G = inf*ones(size(lift_G));
+                lblift_H = zeros(size(lift_G));
+                ublift_H = inf*ones(size(lift_G));
+
+                ublift_G(find(ind_00 | ind_0p)) = 0; 
+                ublift_H(find(ind_00 | ind_p0)) = 0;
+                ind_mpcc = 1:length(lbw);
+                ind_G = (1:length(lift_G))+length(lbw);
+                ind_H = (1:length(lift_H))+length(lbw)+length(lift_G);
+
+                lbw = vertcat(lbw, lblift_G, lblift_H);
+                ubw = vertcat(ubw, ublift_G, ublift_H);
+                w_init = vertcat(w_init, G_old, H_old);
+                lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
+                
+              
+                g = vertcat(g,g_lift);
+                lbg = vertcat(lbg,zeros(size(g_lift)));
+                ubg = vertcat(ubg,zeros(size(g_lift)));
+                lam_g_aug = vertcat(lam_g, zeros(size(g_lift)));
+
+                
+                casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
+                opts_casadi_nlp.ipopt.max_iter = 1000;
+                opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+                opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
+                opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
+                opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
+                opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
+                opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
+                
+                tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
+                tnlp_results = tnlp_solver('x0', w_init,...
+                    'lbx', lbw,...
+                    'ubx', ubw,...
+                    'lbg', lbg,...
+                    'ubg', ubg,...
+                    'lam_g0', lam_g_aug,...
+                    'lam_x0', lam_x_aug,...
+                    'p',obj.p_val(2:end));
+                res_out = tnlp_results;
+
+                w_star = full(tnlp_results.x);
+                w_star_orig = w_star(ind_mpcc);
+                max(abs(w_init - w_star))
+                [~,sort_idx] = sort(full(abs(w_init - w_star))); % sorted by difference from original stationary point
+
+                nu = -full(tnlp_results.lam_x(ind_G));
+                xi = -full(tnlp_results.lam_x(ind_H));
+
+                % Debug
+                jac_f = Function('jac_f', {w, mpcc.p}, {f.jacobian(w)});
+                jac_g = Function('jac_g', {w, mpcc.p}, {g.jacobian(w)});
+                jac_G = Function('jac_G', {w}, {lift_G.jacobian(w)});
+                jac_H = Function('jac_H', {w}, {lift_H.jacobian(w)});
+
+                nabla_f = full(jac_f(w_star, obj.p_val(2:end)));
+                nabla_g = full(jac_g(w_star, obj.p_val(2:end)));
+                nabla_G = full(jac_G(w_star));
+                nabla_H = full(jac_H(w_star));
+                
+                % Index sets
+                I_G = find(ind_0p+ind_00);
+                I_H = find(ind_p0+ind_00);
+
+
+                % multipliers (nu, xi already calculated above)
+                lam_x_star = full(tnlp_results.lam_x);
+                lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+                lam_x_star(ind_H) = 0; % box constraints
+                lam_g_star = tnlp_results.lam_g;
+
+                type_tol = a_tol^2;
+                if n_biactive
+                    nu_biactive = nu(ind_00);
+                    xi_biactive = xi(ind_00);
+                    bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
+
+                    figure()
+                    scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
+                    xline(0,'k-.');
+                    yline(0,'k-.');
+                    xlim([-bound,bound]);
+                    ylim([-bound,bound]);
+                    
+                    grid on;
+
+                    if all(nu_biactive > -type_tol & xi_biactive > -type_tol)
+                        stationarity_type = 0;
+                    elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
+                        stationarity_type = 1;
+                    elseif all(nu_biactive.*xi_biactive > -type_tol)
+                        stationarity_type = 2;
+                    elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
+                        stationarity_type = 3;
+                    else
+                        stationarity_type = 4;
+                    end
+                end
+                if stationarity_type == 0
+                    stat_type = "S";
+                    disp("Converged to S-stationary point")
+                elseif stationarity_type == 1
+                    stat_type = "M";
+                    disp("Converged to M-stationary point")
+                elseif stationarity_type == 2
+                    stat_type = "C";
+                    disp("Converged to C-stationary point")
+                elseif stationarity_type == 3
+                    stat_type = "A";
+                    disp("Converged to A-stationary point")
+                elseif stationarity_type == 4
+                    stat_type = "W";
+                    disp("Converged to W-stationary point, or something has gone wrong")
+                else
+                    disp("Auxiliary NLP escaped to boundary, cannot calculate stationarity")
+                end
+                % output tnlp results
+                res_out = tnlp_results;
+                res_out.x = w_star_orig; 
+                polished_w = w_star_orig; % TODO handle elastic mode
+                %res_out = obj.extract_results_nlp(obj.mpcc, res_out);
+                if 0
+                    figure;
+                    hold on;
+                    fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,100*a_tol])
+                    scatter(G_old, H_old)
+                    xline(a_tol)
+                    yline(a_tol)
+                    xlim([-a_tol,10*a_tol])
+                    ylim([-a_tol,10*a_tol])
+                    axis square;
+                    hold off;
+
+                    figure;
+                    hold on;
+                    fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,1.1*max(max(G_old),max(H_old))])
+                    scatter(G_old, H_old)
+                    xline(a_tol)
+                    yline(a_tol)
+                    xlim([-0.1,1.1*max(G_old)])
+                    ylim([-0.1,1.1*max(H_old)])
+                    hold off;
+                end
+                if 0
+                    fprintf('lbw\tubw\ttnlp_x\tw_init\t-lam_x\tw\n')
+                    for ii=sort_idx'
+                        fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), full(w_init(ii)), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w(ii)))
+                    end
+                end
+                if 0
+                    fprintf('lbg\tubg\tlam_g\tg\n')
+                    for ii=1:length(g)
+                        fprintf('%.4f\t%.4f\t%.4f\t%s\n', lbg(ii), ubg(ii), full(tnlp_results.lam_g(ii)), formattedDisplayText(g_tnlp(ii)))
+                    end
+                    cc = horzcat(G,H);
+                    cc(find(ind_00),:)
+                end
+            end
+        end
+
         function res_out = calculate_stationarity_type(obj, results)
             import casadi.*
             stationarity_type = 0;
@@ -798,6 +1051,14 @@ classdef NosnocSolver < handle
                 complementarity_iter = results.complementarity_iter;
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                 W = [W,results.w];
+            end
+
+            if solver_options.calculate_stationarity_type
+                [polished_w, res_out, stat_type] = obj.calculate_stationarity(results.nlp_results(end));
+                results.W = [results.W,polished_w];
+                results.nlp_results = [results.nlp_results, res_out];
+                complementarity_iter = full(comp_res(polished_w, obj.p_val(2:end)));
+                stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
             end
 
             % number of iterations
