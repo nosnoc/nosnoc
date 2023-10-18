@@ -1059,6 +1059,7 @@ classdef NosnocSolver < handle
                 results.nlp_results = [results.nlp_results, res_out];
                 complementarity_iter = full(comp_res(polished_w, obj.p_val(2:end)));
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
+                stats.stat_type = stat_type;
             end
 
             % number of iterations
