@@ -312,7 +312,7 @@ classdef NosnocNLP < NosnocFormulationObject
                 end
                 expr = psi_fun(comp_pairs(ii,1), comp_pairs(ii,2), sigma);
                 [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
-                obj.addConstraint(expr, lb, ub);
+                obj.addConstraint(expr, lb, ub, 'type', 'g_comp');
             end
         end
         

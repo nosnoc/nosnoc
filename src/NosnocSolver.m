@@ -64,8 +64,7 @@ classdef NosnocSolver < handle
                 obj = obj.construct_relaxation_homotopy();
             elseif solver_options.solver_type == 'DIRECT'
                 obj = obj.construct_direct();
-            end
-            
+            end            
         end
 
         function set(obj, type, val)
@@ -294,6 +293,112 @@ classdef NosnocSolver < handle
             %         stats.homotopy_iterations,stats.cpu_time_total/60, max(stats.cpu_time)/60, min(stats.cpu_time)/60, stats.complementarity_stats(end));
             % end
             % fprintf('\n');
+        end
+
+        function calculate_stationarity_type(obj, results)
+            import casadi.*
+            % TODO do projection here if necessary
+            % construct direct nlp to estimate multipliers nu/xi
+            direct_options = NosnocSolverOptions();
+            direct_options.mpcc_mode = MpccMode.direct;
+            direct_options.print_level = 5;
+            direct_options.opts_casadi_nlp.ipopt.max_iter = 5000;
+            direct_options.preprocess();
+            direct_nlp = NosnocNLP(direct_options, obj.mpcc);
+
+            % construct solver
+            % TODO maybe match solver to existing one?
+            direct_solver = NosnocIpopt().construct_solver(direct_nlp, direct_options);
+
+            % preprocess results in case of elastic modes to match the indices
+            w_init = results.w;
+            w_init(obj.nlp.ind_elastic) = [];
+
+            % get correct params and bounds
+            p_val = obj.p_val;
+            lbw = direct_nlp.lbw; ubw = direct_nlp.ubw;
+            lbg = direct_nlp.lbg; ubg = direct_nlp.ubg;
+
+            %
+            direct_results = direct_solver('x0', w_init,...
+                'lbx', lbw,...
+                'ubx', ubw,...
+                'lbg', lbg,...
+                'ubg', ubg,...
+                'p',obj.p_val);
+
+            % TODO assumes vertical mode, calculate and store the idx sets in NLP to avoid this.
+            G = obj.mpcc.cross_comps(:,1);
+            H = obj.mpcc.cross_comps(:,2);
+            n_comp = length(G);
+            ind_G = zeros(n_comp, 1);
+            ind_H = zeros(n_comp, 1);
+            for ii = 1:n_comp
+                ind_Gi = Function('ind_G',{direct_nlp.w},{direct_nlp.w.jacobian(G(ii))});
+                [ind_Gi,~] = find(sparse(ind_Gi(w_init))==1);
+                ind_Hi = Function('ind_H',{direct_nlp.w},{direct_nlp.w.jacobian(H(ii))});
+                [ind_Hi,~] = find(sparse(ind_Hi(w_init))==1);
+
+                ind_G(ii) = ind_Gi;
+                ind_H(ii) = ind_Hi;
+            end
+            ind_GH = direct_nlp.ind_g_comp;
+
+            lam_G0 = -full(direct_results.lam_x(ind_G));
+            lam_H0 = -full(direct_results.lam_x(ind_H));
+            lam_GH = full(direct_results.lam_g(ind_GH));
+
+            a_tol = 1e-4;
+            G_res = full(direct_results.x(ind_G));
+            H_res = full(direct_results.x(ind_H));
+            ind_00 = G_res<a_tol & H_res<a_tol;
+            n_biactive = sum(ind_00)
+            ind_0p = G_res<a_tol & ~ind_00;
+            ind_p0 = H_res<a_tol & ~ind_00;
+
+            nu = lam_G0 - lam_GH.*H_res;
+            xi = lam_H0 - lam_GH.*G_res;
+
+            stationarity_type = 0;
+            type_tol = 1e-8;
+            if n_biactive
+                nu_biactive = nu(ind_00);
+                xi_biactive = xi(ind_00);
+                bound = 1.1*abs(max([nu_biactive;xi_biactive]));
+
+                figure()
+                scatter(nu_biactive, xi_biactive, 150);
+                xline(0,'k-.');
+                yline(0,'k-.');
+                xlim([-bound,bound]);
+                ylim([-bound,bound]);
+                
+                grid on;
+
+                if  all(nu_biactive > -type_tol & xi_biactive > -type_tol)
+                    stationarity_type = 0;
+                elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
+                    stationarity_type = 1;
+                elseif all(nu_biactive.*xi_biactive > -type_tol)
+                    stationarity_type = 2;
+                elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
+                    stationarity_type = 3;
+                else
+                    stationarity_type = 4;
+                end
+            end
+            if stationarity_type == 0
+                disp('Converged to S-stationary point')
+            elseif stationarity_type == 1
+                disp('Converged to M-stationary point')
+            elseif stationarity_type == 2
+                disp('Converged to C-stationary point')
+            elseif stationarity_type == 3
+                disp('Converged to A-stationary point')
+            elseif stationarity_type == 4
+                disp('Converged to W-stationary point, or something has gone wrong')
+            end
+
         end
     end
 
