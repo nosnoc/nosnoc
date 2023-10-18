@@ -419,10 +419,12 @@ classdef NosnocSolver < handle
             lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
             lam_x_star(ind_H) = 0; % box constraints
             lam_g_star = tnlp_results.lam_g;
-
             type_tol = a_tol^2;
-            if n_biactive
-                nu_biactive = nu(ind_00);
+            switch tnlp_solver.stats.solver_stats(end).return_status
+              case {'Solve_Succeeded'}
+               
+                if n_biactive
+                    nu_biactive = nu(ind_00);
                 xi_biactive = xi(ind_00);
                 bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
 
@@ -446,6 +448,9 @@ classdef NosnocSolver < handle
                 else
                     stationarity_type = 4;
                 end
+                end
+              otherwise
+                stationarity_type = 5;
             end
             if stationarity_type == 0
                 stat_type = "S";
@@ -462,8 +467,9 @@ classdef NosnocSolver < handle
             elseif stationarity_type == 4
                 stat_type = "W";
                 disp("Converged to W-stationary point, or something has gone wrong")
-            else
-                disp("Auxiliary NLP escaped to boundary, cannot calculate stationarity")
+            elseif stationarity_type == 5
+                stat_type = "?";
+                disp("Could not converge to point from the end of homotopy");
             end
             % output tnlp results
             res_out = tnlp_results;
@@ -1015,10 +1021,12 @@ classdef NosnocSolver < handle
 
             if solver_options.calculate_stationarity_type
                 [polished_w, res_out, stat_type] = obj.calculate_stationarity(results.nlp_results(end));
-                results.W = [results.W,polished_w];
-                results.nlp_results = [results.nlp_results, res_out];
-                complementarity_iter = full(comp_res(polished_w(nlp.ind_map), obj.p_val(2:end)));
-                stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
+                if stat_type ~= "?"
+                    results.W = [results.W,polished_w];
+                    results.nlp_results = [results.nlp_results, res_out];
+                    complementarity_iter = full(comp_res(polished_w(nlp.ind_map), obj.p_val(2:end)));
+                    stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
+                end
                 stats.stat_type = stat_type;
             end
 
