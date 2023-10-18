@@ -389,6 +389,7 @@ classdef NosnocSolver < handle
             opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
             opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
             opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+            opts_casadi_nlp.ipopt.print_level = 0;
             opts_casadi_nlp.ipopt.sb = 'yes';
             
             tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
@@ -433,7 +434,7 @@ classdef NosnocSolver < handle
             lam_g_star = tnlp_results.lam_g;
             type_tol = a_tol^2;
             switch tnlp_solver.stats.return_status
-              case {'Solve_Succeeded'}
+              case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
                
                 if n_biactive
                     nu_biactive = nu(ind_00);
@@ -1032,7 +1033,12 @@ classdef NosnocSolver < handle
             end
 
             if solver_options.calculate_stationarity_type
-                [polished_w, res_out, stat_type] = obj.calculate_stationarity(results.nlp_results(end));
+                if last_iter_failed || ~obj.complementarity_tol_met(stats) || timeout
+                    stat_type = "?";
+                    disp("Not checking stationarity due to failure of homotopy to converge");
+                else
+                    [polished_w, res_out, stat_type] = obj.calculate_stationarity(results.nlp_results(end));
+                end
                 if stat_type ~= "?"
                     results.W = [results.W,polished_w];
                     results.nlp_results = [results.nlp_results, res_out];
