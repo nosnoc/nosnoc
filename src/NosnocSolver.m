@@ -351,10 +351,14 @@ classdef NosnocSolver < handle
             ind_mpcc = 1:length(lbw);
             ind_G = (1:length(lift_G))+length(lbw);
             ind_H = (1:length(lift_H))+length(lbw)+length(lift_G);
+            G_init = G_old;
+            G_init(ind_00 | ind_0p) = 0;
+            H_init = H_old;
+            H_init(ind_00 | ind_p0) = 0;
 
             lbw = vertcat(lbw, lblift_G, lblift_H);
             ubw = vertcat(ubw, ublift_G, ublift_H);
-            w_init = vertcat(w_init, G_old, H_old);
+            w_init = vertcat(w_init, G_init, H_init);
             lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
             
             
@@ -365,7 +369,7 @@ classdef NosnocSolver < handle
 
             
             casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
-            opts_casadi_nlp.ipopt.max_iter = 1000;
+            opts_casadi_nlp.ipopt.max_iter = 5000;
             opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
             opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
             opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
@@ -378,6 +382,14 @@ classdef NosnocSolver < handle
             opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
             opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
             opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
+            opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+            opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+            default_tol = 1e-12;
+            opts_casadi_nlp.ipopt.tol = default_tol;
+            opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+            opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+            opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+            opts_casadi_nlp.ipopt.sb = 'yes';
             
             tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
             tnlp_results = tnlp_solver('x0', w_init,...
@@ -420,7 +432,7 @@ classdef NosnocSolver < handle
             lam_x_star(ind_H) = 0; % box constraints
             lam_g_star = tnlp_results.lam_g;
             type_tol = a_tol^2;
-            switch tnlp_solver.stats.solver_stats(end).return_status
+            switch tnlp_solver.stats.return_status
               case {'Solve_Succeeded'}
                
                 if n_biactive
