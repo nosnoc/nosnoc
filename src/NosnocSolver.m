@@ -306,10 +306,10 @@ classdef NosnocSolver < handle
             lam_g = full(results.lam_g);
             lam_g(nlp.ind_g_comp) = []; % TODO: also elastic scholtes constraint
 
-            G = mpcc.G_fun(mpcc.w);
-            H = mpcc.H_fun(mpcc.w);
-            G_old = full(mpcc.G_fun(w_init));
-            H_old = full(mpcc.H_fun(w_init));
+            G = mpcc.G_fun(mpcc.w, mpcc.p);
+            H = mpcc.H_fun(mpcc.w, mpcc.p);
+            G_old = full(mpcc.G_fun(w_init, obj.p_val(2:end)));
+            H_old = full(mpcc.H_fun(w_init, obj.p_val(2:end)));
             a_tol = 1*sqrt(obj.solver_options.comp_tol);
             %a_tol = obj.solver_options.comp_tol^2;
             %a_tol = 1e-7;
@@ -328,13 +328,13 @@ classdef NosnocSolver < handle
             % Debug
             jac_f = Function('jac_f', {mpcc.w, mpcc.p}, {mpcc.augmented_objective.jacobian(mpcc.w)});
             jac_g = Function('jac_g', {mpcc.w, mpcc.p}, {g.jacobian(mpcc.w)});
-            jac_G = Function('jac_G', {mpcc.w}, {G.jacobian(mpcc.w)});
-            jac_H = Function('jac_H', {mpcc.w}, {H.jacobian(mpcc.w)});
+            jac_G = Function('jac_G', {mpcc.w, mpcc.p}, {G.jacobian(mpcc.w)});
+            jac_H = Function('jac_H', {mpcc.w, mpcc.p}, {H.jacobian(mpcc.w)});
 
             nabla_f = jac_f(w_init, obj.p_val(2:end));
             nabla_g = jac_g(w_init, obj.p_val(2:end));
-            nabla_G = jac_G(w_init);
-            nabla_H = jac_H(w_init);
+            nabla_G = jac_G(w_init, obj.p_val(2:end));
+            nabla_H = jac_H(w_init, obj.p_val(2:end));
             
             lift_G = SX.sym('lift_G', length(G));
             lift_H = SX.sym('lift_H', length(H));
@@ -527,288 +527,71 @@ classdef NosnocSolver < handle
             end
         end
 
-        function res_out = calculate_stationarity_type(obj, results)
+        function b_stat = check_b_stationarity(obj, results)
             import casadi.*
-            stationarity_type = 0;
-            % TODO do projection here if necessary
-            % construct tnlp nlp to estimate multipliers nu/xi
-            tnlp_options = NosnocSolverOptions();
-            tnlp_options.mpcc_mode = MpccMode.Scholtes_ineq;
-            tnlp_options.print_level = 5;
-            tnlp_options.opts_casadi_nlp.ipopt.max_iter = 1000;
-            tnlp_options.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-            tnlp_options.opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
-            tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
-            tnlp_options.opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
-            tnlp_options.opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-            tnlp_options.opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
-            tnlp_options.opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
-            tnlp_options.opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
-            tnlp_options.opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
-            tnlp_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-            tnlp_options.opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
-            tnlp_options.preprocess();
-            tnlp = NosnocNLP(tnlp_options, obj.mpcc);
+            mpcc = obj.mpcc;
+            nlp = obj.nlp;
+            x0 = results.W(nlp.ind_map,end);
+            f = mpcc.objective;
+            x = mpcc.w; lbx = mpcc.lbw; ubx = mpcc.ubw;
+            ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
+            g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
+            G = mpcc.G_fun(mpcc.w, mpcc.p);
+            H = mpcc.H_fun(mpcc.w, mpcc.p);
+            G_old = full(mpcc.G_fun(w_init, obj.p_val(2:end)));
+            H_old = full(mpcc.H_fun(w_init, obj.p_val(2:end)));
+
+            lift_G = SX.sym('lift_G', length(G));
+            lift_H = SX.sym('lift_H', length(H));
+            g_lift = vertcat(lift_G - G, lift_H - H);
+
+            x = vertcat(x, lift_G, lift_H);
+            lblift_G = zeros(size(lift_G));
+            ublift_G = inf*ones(size(lift_G));
+            lblift_H = zeros(size(lift_G));
+            ublift_H = inf*ones(size(lift_G));
+            ind_mpcc = 1:length(lbx);
+            ind_G = (1:length(lift_G))+length(lbx);
+            ind_H = (1:length(lift_H))+length(lbx)+length(lift_G);
+
+            lbx = vertcat(lbx, lblift_G, lblift_H);
+            ubx = vertcat(ubx, ublift_G, ublift_H);
+            G_init = G_old; H_init = H_old;
+            x0 = vertcat(x0, G_init, H_init);
+
+            g = vertcat(g,g_lift);
+            lbg = vertcat(lbg,zeros(size(g_lift)));
+            ubg = vertcat(ubg,zeros(size(g_lift)));
             
-            w_init = results.w;
-            w_init(obj.nlp.ind_elastic) = [];
-            
-            G = obj.mpcc.cross_comps(:,1);
-            H = obj.mpcc.cross_comps(:,2);
-            n_comp = length(G);
-            ind_std_comp = logical(obj.nlp.mpcc.ind_std_comp);
-            ind_G = zeros(n_comp, 1);
-            ind_H = zeros(n_comp, 1);
-            for ii = 1:n_comp
-                ind_Gi = Function('ind_G',{tnlp.w},{tnlp.w.jacobian(G(ii))});
-                [ind_Gi,~] = find(sparse(ind_Gi(w_init))==1);
-                ind_Hi = Function('ind_H',{tnlp.w},{tnlp.w.jacobian(H(ii))});
-                [ind_Hi,~] = find(sparse(ind_Hi(w_init))==1);
+            p = mpcc.p;
+            p0 = solver.p_val(2:end);
 
-                ind_G(ii) = ind_Gi;
-                ind_H(ii) = ind_Hi;
-            end
-            ind_GH = tnlp.ind_g_comp;
+            solver_settings = SolverOptions();
+            solver_settings.max_iter = 1;
+            solver_settings.max_inner_iter = 1;
+            solver_settings.restoration_mode = 2;
+            solver_settings.max_feasiblity_restoration_trails = 10;
+            solver_settings.constat_lpcc_TR_radius = true;
+            solver_settings.Delta_TR_lpcc = 1e-7;
+            solver_settings.filte_active = 0;
+            solver_settings.filter_use_nonmonotone = 0;
+            solver_settings.filter_memory_M = 3;
+            solver_settings.filter_infeasiblity_upper_bound = 10;
+            solver_settings.compute_eqp_steps = 1;
+            solver_settings.verbose_solver = 1;
+            solver_settings.tighten_bounds_in_lpcc = 0;
+            solver_settings.hessian_rho_value = 1e8;
+            solver_settings.hessian_regularization = 'project';
+            solver_settings.hessian_reg_value = 1e7;
+            solver_settings.lagrange_multiplers_lsq_estimate = 1;
+            solver_settings.compute_eqp_steps = false;
+            %% The problem
+            nlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
+            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0);
+            solution = filterSMPCC(nlp,solver_initalization,solver_settings);
+            cpu_time_filterSMPCC2 = toc;
 
-            % update index sets to only handle "true" complementarities
-            ind_G = ind_G(ind_std_comp);
-            ind_H = ind_H(ind_std_comp);
-            ind_GH = ind_GH(ind_std_comp);
-
-            % get nlp components
-            w_tnlp = tnlp.w;
-            f_tnlp = tnlp.augmented_objective;
-            g_tnlp = tnlp.g;
-            p_tnlp = tnlp.p;
-            lbw = tnlp.lbw;ubw = tnlp.ubw;
-            lbg = tnlp.lbg;ubg = tnlp.ubg;
-            p_val = obj.p_val;
-            p_val(1) = 0;
-            lam_x = full(results.nlp_results(end).lam_x);
-            lam_x(obj.nlp.ind_elastic) = [];
-            lam_g = full(results.nlp_results(end).lam_g);
-            % remove the bilinear constraints from g
-            % NOTE this is destructive to the tnlp.g object
-            g_tnlp.remove(ind_GH-1,[]);
-            lbg(ind_GH) = [];
-            ubg(ind_GH) = [];
-            lam_g(ind_GH) = [];
-
-            % get active sets
-            a_tol = 1*sqrt(obj.solver_options.comp_tol);
-            % TODO elastic mode breaks this
-            G_res_old = full(w_init(ind_G));
-            H_res_old = full(w_init(ind_H));
-            ind_00 = G_res_old<a_tol & H_res_old<a_tol;
-            n_biactive = sum(ind_00)
-            ind_0p = G_res_old<a_tol & ~ind_00;
-            ind_p0 = H_res_old<a_tol & ~ind_00;
-            find(ind_00)
-
-            if 1
-                lbw(ind_G(ind_0p)) = 0;
-                ubw(ind_G(ind_0p)) = 0;
-                w_init(ind_G(ind_0p)) = 0;
-                lbw(ind_H(ind_0p)) = 0;
-                ubw(ind_H(ind_0p)) = inf;
-
-                lbw(ind_G(ind_p0)) = 0;
-                ubw(ind_G(ind_p0)) = inf;
-                lbw(ind_H(ind_p0)) = 0;
-                ubw(ind_H(ind_p0)) = 0;
-                w_init(ind_H(ind_p0)) = 0;
-                
-                lbw(ind_G(ind_00)) = 0;
-                ubw(ind_G(ind_00)) = 0;
-                w_init(ind_G(ind_00)) = 0;
-                lbw(ind_H(ind_00)) = 0;
-                w_init(ind_H(ind_00)) = 0;
-                ubw(ind_H(ind_00)) = 0;
-            else
-                lbw(ind_G(ind_0p)) = 0;
-                ubw(ind_G(ind_0p)) = 0;
-                lbw(ind_H(ind_0p)) = 0;
-                ubw(ind_H(ind_0p)) = inf;
-
-                lbw(ind_G(ind_p0)) = 0;
-                ubw(ind_G(ind_p0)) = inf;
-                lbw(ind_H(ind_p0)) = 0;
-                ubw(ind_H(ind_p0)) = 0;
-                
-                lbw(ind_G(ind_00)) = 0;
-                ubw(ind_G(ind_00)) = inf;
-                lbw(ind_H(ind_00)) = 0;
-                ubw(ind_H(ind_00)) = inf;
-            end
-
-            casadi_nlp = struct('f', f_tnlp , 'x', w_tnlp, 'g', g_tnlp, 'p', p_tnlp);
-
-            opts_casadi_nlp = tnlp_options.opts_casadi_nlp;
-            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'snopt');
-            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'worhp');
-            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'uno');
-
-            tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
-            %
-            tnlp_results = tnlp_solver('x0', w_init,...
-                'lbx', lbw,...
-                'ubx', ubw,...
-                'lbg', lbg,...
-                'ubg', ubg,...
-                'lam_g0', lam_g,...
-                'lam_x0', lam_x,...
-                'p',obj.p_val);
-            %'lam_g0', lam_g,...
-            %'lam_x0', lam_x,...
-                
-            % TODO assumes vertical mode, calculate and store the idx sets in NLP to avoid this.
-            w_star = full(tnlp_results.x);
-            max(abs(w_init - w_star))
-            [~,sort_idx] = sort(abs(w_init - w_star)); % sorted by difference from original stationary point
-
-            nu = -full(tnlp_results.lam_x(ind_G));
-            xi = -full(tnlp_results.lam_x(ind_H));
-
-            % Debug values
-            f_jac = Function('f_jac',{w_tnlp, p_tnlp}, {f_tnlp.jacobian(w_tnlp)});
-            g_jac = Function('f_jac',{w_tnlp, p_tnlp}, {g_tnlp.jacobian(w_tnlp)});
-            G_jac = Function('G_jac',{w_tnlp, p_tnlp}, {G.jacobian(w_tnlp)});
-            H_jac = Function('G_jac',{w_tnlp, p_tnlp}, {H.jacobian(w_tnlp)});
-
-            % Index sets
-            I_G = find(ind_0p+ind_00);
-            I_H = find(ind_p0+ind_00);
-
-            % values at w_star
-            f_jac_star = f_jac(w_star, p_val);
-            g_jac_star = g_jac(w_star, p_val);
-            G_jac_star = G_jac(w_star, p_val);
-            H_jac_star = H_jac(w_star, p_val);
-
-            % multipliers (nu, xi already calculated above)
-            lam_x_star = tnlp_results.lam_x;
-            lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
-            lam_x_star(ind_H) = 0; % box constraints
-            lam_g_star = tnlp_results.lam_g;
-
-            % rank of cc constraints at this point
-            rank_cc = rank(full(vertcat(G_jac_star(I_G,:),H_jac_star(I_H,:))));
-
-            type_tol = a_tol^2;
-            if n_biactive
-                nu_biactive = nu(ind_00);
-                xi_biactive = xi(ind_00);
-                bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
-
-                figure()
-                scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
-                xline(0,'k-.');
-                yline(0,'k-.');
-                xlim([-bound,bound]);
-                ylim([-bound,bound]);
-                
-                grid on;
-
-                if  all(nu_biactive > -type_tol & xi_biactive > -type_tol)
-                    stationarity_type = 0;
-                elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
-                    stationarity_type = 1;
-                elseif all(nu_biactive.*xi_biactive > -type_tol)
-                    stationarity_type = 2;
-                elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
-                    stationarity_type = 3;
-                else
-                    stationarity_type = 4;
-                end
-            end
-            if stationarity_type == 0
-                disp('Converged to S-stationary point')
-            elseif stationarity_type == 1
-                disp('Converged to M-stationary point')
-            elseif stationarity_type == 2
-                disp('Converged to C-stationary point')
-            elseif stationarity_type == 3
-                disp('Converged to A-stationary point')
-            elseif stationarity_type == 4
-                disp('Converged to W-stationary point, or something has gone wrong')
-            else
-                disp('Auxiliary NLP escaped to boundary, cannot calculate stationarity')
-            end
-            % output tnlp results
-            res_out.nlp_results = tnlp_results;
-            %res_out = obj.extract_results_nlp(obj.mpcc, res_out);
-            if 1
-                figure;
-                hold on;
-                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,100*a_tol])
-                scatter(G_res_old, H_res_old)
-                xline(a_tol)
-                yline(a_tol)
-                xlim([-a_tol,10*a_tol])
-                ylim([-a_tol,10*a_tol])
-                axis square;
-                hold off;
-
-                figure;
-                hold on;
-                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,1.1*max(max(G_res_old),max(H_res_old))])
-                scatter(G_res_old, H_res_old)
-                xline(a_tol)
-                yline(a_tol)
-                xlim([-0.1,1.1*max(G_res_old)])
-                ylim([-0.1,1.1*max(H_res_old)])
-                hold off;
-            end
-            if 1
-                fprintf('lbw\tubw\ttnlp_x\tw_init\t-lam_x\tw\n')
-                for ii=1:length(w_tnlp)
-                    fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), w_init(ii), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w_tnlp(ii)))
-                end
-            end
-            if 1
-                fprintf('lbg\tubg\tlam_g\tg\n')
-                for ii=1:length(g_tnlp)
-                    fprintf('%.4f\t%.4f\t%.4f\t%s\n', lbg(ii), ubg(ii), full(tnlp_results.lam_g(ii)), formattedDisplayText(g_tnlp(ii)))
-                end
-                cc = horzcat(G,H);
-                cc(find(ind_00),:)
-            end
-        end
-
-        function verify_rnlp(obj, results)
-            import casadi.*
-            stationarity_type = 0;
-            % TODO do projection here if necessary
-            % construct direct nlp to estimate multipliers nu/xi
-            direct_options = NosnocSolverOptions();
-            direct_options.mpcc_mode = MpccMode.Scholtes_ineq;
-            direct_options.print_level = 5;
-            direct_options.opts_casadi_nlp.ipopt.max_iter = 5000;
-            direct_options.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-            %direct_options.opts_casadi_nlp.ipopt.nlp_scaling_method = 'none';
-            direct_options.opts_casadi_nlp.ipopt.bound_relax_factor = 1;
-            direct_options.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-            %direct_options.opts_casadi_nlp.ipopt.alpha_for_y = 'safer-min-dual-infeas';
-            direct_options.preprocess();
-            direct_nlp = NosnocNLP(direct_options, obj.mpcc);
-            %direct_nlp.p0(1) = 1e-8;
-            % construct solver
-            % TODO maybe match solver to existing one?
-            direct_solver = NosnocIpopt().construct_solver(direct_nlp, direct_options);
-
-            % preprocess results in case of elastic modes to match the indices
-            w_init = results.w;
-            w_init(obj.nlp.ind_elastic) = [];
-
-            % get correct params and bounds
-            p_val = obj.p_val;
-            lbw = direct_nlp.lbw; ubw = direct_nlp.ubw;
-            lbg = direct_nlp.lbg; ubg = direct_nlp.ubg;
-
-            % small polehedra around found solution
-            bound_tol = 1e-1;
-            lbw = max(lbw,w_init-bound_tol); ubw = min(ubw,w_init+bound_tol);
-            lbg = direct_nlp.lbg; ubg = direct_nlp.ubg;
+            b_stat = ~solution.solver_status;
         end
     end
 

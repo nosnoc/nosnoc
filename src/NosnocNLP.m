@@ -79,6 +79,8 @@ classdef NosnocNLP < NosnocFormulationObject
 
         % mapping mpcc indices to nlp indices
         ind_map
+
+        ind_g_comp
     end
     % remaining list of TODOs
     % TODO: cleanup/add properties (in all components)
