@@ -295,7 +295,7 @@ classdef NosnocSolver < handle
             % fprintf('\n');
         end
 
-        function [polished_w, res_out, stat_type] = calculate_stationarity(obj, results)
+        function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results)
             import casadi.*
             stationarity_type = 0;
             nlp = obj.nlp;
@@ -527,7 +527,7 @@ classdef NosnocSolver < handle
             end
         end
 
-        function b_stat = check_b_stationarity(obj, results)
+        function [solution, improved_point, b_stat] = check_b_stationarity(obj, results)
             import casadi.*
             mpcc = obj.mpcc;
             nlp = obj.nlp;
@@ -538,9 +538,16 @@ classdef NosnocSolver < handle
             g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
             G = mpcc.G_fun(mpcc.w, mpcc.p);
             H = mpcc.H_fun(mpcc.w, mpcc.p);
-            G_old = full(mpcc.G_fun(w_init, obj.p_val(2:end)));
-            H_old = full(mpcc.H_fun(w_init, obj.p_val(2:end)));
+            G_old = full(mpcc.G_fun(x0, obj.p_val(2:end)));
+            H_old = full(mpcc.H_fun(x0, obj.p_val(2:end)));
 
+            a_tol = sqrt(obj.solver_options.comp_tol);
+            ind_00 = G_old<a_tol & H_old<a_tol;
+            n_biactive = sum(ind_00)
+            ind_0p = G_old<a_tol & ~ind_00;
+            ind_p0 = H_old<a_tol & ~ind_00;            
+            y_lpcc = H_old<a_tol;
+            
             lift_G = SX.sym('lift_G', length(G));
             lift_H = SX.sym('lift_H', length(H));
             g_lift = vertcat(lift_G - G, lift_H - H);
@@ -556,7 +563,10 @@ classdef NosnocSolver < handle
 
             lbx = vertcat(lbx, lblift_G, lblift_H);
             ubx = vertcat(ubx, ublift_G, ublift_H);
-            G_init = G_old; H_init = H_old;
+            G_init = G_old;
+            G_init(ind_00 | ind_0p) = 0;
+            H_init = H_old;
+            H_init(ind_00 | ind_p0) = 0;
             x0 = vertcat(x0, G_init, H_init);
 
             g = vertcat(g,g_lift);
@@ -564,32 +574,33 @@ classdef NosnocSolver < handle
             ubg = vertcat(ubg,zeros(size(g_lift)));
             
             p = mpcc.p;
-            p0 = solver.p_val(2:end);
+            p0 = obj.p_val(2:end);
 
             solver_settings = SolverOptions();
             solver_settings.max_iter = 1;
-            solver_settings.max_inner_iter = 1;
+            solver_settings.max_inner_iter = 10;
             solver_settings.restoration_mode = 2;
             solver_settings.max_feasiblity_restoration_trails = 10;
-            solver_settings.constat_lpcc_TR_radius = true;
-            solver_settings.Delta_TR_lpcc = 1e-7;
+            %solver_settings.constat_lpcc_TR_radius = true;
+            solver_settings.Delta_TR_init = 1e-6;
             solver_settings.filte_active = 0;
             solver_settings.filter_use_nonmonotone = 0;
             solver_settings.filter_memory_M = 3;
             solver_settings.filter_infeasiblity_upper_bound = 10;
-            solver_settings.compute_eqp_steps = 1;
             solver_settings.verbose_solver = 1;
             solver_settings.tighten_bounds_in_lpcc = 0;
             solver_settings.hessian_rho_value = 1e8;
             solver_settings.hessian_regularization = 'project';
             solver_settings.hessian_reg_value = 1e7;
-            solver_settings.lagrange_multiplers_lsq_estimate = 1;
+            %solver_settings.lagrange_multiplers_lsq_estimate = 1;
             solver_settings.compute_eqp_steps = false;
             %% The problem
             nlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
-            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0);
+            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
             solution = filterSMPCC(nlp,solver_initalization,solver_settings);
             cpu_time_filterSMPCC2 = toc;
+
+            improved_point = solution.x(ind_mpcc);
 
             b_stat = ~solution.solver_status;
         end
@@ -820,7 +831,7 @@ classdef NosnocSolver < handle
                     stat_type = "?";
                     disp("Not checking stationarity due to failure of homotopy to converge");
                 else
-                    [polished_w, res_out, stat_type] = obj.calculate_stationarity(results.nlp_results(end));
+                    [polished_w, res_out, stat_type, n_biactive] = obj.calculate_stationarity(results.nlp_results(end));
                 end
                 if stat_type ~= "?"
                     results.W = [results.W,polished_w];
@@ -830,6 +841,8 @@ classdef NosnocSolver < handle
                 end
                 stats.stat_type = stat_type;
             end
+
+            
 
             % number of iterations
             stats.homotopy_iterations = ii;
