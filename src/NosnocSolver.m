@@ -532,7 +532,7 @@ classdef NosnocSolver < handle
             mpcc = obj.mpcc;
             nlp = obj.nlp;
             x0 = results.W(nlp.ind_map,end);
-            f = mpcc.objective;
+            f = mpcc.augmented_objective;
             x = mpcc.w; lbx = mpcc.lbw; ubx = mpcc.ubw;
             ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
             g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
@@ -564,9 +564,9 @@ classdef NosnocSolver < handle
             lbx = vertcat(lbx, lblift_G, lblift_H);
             ubx = vertcat(ubx, ublift_G, ublift_H);
             G_init = G_old;
-            G_init(ind_00 | ind_0p) = 0;
+            %G_init(ind_00 | ind_0p) = 0;
             H_init = H_old;
-            H_init(ind_00 | ind_p0) = 0;
+            %H_init(ind_00 | ind_p0) = 0;
             x0 = vertcat(x0, G_init, H_init);
 
             g = vertcat(g,g_lift);
@@ -582,21 +582,24 @@ classdef NosnocSolver < handle
             solver_settings.restoration_mode = 2;
             solver_settings.max_feasiblity_restoration_trails = 10;
             %solver_settings.constat_lpcc_TR_radius = true;
-            solver_settings.Delta_TR_init = 1e-6;
+            solver_settings.tol = 1e-6;
+            %solver_settings.Delta_TR_lpcc = 1;
+            solver_settings.Delta_TR_init = 1;
             solver_settings.filte_active = 0;
             solver_settings.filter_use_nonmonotone = 0;
             solver_settings.filter_memory_M = 3;
             solver_settings.filter_infeasiblity_upper_bound = 10;
             solver_settings.verbose_solver = 1;
-            solver_settings.tighten_bounds_in_lpcc = 0;
+            solver_settings.tighten_bounds_in_lpcc = false;
             solver_settings.hessian_rho_value = 1e8;
             solver_settings.hessian_regularization = 'project';
             solver_settings.hessian_reg_value = 1e7;
+            %solver.BigM = 5;
             %solver_settings.lagrange_multiplers_lsq_estimate = 1;
             solver_settings.compute_eqp_steps = false;
             %% The problem
             nlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
-            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
+            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0);%, 'y_lpcc', y_lpcc);
             solution = filterSMPCC(nlp,solver_initalization,solver_settings);
             cpu_time_filterSMPCC2 = toc;
 
