@@ -361,7 +361,6 @@ classdef NosnocSolver < handle
             w_init = vertcat(w_init, G_init, H_init);
             lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
             
-            
             g = vertcat(g,g_lift);
             lbg = vertcat(lbg,zeros(size(g_lift)));
             ubg = vertcat(ubg,zeros(size(g_lift)));
@@ -369,7 +368,7 @@ classdef NosnocSolver < handle
 
             
             casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
-            opts_casadi_nlp.ipopt.max_iter = 5000;
+            opts_casadi_nlp.ipopt.max_iter = 500;
             opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
             opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
             opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
@@ -389,7 +388,7 @@ classdef NosnocSolver < handle
             opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
             opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
             opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-            opts_casadi_nlp.ipopt.print_level = 0;
+            opts_casadi_nlp.ipopt.print_level = 5;
             opts_casadi_nlp.ipopt.sb = 'yes';
             
             tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
@@ -426,6 +425,8 @@ classdef NosnocSolver < handle
             I_G = find(ind_0p+ind_00);
             I_H = find(ind_p0+ind_00);
 
+            G_new = full(mpcc.G_fun(w_star_orig, obj.p_val(2:end)));
+            H_new = full(mpcc.H_fun(w_star_orig, obj.p_val(2:end)));
 
             % multipliers (nu, xi already calculated above)
             lam_x_star = full(tnlp_results.lam_x);
@@ -489,11 +490,22 @@ classdef NosnocSolver < handle
             polished_w = zeros(size(nlp.w));
             polished_w(nlp.ind_map) = w_star_orig; % TODO this gives wrong slacks and multipliers out of the solver
             res_out.x = polished_w;
-            if 0
+            if 1
                 figure;
                 hold on;
                 fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,100*a_tol])
                 scatter(G_old, H_old)
+                xline(a_tol)
+                yline(a_tol)
+                xlim([-a_tol,10*a_tol])
+                ylim([-a_tol,10*a_tol])
+                axis square;
+                hold off;
+
+                figure;
+                hold on;
+                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,100*a_tol])
+                scatter(G_new, H_new)
                 xline(a_tol)
                 yline(a_tol)
                 xlim([-a_tol,10*a_tol])
@@ -578,34 +590,32 @@ classdef NosnocSolver < handle
 
             solver_settings = SolverOptions();
             solver_settings.max_iter = 1;
-            solver_settings.max_inner_iter = 10;
+            solver_settings.max_inner_iter = 20;
             solver_settings.restoration_mode = 2;
             solver_settings.max_feasiblity_restoration_trails = 10;
             %solver_settings.constat_lpcc_TR_radius = true;
             solver_settings.tol = 1e-6;
-            %solver_settings.Delta_TR_lpcc = 1;
-            solver_settings.Delta_TR_init = 1;
-            solver_settings.filte_active = 0;
-            solver_settings.filter_use_nonmonotone = 0;
-            solver_settings.filter_memory_M = 3;
-            solver_settings.filter_infeasiblity_upper_bound = 10;
+            %solver_settings.Delta_TR_lpcc = 0.1;
+            solver_settings.Delta_TR_init = 10;
+            solver_settings.Delta_TR_min = 1e-4;
             solver_settings.verbose_solver = 1;
             solver_settings.tighten_bounds_in_lpcc = false;
-            solver_settings.hessian_rho_value = 1e8;
-            solver_settings.hessian_regularization = 'project';
-            solver_settings.hessian_reg_value = 1e7;
             %solver.BigM = 5;
             %solver_settings.lagrange_multiplers_lsq_estimate = 1;
             solver_settings.compute_eqp_steps = false;
+
+            if ~n_biactive
+                solver_settings.fixed_y_lpcc = y_lpcc;
+            end
             %% The problem
             nlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
-            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0);%, 'y_lpcc', y_lpcc);
-            solution = filterSMPCC(nlp,solver_initalization,solver_settings);
+            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
+            solution = bStationarityOracle(nlp,solver_initalization,solver_settings);
             cpu_time_filterSMPCC2 = toc;
 
             improved_point = solution.x(ind_mpcc);
 
-            b_stat = ~solution.solver_status;
+            b_stat = ~solution.oracle_status;
         end
     end
 
