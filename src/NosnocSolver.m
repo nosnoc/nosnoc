@@ -295,7 +295,7 @@ classdef NosnocSolver < handle
             % fprintf('\n');
         end
 
-        function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results)
+        function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results, exitfast)
             import casadi.*
             stationarity_type = 0;
             nlp = obj.nlp;
@@ -312,9 +312,16 @@ classdef NosnocSolver < handle
             H_old = full(mpcc.H_fun(w_init, obj.p_val(2:end)));
             a_tol = 1*sqrt(obj.solver_options.comp_tol);
             %a_tol = obj.solver_options.comp_tol^2;
-            %a_tol = 1e-7;
+            a_tol = 1e-5;
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00)
+            if exitfast && n_biactive == 0
+                polished_w = [];
+                res_out = []
+                stat_type = "S";
+                disp("Converged to S-stationary point")
+                return
+            end
             ind_0p = G_old<a_tol & ~ind_00;
             ind_p0 = H_old<a_tol & ~ind_00;
 
@@ -844,7 +851,7 @@ classdef NosnocSolver < handle
                     stat_type = "?";
                     disp("Not checking stationarity due to failure of homotopy to converge");
                 else
-                    [polished_w, res_out, stat_type, n_biactive] = obj.calculate_stationarity(results.nlp_results(end));
+                    [polished_w, res_out, stat_type, n_biactive] = obj.calculate_stationarity(results.nlp_results(end), false);
                 end
                 if stat_type ~= "?"
                     results.W = [results.W,polished_w];
