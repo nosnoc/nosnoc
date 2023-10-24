@@ -1435,9 +1435,16 @@ classdef FiniteElement < NosnocFormulationObject
             if problem_options.cross_comp_mode == CrossCompMode.STAGE_STAGE || ~problem_options.use_fesd
                 % NOTE: this is a hack.
                 bool_cells = cellfun(@(x) false(size(x,1),1), cross_comp_pairs, 'uni', false);
-                for ii=1:obj.n_discont
-                    for r=1:obj.n_indep
-                        bool_cells{1+ii, ii,r} = ~bool_cells{1+ii, ii,r};
+                if problem_options.dcs_mode == "CLS"
+                    for ii=3:obj.n_discont
+                        bool_cells{ii, ii} = ~bool_cells{ii, ii};
+                    end
+                else
+                    for ii=1:obj.n_discont
+                        for r=1:obj.n_indep
+                            bool_cells{1+ii, ii,r} = ~bool_cells{1+ii, ii,r};
+                        end
+
                     end
                 end
                 obj.ind_std_comp = vertcat(bool_cells{:});

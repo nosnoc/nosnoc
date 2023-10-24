@@ -148,7 +148,7 @@ classdef NosnocSolver < handle
         function met = complementarity_tol_met(obj, stats)
             last_stats = stats.solver_stats(end);
             met = 0;
-            if stats.complementarity_stats(end) < 10 * obj.solver_options.comp_tol
+            if abs(stats.complementarity_stats(end)) < 10 * obj.solver_options.comp_tol
                 met = 1;
             end
         end
@@ -718,7 +718,7 @@ classdef NosnocSolver < handle
                 plugin.print_nlp_iter_header();
             end
 
-            while ((complementarity_iter) > solver_options.comp_tol || last_iter_failed) &&...
+            while (abs(complementarity_iter) > solver_options.comp_tol || last_iter_failed) &&...
                     ii < solver_options.N_homotopy &&...
                     (sigma_k > solver_options.sigma_N || ii == 0) &&...
                     ~timeout

@@ -283,10 +283,10 @@ classdef NosnocSolverOptions < handle
                     else
                         normalized_sigma = sigma;
                     end
-                    psi_mpcc1 = [a*b-normalized_sigma^2];
-                    psi_mpcc2 = [((a+normalized_sigma)*(b+normalized_sigma)-normalized_sigma^2)];
-                    psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
-                    obj.lower_bound_relaxation = 1;
+                    psi_mpcc1 = a*b-normalized_sigma^2;
+                    psi_mpcc2 = ((a+normalized_sigma)*(b+normalized_sigma)-normalized_sigma^2);
+                    psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2);
+                    %obj.lower_bound_relaxation = 1;
                 case CFunctionType.KADRANI
                     if obj.normalize_homotopy_update
                         normalized_sigma = sqrt(sigma);
@@ -297,7 +297,7 @@ classdef NosnocSolverOptions < handle
                     psi_mpcc2 = -normalized_sigma - a;
                     psi_mpcc3 = -normalized_sigma - b;
                     psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2, psi_mpcc3)
-                    obj.lower_bound_relaxation = 1;
+                    %obj.lower_bound_relaxation = 1;
             end
 
             obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
