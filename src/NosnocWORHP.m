@@ -69,7 +69,8 @@ classdef NosnocWORHP < handle % TODO maybe handle not necessary, revisit.
                     'AcceptablePreviousConstantF',
                     'AcceptableSolutionSKKT',
                     'AcceptableSolutionScaled',
-                    'AcceptablePreviousScaled'}
+                    'AcceptablePreviousScaled',
+                    'LowPassFilterOptimal'}
                     failed = false;
                 otherwise
                     failed = true;

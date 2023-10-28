@@ -295,24 +295,32 @@ classdef NosnocSolver < handle
             % fprintf('\n');
         end
 
+        function identify_active_set(obj, results)
+
+        end
+
         function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results, exitfast)
             import casadi.*
             stationarity_type = 0;
             nlp = obj.nlp;
             mpcc = obj.mpcc;
             
-            w_init = results.x(nlp.ind_map);
+            w_orig = results.x(nlp.ind_map);
             lam_x = full(results.lam_x(nlp.ind_map));
             lam_g = full(results.lam_g);
             lam_g(nlp.ind_g_comp) = []; % TODO: also elastic scholtes constraint
 
             G = mpcc.G_fun(mpcc.w, mpcc.p);
             H = mpcc.H_fun(mpcc.w, mpcc.p);
-            G_old = full(mpcc.G_fun(w_init, obj.p_val(2:end)));
-            H_old = full(mpcc.H_fun(w_init, obj.p_val(2:end)));
-            a_tol = 1*sqrt(obj.solver_options.comp_tol);
+            G_old = full(mpcc.G_fun(w_orig, obj.p_val(2:end)));
+            H_old = full(mpcc.H_fun(w_orig, obj.p_val(2:end)));
+            if obj.solver_options.elasticity_mode == ElasticityMode.NONE
+                a_tol = 1*sqrt(obj.solver_options.comp_tol);
+            else
+                a_tol = 1*sqrt(full(results.x(obj.nlp.ind_elastic)));
+            end
             %a_tol = obj.solver_options.comp_tol^2;
-            a_tol = 1e-5;
+            %a_tol = 1e-5;
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00)
             if exitfast && n_biactive == 0
@@ -322,10 +330,10 @@ classdef NosnocSolver < handle
                 disp("Converged to S-stationary point")
                 return
             end
-            ind_0p = G_old<a_tol & ~ind_00;
-            ind_p0 = H_old<a_tol & ~ind_00;
+            mindists = max(G_old, H_old);
+            [~, min_idx] = sort(mindists);
 
-            w = mpcc.w; lbw = mpcc.lbw; ubw = mpcc.ubw;
+            w = mpcc.w; lbw_orig = mpcc.lbw; ubw_orig = mpcc.ubw;
             f = mpcc.augmented_objective;
 
             ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
@@ -338,34 +346,17 @@ classdef NosnocSolver < handle
             jac_G = Function('jac_G', {mpcc.w, mpcc.p}, {G.jacobian(mpcc.w)});
             jac_H = Function('jac_H', {mpcc.w, mpcc.p}, {H.jacobian(mpcc.w)});
 
-            nabla_f = jac_f(w_init, obj.p_val(2:end));
-            nabla_g = jac_g(w_init, obj.p_val(2:end));
-            nabla_G = jac_G(w_init, obj.p_val(2:end));
-            nabla_H = jac_H(w_init, obj.p_val(2:end));
+            nabla_f = jac_f(w_orig, obj.p_val(2:end));
+            nabla_g = jac_g(w_orig, obj.p_val(2:end));
+            nabla_G = jac_G(w_orig, obj.p_val(2:end));
+            nabla_H = jac_H(w_orig, obj.p_val(2:end));
             
             lift_G = SX.sym('lift_G', length(G));
             lift_H = SX.sym('lift_H', length(H));
             g_lift = vertcat(lift_G - G, lift_H - H);
             
             w = vertcat(w, lift_G, lift_H);
-            lblift_G = zeros(size(lift_G));
-            ublift_G = inf*ones(size(lift_G));
-            lblift_H = zeros(size(lift_G));
-            ublift_H = inf*ones(size(lift_G));
 
-            ublift_G(find(ind_00 | ind_0p)) = 0; 
-            ublift_H(find(ind_00 | ind_p0)) = 0;
-            ind_mpcc = 1:length(lbw);
-            ind_G = (1:length(lift_G))+length(lbw);
-            ind_H = (1:length(lift_H))+length(lbw)+length(lift_G);
-            G_init = G_old;
-            G_init(ind_00 | ind_0p) = 0;
-            H_init = H_old;
-            H_init(ind_00 | ind_p0) = 0;
-
-            lbw = vertcat(lbw, lblift_G, lblift_H);
-            ubw = vertcat(ubw, ublift_G, ublift_H);
-            w_init = vertcat(w_init, G_init, H_init);
             lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
             
             g = vertcat(g,g_lift);
@@ -373,42 +364,78 @@ classdef NosnocSolver < handle
             ubg = vertcat(ubg,zeros(size(g_lift)));
             lam_g_aug = vertcat(lam_g, zeros(size(g_lift)));
 
-            
-            casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
-            opts_casadi_nlp.ipopt.max_iter = 500;
-            opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-            opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
-            opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
-            opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
-            opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-            opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
-            opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
-            opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
-            opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
-            opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-            opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
-            opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
-            opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
-            opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-            default_tol = 1e-12;
-            opts_casadi_nlp.ipopt.tol = default_tol;
-            opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-            opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-            opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-            opts_casadi_nlp.ipopt.print_level = 5;
-            opts_casadi_nlp.ipopt.sb = 'yes';
-            
-            tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
-            tnlp_results = tnlp_solver('x0', w_init,...
-                'lbx', lbw,...
-                'ubx', ubw,...
-                'lbg', lbg,...
-                'ubg', ubg,...
-                'lam_g0', lam_g_aug,...
-                'lam_x0', lam_x_aug,...
-                'p',obj.p_val(2:end));
-            res_out = tnlp_results;
+            ind_mpcc = 1:length(lbw_orig);
+            ind_G = (1:length(lift_G))+length(lbw_orig);
+            ind_H = (1:length(lift_H))+length(lbw_orig)+length(lift_G);
 
+            converged = false;
+            n_biactive = 0;
+            while ~converged
+                idx_00 = min_idx(1:n_biactive)
+                ind_00 = false(length(G),1);
+                ind_00(idx_00) = true;
+                
+                ind_0p = G_old<H_old & ~ind_00;
+                ind_p0 = H_old<G_old & ~ind_00;
+
+                lblift_G = zeros(size(lift_G));
+                ublift_G = inf*ones(size(lift_G));
+                lblift_H = zeros(size(lift_G));
+                ublift_H = inf*ones(size(lift_G));
+                ublift_G(find(ind_00 | ind_0p)) = 0; 
+                ublift_H(find(ind_00 | ind_p0)) = 0;
+
+                G_init = G_old;
+                G_init(ind_00 | ind_0p) = 0;
+                H_init = H_old;
+                H_init(ind_00 | ind_p0) = 0;
+
+                lbw = vertcat(lbw_orig, lblift_G, lblift_H);
+                ubw = vertcat(ubw_orig, ublift_G, ublift_H);
+                w_init = vertcat(w_orig, G_init, H_init);
+
+                
+                casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
+                opts_casadi_nlp.ipopt.max_iter = 5000;
+                opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+                opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
+                opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
+                opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
+                opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
+                opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
+                opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+                opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+                default_tol = 1e-12;
+                opts_casadi_nlp.ipopt.tol = default_tol;
+                opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.print_level = 5;
+                opts_casadi_nlp.ipopt.sb = 'yes';
+                
+                tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
+                tnlp_results = tnlp_solver('x0', w_init,...
+                    'lbx', lbw,...
+                    'ubx', ubw,...
+                    'lbg', lbg,...
+                    'ubg', ubg,...
+                    'lam_g0', lam_g_aug,...
+                    'lam_x0', lam_x_aug,...
+                    'p',obj.p_val(2:end));
+                res_out = tnlp_results;
+                if tnlp_solver.stats.success
+                    converged = true;
+                else
+                    n_biactive = n_biactive + 1;
+                end 
+                %converged = true;
+            end
             w_star = full(tnlp_results.x);
             w_star_orig = w_star(ind_mpcc);
             max(abs(w_init - w_star))
@@ -500,7 +527,7 @@ classdef NosnocSolver < handle
             if 1
                 figure;
                 hold on;
-                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,100*a_tol])
+                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,a_tol^2)), [0,1.1*max(max(G_old),max(H_old))])
                 scatter(G_old, H_old)
                 xline(a_tol)
                 yline(a_tol)
@@ -511,7 +538,7 @@ classdef NosnocSolver < handle
 
                 figure;
                 hold on;
-                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,100*a_tol])
+                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,a_tol^2)), [0,1.1*max(max(G_old),max(H_old))])
                 scatter(G_new, H_new)
                 xline(a_tol)
                 yline(a_tol)
@@ -522,7 +549,7 @@ classdef NosnocSolver < handle
 
                 figure;
                 hold on;
-                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,obj.solver_options.comp_tol)), [0,1.1*max(max(G_old),max(H_old))])
+                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,a_tol^2)), [0,1.1*max(max(G_old),max(H_old))])
                 scatter(G_old, H_old)
                 xline(a_tol)
                 yline(a_tol)
@@ -546,11 +573,11 @@ classdef NosnocSolver < handle
             end
         end
 
-        function [solution, improved_point, b_stat] = check_b_stationarity(obj, results)
+        function [solution, improved_point, b_stat] = check_b_stationarity(obj, w, s_elastic)
             import casadi.*
             mpcc = obj.mpcc;
             nlp = obj.nlp;
-            x0 = results.W(nlp.ind_map,end);
+            x0 = w(nlp.ind_map);
             f = mpcc.augmented_objective;
             x = mpcc.w; lbx = mpcc.lbw; ubx = mpcc.ubw;
             ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
@@ -560,12 +587,16 @@ classdef NosnocSolver < handle
             G_old = full(mpcc.G_fun(x0, obj.p_val(2:end)));
             H_old = full(mpcc.H_fun(x0, obj.p_val(2:end)));
 
-            a_tol = sqrt(obj.solver_options.comp_tol);
+            if obj.solver_options.elasticity_mode == ElasticityMode.NONE
+                a_tol = 1*sqrt(obj.solver_options.comp_tol);
+            else
+                a_tol = 1*sqrt(s_elastic);
+            end
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00)
-            ind_0p = G_old<a_tol & ~ind_00;
-            ind_p0 = H_old<a_tol & ~ind_00;            
-            y_lpcc = H_old<a_tol;
+            ind_0p = G_old<H_old & ~ind_00;
+            ind_p0 = H_old<G_old & ~ind_00;
+            y_lpcc = H_old<G_old;
             
             lift_G = SX.sym('lift_G', length(G));
             lift_H = SX.sym('lift_H', length(H));
