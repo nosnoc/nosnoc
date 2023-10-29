@@ -299,7 +299,7 @@ classdef NosnocSolver < handle
 
         end
 
-        function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results, exitfast)
+        function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results, exitfast, lifted)
             import casadi.*
             stationarity_type = 0;
             nlp = obj.nlp;
@@ -333,141 +333,265 @@ classdef NosnocSolver < handle
             mindists = max(G_old, H_old);
             [~, min_idx] = sort(mindists);
 
-            w = mpcc.w; lbw_orig = mpcc.lbw; ubw_orig = mpcc.ubw;
-            f = mpcc.augmented_objective;
+            if lifted
+                w = mpcc.w; lbw_orig = mpcc.lbw; ubw_orig = mpcc.ubw;
+                f = mpcc.augmented_objective;
 
-            ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
-            g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
-            p = mpcc.p;
+                ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
+                g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
+                p = mpcc.p;
 
-            % Debug
-            jac_f = Function('jac_f', {mpcc.w, mpcc.p}, {mpcc.augmented_objective.jacobian(mpcc.w)});
-            jac_g = Function('jac_g', {mpcc.w, mpcc.p}, {g.jacobian(mpcc.w)});
-            jac_G = Function('jac_G', {mpcc.w, mpcc.p}, {G.jacobian(mpcc.w)});
-            jac_H = Function('jac_H', {mpcc.w, mpcc.p}, {H.jacobian(mpcc.w)});
+                % Debug
+                jac_f = Function('jac_f', {mpcc.w, mpcc.p}, {mpcc.augmented_objective.jacobian(mpcc.w)});
+                jac_g = Function('jac_g', {mpcc.w, mpcc.p}, {g.jacobian(mpcc.w)});
+                jac_G = Function('jac_G', {mpcc.w, mpcc.p}, {G.jacobian(mpcc.w)});
+                jac_H = Function('jac_H', {mpcc.w, mpcc.p}, {H.jacobian(mpcc.w)});
 
-            nabla_f = jac_f(w_orig, obj.p_val(2:end));
-            nabla_g = jac_g(w_orig, obj.p_val(2:end));
-            nabla_G = jac_G(w_orig, obj.p_val(2:end));
-            nabla_H = jac_H(w_orig, obj.p_val(2:end));
-            
-            lift_G = SX.sym('lift_G', length(G));
-            lift_H = SX.sym('lift_H', length(H));
-            g_lift = vertcat(lift_G - G, lift_H - H);
-            
-            w = vertcat(w, lift_G, lift_H);
-
-            lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
-            
-            g = vertcat(g,g_lift);
-            lbg = vertcat(lbg,zeros(size(g_lift)));
-            ubg = vertcat(ubg,zeros(size(g_lift)));
-            lam_g_aug = vertcat(lam_g, zeros(size(g_lift)));
-
-            ind_mpcc = 1:length(lbw_orig);
-            ind_G = (1:length(lift_G))+length(lbw_orig);
-            ind_H = (1:length(lift_H))+length(lbw_orig)+length(lift_G);
-
-            converged = false;
-            n_biactive = 0;
-            while ~converged
-                idx_00 = min_idx(1:n_biactive)
-                ind_00 = false(length(G),1);
-                ind_00(idx_00) = true;
+                nabla_f = jac_f(w_orig, obj.p_val(2:end));
+                nabla_g = jac_g(w_orig, obj.p_val(2:end));
+                nabla_G = jac_G(w_orig, obj.p_val(2:end));
+                nabla_H = jac_H(w_orig, obj.p_val(2:end));
                 
-                ind_0p = G_old<H_old & ~ind_00;
-                ind_p0 = H_old<G_old & ~ind_00;
-
-                lblift_G = zeros(size(lift_G));
-                ublift_G = inf*ones(size(lift_G));
-                lblift_H = zeros(size(lift_G));
-                ublift_H = inf*ones(size(lift_G));
-                ublift_G(find(ind_00 | ind_0p)) = 0; 
-                ublift_H(find(ind_00 | ind_p0)) = 0;
-
-                G_init = G_old;
-                G_init(ind_00 | ind_0p) = 0;
-                H_init = H_old;
-                H_init(ind_00 | ind_p0) = 0;
-
-                lbw = vertcat(lbw_orig, lblift_G, lblift_H);
-                ubw = vertcat(ubw_orig, ublift_G, ublift_H);
-                w_init = vertcat(w_orig, G_init, H_init);
-
+                lift_G = SX.sym('lift_G', length(G));
+                lift_H = SX.sym('lift_H', length(H));
+                g_lift = vertcat(lift_G - G, lift_H - H);
                 
-                casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
-                opts_casadi_nlp.ipopt.max_iter = 5000;
-                opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
-                opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
-                opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
-                opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-                opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
-                opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
-                opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
-                opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
-                opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-                opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
-                opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
-                opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
-                opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-                default_tol = 1e-12;
-                opts_casadi_nlp.ipopt.tol = default_tol;
-                opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-                opts_casadi_nlp.ipopt.print_level = 5;
-                opts_casadi_nlp.ipopt.sb = 'yes';
+                w = vertcat(w, lift_G, lift_H);
+
+                lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
                 
-                tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
-                tnlp_results = tnlp_solver('x0', w_init,...
-                    'lbx', lbw,...
-                    'ubx', ubw,...
-                    'lbg', lbg,...
-                    'ubg', ubg,...
-                    'lam_g0', lam_g_aug,...
-                    'lam_x0', lam_x_aug,...
-                    'p',obj.p_val(2:end));
-                res_out = tnlp_results;
-                if tnlp_solver.stats.success
-                    converged = true;
-                else
-                    n_biactive = n_biactive + 1;
-                end 
-                %converged = true;
+                g = vertcat(g,g_lift);
+                lbg = vertcat(lbg,zeros(size(g_lift)));
+                ubg = vertcat(ubg,zeros(size(g_lift)));
+                lam_g_aug = vertcat(lam_g, zeros(size(g_lift)));
+
+                ind_mpcc = 1:length(lbw_orig);
+                ind_G = (1:length(lift_G))+length(lbw_orig);
+                ind_H = (1:length(lift_H))+length(lbw_orig)+length(lift_G);
+
+                converged = false;
+                n_max_biactive = n_biactive;
+                n_biactive = 0;
+                while ~converged && n_biactive <=n_max_biactive
+                    idx_00 = min_idx(1:n_biactive)
+                    ind_00 = false(length(G),1);
+                    ind_00(idx_00) = true;
+                    
+                    ind_0p = G_old<H_old & ~ind_00;
+                    ind_p0 = H_old<G_old & ~ind_00;
+
+                    lblift_G = zeros(size(lift_G));
+                    ublift_G = inf*ones(size(lift_G));
+                    lblift_H = zeros(size(lift_G));
+                    ublift_H = inf*ones(size(lift_G));
+                    ublift_G(find(ind_00 | ind_0p)) = 0; 
+                    ublift_H(find(ind_00 | ind_p0)) = 0;
+
+                    G_init = G_old;
+                    G_init(ind_00 | ind_0p) = 0;
+                    H_init = H_old;
+                    H_init(ind_00 | ind_p0) = 0;
+
+                    lbw = vertcat(lbw_orig, lblift_G, lblift_H);
+                    ubw = vertcat(ubw_orig, ublift_G, ublift_H);
+                    w_init = vertcat(w_orig, G_init, H_init);
+
+                    
+                    casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
+                    opts_casadi_nlp.ipopt.max_iter = 5000;
+                    opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                    opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+                    opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                    opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                    opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                    opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
+                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
+                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
+                    opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                    opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                    opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
+                    opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
+                    opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+                    opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+                    default_tol = 1e-7;
+                    opts_casadi_nlp.ipopt.tol = default_tol;
+                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.print_level = 5;
+                    opts_casadi_nlp.ipopt.sb = 'yes';
+                    
+                    tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
+                    tnlp_results = tnlp_solver('x0', w_init,...
+                        'lbx', lbw,...
+                        'ubx', ubw,...
+                        'lbg', lbg,...
+                        'ubg', ubg,...
+                        'lam_g0', lam_g_aug,...
+                        'lam_x0', lam_x_aug,...
+                        'p',obj.p_val(2:end));
+                    res_out = tnlp_results;
+                    if tnlp_solver.stats.success
+                        converged = true;
+                    else
+                        n_biactive = n_biactive + 1;
+                    end 
+                    %converged = true;
+                end
+                w_star = full(tnlp_results.x);
+                w_star_orig = w_star(ind_mpcc);
+                max(abs(w_init - w_star))
+                [~,sort_idx] = sort(full(abs(w_init - w_star))); % sorted by difference from original stationary point
+
+                nu = -full(tnlp_results.lam_x(ind_G));
+                xi = -full(tnlp_results.lam_x(ind_H));
+
+                % Debug
+                jac_f = Function('jac_f', {w, mpcc.p}, {f.jacobian(w)});
+                jac_g = Function('jac_g', {w, mpcc.p}, {g.jacobian(w)});
+                jac_G = Function('jac_G', {w}, {lift_G.jacobian(w)});
+                jac_H = Function('jac_H', {w}, {lift_H.jacobian(w)});
+
+                nabla_f = full(jac_f(w_star, obj.p_val(2:end)));
+                nabla_g = full(jac_g(w_star, obj.p_val(2:end)));
+                nabla_G = full(jac_G(w_star));
+                nabla_H = full(jac_H(w_star));
+                
+                % Index sets
+                I_G = find(ind_0p+ind_00);
+                I_H = find(ind_p0+ind_00);
+
+                G_new = full(mpcc.G_fun(w_star_orig, obj.p_val(2:end)));
+                H_new = full(mpcc.H_fun(w_star_orig, obj.p_val(2:end)));
+
+                % multipliers (nu, xi already calculated above)
+                lam_x_star = full(tnlp_results.lam_x);
+                lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+                lam_x_star(ind_H) = 0; % box constraints
+                lam_g_star = tnlp_results.lam_g;
+                type_tol = a_tol^2;
+            else
+                w = mpcc.w; lbw_orig = mpcc.lbw; ubw_orig = mpcc.ubw;
+                f = mpcc.augmented_objective;
+
+                ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
+                g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
+                p = mpcc.p;
+
+                lam_x_aug = lam_x;
+                
+                g = vertcat(g,10000*G,10000*H);
+                lbg = vertcat(lbg,zeros(size(G)),zeros(size(H)));
+                ubg = vertcat(ubg,zeros(size(G)),zeros(size(H)));
+                lam_g_aug = vertcat(lam_g, zeros(size(G)), zeros(size(H)));
+
+                ind_mpcc = 1:length(lam_g);
+                ind_G = (1:length(G))+length(lam_g);
+                ind_H = (1:length(H))+length(lam_g)+length(G);
+
+                converged = false;
+                n_max_biactive = n_biactive;
+                n_biactive = n_biactive;
+                while ~converged && n_biactive <=n_max_biactive
+                    idx_00 = min_idx(1:n_biactive)
+                    ind_00 = false(length(G),1);
+                    ind_00(idx_00) = true;
+                    
+                    ind_0p = G_old<H_old & ~ind_00;
+                    ind_p0 = H_old<G_old & ~ind_00;
+
+                    lbG = zeros(size(G));
+                    ubG = inf*ones(size(G));
+                    lbH = zeros(size(G));
+                    ubH = inf*ones(size(G));
+                    ubG(find(ind_00 | ind_0p)) = 0; 
+                    ubH(find(ind_00 | ind_p0)) = 0;
+                    lbg(ind_G) = lbG;
+                    lbg(ind_H) = lbH;
+                    ubg(ind_G) = ubG;
+                    ubg(ind_H) = ubH;
+                    
+
+                    lbw = lbw_orig;
+                    ubw = ubw_orig;
+                    w_init = w_orig;
+
+                    
+                    casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
+                    opts_casadi_nlp.ipopt.max_iter = 5000;
+                    opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                    opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+                    opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                    opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                    opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                    opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
+                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
+                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
+                    opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                    opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                    opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
+                    opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
+                    opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+                    opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+                    default_tol = 1e-7;
+                    opts_casadi_nlp.ipopt.tol = default_tol;
+                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.print_level = 5;
+                    opts_casadi_nlp.ipopt.sb = 'yes';
+                    
+                    tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
+                    tnlp_results = tnlp_solver('x0', w_init,...
+                        'lbx', lbw,...
+                        'ubx', ubw,...
+                        'lbg', lbg,...
+                        'ubg', ubg,...
+                        'lam_g0', lam_g_aug,...
+                        'lam_x0', lam_x_aug,...
+                        'p',obj.p_val(2:end));
+                    res_out = tnlp_results;
+                    if tnlp_solver.stats.success
+                        converged = true;
+                    else
+                        n_biactive = n_biactive + 1;
+                    end 
+                    %converged = true;
+                end
+                w_star = full(tnlp_results.x);
+                w_star_orig = w_star(ind_mpcc);
+                max(abs(w_init - w_star))
+                [~,sort_idx] = sort(full(abs(w_init - w_star))); % sorted by difference from original stationary point
+
+                nu = -full(tnlp_results.lam_x(ind_G));
+                xi = -full(tnlp_results.lam_x(ind_H));
+
+                % Debug
+                jac_f = Function('jac_f', {w, mpcc.p}, {f.jacobian(w)});
+                jac_g = Function('jac_g', {w, mpcc.p}, {g.jacobian(w)});
+                jac_G = Function('jac_G', {w}, {lift_G.jacobian(w)});
+                jac_H = Function('jac_H', {w}, {lift_H.jacobian(w)});
+
+                nabla_f = full(jac_f(w_star, obj.p_val(2:end)));
+                nabla_g = full(jac_g(w_star, obj.p_val(2:end)));
+                nabla_G = full(jac_G(w_star));
+                nabla_H = full(jac_H(w_star));
+                
+                % Index sets
+                I_G = find(ind_0p+ind_00);
+                I_H = find(ind_p0+ind_00);
+
+                G_new = full(mpcc.G_fun(w_star_orig, obj.p_val(2:end)));
+                H_new = full(mpcc.H_fun(w_star_orig, obj.p_val(2:end)));
+
+                % multipliers (nu, xi already calculated above)
+                lam_x_star = full(tnlp_results.lam_x);
+                lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+                lam_x_star(ind_H) = 0; % box constraints
+                lam_g_star = tnlp_results.lam_g;
+                type_tol = a_tol^2;
             end
-            w_star = full(tnlp_results.x);
-            w_star_orig = w_star(ind_mpcc);
-            max(abs(w_init - w_star))
-            [~,sort_idx] = sort(full(abs(w_init - w_star))); % sorted by difference from original stationary point
-
-            nu = -full(tnlp_results.lam_x(ind_G));
-            xi = -full(tnlp_results.lam_x(ind_H));
-
-            % Debug
-            jac_f = Function('jac_f', {w, mpcc.p}, {f.jacobian(w)});
-            jac_g = Function('jac_g', {w, mpcc.p}, {g.jacobian(w)});
-            jac_G = Function('jac_G', {w}, {lift_G.jacobian(w)});
-            jac_H = Function('jac_H', {w}, {lift_H.jacobian(w)});
-
-            nabla_f = full(jac_f(w_star, obj.p_val(2:end)));
-            nabla_g = full(jac_g(w_star, obj.p_val(2:end)));
-            nabla_G = full(jac_G(w_star));
-            nabla_H = full(jac_H(w_star));
             
-            % Index sets
-            I_G = find(ind_0p+ind_00);
-            I_H = find(ind_p0+ind_00);
-
-            G_new = full(mpcc.G_fun(w_star_orig, obj.p_val(2:end)));
-            H_new = full(mpcc.H_fun(w_star_orig, obj.p_val(2:end)));
-
-            % multipliers (nu, xi already calculated above)
-            lam_x_star = full(tnlp_results.lam_x);
-            lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
-            lam_x_star(ind_H) = 0; % box constraints
-            lam_g_star = tnlp_results.lam_g;
-            type_tol = a_tol^2;
             switch tnlp_solver.stats.return_status
               case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
                
