@@ -377,13 +377,17 @@ classdef NosnocSolver < handle
                     ind_00 = false(length(G),1);
                     ind_00(idx_00) = true;
                     
-                    ind_0p = G_old<H_old & ~ind_00;
-                    ind_p0 = H_old<G_old & ~ind_00;
+                    ind_0p = G_old<a_tol & ~ind_00;
+                    ind_p0 = H_old<a_tol & ~ind_00;
 
-                    lblift_G = zeros(size(lift_G));
+                    lblift_G = -inf*ones(size(lift_G));
                     ublift_G = inf*ones(size(lift_G));
-                    lblift_H = zeros(size(lift_G));
+                    lblift_H = -inf*ones(size(lift_G));
                     ublift_H = inf*ones(size(lift_G));
+                    %lblift_G = zeros(size(lift_G));
+                    %ublift_G = inf*ones(size(lift_G));
+                    %lblift_H = zeros(size(lift_G));
+                    %ublift_H = inf*ones(size(lift_G));
                     ublift_G(find(ind_00 | ind_0p)) = 0; 
                     ublift_H(find(ind_00 | ind_p0)) = 0;
 
@@ -413,11 +417,13 @@ classdef NosnocSolver < handle
                     opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
                     opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
                     opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+                    opts_casadi_nlp.ipopt.nlp_scaling_method = 'none';
                     default_tol = 1e-7;
                     opts_casadi_nlp.ipopt.tol = default_tol;
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
                     opts_casadi_nlp.ipopt.print_level = 5;
                     opts_casadi_nlp.ipopt.sb = 'yes';
                     
@@ -464,6 +470,7 @@ classdef NosnocSolver < handle
                 G_new = full(mpcc.G_fun(w_star_orig, obj.p_val(2:end)));
                 H_new = full(mpcc.H_fun(w_star_orig, obj.p_val(2:end)));
 
+                g_tnlp = full(tnlp_results.g);
                 % multipliers (nu, xi already calculated above)
                 lam_x_star = full(tnlp_results.lam_x);
                 lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
@@ -485,13 +492,15 @@ classdef NosnocSolver < handle
                 ubg = vertcat(ubg,zeros(size(G)),zeros(size(H)));
                 lam_g_aug = vertcat(lam_g, zeros(size(G)), zeros(size(H)));
 
+                jac_g = Function('jac_g', {mpcc.w, mpcc.p}, {g.jacobian(mpcc.w)});
+
                 ind_mpcc = 1:length(lam_g);
                 ind_G = (1:length(G))+length(lam_g);
                 ind_H = (1:length(H))+length(lam_g)+length(G);
 
                 converged = false;
                 n_max_biactive = n_biactive;
-                n_biactive = n_biactive;
+                n_biactive = 0;
                 while ~converged && n_biactive <=n_max_biactive
                     idx_00 = min_idx(1:n_biactive)
                     ind_00 = false(length(G),1);
@@ -500,17 +509,23 @@ classdef NosnocSolver < handle
                     ind_0p = G_old<H_old & ~ind_00;
                     ind_p0 = H_old<G_old & ~ind_00;
 
-                    lbG = zeros(size(G));
+                    lbG = 0*ones(size(G));
                     ubG = inf*ones(size(G));
-                    lbH = zeros(size(G));
+                    lbH = 0*ones(size(G));
                     ubH = inf*ones(size(G));
-                    ubG(find(ind_00 | ind_0p)) = 0; 
-                    ubH(find(ind_00 | ind_p0)) = 0;
+                    %lbG = zeros(size(G));
+                    %ubG = inf*ones(size(G));
+                    %lbH = zeros(size(G));
+                    %ubH = inf*ones(size(G));
+                    ubG(find(ind_00 | ind_0p)) = 1e-12; 
+                    ubH(find(ind_00 | ind_p0)) = 1e-12;
+                    %g(find(ind_00)) = 10000*g(find(ind_00));
                     lbg(ind_G) = lbG;
                     lbg(ind_H) = lbH;
                     ubg(ind_G) = ubG;
                     ubg(ind_H) = ubH;
-                    
+
+                    nabla_g = jac_g(w_orig, obj.p_val(2:end));
 
                     lbw = lbw_orig;
                     ubw = ubw_orig;
@@ -520,7 +535,7 @@ classdef NosnocSolver < handle
                     casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
                     opts_casadi_nlp.ipopt.max_iter = 5000;
                     opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                    opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+                    %opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
                     opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
                     opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
                     opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
@@ -533,11 +548,13 @@ classdef NosnocSolver < handle
                     opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
                     opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
                     opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-                    default_tol = 1e-7;
+                    %opts_casadi_nlp.ipopt.nlp_scaling_method = 'equilibration-based';
+                    default_tol = 1e-4;
                     opts_casadi_nlp.ipopt.tol = default_tol;
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                    %opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
                     opts_casadi_nlp.ipopt.print_level = 5;
                     opts_casadi_nlp.ipopt.sb = 'yes';
                     
@@ -557,25 +574,20 @@ classdef NosnocSolver < handle
                         n_biactive = n_biactive + 1;
                     end 
                     %converged = true;
+                    switch tnlp_solver.stats.return_status
+                      case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
+                        converged = true;
+                      otherwise
+                        converged = false;
+                    end
                 end
                 w_star = full(tnlp_results.x);
-                w_star_orig = w_star(ind_mpcc);
+                w_star_orig = w_star;
                 max(abs(w_init - w_star))
                 [~,sort_idx] = sort(full(abs(w_init - w_star))); % sorted by difference from original stationary point
 
-                nu = -full(tnlp_results.lam_x(ind_G));
-                xi = -full(tnlp_results.lam_x(ind_H));
-
-                % Debug
-                jac_f = Function('jac_f', {w, mpcc.p}, {f.jacobian(w)});
-                jac_g = Function('jac_g', {w, mpcc.p}, {g.jacobian(w)});
-                jac_G = Function('jac_G', {w}, {lift_G.jacobian(w)});
-                jac_H = Function('jac_H', {w}, {lift_H.jacobian(w)});
-
-                nabla_f = full(jac_f(w_star, obj.p_val(2:end)));
-                nabla_g = full(jac_g(w_star, obj.p_val(2:end)));
-                nabla_G = full(jac_G(w_star));
-                nabla_H = full(jac_H(w_star));
+                nu = -full(tnlp_results.lam_g(ind_G));
+                xi = -full(tnlp_results.lam_g(ind_H));
                 
                 % Index sets
                 I_G = find(ind_0p+ind_00);
@@ -586,10 +598,16 @@ classdef NosnocSolver < handle
 
                 % multipliers (nu, xi already calculated above)
                 lam_x_star = full(tnlp_results.lam_x);
-                lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
-                lam_x_star(ind_H) = 0; % box constraints
+                lam_g_star = full(tnlp_results.lam_g);
+                %lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+                %lam_x_star(ind_H) = 0; % box constraints
                 lam_g_star = tnlp_results.lam_g;
+                lam_g_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+                lam_g_star(ind_H) = 0; % box constraints
                 type_tol = a_tol^2;
+
+                ind_00_new = G_new<a_tol & H_new<a_tol;
+
             end
             
             switch tnlp_solver.stats.return_status
@@ -688,9 +706,9 @@ classdef NosnocSolver < handle
                 end
             end
             if 0
-                fprintf('lbg\tubg\tlam_g\tg\n')
+                fprintf('lbg\tg_val\tubg\tlam_g\tg\n')
                 for ii=1:length(g)
-                    fprintf('%.4f\t%.4f\t%.4f\t%s\n', lbg(ii), ubg(ii), full(tnlp_results.lam_g(ii)), formattedDisplayText(g_tnlp(ii)))
+                    fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbg(ii), full(tnlp_results.g(ii)), ubg(ii), full(tnlp_results.lam_g(ii)), formattedDisplayText(g(ii)))
                 end
                 cc = horzcat(G,H);
                 cc(find(ind_00),:)
