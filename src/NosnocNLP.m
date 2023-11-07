@@ -210,7 +210,7 @@ classdef NosnocNLP < NosnocFormulationObject
 
                 [g_stage, lbg_stage, ubg_stage] = stage.g_stage;
                 obj.addConstraint(g_stage, lbg_stage, ubg_stage);
-                
+
 
                 for fe=stage.stage
                     [lbw,ubw] = obj.relax_complementarity_var_bounds(fe);
@@ -229,6 +229,17 @@ classdef NosnocNLP < NosnocFormulationObject
                         obj.relax_complementarity_constraints(fe);
                     end
                 end
+                s_numerical = stage.w(stage.ind_s_numerical);
+                lbs_numerical = stage.lbw(stage.ind_s_numerical);
+                ubs_numerical = stage.ubw(stage.ind_s_numerical);
+                s_numerical0 = stage.w0(stage.ind_s_numerical);
+                obj.addPrimalVector(s_numerical, lbs_numerical, ubs_numerical, s_numerical0);
+
+                s_physical = stage.w(stage.ind_s_physical);
+                lbs_physical = stage.lbw(stage.ind_s_physical);
+                ubs_physical = stage.ubw(stage.ind_s_physical);
+                s_physical0 = stage.w0(stage.ind_s_physical);
+                obj.addPrimalVector(s_physical, lbs_physical, ubs_physical, s_physical0);
             end
             if obj.solver_options.mpcc_mode == MpccMode.ell_1_penalty
                 if obj.solver_options.objective_scaling_direct
