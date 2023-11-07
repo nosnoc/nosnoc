@@ -197,6 +197,12 @@ classdef NosnocNLP < NosnocFormulationObject
 
             sum_penalty = 0;
             for stage=obj.mpcc.stages
+
+                % TODO @ Anton: I really dont like this inconsistent way of
+                % adding variables to the problem... it is very difficult
+                % to follow and understand if you are off the code for a
+                % few weeks - it should be centralized and consistent,
+
                 [u, lbu, ubu, u0] = stage.u;
                 obj.addPrimalVector(u, lbu, ubu, u0);
                 [sot, lbsot, ubsot, sot0] = stage.sot;
@@ -237,6 +243,18 @@ classdef NosnocNLP < NosnocFormulationObject
                 mpcc.lbw(mpcc.ind_s_terminal),...
                 mpcc.ubw(mpcc.ind_s_terminal),...
                 mpcc.w0(mpcc.ind_s_terminal));
+
+            % Add s_numerical
+           obj.addPrimalVector(mpcc.w(mpcc.ind_s_numerical),...
+                mpcc.lbw(mpcc.ind_s_numerical),...
+                mpcc.ubw(mpcc.ind_s_numerical),...
+                mpcc.w0(mpcc.ind_s_numerical));
+
+            % Add s_physical
+            obj.addPrimalVector(mpcc.w(mpcc.ind_s_physical),...
+                mpcc.lbw(mpcc.ind_s_physical),...
+                mpcc.ubw(mpcc.ind_s_physical),...
+                mpcc.w0(mpcc.ind_s_physical));
 
             % Add t final
             obj.addPrimalVector(mpcc.w(mpcc.ind_t_final),...

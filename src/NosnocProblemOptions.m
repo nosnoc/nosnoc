@@ -126,10 +126,18 @@ classdef NosnocProblemOptions < handle
 
 
         % Relaxation of terminal constraint
-        relax_terminal_constraint(1,1) {mustBeInteger} = 0 %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
-        relax_terminal_constraint_from_above(1,1) logical = 0
-        rho_terminal(1,1) double {mustBePositive} = 1e2
-        relax_terminal_constraint_homotopy(1,1) logical = 0 % terminal penalty is governed by homotopy parameter
+        relax_terminal_constraint(1,1) {mustBeInteger} = 0; %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
+        relax_terminal_constraint_from_above(1,1) logical = 0;
+        rho_terminal(1,1) double {mustBePositive} = 1e2;
+        relax_terminal_constraint_homotopy(1,1) logical = 0; % terminal penalty is governed by homotopy parameter
+
+        % Relaxation of terminal (or stage for equidistant grids) numerical/phyisical time constraints
+        relax_terminal_numerical_time(1,1) logical = 0; % instead of imposing \sum_h = T, add it as ell1_penalty term
+        rho_terminal_numerical_time(1,1) double {mustBeNonnegative} = 1e2
+        relax_terminal_numerical_time_homotopy (1,1) logical = 0; % us the homotopy parameter for the penalty
+        relax_terminal_physical_time(1,1) logical = 0; % instead of imposing \sum_h = T, add it as ell1_penalty term
+        rho_terminal_physical_time(1,1) double {mustBeNonnegative} = 1e2
+        relax_terminal_physical_time_homotopy (1,1) logical = 0; % us the homotopy parameter for the penalty
 
         % Experimental:
         no_initial_impacts(1,1) logical = 0

@@ -26,7 +26,7 @@
 % This file is part of NOSNOC.
 
 classdef NosnocMPCC < NosnocFormulationObject
-    properties % TODO: 
+    properties % TODO:
         % Index vectors
         ind_x
         ind_x0
@@ -82,6 +82,8 @@ classdef NosnocMPCC < NosnocFormulationObject
         ind_t_final % Time-optimal problems: define auxilairy variable for the final time.
         ind_v_global
         ind_s_terminal
+        ind_s_numerical
+        ind_s_physical
         ind_comp_lift
 
         % Parameter index variables
@@ -236,7 +238,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.ind_N_vt = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
             obj.ind_Alpha_vt = cell(problem_options.N_stages,problem_options.N_finite_elements(1),1);
 
-            
+
             % misc
             obj.ind_nu_lift = {};
             obj.ind_h = {};
@@ -245,6 +247,8 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.ind_comp_lift = {};
 
             obj.ind_s_terminal = [];
+            obj.ind_s_numerical = [];
+            obj.ind_s_physical = [];
 
             obj.problem_options = problem_options;
             obj.model = model;
@@ -350,11 +354,47 @@ classdef NosnocMPCC < NosnocFormulationObject
                                 sum_h_all = sum_h_all+fe.h;
                             end
                         end
+                        if problem_options.relax_terminal_numerical_time
+                                s_numerical = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_numerical', 1);
+                                obj.addVariable(s_numerical ,...
+                                    's_numerical',...
+                                    -2*problem_options.T,...
+                                    2*problem_options.T,...
+                                    problem_options.T/2);
+                        end
                         if ~problem_options.time_optimal_problem
-                            obj.addConstraint(sum_h_all-problem_options.T, 0, 0, 'type', 'g_mpcc');
+                            if problem_options.relax_terminal_numerical_time
+                                obj.addConstraint(sum_h_all-problem_options.T-s_numerical ,-inf, 0, 'type', 'g_mpcc');
+                                obj.addConstraint(-(sum_h_all-problem_options.T)-s_numerical ,-inf, 0, 'type', 'g_mpcc');
+                                if problem_options.relax_terminal_numerical_time_homotopy
+                                    %rho_terminal_numerical_time = 1/sigma_p;
+                                    %obj.augmented_objective = obj.augmented_objective + rho_terminal_numerical_time*s_numerical;
+                                    error('homotopy parameter not acessible here - fix bug.')
+                                else
+                                    obj.augmented_objective = obj.augmented_objective + problem_options.rho_terminal_numerical_time*s_numerical;
+                                end
+                            else
+                                obj.addConstraint(sum_h_all-problem_options.T, 0, 0, 'type', 'g_mpcc');
+                            end
                         else
                             if ~problem_options.use_speed_of_time_variables
-                                obj.addConstraint(sum_h_all-T_final, 0, 0, 'type', 'g_mpcc');
+                                if problem_options.relax_terminal_numerical_time
+                                    obj.addConstraint(sum_h_all-T_final-s_numerical ,...
+                                        -inf,...
+                                        0, 'type', 'g_mpcc');
+                                    obj.addConstraint(-(sum_h_all-T_final)-s_numerical ,...
+                                        -inf,...
+                                        0, 'type', 'g_mpcc');
+                                    if problem_options.relax_terminal_numerical_time_homotopy
+                                        %rho_terminal_numerical_time = 1/sigma_p;
+                                        %obj.augmented_objective = obj.augmented_objective + rho_terminal_numerical_time*s_numerical;
+                                        error('homotopy parameter not acessible here - fix bug.')
+                                    else
+                                        obj.augmented_objective = obj.augmented_objective + problem_options.rho_terminal_numerical_time*s_numerical;
+                                    end
+                                else
+                                    obj.addConstraint(sum_h_all-T_final, 0, 0, 'type', 'g_mpcc');
+                                end
                             else
                                 integral_clock_state = 0;
                                 for k=1:problem_options.N_stages
@@ -369,8 +409,24 @@ classdef NosnocMPCC < NosnocFormulationObject
                                     end
                                 end
                                 % T_num = T_phy = T_final \neq T.
-                                obj.addConstraint(sum_h_all-problem_options.T, 0, 0, 'type', 'g_mpcc');
-                                obj.addConstraint(integral_clock_state-T_final, 0, 0, 'type', 'g_mpcc');
+                                if problem_options.relax_terminal_numerical_time
+                                    obj.addConstraint(integral_clock_state-T_final-s_numerical ,...
+                                        -inf,...
+                                        0, 'type', 'g_mpcc');
+                                    obj.addConstraint(-(integral_clock_state-T_final)-s_numerical ,...
+                                        -inf,...
+                                        0, 'type', 'g_mpcc');
+                                    if problem_options.relax_terminal_numerical_time_homotopy
+                                        %rho_terminal_numerical_time = 1/sigma_p;
+                                        %obj.augmented_objective = obj.augmented_objective + rho_terminal_numerical_time*s_numerical;
+                                        error('homotopy parameter not acessible here - fix bug.')
+                                    else
+                                        obj.augmented_objective = obj.augmented_objective + problem_options.rho_terminal_numerical_time*s_numerical;
+                                    end
+                                else
+                                    obj.addConstraint(sum_h_all-problem_options.T, 0, 0, 'type', 'g_mpcc');
+                                    obj.addConstraint(integral_clock_state-T_final, 0, 0, 'type', 'g_mpcc');
+                                end
                             end
                         end
                     end
@@ -392,60 +448,54 @@ classdef NosnocMPCC < NosnocFormulationObject
                     end
                 end
                 switch problem_options.relax_terminal_constraint % TODO name these.
-                  case 0 % hard constraint
-                    if problem_options.relax_terminal_constraint_from_above
-                        obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1), 'type', 'g_mpcc');
-                    else
-                        obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub, 'type', 'g_mpcc');
-                    end
-                  case 1 % l_1
-                    s_terminal_ell_1 = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
-                    obj.addVariable(s_terminal_ell_1,...
-                        's_terminal',...
-                        -inf*ones(n_terminal,1),...
-                        inf*ones(n_terminal,1),...
-                        1e3*ones(n_terminal,1));
+                    case 0 % hard constraint
+                        if problem_options.relax_terminal_constraint_from_above
+                            obj.addConstraint(g_terminal, model.g_terminal_lb, inf*ones(n_terminal,1), 'type', 'g_mpcc');
+                        else
+                            obj.addConstraint(g_terminal, model.g_terminal_lb, model.g_terminal_ub, 'type', 'g_mpcc');
+                        end
+                    case 1 % l_1
+                        s_terminal_ell_1 = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_terminal_ell_1', n_terminal);
+                        obj.addVariable(s_terminal_ell_1,...
+                            's_terminal',...
+                            -inf*ones(n_terminal,1),...
+                            inf*ones(n_terminal,1),...
+                            10*ones(n_terminal,1));
+                        obj.addConstraint(g_terminal-model.g_terminal_lb-s_terminal_ell_1,-inf*ones(n_terminal,1), zeros(n_terminal,1), 'type', 'g_mpcc');
+                        obj.addConstraint(-(g_terminal-model.g_terminal_lb)-s_terminal_ell_1,-inf*ones(n_terminal,1), zeros(n_terminal,1), 'type', 'g_mpcc');
+                        obj.augmented_objective = obj.augmented_objective + rho_terminal_p*sum(s_terminal_ell_1);
+                    case 2 % l_2
+                        obj.augmented_objective = obj.augmented_objective + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-model.g_terminal_lb);
+                    case 3 % l_inf
+                        s_terminal_ell_inf = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
+                        obj.addVariable(s_terminal_ell_inf,...
+                            's_terminal',...
+                            -inf,...
+                            inf,...
+                            1e3);
 
-                    obj.addConstraint(g_terminal-model.g_terminal_lb-s_terminal_ell_1,...
-                        -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1), 'type', 'g_mpcc');
-                    obj.addConstraint(-(g_terminal-model.g_terminal_lb)-s_terminal_ell_1,...
-                        -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1), 'type', 'g_mpcc');
+                        obj.addConstraint(g_terminal-model.g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1), 'type', 'g_mpcc');
+                        obj.addConstraint(-(g_terminal-model.g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1), 'type', 'g_mpcc');
 
-                    obj.augmented_objective = obj.augmented_objective + rho_terminal_p*sum(s_terminal_ell_1);
-                  case 2 % l_2
-                    obj.augmented_objective = obj.augmented_objective + rho_terminal_p*(g_terminal-model.g_terminal_lb)'*(g_terminal-model.g_terminal_lb);
-                  case 3 % l_inf
-                    s_terminal_ell_inf = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 's_terminal_ell_inf', 1);
-                    obj.addVariable(s_terminal_ell_inf,...
-                        's_terminal',...
-                        -inf,...
-                        inf,...
-                        1e3);
-
-                    obj.addConstraint(g_terminal-model.g_terminal_lb-s_terminal_ell_inf*ones(n_terminal,1),...
-                        -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1), 'type', 'g_mpcc');
-                    obj.addConstraint(-(g_terminal-model.g_terminal_lb)-s_terminal_ell_inf*ones(n_terminal,1),...
-                        -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1), 'type', 'g_mpcc');
-
-                    obj.augmented_objective = obj.augmented_objective + rho_terminal_p*s_terminal_ell_inf;
-                  case 4 % l_inf, relaxed
-                    if ismember(problem_options.mpcc_mode, MpccMode.elastic)
-                        elastic = s_elastic*ones(n_terminal,1);
-                    elseif ismemeber(problem_options.mpcc_mode, MpccMode.elastic_ell_1)
-                        elastic = last_fe.elastic{end};
-                    else
-                        error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
-                    end
-                    obj.addConstraint(g_terminal-model.g_terminal_lb-elastic,...
-                        -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1), 'type', 'g_mpcc');
-                    obj.addConstraint(-(g_terminal-model.g_terminal_lb)-elastic,...
-                        -inf*ones(n_terminal,1),...
-                        zeros(n_terminal,1), 'type', 'g_mpcc');
+                        obj.augmented_objective = obj.augmented_objective + rho_terminal_p*s_terminal_ell_inf;
+                    case 4 % l_inf, relaxed
+                        if ismember(problem_options.mpcc_mode, MpccMode.elastic)
+                            elastic = s_elastic*ones(n_terminal,1);
+                        elseif ismemeber(problem_options.mpcc_mode, MpccMode.elastic_ell_1)
+                            elastic = last_fe.elastic{end};
+                        else
+                            error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
+                        end
+                        obj.addConstraint(g_terminal-model.g_terminal_lb-elastic,...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1), 'type', 'g_mpcc');
+                        obj.addConstraint(-(g_terminal-model.g_terminal_lb)-elastic,...
+                            -inf*ones(n_terminal,1),...
+                            zeros(n_terminal,1), 'type', 'g_mpcc');
                 end
             end
 
@@ -526,7 +576,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             % Define CasADi function for the switch indicator function.
             nu_fun = Function('nu_fun', {obj.w,obj.p},{obj.nu_vector});
             obj.nu_fun = nu_fun;
-            
+
             % create CasADi function for objective gradient.
             nabla_J = obj.augmented_objective.jacobian(obj.w);
             nabla_J_fun = Function('nabla_J_fun', {obj.w,obj.p},{nabla_J});
@@ -550,45 +600,45 @@ classdef NosnocMPCC < NosnocFormulationObject
             delta_d00 = [];
             y_gap00 = [];
             switch obj.problem_options.dcs_mode
-              case 'Stewart'
-                lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-              case 'Step'
-                lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-              case 'CLS'
-                % TODO: reconsider this if 0th element has an impulse
-                y_gap00 = max(0, model.f_c_fun(x0));
-                if model.friction_exists
-                    switch obj.problem_options.friction_model
-                      case 'Polyhedral'
-                        v0 = x0(model.dims.n_q+1:end);
-                        D_tangent_0 = model.D_tangent_fun(x0);
-                        v_t0 = D_tangent_0'*v0;
-                        for ii = 1:model.dims.n_contacts
-                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
-                            gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dims.n_t];
-                            delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v0+gamma_d00(ii)];
-                        end
-                      case 'Conic'
-                        v0 = x0(model.dims.n_q+1:end);
-                        v_t0 = model.J_tangent_fun(x0)'*v0;
-                        for ii = 1:model.dims.n_contacts
-                            ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
-                            v_ti0 = v0(ind_temp);
-                            gamma_00 = [gamma_00;norm(v_ti0)];
-                            switch obj.problem_options.conic_model_switch_handling
-                              case 'Plain'
-                                % no extra vars
-                              case {'Abs','Lp'}
-                                p_vt_00 = [p_vt_00; max(v_ti0,0)];
-                                n_vt_00 = [n_vt_00; max(-v_ti0,0)];
-                            end
+                case 'Stewart'
+                    lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+                case 'Step'
+                    lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
+                case 'CLS'
+                    % TODO: reconsider this if 0th element has an impulse
+                    y_gap00 = max(0, model.f_c_fun(x0));
+                    if model.friction_exists
+                        switch obj.problem_options.friction_model
+                            case 'Polyhedral'
+                                v0 = x0(model.dims.n_q+1:end);
+                                D_tangent_0 = model.D_tangent_fun(x0);
+                                v_t0 = D_tangent_0'*v0;
+                                for ii = 1:model.dims.n_contacts
+                                    ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                                    gamma_d00 = [gamma_d00;norm(v_t0(ind_temp))/model.dims.n_t];
+                                    delta_d00 = [delta_d00;D_tangent_0(:,ind_temp)'*v0+gamma_d00(ii)];
+                                end
+                            case 'Conic'
+                                v0 = x0(model.dims.n_q+1:end);
+                                v_t0 = model.J_tangent_fun(x0)'*v0;
+                                for ii = 1:model.dims.n_contacts
+                                    ind_temp = model.dims.n_t*ii-(model.dims.n_t-1):model.dims.n_t*ii;
+                                    v_ti0 = v0(ind_temp);
+                                    gamma_00 = [gamma_00;norm(v_ti0)];
+                                    switch obj.problem_options.conic_model_switch_handling
+                                        case 'Plain'
+                                            % no extra vars
+                                        case {'Abs','Lp'}
+                                            p_vt_00 = [p_vt_00; max(v_ti0,0)];
+                                            n_vt_00 = [n_vt_00; max(-v_ti0,0)];
+                                    end
+                                end
                         end
                     end
-                end
             end
             init_params = [x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
         end
-        
+
         % TODO this should be private
         function create_primal_variables(obj)
             import casadi.*
@@ -749,7 +799,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                 flatten_ind(obj.ind_delta_d(:,:,1:obj.dims.n_s))
                 flatten_ind(obj.ind_p_vt(:,:,1:obj.dims.n_s))
                 flatten_ind(obj.ind_p_vt(:,:,1:obj.dims.n_s))
-                        ];
+                ];
             ind_z_all = sort(ind_z_all);
         end
 
@@ -828,7 +878,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             H_fun = Function('H_fun', {obj.w, obj.p}, {pairs(:,2)});
             mpcc.G_fun = G_fun.serialize();
             mpcc.H_fun = H_fun.serialize();
-            
+
             mpcc.augmented_objective_fun = obj.augmented_objective_fun.serialize();
             mpcc.objective_fun = obj.objective_fun.serialize();
         end
