@@ -166,7 +166,7 @@ classdef ControlStage < NosnocFormulationObject
             
             % TODO: combine this into a function
             if problem_options.use_fesd
-                if problem_options.relax_terminal_numerical_time
+                if problem_options.relax_terminal_numerical_time && problem_options.equidistant_control_grid
                                 s_numerical = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['s_numerical_' num2str(ctrl_idx)], 1);
                                 obj.addVariable(s_numerical ,...
                                     's_numerical',...
@@ -174,7 +174,7 @@ classdef ControlStage < NosnocFormulationObject
                                     2*problem_options.h,...
                                     problem_options.h/2);
                 end
-                if problem_options.time_freezing && problem_options.relax_terminal_phyisical_time
+                if problem_options.time_freezing && problem_options.relax_terminal_phyisical_time && problem_options.stagewise_clock_constraint
                     s_physical = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['s_physical_' num2str(ctrl_idx)], 1);
                                 obj.addVariable(s_physical,...
                                     's_physical',...
