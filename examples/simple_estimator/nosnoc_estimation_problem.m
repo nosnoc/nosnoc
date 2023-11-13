@@ -1,0 +1,79 @@
+clear all
+import casadi.*
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+% Choosing the Runge - Kutta Method and number of stages
+problem_options.n_s = 2; % number of runge Kutta stages
+problem_options.dcs_mode = "Stewart";
+model = NosnocModel();
+problem_options.N_stages = 10; % number of control intervals (no controls, set to one)
+problem_options.N_finite_elements = 3; % number of integration steps (in one control intevral)
+problem_options.T = 2;    % Time/simulation horizon
+% Symbolic variables
+x = SX.sym('x');
+model.x = x;
+model.x0 = -1; % inital value
+% Dyanmics and the regions
+model.c = x; % swiching function
+f_1 = 1;  % for c < 0 , hence -1 in first entry of S
+f_2 = 5;  % for c > 0 , hence 1 in second entry of S
+model.S = [-1;1];
+model.F = [f_1 f_2]; % collect all dynamics modes in one matrix
+
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
+[results,stats] = solver.solve();
+
+%%
+figure
+plot(results.t_grid,results.x)
+grid on
+xlabel('t')
+ylabel('x(t)')
+hold on
+%% Set up estimation problem
+% create data by perturbing simulation results with random points from [-0.1,0.1]
+dx = 0.2;
+x_data = results.x + (-dx + 2*dx.*rand(size(results.x)));
+plot(results.t_grid,x_data,'o-')
+x_samples = x_data(1:3:end);
+
+%% Create nosnoc estimation problem
+problem_options = NosnocProblemOptions();
+solver_options = NosnocSolverOptions();
+% Choosing the Runge - Kutta Method and number of stages
+problem_options.n_s = 2; % number of runge Kutta stages
+problem_options.dcs_mode = "Stewart";
+model = NosnocModel();
+problem_options.N_stages = 10; % number of control intervals (no controls, set to one)
+problem_options.N_finite_elements = 2; % number of integration steps (in one control intevral)
+problem_options.T = 2;    % Time/simulation horizon
+                          %problem_options.step_equilibration = StepEquilibrationMode.direct;
+% Symbolic variables
+x = SX.sym('x');
+x_data_sym = SX.sym('x_data_sym'); % symbolic variable for data
+v_sys = SX.sym('v_sys',2); % Uknown system parameters (optimization variables)
+model.x = x;
+model.v_global = v_sys; % name global, because they are not time dependedt
+model.x0 = -1; % inital value
+% Dyanmics and the regions
+model.c = x; % swiching function
+% determine two parameters (dynamics parameteres, for the two modes of the system)
+f_1 = v_sys(1);  % for c < 0 , hence -1 in first entry of S
+f_2 = v_sys(2);  % for c > 0 , hence 1 in second entry of S
+model.S = [-1;1];
+model.F = [f_1 f_2]; % collect all dynamics modes in one matrix
+model.p_time_var = x_data_sym;
+model.p_time_var_val = x_samples(1:end-1); % value of the parameters
+model.f_q = (x-x_data_sym)'*(x-x_data_sym); % linear least squares objective
+% model.f_q_T = (x-x_data_sym)'*(x-x_data_sym); % linear least squares terminal objective
+
+
+mpcc = NosnocMPCC(problem_options, model);
+solver = NosnocSolver(mpcc, solver_options);
+[results,stats] = solver.solve();
+%% todo fix bugs
+
+%% todo add to plot the results of the fitted trajectory
+
+

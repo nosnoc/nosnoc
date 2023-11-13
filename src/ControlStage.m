@@ -80,7 +80,7 @@ classdef ControlStage < NosnocFormulationObject
         ind_sot
         ind_comp_lift
         ind_s_numerical
-        ind_s_phyisical
+        ind_s_physical
 
         % Index of this control stage.
         ctrl_idx

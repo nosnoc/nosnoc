@@ -283,13 +283,6 @@ classdef NosnocMPCC < NosnocFormulationObject
                 T_final_guess = problem_options.T;
             end
 
-            % Add global vars
-            obj.addVariable(model.v_global,...
-                'v_global',...
-                model.lbv_global,...
-                model.ubv_global,...
-                model.v0_global)
-
             obj.create_primal_variables();
 
             last_stage = obj.stages(end);
@@ -569,7 +562,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             end
 
             if dims.n_p_time_var > 0
-                obj.p0 = [obj.p0; model.p_time_var_val];
+                obj.p0 = [obj.p0; model.p_time_var_val(:)];
             end
             obj.w0_original = obj.w0;
 
@@ -657,6 +650,13 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.addConstraint(fe0.g, fe0.lbg, fe0.ubg);
             prev_fe = fe0;
 
+            % Add global vars
+            obj.addVariable(obj.model.v_global,...
+                'v_global',...
+                obj.model.lbv_global,...
+                obj.model.ubv_global,...
+                obj.model.v0_global)
+            
             s_sot = [];
             if obj.problem_options.time_rescaling && obj.problem_options.use_speed_of_time_variables
                 if ~obj.problem_options.local_speed_of_time_variable
