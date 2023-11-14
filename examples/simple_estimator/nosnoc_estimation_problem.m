@@ -7,7 +7,8 @@ problem_options.n_s = 2; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";
 model = NosnocModel();
 problem_options.N_stages = 10; % number of control intervals (no controls, set to one)
-problem_options.N_finite_elements = 3; % number of integration steps (in one control intevral)
+N_FE = 3;
+problem_options.N_finite_elements = N_FE; % number of integration steps (in one control intevral)
 problem_options.T = 2;    % Time/simulation horizon
 % Symbolic variables
 x = SX.sym('x');
@@ -16,7 +17,7 @@ model.x0 = -1; % inital value
 % Dyanmics and the regions
 model.c = x; % swiching function
 f_1 = 1;  % for c < 0 , hence -1 in first entry of S
-f_2 = 5;  % for c > 0 , hence 1 in second entry of S
+f_2 = -1;  % for c > 0 , hence 1 in second entry of S
 model.S = [-1;1];
 model.F = [f_1 f_2]; % collect all dynamics modes in one matrix
 
@@ -33,10 +34,10 @@ ylabel('x(t)')
 hold on
 %% Set up estimation problem
 % create data by perturbing simulation results with random points from [-0.1,0.1]
-dx = 0.2;
+dx = 0.1;
 x_data = results.x + (-dx + 2*dx.*rand(size(results.x)));
 plot(results.t_grid,x_data,'o-')
-x_samples = x_data(1:3:end);
+x_samples = x_data(1:N_FE:end); 
 
 %% Create nosnoc estimation problem
 problem_options = NosnocProblemOptions();
@@ -71,9 +72,8 @@ model.f_q = (x-x_data_sym)'*(x-x_data_sym); % linear least squares objective
 
 mpcc = NosnocMPCC(problem_options, model);
 solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
-%% todo fix bugs
+[results_estimation,stats_estimation] = solver.solve();
 
-%% todo add to plot the results of the fitted trajectory
-
+%%
+plot(results_estimation.t_grid,results_estimation.x)
 
