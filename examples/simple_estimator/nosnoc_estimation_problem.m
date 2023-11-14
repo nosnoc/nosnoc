@@ -6,8 +6,9 @@ solver_options = NosnocSolverOptions();
 problem_options.n_s = 2; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";
 model = NosnocModel();
-problem_options.N_stages = 10; % number of control intervals (no controls, set to one)
-N_FE = 3;
+N_stages = 50; % number of data points 
+N_FE = 2; % number of intermediate integration steps between data points
+problem_options.N_stages = N_stages; % number of control intervals, or data poitns in this context
 problem_options.N_finite_elements = N_FE; % number of integration steps (in one control intevral)
 problem_options.T = 2;    % Time/simulation horizon
 % Symbolic variables
@@ -17,7 +18,7 @@ model.x0 = -1; % inital value
 % Dyanmics and the regions
 model.c = x; % swiching function
 f_1 = 1;  % for c < 0 , hence -1 in first entry of S
-f_2 = -1;  % for c > 0 , hence 1 in second entry of S
+f_2 = 4;  % for c > 0 , hence 1 in second entry of S
 model.S = [-1;1];
 model.F = [f_1 f_2]; % collect all dynamics modes in one matrix
 
@@ -34,7 +35,7 @@ ylabel('x(t)')
 hold on
 %% Set up estimation problem
 % create data by perturbing simulation results with random points from [-0.1,0.1]
-dx = 0.1;
+dx = 0.1*0;
 x_data = results.x + (-dx + 2*dx.*rand(size(results.x)));
 plot(results.t_grid,x_data,'o-')
 x_samples = x_data(1:N_FE:end); 
@@ -46,10 +47,9 @@ solver_options = NosnocSolverOptions();
 problem_options.n_s = 2; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";
 model = NosnocModel();
-problem_options.N_stages = 10; % number of control intervals (no controls, set to one)
-problem_options.N_finite_elements = 2; % number of integration steps (in one control intevral)
+problem_options.N_stages = N_stages; % number of control intervals (no controls, set to one)
+problem_options.N_finite_elements = N_FE; % number of integration steps (in one control intevral)
 problem_options.T = 2;    % Time/simulation horizon
-                          %problem_options.step_equilibration = StepEquilibrationMode.direct;
 % Symbolic variables
 x = SX.sym('x');
 x_data_sym = SX.sym('x_data_sym'); % symbolic variable for data
