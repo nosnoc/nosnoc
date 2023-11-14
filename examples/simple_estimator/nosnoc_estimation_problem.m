@@ -8,7 +8,7 @@ problem_options.n_s = 1; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";
 model = NosnocModel();
 N_stages = 10; % number of data points 
-N_FE = 2; % number of intermediate integration steps between data points
+N_FE = 1; % number of intermediate integration steps between data points
 problem_options.N_stages = N_stages; % number of control intervals, or data poitns in this context
 problem_options.N_finite_elements = N_FE; % number of integration steps (in one control intevral)
 problem_options.T = 2;    % Time/simulation horizon
@@ -70,7 +70,7 @@ f_2 = v_sys(2);  % for c > 0 , hence 1 in second entry of S
 model.S = [-1;1];
 model.F = [f_1 f_2]; % collect all dynamics modes in one matrix
 model.p_time_var = x_data_sym;
-model.p_time_var_val = x_samples(1:end-1); % value of the parameters
+model.p_time_var_val = x_samples(2:end); % value of the parameters
 model.f_q = 1e3*(x-x_data_sym)'*(x-x_data_sym); % linear least squares objective
 % model.f_q_T = (x-x_data_sym)'*(x-x_data_sym); % linear least squares terminal objective
 
