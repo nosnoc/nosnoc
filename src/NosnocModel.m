@@ -983,7 +983,7 @@ classdef NosnocModel < handle
             obj.p = vertcat(obj.p_global,obj.p_time_var);
 
             %% Stage and terminal costs check
-            if ~size(obj.f_q, 1) ~= 0
+            if size(obj.f_q, 1) == 0
                 obj.f_q = 0;
             end
 

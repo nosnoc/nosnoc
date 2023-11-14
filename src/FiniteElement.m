@@ -1285,13 +1285,28 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                     Xk_end = Xk_end + problem_options.D_irk(j+1) * X_ki{j};
                     obj.addConstraint(obj.h * fj - xj);
-                    obj.augmented_objective = obj.augmented_objective + problem_options.B_irk(j+1) * obj.h * qj;
-                    obj.objective = obj.objective + problem_options.B_irk(j+1) * obj.h * qj;
+                    if ~problem_options.estimator_cost_on_stage_points
+                        obj.augmented_objective = obj.augmented_objective + problem_options.B_irk(j+1) * obj.h * qj;
+                        obj.objective = obj.objective + problem_options.B_irk(j+1) * obj.h * qj;
+                    end
                 else
                     Xk_end = Xk_end + obj.h * problem_options.b_irk(j) * obj.v{j};
                     obj.addConstraint(fj - obj.v{j});
-                    obj.augmented_objective = obj.augmented_objective + problem_options.b_irk(j) * obj.h * qj;
-                    obj.objective = obj.objective + problem_options.b_irk(j) * obj.h * qj;
+                    if ~problem_options.estimator_cost_on_stage_points
+                         obj.augmented_objective = obj.augmented_objective + problem_options.b_irk(j) * obj.h * qj;
+                         obj.objective = obj.objective + problem_options.b_irk(j) * obj.h * qj;
+                    end
+                end
+            end
+            if problem_options.estimator_cost_on_stage_points && problem_options.N_finite_elements(obj.ctrl_idx) == obj.fe_idx
+                if problem_options.right_boundary_point_explicit
+                    [~, q] = model.f_x_fun(X_ki{dims.n_s}, obj.rkStageZ(dims.n_s), Uk, p_stage, model.v_global);
+                    obj.augmented_objective = obj.augmented_objective + q;
+                    obj.objective = obj.objective + q;
+                else
+                    [~, q] = model.f_x_fun(X_ki{dims.n_s+1}, obj.rkStageZ(dims.n_s+1), Uk, p_stage, model.v_global);
+                    obj.augmented_objective = obj.augmented_objective + q;
+                    obj.objective = obj.objective + q;
                 end
             end
 
