@@ -1,4 +1,5 @@
 clear all
+close all
 import casadi.*
 problem_options = NosnocProblemOptions();
 solver_options = NosnocSolverOptions();
@@ -6,7 +7,7 @@ solver_options = NosnocSolverOptions();
 problem_options.n_s = 1; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";
 model = NosnocModel();
-N_stages = 20; % number of data points 
+N_stages = 10; % number of data points 
 N_FE = 2; % number of intermediate integration steps between data points
 problem_options.N_stages = N_stages; % number of control intervals, or data poitns in this context
 problem_options.N_finite_elements = N_FE; % number of integration steps (in one control intevral)
@@ -36,7 +37,7 @@ ylabel('x(t)')
 hold on
 %% Set up estimation problem
 % create data by perturbing simulation results with random points from [-0.1,0.1]
-dx = 0.1*1;
+dx = 0.00*1;
 x_data = results.x + (-dx + 2*dx.*rand(size(results.x)));
 plot(results.t_grid,x_data,'x')
 x_samples = x_data(1:N_FE:end); 
@@ -47,7 +48,7 @@ solver_options = NosnocSolverOptions();
 % Choosing the Runge - Kutta Method and number of stages
 problem_options.n_s = 1; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";
-problem_options.step_equilibration = 'direct_homotopy';
+problem_options.step_equilibration = 'direct';
 model = NosnocModel();
 problem_options.N_stages = N_stages; % number of control intervals (no controls, set to one)
 problem_options.N_finite_elements = N_FE; % number of integration steps (in one control intevral)
@@ -57,7 +58,9 @@ x = SX.sym('x');
 x_data_sym = SX.sym('x_data_sym'); % symbolic variable for data
 v_sys = SX.sym('v_sys',2); % Uknown system parameters (optimization variables)
 model.x = x;
-model.v_global = v_sys; % name global, because they are not time dependedt
+model.v_global = v_sys; % name global, because they are not time dependent
+model.ubv_global = [10;10];
+model.lbv_global = [-10;-10];
 model.x0 = -1; % inital value
 % Dyanmics and the regions
 model.c = x; % swiching function

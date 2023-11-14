@@ -1074,6 +1074,11 @@ classdef NosnocSolver < handle
             results.x = [x0, results.x];
             results.extended.x = [x0, results.extended.x];
 
+            if ~isempty(mpcc.ind_v_global)
+                v_global = w_mpcc(mpcc.ind_v_global);
+                results.v_global = v_global;
+            end
+            
             u = w_mpcc([mpcc.ind_u{:}]);
             u = reshape(u,obj.mpcc.model.dims.n_u,obj.mpcc.problem_options.N_stages);
 

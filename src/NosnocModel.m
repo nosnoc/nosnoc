@@ -928,7 +928,7 @@ classdef NosnocModel < handle
                 end
 
                 if size(obj.ubv_global, 1) ~= 0
-                    if length(obj.ubv_global) ~= dims.n_v_global
+                    if length(obj.ubv_global) ~= n_v_global
                         error('nosnoc: The vector ubv_global, for the upper bound of v_global has the wrong size.')
                     end
                 else
