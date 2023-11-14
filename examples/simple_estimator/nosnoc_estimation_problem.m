@@ -3,14 +3,15 @@ import casadi.*
 problem_options = NosnocProblemOptions();
 solver_options = NosnocSolverOptions();
 % Choosing the Runge - Kutta Method and number of stages
-problem_options.n_s = 2; % number of runge Kutta stages
+problem_options.n_s = 1; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";
 model = NosnocModel();
-N_stages = 50; % number of data points 
+N_stages = 20; % number of data points 
 N_FE = 2; % number of intermediate integration steps between data points
 problem_options.N_stages = N_stages; % number of control intervals, or data poitns in this context
 problem_options.N_finite_elements = N_FE; % number of integration steps (in one control intevral)
 problem_options.T = 2;    % Time/simulation horizon
+problem_options.step_equilibration = 'direct_homotopy';
 % Symbolic variables
 x = SX.sym('x');
 model.x = x;
@@ -18,7 +19,7 @@ model.x0 = -1; % inital value
 % Dyanmics and the regions
 model.c = x; % swiching function
 f_1 = 1;  % for c < 0 , hence -1 in first entry of S
-f_2 = 4;  % for c > 0 , hence 1 in second entry of S
+f_2 = -5;  % for c > 0 , hence 1 in second entry of S
 model.S = [-1;1];
 model.F = [f_1 f_2]; % collect all dynamics modes in one matrix
 
@@ -35,17 +36,18 @@ ylabel('x(t)')
 hold on
 %% Set up estimation problem
 % create data by perturbing simulation results with random points from [-0.1,0.1]
-dx = 0.1*0;
+dx = 0.1*1;
 x_data = results.x + (-dx + 2*dx.*rand(size(results.x)));
-plot(results.t_grid,x_data,'o-')
+plot(results.t_grid,x_data,'x')
 x_samples = x_data(1:N_FE:end); 
 
 %% Create nosnoc estimation problem
 problem_options = NosnocProblemOptions();
 solver_options = NosnocSolverOptions();
 % Choosing the Runge - Kutta Method and number of stages
-problem_options.n_s = 2; % number of runge Kutta stages
+problem_options.n_s = 1; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";
+problem_options.step_equilibration = 'direct_homotopy';
 model = NosnocModel();
 problem_options.N_stages = N_stages; % number of control intervals (no controls, set to one)
 problem_options.N_finite_elements = N_FE; % number of integration steps (in one control intevral)
@@ -66,7 +68,7 @@ model.S = [-1;1];
 model.F = [f_1 f_2]; % collect all dynamics modes in one matrix
 model.p_time_var = x_data_sym;
 model.p_time_var_val = x_samples(1:end-1); % value of the parameters
-model.f_q = (x-x_data_sym)'*(x-x_data_sym); % linear least squares objective
+model.f_q = 1e3*(x-x_data_sym)'*(x-x_data_sym); % linear least squares objective
 % model.f_q_T = (x-x_data_sym)'*(x-x_data_sym); % linear least squares terminal objective
 
 
