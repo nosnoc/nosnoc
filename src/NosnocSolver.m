@@ -1141,7 +1141,8 @@ classdef NosnocSolver < handle
                 for ii=1:size(results.structured.x,1)
                     for jj=1:size(results.structured.x,2)
                         x_with_impulse = [x_with_impulse,results.structured.x_left_bp{ii,jj}];
-                        x_with_impulse = [x_with_impulse,results.structured.x{ii,jj}];
+                        x_fe = results.structured.x{ii,jj};
+                        x_with_impulse = [x_with_impulse, x_fe(:,end)];
                     end
                 end
                 results.x_with_impulse = x_with_impulse;

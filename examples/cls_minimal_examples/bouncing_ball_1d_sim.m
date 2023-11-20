@@ -15,7 +15,7 @@ problem_options.dcs_mode = DcsMode.CLS;
 problem_options.no_initial_impacts = 1;
 
 % elasic mode with decreasing bounds for the elstaic slacks
-solver_options.mpcc_mode = "elastic_ineq";
+%solver_options.mpcc_mode = "elastic_ineq";
 solver_options.elastic_scholtes = 1;
 
 solver_options.sigma_0 = 1e0;
