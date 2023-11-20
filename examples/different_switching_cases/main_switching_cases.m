@@ -52,7 +52,6 @@ problem_options.n_s = 2;
 problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 problem_options.irk_representation= 'differential';
 problem_options.cross_comp_mode = 7;
-problem_options.lift_complementarities = 1
 
 switch switching_case
     case 'crossing'

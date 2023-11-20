@@ -48,13 +48,19 @@ function [results]= form_structured_output(problem, w_opt, name, results)
     end
     results.structured.(name) = opt_s_concat;
 
+    
     temp = opt_s_end';
     flat = horzcat(temp{:});
-    results.(name) = flat;
-
+    if ~isempty(flat)
+        results.(name) = flat;
+    end
     % generate extended
     opt_extended = cellfun(@(idx) w_opt(idx), sort_ind_sets(ind(:)), 'uni', 0);
 
+    
     temp = opt_extended';
-    results.extended.(name) = horzcat(temp{:});
+    flat = horzcat(temp{:});
+    if ~isempty(flat)
+        results.extended.(name) = flat;
+    end
 end

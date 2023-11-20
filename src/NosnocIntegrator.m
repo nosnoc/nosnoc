@@ -92,8 +92,10 @@ classdef NosnocIntegrator < handle
             results.x = x0;
             results.extended.x = x0;
             results.s_sot = [];
-            results.x_with_impulse = x0;
-            results.t_with_impulse = 0;
+            if problem_options.dcs_mode == DcsMode.CLS
+                results.x_with_impulse = x0;
+                results.t_with_impulse = 0;
+            end
             % stats
             complementarity_stats  = [];
             homotopy_iteration_stats = [];
@@ -294,6 +296,14 @@ classdef NosnocIntegrator < handle
 
             if solver_options.store_integrator_step_results
                 results.sim_step_solver_results = sim_step_solver_results;
+            end
+
+            % Clear empty fields
+            names = fieldnames(results);
+            for k=1:numel(names)
+                if isempty(results.(names{k}))
+                    results = rmfield(results, names{k});
+                end
             end
         end
     end
