@@ -433,7 +433,7 @@ classdef NosnocModel < handle
             switch dcs_mode
               case 'Stewart'
                 % dimensions
-                dims.n_theta = sum(obj.dims.n_c_sys); % number of modes
+                dims.n_theta = sum(obj.dims.n_f_sys); % number of modes
                 dims.n_lambda = dims.n_theta;
                 for ii = 1:dims.n_sys
                     ii_str = num2str(ii);
