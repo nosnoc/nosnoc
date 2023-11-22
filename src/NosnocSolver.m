@@ -768,21 +768,14 @@ classdef NosnocSolver < handle
             p = mpcc.p;
             p0 = obj.p_val(2:end);
 
-            solver_settings = SolverOptions();
-            solver_settings.max_iter = 1;
-            solver_settings.max_inner_iter = 20;
-            solver_settings.restoration_mode = 2;
-            solver_settings.max_feasiblity_restoration_trails = 10;
-            %solver_settings.constat_lpcc_TR_radius = true;
+            solver_settings = struct();
+            solver_settings.max_iter = 20;
             solver_settings.tol = 1e-6;
-            %solver_settings.Delta_TR_lpcc = 0.1;
             solver_settings.Delta_TR_init = 10;
             solver_settings.Delta_TR_min = 1e-4;
             solver_settings.verbose_solver = 1;
             solver_settings.tighten_bounds_in_lpcc = false;
-            %solver.BigM = 5;
-            %solver_settings.lagrange_multiplers_lsq_estimate = 1;
-            solver_settings.compute_eqp_steps = false;
+            solver_settings.BigM = 1e2;
 
             if ~n_biactive
                 solver_settings.fixed_y_lpcc = y_lpcc;
