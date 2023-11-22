@@ -1,5 +1,5 @@
 function solution = bStationarityOracle(nlp,problem_data,settings)
-%% Implemented by Armin Nurkanovic, 2023
+%% Implemented by Armin Nurkanovic, Anton Pozharskiy 2023
 import casadi.*
 %% extract inital data
 %% check nlp input
