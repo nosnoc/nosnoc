@@ -20,7 +20,7 @@ model.x0 = -1; % inital value
 % Dyanmics and the regions
 model.c = x; % swiching function
 f_1 = 1;  % for c < 0 , hence -1 in first entry of S
-f_2 = 3;  % for c > 0 , hence 1 in second entry of S
+f_2 = -1;  % for c > 0 , hence 1 in second entry of S
 model.S = [-1;1];
 model.F = [f_1 f_2]; % collect all dynamics modes in one matrix
 

@@ -41,20 +41,21 @@ model = NosnocModel();
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.dcs_mode = 'CLS';
-problem_options.cross_comp_mode = 1;
+problem_options.cross_comp_mode = 7;
 problem_options.friction_model = "Polyhedral";
 solver_options.print_level = 3;
 
 problem_options.gamma_h = 0.8;
-solver_options.sigma_0 = 1e0;
-solver_options.mpcc_mode = "Scholtes_ineq";
-solver_options.homotopy_update_slope = 0.2;
-solver_options.homotopy_update_rule = 'superlinear';
-solver_options.N_homotopy = 7;
+solver_options.sigma_0 = 1e1;
+solver_options.mpcc_mode = "elastic_ineq";
+solver_options.elastic_scholtes = 1;
+solver_options.homotopy_update_slope = 0.5;
+%solver_options.homotopy_update_rule = 'superlinear';
+%solver_options.N_homotopy = 7;
 
 % NLP solver settings;
-default_tol = 1e-8;
-solver_options.comp_tol = 1e-8;
+default_tol = 1e-6;
+solver_options.comp_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.opts_casadi_nlp.ipopt.tol = default_tol;
 solver_options.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
@@ -62,7 +63,7 @@ solver_options.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
 solver_options.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
 
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma97';
 
 %% discretizatioon
 N_stg = 15; % control intervals
