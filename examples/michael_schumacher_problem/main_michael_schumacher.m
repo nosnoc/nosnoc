@@ -56,7 +56,6 @@ problem_options.time_optimal_problem = 1;
 solver_options.mpcc_mode = 'Scholtes_ineq';
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
 solver_options.print_level = 3;
-solver_options.calculate_stationarity_type = 1;
 
 
 %% model equations
@@ -145,7 +144,7 @@ if ~isequal(path_constraint,'none')
 end
 %% objective
 if ~problem_options.time_optimal_problem 
-    f_q = u'*u;
+    model.f_q = u'*u;
     model.T = 5;
 else
     model.f_q = 0.01*u'*u;

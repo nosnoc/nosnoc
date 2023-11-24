@@ -771,7 +771,7 @@ classdef NosnocMPCC < NosnocFormulationObject
 
         function nu_vector = get.nu_vector(obj)
             nu_vector = [];
-            for k=obj.problem_options.N_stages
+            for k=1:obj.problem_options.N_stages
                 stage = obj.stages(k);
                 for fe=stage.stage
                     nu_vector = vertcat(nu_vector,fe.nu_vector);
@@ -895,7 +895,7 @@ classdef NosnocMPCC < NosnocFormulationObject
         function mpcc = from_serialized_casadi(json)
             import casadi.*
             raw_struct = jsondecode(json);
-
+            
             % TODO also handle MX
             mpcc.w = SX.deserialize(raw_struct.w);
             mpcc.w0 = raw_struct.w0;
