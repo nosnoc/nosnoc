@@ -32,9 +32,6 @@ import casadi.*
 % April 2012, Numerische Mathematik 114(4):653-695
 % DOI: 10.1007/s00211-009-0262-2
 % David E. Stewart Mihai Anitescu
-%% A very difficult problem is with:
-% path_constraint = 'track';
-% settings.time_optimal_problem = 1;
 
 %% NOSNOC settings
 path_constraint = 'track';

@@ -44,7 +44,6 @@ problem_options.n_s = 1;
 problem_options.time_freezing = 1;
 problem_options.pss_lift_step_functions = 1;
 problem_options.cross_comp_mode = 7;
-problem_options.lift_complementarities = 1;
 solver_options.mpcc_mode = MpccMode.Scholtes_ineq; 
 solver_options.homotopy_update_slope = 0.25; 
 solver_options.N_homotopy = 100;

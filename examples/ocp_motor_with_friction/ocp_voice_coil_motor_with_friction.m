@@ -18,7 +18,6 @@ model = NosnocModel();
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.cross_comp_mode = 7;
-problem_options.lift_complementarities = 1;
 % solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 % MPCC Method
 solver_options.N_homotopy = 10;

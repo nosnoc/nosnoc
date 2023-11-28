@@ -49,7 +49,6 @@ problem_options.irk_representation = 'integral';
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 solver_options.psi_fun_type = CFunctionType.SCHOLTES;
 problem_options.cross_comp_mode = 7;
-problem_options.experimental_supervertical_form = 1;
 %problem_options.lift_complementarities = 1;
 
 solver_options.print_level = 3;

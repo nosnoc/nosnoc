@@ -63,7 +63,7 @@ solver_options.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
 solver_options.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
 
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma97';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
 N_stg = 15; % control intervals

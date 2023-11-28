@@ -49,7 +49,6 @@ problem_options.relax_terminal_constraint = 0;
 % solver settings
 solver_options.comp_tol = 1e-6;
 problem_options.cross_comp_mode = 4;
-problem_options.lift_complementarities = 1;
 %solver_options.homotopy_update_slope = 0.9;
 %solver_options.homotopy_update_rule = 'superlinear';
 %solver_options.psi_fun_type = CFunctionType.STEFFENSEN_ULBRICH;
