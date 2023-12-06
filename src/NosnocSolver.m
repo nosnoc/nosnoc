@@ -277,28 +277,6 @@ classdef NosnocSolver < handle
             end
         end
 
-        function  print_solver_stats(obj, results, stats)
-            % model = obj.model;
-            % dims = model.dims;
-            % solver_options = obj.solver_options;
-
-            % fprintf('\n---------------------------------------------- Stats summary--------------------------\n');
-            % if stats.cpu_time_total < 60
-            %     fprintf('H. iters\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter \tComp. res.\n');
-            %     fprintf('%d\t\t\t\t%2.2f\t\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t%2.2e\t\t\t\t%2.2e\n',...
-            %         stats.homotopy_iterations, stats.cpu_time_total, max(stats.cpu_time),min(stats.cpu_time), stats.complementarity_stats(end));
-            % else
-            %     fprintf('H. iters\t CPU Time (m)\t Max. CPU (m)/iter\tMin. CPU (m)/iter \tComp. res.\n');
-            %     fprintf('%d\t\t\t\t%2.2f\t\t%2.2f\t\t\t\t%2.2f\t\t\t\t\t%2.2e\t\t\t\t%2.2e \n',...
-            %         stats.homotopy_iterations,stats.cpu_time_total/60, max(stats.cpu_time)/60, min(stats.cpu_time)/60, stats.complementarity_stats(end));
-            % end
-            % fprintf('\n');
-        end
-
-        function identify_active_set(obj, results)
-
-        end
-
         function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results, exitfast, lifted)
             import casadi.*
             stationarity_type = 0;
@@ -1038,8 +1016,6 @@ classdef NosnocSolver < handle
             % check if solved to required accuracy
             stats.converged = obj.complementarity_tol_met(stats) && ~last_iter_failed && ~timeout;
             stats.constraint_violation = obj.compute_constraint_violation(results.w);
-
-            obj.print_solver_stats(results,stats);
         end
 
         function obj = solve_direct(obj)

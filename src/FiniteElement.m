@@ -835,26 +835,6 @@ classdef FiniteElement < NosnocFormulationObject
                                 1);
             end
         end
-
-        function std_comp_pairs = getStdCompPairs(obj)
-            import casadi.*
-            model = obj.model;
-            problem_options = obj.problem_options;
-            dims = obj.dims;
-            warning("This method is experimental and does not work in all cases");
-            switch problem_options.dcs_mode
-                case DcsMode.Stewart
-                    rbp_allowance = ~problem_options.right_boundary_point_explicit;
-                    n_cont = dims.n_s+1+rbp_allowance;
-                    n_discont = dims.n_s;
-                    n_indep = dims.n_sys;
-                    cross_comp_pairs = [];
-                    
-                case DcsMode.Step
-                    cross_comp_pairs{1,jj,r} = [prev_fe.w(prev_fe.ind_lam{end,r}), obj.w(obj.ind_theta{jj,r})];
-                case DcsMode.CLS
-            end
-        end
         
         function cross_comp_pairs = getCrossCompPairs(obj)
             import casadi.*
@@ -1285,29 +1265,27 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                     Xk_end = Xk_end + problem_options.D_irk(j+1) * X_ki{j};
                     obj.addConstraint(obj.h * fj - xj);
-                    if ~problem_options.estimator_cost_on_stage_points
+                    if problem_options.cost_integration
                         obj.augmented_objective = obj.augmented_objective + problem_options.B_irk(j+1) * obj.h * qj;
                         obj.objective = obj.objective + problem_options.B_irk(j+1) * obj.h * qj;
                     end
                 else
                     Xk_end = Xk_end + obj.h * problem_options.b_irk(j) * obj.v{j};
                     obj.addConstraint(fj - obj.v{j});
-                    if ~problem_options.estimator_cost_on_stage_points
+                    if problem_options.cost_integration
                          obj.augmented_objective = obj.augmented_objective + problem_options.b_irk(j) * obj.h * qj;
                          obj.objective = obj.objective + problem_options.b_irk(j) * obj.h * qj;
                     end
                 end
             end
-            if problem_options.estimator_cost_on_stage_points && problem_options.N_finite_elements(obj.ctrl_idx) == obj.fe_idx
+            if ~problem_options.cost_integration && problem_options.N_finite_elements(obj.ctrl_idx) == obj.fe_idx
                 if problem_options.right_boundary_point_explicit
                     [~, q] = model.f_x_fun(X_ki{dims.n_s}, obj.rkStageZ(dims.n_s), Uk, p_stage, model.v_global);
-                    obj.augmented_objective = obj.augmented_objective + q;
-                    obj.objective = obj.objective + q;
                 else
                     [~, q] = model.f_x_fun(X_ki{dims.n_s+1}, obj.rkStageZ(dims.n_s+1), Uk, p_stage, model.v_global);
-                    obj.augmented_objective = obj.augmented_objective + q;
-                    obj.objective = obj.objective + q;
                 end
+                obj.augmented_objective = obj.augmented_objective + q;
+                obj.objective = obj.objective + q;
             end
 
             % nonlinear inequality.

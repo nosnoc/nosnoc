@@ -83,7 +83,7 @@ classdef NosnocMPCC < NosnocFormulationObject
         ind_v_global
         ind_s_terminal
         ind_s_numerical
-%         ind_s_physical
+        ind_s_physical
         ind_comp_lift
 
         % Parameter index variables
@@ -248,7 +248,7 @@ classdef NosnocMPCC < NosnocFormulationObject
 
             obj.ind_s_terminal = [];
             obj.ind_s_numerical = [];
-%             obj.ind_s_physical = [];
+            obj.ind_s_physical = [];
 
             obj.problem_options = problem_options;
             obj.model = model;

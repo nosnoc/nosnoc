@@ -141,7 +141,7 @@ classdef NosnocProblemOptions < handle
 
         % Experimental:
         no_initial_impacts(1,1) logical = 0
-        estimator_cost_on_stage_points(1,1) logical = 0
+        cost_integration(1,1) logical = 1
 
         % All MPCC parameters
         T_val(1,1) double {mustBePositive} = 1
