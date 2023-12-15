@@ -186,7 +186,6 @@ classdef ControlStage < NosnocFormulationObject
 
             if problem_options.use_fesd && problem_options.equidistant_control_grid
                 if ~problem_options.time_optimal_problem
-                    
                     if problem_options.relax_terminal_numerical_time
                         % TODO @Anton: Here Armin did addConstraint as an oneliner, are we fine with this?
                                 obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h-s_numerical,-inf, 0, 'type', 'stage');

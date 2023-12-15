@@ -279,9 +279,14 @@ classdef NosnocSolver < handle
 
         function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results, exitfast, lifted)
             import casadi.*
-            stationarity_type = 0;
+            stat_type = "?";
             nlp = obj.nlp;
             mpcc = obj.mpcc;
+
+            % This method generates a TNLP (tightened NLP) using the results of a homotopy solver.
+            % In order to do so we first identify the active set of the complementarity constraints which involves identifying which
+            % branch of the complementarity each element of G(w) and H(w) are, or whether the solution is biactive at that point.
+            % For a more in depth explanation see the PhD theses of Armin Nurkanovic or Alexandra Schwartz
             
             w_orig = results.x(nlp.ind_map);
             lam_x = full(results.lam_x(nlp.ind_map));
@@ -590,107 +595,48 @@ classdef NosnocSolver < handle
             
             switch tnlp_solver.stats.return_status
               case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
-               
+                
                 if n_biactive
                     nu_biactive = nu(ind_00);
-                xi_biactive = xi(ind_00);
-                bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
+                    xi_biactive = xi(ind_00);
+                    bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
 
-                figure()
-                scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
-                xline(0,'k-.');
-                yline(0,'k-.');
-                xlim([-bound,bound]);
-                ylim([-bound,bound]);
-                
-                grid on;
+                    figure()
+                    scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
+                    xline(0,'k-.');
+                    yline(0,'k-.');
+                    xlim([-bound,bound]);
+                    ylim([-bound,bound]);
+                    
+                    grid on;
 
-                if all(nu_biactive > -type_tol & xi_biactive > -type_tol)
-                    stationarity_type = 0;
-                elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
-                    stationarity_type = 1;
-                elseif all(nu_biactive.*xi_biactive > -type_tol)
-                    stationarity_type = 2;
-                elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
-                    stationarity_type = 3;
-                else
-                    stationarity_type = 4;
-                end
+                    if all(nu_biactive > -type_tol & xi_biactive > -type_tol)
+                        stat_type = "S";
+                        disp("Converged to S-stationary point")
+                    elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
+                        stat_type = "M";
+                        disp("Converged to M-stationary point")
+                    elseif all(nu_biactive.*xi_biactive > -type_tol)
+                        stat_type = "C";
+                        disp("Converged to C-stationary point")
+                    elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
+                        stat_type = "A";
+                        disp("Converged to A-stationary point")
+                    else
+                        stat_type = "W";
+                        disp("Converged to W-stationary point, or something has gone wrong")
+                    end
                 end
               otherwise
-                stationarity_type = 5;
-            end
-            if stationarity_type == 0
-                stat_type = "S";
-                disp("Converged to S-stationary point")
-            elseif stationarity_type == 1
-                stat_type = "M";
-                disp("Converged to M-stationary point")
-            elseif stationarity_type == 2
-                stat_type = "C";
-                disp("Converged to C-stationary point")
-            elseif stationarity_type == 3
-                stat_type = "A";
-                disp("Converged to A-stationary point")
-            elseif stationarity_type == 4
-                stat_type = "W";
-                disp("Converged to W-stationary point, or something has gone wrong")
-            elseif stationarity_type == 5
                 stat_type = "?";
                 disp("Could not converge to point from the end of homotopy");
             end
+            
             % output tnlp results
             res_out = tnlp_results;
             polished_w = zeros(size(nlp.w));
-            polished_w(nlp.ind_map) = w_star_orig; % TODO this gives wrong slacks and multipliers out of the solver
+            polished_w(nlp.ind_map) = w_star_orig;
             res_out.x = polished_w;
-            if 1
-                figure;
-                hold on;
-                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,a_tol^2)), [0,1.1*max(max(G_old),max(H_old))])
-                scatter(G_old, H_old)
-                xline(a_tol)
-                yline(a_tol)
-                xlim([-a_tol,10*a_tol])
-                ylim([-a_tol,10*a_tol])
-                axis square;
-                hold off;
-
-                figure;
-                hold on;
-                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,a_tol^2)), [0,1.1*max(max(G_old),max(H_old))])
-                scatter(G_new, H_new)
-                xline(a_tol)
-                yline(a_tol)
-                xlim([-a_tol,10*a_tol])
-                ylim([-a_tol,10*a_tol])
-                axis square;
-                hold off;
-
-                figure;
-                hold on;
-                fimplicit(@(x,y) full(obj.solver_options.psi_fun(x,y,a_tol^2)), [0,1.1*max(max(G_old),max(H_old))])
-                scatter(G_old, H_old)
-                xline(a_tol)
-                yline(a_tol)
-                xlim([-0.1,1.1*max(G_old)])
-                ylim([-0.1,1.1*max(H_old)])
-                hold off;
-            end
-            if 0
-                fprintf('lbw\tubw\ttnlp_x\tw_init\t-lam_x\tw\n')
-                for ii=sort_idx'
-                    fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbw(ii), ubw(ii), full(tnlp_results.x(ii)), full(w_init(ii)), -full(tnlp_results.lam_x(ii)), formattedDisplayText(w(ii)))
-                end
-            end
-            if 0
-                fprintf('lbg\tg_val\tubg\tlam_g\tg\n')
-                for ii=1:length(g)
-                    fprintf('%.4f\t%.4f\t%.4f\t%.4f\t%s\n', lbg(ii), full(tnlp_results.g(ii)), ubg(ii), full(tnlp_results.lam_g(ii)), formattedDisplayText(g(ii)))
-                end
-                cc = horzcat(G,H);
-                cc(find(ind_00),:)
-            end
         end
 
         function [solution, improved_point, b_stat] = check_b_stationarity(obj, w, s_elastic)
@@ -1011,7 +957,7 @@ classdef NosnocSolver < handle
             % number of iterations
             stats.homotopy_iterations = ii;
 
-            results = obj.extract_results_nlp(obj.mpcc, results);
+            results = obj.extract_results_nlp(results);
 
             % check if solved to required accuracy
             stats.converged = obj.complementarity_tol_met(stats) && ~last_iter_failed && ~timeout;
@@ -1022,8 +968,9 @@ classdef NosnocSolver < handle
             error('TODO: not yet implemented')
         end
 
-        function results = extract_results_nlp(obj, mpcc, results)
+        function results = extract_results_nlp(obj, results)
             import casadi.*
+            mpcc = obj.mpcc;
             plugin = obj.plugin;
             % Store differential states
             w_opt = plugin.w_opt_from_results(results.nlp_results(end));
