@@ -47,12 +47,15 @@ N_finite_elements = 3;
 
 problem_options.irk_representation = 'integral';
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
-solver_options.psi_fun_type = CFunctionType.CHEN_CHEN_KANZOW;
-problem_options.cross_comp_mode = 1;
+solver_options.psi_fun_type = CFunctionType.SCHOLTES;
+problem_options.cross_comp_mode = 7;
+%problem_options.lift_complementarities = 1;
 
 solver_options.print_level = 3;
 problem_options.use_fesd = 1;
 solver_options.comp_tol = 1e-9;
+solver_options.sigma_N = 1e-9;
+solver_options.N_homotopy = 15;
 problem_options.equidistant_control_grid = 1;
 
 problem_options.step_equilibration = 'heuristic_mean';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
@@ -103,7 +106,7 @@ model.x0 = [2*pi/3;pi/3;v0];
 model.x = x;
 problem_options.T = 4;
 
-problem_options.N_stages = 6;
+problem_options.N_stages = 20;
 problem_options.N_finite_elements = N_finite_elements;
 
 % Switching Functions

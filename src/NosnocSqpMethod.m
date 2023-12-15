@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-classdef NosnocWORHP < handle % TODO maybe handle not necessary, revisit.
+classdef NosnocSqpMethod < handle % TODO maybe handle not necessary, revisit.
     properties
 
     end
@@ -42,15 +42,13 @@ classdef NosnocWORHP < handle % TODO maybe handle not necessary, revisit.
             opts_casadi_nlp = solver_options.opts_casadi_nlp;
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'ipopt');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'snopt');
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'worhp');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'uno');
-            if solver_options.timeout_wall
-                if exist('time_remaining')
-                    opts_casadi_nlp.worhp.Timeout = time_remaining;
-                else
-                    opts_casadi_nlp.worhp.Timeout = solver_options.timeout_wall;
-                end
-            end
-            solver = nlpsol(solver_options.solver_name, solver_options.solver, casadi_nlp, opts_casadi_nlp);
+            opts_casadi_nlp.min_step_size=1e-15;
+            %opts_casadi_nlp.qpsol_options.schur = true;
+
+            warning('sqpmethod is not intended for use and is included only for experimental purposes')
+            solver = nlpsol(solver_options.solver_name, 'sqpmethod', casadi_nlp, opts_casadi_nlp);
         end
 
         function solver_stats = cleanup_solver_stats(obj, solver_stats)
@@ -61,16 +59,7 @@ classdef NosnocWORHP < handle % TODO maybe handle not necessary, revisit.
 
         function failed = check_iteration_failed(obj, stats)
             switch stats.solver_stats(end).return_status
-                case {'OptimalSolution',
-                    'OptimalSolutionConstantF',
-                    'AcceptableSolution',
-                    'AcceptablePrevious',
-                    'AcceptableSolutionConstantF',
-                    'AcceptablePreviousConstantF',
-                    'AcceptableSolutionSKKT',
-                    'AcceptableSolutionScaled',
-                    'AcceptablePreviousScaled',
-                    'LowPassFilterOptimal'}
+                case {'Finished successfully'}
                     failed = false;
                 otherwise
                     failed = true;
@@ -79,8 +68,12 @@ classdef NosnocWORHP < handle % TODO maybe handle not necessary, revisit.
 
         function timeout = check_timeout(obj, stats)
             switch stats.solver_stats(end).return_status
-                case {'Timeout'}
-                    timeout = 1;
+                case {'Resource limit error'}
+                    if strcmp(stats.solver_stats(end).secondary_return_status, 'time limit reached');
+                        timeout = 1;
+                    else
+                        timeout = 0;
+                    end
                 otherwise
                     timeout = 0;
             end
@@ -97,16 +90,16 @@ classdef NosnocWORHP < handle % TODO maybe handle not necessary, revisit.
         end
 
         function print_nlp_iter_header(obj)
-            fprintf('\niter\t sigma \t\t compl_res\t objective \t CPU time \t NLP iter\t status \n');
+            fprintf('\niter\t sigma \t\t compl_res\t objective \t CPU time \t NLP iter\t secondary_status\t status \n');
         end
         
         function print_nlp_iter_info(obj, stats)
             solver_stats = stats.solver_stats(end);
             ii = size(stats.solver_stats, 2);
 
-            fprintf('%d\t%6.2e\t %6.2e\t %6.2e \t %6.3f \t %s \n',...
+            fprintf('%d\t%6.2e\t %6.2e\t %6.2e \t %6.3f \t %s \t %s \n',...
                     ii, stats.sigma_k(end), stats.complementarity_stats(end), ...
-                    stats.objective(end), stats.cpu_time(end), solver_stats.return_status);
+                    stats.objective(end), stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
         end
     end
 end

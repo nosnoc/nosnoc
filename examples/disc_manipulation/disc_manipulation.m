@@ -44,14 +44,19 @@ solver_options = NosnocSolverOptions();
 model = NosnocModel();
 % settings
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
-problem_options.n_s = 1;  % number of stages in IRK methods
+problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.time_freezing = 1;
-solver_options.mpcc_mode = MpccMode.elastic_ineq;
-solver_options.homotopy_update_rule = 'superlinear';
-solver_options.N_homotopy = 7;
+problem_options.cross_comp_mode = 7;
+%solver_options.mpcc_mode = MpccMode.elastic_ineq;
+solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
+%solver_options.homotopy_update_rule = 'superlinear';
+solver_options.homotopy_update_slope = 0.5;
+solver_options.N_homotopy = 100;
+solver_options.comp_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.print_level = 3;
 % IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 %% discretizatioon
 N_stg = 10; % control intervals
 N_FE = 5;  % integration steps per control interval

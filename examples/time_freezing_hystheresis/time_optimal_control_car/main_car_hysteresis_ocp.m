@@ -39,27 +39,28 @@ problem_options.time_freezing = 1;
 problem_options.time_freezing_hysteresis = 1;
 problem_options.time_optimal_problem = 1;
 % Time-freezing scaling / speed of time
-problem_options.s_sot_max = 10;
-problem_options.s_sot_min = 0.9;
+problem_options.s_sot_max = 100;
+problem_options.s_sot_min = 0.1;
 problem_options.rho_sot = 1e-1;
 problem_options.use_speed_of_time_variables = 1; 
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 1;
 problem_options.relax_terminal_constraint = 0;
 % solver settings
-solver_options.comp_tol = 1e-8;
-problem_options.cross_comp_mode = 1;
-% solver_options.homotopy_update_slope = 0.2;
+solver_options.comp_tol = 1e-6;
+problem_options.cross_comp_mode = 4;
+%solver_options.homotopy_update_slope = 0.9;
 %solver_options.homotopy_update_rule = 'superlinear';
 %solver_options.psi_fun_type = CFunctionType.STEFFENSEN_ULBRICH;
 %solver_options.elasticity_mode = ElasticityMode.ELL_INF;
+problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e4;
 solver_options.opts_casadi_nlp.ipopt.tol = 1e-7;
 solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
 solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-solver_options.sigma_0 = 0.01;
+solver_options.sigma_0 = 10;
 solver_options.N_homotopy = 7;
-solver_options.print_level = 5;
+solver_options.print_level = 3;
 
 %% Model Settings
 problem_options.N_finite_elements = 3;

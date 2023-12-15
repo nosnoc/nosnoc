@@ -79,6 +79,8 @@ classdef NosnocNLP < NosnocFormulationObject
 
         % mapping mpcc indices to nlp indices
         ind_map
+
+        ind_g_comp
     end
     % remaining list of TODOs
     % TODO: cleanup/add properties (in all components)
@@ -195,6 +197,12 @@ classdef NosnocNLP < NosnocFormulationObject
 
             sum_penalty = 0;
             for stage=obj.mpcc.stages
+
+                % TODO @ Anton: I really dont like this inconsistent way of
+                % adding variables to the problem... it is very difficult
+                % to follow and understand if you are off the code for a
+                % few weeks - it should be centralized and consistent,
+
                 [u, lbu, ubu, u0] = stage.u;
                 obj.addPrimalVector(u, lbu, ubu, u0);
                 [sot, lbsot, ubsot, sot0] = stage.sot;
@@ -202,7 +210,7 @@ classdef NosnocNLP < NosnocFormulationObject
 
                 [g_stage, lbg_stage, ubg_stage] = stage.g_stage;
                 obj.addConstraint(g_stage, lbg_stage, ubg_stage);
-                
+
 
                 for fe=stage.stage
                     [lbw,ubw] = obj.relax_complementarity_var_bounds(fe);
@@ -221,6 +229,17 @@ classdef NosnocNLP < NosnocFormulationObject
                         obj.relax_complementarity_constraints(fe);
                     end
                 end
+                s_numerical = stage.w(stage.ind_s_numerical);
+                lbs_numerical = stage.lbw(stage.ind_s_numerical);
+                ubs_numerical = stage.ubw(stage.ind_s_numerical);
+                s_numerical0 = stage.w0(stage.ind_s_numerical);
+                obj.addPrimalVector(s_numerical, lbs_numerical, ubs_numerical, s_numerical0);
+
+                s_physical = stage.w(stage.ind_s_physical);
+                lbs_physical = stage.lbw(stage.ind_s_physical);
+                ubs_physical = stage.ubw(stage.ind_s_physical);
+                s_physical0 = stage.w0(stage.ind_s_physical);
+                obj.addPrimalVector(s_physical, lbs_physical, ubs_physical, s_physical0);
             end
             if obj.solver_options.mpcc_mode == MpccMode.ell_1_penalty
                 if obj.solver_options.objective_scaling_direct
@@ -235,6 +254,12 @@ classdef NosnocNLP < NosnocFormulationObject
                 mpcc.lbw(mpcc.ind_s_terminal),...
                 mpcc.ubw(mpcc.ind_s_terminal),...
                 mpcc.w0(mpcc.ind_s_terminal));
+
+            % Add s_numerical
+           obj.addPrimalVector(mpcc.w(mpcc.ind_s_numerical),...
+                mpcc.lbw(mpcc.ind_s_numerical),...
+                mpcc.ubw(mpcc.ind_s_numerical),...
+                mpcc.w0(mpcc.ind_s_numerical));
 
             % Add t final
             obj.addPrimalVector(mpcc.w(mpcc.ind_t_final),...
@@ -312,7 +337,7 @@ classdef NosnocNLP < NosnocFormulationObject
                 end
                 expr = psi_fun(comp_pairs(ii,1), comp_pairs(ii,2), sigma);
                 [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, obj.solver_options);
-                obj.addConstraint(expr, lb, ub);
+                obj.addConstraint(expr, lb, ub, 'type', 'g_comp');
             end
         end
         

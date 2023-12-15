@@ -89,8 +89,9 @@ classdef NosnocSolverOptions < handle
         timeout_wall(1,1) {mustBeReal, mustBeNonnegative} = 0;
 
         % Experimental
-        normalize_homotopy_update(1,1) logical = 0
+        normalize_homotopy_update(1,1) logical = 1
         norm_function
+        calculate_stationarity_type(1,1) logical = 0;
     end
 
     properties(Dependent)
@@ -108,6 +109,8 @@ classdef NosnocSolverOptions < handle
             obj.opts_casadi_nlp.verbose = false;
             obj.opts_casadi_nlp.ipopt.max_iter = 500;
             obj.opts_casadi_nlp.ipopt.bound_relax_factor = 0;
+            %obj.opts_casadi_nlp.ipopt.bound_relax_factor = 1e-8;
+            %obj.opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
             obj.opts_casadi_nlp.ipopt.tol = default_tol;
             obj.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
             obj.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
@@ -115,6 +118,9 @@ classdef NosnocSolverOptions < handle
             obj.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
             obj.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
             obj.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+            obj.opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+            obj.opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+            obj.opts_casadi_nlp.ipopt.linear_solver = 'mumps';
             obj.opts_casadi_nlp.snopt = struct();
             
             obj.opts_casadi_nlp.worhp = struct();
@@ -277,10 +283,10 @@ classdef NosnocSolverOptions < handle
                     else
                         normalized_sigma = sigma;
                     end
-                    psi_mpcc1 = [a*b-normalized_sigma^2];
-                    psi_mpcc2 = [((a+normalized_sigma)*(b+normalized_sigma)-normalized_sigma^2)];
-                    psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2)
-                    obj.lower_bound_relaxation = 1;
+                    psi_mpcc1 = a*b-normalized_sigma^2;
+                    psi_mpcc2 = ((a+normalized_sigma)*(b+normalized_sigma)-normalized_sigma^2);
+                    psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2);
+                    %obj.lower_bound_relaxation = 1;
                 case CFunctionType.KADRANI
                     if obj.normalize_homotopy_update
                         normalized_sigma = sqrt(sigma);
@@ -291,7 +297,7 @@ classdef NosnocSolverOptions < handle
                     psi_mpcc2 = -normalized_sigma - a;
                     psi_mpcc3 = -normalized_sigma - b;
                     psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2, psi_mpcc3)
-                    obj.lower_bound_relaxation = 1;
+                    %obj.lower_bound_relaxation = 1;
             end
 
             obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});

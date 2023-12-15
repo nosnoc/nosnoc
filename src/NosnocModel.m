@@ -391,7 +391,7 @@ classdef NosnocModel < handle
                 c_all = vertcat(obj.c{:});
                 obj.c_fun = Function('c_fun',{obj.x,obj.p},{c_all});
                 dot_c = c_all.jacobian(obj.x)*obj.f_x;
-                obj.dot_c_fun = Function('c_fun',{obj.x,obj.z_all,obj.u,obj.p},{dot_c}); % total time derivative of switching functions
+                obj.dot_c_fun = Function('dot_c_fun',{obj.x,obj.z_all,obj.u,obj.p, obj.v_global},{dot_c}); % total time derivative of switching functions
                 obj.lambda00_fun = Function('lambda00_fun',{obj.x,obj.p_global},{lambda00_expr});
                 obj.g_switching_fun = Function('g_switching_fun', {obj.x,obj.z_switching,obj.u,obj.p}, {g_switching});
             end
@@ -433,7 +433,7 @@ classdef NosnocModel < handle
             switch dcs_mode
               case 'Stewart'
                 % dimensions
-                dims.n_theta = sum(obj.dims.n_c_sys); % number of modes
+                dims.n_theta = sum(obj.dims.n_f_sys); % number of modes
                 dims.n_lambda = dims.n_theta;
                 for ii = 1:dims.n_sys
                     ii_str = num2str(ii);
@@ -928,7 +928,7 @@ classdef NosnocModel < handle
                 end
 
                 if size(obj.ubv_global, 1) ~= 0
-                    if length(obj.ubv_global) ~= dims.n_v_global
+                    if length(obj.ubv_global) ~= n_v_global
                         error('nosnoc: The vector ubv_global, for the upper bound of v_global has the wrong size.')
                     end
                 else
@@ -962,7 +962,7 @@ classdef NosnocModel < handle
                 dims.n_p_time_var = size(obj.p_time_var, 1);
                 if size(obj.p_time_var_val, 1) ~= 0
                     if size(obj.p_time_var_val) ~= [dims.n_p_time_var, problem_options.N_stages]
-                        error('nosnoc: User provided p_global_val has the wrong size.')
+                        error('nosnoc: User provided p_time_var_val has the wrong size.')
                     end
                 else
                     obj.p_time_var_val = zeros(dims.n_p_time_var, problem_options.N_stages);
@@ -983,7 +983,7 @@ classdef NosnocModel < handle
             obj.p = vertcat(obj.p_global,obj.p_time_var);
 
             %% Stage and terminal costs check
-            if ~size(obj.f_q, 1) ~= 0
+            if size(obj.f_q, 1) == 0
                 obj.f_q = 0;
             end
 

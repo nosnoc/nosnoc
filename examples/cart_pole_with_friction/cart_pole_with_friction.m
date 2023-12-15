@@ -39,15 +39,18 @@ problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 3;
 problem_options.dcs_mode = 'Stewart';
 problem_options.N_stages = 20; % number of control intervals
-problem_options.N_finite_elements = 2; % number of finite element on every control interval
+problem_options.N_finite_elements = 3; % number of finite element on every control interval
+problem_options.cross_comp_mode = 7;
 
 % solver options
 solver_options = NosnocSolverOptions();
-solver_options.N_homotopy = 8;
-solver_options.homotopy_update_rule = 'superlinear';
+solver_options.N_homotopy = 15;
+solver_options.comp_tol = 1e-13;
+solver_options.sigma_N = 1e-13;
+%solver_options.homotopy_update_rule = 'superlinear';
 
 % other linear solvers require installation, check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions
-% settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+%settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 % Setup mathematical program with complementarity constraints (MPCC)
 mpcc = NosnocMPCC(problem_options, model);

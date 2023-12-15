@@ -90,6 +90,7 @@ classdef FiniteElement < NosnocFormulationObject
         cross_comp_pairs
         all_comp_pairs
         n_comp_components
+        ind_std_comp      % NOTE: EXPERIMENTAL, doesn't work for CLS, or c_n != 1 integration schemes
 
         ctrl_idx
         fe_idx
@@ -834,7 +835,7 @@ classdef FiniteElement < NosnocFormulationObject
                                 1);
             end
         end
-
+        
         function cross_comp_pairs = getCrossCompPairs(obj)
             import casadi.*
             model = obj.model;
@@ -1264,14 +1265,27 @@ classdef FiniteElement < NosnocFormulationObject
                     end
                     Xk_end = Xk_end + problem_options.D_irk(j+1) * X_ki{j};
                     obj.addConstraint(obj.h * fj - xj);
-                    obj.augmented_objective = obj.augmented_objective + problem_options.B_irk(j+1) * obj.h * qj;
-                    obj.objective = obj.objective + problem_options.B_irk(j+1) * obj.h * qj;
+                    if problem_options.cost_integration
+                        obj.augmented_objective = obj.augmented_objective + problem_options.B_irk(j+1) * obj.h * qj;
+                        obj.objective = obj.objective + problem_options.B_irk(j+1) * obj.h * qj;
+                    end
                 else
                     Xk_end = Xk_end + obj.h * problem_options.b_irk(j) * obj.v{j};
                     obj.addConstraint(fj - obj.v{j});
-                    obj.augmented_objective = obj.augmented_objective + problem_options.b_irk(j) * obj.h * qj;
-                    obj.objective = obj.objective + problem_options.b_irk(j) * obj.h * qj;
+                    if problem_options.cost_integration
+                         obj.augmented_objective = obj.augmented_objective + problem_options.b_irk(j) * obj.h * qj;
+                         obj.objective = obj.objective + problem_options.b_irk(j) * obj.h * qj;
+                    end
                 end
+            end
+            if ~problem_options.cost_integration && problem_options.N_finite_elements(obj.ctrl_idx) == obj.fe_idx
+                if problem_options.right_boundary_point_explicit
+                    [~, q] = model.f_x_fun(X_ki{dims.n_s}, obj.rkStageZ(dims.n_s), Uk, p_stage, model.v_global);
+                else
+                    [~, q] = model.f_x_fun(X_ki{dims.n_s+1}, obj.rkStageZ(dims.n_s+1), Uk, p_stage, model.v_global);
+                end
+                obj.augmented_objective = obj.augmented_objective + q;
+                obj.objective = obj.objective + q;
             end
 
             % nonlinear inequality.
@@ -1404,6 +1418,7 @@ classdef FiniteElement < NosnocFormulationObject
             cross_comp_pairs = obj.getCrossCompPairs();
 
             cross_comp_aggregated = [];
+            ind_std_comp = [];
 
             sigma_scale = 1; % TODO scale properly
                              % apply psi
@@ -1411,6 +1426,21 @@ classdef FiniteElement < NosnocFormulationObject
             lbg_cross_comp = [];
             ubg_cross_comp = [];
             if problem_options.cross_comp_mode == CrossCompMode.STAGE_STAGE || ~problem_options.use_fesd
+                % NOTE: this is a hack.
+                bool_cells = cellfun(@(x) false(size(x,1),1), cross_comp_pairs, 'uni', false);
+                if problem_options.dcs_mode == "CLS"
+                    for ii=3:obj.n_discont
+                        bool_cells{ii, ii} = ~bool_cells{ii, ii};
+                    end
+                else
+                    for ii=1:obj.n_discont
+                        for r=1:obj.n_indep
+                            bool_cells{1+ii, ii,r} = ~bool_cells{1+ii, ii,r};
+                        end
+
+                    end
+                end
+                obj.ind_std_comp = vertcat(bool_cells{:});
                 cross_comp_aggregated = vertcat(cross_comp_pairs{:});
             elseif problem_options.cross_comp_mode == CrossCompMode.FE_STAGE
                 a = [];
@@ -1430,6 +1460,7 @@ classdef FiniteElement < NosnocFormulationObject
                         a = [a;cont];
                     end
                 end
+                obj.ind_std_comp = true(size(a)); % TODO This may be wrong
                 cross_comp_aggregated = [a,b];
             elseif problem_options.cross_comp_mode == CrossCompMode.STAGE_FE
                 a = [];
@@ -1449,6 +1480,7 @@ classdef FiniteElement < NosnocFormulationObject
                         a = [a;sum2([cont{:}])];
                     end
                 end
+                obj.ind_std_comp = true(size(a)); % TODO This may be wrong
                 cross_comp_aggregated = [a,b];
             elseif problem_options.cross_comp_mode == CrossCompMode.FE_FE
                 a = [];
@@ -1466,9 +1498,10 @@ classdef FiniteElement < NosnocFormulationObject
                     b = [b;sum2([discont{:}])];
                     a = [a;sum2([cont{:}])];
                 end
+                obj.ind_std_comp = true(size(a));
                 cross_comp_aggregated = [a,b];
             end
-
+            obj.ind_std_comp = vertcat(true(size(g_path_comp_pairs,1),1),true(size(impulse_pairs,1),1), obj.ind_std_comp);
             obj.all_comp_pairs = vertcat(g_path_comp_pairs, impulse_pairs, cross_comp_aggregated);
 
             if problem_options.lift_complementarities
@@ -1482,7 +1515,7 @@ classdef FiniteElement < NosnocFormulationObject
                         ind_lift_comp = [ind_lift_comp, ii];
                     end
                 end
-                z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, 'z_comp', n_lift_comp);
+                z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['z_comp_' num2str(obj.ctrl_idx-1) '_' num2str(obj.fe_idx-1)], n_lift_comp);
                 if problem_options.lower_bound_comp_lift
                     lb = zeros(n_lift_comp,1);
                 else
@@ -1497,6 +1530,60 @@ classdef FiniteElement < NosnocFormulationObject
                     g_comp_lift = z_comp - tmp(ind_lift_comp);
                     obj.addConstraint(g_comp_lift);
                     obj.all_comp_pairs(ind_lift_comp) = z_comp;
+                end
+            end
+
+            if problem_options.experimental_supervertical_form
+                % lift G
+                n_lift_comp = 0;
+                ind_lift_comp = [];
+                tmp = obj.all_comp_pairs(:,1);
+                % figure out what we need to lift
+                for ii=1:length(tmp)
+                    n_lift_comp = n_lift_comp+1;
+                    ind_lift_comp = [ind_lift_comp, ii];
+                end
+                z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['z_G_' num2str(obj.ctrl_idx-1) '_' num2str(obj.fe_idx-1)], n_lift_comp);
+                if problem_options.lower_bound_comp_lift
+                    lb = zeros(n_lift_comp,1);
+                else
+                    lb = -inf*ones(n_lift_comp,1);
+                end
+                obj.addVariable(z_comp,...
+                    'comp_lift',...
+                    lb,...
+                    inf*ones(n_lift_comp, 1),...
+                    ones(n_lift_comp, 1));
+                if length(ind_lift_comp)
+                    g_comp_lift = z_comp - tmp(ind_lift_comp);
+                    obj.addConstraint(g_comp_lift);
+                    obj.all_comp_pairs(ind_lift_comp,1) = z_comp;
+                end
+
+                % lift H
+                n_lift_comp = 0;
+                ind_lift_comp = [];
+                tmp = obj.all_comp_pairs(:,2);
+                % figure out what we need to lift
+                for ii=1:length(tmp)
+                    n_lift_comp = n_lift_comp+1;
+                    ind_lift_comp = [ind_lift_comp, ii];
+                end
+                z_comp = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['z_H_' num2str(obj.ctrl_idx-1) '_' num2str(obj.fe_idx-1)], n_lift_comp);
+                if problem_options.lower_bound_comp_lift
+                    lb = zeros(n_lift_comp,1);
+                else
+                    lb = -inf*ones(n_lift_comp,1);
+                end
+                obj.addVariable(z_comp,...
+                    'comp_lift',...
+                    lb,...
+                    inf*ones(n_lift_comp, 1),...
+                    ones(n_lift_comp, 1));
+                if length(ind_lift_comp)
+                    g_comp_lift = z_comp - tmp(ind_lift_comp);
+                    obj.addConstraint(g_comp_lift);
+                    obj.all_comp_pairs(ind_lift_comp,2) = z_comp;
                 end
             end
         end

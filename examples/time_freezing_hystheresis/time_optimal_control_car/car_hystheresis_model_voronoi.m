@@ -18,7 +18,7 @@ v1 = 10;
 v2 = 15;
 % fual costs of turbo and nominal
 Pn = 1;
-Pt = 2.5;
+Pt = 1;
 
 %% Variable defintion
 % states
@@ -61,9 +61,12 @@ model.g_ind = [g_1;g_2;g_3;g_4];
 f_A = [v;u;Pn;0;1];
 f_B = [v;3*u;Pt;0;1];
 
-a_push = 2;
-f_push_down = [0;0;0;-a_push;0];
-f_push_up = [0;0;0;a_push;0];
+a_push = 1;
+gamma_p = a_push*(psi^2/(1+psi^2))
+gamma_n = a_push*((psi-1)^2/(1+(psi-1)^2))
+
+f_push_down = [0;0;0;-gamma_n;0];
+f_push_up = [0;0;0;gamma_p;0];
 
 f_2 = f_push_down;
 f_3 = f_push_up;

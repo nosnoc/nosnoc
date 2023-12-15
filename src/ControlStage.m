@@ -78,6 +78,9 @@ classdef ControlStage < NosnocFormulationObject
         ind_nu_lift
         ind_elastic
         ind_sot
+        ind_comp_lift
+        ind_s_numerical
+        ind_s_physical
 
         % Index of this control stage.
         ctrl_idx
@@ -103,6 +106,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.model = model;
             obj.dims = dims;
 
+            obj.ind_comp_lift = cell(1, problem_options.N_finite_elements(ctrl_idx));
             obj.ctrl_idx = ctrl_idx;
             
             obj.Uk = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['U_' num2str(ctrl_idx)], obj.dims.n_u);
@@ -161,9 +165,40 @@ classdef ControlStage < NosnocFormulationObject
             end
             
             % TODO: combine this into a function
+            if problem_options.use_fesd
+                if problem_options.relax_terminal_numerical_time && problem_options.equidistant_control_grid
+                                s_numerical = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['s_numerical_' num2str(ctrl_idx)], 1);
+                                obj.addVariable(s_numerical ,...
+                                    's_numerical',...
+                                    -2*problem_options.h,...
+                                    2*problem_options.h,...
+                                    problem_options.h/2);
+                end
+                if problem_options.time_freezing && problem_options.relax_terminal_physical_time && problem_options.stagewise_clock_constraint
+                    s_physical = define_casadi_symbolic(problem_options.casadi_symbolic_mode, ['s_physical_' num2str(ctrl_idx)], 1);
+                                obj.addVariable(s_physical,...
+                                    's_physical',...
+                                    -2*problem_options.T,...
+                                    2*problem_options.T,...
+                                    problem_options.T/2);
+                end
+            end
+
             if problem_options.use_fesd && problem_options.equidistant_control_grid
                 if ~problem_options.time_optimal_problem
-                    obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h, 'type', 'stage');
+                    if problem_options.relax_terminal_numerical_time
+                        % TODO @Anton: Here Armin did addConstraint as an oneliner, are we fine with this?
+                                obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h-s_numerical,-inf, 0, 'type', 'stage');
+                                obj.addConstraint(-(sum(vertcat(obj.stage.h)) - problem_options.h)-s_numerical ,-inf, 0, 'type', 'stage');
+                                if problem_options.relax_terminal_numerical_time_homotopy
+                                    error('homotopy parameter not acessible here - to be implemented.')
+                                else
+                                    obj.augmented_objective = obj.augmented_objective + problem_options.rho_terminal_numerical_time*s_numerical;
+                                end
+                    else
+                        obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h, 'type', 'stage');
+                    end
+
                 elseif ~problem_options.time_freezing
                     if problem_options.use_speed_of_time_variables
                         obj.addConstraint(sum(vertcat(obj.stage.h)) - problem_options.h, 'type', 'stage')
@@ -173,6 +208,7 @@ classdef ControlStage < NosnocFormulationObject
                     end
                 end
             end
+
             if problem_options.time_freezing && problem_options.stagewise_clock_constraint
                 if problem_options.time_optimal_problem
                     obj.addConstraint(fe.x{end}(end) - ctrl_idx*(T_final/problem_options.N_stages) + model.x0(end), 'type', 'stage');
@@ -229,6 +265,7 @@ classdef ControlStage < NosnocFormulationObject
             obj.ind_Alpha_vt = [obj.ind_Alpha_vt; transpose(flatten_sys(increment_indices(fe.ind_Alpha_vt, w_len)))];
             
             obj.ind_nu_lift = [obj.ind_nu_lift, {fe.ind_nu_lift+w_len}];
+            obj.ind_comp_lift{fe.fe_idx} = fe.ind_comp_lift+w_len;
         end
 
         function addPrimalVector(obj, symbolic, lb, ub, initial)

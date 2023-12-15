@@ -42,15 +42,20 @@ solver_options = NosnocSolverOptions();
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 1;  
 problem_options.time_freezing = 1;
-problem_options.pss_lift_step_functions = 0;
+problem_options.pss_lift_step_functions = 1;
+problem_options.cross_comp_mode = 7;
 solver_options.mpcc_mode = MpccMode.Scholtes_ineq; 
-solver_options.N_homotopy = 5;
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.homotopy_update_slope = 0.25; 
+solver_options.N_homotopy = 100;
+solver_options.comp_tol = 1e-6;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
+solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
 % problem_options.g_path_at_fe = 1;
 % problem_options.g_path_at_stg = 1;
+solver_options.print_level = 5;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% discretizatioon
 T = 3;

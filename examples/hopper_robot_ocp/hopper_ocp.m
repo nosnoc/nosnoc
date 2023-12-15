@@ -47,7 +47,7 @@ solver_options = NosnocSolverOptions();
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.use_fesd = 1;
-problem_options.cross_comp_mode = 1;
+problem_options.cross_comp_mode = 7;
 problem_options.time_freezing = 1;
 % problem_options.s_sot_max = 2;
 problem_options.s_sot_min = 1;
@@ -69,10 +69,10 @@ solver_options.comp_tol = 1e-9;
 solver_options.print_level = 5;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretization
-T = 1; % prediction horizon
+T = 1.5; % prediction horizon
 N_stg = 20; % control intervals
 N_FE = 3;  % integration steps per control interval
 
