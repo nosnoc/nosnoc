@@ -27,6 +27,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nlp.p.mpcc_p(0) = {mpcc.p};
                 nlp.g.mpcc_g(0) = {mpcc.g};
                 nlp.p.sigma_p(0) = {{'sigma_p', 1}, 0, inf, opts.sigma_0};
+                n_c = size(mpcc.G);
 
                 switch opts.elasticity_mode
                   case ElasticityMode.NONE
@@ -35,13 +36,23 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                     nlp.w.s_elastic(0) = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, s_elastic_0};
                     sigma = nlp.w.s_elastic(0);
                   case ElasticityMode.ELL_1
-                    n_c = size(mpcc.G);
                     nlp.w.s_elastic(0) = {{'s_elastic', n_c}, opts.s_elastic_min, opts.s_elastic_max, s_elastic_0};
                     sigma = nlp.w.s_elastic(0);
                 end
 
                 % add complementarites
-                expr = psi_fun(mpcc.G, mpcc.H, sigma);
+                if opts.lift_complementarities
+                    nlp.w.G(0) = {{'G', n_c}, 0, inf};
+                    G = nlp.w.G(0);
+                    nlp.w.H(0) = {{'H', n_c}, 0, inf};
+                    H = nlp.w.H(0);
+                    nlp.g.G_lift = {mpcc.G-G};
+                    nlp.g.H_lift = {mpcc.H-H};
+                else
+                    G = mpcc.G;
+                    H = mpcc.H;
+                end
+                expr = psi_fun(G, H, sigma);
                 [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, opts);
                 nlp.g.complementarities(0) = {expr, lb, ub};
 
