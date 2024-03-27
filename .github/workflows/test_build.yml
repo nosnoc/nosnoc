@@ -20,7 +20,7 @@ jobs:
     - name: Checkout vdx
       uses: actions/checkout@v3
       with:
-        name: apozharski/vdx
+        repository: apozharski/vdx
         path: vdx
 
     # Install matlab to run tests.
