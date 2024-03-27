@@ -52,11 +52,10 @@ classdef NosnocSolver < handle
         end
 
         function set(obj, type, val)
-            nlp = obj.nlp;
             mpcc = obj.mpcc;
             if strcmp(type, 'w0')
-                if length(obj.nlp.w0) == length(val)
-                    obj.nlp.w0 = val;
+                if length(obj.mpcc.w0) == length(val)
+                    obj.mpcc.w0 = val;
                 else
                     error("nosnoc: if initializing w0 all at once you need to provide a vector of corresponding size.")
                 end
@@ -79,7 +78,7 @@ classdef NosnocSolver < handle
                             for v=ind(ii,:,:)
                                 % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, etc.)
                                 if ~isempty(v) && length(v{1}) == length(val{ii})
-                                    obj.nlp.w0(nlp.ind_map(v{1})) = val{ii};
+                                    obj.mpcc.w0(v{1}) = val{ii};
                                 end
                             end
                         end
@@ -91,7 +90,7 @@ classdef NosnocSolver < handle
                                 for v=ind(ii,jj,:)
                                     % NOTE: isempty check is needed for possibly unused rk-stage level cells (like in the case of rbp, cls, etc.)
                                     if ~isempty(v) && length(v{1}) == length(val{ii,jj})
-                                        obj.nlp.w0(nlp.ind_map(v{1})) = val{ii,jj};
+                                        obj.mpcc.w0(v{1}) = val{ii,jj};
                                     end
                                 end
                             end
@@ -102,7 +101,7 @@ classdef NosnocSolver < handle
                     % Otherwise we assume that we are initializing via a flat array and we simply check for the same length
                 else
                     if ismatrix(val) && length(val) == length(flat_ind)
-                        obj.nlp.w0(nlp.ind_map(flat_ind)) = val;
+                        obj.mpcc.w0(flat_ind) = val;
                     else
                         error('nosnoc: set should be a cell array or a flat array')
                     end

@@ -127,6 +127,23 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             end
         end
 
+        function met = complementarity_tol_met(obj, stats)
+            last_stats = stats.solver_stats(end);
+            met = 0;
+            if abs(stats.complementarity_stats(end)) < 10 * obj.opts.comp_tol
+                met = 1;
+            end
+        end
+
+        function violation = compute_constraint_violation(obj, w, g)
+            nlp = obj.nlp;
+            ubw_violation = max(max(w - nlp.w.mpcc_w(0).ub), 0);
+            lbw_violation = max(max(nlp.w.mpcc_w(0).lb - w), 0);
+            ubg_violation = max(max(g - nlp.g.mpcc_g(0).ub), 0);
+            lbg_violation = max(max(nlp.g.mpcc_g(0).lb - g), 0);
+            violation = max([lbg_violation, ubg_violation, lbw_violation, ubw_violation]);
+        end
+
         function out = cat(dim,varargin)
             error('Concatenation not supported')
         end
@@ -313,6 +330,9 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             % mpcc_results.lam_G = ;
             mpcc_results.H = full(H_fun(mpcc_results.x, mpcc_results.p));
             % mpcc_results.lam_H = ;
+            
+            stats.converged = obj.complementarity_tol_met(stats) && ~last_iter_failed && ~timeout;
+            stats.constraint_violation = obj.compute_constraint_violation(mpcc_results.x, mpcc_results.g);
 
             varargout{1} = mpcc_results;
             obj.stats = stats;
