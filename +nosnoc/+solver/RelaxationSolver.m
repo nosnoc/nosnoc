@@ -184,7 +184,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nlp.g.mpcc_g(0).ub = p.Results.ubg;
             end
             if ~isempty(p.Results.p)
-                nlp.p.mpcc_p.init = p.Results.p;
+                nlp.p.mpcc_p(0).init = p.Results.p;
             end
             if ~isempty(p.Results.lam_g0)
                 nlp.g.mpcc_g(0).mult = p.Results.lam_g0;
