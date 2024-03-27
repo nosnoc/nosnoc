@@ -59,8 +59,7 @@ jobs:
     - name: Install NOSNOC
       shell: bash
       run: |
-        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/nosnoc/src" >> $GITHUB_ENV
-        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/nosnoc" >> $GITHUB_ENV 
+        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/nosnoc:$GITHUB_WORKSPACE/nosnoc/src" >> $GITHUB_ENV 
 
     # Run matlab tests from the test directory and dump the results in junit format.
     - name: Run NOSNOC tests
