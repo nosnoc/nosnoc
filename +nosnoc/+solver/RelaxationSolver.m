@@ -100,8 +100,17 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 % apply relaxation
                 psi_fun = opts.psi_fun;
-                expr = psi_fun(G, H, sigma);
-                [lb, ub, expr] = generate_mpcc_relaxation_bounds(expr, opts);
+                lb = [];
+                ub = [];
+                expr = [];
+                n_comp_pairs = size(G, 1);
+                for ii=1:n_comp_pairs
+                    expr_i = psi_fun(G(ii), H(ii), sigma);
+                    [lb_i, ub_i, expr_i] = generate_mpcc_relaxation_bounds(expr_i, opts);
+                    lb = [lb;lb_i];
+                    ub = [ub;ub_i];
+                    expr = [expr;expr_i];
+                end
                 nlp.g.complementarities(0) = {expr, lb, ub};
 
                 if ~opts.assume_lower_bounds && ~opts.lift_complementarites % Lower bounds on G, H, not already present in MPCC

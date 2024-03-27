@@ -174,8 +174,9 @@ classdef NosnocIntegrator < handle
 
                 %% handle failure -> try second initialization
                 if solver_stats.converged == 0
-                    disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
-                    solver.print_iterate(res.W(:,end))
+                    disp(['integrator_fesd: did not converge in step ', num2str(ii), ' constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+                    % TODO re-implement
+                    %solver.print_iterate(res.W(:,end))
                     if problem_options.dcs_mode == "CLS"
                         disp('provided initial guess in integrator step did not converge, trying anther inital guess.');
                         solver.set('Lambda_normal', {7});
