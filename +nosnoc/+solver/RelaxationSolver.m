@@ -67,7 +67,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                   case ElasticityMode.NONE
                     sigma = nlp.p.sigma_p(0);
                   case ElasticityMode.ELL_INF
-                    nlp.w.s_elastic(0) = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, s_elastic_0};
+                    nlp.w.s_elastic(0) = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                     sigma = nlp.w.s_elastic(0);
                     if opts.objective_scaling_direct
                         nlp.f = nlp.f + (1/nlp.p.sigma_p(0))*sigma;
@@ -75,7 +75,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                         nlp.f = nlp.p.sigma_p(0)*nlp.f + sigma;
                     end
                   case ElasticityMode.ELL_1
-                    nlp.w.s_elastic(0) = {{'s_elastic', n_c}, opts.s_elastic_min, opts.s_elastic_max, s_elastic_0};
+                    nlp.w.s_elastic(0) = {{'s_elastic', n_c}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                     sigma = nlp.w.s_elastic(0);
                     sum_elastic = sum1(sigma);
                     if opts.objective_scaling_direct
