@@ -4,7 +4,7 @@ function mpccsol = mpccsol(name, plugin, mpcc, options)
 %              For now we just return a class with an overriden paren
     switch plugin
       case 'relaxation'
-        mpccsol = RelaxationSolver(mpcc, options.relaxation);
+        mpccsol = nosnoc.solver.RelaxationSolver(mpcc, options.relaxation);
       otherwise
         error('Only relaxation solver is currently implemented')
     end
