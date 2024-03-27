@@ -143,7 +143,8 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
 
     methods (Access=protected)
         function varargout = parenReference(obj, index_op)
-        % TODO(@anton) this returns mpccresults struct from homotopy
+            % TODO(@anton) this returns mpccresults struct from homotopy
+            import casadi.*;
             p = inputParser;
             addParameter(p, 'x0', []);
             addParameter(p, 'lbx', []);
@@ -157,9 +158,15 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             %              how exactly to implement that.
             parse(p, index_op(1).Indices{:});
 
+            % data and local variables
             nlp = obj.nlp;
+            mpcc = obj.mpcc;
             opts = obj.opts;
             plugin = obj.plugin;
+            G_fun = Function('G', {mpcc.x, mpcc.p}, {mpcc.G});
+            H_fun = Function('H', {mpcc.x, mpcc.p}, {mpcc.H});
+            comp_res_fun = Function('comp_res', {mpcc.x, mpcc.p}, {mmax(mpcc.G.*mpcc.H)});
+            f_mpcc_fun = Function('f_mpcc', {mpcc.x, mpcc.p}, {mpcc.f});
             % Update nlp data
             if ~isempty(p.Results.x0)
                 nlp.w.mpcc_w(0).init = p.Results.x0;
@@ -199,13 +206,13 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             stats.homotopy_iterations = [];
             stats.solver_stats = [];
             % TODO(@anton) calculate objective and complementarity residual
-            % stats.objective = [];
-            % stats.complementarity_stats = [full(comp_res(w0_mpcc, obj.p_val(2:end)))];
+            stats.objective = [];
+            stats.complementarity_stats = [full(comp_res_fun(nlp.w.mpcc_w(0).init, nlp.p.mpcc_p(0).init))];
 
             % Initialize Results struct
-            results = struct;
-            results.W = nlp.w.mpcc_w(0).init;
-            results.nlp_results = [];
+            mpcc_results = struct;
+            mpcc_results.W = nlp.w.mpcc_w(0).init;
+            mpcc_results.nlp_results = [];
 
             % homotopy loop
             complementarity_iter = 1;
@@ -254,7 +261,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 
                 stats.solver_stats = [stats.solver_stats, solver_stats];
 
-                results.nlp_results = [results.nlp_results, nlpsol_results];
+                mpcc_results.nlp_results = [mpcc_results.nlp_results, nlpsol_results];
 
                 last_iter_failed = plugin.check_iteration_failed(stats);
                 timeout = plugin.check_timeout(stats);
@@ -278,13 +285,13 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                     last_iter_failed = 1;
                 end
                 % update results output.
-                results.W = [results.W,nlp.w.mpcc_w(0).res]; % all homotopy iterations
+                mpcc_results.W = [mpcc_results.W,nlp.w.mpcc_w(0).res]; % all homotopy iterations
 
                 % update complementarity and objective stats
-                % complementarity_iter = full(comp_res(w_opt_mpcc, obj.p_val(2:end)));
-                % stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
-                % objective = full(obj.nlp.objective_fun(w_opt, obj.p_val));
-                % stats.objective = [stats.objective, objective];
+                complementarity_iter = full(comp_res_fun(nlp.w.mpcc_w(0).res, nlp.p.mpcc_p(0).init));
+                stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
+                objective = full(f_mpcc_fun(nlp.w.mpcc_w(0).res, nlp.p.mpcc_p(0).init));
+                stats.objective = [stats.objective, objective];
 
                 % update counter
                 ii = ii+1;
@@ -294,15 +301,17 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % end
             end
             
-            mpcc_results = struct;
+            mpcc_results.f = full(f_mpcc_fun(nlp.w.mpcc_w(0).res, nlp.p.mpcc_p(0).init));
             mpcc_results.x = nlp.w.mpcc_w(0).res;
+            mpcc_results.p = nlp.p.mpcc_p(0).init;
             mpcc_results.lam_x = nlp.w.mpcc_w(0).mult;
             mpcc_results.g = nlp.g.mpcc_g(0).res;
             mpcc_results.lam_g = nlp.g.mpcc_g(0).mult;
             % TODO(@anton) it may not always be possible to calculate lam_G and lam_H
-            % mpcc_results.G = ;
+            %              figure out when this is possible.
+            mpcc_results.G = full(G_fun(mpcc_results.x, mpcc_results.p));
             % mpcc_results.lam_G = ;
-            % mpcc_results.H = ;
+            mpcc_results.H = full(H_fun(mpcc_results.x, mpcc_results.p));
             % mpcc_results.lam_H = ;
 
             varargout{1} = mpcc_results;
