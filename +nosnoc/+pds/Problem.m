@@ -108,6 +108,10 @@ classdef Problem < vdx.problems.Mpcc
             p_global = obj.p.p_global(0);
             c_fun = model.c_fun;
 
+            %add path constraints all at once :)
+            obj.g.dynamics(1:opts.N_stages, 1:opts.N_finite_elements, 1:opts.n_s) = {{model.g_path_fun, {obj.w.x, obj.w.z, obj.w.u, obj.w.v_global, obj.p.p_global, obj.p.p_time_var}}, ...
+                model.lbg_path, model.ubg_path};
+
             x_prev = obj.w.x(0,0,opts.n_s);
             for ii=1:opts.N_stages
                 ui = obj.w.u(ii);
@@ -141,8 +145,6 @@ classdef Problem < vdx.problems.Mpcc
                         obj.g.algebraics(ii,jj,kk) = {model.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                         % also add non-negativity constraint on c
                         obj.g.c_nonnegative(ii,jj,kk) = {c_fun(x_ijk, v_global, p), 0, inf};
-                        %add path constraints
-                        obj.g.g_path(ii,jj,kk) = {model.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         % also integrate the objective
                         obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
                     end

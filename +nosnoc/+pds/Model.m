@@ -128,7 +128,7 @@ classdef Model < handle
             obj.f_x_fun = Function('f_x', {obj.x, obj.z, obj.u, obj.lambda, obj.v_global, obj.p}, {obj.f_x + obj.E*nabla_c*obj.lambda});
             obj.c_fun = Function('c', {obj.x, obj.v_global, obj.p}, {obj.c});
             obj.g_z_fun = Function('g_z', {obj.x, obj.z, obj.u, obj.v_global, obj.p}, {obj.g_z});
-            obj.g_path_fun = Function('g_path', {obj.x, obj.z, obj.u, obj.v_global, obj.p}, {obj.g_path});
+            obj.g_path_fun = Function('g_path', {obj.x, obj.z, obj.u, obj.v_global, obj.p_global, obj.p_time_var}, {obj.g_path});
             obj.g_terminal_fun = Function('g_terminal', {obj.x, obj.z, obj.v_global, obj.p_global}, {obj.g_terminal});
             obj.f_q_fun = Function('f_q', {obj.x, obj.z, obj.u, obj.v_global, obj.p}, {obj.f_q});
             obj.f_q_T_fun = Function('f_q_T', {obj.x, obj.z, obj.v_global, obj.p}, {obj.f_q_T});
