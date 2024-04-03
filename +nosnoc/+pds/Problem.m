@@ -109,7 +109,7 @@ classdef Problem < vdx.problems.Mpcc
             c_fun = model.c_fun;
 
             %add path constraints all at once :)
-            obj.g.dynamics(1:opts.N_stages, 1:opts.N_finite_elements, 1:opts.n_s) = {{model.g_path_fun, {obj.w.x, obj.w.z, obj.w.u, obj.w.v_global, obj.p.p_global, obj.p.p_time_var}}, ...
+            obj.g.g_path(1:opts.N_stages, 1:opts.N_finite_elements, 1:opts.n_s) = {{model.g_path_fun, {obj.w.x, obj.w.z, obj.w.u, obj.w.v_global, obj.p.p_global, obj.p.p_time_var}}, ...
                 model.lbg_path, model.ubg_path};
 
             x_prev = obj.w.x(0,0,opts.n_s);
