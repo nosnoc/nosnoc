@@ -113,7 +113,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
                 nlp.g.complementarities(0) = {expr, lb, ub};
 
-                if ~opts.assume_lower_bounds && ~opts.lift_complementarites % Lower bounds on G, H, not already present in MPCC
+                if ~opts.assume_lower_bounds && ~opts.lift_complementarities % Lower bounds on G, H, not already present in MPCC
                    nlp.g.G_lower_bounds(0) = {mpcc.G, 0, inf};
                    nlp.g.H_lower_bounds(0) = {mpcc.H, 0, inf};
                 end
@@ -282,6 +282,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 [nlpsol_stats, nlpsol_results] = nlp.solve();
                 cpu_time_iter = cputime - start;
                 wall_time_iter = toc;
+                nlp.w.init = nlp.w.res;
                 
                 solver_stats = plugin.cleanup_solver_stats(nlpsol_stats);
                 
