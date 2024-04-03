@@ -342,6 +342,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             % mpcc_results.lam_H = ;
             
             stats.converged = obj.complementarity_tol_met(stats) && ~last_iter_failed && ~timeout;
+            stats.success = stats.converged;
             stats.constraint_violation = obj.compute_constraint_violation(mpcc_results.x, mpcc_results.g);
 
             varargout{1} = mpcc_results;
