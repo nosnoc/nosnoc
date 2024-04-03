@@ -73,13 +73,13 @@ classdef Problem < vdx.problems.Mpcc
             if (strcmp(obj.opts.step_equilibration,'linear')||...
                 strcmp(obj.opts.step_equilibration,'linear_tanh')||...
                 strcmp(obj.opts.step_equilibration,'linear_relaxed')) && jj > 1
-                obj.w.B_max(1:opts.N_stages,1:opts.N_finite_elements) ={{'B_max', dims.n_c},-inf,inf};
-                obj.w.pi_lambda(1:opts.N_stages,1:opts.N_finite_elements) ={{'pi_lambda', dims.n_c},-inf,inf};
-                obj.w.pi_c(1:opts.N_stages,1:opts.N_finite_elements) ={{'pi_c', dims.n_c},-inf,inf};
-                obj.w.lambda_lambda(1:opts.N_stages,1:opts.N_finite_elements) ={{'lambda_lambda', dims.n_c},0,inf};
-                obj.w.lambda_c(1:opts.N_stages,1:opts.N_finite_elements) ={{'lambda_c', dims.n_c},0,inf};
-                obj.w.eta(1:opts.N_stages,1:opts.N_finite_elements) ={{'eta', dims.n_c},0,inf};
-                obj.w.nu(1:opts.N_stages,1:opts.N_finite_elements) ={{'nu', 1},0,inf};
+                obj.w.B_max(1:opts.N_stages,1:opts.N_finite_elements) = {{'B_max', dims.n_c},-inf,inf};
+                obj.w.pi_lambda(1:opts.N_stages,1:opts.N_finite_elements) = {{'pi_lambda', dims.n_c},-inf,inf};
+                obj.w.pi_c(1:opts.N_stages,1:opts.N_finite_elements) = {{'pi_c', dims.n_c},-inf,inf};
+                obj.w.lambda_lambda(1:opts.N_stages,1:opts.N_finite_elements) = {{'lambda_lambda', dims.n_c},0,inf};
+                obj.w.lambda_c(1:opts.N_stages,1:opts.N_finite_elements) = {{'lambda_c', dims.n_c},0,inf};
+                obj.w.eta(1:opts.N_stages,1:opts.N_finite_elements) = {{'eta', dims.n_c},0,inf};
+                obj.w.nu(1:opts.N_stages,1:opts.N_finite_elements) = {{'nu', 1},0,inf};
             end
 
             % 3d vars
