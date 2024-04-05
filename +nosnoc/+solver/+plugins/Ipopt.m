@@ -1,6 +1,6 @@
 % BSD 2-Clause License
 
-% Copyright (c) 2024, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
+% Copyright (c) 2022, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
 
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions are met:
