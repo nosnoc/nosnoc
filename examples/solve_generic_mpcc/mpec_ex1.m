@@ -1,11 +1,16 @@
+% Example of a small MPCC example, solved via the nonsnoc MPCC solver mpccsol. 
+% The origin is C stationary, (1,0) is S-stationary
 close all;
 clear;
 import casadi.*;
 import nosnoc.solver.mpccsol;
 
 opts = nosnoc.solver.Options();
-mpccsol_opts.relaxation = opts;
-% origin is C stationary, (1,0) is S-stationary
+mpccsol_opts.relaxation = opts;  % TODO: remove relaxation layer
+% mpccsol_opts.solver_type = '??'  % to be adressed in current PR.
+mpccsol_opts.relaxation.calculate_stationarity_type = true; % does nothing
+
+
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
 % parameters

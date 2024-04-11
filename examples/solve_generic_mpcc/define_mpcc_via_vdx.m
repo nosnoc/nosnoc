@@ -1,3 +1,7 @@
+%% MPCC Example via VDX
+% this examples uses VDX to define a generic MPCC (cf. https://github.com/apozharski/vdx)
+% VDX is a tool that facilitates index tracking and result extraction when formulating optimization problems with CasADi.
+
 close all;
 clear all;
 import casadi.*;
