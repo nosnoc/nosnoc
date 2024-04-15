@@ -33,7 +33,6 @@ settings.opts_casadi_nlp.ipopt.tol = 1e-12;
 settings.comp_tol = 1e-10;
 settings.sigma_0 = 1;
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
 %% time-freezing
 settings.s_sot_max = 5;
 settings.s_sot_min = 1;

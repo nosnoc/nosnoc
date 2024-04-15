@@ -18,7 +18,6 @@ settings.dcs_mode = DcsMode.CLS;
 % settings.friction_model = "Polyhedral";
 settings.friction_model = "Conic"; % "Conic"
 settings.conic_model_switch_handling = "Abs";
-settings.mpcc_mode = MpccMode.Scholtes_ineq;
 settings.no_initial_impacts = 1;
 %%
 g = 9.81;

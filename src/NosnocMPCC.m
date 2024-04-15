@@ -475,20 +475,6 @@ classdef NosnocMPCC < NosnocFormulationObject
                             zeros(n_terminal,1), 'type', 'g_mpcc');
 
                         obj.augmented_objective = obj.augmented_objective + rho_terminal_p*s_terminal_ell_inf;
-                    case 4 % l_inf, relaxed
-                        if ismember(problem_options.mpcc_mode, MpccMode.elastic)
-                            elastic = s_elastic*ones(n_terminal,1);
-                        elseif ismemeber(problem_options.mpcc_mode, MpccMode.elastic_ell_1)
-                            elastic = last_fe.elastic{end};
-                        else
-                            error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
-                        end
-                        obj.addConstraint(g_terminal-model.g_terminal_lb-elastic,...
-                            -inf*ones(n_terminal,1),...
-                            zeros(n_terminal,1), 'type', 'g_mpcc');
-                        obj.addConstraint(-(g_terminal-model.g_terminal_lb)-elastic,...
-                            -inf*ones(n_terminal,1),...
-                            zeros(n_terminal,1), 'type', 'g_mpcc');
                 end
             end
 
