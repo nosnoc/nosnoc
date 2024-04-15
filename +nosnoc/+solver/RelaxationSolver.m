@@ -35,13 +35,14 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
         stats % struct
         nlp_solver
         plugin
+        relaxation_type
     end
 
     methods (Access=public)
         
-        function obj=RelaxationSolver(mpcc, opts)
-        % TODO(@anton) move NosnocSolver building here.
+        function obj=RelaxationSolver(relaxation_type, mpcc, opts)
             import casadi.*
+            import nosnoc.solver.*
             casadi_symbolic_mode = split(class(mpcc.x), '.');
             casadi_symbolic_mode = casadi_symbolic_mode{end};
             if ~isfield(mpcc, 'g') || isempty(mpcc.g)
@@ -50,6 +51,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             if ~isfield(mpcc, 'p') || isempty(mpcc.p)
                 mpcc.p = casadi.(casadi_symbolic_mode)([]); 
             end
+            obj.relaxation_type = relaxation_type;
             obj.mpcc = mpcc;
             obj.opts = opts;
             opts.preprocess();
@@ -107,7 +109,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
 
                 % apply relaxation
-                psi_fun = opts.psi_fun;
+                psi_fun = get_psi_fun(RelaxationType(obj.relaxation_type), opts.normalize_homotopy_update);
                 lb = [];
                 ub = [];
                 expr = [];
