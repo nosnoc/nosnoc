@@ -54,7 +54,6 @@ problem_options.dcs_mode = 'Step';
 problem_options.g_path_at_fe = 1;
 problem_options.g_path_at_stg = 1;
 problem_options.time_optimal_problem = 1;
-solver_options.mpcc_mode = 'Scholtes_ineq';
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
 solver_options.print_level = 3;
 
