@@ -5,10 +5,7 @@ clear;
 import casadi.*;
 import nosnoc.solver.mpccsol;
 
-opts = nosnoc.solver.Options();
-mpccsol_opts = opts;  % TODO: remove relaxation layer
-% mpccsol_opts.solver_type = '??'  % to be adressed in current PR.
-mpccsol_opts.calculate_stationarity_type = true; % does nothing
+mpccsol_opts = nosnoc.solver.Options();;  % TODO: remove relaxation layer
 
 
 x1 = SX.sym('x1');
@@ -30,8 +27,24 @@ mpcc_struct.H = x2;
 mpcc_struct.f = f;
 
 solver = mpccsol('generic_mpcc', 'scholtes_ineq', mpcc_struct, mpccsol_opts);
+solver_ks = mpccsol('generic_mpcc', 'kanzow_schwartz_ineq', mpcc_struct, mpccsol_opts);
+solver_su = mpccsol('generic_mpcc', 'steffensen_ulbrich_ineq', mpcc_struct, mpccsol_opts);
 
 mpcc_results = solver('x0', x0,...
+    'lbx', lbx,...
+    'ubx', ubx,...
+    'p',p0);
+
+disp(mpcc_results.x)
+
+mpcc_results = solver_ks('x0', x0,...
+    'lbx', lbx,...
+    'ubx', ubx,...
+    'p',p0);
+
+disp(mpcc_results.x)
+
+mpcc_results = solver_su('x0', x0,...
     'lbx', lbx,...
     'ubx', ubx,...
     'p',p0);

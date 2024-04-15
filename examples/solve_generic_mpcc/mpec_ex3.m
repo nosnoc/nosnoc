@@ -4,11 +4,9 @@ clear;
 import casadi.*;
 import nosnoc.solver.mpccsol;
 
-opts = nosnoc.solver.Options();
-mpccsol_opts.relaxation = opts;  % TODO: remove relaxation layer
-% Todo: how to set this
-% opts_ipopt.ipopt.mu_strategy = 'adaptive';
-% opts_ipopt.ipopt.mu_oracle = 'quality-function';
+mpccsol_opts = nosnoc.solver.Options();
+mpccsol_opts.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+mpccsol_opts.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
 
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
@@ -45,7 +43,7 @@ mpcc_struct.G = G;
 mpcc_struct.H = H;
 mpcc_struct.f = f;
 
-solver = mpccsol('generic_mpcc', 'relaxation', mpcc_struct, mpccsol_opts);
+solver = mpccsol('generic_mpcc', 'scholtes_ineq', mpcc_struct, mpccsol_opts);
 
 mpcc_results = solver('x0', w0,...
     'lbx', lbw,...
