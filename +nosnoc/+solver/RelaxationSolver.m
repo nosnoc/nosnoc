@@ -116,7 +116,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 n_comp_pairs = size(G, 1);
                 for ii=1:n_comp_pairs
                     expr_i = psi_fun(G(ii), H(ii), sigma);
-                    [lb_i, ub_i, expr_i] = generate_mpcc_relaxation_bounds(expr_i, opts);
+                    [lb_i, ub_i, expr_i] = generate_mpcc_relaxation_bounds(expr_i, obj.relaxation_type);
                     lb = [lb;lb_i];
                     ub = [ub;ub_i];
                     expr = [expr;expr_i];

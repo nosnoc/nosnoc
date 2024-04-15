@@ -39,7 +39,7 @@ classdef NosnocSolver < handle
             obj.mpcc = mpcc;
             obj.solver_options = solver_options;
             opts = struct;
-            opts.relaxation = solver_options;
+            opts= solver_options;
             mpcc_struct = struct;
             mpcc_struct.x = mpcc.w;
             mpcc_struct.g = mpcc.g;
@@ -48,7 +48,7 @@ classdef NosnocSolver < handle
             mpcc_struct.G = mpcc.cross_comps(:,1);
             mpcc_struct.H = mpcc.cross_comps(:,2);
             
-            obj.solver = nosnoc.solver.mpccsol('nosnoc_solver', 'relaxation', mpcc_struct, opts);
+            obj.solver = nosnoc.solver.mpccsol('nosnoc_solver', 'scholtes_ineq', mpcc_struct, opts);
         end
 
         function set(obj, type, val)
