@@ -44,6 +44,12 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             import casadi.*
             casadi_symbolic_mode = split(class(mpcc.x), '.');
             casadi_symbolic_mode = casadi_symbolic_mode{end};
+            if ~isfield(mpcc, 'g') || isempty(mpcc.g)
+                mpcc.g = casadi.(casadi_symbolic_mode)([]); 
+            end
+            if ~isfield(mpcc, 'p') || isempty(mpcc.p)
+                mpcc.p = casadi.(casadi_symbolic_mode)([]); 
+            end
             obj.mpcc = mpcc;
             obj.opts = opts;
             opts.preprocess();
@@ -54,34 +60,36 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % TODO(@anton) implement this
             else % Otherwise use vdx internally anyway but be sad about interleaving
                 use_vdx = false;
+                % preprocess empty fields
+                
                 nlp = vdx.Problem('casadi_type', casadi_symbolic_mode);
-                nlp.w.mpcc_w(0) = {mpcc.x};
-                nlp.p.mpcc_p(0) = {mpcc.p};
-                nlp.g.mpcc_g(0) = {mpcc.g};
-                nlp.p.sigma_p(0) = {{'sigma_p', 1}, 0, inf, opts.sigma_0};
+                nlp.w.mpcc_w = {mpcc.x};
+                nlp.p.mpcc_p = {mpcc.p};
+                nlp.g.mpcc_g = {mpcc.g};
+                nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0};
                 nlp.f = mpcc.f;
                 n_c = size(mpcc.G);
 
                 % Create relaxation slacks/parameters
                 switch opts.elasticity_mode
                   case ElasticityMode.NONE
-                    sigma = nlp.p.sigma_p(0);
+                    sigma = nlp.p.sigma_p();
                   case ElasticityMode.ELL_INF
-                    nlp.w.s_elastic(0) = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
-                    sigma = nlp.w.s_elastic(0);
+                    nlp.w.s_elastic = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
+                    sigma = nlp.w.s_elastic();
                     if opts.objective_scaling_direct
-                        nlp.f = nlp.f + (1/nlp.p.sigma_p(0))*sigma;
+                        nlp.f = nlp.f + (1/nlp.p.sigma_p())*sigma;
                     else
-                        nlp.f = nlp.p.sigma_p(0)*nlp.f + sigma;
+                        nlp.f = nlp.p.sigma_p()*nlp.f + sigma;
                     end
                   case ElasticityMode.ELL_1
-                    nlp.w.s_elastic(0) = {{'s_elastic', n_c}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
-                    sigma = nlp.w.s_elastic(0);
+                    nlp.w.s_elastic = {{'s_elastic', n_c}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
+                    sigma = nlp.w.s_elastic();
                     sum_elastic = sum1(sigma);
                     if opts.objective_scaling_direct
-                        nlp.f = nlp.f + (1/nlp.p.sigma_p(0))*sum_elastic;
+                        nlp.f = nlp.f + (1/nlp.p.sigma_p())*sum_elastic;
                     else
-                        nlp.f = nlp.p.sigma_p(0)*nlp.f + sum_elastic;
+                        nlp.f = nlp.p.sigma_p()*nlp.f + sum_elastic;
                     end
                 end
 
@@ -146,11 +154,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
 
         function violation = compute_constraint_violation(obj, w, g)
             nlp = obj.nlp;
-            ubw_violation = max(max(w - nlp.w.mpcc_w(0).ub), 0);
-            lbw_violation = max(max(nlp.w.mpcc_w(0).lb - w), 0);
-            ubg_violation = max(max(g - nlp.g.mpcc_g(0).ub), 0);
-            lbg_violation = max(max(nlp.g.mpcc_g(0).lb - g), 0);
-            violation = max([lbg_violation, ubg_violation, lbw_violation, ubw_violation]);
+            violation = max([nlp.g.mpcc_g().violation; nlp.w.mpcc_w().violation]);
         end
 
         function out = cat(dim,varargin)
@@ -195,28 +199,28 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             f_mpcc_fun = Function('f_mpcc', {mpcc.x, mpcc.p}, {mpcc.f});
             % Update nlp data
             if ~isempty(p.Results.x0)
-                nlp.w.mpcc_w(0).init = p.Results.x0;
+                nlp.w.mpcc_w().init = p.Results.x0;
             end
             if ~isempty(p.Results.lbx)
-                nlp.w.mpcc_w(0).lb = p.Results.lbx;
+                nlp.w.mpcc_w().lb = p.Results.lbx;
             end
             if ~isempty(p.Results.ubx)
-                nlp.w.mpcc_w(0).ub = p.Results.ubx;
+                nlp.w.mpcc_w().ub = p.Results.ubx;
             end
             if ~isempty(p.Results.lbg)
-                nlp.g.mpcc_g(0).lb = p.Results.lbg;
+                nlp.g.mpcc_g().lb = p.Results.lbg;
             end
             if ~isempty(p.Results.ubg)
-                nlp.g.mpcc_g(0).ub = p.Results.ubg;
+                nlp.g.mpcc_g().ub = p.Results.ubg;
             end
             if ~isempty(p.Results.p)
-                nlp.p.mpcc_p(0).init = p.Results.p;
+                nlp.p.mpcc_p().val = p.Results.p;
             end
             if ~isempty(p.Results.lam_g0)
-                nlp.g.mpcc_g(0).mult = p.Results.lam_g0;
+                nlp.g.mpcc_g().init_mult = p.Results.lam_g0;
             end
             if ~isempty(p.Results.lam_x0)
-                nlp.w.mpcc_w(0).mult = p.Results.lam_x0;
+                nlp.w.mpcc_w().init_mult = p.Results.lam_x0;
             end
 
             % Initial conditions
@@ -233,11 +237,11 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             stats.solver_stats = [];
             % TODO(@anton) calculate objective and complementarity residual
             stats.objective = [];
-            stats.complementarity_stats = [full(comp_res_fun(nlp.w.mpcc_w(0).init, nlp.p.mpcc_p(0).init))];
+            stats.complementarity_stats = [full(comp_res_fun(nlp.w.mpcc_w().init, nlp.p.mpcc_p().val))];
 
             % Initialize Results struct
             mpcc_results = struct;
-            mpcc_results.W = nlp.w.mpcc_w(0).init;
+            mpcc_results.W = nlp.w.mpcc_w().init;
             mpcc_results.nlp_results = [];
 
             % homotopy loop
@@ -265,7 +269,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                     end
                 end
                 stats.sigma_k = [stats.sigma_k, sigma_k];
-                nlp.p.sigma_p(0).init = sigma_k;
+                nlp.p.sigma_p().val = sigma_k;
 
                 % TODO(@anton) maybe revive multisolver here :)
                 if ii ~= 0
@@ -312,12 +316,12 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                     last_iter_failed = 1;
                 end
                 % update results output.
-                mpcc_results.W = [mpcc_results.W,nlp.w.mpcc_w(0).res]; % all homotopy iterations
+                mpcc_results.W = [mpcc_results.W,nlp.w.mpcc_w().res]; % all homotopy iterations
 
                 % update complementarity and objective stats
-                complementarity_iter = full(comp_res_fun(nlp.w.mpcc_w(0).res, nlp.p.mpcc_p(0).init));
+                complementarity_iter = full(comp_res_fun(nlp.w.mpcc_w().res, nlp.p.mpcc_p().val));
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
-                objective = full(f_mpcc_fun(nlp.w.mpcc_w(0).res, nlp.p.mpcc_p(0).init));
+                objective = full(f_mpcc_fun(nlp.w.mpcc_w().res, nlp.p.mpcc_p().val));
                 stats.objective = [stats.objective, objective];
 
                 % update counter
@@ -328,12 +332,12 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % end
             end
             
-            mpcc_results.f = full(f_mpcc_fun(nlp.w.mpcc_w(0).res, nlp.p.mpcc_p(0).init));
-            mpcc_results.x = nlp.w.mpcc_w(0).res;
-            mpcc_results.p = nlp.p.mpcc_p(0).init;
-            mpcc_results.lam_x = nlp.w.mpcc_w(0).mult;
-            mpcc_results.g = nlp.g.mpcc_g(0).res;
-            mpcc_results.lam_g = nlp.g.mpcc_g(0).mult;
+            mpcc_results.f = full(f_mpcc_fun(nlp.w.mpcc_w().res, nlp.p.mpcc_p().val));
+            mpcc_results.x = nlp.w.mpcc_w().res;
+            mpcc_results.p = nlp.p.mpcc_p().val;
+            mpcc_results.lam_x = nlp.w.mpcc_w().mult;
+            mpcc_results.g = nlp.g.mpcc_g().eval;
+            mpcc_results.lam_g = nlp.g.mpcc_g().mult;
             % TODO(@anton) it may not always be possible to calculate lam_G and lam_H
             %              figure out when this is possible.
             mpcc_results.G = full(G_fun(mpcc_results.x, mpcc_results.p));
