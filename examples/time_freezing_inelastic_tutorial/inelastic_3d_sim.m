@@ -9,7 +9,6 @@ model = NosnocModel();
 %% settings
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 1;
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
 solver_options.print_level = 3;
 solver_options.N_homotopy = 6;
 problem_options.use_fesd = 1;

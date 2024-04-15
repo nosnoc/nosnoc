@@ -16,7 +16,6 @@ problem_options.impose_terminal_phyisical_time = 1;
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 0;
 problem_options.experimental_supervertical_form = 1;
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
 solver_options.comp_tol = 1e-10;
 solver_options.sigma_N = 1e-10;
 solver_options.N_homotopy = 16;

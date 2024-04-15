@@ -22,7 +22,6 @@ problem_options.time_freezing = 1;
 problem_options.impose_terminal_phyisical_time = 1;
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 0;
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
 problem_options.pss_lift_step_functions = 0;
 solver_options.break_simulation_if_infeasible = 0;
 %% integrator settings
