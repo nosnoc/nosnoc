@@ -28,7 +28,6 @@ problem_options.n_s = 2;
 
 solver_options = nosnoc.solver.Options();
 %solver_options.mpcc_mode = MpccMode.elastic_ineq;
-%solver_options.psi_fun_type = CFunctionType.STEFFENSON_ULBRICH;
 %solver_options.elasticity_mode = ElasticityMode.ELL_INF;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 20000;
 

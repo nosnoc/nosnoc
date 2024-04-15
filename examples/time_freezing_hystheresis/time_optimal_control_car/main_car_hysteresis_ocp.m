@@ -51,7 +51,6 @@ solver_options.comp_tol = 1e-6;
 problem_options.cross_comp_mode = 4;
 %solver_options.homotopy_update_slope = 0.9;
 %solver_options.homotopy_update_rule = 'superlinear';
-%solver_options.psi_fun_type = CFunctionType.STEFFENSEN_ULBRICH;
 %solver_options.elasticity_mode = ElasticityMode.ELL_INF;
 problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e4;

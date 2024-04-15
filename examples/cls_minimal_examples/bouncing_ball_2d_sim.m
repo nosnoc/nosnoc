@@ -20,7 +20,6 @@ problem_options.friction_model = "Conic"; % "Conic"
 problem_options.conic_model_switch_handling = "Abs";
 % settings.mpcc_mode = MpccMode.elastic_ineq;
 % solver_options.nlpsol = 'snopt';
-% solver_options.psi_fun_type = CFunctionType.KANZOW_SCHWARTZ;
 solver_options.use_previous_solution_as_initial_guess = 1;
 %%
 g = 9.81;
