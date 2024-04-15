@@ -13,7 +13,6 @@ solver_options.print_level = 3;
 problem_options.cross_comp_mode = 1;
 problem_options.dcs_mode = DcsMode.CLS;
 solver_options.multiple_solvers = 0;
-solver_options.mpcc_mode = "Scholtes_ineq";
 % solver_options.elasticity_mode = ElasticityMode.ELL_INF;
 problem_options.no_initial_impacts = 1;
 solver_options.print_details_if_infeasible = 0;
@@ -25,7 +24,6 @@ solver_options.real_time_plot = 0;
 solver_options.comp_tol  = 1e-13;
 solver_options.sigma_N = 1e-13;
 
-solver_options.mpcc_mode = "elastic_ineq";
 solver_options.elastic_scholtes = 1;
 solver_options.sigma_0 = 1e0;
 solver_options.homotopy_update_slope = 0.2;

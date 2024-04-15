@@ -48,7 +48,6 @@ solver_options.print_level = 3;
 
 problem_options.gamma_h = 0.8;
 solver_options.sigma_0 = 1e0;
-solver_options.mpcc_mode = "Scholtes_ineq";
 solver_options.homotopy_update_slope = 0.2;
 solver_options.homotopy_update_rule = 'superlinear';
 solver_options.N_homotopy = 7;
