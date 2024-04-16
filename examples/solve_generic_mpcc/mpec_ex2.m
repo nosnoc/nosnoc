@@ -8,7 +8,7 @@ import casadi.*;
 import nosnoc.solver.mpccsol;
 
 mpccsol_opts = nosnoc.solver.Options();
-
+mpccsol_opts.lift_complementarities = false;
 x = SX.sym('x',8);
 x_0 = x(1:4);
 x_1 = x(5:6);
@@ -38,14 +38,14 @@ x0 = zeros(8,1);
 %     0.1424
 %    -0.0000];
 
-lbx = [-inf*ones(4,1);0*ones(4,1)];
+lbx = [-inf*ones(4,1);-inf*ones(4,1)];
 ubx = inf*ones(8,1);
 
 mpcc_struct.x = x;
 % mpcc_struct.g = [];
 % mpcc_struct.p = [];
 mpcc_struct.G = x_1;
-mpcc_struct.H = x_2;
+mpcc_struct.H = 2*x_2;
 mpcc_struct.f = f;
 
 solver_eq = mpccsol('generic_mpcc', 'steffensen_ulbrich_eq', mpcc_struct, mpccsol_opts);

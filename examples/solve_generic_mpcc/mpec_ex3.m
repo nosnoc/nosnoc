@@ -7,6 +7,8 @@ import nosnoc.solver.mpccsol;
 mpccsol_opts = nosnoc.solver.Options();
 mpccsol_opts.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
 mpccsol_opts.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+mpccsol_opts.lift_complementarities = false;
+mpccsol_opts.assume_lower_bounds = true;
 
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');

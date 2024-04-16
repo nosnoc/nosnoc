@@ -38,6 +38,15 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
         relaxation_type
     end
 
+    properties (Access=private)
+        ind_scalar_G
+        ind_scalar_H
+        ind_nonscalar_G
+        ind_nonscalar_H
+        ind_map_G
+        ind_map_H
+    end
+
     methods (Access=public)
         
         function obj=RelaxationSolver(relaxation_type, mpcc, opts)
@@ -95,14 +104,35 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                     end
                 end
 
+                [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(mpcc.G,mpcc.x);
+                [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(mpcc.H,mpcc.x);
+                obj.ind_nonscalar_G = ind_nonscalar_G;
+                obj.ind_nonscalar_H = ind_nonscalar_H;
+                obj.ind_scalar_G = ind_scalar_G;
+                obj.ind_scalar_H = ind_scalar_H;
+                obj.ind_map_G = ind_map_G;
+                obj.ind_map_H = ind_map_H;
                 % possibly lift complementarities
                 if opts.lift_complementarities
-                    nlp.w.G(0) = {{'G', n_c}, 0, inf};
-                    G = nlp.w.G(0);
-                    nlp.w.H(0) = {{'H', n_c}, 0, inf};
-                    H = nlp.w.H(0);
-                    nlp.g.G_lift = {mpcc.G-G};
-                    nlp.g.H_lift = {mpcc.H-H};
+                    ind_G_fun = Function('ind_G', {mpcc.x}, {mpcc.G.jacobian(mpcc.x)});
+                    [ind_G1,ind_G2] = find(sparse(DM(ind_G_fun(nlp.w.sym) == 1)));
+                    ind_H_fun = Function('ind_G', {mpcc.x}, {mpcc.H.jacobian(mpcc.x)});
+                    [ind_H1,ind_H2] = find(sparse(DM(ind_H_fun(nlp.w.sym) == 1)));
+
+                    nlp.w.G_lift = {{'G', length(ind_nonscalar_G)}, 0, inf};
+                    G = casadi.(casadi_symbolic_mode)(size(mpcc.H,1), 1);
+                    G(ind_scalar_G) = mpcc.G(ind_scalar_G);
+                    G(ind_nonscalar_G) = nlp.w.G_lift();
+
+                    
+                    nlp.w.H_lift = {{'H', length(ind_nonscalar_H)}, 0, inf};
+                    H = casadi.(casadi_symbolic_mode)(size(mpcc.H,1), 1);
+                    H(ind_scalar_H) = mpcc.H(ind_scalar_H);
+                    H(ind_nonscalar_H) = nlp.w.H_lift();
+                    
+                    nlp.g.G_lift = {mpcc.G(ind_nonscalar_G)-G(ind_nonscalar_G)};
+                    nlp.g.H_lift = {mpcc.H(ind_nonscalar_H)-H(ind_nonscalar_H)};
+                    
                 else
                     G = mpcc.G;
                     H = mpcc.H;
@@ -124,10 +154,9 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nlp.g.complementarities(0) = {expr, lb, ub};
 
                 if ~opts.assume_lower_bounds && ~opts.lift_complementarities % Lower bounds on G, H, not already present in MPCC
-                   nlp.g.G_lower_bounds(0) = {mpcc.G, 0, inf};
-                   nlp.g.H_lower_bounds(0) = {mpcc.H, 0, inf};
+                    nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
+                    nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
                 end
-
                 % Get nlpsol plugin
                 switch opts.solver
                   case 'ipopt'
@@ -165,7 +194,6 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
 
         function varargout = size(obj,varargin)
             varargout = 1;
-            %TODO(anton) needs to return correct values for varargin
         end
         
         function ind = end(obj,k,n)
@@ -224,6 +252,19 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             if ~isempty(p.Results.lam_x0)
                 nlp.w.mpcc_w().init_mult = p.Results.lam_x0;
             end
+
+            if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
+                lb = nlp.w.mpcc_w().lb;
+                lb(obj.ind_map_G) = 0;
+                lb(obj.ind_map_H) = 0;
+                nlp.w.mpcc_w().lb = lb;
+                
+                if ~opts.lift_complementarities
+                    nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
+                    nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
+                end
+            end
+ 
 
             % Initial conditions
             sigma_k = opts.sigma_0;
