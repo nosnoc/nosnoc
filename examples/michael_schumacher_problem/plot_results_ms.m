@@ -82,9 +82,9 @@ function plot_results_ms(model, problem_options, results, q_target, path_constra
         v_normal  = [v_normal,normal(:,ii)'*v_opt(:,ii)];
     end
     figure
-    plot(t_grid,v_normal);
+    plot(results.t_grid,v_normal);
     hold on
-    plot(t_grid,v_tangent);
+    plot(results.t_grid,v_tangent);
     xlabel('$t$','interpreter','latex');
     ylabel('$v$','interpreter','latex');
     legend({'$n^\top v$','$t^\top v$'},'interpreter','latex');
