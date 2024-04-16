@@ -3,16 +3,32 @@
 ## `nosnoc`
 This is the top level namespace that all elements of nosnoc lives under.
 
-### `nosnoc.solver`
+### `NosnocOcp`
 
-#### `nosnoc.solver.plugins`
+## `nosnoc.solver`
 
-### `nosnoc.types`
+### `Options`
 
-### `nosnoc.utils`
+### `RelaxationSolver`
 
-### `nosnoc.pds`
+### `mpccsol`
 
-### `nosnoc.filippov`
+## `nosnoc.solver.plugins`
 
-### `nosnoc.cls`
+## `nosnoc.core`
+
+### `ModelBase`
+
+## `nosnoc.utils`
+
+## `nosnoc.pds`
+
+### `Model`
+
+## `nosnoc.filippov`
+Alternative name would be `nosnoc.pss`.
+### `Model`
+
+## `nosnoc.cls`
+
+### `Model`
