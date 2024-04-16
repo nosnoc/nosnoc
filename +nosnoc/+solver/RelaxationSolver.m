@@ -86,9 +86,10 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % Create relaxation slacks/parameters
                 switch opts.elasticity_mode
                   case ElasticityMode.NONE
-                    %nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
+                    % nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
                     sigma = nlp.p.sigma_p(); 
                   case ElasticityMode.ELL_INF
+                    % adding elastic variables to nlp.w which augments the original mpcc.w
                     nlp.w.s_elastic = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                     sigma = nlp.w.s_elastic();
                     if opts.objective_scaling_direct
