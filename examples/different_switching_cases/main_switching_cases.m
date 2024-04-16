@@ -44,7 +44,7 @@ model = NosnocModel();
 
 % discretization parameters
 % TODO: these should be problem_options
-problem_options.N_sim = 1;
+problem_options.N_sim = 10;
 problem_options.T_sim = 1.5;
 
 problem_options.N_finite_elements = 2;
