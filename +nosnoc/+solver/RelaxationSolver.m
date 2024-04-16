@@ -154,8 +154,12 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nlp.g.complementarities(0) = {expr, lb, ub};
 
                 if ~opts.assume_lower_bounds && ~opts.lift_complementarities % Lower bounds on G, H, not already present in MPCC
-                    nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
-                    nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
+                    if ~isempty(obj.ind_nonscalar_G)
+                        nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
+                    end
+                    if ~isempty(obj.ind_nonscalar_H)
+                        nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
+                    end
                 end
                 % Get nlpsol plugin
                 switch opts.solver
@@ -258,11 +262,6 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 lb(obj.ind_map_G) = 0;
                 lb(obj.ind_map_H) = 0;
                 nlp.w.mpcc_w().lb = lb;
-                
-                if ~opts.lift_complementarities
-                    nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
-                    nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
-                end
             end
  
 
