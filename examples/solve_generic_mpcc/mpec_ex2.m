@@ -42,12 +42,13 @@ lbx = [-inf*ones(4,1);-inf*ones(4,1)];
 ubx = inf*ones(8,1);
 
 mpcc_struct.x = x;
-% mpcc_struct.g = [];
-% mpcc_struct.p = [];
+mpcc_struct.g = [];
+mpcc_struct.p = [];
 mpcc_struct.G = x_1;
 mpcc_struct.H = 2*x_2;
 mpcc_struct.f = f;
 
+% create two solvers with different mpcc relaxation methods: steffensen_ulbrich_eq and steffensen_ulbrich_ineq
 solver_eq = mpccsol('generic_mpcc', 'steffensen_ulbrich_eq', mpcc_struct, mpccsol_opts);
 solver_ineq = mpccsol('generic_mpcc', 'steffensen_ulbrich_ineq', mpcc_struct, mpccsol_opts);
 
