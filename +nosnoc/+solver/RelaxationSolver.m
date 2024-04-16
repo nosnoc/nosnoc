@@ -54,6 +54,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
             import nosnoc.solver.*
             casadi_symbolic_mode = split(class(mpcc.x), '.');
             casadi_symbolic_mode = casadi_symbolic_mode{end};
+            % preprocess empty fields
             if ~isfield(mpcc, 'g') || isempty(mpcc.g)
                 mpcc.g = casadi.(casadi_symbolic_mode)([]); 
             end
@@ -71,20 +72,22 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % TODO(@anton) implement this
             else % Otherwise use vdx internally anyway but be sad about interleaving
                 use_vdx = false;
-                % preprocess empty fields
-                
+
+                % create an nlp (in the form of a vdx.Problem) from the mpcc data (f,x,p,g).
+                % We track the indices of this data in vdx.Variables: mpcc_w, mpcc_p, mpcc_g.
                 nlp = vdx.Problem('casadi_type', casadi_symbolic_mode);
-                nlp.w.mpcc_w = {mpcc.x};
-                nlp.p.mpcc_p = {mpcc.p};
-                nlp.g.mpcc_g = {mpcc.g};
-                nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0};
+                nlp.w.mpcc_w = {mpcc.x}; % nlp.w.mpcc_w is a vdx.Variable (depth 0) which stores mpcc optimization variables
+                nlp.p.mpcc_p = {mpcc.p}; % nlp.p.mpcc_p is a vdx.Variable (depth 0) which stores mpcc parameters
+                nlp.g.mpcc_g = {mpcc.g}; % nlp.g.mpcc_g is a vdx.Variable (depth 0) which stores mpcc general constraints
+                nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0}; % sigma_p is
                 nlp.f = mpcc.f;
                 n_c = size(mpcc.G);
 
                 % Create relaxation slacks/parameters
                 switch opts.elasticity_mode
                   case ElasticityMode.NONE
-                    sigma = nlp.p.sigma_p();
+                    %nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
+                    sigma = nlp.p.sigma_p(); 
                   case ElasticityMode.ELL_INF
                     nlp.w.s_elastic = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                     sigma = nlp.w.s_elastic();
@@ -189,6 +192,9 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
 
         function violation = compute_constraint_violation(obj, w, g)
             nlp = obj.nlp;
+            % We get the maximum violation of g: (max(max(lbg - g(w,p), 0), max(g(w,p) - ubg, 0))),
+            % and w: (max(max(lbw - w, 0), max(w - ubw, 0)))
+            % bounds from the last solve of the relaxed nlp.
             violation = max([nlp.g.mpcc_g().violation; nlp.w.mpcc_w().violation]);
         end
 
