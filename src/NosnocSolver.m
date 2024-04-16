@@ -41,8 +41,8 @@ classdef NosnocSolver < handle
             end
             obj.mpcc = mpcc;
             obj.solver_options = solver_options;
-            opts = struct;
-            opts= solver_options;
+            solver_options.assume_lower_bounds = true;
+            opts = solver_options;
             mpcc_struct = struct;
             mpcc_struct.x = mpcc.w;
             mpcc_struct.g = mpcc.g;

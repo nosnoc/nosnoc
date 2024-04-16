@@ -40,7 +40,7 @@ classdef Options < handle
         homotopy_update_rule = 'linear' % 'linear' sigma_k = homotopy_update_slope*sigma_N
                                         % 'superlinear' - sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent))
                                         % TODO enum
-        assume_lower_bounds(1,1) logical = true;
+        assume_lower_bounds(1,1) logical = false;
         lift_complementarities(1,1) logical = false;
         
         homotopy_update_slope(1,1) double {mustBeReal} = 0.1

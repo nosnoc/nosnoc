@@ -615,7 +615,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                         end
                     end
             end
-            init_params = [x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
+            init_params = full([x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)]);
         end
 
         % TODO this should be private
