@@ -28,7 +28,7 @@ mpcc_struct.f = f;
 
 mpcc_method1 = 'scholtes_ineq';
 mpcc_method2 = 'kanzow_schwartz_ineq';
-mpcc_method3 =  nosnoc.solver.RelaxationType.SCHOLTES_EQ;
+mpcc_method3 =  nosnoc.solver.MpccMethod.SCHOLTES_EQ;
 
 solver = mpccsol('generic_mpcc', mpcc_method1, mpcc_struct, mpccsol_opts);
 solver_ks = mpccsol('generic_mpcc', mpcc_method2, mpcc_struct, mpccsol_opts);

@@ -143,7 +143,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
 
                 % apply relaxation
-                psi_fun = get_psi_fun(RelaxationType(obj.relaxation_type), opts.normalize_homotopy_update);
+                psi_fun = get_psi_fun(MpccMethod(obj.relaxation_type), opts.normalize_homotopy_update);
                 lb = [];
                 ub = [];
                 expr = [];

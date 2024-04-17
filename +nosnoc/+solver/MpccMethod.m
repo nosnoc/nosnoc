@@ -1,4 +1,4 @@
-classdef RelaxationType
+classdef MpccMethod
     enumeration
         SCHOLTES_EQ
         SCHOLTES_INEQ
