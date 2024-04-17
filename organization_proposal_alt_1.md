@@ -1,7 +1,14 @@
 # Proposed class structure for `nosnoc`
 Remaining open questions:
-+ Where to put discretization options
++ Where to put discretization options.
 + Is it a good idea to implement time-freezing as a transform from one model type to another.
++ Should we also split the nosnoc.cls.Model.
++ Does it make sense to include the algebraic variables in the model at all?
+  + Anton: My view is split on this. 
+  I personally prefer to keep the model frontend as small as possible. 
+  This could be done via having the model only containing the bare minimum data e.g. for pss: `F`, `c`, `S`, `x`, `u`, `z`.
+  This would then be passed to a reformulation step that would produce a DCS..
++ How to get results:
 
 ## `nosnoc`
 This is the top level namespace that all elements of nosnoc live under.
@@ -150,11 +157,15 @@ Subclass of `nosnoc.core.MpccBase`.
 ## `nosnoc.cls`
 
 ### `Model`
+Subclass of `nosnoc.core.ModelBase`.
+
+Properties:
++ `dims`: Structure of dimensions, contains additional fields.
+  + `n_q`: dimension of generalized positions.
+  + `n_contacts`: number of contacts 
 
 ### `FesdJMpcc`
 Subclass of `nosnoc.core.MpccBase`.
-
-### `time_freezing`
 
 ## `nosnoc.cds`
 
