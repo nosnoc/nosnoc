@@ -259,7 +259,7 @@ classdef NosnocIntegrator < handle
                 t_current = t_current + problem_options.T;
                 % update clock state
                 if problem_options.impose_terminal_phyisical_time
-                    solver.mpcc.p0(end) = solver.mpcc.p0(end)+problem_options.T;
+                    solver.mpcc.p_static_0(end) = solver.mpcc.p_static_0(end)+problem_options.T;
                 end
             end
 
