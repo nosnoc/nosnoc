@@ -49,8 +49,8 @@ jobs:
     - name: Run NOSNOC tests
       uses: matlab-actions/run-tests@v2.1
       with:
-        source-folder: nosnoc/src; nosnoc/+nosnoc
-        select-by-folder: nosnoc/test
+        source-folder: src; .
+        select-by-folder: test
         test-results-junit: test-results/matlab-results.xml
 
     - name: Upload test results
