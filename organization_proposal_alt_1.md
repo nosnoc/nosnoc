@@ -1,4 +1,7 @@
 # Proposed class structure for `nosnoc`
+Remaining open questions:
++ Where to put discretization options
++ Is it a good idea to implement time-freezing as a transform from one model type to another.
 
 ## `nosnoc`
 This is the top level namespace that all elements of nosnoc live under.
@@ -59,7 +62,7 @@ This namespace contains plugins that handle the different options and behaviors 
 Contains core base classes for nosnoc models and MPCCs.
 
 ### `ModelBase`
-Base class for nosnoc models.
+Abstract base class for nosnoc models.
 
 Properties:
 + `dims`: Structure of dimensions.
@@ -91,6 +94,13 @@ Methods:
 + `generate_functions()`: Generate functions required for problem generation.
 
 ### `MpccBase`
+Abstract base class for MPCCs. Subclass of `vdx.problems.Mpcc`.
+
+Methods:
++ `create_variables()`: Creates all the variables of the Mpcc.
++ `forward_sim_constraints()`: Creates forward simulation and stagewise constraints.
++ `create_complementarities()`: Creates complementarity constraints.
++ `step_equilibration()`: Creates step equilibration constriants.
 
 ## `nosnoc.filippov`
 Models and problems related to piecewise-smooth dynamical systems.
@@ -98,7 +108,7 @@ An alternative name would be `nosnoc.pss`.
 
 TODO: how should we structure the Stewart vs Heaviside Step reformulation.
 It is possible that splitting into two classes may be confusing for users?
-
+	
 ### `StewartModel`
 Subclass of `nosnoc.core.ModelBase`.
 
@@ -116,6 +126,7 @@ Properties:
 + `mu`: Lagrange multipliers from inequality constraints in convex problem.
 
 ### `StewartMpcc`
+Subclass of `nosnoc.core.MpccBase`.
 
 ### `StepModel`
 Subclass of `nosnoc.core.ModelBase`.
@@ -131,14 +142,17 @@ Properties:
 + `alpha`: Heaviside step function corresponding to switching functions `c`.
 + `lambda_p`, `lambda_n`: Lagrange multipliers from equality constraints in convex problem.
 + `beta`,`gamma`,`theta_step`: Lifting variables for convex multipliers for each region.
++ `f_x`: Dynamics, either generated from `F` or provided in the case of more general Aizerman–Pyatnitskii DIs.
 
 ### `StepMpcc`
+Subclass of `nosnoc.core.MpccBase`.
 
 ## `nosnoc.cls`
 
 ### `Model`
 
 ### `FesdJMpcc`
+Subclass of `nosnoc.core.MpccBase`.
 
 ### `time_freezing`
 
@@ -156,3 +170,4 @@ Properties:
 + `E`: Projection matrix for ePDS.
 
 ### `CdsMpcc`
+Subclass of `nosnoc.core.MpccBase`.
