@@ -93,10 +93,44 @@ Methods:
 ### `MpccBase`
 
 ## `nosnoc.filippov`
-Alternative name would be `nosnoc.pss`.
-### `Model`
+Models and problems related to piecewise-smooth dynamical systems.
+An alternative name would be `nosnoc.pss`.
+
+TODO: how should we structure the Stewart vs Heaviside Step reformulation.
+It is possible that splitting into two classes may be confusing for users?
+
+### `StewartModel`
+Subclass of `nosnoc.core.ModelBase`.
+
+Properties:
++ `dims`: Structure of dimensions, contains additional fields:
+  + `n_sys`: Number of independent systems.
+  + `n_c_sys`: Number of switching functions.
+  + `n_f_sys`: Number of smooth functions.
++ `F`: Smooth dynamic functions.
++ `c`: Switching functions.
++ `S`: Sign Matrix.
++ `g_ind`: Stewart indicator functions, may be calculated from `c` and `S`.
++ `theta`: Stewart convex multipliers.
++ `lambda`: Lagrange multipliers from equality constraints in convex problem.
++ `mu`: Lagrange multipliers from inequality constraints in convex problem.
 
 ### `StewartMpcc`
+
+### `StepModel`
+Subclass of `nosnoc.core.ModelBase`.
+
+Properties:
++ `dims`: Structure of dimensions, contains additional fields:
+  + `n_sys`: Number of independent systems.
+  + `n_c_sys`: Number of switching functions.
+  + `n_f_sys`: Number of smooth functions.
++ `F`: Smooth dynamic functions.
++ `c`: Switching functions.
++ `S`: Sign Matrix.
++ `alpha`: Heaviside step function corresponding to switching functions `c`.
++ `lambda_p`, `lambda_n`: Lagrange multipliers from equality constraints in convex problem.
++ `beta`,`gamma`,`theta_step`: Lifting variables for convex multipliers for each region.
 
 ### `StepMpcc`
 
@@ -106,10 +140,19 @@ Alternative name would be `nosnoc.pss`.
 
 ### `FesdJMpcc`
 
-### `TFMpcc`
+### `time_freezing`
 
 ## `nosnoc.cds`
 
 ### `Model`
+Subclass of `nosnoc.core.ModelBase`.
+
+Properties:
++ `dims`: Structure of dimensions, contains additional fields:
+  + `n_c`: Number of boundary functions.
++ `f_x`: Smooth dynamic functions.
++ `c`: Boundary functions.
++ `lambda`: Multipliers corresponding to boundary functions `c`.
++ `E`: Projection matrix for ePDS.
 
 ### `CdsMpcc`
