@@ -124,7 +124,7 @@ classdef NosnocSolver < handle
             stats = obj.solver.stats;
             results = obj.extract_results(results);
         end
-        % TODO(@anton) fix these two or more likely move them to nosnoc.solver.RelaxationSolver
+        % TODO(@anton) fix these two or more likely move them to nosnoc.solver.MpccSolver
         function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results, exitfast, lifted)
             import casadi.*
             stat_type = "?";

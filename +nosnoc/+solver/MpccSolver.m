@@ -27,7 +27,7 @@
 
 % TODO(@anton) add printing
 
-classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
+classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
     properties
         mpcc
         nlp
@@ -49,7 +49,7 @@ classdef RelaxationSolver < handle & matlab.mixin.indexing.RedefinesParen
 
     methods (Access=public)
         
-        function obj=RelaxationSolver(relaxation_type, mpcc, opts)
+        function obj=MpccSolver(relaxation_type, mpcc, opts)
             import casadi.*
             import nosnoc.solver.*
             casadi_symbolic_mode = split(class(mpcc.x), '.');
