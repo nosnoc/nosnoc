@@ -98,6 +98,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         nlp.f = nlp.p.sigma_p()*nlp.f + sigma;
                     end
                   case ElasticityMode.ELL_1
+                    % adding elastic variables to nlp.w which augments the original mpcc.w
                     nlp.w.s_elastic = {{'s_elastic', n_c}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                     sigma = nlp.w.s_elastic();
                     sum_elastic = sum1(sigma);
