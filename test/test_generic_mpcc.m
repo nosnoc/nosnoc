@@ -1,4 +1,4 @@
-function [results,stats] = test_generic_mpcc(mpcc_method, elasticity_mode)
+function [results,stats] = test_generic_mpcc(mpcc_method, homotopy_steering_strategy)
 import casadi.*;
 import nosnoc.solver.*;
 
@@ -25,7 +25,7 @@ mpcc_struct.f = f;
 
 mpcc_method = mpcc_method;
 
-mpccsol_opts.elasticity_mode = elasticity_mode;
+mpccsol_opts.homotopy_steering_strategy = homotopy_steering_strategy;
 
 solver = mpccsol('generic_mpcc', mpcc_method, mpcc_struct, mpccsol_opts);
 

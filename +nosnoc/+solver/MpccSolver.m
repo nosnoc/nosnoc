@@ -84,11 +84,11 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 n_c = length(mpcc.G);
 
                 % Create relaxation slacks/parameters
-                switch opts.elasticity_mode
-                  case ElasticityMode.DIRECT
+                switch opts.homotopy_steering_strategy
+                  case HomotopySteeringStrategy.DIRECT
                     % nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
                     sigma = nlp.p.sigma_p(); 
-                  case ElasticityMode.ELL_INF
+                  case HomotopySteeringStrategy.ELL_INF
                     % adding elastic variables to nlp.w which augments the original mpcc.w
                     nlp.w.s_elastic = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                     sigma = nlp.w.s_elastic();
@@ -97,7 +97,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     else
                         nlp.f = nlp.p.sigma_p()*nlp.f + sigma;
                     end
-                  case ElasticityMode.ELL_1
+                  case HomotopySteeringStrategy.ELL_1
                     % adding elastic variables to nlp.w which augments the original mpcc.w
                     nlp.w.s_elastic = {{'s_elastic', n_c}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                     sigma = nlp.w.s_elastic();

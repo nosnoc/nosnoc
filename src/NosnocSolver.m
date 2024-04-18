@@ -145,7 +145,7 @@ classdef NosnocSolver < handle
             H = mpcc.H_fun(mpcc.w, mpcc.p);
             G_old = full(mpcc.G_fun(w_orig, obj.p_val(2:end)));
             H_old = full(mpcc.H_fun(w_orig, obj.p_val(2:end)));
-            if obj.solver_options.elasticity_mode == ElasticityMode.DIRECT
+            if obj.solver_options.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
                 a_tol = 1*sqrt(obj.solver_options.comp_tol);
             else
                 a_tol = 1*sqrt(full(results.x(obj.nlp.ind_elastic)));
@@ -501,7 +501,7 @@ classdef NosnocSolver < handle
             G_old = full(mpcc.G_fun(x0, obj.p_val(2:end)));
             H_old = full(mpcc.H_fun(x0, obj.p_val(2:end)));
 
-            if obj.solver_options.elasticity_mode == ElasticityMode.DIRECT
+            if obj.solver_options.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
                 a_tol = 1*sqrt(obj.solver_options.comp_tol);
             else
                 a_tol = 1*sqrt(s_elastic);

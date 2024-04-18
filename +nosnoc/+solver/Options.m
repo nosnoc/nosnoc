@@ -76,7 +76,7 @@ classdef Options < handle
         p_val
 
         %
-        elasticity_mode(1,1) ElasticityMode = ElasticityMode.DIRECT
+        homotopy_steering_strategy(1,1) HomotopySteeringStrategy = ElasticityMode.DIRECT
         lower_bound_relaxation(1,1) logical = 0
 
         % Output options
