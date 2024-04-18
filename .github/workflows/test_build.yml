@@ -10,11 +10,13 @@ jobs:
 
     steps:
     # Checkout repo
-    - uses: actions/checkout@v3
-
+    - name: Checkout NOSNOC
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
     # Install matlab to run tests.
     - name: Install MATLAB
-      uses: matlab-actions/setup-matlab@v1
+      uses: matlab-actions/setup-matlab@v2.1
       with:
         # NOTE: no longer earliest version to support more property validation functions
         release: R2021b
@@ -37,17 +39,18 @@ jobs:
         tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v3.5.5.tar.gz .
         echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/casadi" >> $GITHUB_ENV
 
-    # Install nosnoc by adding it to the matlab path
+    # Run matlab tests from the test directory and dump the results in junit format.
     - name: Install NOSNOC
-      shell: bash
-      run: |
-        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+      uses: matlab-actions/run-command@v2.1
+      with:
+        command: install_nosnoc
 
     # Run matlab tests from the test directory and dump the results in junit format.
     - name: Run NOSNOC tests
-      uses: matlab-actions/run-tests@v1.3.2
+      uses: matlab-actions/run-tests@v2.1
       with:
-        source-folder: test
+        source-folder: src; .
+        select-by-folder: test
         test-results-junit: test-results/matlab-results.xml
 
     - name: Upload test results

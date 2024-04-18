@@ -44,13 +44,12 @@ N_sim = 20;
 
 %% Settings
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 problem_options.use_fesd = 1;
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 solver_options.print_level = 3;
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq; %MpccMode.elastic_ineq;
 solver_options.homotopy_update_rule = 'superlinear';
 
 %% Generate different trajectories

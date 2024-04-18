@@ -40,15 +40,13 @@ import casadi.*
 filename = 'discs_manipulation.gif';
 %% init
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 % settings
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.time_freezing = 1;
 problem_options.cross_comp_mode = 7;
-%solver_options.mpcc_mode = MpccMode.elastic_ineq;
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
 %solver_options.homotopy_update_rule = 'superlinear';
 solver_options.homotopy_update_slope = 0.5;
 solver_options.N_homotopy = 100;

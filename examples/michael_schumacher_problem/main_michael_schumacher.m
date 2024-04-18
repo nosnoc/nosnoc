@@ -42,21 +42,20 @@ chicane_width = 2;
 
 %% NOSNOC settings
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 problem_options.n_s = 4; 
 solver_options.sigma_0 = 1e0;
 problem_options.use_fesd = 1;
 problem_options.cross_comp_mode = 1;
 problem_options.T_final_max = 5*pi;
 problem_options.T_final_min = 2;
-%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 problem_options.dcs_mode = 'Step';
 problem_options.g_path_at_fe = 1;
 problem_options.g_path_at_stg = 1;
 problem_options.time_optimal_problem = 1;
-solver_options.mpcc_mode = 'Scholtes_ineq';
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
-solver_options.print_level = 3;
+solver_options.print_level = 5;
 
 
 %% model equations

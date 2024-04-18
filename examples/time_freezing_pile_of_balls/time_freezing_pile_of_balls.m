@@ -13,7 +13,7 @@ run_animation = 1;
 video_speed_up = 0.25;
 %% nosnoc settings
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 1;
 solver_options.print_level = 3;
@@ -22,7 +22,6 @@ problem_options.time_freezing = 1;
 problem_options.impose_terminal_phyisical_time = 1;
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 0;
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
 problem_options.pss_lift_step_functions = 0;
 solver_options.break_simulation_if_infeasible = 0;
 %% integrator settings

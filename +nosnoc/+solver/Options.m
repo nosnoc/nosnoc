@@ -24,24 +24,25 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef NosnocSolverOptions < handle
+classdef Options < handle
 % TODO clean up much of the work here.
     properties
         % General
         solver_name {mustBeTextScalar} = 'nosnoc_solver'
-        solver_type = 'RELAXATION_HOMOTOPY' % TODO: enum
         solver = 'ipopt'
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
 
         % MPCC and Homotopy Settings
         comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
-        mpcc_mode(1,1) MpccMode = MpccMode.custom
         objective_scaling_direct(1,1) logical = 1
         sigma_0(1,1) double {mustBeReal, mustBeNonnegative} = 1
         sigma_N(1,1) double {mustBeReal, mustBePositive} = 1e-9
         homotopy_update_rule = 'linear' % 'linear' sigma_k = homotopy_update_slope*sigma_N
                                         % 'superlinear' - sigma_k = max(sigma_N,min(homotopy_update_slope*sigma_k,sigma_k^homotopy_update_exponent))
                                         % TODO enum
+        assume_lower_bounds(1,1) logical = false;
+        lift_complementarities(1,1) logical = false;
+        
         homotopy_update_slope(1,1) double {mustBeReal} = 0.1
         homotopy_update_exponent(1,1) double {mustBeReal, mustBePositive} = 1.5 % the exponent in the superlinear rule
         N_homotopy = 0 % 0 -> set automatically
@@ -74,11 +75,8 @@ classdef NosnocSolverOptions < handle
         % All NLP parameters
         p_val
 
-        % psi func
-        psi_fun_type CFunctionType = CFunctionType.SCHOLTES
-        relaxation_method(1,1) RelaxationMode = RelaxationMode.INEQ
-        elasticity_mode(1,1) ElasticityMode = ElasticityMode.NONE
-        psi_fun
+        %
+        homotopy_steering_strategy(1,1) HomotopySteeringStrategy = HomotopySteeringStrategy.DIRECT
         lower_bound_relaxation(1,1) logical = 0
 
         % Output options
@@ -99,7 +97,7 @@ classdef NosnocSolverOptions < handle
     end
 
     methods
-        function obj = NosnocSolverOptions()
+        function obj = Options()
 
             default_tol = 1e-12;
 
@@ -165,143 +163,12 @@ classdef NosnocSolverOptions < handle
                 error('homotopy_update_slope must be in (0, 1)');
             end
 
-            % MPCC mode setup
-            if obj.mpcc_mode == MpccMode.direct
-                % TODO maybe need to check later if people try to set sigmas/n_homotopy as for now we just let them break the
-                %      assumptions.
-                if obj.print_level >= 1
-                    fprintf('Info: Setting N_homotopy to 1 and sigma_0,sigma_N to constants in direct mode.\n')
+            if obj.N_homotopy == 0
+                obj.N_homotopy = ceil(abs(log(obj.sigma_N / obj.sigma_0) / log(obj.homotopy_update_slope)));
+                if ~strcmp(obj.homotopy_update_rule, 'linear')
+                    warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
                 end
-                obj.N_homotopy = 1;
-                obj.sigma_0 = 1e-12;
-                obj.sigma_N = 1e-12;
-                obj.mpcc_mode = MpccMode.Scholtes_ineq;
             end
-
-            switch obj.mpcc_mode
-                case MpccMode.Scholtes_ineq
-                    obj.psi_fun_type = CFunctionType.SCHOLTES;
-                    obj.relaxation_method = RelaxationMode.INEQ;
-                    obj.elasticity_mode = ElasticityMode.NONE;
-                case MpccMode.Scholtes_eq
-                    obj.psi_fun_type = CFunctionType.SCHOLTES;
-                    obj.relaxation_method = RelaxationMode.EQ;
-                    obj.elasticity_mode = ElasticityMode.NONE;
-                case MpccMode.elastic_ineq
-                    obj.psi_fun_type = CFunctionType.SCHOLTES;
-                    obj.relaxation_method = RelaxationMode.INEQ;
-                    obj.elasticity_mode = ElasticityMode.ELL_INF;
-                case MpccMode.elastic_eq
-                    obj.psi_fun_type = CFunctionType.SCHOLTES;
-                    obj.relaxation_method = RelaxationMode.EQ;
-                    obj.elasticity_mode = ElasticityMode.ELL_INF;
-                case MpccMode.elastic_two_sided
-                    obj.psi_fun_type = CFunctionType.SCHOLTES_TWO_SIDED;
-                    obj.relaxation_method = RelaxationMode.TWO_SIDED;
-                    obj.elasticity_mode = ElasticityMode.ELL_INF;
-                case MpccMode.elastic_ell_1_ineq
-                    obj.psi_fun_type = CFunctionType.SCHOLTES;
-                    obj.relaxation_method = RelaxationMode.INEQ;
-                    obj.elasticity_mode = ElasticityMode.ELL_1;
-                case MpccMode.elastic_ell_1_eq
-                    obj.psi_fun_type = CFunctionType.SCHOLTES;
-                    obj.relaxation_method = RelaxationMode.EQ;
-                    obj.elasticity_mode = ElasticityMode.ELL_1;
-                case MpccMode.elastic_ell_1_two_sided
-                    obj.psi_fun_type = CFunctionType.SCHOLTES_TWO_SIDED;
-                    obj.relaxation_method = RelaxationMode.TWO_SIDED;
-                    obj.elasticity_mode = ElasticityMode.ELL_1;
-            end
-
-            % psi function
-            a = define_casadi_symbolic(obj.casadi_symbolic_mode,'a',1);
-            b = define_casadi_symbolic(obj.casadi_symbolic_mode,'b',1);
-            sigma = define_casadi_symbolic(obj.casadi_symbolic_mode,'sigma',1);
-
-            switch obj.psi_fun_type
-                case CFunctionType.SCHOLTES
-                    psi_mpcc = a.*b-sigma;
-                    norm = sigma;
-                case CFunctionType.SCHOLTES_TWO_SIDED
-                    psi_mpcc = [a*b-sigma;a*b+sigma];
-                    norm = sigma;
-                    obj.lower_bound_relaxation = 1;
-                case CFunctionType.FISCHER_BURMEISTER
-                    if obj.normalize_homotopy_update
-                        normalized_sigma = sqrt(2*sigma);
-                    else
-                        normalized_sigma = sigma;
-                    end
-                    psi_mpcc = a+b-sqrt(a^2+b^2+normalized_sigma^2);
-                    
-                case CFunctionType.NATURAL_RESIDUAL
-                    if obj.normalize_homotopy_update
-                        normalized_sigma = sqrt(4*sigma);
-                    else
-                        normalized_sigma = sigma;
-                    end
-                    psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+normalized_sigma^2));
-                case CFunctionType.CHEN_CHEN_KANZOW
-                    alpha = 0.5;
-                    if obj.normalize_homotopy_update
-                        psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+2*sigma))+(1-alpha)*(a*b-sigma);
-                    else
-                        psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+sigma^2))+(1-alpha)*(a*b-sigma);
-                    end
-                case CFunctionType.STEFFENSEN_ULBRICH
-                    if obj.normalize_homotopy_update
-                        normalized_sigma = 2/((2/pi)*sin(3*pi/2)+1)*sqrt(sigma);
-                    else
-                        normalized_sigma = sigma;
-                    end
-                    x = a-b;
-                    z = x/normalized_sigma;
-                    y_sin = normalized_sigma*((2/pi)*sin(z*pi/2+3*pi/2)+1);
-                    psi_mpcc = a+b-if_else(abs(x)>=normalized_sigma,abs(x),y_sin);
-                case  CFunctionType.STEFFENSEN_ULBRICH_POLY
-                    if obj.normalize_homotopy_update
-                        normalized_sigma = (16/3)*sqrt(sigma);
-                    else
-                        normalized_sigma = sigma;
-                    end
-                    x = a-b;
-                    z = x/normalized_sigma;
-                    y_pol = normalized_sigma*(1/8*(-z^4+6*z^2+3));
-                    psi_mpcc = a+b- if_else(abs(x)>=normalized_sigma,abs(x),y_pol);
-                case CFunctionType.KANZOW_SCHWARTZ
-                    if obj.normalize_homotopy_update
-                        normalized_sigma = sqrt(sigma);
-                    else
-                        normalized_sigma = sigma;
-                    end 
-                    a1 = a-normalized_sigma;
-                    b1 = b-normalized_sigma;
-                    psi_mpcc = if_else((a1+b1)>=0,a1*b1,-0.5*(a1^2+b1^2));
-                case CFunctionType.LIN_FUKUSHIMA
-                    if obj.normalize_homotopy_update
-                        normalized_sigma = sqrt(sigma);
-                    else
-                        normalized_sigma = sigma;
-                    end
-                    psi_mpcc1 = a*b-normalized_sigma^2;
-                    psi_mpcc2 = ((a+normalized_sigma)*(b+normalized_sigma)-normalized_sigma^2);
-                    psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2);
-                    %obj.lower_bound_relaxation = 1;
-                case CFunctionType.KADRANI
-                    if obj.normalize_homotopy_update
-                        normalized_sigma = sqrt(sigma);
-                    else
-                        normalized_sigma = sigma;
-                    end
-                    psi_mpcc1 = (a-normalized_sigma)*(b-normalized_sigma);
-                    psi_mpcc2 = -normalized_sigma - a;
-                    psi_mpcc3 = -normalized_sigma - b;
-                    psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2, psi_mpcc3)
-                    %obj.lower_bound_relaxation = 1;
-            end
-
-            obj.psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
         end
-
     end
 end

@@ -9,7 +9,7 @@ J = 1/32; % frictional impulse apperas
 above_ground = 0.1;
 %% init nosnoc
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %% settings
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
@@ -20,7 +20,6 @@ solver_options.opts_casadi_nlp.ipopt.max_iter = 3e2;
 solver_options.print_level = 2;
 solver_options.N_homotopy = 10;
 problem_options.cross_comp_mode = 1;
-solver_options.psi_fun_type = CFunctionType.SCHOLTES;
 problem_options.time_freezing = 1;
 problem_options.impose_terminal_phyisical_time = 1;
 problem_options.stagewise_clock_constraint = 0;

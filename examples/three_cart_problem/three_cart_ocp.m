@@ -42,13 +42,11 @@ delete three_carts.gif
 
 %%
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.cross_comp_mode = 7;
 
-%solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
 solver_options.homotopy_update_slope = 0.5;
 solver_options.N_homotopy = 100;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;

@@ -44,7 +44,7 @@ model = NosnocModel();
 
 % discretization parameters
 % TODO: these should be problem_options
-problem_options.N_sim = 1;
+problem_options.N_sim = 10;
 problem_options.T_sim = 1.5;
 
 problem_options.N_finite_elements = 2;
@@ -100,7 +100,7 @@ switch switching_case
         error('pick a value for example_num between 1 and 4.')
 end
 
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 solver_options.print_level = 3;
 solver_options.store_integrator_step_results = 1;
 

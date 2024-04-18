@@ -113,7 +113,7 @@ classdef NosnocMPCC < NosnocFormulationObject
 
         % Parameters
         p
-        p0
+        p_static_0
 
         % cross comps
         cross_comps
@@ -146,6 +146,10 @@ classdef NosnocMPCC < NosnocFormulationObject
 
         nabla_J
         nabla_J_fun
+    end
+
+    properties(Dependent, SetAccess=private)
+        p0 % current parameters.
     end
 
     properties(Dependent, SetAccess=private, Hidden)
@@ -475,20 +479,6 @@ classdef NosnocMPCC < NosnocFormulationObject
                             zeros(n_terminal,1), 'type', 'g_mpcc');
 
                         obj.augmented_objective = obj.augmented_objective + rho_terminal_p*s_terminal_ell_inf;
-                    case 4 % l_inf, relaxed
-                        if ismember(problem_options.mpcc_mode, MpccMode.elastic)
-                            elastic = s_elastic*ones(n_terminal,1);
-                        elseif ismemeber(problem_options.mpcc_mode, MpccMode.elastic_ell_1)
-                            elastic = last_fe.elastic{end};
-                        else
-                            error('This mode of terminal constraint relaxation is only available if a MPCC elastic mode is used.');
-                        end
-                        obj.addConstraint(g_terminal-model.g_terminal_lb-elastic,...
-                            -inf*ones(n_terminal,1),...
-                            zeros(n_terminal,1), 'type', 'g_mpcc');
-                        obj.addConstraint(-(g_terminal-model.g_terminal_lb)-elastic,...
-                            -inf*ones(n_terminal,1),...
-                            zeros(n_terminal,1), 'type', 'g_mpcc');
                 end
             end
 
@@ -555,14 +545,14 @@ classdef NosnocMPCC < NosnocFormulationObject
             obj.G_fun = Function('G_fun', {obj.w,obj.p}, {obj.cross_comps(:,1)});
             obj.H_fun = Function('H_fun', {obj.w,obj.p}, {obj.cross_comps(:,2)});
 
-            obj.p0 = [problem_options.rho_sot; problem_options.rho_h; problem_options.rho_terminal; problem_options.T];
+            obj.p_static_0 = [problem_options.rho_sot; problem_options.rho_h; problem_options.rho_terminal; problem_options.T];
 
             if dims.n_p_global > 0
-                obj.p0 = [obj.p0; model.p_global_val];
+                obj.p_static_0 = [obj.p_static_0; model.p_global_val];
             end
 
             if dims.n_p_time_var > 0
-                obj.p0 = [obj.p0; model.p_time_var_val(:)];
+                obj.p_static_0 = [obj.p_static_0; model.p_time_var_val(:)];
             end
             obj.w0_original = obj.w0;
 
@@ -629,7 +619,7 @@ classdef NosnocMPCC < NosnocFormulationObject
                         end
                     end
             end
-            init_params = [x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)];
+            init_params = full([x0(:);lambda00(:);y_gap00(:);gamma_00(:);gamma_d00(:);delta_d00(:);p_vt_00(:);n_vt_00(:)]);
         end
 
         % TODO this should be private
@@ -769,6 +759,10 @@ classdef NosnocMPCC < NosnocFormulationObject
             sot = cellfun(@(sot) obj.w(sot), obj.ind_sot, 'UniformOutput', false);
         end
 
+        function p0 = get.p0(obj)
+            p0 = [obj.p_static_0;obj.compute_initial_parameters(obj.w0(obj.ind_x0))];
+        end
+        
         function nu_vector = get.nu_vector(obj)
             nu_vector = [];
             for k=1:obj.problem_options.N_stages
@@ -863,7 +857,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             mpcc.lbw = obj.lbw;
             mpcc.ubw = obj.ubw;
             mpcc.p = obj.p.serialize();
-            mpcc.p0 = [obj.p0;obj.compute_initial_parameters(obj.model.x0)];
+            mpcc.p0 = [obj.p_static_0;obj.compute_initial_parameters(obj.model.x0)];
             mpcc.g_fun = obj.g_fun.serialize();
             mpcc.lbg = obj.lbg;
             mpcc.ubg = obj.ubg;

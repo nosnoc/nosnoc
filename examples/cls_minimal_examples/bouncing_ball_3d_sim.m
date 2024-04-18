@@ -4,12 +4,11 @@ clc;
 import casadi.*
 %% init model and settings)
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %%
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq;
 solver_options.print_level = 3;
 solver_options.N_homotopy = 10;
 problem_options.use_fesd = 1;

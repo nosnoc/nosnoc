@@ -40,13 +40,12 @@ import casadi.*
 %% settings
 % collocation settings
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 problem_options.n_s = 2;                            
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;     
 % problem_options.irk_representation = IrkRepresentation.differential_lift_x;
 problem_options.use_fesd = 1;
 problem_options.cross_comp_mode = 3;
-solver_options.mpcc_mode = 'Scholtes_ineq';
 solver_options.print_level = 2;
 solver_options.s_elastic_max = 1e1;                    
 solver_options.sigma_0 = 1;

@@ -43,7 +43,7 @@ R_osc  = 1;
 %% Init
 % collocation settings
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %% settings
 problem_options.use_fesd = 1;       % switch detection method on/off
@@ -51,7 +51,6 @@ problem_options.irk_scheme = IRKSchemes.RADAU_IIA; %'Gauss-Legendre';
 solver_options.print_level = 2;
 problem_options.n_s = 4;
 problem_options.dcs_mode = 'Step'; % 'Step;
-solver_options.mpcc_mode = MpccMode.Scholtes_ineq;  % Scholtes regularization
 
 % Penalty/Relaxation paraemetr
 solver_options.comp_tol = 1e-9;

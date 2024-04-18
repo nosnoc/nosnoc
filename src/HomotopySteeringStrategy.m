@@ -24,9 +24,9 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef ElasticityMode
+classdef HomotopySteeringStrategy
     enumeration
-        NONE
+        DIRECT
         ELL_1
         ELL_INF
     end
@@ -34,22 +34,22 @@ classdef ElasticityMode
     methods
         function latex = to_latex(obj)
             switch obj
-                case ElasticityMode.NONE
+                case HomotopySteeringStrategy.DIRECT
                     latex = 'Standard';
-                case ElasticityMode.ELL_1
+                case HomotopySteeringStrategy.ELL_1
                     latex = '$\ell_1$';
-                case ElasticityMode.ELL_INF
+                case HomotopySteeringStrategy.ELL_INF
                     latex = '$\ell_{\infty}$';
             end
         end
 
         function plain = to_plain(obj)
             switch obj
-                case ElasticityMode.NONE
+                case HomotopySteeringStrategy.DIRECT
                     plain = 'standard';
-                case ElasticityMode.ELL_1
+                case HomotopySteeringStrategy.ELL_1
                     plain = 'ell_1';
-                case ElasticityMode.ELL_INF
+                case HomotopySteeringStrategy.ELL_INF
                     plain = 'ell_inf';
             end
         end

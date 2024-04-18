@@ -1,7 +1,7 @@
 clear all
 import casadi.*
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 
 % Choosing the Runge - Kutta Method and number of stages
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
@@ -10,7 +10,6 @@ problem_options.n_s = 2;
 % Time-settings  - Solve an time optimal control problem
 problem_options.time_optimal_problem = 1;
 
-solver_options.psi_fun_type = CFunctionType.SCHOLTES;
 
 % settings.nlpsol = 'snopt';  % Note: requires installing.
 

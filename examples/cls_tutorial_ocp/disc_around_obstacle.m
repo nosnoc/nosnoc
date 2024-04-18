@@ -38,20 +38,18 @@ import casadi.*
 filename = 'discs_switch_position_obstacle.gif';
 %%
 problem_options = NosnocProblemOptions();
-solver_options = NosnocSolverOptions();
+solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %%
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 
-solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
 problem_options.use_fesd = 1;
 solver_options.N_homotopy = 7;
 problem_options.dcs_mode = 'CLS';
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 problem_options.g_path_at_fe = 1;
 % 
-solver_options.mpcc_mode = 'Scholtes_ineq';
 solver_options.homotopy_update_slope = 0.5;
 %solver_options.homotopy_update_rule = 'superlinear';
 solver_options.N_homotopy = 100;
