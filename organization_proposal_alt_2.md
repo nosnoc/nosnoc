@@ -38,44 +38,159 @@ Methods:
 ### `DCSBase`
 Abstract Base class for DCS. Unsure if necessary.
 
+Properties:
++ `f_x_fun`:
++ `g_path_fun`:
++ `g_terminal_fun`:
++ `g_path_comp_fun`:
+
 Methods:
 + `generate_variables()`: Generate missing variables.
 + `generate_functions()`: Generate functions required for problem generation.
 
+### `MpccBase`
+Abstract base class for MPCCs. Subclass of `vdx.problems.Mpcc`.
+
+Methods:
++ `create_variables()`: Creates all the variables of the Mpcc.
++ `forward_sim_constraints()`: Creates forward simulation and stagewise constraints.
++ `create_complementarities()`: Creates complementarity constraints.
++ `step_equilibration()`: Creates step equilibration constriants.
+
 ## `nosnoc.model`
 
 ### `PSS`
+Subclass of `nosnoc.core.ModelBase`.
 
 Properties:
++ `dims`: Structure of dimensions, contains additional fields:
+  + `n_sys`: Number of independent systems.
+  + `n_c_sys`: Number of switching functions.
+  + `n_f_sys`: Number of smooth functions.
 + `F`: Smooth dynamic functions.
 + `c`: Switching functions.
 + `S`: Sign Matrix.
 + `g_ind`: Stewart indicator functions, may be calculated from `c` and `S`.
 
 ### `AizermanPyatnitskii`
+Subclass of `nosnoc.core.ModelBase`.
+
+Properties:
++ `dims`: Structure of dimensions, contains additional fields:
+  + `n_sys`: Number of independent systems.
+  + `n_c_sys`: Number of switching functions.
+  + `n_f_sys`: Number of smooth functions.
++ `f_x`: Smooth dynamic functions.
++ `c`: Switching functions.
++ `alpha`: Step functions.
 
 ### `CLS`
+Subclass of `nosnoc.core.ModelBase`.
+
+Properties:
++ `dims`: Structure of dimensions, contains additional fields.
+  + `n_q`: dimension of generalized positions.
+  + `n_contacts`: number of contacts 
++ `q`: .
++ `v`: .
++ `f_v`: .
++ `f_c`: .
++ `mu_f`: .
++ `e`:
++ `M`,
++ `J_normal`:
++ `J_tangent`:
 
 ### `CDS`
+Subclass of `nosnoc.core.ModelBase`.
+
+Properties:
++ `dims`: Structure of dimensions, contains additional fields:
+  + `n_c`: Number of boundary functions.
++ `f_x`: Smooth dynamic functions.
++ `c`: Switching functions.
 
 ## `nosnoc.dcs`
 
 ### `Step`
+Subclass of `nosnoc.core.DCSBase`.
+
+Properties:
++ `model`: Underlying model.
++ `alpha`: Heaviside step function corresponding to switching functions `c`.
++ `lambda_p`, `lambda_n`: Lagrange multipliers from equality constraints in convex problem.
++ `beta`,`gamma`,`theta_step`: Lifting variables for convex multipliers for each region.
++ `f_x`: Dynamics, either generated from `F` or provided in the case of more general Aizerman–Pyatnitskii DIs.
 
 ### `Stewart`
+Subclass of `nosnoc.core.DCSBase`.
+
+Properties:
++ `model`: Underlying model.
++ `theta`: Stewart convex multipliers.
++ `lambda`: Lagrange multipliers from equality constraints in convex problem.
++ `mu`: Lagrange multipliers from inequality constraints in convex problem.
 
 ### `FESDJ`
+Subclass of `nosnoc.core.DCSBase`.
+
+Properties:
++ `model`: Underlying model.
++ `lambda_normal`:
++ `y_gap`:
++ `lambda_tangent`:
++ `gamma_d`:
++ `beta_d`:
++ `delta_d`:
++ `beta_conic`:
++ `gamma_conic`:
++ `p_vt`:
++ `n_vt`:
++ `alpha_vt`:
++ `Lambda_normal`:
++ `Y_gap`:
++ `L_vn`:
++ `Lambda_tangent`:
++ `Gamma_d`:
++ `Beta_d`:
++ `Delta_d`:
++ `Gamma`:
++ `Beta`:
++ `P_vt`:
++ `N_vt`:
++ `Alpha_vt`:
++ `z_v`:
 
 ### `GCS`
+Subclass of `nosnoc.core.DCSBase`.
+
+Properties:
++ `model`: Underlying model.
 
 ## `nosnoc.mpcc`
+Namespace containing discretized MPCCs.
+Each class in this namespace produces op
 
 ### `Step`
+Subclass of `nosnoc.core.MPCCBase`.
 
 ### `Stewart`
+Subclass of `nosnoc.core.MPCCBase`.
 
 ### `FESDJ`
+Subclass of `nosnoc.core.MPCCBase`.
 
 ### `GCS`
+Subclass of `nosnoc.core.MPCCBase`.
 
 ## `nosnoc.solver`
+A generic solver interface for MPCCs.
+
+### `Options`
+Options for the `nosnoc.solver.MpccSolver`.
+
+### `MpccSolver`
+Backend for `nosnoc.solver.mpccsol` which implements the relaxation/smoothing approaches to solving MPCCs.
+
+### `mpccsol`
+An `nlpsol` style interface for solving MPCCs.
