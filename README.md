@@ -148,7 +148,9 @@ Mathematical programming, 2006
 
 ## Contact
 
-Feel free to contact one of the main developers directly: Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
+Feel free to contact one of the main developers directly: 
+Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
+Anton Pozharskiy [anton.pozharskiy@imtek.uni-freiburg.de](mailto:anton.pozharskiy@imtek.uni-freiburg.de)
 Jonathan Frey [jonathan.frey@imtek.uni-freiburg.de](mailto:jonathan.frey@imtek.uni-freiburg.de)
 If you have questions, remarks, or comments, you are strongly encouraged to report them by creating a new issue on this Github page.
 Success stories and source code contributions are very welcome.
