@@ -57,6 +57,29 @@ Methods:
 + `create_complementarities()`: Creates complementarity constraints.
 + `step_equilibration()`: Creates step equilibration constriants.
 
+### `DiscretizationOptions`
+Options class used to discretize a DCS and create an MPCC.
+
+Properties:
++ `N_stages`:
++ `N_finite_elements`:
++ `n_s`:
++ `irk_scheme`:
++ `irk_representation`:
++ `T`:
++ `cross_comp_mode`:
++ `g_path_at_fe`:
++ `g_path_at_stage`:
++ `x_box_at_fe`:
++ `x_box_at_stg`:
++ `time_optimal_problem`:
++ `step_equiliration`, `rho_h`, `step_equilibration_sigma`:
++ `equidistant_control_grid`:
++ `use_speed_of_time_variables`, `local_speed_of_time_variable`, `stagewise_clock_constraint`, `impose_terminal_phyisical_time`:
++ `s_sot0`, `s_sot_max`, `s_sot_min`, `s_sot_nominal`, `rho_sot`:
++ `T_final_max`, `T_final_min`:
++ `lift_complementarities`:
+
 ## `nosnoc.model`
 
 ### `PSS`
