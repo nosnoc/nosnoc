@@ -6,11 +6,11 @@ else
     fileID = 1;
 end
 fprintf(fileID, "i\t\t lbg\t\t\t ubg \t\t\t g_val \t\t infeasible \t\t g_exp\n");
-inf_trashhold = 1e-3;
+inf_threshold = 1e-5;
 for i = 1:length(problem.lbg)
     expr_str = formattedDisplayText(problem.g(i));
     expr_val = full(results.nlp_results(end).g(i));
-    if expr_val < problem.lbg(i)-inf_trashhold  || expr_val > problem.ubg(i)+inf_trashhold
+    if expr_val < problem.lbg(i)-inf_threshold  || expr_val > problem.ubg(i)+inf_threshold
         str_inf = '[x]';
     else
         str_inf = '  ';
@@ -19,11 +19,11 @@ for i = 1:length(problem.lbg)
 end
 
 fprintf(fileID, "i\t\t lbw\t\t\t ubw \t\t\t w_val \t\t infeasible \t\t w\n");
-inf_trashhold = 1e-3;
+inf_threshold = 1e-5;
 for i = 1:length(problem.lbw)
     expr_str = formattedDisplayText(problem.w(i));
     expr_val = full(results.nlp_results(end).x(i));
-    if expr_val < problem.lbw(i)-inf_trashhold  || expr_val > problem.ubw(i)+inf_trashhold
+    if expr_val < problem.lbw(i)-inf_threshold  || expr_val > problem.ubw(i)+inf_threshold
         str_inf = '[x]';
     else
         str_inf = '  ';
