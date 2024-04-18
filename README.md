@@ -43,7 +43,7 @@ For `CasADi` installation instructions follow visit: https://web.casadi.org/get/
 
 2.   Clone this repository
 ```
-git clone https://github.com/nurkanovic/nosnoc.git
+git clone --recursive https://github.com/nurkanovic/nosnoc.git
 ```
 
 3. Open the `NOSNOC` folder in Matlab and run the `install_nosnoc` script
