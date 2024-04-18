@@ -81,11 +81,11 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nlp.g.mpcc_g = {mpcc.g}; % nlp.g.mpcc_g is a vdx.Variable (depth 0) which stores mpcc general constraints
                 nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0}; % sigma_p is
                 nlp.f = mpcc.f;
-                n_c = size(mpcc.G);
+                n_c = length(mpcc.G);
 
                 % Create relaxation slacks/parameters
                 switch opts.elasticity_mode
-                  case ElasticityMode.NONE
+                  case ElasticityMode.DIRECT
                     % nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
                     sigma = nlp.p.sigma_p(); 
                   case ElasticityMode.ELL_INF

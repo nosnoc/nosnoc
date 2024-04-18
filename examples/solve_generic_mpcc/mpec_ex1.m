@@ -32,7 +32,7 @@ mpcc_method3 =  nosnoc.solver.MpccMethod.SCHOLTES_EQ;
 
 mpccsol_opts.elasticity_mode = "ELL_1";
 % the parameter relaxation/smoothing parameter s is minmized in the objective, its penality (1/sigma) is steered outside, cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf 
-% mpccsol_opts.elasticity_mode = "NONE"; 
+% mpccsol_opts.elasticity_mode = "DIRECT"; 
 % the parameter relaxation/smoothing parameter sigma is steered outside the optimization , cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf
 
 solver = mpccsol('generic_mpcc', mpcc_method1, mpcc_struct, mpccsol_opts);

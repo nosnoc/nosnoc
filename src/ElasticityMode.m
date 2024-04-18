@@ -26,7 +26,7 @@
 % This file is part of NOSNOC.
 classdef ElasticityMode
     enumeration
-        NONE
+        DIRECT
         ELL_1
         ELL_INF
     end
@@ -34,7 +34,7 @@ classdef ElasticityMode
     methods
         function latex = to_latex(obj)
             switch obj
-                case ElasticityMode.NONE
+                case ElasticityMode.DIRECT
                     latex = 'Standard';
                 case ElasticityMode.ELL_1
                     latex = '$\ell_1$';
@@ -45,7 +45,7 @@ classdef ElasticityMode
 
         function plain = to_plain(obj)
             switch obj
-                case ElasticityMode.NONE
+                case ElasticityMode.DIRECT
                     plain = 'standard';
                 case ElasticityMode.ELL_1
                     plain = 'ell_1';
