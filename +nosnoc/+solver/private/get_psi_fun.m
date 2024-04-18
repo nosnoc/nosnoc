@@ -23,7 +23,7 @@ function psi_fun = get_psi_fun(relaxation_type, normalize)
             normalized_sigma = sigma;
         end
         psi_mpcc = 0.5*(a+b-sqrt((a-b)^2+normalized_sigma^2));
-      case {MpccMethod.CHEN_CHEN_KANZOW_EQ, MpccMethod.NATURAL_RESIDUAL_INEQ}
+      case {MpccMethod.CHEN_CHEN_KANZOW_EQ, MpccMethod.CHEN_CHEN_KANZOW_INEQ}
         alpha = 0.5;
         if normalize
             psi_mpcc = alpha*(a+b-sqrt(a^2+b^2+2*sigma))+(1-alpha)*(a*b-sigma);
@@ -77,7 +77,7 @@ function psi_fun = get_psi_fun(relaxation_type, normalize)
         psi_mpcc1 = (a-normalized_sigma)*(b-normalized_sigma);
         psi_mpcc2 = -normalized_sigma - a;
         psi_mpcc3 = -normalized_sigma - b;
-        psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2, psi_mpcc3)
+        psi_mpcc = vertcat(psi_mpcc1, psi_mpcc2, psi_mpcc3);
     end
 
     psi_fun = Function('psi_fun',{a,b,sigma},{psi_mpcc});
