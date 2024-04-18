@@ -5,7 +5,7 @@ clear;
 import casadi.*;
 import nosnoc.solver.*;
 
-mpccsol_opts = nosnoc.solver.Options();  % TODO: remove relaxation layer
+mpccsol_opts = nosnoc.solver.Options();  
 
 
 x1 = SX.sym('x1');
@@ -14,7 +14,7 @@ x2 = SX.sym('x2');
 p = SX.sym('p');
 x = [x1;x2];
 f = (x1-1)^2+x2^3+x2^2+p;
-x0 = [0;5];
+x0 = [0;0];
 p0 = 0;
 lbx = [0;0];
 ubx = [inf;inf];
@@ -29,6 +29,11 @@ mpcc_struct.f = f;
 mpcc_method1 = 'scholtes_ineq';
 mpcc_method2 = 'kanzow_schwartz_ineq';
 mpcc_method3 =  nosnoc.solver.MpccMethod.SCHOLTES_EQ;
+
+mpccsol_opts.elasticity_mode = "ELL_1";
+% the parameter relaxation/smoothing parameter s is minmized in the objective, its penality (1/sigma) is steered outside, cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf 
+% mpccsol_opts.elasticity_mode = "NONE"; 
+% the parameter relaxation/smoothing parameter sigma is steered outside the optimization , cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf
 
 solver = mpccsol('generic_mpcc', mpcc_method1, mpcc_struct, mpccsol_opts);
 solver_ks = mpccsol('generic_mpcc', mpcc_method2, mpcc_struct, mpccsol_opts);
