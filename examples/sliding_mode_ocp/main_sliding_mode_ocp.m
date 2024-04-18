@@ -105,7 +105,7 @@ model.x0 = [2*pi/3;pi/3;v0];
 model.x = x;
 problem_options.T = 4;
 
-problem_options.N_stages = 20;
+problem_options.N_stages = 6;
 problem_options.N_finite_elements = N_finite_elements;
 
 % Switching Functions
