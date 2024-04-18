@@ -793,18 +793,17 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             import casadi.*
             mpcc = obj.mpcc;
             nlp = obj.nlp;
-            x0 = w(nlp.ind_map);
+            x0 = nlp.w.mpcc_w().res;
             f = mpcc.augmented_objective;
             x = mpcc.w; lbx = mpcc.lbw; ubx = mpcc.ubw;
-            ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
-            g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
+            g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_w().ub;
             G = mpcc.G_fun(mpcc.w, mpcc.p);
             H = mpcc.H_fun(mpcc.w, mpcc.p);
-            G_old = full(mpcc.G_fun(x0, obj.p_val(2:end)));
-            H_old = full(mpcc.H_fun(x0, obj.p_val(2:end)));
+            G_old = full(mpcc.G_fun(x0, nlp.p.mpcc_p().val));
+            H_old = full(mpcc.H_fun(x0, nlp.p.mpcc_p().val));
 
             if obj.solver_options.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
-                a_tol = 1*sqrt(obj.solver_options.comp_tol);
+                a_tol = 1*sqrt(obj.opts.comp_tol);
             else
                 a_tol = 1*sqrt(s_elastic);
             end
@@ -823,6 +822,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             ublift_G = inf*ones(size(lift_G));
             lblift_H = zeros(size(lift_G));
             ublift_H = inf*ones(size(lift_G));
+
+            %TODO (@anton) maybe take advantage of vdx here.
             ind_mpcc = 1:length(lbx);
             ind_G = (1:length(lift_G))+length(lbx);
             ind_H = (1:length(lift_H))+length(lbx)+length(lift_G);
@@ -842,7 +843,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             p = mpcc.p;
             p0 = obj.p_val(2:end);
 
-            solver_settings = struct();
             solver_settings.max_iter = 20;
             solver_settings.tol = 1e-6;
             solver_settings.Delta_TR_init = 10;
@@ -855,9 +855,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 solver_settings.fixed_y_lpcc = y_lpcc;
             end
             %% The problem
-            nlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
+            rnlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
             solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
-            solution = bStationarityOracle(nlp,solver_initalization,solver_settings);
+            solution = bStationarityOracle(rnlp,solver_initalization,solver_settings);
             cpu_time_filterSMPCC2 = toc;
 
             improved_point = solution.x(ind_mpcc);

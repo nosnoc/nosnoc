@@ -1,4 +1,4 @@
-function solution = bStationarityOracle(nlp,problem_data,settings)
+function solution = b_stationarity_oracle(nlp,problem_data,settings)
 %% Implemented by Armin Nurkanovic, Anton Pozharskiy 2023
 import casadi.*
 %% extract inital data
