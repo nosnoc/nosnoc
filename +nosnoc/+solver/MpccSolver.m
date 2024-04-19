@@ -403,7 +403,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             stats.success = stats.converged;
             stats.constraint_violation = obj.compute_constraint_violation(mpcc_results.x, mpcc_results.g);
 
-            if opts.calculate_stationarity_type
+            
+            if opts.calculate_stationarity_type || opts.polishing_step
                 if last_iter_failed || ~obj.complementarity_tol_met(stats) || timeout
                     stat_type = "?";
                     disp("Not checking stationarity due to failure of homotopy to converge");
@@ -421,7 +422,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     end
                 end
                 if stat_type ~= "?"
-                    mpcc_results.W = [mpcc_results.W,polished_w];
+                    mpcc_results.x = polished_w;
+                    mpcc_results.f = full(f_mpcc_fun(polished_w, nlp.p.mpcc_p().val));
+                    % TODO (@anton) also recalculate multipliers and g?
                     if stat_type ~= "B"
                         mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
                     end
