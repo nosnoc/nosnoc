@@ -88,16 +88,16 @@ classdef Snopt < handle % TODO maybe handle not necessary, revisit.
         end
 
         function print_nlp_iter_header(obj)
-            fprintf('\niter\t sigma \t\t compl_res\t objective \t CPU time \t NLP iter\t secondary_status\t status \n');
+            fprintf('\n|%-5s|%-10s|%-10s|%-10s|%-10s|%-10s|%-20s|%-30s\n', 'iter', 'sigma', 'compl_res', 'objective', 'CPU time', 'NLP iter', 'status', 'secondary status');
         end
         
         function print_nlp_iter_info(obj, stats)
             solver_stats = stats.solver_stats(end);
             ii = size(stats.solver_stats, 2);
 
-            fprintf('%d\t%6.2e\t %6.2e\t %6.2e \t %6.3f \t %s \t %s \n',...
+            fprintf('\n|%-5d|%6.2e|%6.2e|%6.2e|%6.3f|%-20s|%-30s',...
                     ii, stats.sigma_k(end), stats.complementarity_stats(end), ...
-                    stats.objective(end), stats.cpu_time(end), solver_stats.secondary_return_status, solver_stats.return_status);
+                    stats.objective(end), stats.cpu_time(end), solver_stats.return_status, solver_stats.secondary_return_status);
         end
     end
 end
