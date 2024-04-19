@@ -45,6 +45,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         ind_nonscalar_H
         ind_map_G
         ind_map_H
+
+        G_fun
+        H_fun
+        comp_res_fun
     end
 
     methods (Access=public)
@@ -119,17 +123,11 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 obj.ind_map_H = ind_map_H;
                 % possibly lift complementarities
                 if opts.lift_complementarities
-                    ind_G_fun = Function('ind_G', {mpcc.x}, {mpcc.G.jacobian(mpcc.x)});
-                    [ind_G1,ind_G2] = find(sparse(DM(ind_G_fun(nlp.w.sym) == 1)));
-                    ind_H_fun = Function('ind_G', {mpcc.x}, {mpcc.H.jacobian(mpcc.x)});
-                    [ind_H1,ind_H2] = find(sparse(DM(ind_H_fun(nlp.w.sym) == 1)));
-
                     nlp.w.G_lift = {{'G', length(ind_nonscalar_G)}, 0, inf};
                     G = casadi.(casadi_symbolic_mode)(size(mpcc.H,1), 1);
                     G(ind_scalar_G) = mpcc.G(ind_scalar_G);
                     G(ind_nonscalar_G) = nlp.w.G_lift();
 
-                    
                     nlp.w.H_lift = {{'H', length(ind_nonscalar_H)}, 0, inf};
                     H = casadi.(casadi_symbolic_mode)(size(mpcc.H,1), 1);
                     H(ind_scalar_H) = mpcc.H(ind_scalar_H);
@@ -237,7 +235,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             plugin = obj.plugin;
             G_fun = Function('G', {mpcc.x, mpcc.p}, {mpcc.G});
             H_fun = Function('H', {mpcc.x, mpcc.p}, {mpcc.H});
+            obj.G_fun = G_fun;
+            obj.H_fun = H_fun;
             comp_res_fun = Function('comp_res', {mpcc.x, mpcc.p}, {mmax(mpcc.G.*mpcc.H)});
+            obj.comp_res_fun = comp_res_fun;
             f_mpcc_fun = Function('f_mpcc', {mpcc.x, mpcc.p}, {mpcc.f});
             % Update nlp data
             if ~isempty(p.Results.x0)
@@ -402,6 +403,34 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             stats.success = stats.converged;
             stats.constraint_violation = obj.compute_constraint_violation(mpcc_results.x, mpcc_results.g);
 
+            if opts.calculate_stationarity_type
+                if last_iter_failed || ~obj.complementarity_tol_met(stats) || timeout
+                    stat_type = "?";
+                    disp("Not checking stationarity due to failure of homotopy to converge");
+                else
+                    if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
+                        s_elastic = [];
+                    else
+                        s_elastic = max(nlp.w.s_elastic().res);
+                    end
+                    [sol, polished_w, b_stat] = obj.check_b_stationarity(s_elastic);
+                    if ~b_stat
+                        [polished_w, res_out, stat_type, n_biactive] = obj.calculate_stationarity(true, true);
+                    else
+                        stat_type = "B";
+                    end
+                end
+                if stat_type ~= "?"
+                    mpcc_results.W = [mpcc_results.W,polished_w];
+                    if stat_type ~= "B"
+                        mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
+                    end
+                    complementarity_iter = full(obj.comp_res_fun(polished_w, nlp.p.mpcc_p().val));
+                    stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
+                end
+                stats.stat_type = stat_type;
+            end
+            
             varargout{1} = mpcc_results;
             obj.stats = stats;
         end
@@ -427,7 +456,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             end
         end
 
-        function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, results, exitfast, lifted)
+        function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, exitfast, lifted)
             import casadi.*
             stat_type = "?";
             nlp = obj.nlp;
@@ -438,24 +467,22 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % branch of the complementarity each element of G(w) and H(w) are, or whether the solution is biactive at that point.
             % For a more in depth explanation see the PhD theses of Armin Nurkanovic or Alexandra Schwartz
             
-            w_orig = results.x(nlp.ind_map);
-            lam_x = full(results.lam_x(nlp.ind_map));
-            lam_g = full(results.lam_g);
-            lam_g(nlp.ind_g_comp) = []; % TODO: also elastic scholtes constraint
+            w_orig = nlp.w.mpcc_w().res;
+            lam_x = nlp.w.mpcc_w().mult;
+            lam_g = nlp.g.mpcc_g().mult;
 
-            G = mpcc.G_fun(mpcc.w, mpcc.p);
-            H = mpcc.H_fun(mpcc.w, mpcc.p);
-            G_old = full(mpcc.G_fun(w_orig, obj.p_val(2:end)));
-            H_old = full(mpcc.H_fun(w_orig, obj.p_val(2:end)));
-            if obj.solver_options.elasticity_mode == ElasticityMode.NONE
-                a_tol = 1*sqrt(obj.solver_options.comp_tol);
+            G = mpcc.G;
+            H = mpcc.H;
+            G_old = full(obj.G_fun(w_orig, nlp.p.mpcc_p().val));
+            H_old = full(obj.H_fun(w_orig, nlp.p.mpcc_p().val));
+            if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
+                a_tol = 1*sqrt(obj.opts.comp_tol);
             else
-                a_tol = 1*sqrt(full(results.x(obj.nlp.ind_elastic)));
+                a_tol = 1*sqrt(max(nlp.w.s_elastic().res));
             end
-            %a_tol = obj.solver_options.comp_tol^2;
-            %a_tol = 1e-5;
+            
             ind_00 = G_old<a_tol & H_old<a_tol;
-            n_biactive = sum(ind_00)
+            n_biactive = sum(ind_00);
             if exitfast && n_biactive == 0
                 polished_w = [];
                 res_out = []
@@ -467,23 +494,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             [~, min_idx] = sort(mindists);
 
             if lifted
-                w = mpcc.w; lbw_orig = mpcc.lbw; ubw_orig = mpcc.ubw;
-                f = mpcc.augmented_objective;
-
-                ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
-                g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
-                p = mpcc.p;
-
-                % Debug
-                jac_f = Function('jac_f', {mpcc.w, mpcc.p}, {mpcc.augmented_objective.jacobian(mpcc.w)});
-                jac_g = Function('jac_g', {mpcc.w, mpcc.p}, {g.jacobian(mpcc.w)});
-                jac_G = Function('jac_G', {mpcc.w, mpcc.p}, {G.jacobian(mpcc.w)});
-                jac_H = Function('jac_H', {mpcc.w, mpcc.p}, {H.jacobian(mpcc.w)});
-
-                nabla_f = jac_f(w_orig, obj.p_val(2:end));
-                nabla_g = jac_g(w_orig, obj.p_val(2:end));
-                nabla_G = jac_G(w_orig, obj.p_val(2:end));
-                nabla_H = jac_H(w_orig, obj.p_val(2:end));
+                w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
+                g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
+                p = nlp.p.mpcc_p();
+                f = mpcc.f;
                 
                 lift_G = SX.sym('lift_G', length(G));
                 lift_H = SX.sym('lift_H', length(H));
@@ -541,13 +555,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
                     opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
                     opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
-                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
-                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
+                    opts_casadi_nlp.ipopt.tol = obj.opts.comp_tol;
+                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.comp_tol);
+                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.comp_tol);
                     opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
                     opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
                     opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
-                    opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
+                    opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
                     opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
                     opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
                     opts_casadi_nlp.ipopt.nlp_scaling_method = 'none';
@@ -568,7 +582,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         'ubg', ubg,...
                         'lam_g0', lam_g_aug,...
                         'lam_x0', lam_x_aug,...
-                        'p',obj.p_val(2:end));
+                        'p', nlp.p.mpcc_p().val);
                     res_out = tnlp_results;
                     if tnlp_solver.stats.success
                         converged = true;
@@ -585,23 +599,12 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nu = -full(tnlp_results.lam_x(ind_G));
                 xi = -full(tnlp_results.lam_x(ind_H));
 
-                % Debug
-                jac_f = Function('jac_f', {w, mpcc.p}, {f.jacobian(w)});
-                jac_g = Function('jac_g', {w, mpcc.p}, {g.jacobian(w)});
-                jac_G = Function('jac_G', {w}, {lift_G.jacobian(w)});
-                jac_H = Function('jac_H', {w}, {lift_H.jacobian(w)});
-
-                nabla_f = full(jac_f(w_star, obj.p_val(2:end)));
-                nabla_g = full(jac_g(w_star, obj.p_val(2:end)));
-                nabla_G = full(jac_G(w_star));
-                nabla_H = full(jac_H(w_star));
-                
                 % Index sets
                 I_G = find(ind_0p+ind_00);
                 I_H = find(ind_p0+ind_00);
 
-                G_new = full(mpcc.G_fun(w_star_orig, obj.p_val(2:end)));
-                H_new = full(mpcc.H_fun(w_star_orig, obj.p_val(2:end)));
+                G_new = full(obj.G_fun(w_star_orig, nlp.p.mpcc_p().val));
+                H_new = full(obj.H_fun(w_star_orig, nlp.p.mpcc_p().val));
 
                 g_tnlp = full(tnlp_results.g);
                 % multipliers (nu, xi already calculated above)
@@ -611,12 +614,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 lam_g_star = tnlp_results.lam_g;
                 type_tol = a_tol^2;
             else
-                w = mpcc.w; lbw_orig = mpcc.lbw; ubw_orig = mpcc.ubw;
-                f = mpcc.augmented_objective;
-
-                ind_g = setdiff(1:length(nlp.g),nlp.ind_g_comp);
-                g = nlp.g(ind_g); lbg = nlp.lbg(ind_g); ubg = nlp.ubg(ind_g);
-                p = mpcc.p;
+                w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
+                g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
+                p = nlp.p.mpcc_p();
+                f = mpcc.f;
 
                 lam_x_aug = lam_x;
                 
@@ -625,7 +626,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 ubg = vertcat(ubg,zeros(size(G)),zeros(size(H)));
                 lam_g_aug = vertcat(lam_g, zeros(size(G)), zeros(size(H)));
 
-                jac_g = Function('jac_g', {mpcc.w, mpcc.p}, {g.jacobian(mpcc.w)});
+                jac_g = Function('jac_g', {w, p}, {g.jacobian(w)});
 
                 ind_mpcc = 1:length(lam_g);
                 ind_G = (1:length(G))+length(lam_g);
@@ -635,7 +636,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 n_max_biactive = n_biactive;
                 n_biactive = 0;
                 while ~converged && n_biactive <=n_max_biactive
-                    idx_00 = min_idx(1:n_biactive)
+                    idx_00 = min_idx(1:n_biactive);
                     ind_00 = false(length(G),1);
                     ind_00(idx_00) = true;
                     
@@ -658,7 +659,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     ubg(ind_G) = ubG;
                     ubg(ind_H) = ubH;
 
-                    nabla_g = jac_g(w_orig, obj.p_val(2:end));
+                    nabla_g = jac_g(w_orig, nlp.p.mpcc_p().val);
 
                     lbw = lbw_orig;
                     ubw = ubw_orig;
@@ -672,13 +673,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
                     opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
                     opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.tol = obj.solver_options.comp_tol;
-                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.solver_options.comp_tol);
-                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.solver_options.comp_tol);
+                    opts_casadi_nlp.ipopt.tol = obj.opts.comp_tol;
+                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.comp_tol);
+                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.comp_tol);
                     opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
                     opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
                     opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
-                    opts_casadi_nlp.ipopt.linear_solver = obj.solver_options.opts_casadi_nlp.ipopt.linear_solver;
+                    opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
                     opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
                     opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
                     %opts_casadi_nlp.ipopt.nlp_scaling_method = 'equilibration-based';
@@ -688,7 +689,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
                     %opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
-                    opts_casadi_nlp.ipopt.print_level = 5;
+                    opts_casadi_nlp.ipopt.print_level = 0;
                     opts_casadi_nlp.ipopt.sb = 'yes';
                     
                     tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
@@ -699,7 +700,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         'ubg', ubg,...
                         'lam_g0', lam_g_aug,...
                         'lam_x0', lam_x_aug,...
-                        'p',obj.p_val(2:end));
+                        'p',nlp.p.mpcc_p().val);
                     res_out = tnlp_results;
                     if tnlp_solver.stats.success
                         converged = true;
@@ -716,7 +717,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
                 w_star = full(tnlp_results.x);
                 w_star_orig = w_star;
-                max(abs(w_init - w_star))
                 [~,sort_idx] = sort(full(abs(w_init - w_star))); % sorted by difference from original stationary point
 
                 nu = -full(tnlp_results.lam_g(ind_G));
@@ -726,8 +726,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 I_G = find(ind_0p+ind_00);
                 I_H = find(ind_p0+ind_00);
 
-                G_new = full(mpcc.G_fun(w_star_orig, obj.p_val(2:end)));
-                H_new = full(mpcc.H_fun(w_star_orig, obj.p_val(2:end)));
+                G_new = full(obj.G_fun(w_star_orig, nlp.p.mpcc_p().val));
+                H_new = full(obj.H_fun(w_star_orig, nlp.p.mpcc_p().val));
 
                 % multipliers (nu, xi already calculated above)
                 lam_x_star = full(tnlp_results.lam_x);
@@ -740,12 +740,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 type_tol = a_tol^2;
 
                 ind_00_new = G_new<a_tol & H_new<a_tol;
-
             end
             
             switch tnlp_solver.stats.return_status
               case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
-                
                 if n_biactive
                     nu_biactive = nu(ind_00);
                     xi_biactive = xi(ind_00);
@@ -776,6 +774,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         stat_type = "W";
                         disp("Converged to W-stationary point, or something has gone wrong")
                     end
+                else
+                    stat_type = "S";
+                    disp("Converged to S-stationary point")
                 end
               otherwise
                 stat_type = "?";
@@ -785,30 +786,30 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % output tnlp results
             res_out = tnlp_results;
             polished_w = zeros(size(nlp.w));
-            polished_w(nlp.ind_map) = w_star_orig;
+            polished_w = w_star_orig;
             res_out.x = polished_w;
         end
 
-        function [solution, improved_point, b_stat] = check_b_stationarity(obj, w, s_elastic)
+        function [solution, improved_point, b_stat] = check_b_stationarity(obj, s_elastic)
             import casadi.*
             mpcc = obj.mpcc;
             nlp = obj.nlp;
             x0 = nlp.w.mpcc_w().res;
-            f = mpcc.augmented_objective;
-            x = mpcc.w; lbx = mpcc.lbw; ubx = mpcc.ubw;
-            g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_w().ub;
-            G = mpcc.G_fun(mpcc.w, mpcc.p);
-            H = mpcc.H_fun(mpcc.w, mpcc.p);
-            G_old = full(mpcc.G_fun(x0, nlp.p.mpcc_p().val));
-            H_old = full(mpcc.H_fun(x0, nlp.p.mpcc_p().val));
+            f = mpcc.f;
+            x = nlp.w.mpcc_w(); lbx = nlp.w.mpcc_w().lb; ubx = nlp.w.mpcc_w().ub;
+            g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
+            G = mpcc.G;
+            H = mpcc.H;
+            G_old = full(obj.G_fun(x0, nlp.p.mpcc_p().val));
+            H_old = full(obj.H_fun(x0, nlp.p.mpcc_p().val));
 
-            if obj.solver_options.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
+            if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
                 a_tol = 1*sqrt(obj.opts.comp_tol);
             else
                 a_tol = 1*sqrt(s_elastic);
             end
             ind_00 = G_old<a_tol & H_old<a_tol;
-            n_biactive = sum(ind_00)
+            n_biactive = sum(ind_00);
             ind_0p = G_old<H_old & ~ind_00;
             ind_p0 = H_old<G_old & ~ind_00;
             y_lpcc = H_old<G_old;
@@ -841,7 +842,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             ubg = vertcat(ubg,zeros(size(g_lift)));
             
             p = mpcc.p;
-            p0 = obj.p_val(2:end);
+            p0 = nlp.p.mpcc_p().val;
 
             solver_settings.max_iter = 20;
             solver_settings.tol = 1e-6;
@@ -857,7 +858,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             %% The problem
             rnlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
             solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
-            solution = bStationarityOracle(rnlp,solver_initalization,solver_settings);
+            solution = b_stationarity_oracle(rnlp,solver_initalization,solver_settings);
             cpu_time_filterSMPCC2 = toc;
 
             improved_point = solution.x(ind_mpcc);
