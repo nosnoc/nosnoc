@@ -88,7 +88,7 @@ classdef Ipopt < handle % TODO maybe handle not necessary, revisit.
         end
 
         function print_nlp_iter_header(obj)
-            fprintf('\niter\t sigma \t\t compl_res\t inf_pr \t inf_du \t objective \t CPU time \t NLP iter\t status \n');
+            fprintf('\niter\t\t sigma \t\t compl_res\t inf_pr \t inf_du \t objective \t CPU time \t NLP iter\t status \n');
         end
         
         function print_nlp_iter_info(obj, stats)
@@ -104,7 +104,7 @@ classdef Ipopt < handle % TODO maybe handle not necessary, revisit.
                 inf_du = nan;
                 objective = nan;
             end
-            fprintf('%d\t%6.2e\t %6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.3f \t %d \t %s \n',...
+            fprintf('%d\t\t\t%6.2e\t %6.2e\t %6.2e\t %6.2e \t %6.2e \t %6.3f \t\t %d \t %s \n',...
                 ii, stats.sigma_k(end), stats.complementarity_stats(end), inf_pr,inf_du, ...
                 objective, stats.cpu_time(end), solver_stats.iter_count, solver_stats.return_status);
         end
