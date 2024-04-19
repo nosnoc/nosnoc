@@ -300,6 +300,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             last_iter_failed = 0;
             timeout = 0;
 
+            if opts.print_level >= 3
+                plugin.print_nlp_iter_header();
+            end
+
             while (abs(complementarity_iter) > opts.comp_tol || last_iter_failed) &&...
                     ii < opts.N_homotopy &&...
                     (sigma_k > opts.sigma_N || ii == 0) &&...
@@ -321,7 +325,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 stats.sigma_k = [stats.sigma_k, sigma_k];
                 nlp.p.sigma_p().val = sigma_k;
 
-                % TODO(@anton) maybe revive multisolver here :)
                 if ii ~= 0
                     % TODO(@anton) Lets push on casadi devs to allow for changing of options after construction
                     %              (or maybe do it ourselves) and then remove this hack
@@ -347,9 +350,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 last_iter_failed = plugin.check_iteration_failed(stats);
                 timeout = plugin.check_timeout(stats);
 
-                % if last_iter_failed
-                %     obj.print_infeasibility();
-                % end
+                if last_iter_failed
+                    obj.print_infeasibility();
+                end
 
                 % update timing stats
                 stats.cpu_time = [stats.cpu_time,cpu_time_iter];
@@ -377,9 +380,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % update counter
                 ii = ii+1;
                 % Verbose
-                % if opts.print_level >= 3
-                %     plugin.print_nlp_iter_info(stats)
-                % end
+                if opts.print_level >= 3
+                    plugin.print_nlp_iter_info(stats)
+                end
             end
             
             mpcc_results.f = full(f_mpcc_fun(nlp.w.mpcc_w().res, nlp.p.mpcc_p().val));
@@ -413,6 +416,15 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
         function n = parenListLength(obj,index_op,ctx)
             n = 1;
+        end
+
+        function print_infeasibility(obj, results)
+            if obj.opts.print_details_if_infeasible
+                print_problem_details(results,obj.model,obj.mpcc, []);
+            end
+            if obj.opts.pause_homotopy_solver_if_infeasible
+                keyboard
+            end
         end
     end
 end
