@@ -31,8 +31,12 @@ opts.cross_comp_mode = CrossCompMode.FE_FE;
 
 prob = nosnoc.pds.Problem(model, opts);
 
-solver_opts = struct;
-solver_opts.relaxation = nosnoc.solver.Options();
+solver_opts = nosnoc.solver.Options();
 prob.create_solver(solver_opts);
 
+prob.w.x(0, 0, opts.n_s).lb = model.x0;
+prob.w.x(0, 0, opts.n_s).ub = model.x0;
+
 prob.solve();
+
+plot(prob.w.x(:,:,opts.n_s).res')

@@ -46,22 +46,22 @@ classdef Problem < vdx.problems.Mpcc
             model.generate_functions();
             dims = model.dims;
             
-            obj.p.sigma(0) = {{'sigma',1},0,inf,0};
-            obj.p.rho_h_p(0) = {{'rho_h_p',1},0,inf,1};
-            obj.p.gamma_h(0) = {{'gamma_h',1},0,inf,1e-1};
-            obj.p.T(0) = {{'T',1},0,inf,opts.T};
-            obj.p.p_global(0) = {model.p_global,-inf, inf, model.p_global_val};
+            obj.p.sigma = {{'sigma',1},0};
+            obj.p.rho_h_p = {{'rho_h_p',1},1};
+            obj.p.gamma_h = {{'gamma_h',1},1e-1};
+            obj.p.T = {{'T',1}, opts.T};
+            obj.p.p_global = {model.p_global, model.p_global_val};
 
             % other derived values
             t_stage = opts.T/opts.N_stages;
             h0 = opts.h;
 
             % 0d vars
-            obj.w.v_global(0) = {{'v_global',dims.n_v_global}, model.lbv_global, model.ubv_global, model.v0_global};
+            obj.w.v_global = {{'v_global',dims.n_v_global}, model.lbv_global, model.ubv_global, model.v0_global};
 
             % 1d vars
             obj.w.u(1:opts.N_stages) = {{'u', dims.n_u}, model.lbu, model.ubu, model.u0};
-            obj.p.p_time_var(1:opts.N_stages) = {{'p_time_var', dims.n_p_time_var}, -inf, inf, model.p_time_var_val};
+            obj.p.p_time_var(1:opts.N_stages) = {{'p_time_var', dims.n_p_time_var}, model.p_time_var_val};
             if obj.opts.use_speed_of_time_variables
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
@@ -95,17 +95,17 @@ classdef Problem < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
             if obj.opts.use_fesd
-                t_stage = obj.p.T(0)/opts.N_stages;
-                h0 = obj.p.T(0).init/(opts.N_stages*opts.N_finite_elements);
+                t_stage = obj.p.T()/opts.N_stages;
+                h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements);
             else
-                h0 = obj.p.T(0).init/(opts.N_stages*opts.N_finite_elements);
+                h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements);
             end
             
             % Define functions from obj.data
             nabla_c = model.c.jacobian(model.x)';
             E = model.E;
-            v_global = obj.w.v_global(0);
-            p_global = obj.p.p_global(0);
+            v_global = obj.w.v_global();
+            p_global = obj.p.p_global();
             c_fun = model.c_fun;
 
             %add path constraints all at once :)
@@ -165,7 +165,7 @@ classdef Problem < vdx.problems.Mpcc
             obj.f = obj.f + model.f_q_T_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global);
 
             % Terminal constraint
-            obj.g.terminal(0) = {model.g_terminal_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global), model.lbg_terminal, model.ubg_terminal};
+            obj.g.terminal = {model.g_terminal_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global), model.lbg_terminal, model.ubg_terminal};
         end
 
         function generate_complementarities(obj)
@@ -176,8 +176,8 @@ classdef Problem < vdx.problems.Mpcc
             
             x_prev = obj.w.x(0,0,opts.n_s);
             lambda_prev = obj.w.lambda(0,0,opts.n_s);
-            v_global = obj.w.v_global(0);
-            p_global = obj.p.p_global(0);
+            v_global = obj.w.v_global();
+            p_global = obj.p.p_global();
             c_fun = model.c_fun;
 
             G = [];
@@ -307,20 +307,20 @@ classdef Problem < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
             h0 = opts.h;
-            v_global = obj.w.v_global(0);
-            p_global = obj.p.p_global(0);
+            v_global = obj.w.v_global();
+            p_global = obj.p.p_global();
             c_fun = model.c_fun;
             switch obj.opts.step_equilibration
               case 'heuristic_mean'
                 for ii=1:opts.N_stages
                     for jj=1:opts.N_finite_elements
-                        obj.f = obj.f + obj.p.gamma_h(0)*(h0-obj.w.h(ii,jj))^2;
+                        obj.f = obj.f + obj.p.gamma_h()*(h0-obj.w.h(ii,jj))^2;
                     end
                 end
               case 'heuristic_diff'
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements
-                        obj.f = obj.f + obj.p.gamma_h(0)*(obj.w.h(ii,jj)-obj.w.h(ii,jj-1))^2;
+                        obj.f = obj.f + obj.p.gamma_h()*(obj.w.h(ii,jj)-obj.w.h(ii,jj-1))^2;
                     end
                 end
               case 'l2_relaxed_scaled'
@@ -351,7 +351,7 @@ classdef Problem < vdx.problems.Mpcc
                         end
                         eta_vec = [eta_vec;eta];
                         delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        obj.f = obj.f + obj.p.rho_h_p(0) * tanh(eta/opts.step_equilibration_sigma) * delta_h.^2;
+                        obj.f = obj.f + obj.p.rho_h_p() * tanh(eta/opts.step_equilibration_sigma) * delta_h.^2;
                     end
                 end
               case 'l2_relaxed'
@@ -382,7 +382,7 @@ classdef Problem < vdx.problems.Mpcc
                         end
                         eta_vec = [eta_vec;eta];
                         delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        obj.f = obj.f + obj.p.rho_h_p(0) * eta * delta_h.^2
+                        obj.f = obj.f + obj.p.rho_h_p() * eta * delta_h.^2
                     end
                 end
               case 'direct'
@@ -519,8 +519,11 @@ classdef Problem < vdx.problems.Mpcc
             obj.step_equilibration();
 
             if ~exist('plugin')
-                plugin = 'relaxation';
+                plugin = 'scholtes_ineq';
             end
+
+            obj.w.sort_by_index();
+            obj.g.sort_by_index();
             
             create_solver@vdx.problems.Mpcc(obj, solver_options, plugin);
         end
