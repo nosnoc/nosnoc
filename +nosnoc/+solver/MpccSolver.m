@@ -466,6 +466,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % This method generates a TNLP (tightened NLP) using the results of a homotopy solver.
             % In order to do so we first identify the active set of the complementarity constraints which involves identifying which
             % branch of the complementarity each element of G(w) and H(w) are, or whether the solution is biactive at that point.
+            %
+            % This algorithm also attempts to solve multiple TNLPs by iteratively adding ambiguous complementarity pairs to the bi-active set.
+            % We do this starting from the unambigously biactive complementarities (ones whos maximum is smaller than the complementarity tolerance of the homotopy)
+            % and attempting to solve the corresponding TNLP. We then add the ambiguous complementarities in order of inf-norm distance from the origin in G-H space.
+            % This algorithm terminates when the correct biactive set is found (a TNLP converges to a point close enough to the solution of the homotopy), or until
+            % all ambiguous complementarity pairs are exhausted, at which point we fail to calculate the stationarity type.
+            %
             % For a more in depth explanation see the PhD theses of Armin Nurkanovic (Section 2.3, https://publications.syscop.de/Nurkanovic2023f.pdf)
             % or Alexandra Schwartz (Section 5.2, https://opus.bibliothek.uni-wuerzburg.de/opus4-wuerzburg/frontdoor/index/index/docId/4977).
             % A consice overview can also be found in https://arxiv.org/abs/2312.11022.
@@ -524,7 +531,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 converged = false;
                 n_max_biactive = n_biactive;
-                n_biactive = 0;
+                n_biactive = sum(mindists < obj.opts.comp_tol);
                 while ~converged && n_biactive <=n_max_biactive
                     idx_00 = min_idx(1:n_biactive)
                     ind_00 = false(length(G),1);
@@ -537,10 +544,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     ublift_G = inf*ones(size(lift_G));
                     lblift_H = -inf*ones(size(lift_G));
                     ublift_H = inf*ones(size(lift_G));
-                    %lblift_G = zeros(size(lift_G));
-                    %ublift_G = inf*ones(size(lift_G));
-                    %lblift_H = zeros(size(lift_G));
-                    %ublift_H = inf*ones(size(lift_G));
                     ublift_G(find(ind_00 | ind_0p)) = 0; 
                     ublift_H(find(ind_00 | ind_p0)) = 0;
 
@@ -638,7 +641,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 converged = false;
                 n_max_biactive = n_biactive;
-                n_biactive = 0;
+                n_biactive = sum(mindists < obj.opts.comp_tol);
                 while ~converged && n_biactive <=n_max_biactive
                     idx_00 = min_idx(1:n_biactive);
                     ind_00 = false(length(G),1);
