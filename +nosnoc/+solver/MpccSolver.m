@@ -25,8 +25,6 @@
 
 % This file is part of NOSNOC.
 
-% TODO(@anton) add printing
-
 classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
     properties
         mpcc
@@ -407,28 +405,28 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             if opts.calculate_stationarity_type || opts.polishing_step
                 if last_iter_failed || ~obj.complementarity_tol_met(stats) || timeout
                     stat_type = "?";
-                    disp("Not checking stationarity due to failure of homotopy to converge");
+                    disp("Not checking stationarity due to failure of homotopy to converge.");
                 else
                     if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
                         s_elastic = [];
                     else
                         s_elastic = max(nlp.w.s_elastic().res);
                     end
-                    [sol, polished_w, b_stat] = obj.check_b_stationarity(s_elastic);
+                    [sol, w_polished, b_stat] = obj.check_b_stationarity(s_elastic);
                     if ~b_stat
-                        [polished_w, res_out, stat_type, n_biactive] = obj.calculate_stationarity(true, true);
+                        [w_polished, res_out, stat_type, n_biactive] = obj.calculate_stationarity(true, true);
                     else
                         stat_type = "B";
                     end
                 end
                 if stat_type ~= "?"
-                    mpcc_results.x = polished_w;
-                    mpcc_results.f = full(f_mpcc_fun(polished_w, nlp.p.mpcc_p().val));
+                    mpcc_results.x = w_polished;
+                    mpcc_results.f = full(f_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
                     % TODO (@anton) also recalculate multipliers and g?
                     if stat_type ~= "B"
                         mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
                     end
-                    complementarity_iter = full(obj.comp_res_fun(polished_w, nlp.p.mpcc_p().val));
+                    complementarity_iter = full(obj.comp_res_fun(w_polished, nlp.p.mpcc_p().val));
                     stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                 end
                 stats.stat_type = stat_type;
@@ -459,7 +457,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             end
         end
 
-        function [polished_w, res_out, stat_type, n_biactive] = calculate_stationarity(obj, exitfast, lifted)
+        function [w_polished, res_out, stat_type, n_biactive] = calculate_stationarity(obj, exitfast, complementarity_constraints_lifted)
             import casadi.*
             stat_type = "?";
             nlp = obj.nlp;
@@ -468,7 +466,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % This method generates a TNLP (tightened NLP) using the results of a homotopy solver.
             % In order to do so we first identify the active set of the complementarity constraints which involves identifying which
             % branch of the complementarity each element of G(w) and H(w) are, or whether the solution is biactive at that point.
-            % For a more in depth explanation see the PhD theses of Armin Nurkanovic or Alexandra Schwartz
+            % For a more in depth explanation see the PhD theses of Armin Nurkanovic (Section 2.3, https://publications.syscop.de/Nurkanovic2023f.pdf)
+            % or Alexandra Schwartz (Section 5.2, https://opus.bibliothek.uni-wuerzburg.de/opus4-wuerzburg/frontdoor/index/index/docId/4977).
+            % A consice overview can also be found in https://arxiv.org/abs/2312.11022.
             
             w_orig = nlp.w.mpcc_w().res;
             lam_x = nlp.w.mpcc_w().mult;
@@ -478,16 +478,19 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             H = mpcc.H;
             G_old = full(obj.G_fun(w_orig, nlp.p.mpcc_p().val));
             H_old = full(obj.H_fun(w_orig, nlp.p.mpcc_p().val));
+
+            % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
+            % i.e. in the worst case G=sqrt(comp_tol) and H=sqrt(comp_tol).
             if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
-                a_tol = 1*sqrt(obj.opts.comp_tol);
+                a_tol = sqrt(obj.opts.comp_tol);
             else
-                a_tol = 1*sqrt(max(nlp.w.s_elastic().res));
+                a_tol = sqrt(max(nlp.w.s_elastic().res));
             end
             
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00);
             if exitfast && n_biactive == 0
-                polished_w = [];
+                w_polished = [];
                 res_out = []
                 stat_type = "S";
                 disp("Converged to S-stationary point")
@@ -496,7 +499,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             mindists = max(G_old, H_old);
             [~, min_idx] = sort(mindists);
 
-            if lifted
+            if complementarity_constraints_lifted
                 w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
                 g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
                 p = nlp.p.mpcc_p();
@@ -596,8 +599,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
                 w_star = full(tnlp_results.x);
                 w_star_orig = w_star(ind_mpcc);
-                max(abs(w_init - w_star))
-                [~,sort_idx] = sort(full(abs(w_init - w_star))); % sorted by difference from original stationary point
 
                 nu = -full(tnlp_results.lam_x(ind_G));
                 xi = -full(tnlp_results.lam_x(ind_H));
@@ -719,8 +720,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     end
                 end
                 w_star = full(tnlp_results.x);
-                w_star_orig = w_star;
-                [~,sort_idx] = sort(full(abs(w_init - w_star))); % sorted by difference from original stationary point
 
                 nu = -full(tnlp_results.lam_g(ind_G));
                 xi = -full(tnlp_results.lam_g(ind_H));
@@ -788,9 +787,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             
             % output tnlp results
             res_out = tnlp_results;
-            polished_w = zeros(size(nlp.w));
-            polished_w = w_star_orig;
-            res_out.x = polished_w;
+            w_polished = zeros(size(nlp.w));
+            w_polished = w_star_orig;
+            res_out.x = w_polished;
         end
 
         function [solution, improved_point, b_stat] = check_b_stationarity(obj, s_elastic)
@@ -862,8 +861,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             rnlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
             solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
             solution = b_stationarity_oracle(rnlp,solver_initalization,solver_settings);
-            cpu_time_filterSMPCC2 = toc;
-
+            
             improved_point = solution.x(ind_mpcc);
 
             b_stat = ~solution.oracle_status;
