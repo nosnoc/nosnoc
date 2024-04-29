@@ -475,7 +475,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             %
             % For a more in depth explanation see the PhD theses of Armin Nurkanovic (Section 2.3, https://publications.syscop.de/Nurkanovic2023f.pdf)
             % or Alexandra Schwartz (Section 5.2, https://opus.bibliothek.uni-wuerzburg.de/opus4-wuerzburg/frontdoor/index/index/docId/4977).
-            % A consice overview can also be found in https://arxiv.org/abs/2312.11022.
+            % A concise overview can also be found in https://arxiv.org/abs/2312.11022.
             
             w_orig = nlp.w.mpcc_w().res;
             lam_x = nlp.w.mpcc_w().mult;
