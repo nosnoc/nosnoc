@@ -24,7 +24,7 @@ solver_options.real_time_plot = 0;
 solver_options.comp_tol  = 1e-13;
 solver_options.sigma_N = 1e-13;
 
-solver_options.elastic_scholtes = 1;
+solver_options.decreasing_s_elastic_upper_bound = 1;
 solver_options.sigma_0 = 1e0;
 solver_options.homotopy_update_slope = 0.2;
 %%
