@@ -143,16 +143,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 psi_fun = get_psi_fun(MpccMethod(obj.relaxation_type), opts.normalize_homotopy_update);
                 lb = [];
                 ub = [];
-                expr = [];
+                g_comp_expr = [];
                 n_comp_pairs = size(G, 1);
                 for ii=1:n_comp_pairs
-                    expr_i = psi_fun(G(ii), H(ii), sigma);
-                    [lb_i, ub_i, expr_i] = generate_mpcc_relaxation_bounds(expr_i, obj.relaxation_type);
+                    g_comp_expr_i = psi_fun(G(ii), H(ii), sigma);
+                    [lb_i, ub_i, g_comp_expr_i] = generate_mpcc_relaxation_bounds(g_comp_expr_i, obj.relaxation_type);
                     lb = [lb;lb_i];
                     ub = [ub;ub_i];
-                    expr = [expr;expr_i];
+                    g_comp_expr = [g_comp_expr;g_comp_expr_i];
                 end
-                nlp.g.complementarities(0) = {expr, lb, ub};
+                nlp.g.complementarities(0) = {g_comp_expr, lb, ub};
 
                 if ~opts.assume_lower_bounds && ~opts.lift_complementarities % Lower bounds on G, H, not already present in MPCC
                     if ~isempty(obj.ind_nonscalar_G)
@@ -829,7 +829,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             lblift_H = zeros(size(lift_G));
             ublift_H = inf*ones(size(lift_G));
 
-            %TODO (@anton) maybe take advantage of vdx here.
+            %TODO (@anton) maybe take advantage of vdx here. (@armin: if so, please comment it appropietly and make it readable)
             ind_mpcc = 1:length(lbx);
             ind_G = (1:length(lift_G))+length(lbx);
             ind_H = (1:length(lift_H))+length(lbx)+length(lift_G);
@@ -861,9 +861,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 solver_settings.fixed_y_lpcc = y_lpcc;
             end
             %% The problem
-            rnlp = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
+            % @TODO: 
+            lpec_data = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
             solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
-            solution = b_stationarity_oracle(rnlp,solver_initalization,solver_settings);
+            solution = b_stationarity_oracle(lpec_data,solver_initalization,solver_settings);
             
             improved_point = solution.x(ind_mpcc);
 
