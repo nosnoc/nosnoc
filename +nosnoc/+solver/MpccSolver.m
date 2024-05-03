@@ -283,8 +283,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 converged = false;
                 n_max_biactive = n_biactive;
-                n_biactive = n_biactive; %sum(mindists < obj.opts.complementarity_tol);
-                while ~converged && n_biactive <=n_max_biactive
+                n_biactive = n_biactive;
+                while ~converged && n_biactive >= 0
                     idx_00 = min_idx(1:n_biactive)
                     ind_00 = false(length(G),1);
                     ind_00(idx_00) = true;
@@ -348,7 +348,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     if tnlp_solver.stats.success
                         converged = true;
                     else
-                        n_biactive = n_biactive + 1;
+                        n_biactive = n_biactive - 1;
                     end 
                     %converged = true;
                 end
@@ -393,8 +393,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 converged = false;
                 n_max_biactive = n_biactive;
-                n_biactive = n_biactive;%sum(mindists < obj.opts.complementarity_tol);
-                while ~converged && n_biactive <=n_max_biactive
+                n_biactive = n_biactive;
+                while ~converged && n_biactive >= 0
                     idx_00 = min_idx(1:n_biactive);
                     ind_00 = false(length(G),1);
                     ind_00(idx_00) = true;
@@ -461,17 +461,15 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         'lam_x0', lam_x_aug,...
                         'p',nlp.p.mpcc_p().val);
                     res_out = tnlp_results;
-                    if tnlp_solver.stats.success && full(abs(obj.f_mpcc_fun(tnlp_results.x, nlp.p.mpcc_p().val)-tnlp_results.f)) < 1e-9
+                    if tnlp_solver.stats.success
                         converged = true;
                     else
-                        n_biactive = n_biactive + 1;
+                        n_biactive = n_biactive - 1;
                     end
                     
                     switch tnlp_solver.stats.return_status
                       case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
-                        if abs(f-tnlp_results.f) < 1e-5
-                            converged = true;
-                        end
+                        converged = true;
                       otherwise
                         converged = false;
                     end
