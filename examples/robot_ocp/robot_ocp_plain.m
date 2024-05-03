@@ -30,7 +30,7 @@ settings.cross_comp_mode = 3;
 settings.opts_casadi_nlp.ipopt.max_iter = 1500;
 settings.N_homotopy = 10;
 settings.opts_casadi_nlp.ipopt.tol = 1e-12;
-settings.comp_tol = 1e-10;
+settings.complementarity_tol = 1e-10;
 settings.sigma_0 = 1;
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 %% time-freezing

@@ -15,7 +15,7 @@ mpccsol_opts.homotopy_steering_strategy = "Direct"; % reports homotopy faild, bu
 % mpccsol_opts.homotopy_steering_strategy = "ELL_INF"; 
 mpccsol_opts.calculate_stationarity_type  = 1;
 
-% mpccsol_opts.comp_tol = 1e-12;
+% mpccsol_opts.complementarity_tol = 1e-12;
 % mpccsol_opts.N_homotopy = 20;  % Using Direct solver terminates before the comp tol was reached? why?
 
 

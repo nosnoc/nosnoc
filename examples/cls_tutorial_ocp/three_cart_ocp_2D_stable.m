@@ -55,7 +55,7 @@ solver_options.homotopy_update_slope = 0.5;
 
 % NLP solver settings;
 default_tol = 1e-6;
-solver_options.comp_tol = 1e-6;
+solver_options.complementarity_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.opts_casadi_nlp.ipopt.tol = default_tol;
 solver_options.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;

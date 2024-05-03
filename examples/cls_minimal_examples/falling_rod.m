@@ -22,7 +22,7 @@ solver_options.print_level = 3;
 solver_options.N_homotopy = 10;
 problem_options.cross_comp_mode = 1;
 solver_options.sigma_0 = 1e0;
-solver_options.comp_tol = 1e-5;
+solver_options.complementarity_tol = 1e-5;
 solver_options.print_details_if_infeasible = 0;
 solver_options.break_simulation_if_infeasible = 0;
 %%

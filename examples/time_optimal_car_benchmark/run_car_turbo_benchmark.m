@@ -15,7 +15,7 @@ settings.sigma_0 = 10;
 % settings.N_homotopy = 20;
 settings.print_level = 0;
 settings.use_fesd = 1;
-settings.comp_tol = 1e-12;
+settings.complementarity_tol = 1e-12;
 settings.time_optimal_problem = 1;
 settings.n_s = 2;
 % model data

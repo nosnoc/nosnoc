@@ -183,7 +183,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         function met = complementarity_tol_met(obj, stats)
             last_stats = stats.solver_stats(end);
             met = 0;
-            if abs(stats.complementarity_stats(end)) < 10 * obj.opts.comp_tol
+            if abs(stats.complementarity_stats(end)) < 10 * obj.opts.complementarity_tol
                 met = 1;
             end
         end
@@ -206,6 +206,420 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         
         function ind = end(obj,k,n)
             ind = 1;
+        end
+
+        function [w_polished, res_out, stat_type, n_biactive] = calculate_stationarity(obj, exitfast, complementarity_constraints_lifted)
+            import casadi.*
+            stat_type = "?";
+            nlp = obj.nlp;
+            mpcc = obj.mpcc;
+
+            % This method generates a TNLP (tightened NLP) using the results of a homotopy solver.
+            % In order to do so we first identify the active set of the complementarity constraints which involves identifying which
+            % branch of the complementarity each element of G(w) and H(w) are, or whether the solution is biactive at that point.
+            %
+            % This algorithm also attempts to solve multiple TNLPs by iteratively adding ambiguous complementarity pairs to the bi-active set.
+            % We do this starting from the unambigously biactive complementarities (ones whos maximum is smaller than the complementarity tolerance of the homotopy)
+            % and attempting to solve the corresponding TNLP. We then add the ambiguous complementarities in order of inf-norm distance from the origin in G-H space.
+            % This algorithm terminates when the correct biactive set is found (a TNLP converges to a point close enough to the solution of the homotopy), or until
+            % all ambiguous complementarity pairs are exhausted, at which point we fail to calculate the stationarity type.
+            %
+            % For a more in depth explanation see the PhD theses of Armin Nurkanovic (Section 2.3, https://publications.syscop.de/Nurkanovic2023f.pdf)
+            % or Alexandra Schwartz (Section 5.2, https://opus.bibliothek.uni-wuerzburg.de/opus4-wuerzburg/frontdoor/index/index/docId/4977).
+            % A concise overview can also be found in https://arxiv.org/abs/2312.11022.
+            
+            w_orig = nlp.w.mpcc_w().res;
+            lam_x = nlp.w.mpcc_w().mult;
+            lam_g = nlp.g.mpcc_g().mult;
+
+            G = mpcc.G;
+            H = mpcc.H;
+            G_old = full(obj.G_fun(w_orig, nlp.p.mpcc_p().val));
+            H_old = full(obj.H_fun(w_orig, nlp.p.mpcc_p().val));
+
+            % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
+            % i.e. in the worst case G=sqrt(complementarity_tol) and H=sqrt(comp_tol).
+            if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
+                a_tol = sqrt(obj.opts.complementarity_tol);
+            else
+                a_tol = sqrt(max(nlp.w.s_elastic().res));
+            end
+            
+            ind_00 = G_old<a_tol & H_old<a_tol;
+            n_biactive = sum(ind_00);
+            if exitfast && n_biactive == 0
+                w_polished = [];
+                res_out = []
+                stat_type = "S";
+                disp("Converged to S-stationary point")
+                return
+            end
+            mindists = max(G_old, H_old);
+            [~, min_idx] = sort(mindists);
+
+            if complementarity_constraints_lifted
+                w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
+                g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
+                p = nlp.p.mpcc_p();
+                f = mpcc.f;
+                
+                lift_G = SX.sym('lift_G', length(G));
+                lift_H = SX.sym('lift_H', length(H));
+                g_lift = vertcat(lift_G - G, lift_H - H);
+                
+                w = vertcat(w, lift_G, lift_H);
+
+                lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
+                
+                g = vertcat(g,g_lift);
+                lbg = vertcat(lbg,zeros(size(g_lift)));
+                ubg = vertcat(ubg,zeros(size(g_lift)));
+                lam_g_aug = vertcat(lam_g, zeros(size(g_lift)));
+
+                ind_mpcc = 1:length(lbw_orig);
+                ind_G = (1:length(lift_G))+length(lbw_orig);
+                ind_H = (1:length(lift_H))+length(lbw_orig)+length(lift_G);
+
+                converged = false;
+                n_max_biactive = n_biactive;
+                n_biactive = sum(mindists < obj.opts.complementarity_tol);
+                while ~converged && n_biactive <=n_max_biactive
+                    idx_00 = min_idx(1:n_biactive)
+                    ind_00 = false(length(G),1);
+                    ind_00(idx_00) = true;
+                    
+                    ind_0p = G_old<a_tol & ~ind_00;
+                    ind_p0 = H_old<a_tol & ~ind_00;
+
+                    lblift_G = -inf*ones(size(lift_G));
+                    ublift_G = inf*ones(size(lift_G));
+                    lblift_H = -inf*ones(size(lift_G));
+                    ublift_H = inf*ones(size(lift_G));
+                    ublift_G(find(ind_00 | ind_0p)) = 0; 
+                    ublift_H(find(ind_00 | ind_p0)) = 0;
+
+                    G_init = G_old;
+                    G_init(ind_00 | ind_0p) = 0;
+                    H_init = H_old;
+                    H_init(ind_00 | ind_p0) = 0;
+
+                    lbw = vertcat(lbw_orig, lblift_G, lblift_H);
+                    ubw = vertcat(ubw_orig, ublift_G, ublift_H);
+                    w_init = vertcat(w_orig, G_init, H_init);
+
+                    
+                    casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
+                    opts_casadi_nlp.ipopt.max_iter = 5000;
+                    opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                    opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+                    opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                    opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                    opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                    opts_casadi_nlp.ipopt.tol = obj.opts.complementarity_tol;
+                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.complementarity_tol);
+                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.complementarity_tol);
+                    opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                    opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                    opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
+                    opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
+                    opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+                    opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+                    opts_casadi_nlp.ipopt.nlp_scaling_method = 'none';
+                    default_tol = 1e-7;
+                    opts_casadi_nlp.ipopt.tol = default_tol;
+                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
+                    opts_casadi_nlp.ipopt.print_level = 5;
+                    opts_casadi_nlp.ipopt.sb = 'yes';
+                    
+                    tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
+                    tnlp_results = tnlp_solver('x0', w_init,...
+                        'lbx', lbw,...
+                        'ubx', ubw,...
+                        'lbg', lbg,...
+                        'ubg', ubg,...
+                        'lam_g0', lam_g_aug,...
+                        'lam_x0', lam_x_aug,...
+                        'p', nlp.p.mpcc_p().val);
+                    res_out = tnlp_results;
+                    if tnlp_solver.stats.success
+                        converged = true;
+                    else
+                        n_biactive = n_biactive + 1;
+                    end 
+                    %converged = true;
+                end
+                w_star = full(tnlp_results.x);
+                w_star_orig = w_star(ind_mpcc);
+
+                nu = -full(tnlp_results.lam_x(ind_G));
+                xi = -full(tnlp_results.lam_x(ind_H));
+
+                % Index sets
+                I_G = find(ind_0p+ind_00);
+                I_H = find(ind_p0+ind_00);
+
+                G_new = full(obj.G_fun(w_star_orig, nlp.p.mpcc_p().val));
+                H_new = full(obj.H_fun(w_star_orig, nlp.p.mpcc_p().val));
+
+                g_tnlp = full(tnlp_results.g);
+                % multipliers (nu, xi already calculated above)
+                lam_x_star = full(tnlp_results.lam_x);
+                lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+                lam_x_star(ind_H) = 0; % box constraints
+                lam_g_star = tnlp_results.lam_g;
+                type_tol = a_tol^2;
+            else
+                w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
+                g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
+                p = nlp.p.mpcc_p();
+                f = mpcc.f;
+
+                lam_x_aug = lam_x;
+                
+                g = vertcat(g,10000*G,10000*H);
+                lbg = vertcat(lbg,zeros(size(G)),zeros(size(H)));
+                ubg = vertcat(ubg,zeros(size(G)),zeros(size(H)));
+                lam_g_aug = vertcat(lam_g, zeros(size(G)), zeros(size(H)));
+
+                jac_g = Function('jac_g', {w, p}, {g.jacobian(w)});
+
+                ind_mpcc = 1:length(lam_g);
+                ind_G = (1:length(G))+length(lam_g);
+                ind_H = (1:length(H))+length(lam_g)+length(G);
+
+                converged = false;
+                n_max_biactive = n_biactive;
+                n_biactive = sum(mindists < obj.opts.complementarity_tol);
+                while ~converged && n_biactive <=n_max_biactive
+                    idx_00 = min_idx(1:n_biactive);
+                    ind_00 = false(length(G),1);
+                    ind_00(idx_00) = true;
+                    
+                    ind_0p = G_old<H_old & ~ind_00;
+                    ind_p0 = H_old<G_old & ~ind_00;
+
+                    lbG = 0*ones(size(G));
+                    ubG = inf*ones(size(G));
+                    lbH = 0*ones(size(G));
+                    ubH = inf*ones(size(G));
+                    %lbG = zeros(size(G));
+                    %ubG = inf*ones(size(G));
+                    %lbH = zeros(size(G));
+                    %ubH = inf*ones(size(G));
+                    ubG(find(ind_00 | ind_0p)) = 1e-12; 
+                    ubH(find(ind_00 | ind_p0)) = 1e-12;
+                    %g(find(ind_00)) = 10000*g(find(ind_00));
+                    lbg(ind_G) = lbG;
+                    lbg(ind_H) = lbH;
+                    ubg(ind_G) = ubG;
+                    ubg(ind_H) = ubH;
+
+                    nabla_g = jac_g(w_orig, nlp.p.mpcc_p().val);
+
+                    lbw = lbw_orig;
+                    ubw = ubw_orig;
+                    w_init = w_orig;
+
+                    
+                    casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
+                    opts_casadi_nlp.ipopt.max_iter = 5000;
+                    opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                    %opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
+                    opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                    opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                    opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                    opts_casadi_nlp.ipopt.tol = obj.opts.complementarity_tol;
+                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.complementarity_tol);
+                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.complementarity_tol);
+                    opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                    opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                    opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
+                    opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
+                    opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+                    opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+                    %opts_casadi_nlp.ipopt.nlp_scaling_method = 'equilibration-based';
+                    default_tol = 1e-4;
+                    opts_casadi_nlp.ipopt.tol = default_tol;
+                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                    opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                    %opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
+                    opts_casadi_nlp.ipopt.print_level = 0;
+                    opts_casadi_nlp.ipopt.sb = 'yes';
+                    
+                    tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
+                    tnlp_results = tnlp_solver('x0', w_init,...
+                        'lbx', lbw,...
+                        'ubx', ubw,...
+                        'lbg', lbg,...
+                        'ubg', ubg,...
+                        'lam_g0', lam_g_aug,...
+                        'lam_x0', lam_x_aug,...
+                        'p',nlp.p.mpcc_p().val);
+                    res_out = tnlp_results;
+                    if tnlp_solver.stats.success
+                        converged = true;
+                    else
+                        n_biactive = n_biactive + 1;
+                    end 
+                    %converged = true;
+                    switch tnlp_solver.stats.return_status
+                      case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
+                        converged = true;
+                      otherwise
+                        converged = false;
+                    end
+                end
+                w_star = full(tnlp_results.x);
+
+                nu = -full(tnlp_results.lam_g(ind_G));
+                xi = -full(tnlp_results.lam_g(ind_H));
+                
+                % Index sets
+                I_G = find(ind_0p+ind_00);
+                I_H = find(ind_p0+ind_00);
+
+                G_new = full(obj.G_fun(w_star_orig, nlp.p.mpcc_p().val));
+                H_new = full(obj.H_fun(w_star_orig, nlp.p.mpcc_p().val));
+
+                % multipliers (nu, xi already calculated above)
+                lam_x_star = full(tnlp_results.lam_x);
+                lam_g_star = full(tnlp_results.lam_g);
+                %lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+                %lam_x_star(ind_H) = 0; % box constraints
+                lam_g_star = tnlp_results.lam_g;
+                lam_g_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
+                lam_g_star(ind_H) = 0; % box constraints
+                type_tol = a_tol^2;
+
+                ind_00_new = G_new<a_tol & H_new<a_tol;
+            end
+            
+            switch tnlp_solver.stats.return_status
+              case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
+                if n_biactive
+                    nu_biactive = nu(ind_00);
+                    xi_biactive = xi(ind_00);
+                    bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
+
+                    figure()
+                    scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
+                    xline(0,'k-.');
+                    yline(0,'k-.');
+                    xlim([-bound,bound]);
+                    ylim([-bound,bound]);
+                    
+                    grid on;
+
+                    if all(nu_biactive > -type_tol & xi_biactive > -type_tol)
+                        stat_type = "S";
+                        disp("Converged to S-stationary point")
+                    elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
+                        stat_type = "M";
+                        disp("Converged to M-stationary point")
+                    elseif all(nu_biactive.*xi_biactive > -type_tol)
+                        stat_type = "C";
+                        disp("Converged to C-stationary point")
+                    elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
+                        stat_type = "A";
+                        disp("Converged to A-stationary point")
+                    else
+                        stat_type = "W";
+                        disp("Converged to W-stationary point, or something has gone wrong")
+                    end
+                else
+                    stat_type = "S";
+                    disp("Converged to S-stationary point")
+                end
+              otherwise
+                stat_type = "?";
+                disp("Could not converge to point from the end of homotopy");
+            end
+            
+            % output tnlp results
+            res_out = tnlp_results;
+            w_polished = zeros(size(nlp.w));
+            w_polished = w_star_orig;
+            res_out.x = w_polished;
+        end
+
+        function [solution, improved_point, b_stat] = check_b_stationarity(obj, s_elastic)
+            import casadi.*
+            mpcc = obj.mpcc;
+            nlp = obj.nlp;
+            x0 = nlp.w.mpcc_w().res;
+            f = mpcc.f;
+            x = nlp.w.mpcc_w(); lbx = nlp.w.mpcc_w().lb; ubx = nlp.w.mpcc_w().ub;
+            g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
+            G = mpcc.G;
+            H = mpcc.H;
+            G_old = full(obj.G_fun(x0, nlp.p.mpcc_p().val));
+            H_old = full(obj.H_fun(x0, nlp.p.mpcc_p().val));
+
+            if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
+                a_tol = 1*sqrt(obj.opts.complementarity_tol);
+            else
+                a_tol = 1*sqrt(s_elastic);
+            end
+            ind_00 = G_old<a_tol & H_old<a_tol;
+            n_biactive = sum(ind_00);
+            ind_0p = G_old<H_old & ~ind_00;
+            ind_p0 = H_old<G_old & ~ind_00;
+            y_lpcc = H_old<G_old;
+            
+            lift_G = SX.sym('lift_G', length(G));
+            lift_H = SX.sym('lift_H', length(H));
+            g_lift = vertcat(lift_G - G, lift_H - H);
+
+            x = vertcat(x, lift_G, lift_H);
+            lblift_G = zeros(size(lift_G));
+            ublift_G = inf*ones(size(lift_G));
+            lblift_H = zeros(size(lift_G));
+            ublift_H = inf*ones(size(lift_G));
+
+            %TODO (@anton) maybe take advantage of vdx here. (@armin: if so, please comment it appropietly and make it readable)
+            ind_mpcc = 1:length(lbx);
+            ind_G = (1:length(lift_G))+length(lbx);
+            ind_H = (1:length(lift_H))+length(lbx)+length(lift_G);
+
+            lbx = vertcat(lbx, lblift_G, lblift_H);
+            ubx = vertcat(ubx, ublift_G, ublift_H);
+            G_init = G_old;
+            %G_init(ind_00 | ind_0p) = 0;
+            H_init = H_old;
+            %H_init(ind_00 | ind_p0) = 0;
+            x0 = vertcat(x0, G_init, H_init);
+
+            g = vertcat(g,g_lift);
+            lbg = vertcat(lbg,zeros(size(g_lift)));
+            ubg = vertcat(ubg,zeros(size(g_lift)));
+            
+            p = mpcc.p;
+            p0 = nlp.p.mpcc_p().val;
+
+            solver_settings.max_iter = 20;
+            solver_settings.tol = 1e-6;
+            solver_settings.Delta_TR_init = 10;
+            solver_settings.Delta_TR_min = 1e-4;
+            solver_settings.verbose_solver = 1;
+            solver_settings.tighten_bounds_in_lpcc = false;
+            solver_settings.BigM = 1e2;
+
+            if ~n_biactive
+                solver_settings.fixed_y_lpcc = y_lpcc;
+            end
+            %% The problem
+            % @TODO: 
+            lpec_data = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
+            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
+            solution = b_stationarity_oracle(lpec_data,solver_initalization,solver_settings);
+            
+            improved_point = solution.x(ind_mpcc);
+
+            b_stat = ~solution.oracle_status;
         end
     end
 
@@ -303,7 +717,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 plugin.print_nlp_iter_header();
             end
 
-            while (abs(complementarity_iter) > opts.comp_tol || last_iter_failed) &&...
+            while (abs(complementarity_iter) > opts.complementarity_tol || last_iter_failed) &&...
                     ii < opts.N_homotopy &&...
                     (sigma_k > opts.sigma_N || ii == 0) &&...
                     ~timeout
@@ -455,420 +869,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             if obj.opts.pause_homotopy_solver_if_infeasible
                 keyboard
             end
-        end
-
-        function [w_polished, res_out, stat_type, n_biactive] = calculate_stationarity(obj, exitfast, complementarity_constraints_lifted)
-            import casadi.*
-            stat_type = "?";
-            nlp = obj.nlp;
-            mpcc = obj.mpcc;
-
-            % This method generates a TNLP (tightened NLP) using the results of a homotopy solver.
-            % In order to do so we first identify the active set of the complementarity constraints which involves identifying which
-            % branch of the complementarity each element of G(w) and H(w) are, or whether the solution is biactive at that point.
-            %
-            % This algorithm also attempts to solve multiple TNLPs by iteratively adding ambiguous complementarity pairs to the bi-active set.
-            % We do this starting from the unambigously biactive complementarities (ones whos maximum is smaller than the complementarity tolerance of the homotopy)
-            % and attempting to solve the corresponding TNLP. We then add the ambiguous complementarities in order of inf-norm distance from the origin in G-H space.
-            % This algorithm terminates when the correct biactive set is found (a TNLP converges to a point close enough to the solution of the homotopy), or until
-            % all ambiguous complementarity pairs are exhausted, at which point we fail to calculate the stationarity type.
-            %
-            % For a more in depth explanation see the PhD theses of Armin Nurkanovic (Section 2.3, https://publications.syscop.de/Nurkanovic2023f.pdf)
-            % or Alexandra Schwartz (Section 5.2, https://opus.bibliothek.uni-wuerzburg.de/opus4-wuerzburg/frontdoor/index/index/docId/4977).
-            % A concise overview can also be found in https://arxiv.org/abs/2312.11022.
-            
-            w_orig = nlp.w.mpcc_w().res;
-            lam_x = nlp.w.mpcc_w().mult;
-            lam_g = nlp.g.mpcc_g().mult;
-
-            G = mpcc.G;
-            H = mpcc.H;
-            G_old = full(obj.G_fun(w_orig, nlp.p.mpcc_p().val));
-            H_old = full(obj.H_fun(w_orig, nlp.p.mpcc_p().val));
-
-            % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
-            % i.e. in the worst case G=sqrt(comp_tol) and H=sqrt(comp_tol).
-            if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
-                a_tol = sqrt(obj.opts.comp_tol);
-            else
-                a_tol = sqrt(max(nlp.w.s_elastic().res));
-            end
-            
-            ind_00 = G_old<a_tol & H_old<a_tol;
-            n_biactive = sum(ind_00);
-            if exitfast && n_biactive == 0
-                w_polished = [];
-                res_out = []
-                stat_type = "S";
-                disp("Converged to S-stationary point")
-                return
-            end
-            mindists = max(G_old, H_old);
-            [~, min_idx] = sort(mindists);
-
-            if complementarity_constraints_lifted
-                w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
-                g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
-                p = nlp.p.mpcc_p();
-                f = mpcc.f;
-                
-                lift_G = SX.sym('lift_G', length(G));
-                lift_H = SX.sym('lift_H', length(H));
-                g_lift = vertcat(lift_G - G, lift_H - H);
-                
-                w = vertcat(w, lift_G, lift_H);
-
-                lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
-                
-                g = vertcat(g,g_lift);
-                lbg = vertcat(lbg,zeros(size(g_lift)));
-                ubg = vertcat(ubg,zeros(size(g_lift)));
-                lam_g_aug = vertcat(lam_g, zeros(size(g_lift)));
-
-                ind_mpcc = 1:length(lbw_orig);
-                ind_G = (1:length(lift_G))+length(lbw_orig);
-                ind_H = (1:length(lift_H))+length(lbw_orig)+length(lift_G);
-
-                converged = false;
-                n_max_biactive = n_biactive;
-                n_biactive = sum(mindists < obj.opts.comp_tol);
-                while ~converged && n_biactive <=n_max_biactive
-                    idx_00 = min_idx(1:n_biactive)
-                    ind_00 = false(length(G),1);
-                    ind_00(idx_00) = true;
-                    
-                    ind_0p = G_old<a_tol & ~ind_00;
-                    ind_p0 = H_old<a_tol & ~ind_00;
-
-                    lblift_G = -inf*ones(size(lift_G));
-                    ublift_G = inf*ones(size(lift_G));
-                    lblift_H = -inf*ones(size(lift_G));
-                    ublift_H = inf*ones(size(lift_G));
-                    ublift_G(find(ind_00 | ind_0p)) = 0; 
-                    ublift_H(find(ind_00 | ind_p0)) = 0;
-
-                    G_init = G_old;
-                    G_init(ind_00 | ind_0p) = 0;
-                    H_init = H_old;
-                    H_init(ind_00 | ind_p0) = 0;
-
-                    lbw = vertcat(lbw_orig, lblift_G, lblift_H);
-                    ubw = vertcat(ubw_orig, ublift_G, ublift_H);
-                    w_init = vertcat(w_orig, G_init, H_init);
-
-                    
-                    casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
-                    opts_casadi_nlp.ipopt.max_iter = 5000;
-                    opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                    opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
-                    opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
-                    opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.tol = obj.opts.comp_tol;
-                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.comp_tol);
-                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.comp_tol);
-                    opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
-                    opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-                    opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
-                    opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
-                    opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
-                    opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-                    opts_casadi_nlp.ipopt.nlp_scaling_method = 'none';
-                    default_tol = 1e-7;
-                    opts_casadi_nlp.ipopt.tol = default_tol;
-                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
-                    opts_casadi_nlp.ipopt.print_level = 5;
-                    opts_casadi_nlp.ipopt.sb = 'yes';
-                    
-                    tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
-                    tnlp_results = tnlp_solver('x0', w_init,...
-                        'lbx', lbw,...
-                        'ubx', ubw,...
-                        'lbg', lbg,...
-                        'ubg', ubg,...
-                        'lam_g0', lam_g_aug,...
-                        'lam_x0', lam_x_aug,...
-                        'p', nlp.p.mpcc_p().val);
-                    res_out = tnlp_results;
-                    if tnlp_solver.stats.success
-                        converged = true;
-                    else
-                        n_biactive = n_biactive + 1;
-                    end 
-                    %converged = true;
-                end
-                w_star = full(tnlp_results.x);
-                w_star_orig = w_star(ind_mpcc);
-
-                nu = -full(tnlp_results.lam_x(ind_G));
-                xi = -full(tnlp_results.lam_x(ind_H));
-
-                % Index sets
-                I_G = find(ind_0p+ind_00);
-                I_H = find(ind_p0+ind_00);
-
-                G_new = full(obj.G_fun(w_star_orig, nlp.p.mpcc_p().val));
-                H_new = full(obj.H_fun(w_star_orig, nlp.p.mpcc_p().val));
-
-                g_tnlp = full(tnlp_results.g);
-                % multipliers (nu, xi already calculated above)
-                lam_x_star = full(tnlp_results.lam_x);
-                lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
-                lam_x_star(ind_H) = 0; % box constraints
-                lam_g_star = tnlp_results.lam_g;
-                type_tol = a_tol^2;
-            else
-                w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
-                g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
-                p = nlp.p.mpcc_p();
-                f = mpcc.f;
-
-                lam_x_aug = lam_x;
-                
-                g = vertcat(g,10000*G,10000*H);
-                lbg = vertcat(lbg,zeros(size(G)),zeros(size(H)));
-                ubg = vertcat(ubg,zeros(size(G)),zeros(size(H)));
-                lam_g_aug = vertcat(lam_g, zeros(size(G)), zeros(size(H)));
-
-                jac_g = Function('jac_g', {w, p}, {g.jacobian(w)});
-
-                ind_mpcc = 1:length(lam_g);
-                ind_G = (1:length(G))+length(lam_g);
-                ind_H = (1:length(H))+length(lam_g)+length(G);
-
-                converged = false;
-                n_max_biactive = n_biactive;
-                n_biactive = sum(mindists < obj.opts.comp_tol);
-                while ~converged && n_biactive <=n_max_biactive
-                    idx_00 = min_idx(1:n_biactive);
-                    ind_00 = false(length(G),1);
-                    ind_00(idx_00) = true;
-                    
-                    ind_0p = G_old<H_old & ~ind_00;
-                    ind_p0 = H_old<G_old & ~ind_00;
-
-                    lbG = 0*ones(size(G));
-                    ubG = inf*ones(size(G));
-                    lbH = 0*ones(size(G));
-                    ubH = inf*ones(size(G));
-                    %lbG = zeros(size(G));
-                    %ubG = inf*ones(size(G));
-                    %lbH = zeros(size(G));
-                    %ubH = inf*ones(size(G));
-                    ubG(find(ind_00 | ind_0p)) = 1e-12; 
-                    ubH(find(ind_00 | ind_p0)) = 1e-12;
-                    %g(find(ind_00)) = 10000*g(find(ind_00));
-                    lbg(ind_G) = lbG;
-                    lbg(ind_H) = lbH;
-                    ubg(ind_G) = ubG;
-                    ubg(ind_H) = ubH;
-
-                    nabla_g = jac_g(w_orig, nlp.p.mpcc_p().val);
-
-                    lbw = lbw_orig;
-                    ubw = ubw_orig;
-                    w_init = w_orig;
-
-                    
-                    casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
-                    opts_casadi_nlp.ipopt.max_iter = 5000;
-                    opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                    %opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
-                    opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
-                    opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.tol = obj.opts.comp_tol;
-                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.comp_tol);
-                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.comp_tol);
-                    opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
-                    opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-                    opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
-                    opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
-                    opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
-                    opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-                    %opts_casadi_nlp.ipopt.nlp_scaling_method = 'equilibration-based';
-                    default_tol = 1e-4;
-                    opts_casadi_nlp.ipopt.tol = default_tol;
-                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-                    %opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
-                    opts_casadi_nlp.ipopt.print_level = 0;
-                    opts_casadi_nlp.ipopt.sb = 'yes';
-                    
-                    tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
-                    tnlp_results = tnlp_solver('x0', w_init,...
-                        'lbx', lbw,...
-                        'ubx', ubw,...
-                        'lbg', lbg,...
-                        'ubg', ubg,...
-                        'lam_g0', lam_g_aug,...
-                        'lam_x0', lam_x_aug,...
-                        'p',nlp.p.mpcc_p().val);
-                    res_out = tnlp_results;
-                    if tnlp_solver.stats.success
-                        converged = true;
-                    else
-                        n_biactive = n_biactive + 1;
-                    end 
-                    %converged = true;
-                    switch tnlp_solver.stats.return_status
-                      case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
-                        converged = true;
-                      otherwise
-                        converged = false;
-                    end
-                end
-                w_star = full(tnlp_results.x);
-
-                nu = -full(tnlp_results.lam_g(ind_G));
-                xi = -full(tnlp_results.lam_g(ind_H));
-                
-                % Index sets
-                I_G = find(ind_0p+ind_00);
-                I_H = find(ind_p0+ind_00);
-
-                G_new = full(obj.G_fun(w_star_orig, nlp.p.mpcc_p().val));
-                H_new = full(obj.H_fun(w_star_orig, nlp.p.mpcc_p().val));
-
-                % multipliers (nu, xi already calculated above)
-                lam_x_star = full(tnlp_results.lam_x);
-                lam_g_star = full(tnlp_results.lam_g);
-                %lam_x_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
-                %lam_x_star(ind_H) = 0; % box constraints
-                lam_g_star = tnlp_results.lam_g;
-                lam_g_star(ind_G) = 0; % Capturing multipliers for non-complementarity 
-                lam_g_star(ind_H) = 0; % box constraints
-                type_tol = a_tol^2;
-
-                ind_00_new = G_new<a_tol & H_new<a_tol;
-            end
-            
-            switch tnlp_solver.stats.return_status
-              case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
-                if n_biactive
-                    nu_biactive = nu(ind_00);
-                    xi_biactive = xi(ind_00);
-                    bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
-
-                    figure()
-                    scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
-                    xline(0,'k-.');
-                    yline(0,'k-.');
-                    xlim([-bound,bound]);
-                    ylim([-bound,bound]);
-                    
-                    grid on;
-
-                    if all(nu_biactive > -type_tol & xi_biactive > -type_tol)
-                        stat_type = "S";
-                        disp("Converged to S-stationary point")
-                    elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
-                        stat_type = "M";
-                        disp("Converged to M-stationary point")
-                    elseif all(nu_biactive.*xi_biactive > -type_tol)
-                        stat_type = "C";
-                        disp("Converged to C-stationary point")
-                    elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
-                        stat_type = "A";
-                        disp("Converged to A-stationary point")
-                    else
-                        stat_type = "W";
-                        disp("Converged to W-stationary point, or something has gone wrong")
-                    end
-                else
-                    stat_type = "S";
-                    disp("Converged to S-stationary point")
-                end
-              otherwise
-                stat_type = "?";
-                disp("Could not converge to point from the end of homotopy");
-            end
-            
-            % output tnlp results
-            res_out = tnlp_results;
-            w_polished = zeros(size(nlp.w));
-            w_polished = w_star_orig;
-            res_out.x = w_polished;
-        end
-
-        function [solution, improved_point, b_stat] = check_b_stationarity(obj, s_elastic)
-            import casadi.*
-            mpcc = obj.mpcc;
-            nlp = obj.nlp;
-            x0 = nlp.w.mpcc_w().res;
-            f = mpcc.f;
-            x = nlp.w.mpcc_w(); lbx = nlp.w.mpcc_w().lb; ubx = nlp.w.mpcc_w().ub;
-            g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
-            G = mpcc.G;
-            H = mpcc.H;
-            G_old = full(obj.G_fun(x0, nlp.p.mpcc_p().val));
-            H_old = full(obj.H_fun(x0, nlp.p.mpcc_p().val));
-
-            if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
-                a_tol = 1*sqrt(obj.opts.comp_tol);
-            else
-                a_tol = 1*sqrt(s_elastic);
-            end
-            ind_00 = G_old<a_tol & H_old<a_tol;
-            n_biactive = sum(ind_00);
-            ind_0p = G_old<H_old & ~ind_00;
-            ind_p0 = H_old<G_old & ~ind_00;
-            y_lpcc = H_old<G_old;
-            
-            lift_G = SX.sym('lift_G', length(G));
-            lift_H = SX.sym('lift_H', length(H));
-            g_lift = vertcat(lift_G - G, lift_H - H);
-
-            x = vertcat(x, lift_G, lift_H);
-            lblift_G = zeros(size(lift_G));
-            ublift_G = inf*ones(size(lift_G));
-            lblift_H = zeros(size(lift_G));
-            ublift_H = inf*ones(size(lift_G));
-
-            %TODO (@anton) maybe take advantage of vdx here. (@armin: if so, please comment it appropietly and make it readable)
-            ind_mpcc = 1:length(lbx);
-            ind_G = (1:length(lift_G))+length(lbx);
-            ind_H = (1:length(lift_H))+length(lbx)+length(lift_G);
-
-            lbx = vertcat(lbx, lblift_G, lblift_H);
-            ubx = vertcat(ubx, ublift_G, ublift_H);
-            G_init = G_old;
-            %G_init(ind_00 | ind_0p) = 0;
-            H_init = H_old;
-            %H_init(ind_00 | ind_p0) = 0;
-            x0 = vertcat(x0, G_init, H_init);
-
-            g = vertcat(g,g_lift);
-            lbg = vertcat(lbg,zeros(size(g_lift)));
-            ubg = vertcat(ubg,zeros(size(g_lift)));
-            
-            p = mpcc.p;
-            p0 = nlp.p.mpcc_p().val;
-
-            solver_settings.max_iter = 20;
-            solver_settings.tol = 1e-6;
-            solver_settings.Delta_TR_init = 10;
-            solver_settings.Delta_TR_min = 1e-4;
-            solver_settings.verbose_solver = 1;
-            solver_settings.tighten_bounds_in_lpcc = false;
-            solver_settings.BigM = 1e2;
-
-            if ~n_biactive
-                solver_settings.fixed_y_lpcc = y_lpcc;
-            end
-            %% The problem
-            % @TODO: 
-            lpec_data = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
-            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
-            solution = b_stationarity_oracle(lpec_data,solver_initalization,solver_settings);
-            
-            improved_point = solution.x(ind_mpcc);
-
-            b_stat = ~solution.oracle_status;
         end
     end
 end

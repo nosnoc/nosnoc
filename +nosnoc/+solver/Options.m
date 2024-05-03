@@ -33,7 +33,7 @@ classdef Options < handle
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
 
         % MPCC and Homotopy Settings
-        comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
+        complementarity_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
         objective_scaling_direct(1,1) logical = 1
         sigma_0(1,1) double {mustBeReal, mustBeNonnegative} = 1
         sigma_N(1,1) double {mustBeReal, mustBePositive} = 1e-9

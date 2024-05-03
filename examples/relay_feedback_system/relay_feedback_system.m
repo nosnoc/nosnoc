@@ -53,7 +53,7 @@ problem_options.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
 solver_options.print_level = 2;
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'Stewart'; % 'Step;
-solver_options.comp_tol = 1e-9;
+solver_options.complementarity_tol = 1e-9;
 solver_options.homotopy_update_rule = 'superlinear';
 %% Time settings
 problem_options.T_sim = T_sim;

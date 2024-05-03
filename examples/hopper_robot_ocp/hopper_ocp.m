@@ -65,7 +65,7 @@ solver_options.opts_casadi_nlp.ipopt.tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
-solver_options.comp_tol = 1e-9;
+solver_options.complementarity_tol = 1e-9;
 solver_options.print_level = 5;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:

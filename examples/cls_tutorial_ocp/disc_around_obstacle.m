@@ -56,7 +56,7 @@ solver_options.N_homotopy = 100;
 problem_options.g_path_at_fe = 1;
 problem_options.cross_comp_mode = 7;
 solver_options.sigma_0 = 1e1;
-solver_options.comp_tol = 1e-6;
+solver_options.complementarity_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 2e3;
 problem_options.gamma_h = 0.995;
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
