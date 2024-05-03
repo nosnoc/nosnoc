@@ -220,8 +220,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % branch of the complementarity each element of G(w) and H(w) are, or whether the solution is biactive at that point.
             %
             % This algorithm also attempts to solve multiple TNLPs by iteratively adding ambiguous complementarity pairs to the bi-active set.
-            % We do this starting from the unambigously biactive complementarities (ones whos maximum is smaller than the complementarity tolerance of the homotopy)
-            % and attempting to solve the corresponding TNLP. We then add the ambiguous complementarities in order of inf-norm distance from the origin in G-H space.
+            % We do this starting from all the possibly biactive points 
+            % and attempting to solve the corresponding TNLP. We then remove the ambiguous complementarities in order of inf-norm distance from the origin in G-H space.
             % This algorithm terminates when the correct biactive set is found (a TNLP converges to a point close enough to the solution of the homotopy), or until
             % all ambiguous complementarity pairs are exhausted, at which point we fail to calculate the stationarity type.
             %
