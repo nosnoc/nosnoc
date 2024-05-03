@@ -8,16 +8,12 @@ import nosnoc.solver.*;
 
 % set options
 mpccsol_opts = nosnoc.solver.Options();  
-mpccsol_opts.homotopy_steering_strategy = "Direct"; % reports homotopy faild, but solve was sucessful
-% mpccsol_opts.homotopy_steering_strategy = "ELL_1"; % reports wrongly that
-% (0,0,0), the point is S stationary, whereas it is C or M, but not S. %
-% also B stat oracle fails? (if default comp tol used)
-% mpccsol_opts.homotopy_steering_strategy = "ELL_INF"; 
-mpccsol_opts.calculate_stationarity_type  = 1;
+% mpccsol_opts.homotopy_steering_strategy = "Direct";
+% mpccsol_opts.homotopy_steering_strategy = "ELL_1";
+mpccsol_opts.homotopy_steering_strategy = "ELL_INF"; 
+mpccsol_opts.calculate_stationarity_type = 1;
 
 mpccsol_opts.complementarity_tol = 1e-12;
-mpccsol_opts.N_homotopy = 20;  % Using Direct solver terminates before the comp tol was reached? why?
-
 
 % mpcc_method =  nosnoc.solver.MpccMethod.KADRANI;
 mpcc_method =  nosnoc.solver.MpccMethod.SCHOLTES_INEQ;

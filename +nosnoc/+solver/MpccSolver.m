@@ -250,7 +250,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             n_biactive = sum(ind_00);
             if exitfast && n_biactive == 0
                 w_polished = [];
-                res_out = []
+                res_out = [];
                 stat_type = "S";
                 disp("Converged to S-stationary point")
                 return
@@ -285,7 +285,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 n_max_biactive = n_biactive;
                 n_biactive = n_biactive;
                 while ~converged && n_biactive >= 0
-                    idx_00 = min_idx(1:n_biactive)
+                    idx_00 = min_idx(1:n_biactive);
                     ind_00 = false(length(G),1);
                     ind_00(idx_00) = true;
                     
@@ -332,8 +332,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
-                    opts_casadi_nlp.ipopt.print_level = 5;
+                    opts_casadi_nlp.ipopt.print_level = obj.opts.opts_casadi_nlp.ipopt.print_level;
+                    opts_casadi_nlp.print_time = obj.opts.opts_casadi_nlp.print_time;
                     opts_casadi_nlp.ipopt.sb = 'yes';
+                    
                     
                     tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
                     tnlp_results = tnlp_solver('x0', w_init,...
@@ -448,7 +450,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
                     %opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
-                    opts_casadi_nlp.ipopt.print_level = 0;
+                    opts_casadi_nlp.ipopt.print_level = obj.opts.opts_casadi_nlp.ipopt.print_level;
+                    opts_casadi_nlp.print_time = obj.opts.opts_casadi_nlp.print_time;
                     opts_casadi_nlp.ipopt.sb = 'yes';
                     
                     tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
@@ -517,27 +520,41 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                     if all(nu_biactive > -type_tol & xi_biactive > -type_tol)
                         stat_type = "S";
-                        disp("Converged to S-stationary point")
+                        if obj.opts.print_level >= 1
+                            disp("Converged to S-stationary point.")
+                        end
                     elseif all((nu_biactive > -type_tol & xi_biactive > -type_tol) | (abs(nu_biactive.*xi_biactive) < type_tol))
                         stat_type = "M";
-                        disp("Converged to M-stationary point")
+                        if obj.opts.print_level >= 1
+                            disp("Converged to M-stationary point.")
+                        end
                     elseif all(nu_biactive.*xi_biactive > -type_tol)
                         stat_type = "C";
-                        disp("Converged to C-stationary point")
+                        if obj.opts.print_level >= 1
+                            disp("Converged to C-stationary point.")
+                        end
                     elseif all(nu_biactive > -type_tol | xi_biactive > -type_tol)
                         stat_type = "A";
-                        disp("Converged to A-stationary point")
+                        if obj.opts.print_level >= 1
+                            disp("Converged to A-stationary point.")
+                        end
                     else
                         stat_type = "W";
-                        disp("Converged to W-stationary point, or something has gone wrong")
+                        if obj.opts.print_level >= 1
+                            disp("Converged to W-stationary point, or something has gone wrong.")
+                        end
                     end
                 else
                     stat_type = "S";
-                    disp("Converged to S-stationary point")
+                    if obj.opts.print_level >= 1
+                        disp("Converged to S-stationary point.")
+                    end
                 end
               otherwise
                 stat_type = "?";
-                disp("Could not converge to point from the end of homotopy");
+                if obj.opts.print_level >= 1
+                    disp("Could not converge to point from the end of homotopy.");
+                end
             end
             
             % output tnlp results
@@ -604,10 +621,14 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             solver_settings.tol = 1e-6;
             solver_settings.Delta_TR_init = 10;
             solver_settings.Delta_TR_min = 1e-4;
-            solver_settings.verbose_solver = 1;
             solver_settings.tighten_bounds_in_lpcc = false;
             solver_settings.BigM = 1e2;
-
+            if obj.opts.print_level >= 4
+                solver_settings.verbose_solver = 1;
+            else
+                solver_settings.verbose_solver = 0;
+            end
+            
             if ~n_biactive
                 solver_settings.fixed_y_lpcc = y_lpcc;
             end
