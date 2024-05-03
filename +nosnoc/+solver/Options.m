@@ -163,6 +163,7 @@ classdef Options < handle
                 error('homotopy_update_slope must be in (0, 1)');
             end
 
+            obj.sigma_N = min(0.1*obj.complementarity_tol, obj.sigma_N); 
             if obj.N_homotopy == 0
                 obj.N_homotopy = ceil(abs(log(obj.sigma_N / obj.sigma_0) / log(obj.homotopy_update_slope)));
                 if ~strcmp(obj.homotopy_update_rule, 'linear')

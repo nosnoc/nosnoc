@@ -47,6 +47,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         G_fun
         H_fun
         comp_res_fun
+        f_mpcc_fun
     end
 
     methods (Access=public)
@@ -240,9 +241,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
             % i.e. in the worst case G=sqrt(complementarity_tol) and H=sqrt(comp_tol).
             if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
-                a_tol = sqrt(obj.opts.complementarity_tol);
+                a_tol = sqrt(obj.opts.complementarity_tol) + 1e-14;
             else
-                a_tol = sqrt(max(nlp.w.s_elastic().res));
+                a_tol = sqrt(max(nlp.w.s_elastic().res)) + 1e-14;
             end
             
             ind_00 = G_old<a_tol & H_old<a_tol;
@@ -282,7 +283,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 converged = false;
                 n_max_biactive = n_biactive;
-                n_biactive = sum(mindists < obj.opts.complementarity_tol);
+                n_biactive = n_biactive; %sum(mindists < obj.opts.complementarity_tol);
                 while ~converged && n_biactive <=n_max_biactive
                     idx_00 = min_idx(1:n_biactive)
                     ind_00 = false(length(G),1);
@@ -392,7 +393,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 converged = false;
                 n_max_biactive = n_biactive;
-                n_biactive = sum(mindists < obj.opts.complementarity_tol);
+                n_biactive = n_biactive;%sum(mindists < obj.opts.complementarity_tol);
                 while ~converged && n_biactive <=n_max_biactive
                     idx_00 = min_idx(1:n_biactive);
                     ind_00 = false(length(G),1);
@@ -460,15 +461,17 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         'lam_x0', lam_x_aug,...
                         'p',nlp.p.mpcc_p().val);
                     res_out = tnlp_results;
-                    if tnlp_solver.stats.success
+                    if tnlp_solver.stats.success && full(abs(obj.f_mpcc_fun(tnlp_results.x, nlp.p.mpcc_p().val)-tnlp_results.f)) < 1e-9
                         converged = true;
                     else
                         n_biactive = n_biactive + 1;
-                    end 
-                    %converged = true;
+                    end
+                    
                     switch tnlp_solver.stats.return_status
                       case {'Solve_Succeeded', 'Solved_To_Acceptable_Level', 'Search_Direction_Becomes_Too_Small'}
-                        converged = true;
+                        if abs(f-tnlp_results.f) < 1e-5
+                            converged = true;
+                        end
                       otherwise
                         converged = false;
                     end
@@ -546,11 +549,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             res_out.x = w_polished;
         end
 
-        function [solution, improved_point, b_stat] = check_b_stationarity(obj, s_elastic)
+        function [solution, improved_point, b_stat] = check_b_stationarity(obj, s_elastic, x0)
             import casadi.*
             mpcc = obj.mpcc;
             nlp = obj.nlp;
-            x0 = nlp.w.mpcc_w().res;
             f = mpcc.f;
             x = nlp.w.mpcc_w(); lbx = nlp.w.mpcc_w().lb; ubx = nlp.w.mpcc_w().ub;
             g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
@@ -560,9 +562,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             H_old = full(obj.H_fun(x0, nlp.p.mpcc_p().val));
 
             if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
-                a_tol = 1*sqrt(obj.opts.complementarity_tol);
+                a_tol = sqrt(obj.opts.complementarity_tol) + 1e-14;
             else
-                a_tol = 1*sqrt(s_elastic);
+                a_tol = sqrt(s_elastic) + 1e-14;
             end
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00);
@@ -588,9 +590,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             lbx = vertcat(lbx, lblift_G, lblift_H);
             ubx = vertcat(ubx, ublift_G, ublift_H);
             G_init = G_old;
-            %G_init(ind_00 | ind_0p) = 0;
+            G_init(ind_00 | ind_0p) = 0;
             H_init = H_old;
-            %H_init(ind_00 | ind_p0) = 0;
+            H_init(ind_00 | ind_p0) = 0;
             x0 = vertcat(x0, G_init, H_init);
 
             g = vertcat(g,g_lift);
@@ -652,6 +654,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             comp_res_fun = Function('comp_res', {mpcc.x, mpcc.p}, {mmax(mpcc.G.*mpcc.H)});
             obj.comp_res_fun = comp_res_fun;
             f_mpcc_fun = Function('f_mpcc', {mpcc.x, mpcc.p}, {mpcc.f});
+            obj.f_mpcc_fun = f_mpcc_fun;
+            g_mpcc_fun = Function('g_mpcc', {mpcc.x, mpcc.p}, {mpcc.g});
             % Update nlp data
             if ~isempty(p.Results.x0)
                 nlp.w.mpcc_w().init = p.Results.x0;
@@ -814,7 +818,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             stats.converged = obj.complementarity_tol_met(stats) && ~last_iter_failed && ~timeout;
             stats.success = stats.converged;
             stats.constraint_violation = obj.compute_constraint_violation(mpcc_results.x, mpcc_results.g);
-
             
             if opts.calculate_stationarity_type || opts.polishing_step
                 if last_iter_failed || ~obj.complementarity_tol_met(stats) || timeout
@@ -826,24 +829,23 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     else
                         s_elastic = max(nlp.w.s_elastic().res);
                     end
-                    [sol, w_polished, b_stat] = obj.check_b_stationarity(s_elastic);
-                    if ~b_stat
-                        [w_polished, res_out, stat_type, n_biactive] = obj.calculate_stationarity(true, true);
-                    else
-                        stat_type = "B";
-                    end
+                    
+                    [w_polished, res_out, stat_type, n_biactive] = obj.calculate_stationarity(true, true);
+                    [sol, w_polished, b_stat] = obj.check_b_stationarity(s_elastic, w_polished);
                 end
                 if stat_type ~= "?"
                     mpcc_results.x = w_polished;
                     mpcc_results.f = full(f_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
+                    mpcc_results.g = full(g_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
+                    mpcc_results.G = full(G_fun(w_polished, nlp.p.mpcc_p().val));
+                    mpcc_results.H = full(H_fun(w_polished, nlp.p.mpcc_p().val));
                     % TODO (@anton) also recalculate multipliers and g?
-                    if stat_type ~= "B"
-                        mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
-                    end
+                    mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
                     complementarity_iter = full(obj.comp_res_fun(w_polished, nlp.p.mpcc_p().val));
                     stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                 end
                 stats.stat_type = stat_type;
+                stats.b_stationary = b_stat;
             end
             
             varargout{1} = mpcc_results;
