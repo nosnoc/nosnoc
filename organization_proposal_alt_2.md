@@ -7,6 +7,7 @@ This is the top level namespace that all elements of nosnoc lives under.
 
 ### `ModelBase`
 Abstract base class for nosnoc models.
+Provides shared functionality for OCPs and Simulations of the availiable models in nosnoc.
 
 Properties:
 + `dims`: Structure of dimensions.
@@ -36,13 +37,15 @@ Methods:
 + `verify()`: Verify dimension of provided and generated variables.
 
 ### `DCSBase`
-Abstract Base class for DCS. Unsure if necessary.
+Abstract Base class for DCS. Unsure if necessary as it is possible to go straight from model to MPCC.
+In theory this is also impetus to move forward towards defining FESD as a discretization method for a more generic class of DCS. 
+For this we essentially need the ability to have continuous and discontinuous complementarity functions.
 
 Properties:
-+ `f_x_fun`:
-+ `g_path_fun`:
-+ `g_terminal_fun`:
-+ `g_path_comp_fun`:
++ `f_x_fun`: Forward simulation function.
++ `g_path_fun`: Path constraints function
++ `g_terminal_fun`: Terminal constraints function
++ `g_path_comp_fun`: Path complementarity constraint function
 
 Methods:
 + `generate_variables()`: Generate missing variables.
@@ -192,7 +195,7 @@ Properties:
 
 ## `nosnoc.mpcc`
 Namespace containing discretized MPCCs.
-Each class in this namespace produces op
+Each class in this namespace produces an MPCC which chan be given to `nosnoc.solver.mpccsol`.
 
 ### `Step`
 Subclass of `nosnoc.core.MPCCBase`.
