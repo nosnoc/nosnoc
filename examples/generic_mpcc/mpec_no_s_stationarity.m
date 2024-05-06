@@ -8,16 +8,19 @@ import nosnoc.solver.*;
 
 % set options
 mpccsol_opts = nosnoc.solver.Options();  
-% mpccsol_opts.homotopy_steering_strategy = "Direct";
+mpccsol_opts.homotopy_steering_strategy = "Direct";
 % mpccsol_opts.homotopy_steering_strategy = "ELL_1";
-mpccsol_opts.homotopy_steering_strategy = "ELL_INF"; 
+% mpccsol_opts.homotopy_steering_strategy = "ELL_INF"; 
 mpccsol_opts.calculate_stationarity_type = 1;
 
-mpccsol_opts.complementarity_tol = 1e-12;
+
+mpccsol_opts.complementarity_tol = 1e-20;
+
+%TODO: it fails for very low comp tols. 
+% TODO: it does not say anything about B stationarity?
 
 % mpcc_method =  nosnoc.solver.MpccMethod.KADRANI;
 mpcc_method =  nosnoc.solver.MpccMethod.SCHOLTES_INEQ;
-
 
 % define MPCC
 x1 = SX.sym('x1');
@@ -38,7 +41,6 @@ ubg = [inf;inf];
 G = x1;
 H = x2;
 
-
 mpcc.x = x;
 mpcc.g = g;
 mpcc.G = x1;
@@ -46,6 +48,7 @@ mpcc.H = x2;
 mpcc.f = f;
 
 solver = mpccsol('solver_mpecc', mpcc_method, mpcc, mpccsol_opts);
-
 mpcc_results = solver('x0', x0,'lbx', lbx,'ubx', ubx);
 disp(mpcc_results.x)
+  
+%

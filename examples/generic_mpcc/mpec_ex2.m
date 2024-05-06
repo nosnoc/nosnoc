@@ -8,7 +8,8 @@ import casadi.*;
 import nosnoc.solver.mpccsol;
 
 mpccsol_opts = nosnoc.solver.Options();
-mpccsol_opts.lift_complementarities = false;
+mpccsol_opts.lift_complementarities = true;
+mpccsol_opts.calculate_stationarity_type = true;
 x = SX.sym('x',8);
 x_0 = x(1:4);
 x_1 = x(5:6);
