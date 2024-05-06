@@ -27,12 +27,12 @@
 
 classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
     properties
-        mpcc
+        mpcc % TODO: Add description of every proprety (what type is it, where is it used for - possibly in a format that is suitable for readthedocs), e.g. mpcc is a vdx object or a struct, why is it defferent than nlp
         nlp
         opts
         stats % struct
         nlp_solver
-        plugin
+        plugin % NLP solver: Ipopt, Snopt, Worhop or Uno.
         relaxation_type
     end
 
@@ -41,7 +41,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         ind_scalar_H
         ind_nonscalar_G
         ind_nonscalar_H
-        ind_map_G
+        ind_map_G % what is map_G?
         ind_map_H
 
         G_fun
@@ -82,9 +82,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nlp.w.mpcc_w = {mpcc.x}; % nlp.w.mpcc_w is a vdx.Variable (depth 0) which stores mpcc optimization variables
                 nlp.p.mpcc_p = {mpcc.p}; % nlp.p.mpcc_p is a vdx.Variable (depth 0) which stores mpcc parameters
                 nlp.g.mpcc_g = {mpcc.g}; % nlp.g.mpcc_g is a vdx.Variable (depth 0) which stores mpcc general constraints
-                nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0}; % sigma_p is
+                nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0}; % sigma_p is the homotopy parameter (a scalar), with the value sigma_0 from the options.
                 nlp.f = mpcc.f;
-                n_c = length(mpcc.G);
+                n_c = length(mpcc.G); % number of complementarity constraints
 
                 % Create relaxation slacks/parameters
                 switch opts.homotopy_steering_strategy
@@ -92,16 +92,18 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     % nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
                     sigma = nlp.p.sigma_p(); 
                   case HomotopySteeringStrategy.ELL_INF
-                    % adding elastic variables to nlp.w which augments the original mpcc.w
+                    % adding a scalar elastic variable to nlp.w which augments the original mpcc.w
                     nlp.w.s_elastic = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
-                    sigma = nlp.w.s_elastic();
+                    sigma = nlp.w.s_elastic(); % Here s_elastic takes the role of sigma in direct, and sigma_p is used to define a penalty parameter for the elastic variable s_elastic
                     if opts.objective_scaling_direct
-                        nlp.f = nlp.f + (1/nlp.p.sigma_p())*sigma;
+                        nlp.f = nlp.f + (1/nlp.p.sigma_p())*sigma; % penalize the elastic more and more with decreasing sigma_p
                     else
-                        nlp.f = nlp.p.sigma_p()*nlp.f + sigma;
+                        nlp.f = nlp.p.sigma_p()*nlp.f + sigma; % reduce the weight of the initial objective with decreasing sigma_p
                     end
                   case HomotopySteeringStrategy.ELL_1
                     % adding elastic variables to nlp.w which augments the original mpcc.w
+                    % Remark: ELL_1 with s_elastic is equivalent to usually Ell_1 penality approach, but this indirect way helps
+                    % to add some constraint on s_elastic (which  avoids unbounded problems somtimes, and it can also improve convergence)
                     nlp.w.s_elastic = {{'s_elastic', n_c}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                     sigma = nlp.w.s_elastic();
                     sum_elastic = sum1(sigma);
@@ -140,7 +142,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     H = mpcc.H;
                 end
 
-                % apply relaxation
+                % apply relaxation (defines a particular method, e.g. Scholtes, Kanzow-Schwartz, Fischer Burmeister, etc.)
                 psi_fun = get_psi_fun(MpccMethod(obj.relaxation_type), opts.normalize_homotopy_update);
                 lb = [];
                 ub = [];
@@ -184,7 +186,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         function met = complementarity_tol_met(obj, stats)
             last_stats = stats.solver_stats(end);
             met = 0;
-            if abs(stats.complementarity_stats(end)) < 10 * obj.opts.complementarity_tol
+            if abs(stats.complementarity_stats(end)) < 10 * obj.opts.complementarity_tol % TODO: why a 10*?
                 met = 1;
             end
         end
@@ -198,7 +200,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         end
 
         function out = cat(dim,varargin)
-            error('Concatenation not supported')
+            error('Concatenation not supported.')
         end
 
         function varargout = size(obj,varargin)
@@ -206,6 +208,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         end
         
         function ind = end(obj,k,n)
+            % TODO end is a matlab keyword, maybe use a different name?
+            % TODO: Why and where is this used?
             ind = 1;
         end
 
@@ -255,8 +259,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 disp("Converged to S-stationary point")
                 return
             end
-            mindists = max(G_old, H_old);
-            [~, min_idx] = sort(mindists);
+            min_dists = max(G_old, H_old);
+            [~, min_idx] = sort(min_dists);
 
             if complementarity_constraints_lifted
                 w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
@@ -382,7 +386,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 lam_x_aug = lam_x;
                 
-                g = vertcat(g,10000*G,10000*H);
+                g = vertcat(g,10000*G,10000*H); % TODO: Why 10000*? 
                 lbg = vertcat(lbg,zeros(size(G)),zeros(size(H)));
                 ubg = vertcat(ubg,zeros(size(G)),zeros(size(H)));
                 lam_g_aug = vertcat(lam_g, zeros(size(G)), zeros(size(H)));
@@ -479,7 +483,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
                 w_star = full(tnlp_results.x);
 
-                nu = -full(tnlp_results.lam_g(ind_G));
+                nu = -full(tnlp_results.lam_g(ind_G)); % here a - is put, as in casadi Lagrange multipliers for inequality constraints are nonpositive, but we use our defintions with nonnegative multipliers
                 xi = -full(tnlp_results.lam_g(ind_H));
                 
                 % Index sets
@@ -507,7 +511,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 if n_biactive
                     nu_biactive = nu(ind_00);
                     xi_biactive = xi(ind_00);
-                    bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10);
+                    bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10); % TODO:why 1e-10?
 
                     figure()
                     scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
@@ -515,6 +519,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     yline(0,'k-.');
                     xlim([-bound,bound]);
                     ylim([-bound,bound]);
+                    xlabel('\nu')
+                    ylabel('\xi')
+                    title('Lagrange multipliers for the comp. constraints')
                     
                     grid on;
 
@@ -633,7 +640,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 solver_settings.fixed_y_lpcc = y_lpcc;
             end
             %% The problem
-            % @TODO: 
+            % @TODO: ???
             lpec_data = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
             solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
             solution = b_stationarity_oracle(lpec_data,solver_initalization,solver_settings);
