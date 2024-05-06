@@ -37,6 +37,7 @@ Methods:
 + `verify()`: Verify dimension of provided and generated variables.
 
 ### `DCSBase`
+(Armin: this is to be discussed, but my feeling is it makes sense to have both model and dcs, as we can arrive to from different modesle to the same dcs, e.g. nosnoc.model.pss with the heaviside option or nosnoc.model.heaviside lead to the same dcs, similar when we use time freezing...)
 Abstract Base class for DCS. Unsure if necessary as it is possible to go straight from model to MPCC.
 In theory this is also impetus to move forward towards defining FESD as a discretization method for a more generic class of DCS. 
 For this we essentially need the ability to have continuous and discontinuous complementarity functions.
@@ -61,6 +62,7 @@ Methods:
 + `step_equilibration()`: Creates step equilibration constriants.
 
 ### `DiscretizationOptions`
+(Armin: for now all nosnoc options in a single class)
 Options class used to discretize a DCS and create an MPCC.
 
 Properties:
@@ -99,6 +101,7 @@ Properties:
 + `g_ind`: Stewart indicator functions, may be calculated from `c` and `S`.
 
 ### `AizermanPyatnitskii`
+(Armin: AizermanPyatnitskii - > Heaviside)
 Subclass of `nosnoc.core.ModelBase`.
 
 Properties:

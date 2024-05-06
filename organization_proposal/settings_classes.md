@@ -4,6 +4,7 @@ This file contains an overview of the options structure for Nosnoc.
 ## Option 1: Single, Top level Options Class
 This option is essentially just maintaining a single large pile of options which would combine every existing option minus those which particularly pertain to `MpccSolver`.
 In this case we would simply have a top level `nosnoc.core.Options` with a combination of `NosnocProblemOptions` and the integrator related options from `nosnoc.solver.options`.
+(Armin: I vote for this one)
 
 ## Option 2: Top Level Options Class tree structure
 In this case we would have a single top level options class `nosnoc.core.Options` with several sub-options classes that form an options tree.

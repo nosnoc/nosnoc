@@ -1,14 +1,15 @@
 # Proposed class structure for `nosnoc`
 Remaining open questions:
-+ Where to put discretization options.
-+ Is it a good idea to implement time-freezing as a transform from one model type to another.
-+ Should we also split the nosnoc.cls.Model.
-+ Does it make sense to include the algebraic variables in the model at all?
++ Where to put discretization options. (Armin: all in the major options)
++ Is it a good idea to implement time-freezing as a transform from one model type to another.  (Armin: time freezing problems should be defined as a CLS and then transformed into the according DCS (whereas in principle one could create also an pss objecto before, but then we whould have two))
++ Should we also split the nosnoc.cls.Model. (Armin: no, too many branching makes it more complicated)
++ Does it make sense to include the algebraic variables in the model at all? (Armin: which algebaric variables? e.g. for pss, hiding the theta would not hurt - as we do not want to add constraints with theta so easily since this can break everything,
+expert mode could be use the generated nosnoc.dcs.stewart acess its variables and add more path constraints there? User algebaric should ofc visible, but it is requirment to provide laso a g_z with the same dimension as z)
   + Anton: My view is split on this. 
   I personally prefer to keep the model frontend as small as possible. 
   This could be done via having the model only containing the bare minimum data e.g. for pss: `F`, `c`, `S`, `x`, `u`, `z`.
   This would then be passed to a reformulation step that would produce a DCS..
-+ How to get results:
++ How to get results:  (Armin: once we have nosnoc solver object, it should return structured results (obtain via vdx internally and create from the mpcc solver results)
 
 ## `nosnoc`
 This is the top level namespace that all elements of nosnoc live under.
@@ -28,7 +29,7 @@ Properties:
 + `mpcc`, type: `nosnoc.core.MpccBase`
 
 Methods:
-+ `set(var: string, index, val)`
++ `set(var: string, index, val)` (Armin: why both string and index?)
   + Sets the `var(index)` to the `val`.
   + more advanced setting should be available through accessing the `mpcc` property.
 + `solve()`
@@ -47,7 +48,7 @@ Properties:
 + `mpcc`, type: `nosnoc.core.MpccBase`
 
 Methods
-+ `step(x0, t)`
++ `step(x0, t)`   (Armin: dont like the name step, i prefer integrator.simulate() or integrator.solve(), once integrator = nosnoc.integrator(model,problem_options,solver_options)  is created)
   + Returns: `x(t;x0)`
 
 ## `nosnoc.solver`
@@ -67,6 +68,8 @@ This namespace contains plugins that handle the different options and behaviors 
 
 ## `nosnoc.core`
 Contains core base classes for nosnoc models and MPCCs.
+
+(Armin: nosnoc.core should be hidden from the user and just called internally when defining any nosnoc.model.x, nosnoc.dcs.x or nosnoc.mpcc.x )
 
 ### `ModelBase`
 Abstract base class for nosnoc models.
@@ -103,13 +106,16 @@ Methods:
 ### `MpccBase`
 Abstract base class for MPCCs. Subclass of `vdx.problems.Mpcc`.
 
+(Armin: the name MpccBase is maybe not instructive enough, even though we get an mpcc, i prefer to call it maybe discrete_time_problem (simulation or ocp mpcc in the end))
+
 Methods:
 + `create_variables()`: Creates all the variables of the Mpcc.
-+ `forward_sim_constraints()`: Creates forward simulation and stagewise constraints.
++ `forward_sim_constraints()`: Creates forward simulation and stagewise constraints. (Armin: I am not in favor of splitting these steps, but rather make them explicit in one method, and they should not maybe be in an abstract class, as fesd is slightly differet for every problem type)
 + `create_complementarities()`: Creates complementarity constraints.
 + `step_equilibration()`: Creates step equilibration constriants.
 
-## `nosnoc.filippov`
+## `nosnoc.filippov` 
+(Armin: nosnoc.model.pss)
 Models and problems related to piecewise-smooth dynamical systems.
 An alternative name would be `nosnoc.pss`.
 
@@ -136,6 +142,8 @@ Properties:
 Subclass of `nosnoc.core.MpccBase`.
 
 ### `StepModel`
+
+(Armin: rename in general: Step to Heaviside)
 Subclass of `nosnoc.core.ModelBase`.
 
 Properties:
@@ -165,6 +173,7 @@ Properties:
   + `n_contacts`: number of contacts 
 
 ### `FesdJMpcc`
+(Armin:name not consistent with others,)
 Subclass of `nosnoc.core.MpccBase`.
 
 ## `nosnoc.cds`
