@@ -27,10 +27,10 @@
 
 classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
     properties
-        mpcc % TODO: Add description of every proprety (what type is it, where is it used for - possibly in a format that is suitable for readthedocs), e.g. mpcc is a vdx object or a struct, why is it defferent than nlp
-        nlp
-        opts
-        stats % struct
+        mpcc % Either a struct with the (possibly optional) fields (f, p, w, g, G, H) or a subclass of vdx.problems.Mpcc.
+        nlp % The relaxed/smoothed nlp which is solved in a homotopy loop with a decreasing relaxation/smoothing parameter. 
+        opts % Options object.
+        stats % Struct with stats of the last solve.
         nlp_solver
         plugin % NLP solver: Ipopt, Snopt, Worhop or Uno.
         relaxation_type
@@ -41,8 +41,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         ind_scalar_H
         ind_nonscalar_G
         ind_nonscalar_H
-        ind_map_G % what is map_G?
-        ind_map_H
+        ind_map_G % Map from lifted indices to original indices in G.
+        ind_map_H % Map from lifted indices to original indices in H.
 
         G_fun
         H_fun
@@ -186,7 +186,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         function met = complementarity_tol_met(obj, stats)
             last_stats = stats.solver_stats(end);
             met = 0;
-            if abs(stats.complementarity_stats(end)) < 10 * obj.opts.complementarity_tol % TODO: why a 10*?
+            if abs(stats.complementarity_stats(end)) < obj.opts.complementarity_tol + eps(obj.opts.complementarity_tol) % add epsilon to check.
                 met = 1;
             end
         end
@@ -204,12 +204,14 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         end
 
         function varargout = size(obj,varargin)
+        % This is a required overload for matlab.mixin.indexing.RedefinesParen.
+        % In the case of a scalar like this class returning 1 or throwing an error is prefered.
             varargout = 1;
         end
         
         function ind = end(obj,k,n)
-            % TODO end is a matlab keyword, maybe use a different name?
-            % TODO: Why and where is this used?
+        % This is a required overload for matlab.mixin.indexing.RedefinesParen.
+        % In the case of a scalar like this class returning 1 or throwing an error is prefered.
             ind = 1;
         end
 
@@ -386,7 +388,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 lam_x_aug = lam_x;
                 
-                g = vertcat(g,10000*G,10000*H); % TODO: Why 10000*? 
+                g = vertcat(g,10000*G,10000*H); % in case of unlifted complementarity functions scaling the functions by a large value, greatly improves the convergence of the TNLP
+                                                % This does not affect the signs of the MPCC multipliers and therefore does not affect the stationarity type verification. 
                 lbg = vertcat(lbg,zeros(size(G)),zeros(size(H)));
                 ubg = vertcat(ubg,zeros(size(G)),zeros(size(H)));
                 lam_g_aug = vertcat(lam_g, zeros(size(G)), zeros(size(H)));
@@ -412,13 +415,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     ubG = inf*ones(size(G));
                     lbH = 0*ones(size(G));
                     ubH = inf*ones(size(G));
-                    %lbG = zeros(size(G));
-                    %ubG = inf*ones(size(G));
-                    %lbH = zeros(size(G));
-                    %ubH = inf*ones(size(G));
                     ubG(find(ind_00 | ind_0p)) = 1e-12; 
                     ubH(find(ind_00 | ind_p0)) = 1e-12;
-                    %g(find(ind_00)) = 10000*g(find(ind_00));
                     lbg(ind_G) = lbG;
                     lbg(ind_H) = lbH;
                     ubg(ind_G) = ubG;
@@ -434,7 +432,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
                     opts_casadi_nlp.ipopt.max_iter = 5000;
                     opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                    %opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
                     opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
                     opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
                     opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
@@ -447,13 +444,11 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
                     opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
                     opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-                    %opts_casadi_nlp.ipopt.nlp_scaling_method = 'equilibration-based';
                     default_tol = 1e-4;
                     opts_casadi_nlp.ipopt.tol = default_tol;
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                     opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-                    %opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
                     opts_casadi_nlp.ipopt.print_level = obj.opts.opts_casadi_nlp.ipopt.print_level;
                     opts_casadi_nlp.print_time = obj.opts.opts_casadi_nlp.print_time;
                     opts_casadi_nlp.ipopt.sb = 'yes';
@@ -511,7 +506,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 if n_biactive
                     nu_biactive = nu(ind_00);
                     xi_biactive = xi(ind_00);
-                    bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10); % TODO:why 1e-10?
+                    bound = 1.1*(max(abs([nu_biactive;xi_biactive]))+1e-10); % 1e-10 here is added for better plots when all biactive point multipliers are small.  
 
                     figure()
                     scatter(nu_biactive, xi_biactive, 50, 'o', 'LineWidth', 2);
@@ -640,7 +635,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 solver_settings.fixed_y_lpcc = y_lpcc;
             end
             %% The problem
-            % @TODO: ???
             lpec_data = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
             solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
             solution = b_stationarity_oracle(lpec_data,solver_initalization,solver_settings);
