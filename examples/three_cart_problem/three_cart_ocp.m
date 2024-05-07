@@ -50,7 +50,7 @@ problem_options.cross_comp_mode = 7;
 solver_options.homotopy_update_slope = 0.5;
 solver_options.N_homotopy = 100;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
-solver_options.comp_tol = 1e-6;
+solver_options.complementarity_tol = 1e-6;
 solver_options.print_level = 5;
 problem_options.time_freezing = 1;
 

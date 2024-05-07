@@ -151,7 +151,7 @@ if estimate_terminal_error
 
         settings_integrator = settings;
         settings_integrator.mpcc_mode = 5;
-        settings_integrator.comp_tol = 1e-15;
+        settings_integrator.complementarity_tol = 1e-15;
         settings_integrator.irk_scheme = IRKSchemes.RADAU_IIA;
         settings_integrator.n_s = 5;
         settings_integrator.use_fesd = 1;

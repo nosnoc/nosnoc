@@ -52,7 +52,7 @@ problem_options.cross_comp_mode = 7;
 
 solver_options.print_level = 3;
 problem_options.use_fesd = 1;
-solver_options.comp_tol = 1e-9;
+solver_options.complementarity_tol = 1e-9;
 solver_options.sigma_N = 1e-9;
 solver_options.N_homotopy = 15;
 problem_options.equidistant_control_grid = 1;
@@ -164,7 +164,7 @@ t_end = 0;
 
 tspan = [0 4/6];
 y0 = [2*pi/3;pi/3;0;0];
-sigma_int = solver_options.comp_tol;
+sigma_int = solver_options.complementarity_tol;
 tol = sigma_int/10;
 options = odeset('RelTol', tol, 'AbsTol', tol/10);
 x_res_integrator = [];

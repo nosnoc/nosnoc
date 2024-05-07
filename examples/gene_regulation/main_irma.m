@@ -53,7 +53,7 @@ problem_options.n_s = 2;
 problem_options.dcs_mode = 'Step'; % General inclusions only possible in step mode.
 problem_options.cross_comp_mode = 3;
 solver_options.homotopy_update_rule = 'superlinear';
-solver_options.comp_tol = 1e-5;
+solver_options.complementarity_tol = 1e-5;
 
 % Generate model
 model = irma_model(switch_on, lifting);

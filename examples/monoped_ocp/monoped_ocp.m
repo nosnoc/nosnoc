@@ -41,7 +41,7 @@ solver_options.homotopy_update_slope = 0.1;
 solver_options.opts_casadi_nlp.ipopt.tol = 1e-8;
 solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
 solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-solver_options.comp_tol = 1e-6;
+solver_options.complementarity_tol = 1e-6;
 %solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% time-freezing

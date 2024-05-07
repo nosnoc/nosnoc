@@ -1,4 +1,4 @@
-function solution = bStationarityOracle(nlp,problem_data,settings)
+function solution = b_stationarity_oracle(nlp,problem_data,settings)
 %% Implemented by Armin Nurkanovic, Anton Pozharskiy 2023
 import casadi.*
 %% extract inital data
@@ -316,7 +316,9 @@ while l_k < settings.max_iter
         activ_set_changes = sum(abs(y_lpcc_k-y_lpcc));
         %fprintf('activ set changes %d \n',activ_set_changes);
     end
-    fprintf("%e\t%e\t%e\t%e\n", Delta_TR_lpcc, f_lin_opt, norm(d_lpcc_k), max(abs(d_lpcc_k)))
+    if settings.verbose_solver
+        fprintf("%e\t%e\t%e\t%e\n", Delta_TR_lpcc, f_lin_opt, norm(d_lpcc_k), max(abs(d_lpcc_k)))
+    end
     d_step_k = d_lpcc_k;
     d_lpcc_list = [d_lpcc_list, d_lpcc_k];
     l_k =  l_k + 1;
@@ -340,7 +342,9 @@ while l_k < settings.max_iter
 end
 
 % Final message
-fprintf(oracle_message);
+if settings.verbose_solver
+    fprintf(oracle_message);
+end
 
 %% Extract Results
 solution.x = x_k;

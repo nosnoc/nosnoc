@@ -9,6 +9,7 @@ mpccsol_opts.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
 mpccsol_opts.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
 mpccsol_opts.lift_complementarities = false;
 mpccsol_opts.assume_lower_bounds = true;
+mpccsol_opts.calculate_stationarity_type = true;
 
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');

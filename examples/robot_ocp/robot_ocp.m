@@ -41,7 +41,7 @@ settings.homotopy_update_rule = 'superlinear';
 settings.opts_casadi_nlp.ipopt.tol = 1e-6;
 settings.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
 settings.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-settings.comp_tol = 1e-6;
+settings.complementarity_tol = 1e-6;
 settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
 %% time-freezing

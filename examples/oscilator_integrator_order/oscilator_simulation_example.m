@@ -53,7 +53,7 @@ problem_options.n_s = 4;
 problem_options.dcs_mode = 'Step'; % 'Step;
 
 % Penalty/Relaxation paraemetr
-solver_options.comp_tol = 1e-9;
+solver_options.complementarity_tol = 1e-9;
 problem_options.cross_comp_mode = 1;
 
 %% Time settings

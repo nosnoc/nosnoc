@@ -35,6 +35,8 @@ mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 % mpccsol_opts.homotopy_steering_strategy = "DIRECT"; 
 % the parameter relaxation/smoothing parameter sigma is steered outside the optimization , cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf
 
+mpccsol_opts.calculate_stationarity_type  = 1;
+
 solver = mpccsol('generic_mpcc', mpcc_method1, mpcc_data, mpccsol_opts);
 solver_ks = mpccsol('generic_mpcc', mpcc_method2, mpcc_data, mpccsol_opts);
 solver_su = mpccsol('generic_mpcc', mpcc_method3, mpcc_data, mpccsol_opts);
@@ -58,4 +60,19 @@ mpcc_results = solver_su('x0', x0,...
     'ubx', ubx,...
     'p',p0);
 
+
+solver_ks.compute_constraint_violation()
+solver_su.stats
 disp(mpcc_results.x)
+
+%% Check stationarity of non optimal points
+w_optimal = mpcc_results.x;
+[w_polished, res_out, stat_type, n_biactive] = solver.check_multiplier_based_stationarity(w_optimal);
+% Try calculating b-stationarity with polished result:
+[solution, improved_point, b_stat] = solver.check_b_stationarity(w_polished);
+
+fprintf('-------------------------------\n');
+w_non_optimal = [0;0]; % - C and not B
+[w_polished, res_out, stat_type, n_biactive] = solver.check_multiplier_based_stationarity(w_non_optimal);
+% Try calculating b-stationarity with polished result:
+[solution, improved_point, b_stat] = solver.check_b_stationarity(w_polished);

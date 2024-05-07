@@ -47,7 +47,7 @@ problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 1;
 problem_options.relax_terminal_constraint = 0;
 % solver settings
-solver_options.comp_tol = 1e-6;
+solver_options.complementarity_tol = 1e-6;
 problem_options.cross_comp_mode = 4;
 %solver_options.homotopy_update_slope = 0.9;
 %solver_options.homotopy_update_rule = 'superlinear';

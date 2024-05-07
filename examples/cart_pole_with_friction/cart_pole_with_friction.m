@@ -45,7 +45,7 @@ problem_options.cross_comp_mode = 7;
 % solver options
 solver_options = nosnoc.solver.Options();
 solver_options.N_homotopy = 15;
-solver_options.comp_tol = 1e-13;
+solver_options.complementarity_tol = 1e-13;
 solver_options.sigma_N = 1e-13;
 %solver_options.homotopy_update_rule = 'superlinear';
 

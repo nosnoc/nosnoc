@@ -33,7 +33,7 @@ classdef Options < handle
         casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
 
         % MPCC and Homotopy Settings
-        comp_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
+        complementarity_tol(1,1) double {mustBeReal, mustBePositive} = 1e-9
         objective_scaling_direct(1,1) logical = 1
         sigma_0(1,1) double {mustBeReal, mustBeNonnegative} = 1
         sigma_N(1,1) double {mustBeReal, mustBePositive} = 1e-9
@@ -49,7 +49,7 @@ classdef Options < handle
         s_elastic_max(1,1) double {mustBeReal, mustBePositive} = 1e1
         s_elastic_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
         s_elastic_0(1,1) double {mustBeReal, mustBePositive} = 1
-        elastic_scholtes(1,1) logical = 0
+        decreasing_s_elastic_upper_bound(1,1) logical = 0
 
         polishing_step(1,1) logical = 0 % heuristic for fixing active set, yet exerimental, not recommended to use.
         polishing_derivative_test(1,1) logical = 0 % check in sliding mode also the derivative of switching functions
@@ -163,6 +163,7 @@ classdef Options < handle
                 error('homotopy_update_slope must be in (0, 1)');
             end
 
+            obj.sigma_N = min(0.1*obj.complementarity_tol, obj.sigma_N); 
             if obj.N_homotopy == 0
                 obj.N_homotopy = ceil(abs(log(obj.sigma_N / obj.sigma_0) / log(obj.homotopy_update_slope)));
                 if ~strcmp(obj.homotopy_update_rule, 'linear')
