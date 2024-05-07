@@ -517,8 +517,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     yline(0,'k-.');
                     xlim([-bound,bound]);
                     ylim([-bound,bound]);
-                    xlabel('$\nu$')
-                    ylabel('$\xi$')
+                    xlabel('$\nu$','interpreter','latex')
+                    ylabel('$\xi$','interpreter','latex')
                     title('Lagrange multipliers for the comp. constraints')
                     
                     grid on;
@@ -649,9 +649,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             b_stat = ~solution.oracle_status;
             if obj.opts.print_level >= 1
                 if b_stat
-                    disp("Converged to point is B-Stationary.")
+                    disp("Converged to B-stationary point.")
                 else
-                    disp("Converged to point is not B-Stationary.")
+                    disp("Converged to a point that is not B-stationary.")
                 end
             end
         end
