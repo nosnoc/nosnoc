@@ -50,6 +50,6 @@ disp(mpcc_results.x)
 % Try calculating b-stationarity before getting polished result:
 [solution, improved_point, b_stat] = solver.check_b_stationarity(mpcc_results.x);
 % get polished solution and multiplier based stationarity type with a lifted TNLP.
-[w_polished, res_out, stat_type, n_biactive] = solver.calculate_stationarity(false,true);
+[w_polished, res_out, stat_type, n_biactive] = solver.check_multiplier_based_stationarity(mpcc_results.x);
 % Try calculating b-stationarity with polished result:
 [solution, improved_point, b_stat] = solver.check_b_stationarity(w_polished);

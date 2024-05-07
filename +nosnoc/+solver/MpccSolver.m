@@ -215,10 +215,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             ind = 1;
         end
 
-        function [w_polished, res_out, stat_type, n_biactive] = calculate_stationarity(obj, exitfast, complementarity_constraints_lifted)
+        function [w_polished, res_out, stat_type, n_biactive] = check_multiplier_based_stationarity(obj, x0, exitfast, complementarity_constraints_lifted)
         % exitfast: Exit without solving the TNLP if we have no biactive constraints (point must be S-stationary).
         % complementarity_constraints_lifted: Additionally lift necessary complementariy constraints when necessary.
             import casadi.*
+            if ~exist('exitfast', 'var')
+                exitfast = false;
+            end
+            if ~exist('complementarity_constraints_lifted', 'var')
+                complementarity_constraints_lifted = true;
+            end
             stat_type = "?";
             nlp = obj.nlp;
             mpcc = obj.mpcc;
@@ -237,7 +243,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % or Alexandra Schwartz (Section 5.2, https://opus.bibliothek.uni-wuerzburg.de/opus4-wuerzburg/frontdoor/index/index/docId/4977).
             % A concise overview can also be found in https://arxiv.org/abs/2312.11022.
             
-            w_orig = nlp.w.mpcc_w().res;
+            w_orig = x0;
             lam_x = nlp.w.mpcc_w().mult;
             lam_g = nlp.g.mpcc_g().mult;
 
@@ -856,7 +862,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     stat_type = "?";
                     disp("Not checking stationarity due to failure of homotopy to converge.");
                 else                    
-                    [w_polished, res_out, stat_type, n_biactive] = obj.calculate_stationarity(~opts.polishing_step, true);
+                    [w_polished, res_out, stat_type, n_biactive] = obj.check_multiplier_based_stationarity(nlp.w.mpcc_w().res);
                     [sol, w_polished, b_stat] = obj.check_b_stationarity(w_polished);
                     if stat_type ~= "?"
                         mpcc_results.x = w_polished;
