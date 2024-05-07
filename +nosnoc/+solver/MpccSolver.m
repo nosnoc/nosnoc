@@ -575,8 +575,12 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             res_out.x = w_polished;
         end
 
-        function [solution, improved_point, b_stat] = check_b_stationarity(obj, x0)
+        function [solution, improved_point, b_stat] = check_b_stationarity(obj, x0, exitfast)
             import casadi.*
+            if ~exist('exitfast', 'var')
+                exitfast = true;
+            end
+            
             mpcc = obj.mpcc;
             nlp = obj.nlp;
             f = mpcc.f;
@@ -597,6 +601,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             end
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00);
+            if n_biactive == 0 && exitfast
+                b_stat = true;
+                solution = [];
+                improved_point = x0;
+                disp("Converged to B-stationary point.")
+                return
+            end
             ind_0p = G_old<H_old & ~ind_00;
             ind_p0 = H_old<G_old & ~ind_00;
             y_lpcc = H_old<G_old;
