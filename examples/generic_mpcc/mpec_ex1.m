@@ -64,3 +64,15 @@ mpcc_results = solver_su('x0', x0,...
 solver_ks.compute_constraint_violation()
 solver_su.stats
 disp(mpcc_results.x)
+
+%% Check stationarity of non optimal points
+w_optimal = mpcc_results.x;
+[w_polished, res_out, stat_type, n_biactive] = solver.check_multiplier_based_stationarity(w_optimal);
+% Try calculating b-stationarity with polished result:
+[solution, improved_point, b_stat] = solver.check_b_stationarity(w_polished);
+
+fprintf('-------------------------------\n');
+w_non_optimal = [0;0]; % - C and not B
+[w_polished, res_out, stat_type, n_biactive] = solver.check_multiplier_based_stationarity(w_non_optimal);
+% Try calculating b-stationarity with polished result:
+[solution, improved_point, b_stat] = solver.check_b_stationarity(w_polished);
