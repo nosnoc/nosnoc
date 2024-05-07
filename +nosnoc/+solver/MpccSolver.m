@@ -852,22 +852,21 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     
                     [w_polished, res_out, stat_type, n_biactive] = obj.calculate_stationarity(true, true);
                     [sol, w_polished, b_stat] = obj.check_b_stationarity(s_elastic, w_polished);
+                    if stat_type ~= "?"
+                        mpcc_results.x = w_polished;
+                        mpcc_results.f = full(f_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
+                        mpcc_results.g = full(g_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
+                        mpcc_results.G = full(G_fun(w_polished, nlp.p.mpcc_p().val));
+                        mpcc_results.H = full(H_fun(w_polished, nlp.p.mpcc_p().val));
+                        % TODO (@anton) also recalculate multipliers and g?
+                        mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
+                        complementarity_iter = full(obj.comp_res_fun(w_polished, nlp.p.mpcc_p().val));
+                        stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
+                    end
+                    stats.stat_type = stat_type;
+                    stats.b_stationary = b_stat;
                 end
-                if stat_type ~= "?"
-                    mpcc_results.x = w_polished;
-                    mpcc_results.f = full(f_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
-                    mpcc_results.g = full(g_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
-                    mpcc_results.G = full(G_fun(w_polished, nlp.p.mpcc_p().val));
-                    mpcc_results.H = full(H_fun(w_polished, nlp.p.mpcc_p().val));
-                    % TODO (@anton) also recalculate multipliers and g?
-                    mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
-                    complementarity_iter = full(obj.comp_res_fun(w_polished, nlp.p.mpcc_p().val));
-                    stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
-                end
-                stats.stat_type = stat_type;
-                stats.b_stationary = b_stat;
-            end
-            
+            end            
             varargout{1} = mpcc_results;
             obj.stats = stats;
         end
