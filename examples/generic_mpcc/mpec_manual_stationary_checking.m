@@ -10,11 +10,10 @@ import nosnoc.solver.*;
 mpccsol_opts = nosnoc.solver.Options();  
 mpccsol_opts.homotopy_steering_strategy = "Direct";
 % mpccsol_opts.homotopy_steering_strategy = "ELL_1";
-% mpccsol_opts.homotopy_steering_strategy = "ELL_INF"; 
-mpccsol_opts.calculate_stationarity_type = 1;
+% mpccsol_opts.homotopy_steering_strategy = "ELL_INF";
 
 
-mpccsol_opts.complementarity_tol = 1e-15;
+mpccsol_opts.complementarity_tol = 1e-10;
 
 % mpcc_method =  nosnoc.solver.MpccMethod.KADRANI;
 mpcc_method =  nosnoc.solver.MpccMethod.SCHOLTES_INEQ;
@@ -47,5 +46,10 @@ mpcc.f = f;
 solver = mpccsol('solver_mpecc', mpcc_method, mpcc, mpccsol_opts);
 mpcc_results = solver('x0', x0,'lbx', lbx,'ubx', ubx);
 disp(mpcc_results.x)
-  
-%
+
+% Try calculating b-stationarity before getting polished result:
+[solution, improved_point, b_stat] = solver.check_b_stationarity(mpcc_results.x);
+% get polished solution and multiplier based stationarity type with a lifted TNLP.
+[w_polished, res_out, stat_type, n_biactive] = solver.calculate_stationarity(false,true);
+% Try calculating b-stationarity with polished result:
+[solution, improved_point, b_stat] = solver.check_b_stationarity(w_polished);

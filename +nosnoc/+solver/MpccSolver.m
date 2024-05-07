@@ -216,6 +216,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         end
 
         function [w_polished, res_out, stat_type, n_biactive] = calculate_stationarity(obj, exitfast, complementarity_constraints_lifted)
+        % exitfast: Exit without solving the TNLP if we have no biactive constraints (point must be S-stationary).
+        % complementarity_constraints_lifted: Additionally lift necessary complementariy constraints when necessary.
             import casadi.*
             stat_type = "?";
             nlp = obj.nlp;
@@ -246,6 +248,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
             % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
             % i.e. in the worst case G=sqrt(complementarity_tol) and H=sqrt(comp_tol).
+            % We add 1e-14 (a value near machine precision) in order to accurately identify points on the boundary.
             if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
                 a_tol = sqrt(obj.opts.complementarity_tol) + 1e-14;
             else
@@ -514,8 +517,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     yline(0,'k-.');
                     xlim([-bound,bound]);
                     ylim([-bound,bound]);
-                    xlabel('\nu')
-                    ylabel('\xi')
+                    xlabel('$\nu$')
+                    ylabel('$\xi$')
                     title('Lagrange multipliers for the comp. constraints')
                     
                     grid on;
@@ -566,7 +569,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             res_out.x = w_polished;
         end
 
-        function [solution, improved_point, b_stat] = check_b_stationarity(obj, s_elastic, x0)
+        function [solution, improved_point, b_stat] = check_b_stationarity(obj, x0)
             import casadi.*
             mpcc = obj.mpcc;
             nlp = obj.nlp;
@@ -578,10 +581,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             G_old = full(obj.G_fun(x0, nlp.p.mpcc_p().val));
             H_old = full(obj.H_fun(x0, nlp.p.mpcc_p().val));
 
+            % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
+            % i.e. in the worst case G=sqrt(complementarity_tol) and H=sqrt(comp_tol).
+            % We add 1e-14 (a value near machine precision) in order to accurately identify points on the boundary.
             if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
                 a_tol = sqrt(obj.opts.complementarity_tol) + 1e-14;
             else
-                a_tol = sqrt(s_elastic) + 1e-14;
+                a_tol = sqrt(max(nlp.w.s_elastic().res)) + 1e-14;
             end
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00);
@@ -599,7 +605,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             lblift_H = zeros(size(lift_G));
             ublift_H = inf*ones(size(lift_G));
 
-            %TODO (@anton) maybe take advantage of vdx here. (@armin: if so, please comment it appropietly and make it readable)
             ind_mpcc = 1:length(lbx);
             ind_G = (1:length(lift_G))+length(lbx);
             ind_H = (1:length(lift_H))+length(lbx)+length(lift_G);
@@ -642,6 +647,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             improved_point = solution.x(ind_mpcc);
 
             b_stat = ~solution.oracle_status;
+            if obj.opts.print_level >= 1
+                if b_stat
+                    disp("Converged to point is B-Stationary.")
+                else
+                    disp("Converged to point is not B-Stationary.")
+                end
+            end
         end
     end
 
@@ -843,15 +855,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 if last_iter_failed || ~obj.complementarity_tol_met(stats) || timeout
                     stat_type = "?";
                     disp("Not checking stationarity due to failure of homotopy to converge.");
-                else
-                    if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
-                        s_elastic = [];
-                    else
-                        s_elastic = max(nlp.w.s_elastic().res);
-                    end
-                    
-                    [w_polished, res_out, stat_type, n_biactive] = obj.calculate_stationarity(true, true);
-                    [sol, w_polished, b_stat] = obj.check_b_stationarity(s_elastic, w_polished);
+                else                    
+                    [w_polished, res_out, stat_type, n_biactive] = obj.calculate_stationarity(~opts.polishing_step, true);
+                    [sol, w_polished, b_stat] = obj.check_b_stationarity(w_polished);
                     if stat_type ~= "?"
                         mpcc_results.x = w_polished;
                         mpcc_results.f = full(f_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
