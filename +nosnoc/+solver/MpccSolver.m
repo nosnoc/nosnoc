@@ -135,8 +135,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     H(ind_nonscalar_H) = nlp.w.H_lift();
                     
                     nlp.g.G_lift = {mpcc.G(ind_nonscalar_G)-G(ind_nonscalar_G)};
-                    nlp.g.H_lift = {mpcc.H(ind_nonscalar_H)-H(ind_nonscalar_H)};
-                    
+                    nlp.g.H_lift = {mpcc.H(ind_nonscalar_H)-H(ind_nonscalar_H)};    
                 else
                     G = mpcc.G;
                     H = mpcc.H;
