@@ -26,4 +26,15 @@ function [ind_scalar,ind_nonscalar, ind_map] = find_nonscalar(g,w)
     ind_map = ind_map(check);
 
     ind_nonscalar = setdiff(1:length(g),ind_scalar)';
+
+    % Avoid 1x0 vs 0x1 issues
+    if numel(ind_scalar) == 0
+        ind_scalar = [];
+    end
+    if numel(ind_nonscalar) == 0
+        ind_nonscalar = [];
+    end
+    if numel(ind_map) == 0
+        ind_map = [];
+    end
 end
