@@ -12,6 +12,8 @@ classdef stewart < nosnoc.dcs.base
         f_x
         g_Stewart
 
+        sys_idx
+
         dims
     end
 
@@ -27,7 +29,10 @@ classdef stewart < nosnoc.dcs.base
             % dimensions
             dims.n_theta = sum(obj.dims.n_f_sys); % number of modes
             dims.n_lambda = dims.n_theta;
+            idx = 1;
             for ii = 1:dims.n_sys
+                sys_idx{ii} = idx:(idx + obj.dims.n_f_sys(ii)-1);
+                idx = idx + obj.dims.n_f_sys(ii);
                 ii_str = num2str(ii);
                 % define theta (Filippov multiplers)
                 obj.theta_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['theta_' ii_str],obj.dims.n_f_sys(ii));

@@ -139,7 +139,91 @@ classdef stewart < vdx.problems.Mpcc
         end
 
         function generate_complementarities(obj)
+            import casadi.*
+            opts = obj.opts;
+            dcs = obj.dcs;
+            model = obj.model;
+            % Do Cross-Complementarity
 
+            switch opts.cross_comp_mode
+              case CrossCompMode.STAGE_STAGE
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(ii);
+                        sum_lambda = lambda_prev + sum1(obj.w.lambda(ii,jj,:));
+                        Gij = {};
+                        Hij = {};
+                        for kk=1:opts.n_s
+                            lambda_ijk = obj.w.theta(ii,jj,kk);
+                            for rr=1:opts.n_s
+                                theta_ijr = obj.w.theta(ii,jj,rr);
+                                
+                                Gij = vertcat(Gij, lambda_ijk);
+                                Hij = vertcat(Hij, theta_ijr);
+                            end
+                        end
+                        obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
+                        obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
+                        lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
+                    end
+                end
+              case CrossCompMode.FE_STAGE
+                lambda_prev = obj.w.lambda(0,0,opts.n_s);
+                % Do cross comp for distance with lambda
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(ii);
+                        sum_lambda = lambda_prev + sum1(obj.w.lambda(ii,jj,:));
+                        Gij = {};
+                        Hij = {};
+                        for kk=1:opts.n_s
+                            theta_ijk = obj.w.theta(ii,jj,kk);
+                            
+                            Gij = vertcat(Gij, sum_lambda);
+                            Hij = vertcat(Hij, theta_ijk);
+                        end
+                        obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
+                        obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
+                        lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
+                    end
+                end
+              case CrossCompMode.STAGE_FE
+                lambda_prev = obj.w.lambda(0,0,opts.n_s);
+                % Do cross comp for distance with lambda
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(ii);
+                        sum_theta = sum1(obj.w.theta(ii,jj,:));
+                        Gij = {lambda_prev};
+                        Hij = {sum_theta};
+                        for kk=1:opts.n_s
+                            lambda_ijk = obj.w.lambda(ii,jj,kk);
+                            
+                            Gij = vertcat(Gij, lambda_ijk);
+                            Hij = vertcat(Hij, sum_theta);
+                        end
+                        obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
+                        obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
+                        lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
+                    end
+                end
+              case CrossCompMode.FE_FE
+                lambda_prev = obj.w.lambda(0,0,opts.n_s);
+                % Do cross comp for distance with lambda
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(ii);
+                        Gij = [];
+                        Hij = [];
+                        for kk=1:opts.n_s
+                            lambda_ijk = obj.w.lambda(ii,jj,kk);
+                            theta_ijk = obj.w.theta(ii,jj,kk);
+                            
+                            Gij = Gij + lambda_ijk;
+                            Hij = Hij + theta_ijk;
+                        end
+                        obj.G.cross_comp(ii,jj) = {Gij};
+                        obj.H.cross_comp(ii,jj) = {Hij};
+                        lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
+                    end
+                end
+            end
         end
 
         function step_equilibration(obj)
