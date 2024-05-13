@@ -42,12 +42,12 @@ classdef stewart < vdx.problems.Mpcc
             if (strcmp(obj.opts.step_equilibration,'linear')||..
                 strcmp(obj.opts.step_equilibration,'linear_tanh')||...
                 strcmp(obj.opts.step_equilibration,'linear_relaxed'))
-                obj.w.B_max(1:opts.N_stages,2:opts.N_finite_elements) = {{'B_max', dims.n_c},-inf,inf};
-                obj.w.pi_lambda(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'pi_lambda', dims.n_c},-inf,inf};
-                obj.w.pi_c(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'pi_c', dims.n_c},-inf,inf};
-                obj.w.lambda_lambda(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'lambda_lambda', dims.n_c},0,inf};
-                obj.w.lambda_c(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'lambda_c', dims.n_c},0,inf};
-                obj.w.eta(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'eta', dims.n_c},0,inf};
+                obj.w.B_max(1:opts.N_stages,2:opts.N_finite_elements) = {{'B_max', dims.n_lambda},-inf,inf};
+                obj.w.pi_theta(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'pi_theta', dims.n_theta},-inf,inf};
+                obj.w.pi_lambda(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
+                obj.w.lambda_theta(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'lambda_theta', dims.n_theta},0,inf};
+                obj.w.lambda_lambda(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'lambda_lambda', dims.n_lambda},0,inf};
+                obj.w.eta(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'eta', dims.n_lambda},0,inf};
                 obj.w.nu(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'nu', 1},0,inf};
             end
 
@@ -242,7 +242,212 @@ classdef stewart < vdx.problems.Mpcc
         end
 
         function step_equilibration(obj)
+            model = obj.model;
+            opts = obj.opts;
+            h0 = opts.h;
+            v_global = obj.w.v_global();
+            p_global = obj.p.p_global();
+            
+            switch obj.opts.step_equilibration
+              case 'heuristic_mean'
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(1)
+                        obj.f = obj.f + obj.p.rho_h_p()*(h0-obj.w.h(ii,jj))^2;
+                    end
+                end
+              case 'heuristic_diff'
+                for ii=1:opts.N_stages
+                    for jj=2:opts.N_finite_elements(1)
+                        obj.f = obj.f + obj.p.rho_h_p()*(obj.w.h(ii,jj)-obj.w.h(ii,jj-1))^2;
+                    end
+                end
+              case 'l2_relaxed_scaled'
+                eta_vec = [];
+                for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
+                    for jj=2:opts.N_finite_elements(1)
+                        sigma_lambda_B = 0;
+                        sigma_theta_B = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_B = sigma_lambda_B + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
+                            sigma_theta_B = sigma_theta_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_lambda_F = 0;
+                        sigma_theta_F = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_F = sigma_lambda_F + c_fun(obj.w.x(ii,jj,kk), v_global, p);
+                            sigma_theta_F = sigma_theta_F + obj.w.lambda(ii,jj,kk);
+                        end
 
+                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
+                        pi_theta = sigma_theta_B .* sigma_theta_F;
+                        nu = pi_lambda + pi_theta;
+                        eta = 1;
+                        for jjj=1:length(nu)
+                            eta = eta*nu(jjj);
+                        end
+                        eta_vec = [eta_vec;eta];
+                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
+                        obj.f = obj.f + obj.p.rho_h_p() * tanh(eta/opts.step_equilibration_sigma) * delta_h.^2;
+                    end
+                end
+              case 'l2_relaxed'
+                eta_vec = [];
+                for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
+                    for jj=2:opts.N_finite_elements(1)
+                        sigma_lambda_B = 0;
+                        sigma_theta_B = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_B = sigma_lambda_B + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
+                            sigma_theta_B = sigma_theta_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_lambda_F = 0;
+                        sigma_theta_F = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_F = sigma_lambda_F + c_fun(obj.w.x(ii,jj,kk), v_global, p);
+                            sigma_theta_F = sigma_theta_F + obj.w.lambda(ii,jj,kk);
+                        end
+
+                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
+                        pi_theta = sigma_theta_B .* sigma_theta_F;
+                        nu = pi_lambda + pi_theta;
+                        eta = 1;
+                        for jjj=1:length(nu)
+                            eta = eta*nu(jjj);
+                        end
+                        eta_vec = [eta_vec;eta];
+                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
+                        obj.f = obj.f + obj.p.rho_h_p() * eta * delta_h.^2
+                    end
+                end
+              case 'direct'
+                eta_vec = [];
+                for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
+                    for jj=2:opts.N_finite_elements(1)
+                        sigma_lambda_B = 0;
+                        sigma_theta_B = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_B = sigma_lambda_B + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
+                            sigma_theta_B = sigma_theta_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_lambda_F = 0;
+                        sigma_theta_F = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_F = sigma_lambda_F + c_fun(obj.w.x(ii,jj,kk), v_global, p);
+                            sigma_theta_F = sigma_theta_F + obj.w.lambda(ii,jj,kk);
+                        end
+
+                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
+                        pi_theta = sigma_theta_B .* sigma_theta_F;
+                        nu = pi_lambda + pi_theta;
+                        eta = 1;
+                        for jjj=1:length(nu)
+                            eta = eta*nu(jjj);
+                        end
+                        eta_vec = [eta_vec;eta];
+                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
+                        obj.g.step_equilibration(ii,jj) = {eta*delta_h, 0, 0};
+                    end
+                end
+                obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
+              case 'direct_homotopy'
+                eta_vec = [];
+                for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
+                    for jj=2:opts.N_finite_elements(1)
+                        sigma_lambda_B = 0;
+                        sigma_theta_B = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_B = sigma_lambda_B + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
+                            sigma_theta_B = sigma_theta_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_lambda_F = 0;
+                        sigma_theta_F = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_F = sigma_lambda_F + c_fun(obj.w.x(ii,jj,kk), v_global, p);
+                            sigma_theta_F = sigma_theta_F + obj.w.lambda(ii,jj,kk);
+                        end
+
+                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
+                        pi_theta = sigma_theta_B .* sigma_theta_F;
+                        nu = pi_lambda + pi_theta;
+                        eta = 1;
+                        for jjj=1:length(nu)
+                            eta = eta*nu(jjj);
+                        end
+                        eta_vec = [eta_vec;eta];
+                        obj.eta_vec = eta_vec;
+                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
+                        homotopy_eq = [eta*delta_h - sigma;eta*delta_h + sigma];
+                        obj.g.step_equilibration(ii,jj) = {homotopy_eq, [-inf;0], [0;inf]};
+                    end
+                end
+                obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
+              case 'mlcp'
+                for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
+                    for jj=2:opts.N_finite_elements(1)
+                        sigma_lambda_b = 0;
+                        sigma_theta_b = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_b = sigma_lambda_b + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
+                            sigma_theta_b = sigma_theta_b + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_lambda_f = 0;
+                        sigma_theta_f = 0;
+                        for kk=1:opts.n_s
+                            sigma_lambda_f = sigma_lambda_f + c_fun(obj.w.x(ii,jj,kk), v_global, p);
+                            sigma_theta_f = sigma_theta_f + obj.w.lambda(ii,jj,kk);
+                        end
+
+                        
+                        % todo ideally we output G and H instead of doing all of the stuff here but ok.
+                        lambda_lambda = obj.w.lambda_lambda(ii,jj);
+                        lambda_theta = obj.w.lambda_theta(ii,jj);
+                        B_max = obj.w.B_max(ii,jj);
+                        pi_lambda = obj.w.pi_lambda(ii,jj);
+                        pi_theta = obj.w.pi_theta(ii,jj);
+                        eta = obj.w.eta(ii,jj);
+                        nu = obj.w.nu(ii,jj);
+
+                        obj.g.pi_lambda_or(ii,jj) = {[pi_lambda-sigma_lambda_f;pi_lambda-sigma_lambda_b;sigma_lambda_f+sigma_lambda_b-pi_lambda],0,inf};
+                        obj.g.pi_theta_or(ii,jj) = {[pi_theta-sigma_theta_f;pi_theta-sigma_theta_b;sigma_theta_f+sigma_theta_b-pi_theta],0,inf};
+
+                        % kkt conditions for min B, B>=sigmaB, B>=sigmaF
+                        kkt_max = [1-lambda_theta-lambda_lambda;
+                            B_max-pi_lambda;
+                            B_max-pi_theta;
+                            (B_max-pi_lambda).*lambda_lambda - sigma;
+                            (B_max-pi_theta).*lambda_theta - sigma];
+                        obj.g.kkt_max(ii,jj) = {kkt_max,
+                            [0*ones(n_lambda,1);0*ones(n_lambda,1);0*ones(n_lambda,1);-inf*ones(n_lambda,1);-inf*ones(n_lambda,1)],
+                            [0*ones(n_lambda,1);inf*ones(n_lambda,1);inf*ones(n_lambda,1);0*ones(n_lambda,1);0*ones(n_lambda,1)]};
+
+                        % eta calculation
+                        eta_const = [eta-pi_theta;eta-pi_lambda;eta-pi_theta-pi_lambda+B_max];
+                        obj.g.eta_const(ii,jj) = {eta_const,
+                            [-inf*ones(n_lambda,1);-inf*ones(n_lambda,1);zeros(n_lambda,1)],
+                            [zeros(n_lambda,1);zeros(n_lambda,1);inf*ones(n_lambda,1)]};
+
+                        obj.g.nu_or(ii,jj) = {[nu-eta;sum(eta)-nu],0,inf};
+
+                        % the actual step eq conditions
+                        %M = 1e5;
+                        M=t_stage;
+                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
+                        step_equilibration = [delta_h + (1/h0)*nu*M;
+                            delta_h - (1/h0)*nu*M];
+                        obj.g.step_equilibration(ii,jj) = {step_equilibration,[0;-inf],[inf;0]};
+                    end
+                end
+            end
         end
 
         function populate_problem(obj)
