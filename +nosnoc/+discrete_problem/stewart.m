@@ -39,7 +39,7 @@ classdef stewart < vdx.problems.Mpcc
             if obj.opts.use_fesd
                 obj.w.h(1:opts.N_stages,1:opts.N_finite_elements(1)) = {{'h', 1}, (1-opts.gamma_h)*h0, (1+opts.gamma_h)*h0, h0};
             end
-            if (strcmp(obj.opts.step_equilibration,'linear')||..
+            if (strcmp(obj.opts.step_equilibration,'linear')||...
                 strcmp(obj.opts.step_equilibration,'linear_tanh')||...
                 strcmp(obj.opts.step_equilibration,'linear_relaxed'))
                 obj.w.B_max(1:opts.N_stages,2:opts.N_finite_elements) = {{'B_max', dims.n_lambda},-inf,inf};

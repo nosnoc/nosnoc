@@ -4,7 +4,6 @@ import nosnoc.*
 
 
 %% populate options
-problem_options = nosnoc.core.Options(); % problem_options = NosnocProblemOptions();
 problem_options = nosnoc.Options(); % problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 
@@ -40,7 +39,7 @@ model.g_terminal = [q-200;v-0];
 % mpcc = NosnocMPCC(problem_options, model);
 % solver = NosnocSolver(mpcc, solver_options);
 % solver = nosnoc.solver(mpcc, solver_options);
-ocp_solver = nosnoc.ocp.solver(model, solver_options);
+ocp_solver = nosnoc.ocp.solver(model, problem_options, solver_options);
 [results,stats] = ocp_solver.solve();
 
 % how to create an integrator?

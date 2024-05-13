@@ -1,6 +1,6 @@
 classdef stewart < nosnoc.dcs.base
     properties
-        model nosnoc.model.pss
+        model
 
         theta
         theta_sys

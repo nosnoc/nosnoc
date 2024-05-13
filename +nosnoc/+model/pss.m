@@ -8,7 +8,7 @@ classdef pss < nosnoc.model.base
 
     methods
         function obj = pss()
-            obj = obj@base();
+            obj = obj@nosnoc.model.base();
         end
         
         function verify_and_backfill(obj, opts)
@@ -57,7 +57,7 @@ classdef pss < nosnoc.model.base
                 dims.n_c_sys  = [dims.n_c_sys;length(obj.c{ii})];
             end
 
-            dims.n_f_sys = arrayfun(@(sys) size(obj.F{sys},2),1:dims.n_sys);,1)];
+            dims.n_f_sys = arrayfun(@(sys) size(obj.F{sys},2),1:dims.n_sys);
 
             obj.dims = dims;
         end
