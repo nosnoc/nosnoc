@@ -52,7 +52,7 @@ classdef stewart < vdx.problems.Mpcc
             end
 
             % 3d vars
-            obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}};
+            obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
             obj.w.z(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda_0'], dims.n_lambda},0,inf};
@@ -247,6 +247,10 @@ classdef stewart < vdx.problems.Mpcc
             h0 = opts.h;
             v_global = obj.w.v_global();
             p_global = obj.p.p_global();
+
+            if ~opts.use_fesd % do nothing
+                return
+            end
             
             switch obj.opts.step_equilibration
               case 'heuristic_mean'
@@ -440,7 +444,7 @@ classdef stewart < vdx.problems.Mpcc
 
                         % the actual step eq conditions
                         %M = 1e5;
-                        M=t_stage;
+                        M=obj.p.T()/opts.N_stages;
                         delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
                         step_equilibration = [delta_h + (1/h0)*nu*M;
                             delta_h - (1/h0)*nu*M];
