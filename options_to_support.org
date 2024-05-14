@@ -20,4 +20,4 @@ How do we allow people to tie into the homotopy in `mpccsol`
 ** TODO relax_terminal_numerical_time
 ** TODO relax_terminal_physical_time
 ** TODO cost_integration
-** TODO least squares costs
+** DONE least squares costs

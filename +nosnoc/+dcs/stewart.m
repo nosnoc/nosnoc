@@ -70,7 +70,7 @@ classdef stewart < nosnoc.dcs.base
 
         function generate_equations(obj, opts)
             import casadi.*
-            model = obj.model
+            model = obj.model;
             dims = obj.dims;
             
             obj.f_x = zeros(dims.n_x,1);

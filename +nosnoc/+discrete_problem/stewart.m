@@ -10,7 +10,7 @@ classdef stewart < vdx.problems.Mpcc
     methods
         function obj = stewart(dcs, opts)
             obj = obj@vdx.problems.Mpcc();
-            obj.model = dcs.model
+            obj.model = dcs.model;
             obj.dcs = dcs;
             obj.opts = opts;
         end
@@ -20,7 +20,7 @@ classdef stewart < vdx.problems.Mpcc
             dcs = obj.dcs;
             model = obj.model;
             opts = obj.opts;
-            
+
             obj.p.rho_h_p = {{'rho_h_p',1}, 1};
             obj.p.T = {{'T',1}, opts.T};
             obj.p.p_global = {model.p_global, model.p_global_val};
@@ -30,11 +30,14 @@ classdef stewart < vdx.problems.Mpcc
 
             % 0d vars
             obj.w.v_global = {{'v_global',dims.n_v_global}, model.lbv_global, model.ubv_global, model.v0_global};
+            if opts.use_speed_of_time_variables && ~opts.local_speed_of_time_variable
+                obj.w.sot = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
+            end
 
             % 1d vars
             obj.w.u(1:opts.N_stages) = {{'u', dims.n_u}, model.lbu, model.ubu, model.u0};
             obj.p.p_time_var(1:opts.N_stages) = {{'p_time_var', dims.n_p_time_var}, model.p_time_var_val};
-            if obj.opts.use_speed_of_time_variables
+            if opts.use_speed_of_time_variables && opts.local_speed_of_time_variable
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
 
@@ -69,31 +72,32 @@ classdef stewart < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
             dcs = obj.dcs;
-            
+
             if obj.opts.use_fesd
                 t_stage = obj.p.T()/opts.N_stages;
                 h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(1));
             else
                 h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(1));
             end
-            
+
             v_global = obj.w.v_global();
             p_global = obj.p.p_global();
 
             x_0 = obj.w.x(0,0,opts.n_s);
-            lambda_0 = obj.w.lambda(0,0,opts.n_s);
-            
+
             x_prev = obj.w.x(0,0,opts.n_s);
             for ii=1:opts.N_stages
                 ui = obj.w.u(ii);
                 p_stage = obj.p.p_time_var(ii);
                 p = [p_global;p_stage];
-                if obj.opts.use_speed_of_time_variables
+                if obj.opts.use_speed_of_time_variables && problem_options.local_speed_of_time_variable
                     s_sot = obj.w.sot(ii);
+                elseif obj.opts.use_speed_of_time_variables
+                    s_sot = obj.w.sot();
                 else
                     s_sot = 1;
                 end
-                
+
                 sum_h = 0;
                 for jj=1:opts.N_finite_elements(ii)
                     if obj.opts.use_fesd
@@ -108,8 +112,7 @@ classdef stewart < vdx.problems.Mpcc
                         lambda_ijk = obj.w.lambda(ii,jj,kk);
                         theta_ijk = obj.w.theta(ii,jj,kk);
                         mu_ijk = obj.w.mu(ii,jj,kk);
-                        
-                        
+
                         fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
                         qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
                         xk = opts.C_irk(1, kk+1) * x_prev;
@@ -126,6 +129,17 @@ classdef stewart < vdx.problems.Mpcc
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s);
                 end
+
+                % Least Squares Costs
+                % TODO we should convert the refs to params
+                obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_x_fun(obj.w.x(ii,opts.N_finite_elements(ii),opts.n_s),...
+                    model.x_ref_val(:,ii),...
+                    p);
+                obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_u_fun(obj.w.u(ii),...
+                    model.u_ref_val(:,ii),...
+                    p);
+                
+                % Clock Constraints
                 if obj.opts.use_fesd
                     obj.g.sum_h(ii) = {t_stage-sum_h};
                 end
@@ -137,8 +151,13 @@ classdef stewart < vdx.problems.Mpcc
             end
 
             % Terminal cost
-            obj.f = obj.f + dcs.f_q_T_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global);
+            obj.f = obj.f + dcs.f_q_T_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,opts.n_s), v_global, p_global);
 
+            % Terminal_lsq_cost
+            obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(obj.w.x(ii,jj,opts.n_s),...
+                model.x_ref_end_val,...
+                p);
+            
             % Terminal constraint
             obj.g.terminal = {dcs.g_terminal_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global), model.lbg_terminal, model.ubg_terminal};
         end
@@ -161,7 +180,7 @@ classdef stewart < vdx.problems.Mpcc
                                 lambda_ijk = obj.w.theta(ii,jj,kk);
                                 for rr=1:opts.n_s
                                     theta_ijr = obj.w.theta(ii,jj,rr);
-                                    
+
                                     Gij = vertcat(Gij, lambda_ijk);
                                     Hij = vertcat(Hij, theta_ijr);
                                 end
@@ -181,7 +200,7 @@ classdef stewart < vdx.problems.Mpcc
                             Hij = {};
                             for kk=1:opts.n_s
                                 theta_ijk = obj.w.theta(ii,jj,kk);
-                                
+
                                 Gij = vertcat(Gij, {sum_lambda});
                                 Hij = vertcat(Hij, {theta_ijk});
                             end
@@ -200,7 +219,7 @@ classdef stewart < vdx.problems.Mpcc
                             Hij = {sum_theta};
                             for kk=1:opts.n_s
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
-                                
+
                                 Gij = vertcat(Gij, {lambda_ijk});
                                 Hij = vertcat(Hij, {sum_theta});
                             end
@@ -219,7 +238,7 @@ classdef stewart < vdx.problems.Mpcc
                             for kk=1:opts.n_s
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
                                 theta_ijk = obj.w.theta(ii,jj,kk);
-                                
+
                                 Gij = Gij + lambda_ijk;
                                 Hij = Hij + theta_ijk;
                             end
@@ -237,7 +256,7 @@ classdef stewart < vdx.problems.Mpcc
                         for kk=1:opts.n_s
                             lambda_ijk = obj.w.theta(ii,jj,kk);
                             theta_ijk = obj.w.theta(ii,jj,kk);
-                            
+
                             obj.G.standard_comp(ii,jj, kk) = {lambda_ijk};
                             obj.H.standard_comp(ii,jj, kk) = {theta_ijk};
                         end
@@ -256,7 +275,7 @@ classdef stewart < vdx.problems.Mpcc
             if ~opts.use_fesd % do nothing
                 return
             end
-            
+
             switch obj.opts.step_equilibration
               case 'heuristic_mean'
                 for ii=1:opts.N_stages
@@ -416,7 +435,7 @@ classdef stewart < vdx.problems.Mpcc
                             sigma_theta_f = sigma_theta_f + obj.w.lambda(ii,jj,kk);
                         end
 
-                        
+
                         % todo ideally we output G and H instead of doing all of the stuff here but ok.
                         lambda_lambda = obj.w.lambda_lambda(ii,jj);
                         lambda_theta = obj.w.lambda_theta(ii,jj);
@@ -467,12 +486,12 @@ classdef stewart < vdx.problems.Mpcc
 
             obj.populated = true;
         end
-        
+
         function create_solver(obj, solver_options, plugin)
             if ~obj.populated
                 obj.populate_problem()
             end
-            
+
             if ~exist('plugin')
                 plugin = 'scholtes_ineq';
             end
