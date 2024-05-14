@@ -15,8 +15,10 @@ problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 40;    % Time horizon
 problem.options.dcs_mode = "Stewart"; % or "Heaviside"
-problem_options.x_box_at_stg = 0;
-problem_options.x_box_at_fe = 0;
+
+%problem_options.x_box_at_stg = 0;
+%problem_options.x_box_at_fe = 0;
+problem_options.relax_terminal_constraint = 3;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.pss(); 

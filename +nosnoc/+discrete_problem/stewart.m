@@ -22,6 +22,7 @@ classdef stewart < vdx.problems.Mpcc
             opts = obj.opts;
 
             obj.p.rho_h_p = {{'rho_h_p',1}, 1};
+            obj.p.rho_terminal_p = {{'rho_terminal_p',1}, 1};
             obj.p.T = {{'T',1}, opts.T};
             obj.p.p_global = {model.p_global, model.p_global_val};
 
@@ -103,6 +104,7 @@ classdef stewart < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
             dcs = obj.dcs;
+            dims = obj.dcs.dims;
 
             if obj.opts.use_fesd
                 t_stage = obj.p.T()/opts.N_stages;
@@ -282,7 +284,35 @@ classdef stewart < vdx.problems.Mpcc
                 p);
             
             % Terminal constraint
-            obj.g.terminal = {dcs.g_terminal_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global), model.lbg_terminal, model.ubg_terminal};
+            if opts.relax_terminal_constraint_homotopy
+                error("Currently unsupported")
+            end
+            g_terminal = dcs.g_terminal_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global);
+            switch opts.relax_terminal_constraint
+              case 0 % hard constraint
+                if opts.relax_terminal_constraint_from_above
+                    obj.g.terminal = {g_terminal, model.lbg_terminal, inf*ones(dims.n_g_terminal,1)};
+                else
+                    obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal};
+                end
+              case 1 % l_1
+                obj.w.s_terminal_ell_1 = {{'s_terminal_ell_1', dims.n_g_terminal}, 0, inf, 10};
+                
+                g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_1();
+                    -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_1()];
+                obj.g.terminal = {g_terminal, -inf, 0}
+                obj.f = obj.f + obj.p.rho_terminal_p()*sum(obj.w.s_terminal_ell_1());
+              case 2 % l_2
+                     % TODO(@anton): this is as it was implemented before. should handle lb != ub?
+                obj.f = obj.f + obj.p.rho_terminal_p()*(g_terminal-model.lbg_terminal)'*(g_terminal-model.lbg_terminal);
+              case 3 % l_inf
+                obj.w.s_terminal_ell_inf = {{'s_terminal_ell_inf', 1}, 0, inf, 1e3};
+                
+                g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_inf();
+                    -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_inf()];
+                obj.g.terminal = {g_terminal, -inf, 0}
+                obj.f = obj.f + obj.p.rho_terminal_p()*obj.w.s_terminal_ell_inf();
+            end
         end
 
         function generate_complementarities(obj)

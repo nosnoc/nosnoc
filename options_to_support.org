@@ -12,8 +12,8 @@ Maybe this is not actually necessary anymore?
 ** DONE x_box_at_stg
 ** DONE time_optimal_problem
 ** DONE equidistant_control_grid
-** TODO relax_terminal_constraint
-** TODO relax_terminal_constraint_from_above 
+** DONE relax_terminal_constraint
+** DONE relax_terminal_constraint_from_above 
 Do we actually need this?
 ** TODO relax_terminal_constraint_homotopy
 How do we allow people to tie into the homotopy in `mpccsol`
