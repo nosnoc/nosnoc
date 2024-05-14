@@ -164,6 +164,11 @@ classdef stewart < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
+                            if size(model.g_comp_path, 1) > 0
+                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
+                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            end
                             if opts.cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
@@ -200,6 +205,11 @@ classdef stewart < vdx.problems.Mpcc
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            end
+                            if size(model.g_comp_path, 1) > 0
+                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
+                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
@@ -238,6 +248,11 @@ classdef stewart < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
+                            if size(model.g_comp_path, 1) > 0
+                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
+                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            end
                             if opts.cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.b_irk(kk)*h*qj;
@@ -264,10 +279,10 @@ classdef stewart < vdx.problems.Mpcc
                 obj.f = obj.f + t_stage*dcs.f_lsq_u_fun(obj.w.u(ii),...
                     model.u_ref_val(:,ii),...
                     p);
-                if ~opts.cost_ingration
+                if ~opts.cost_integration
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
                 end
-                
+
                 % Clock <Constraints
                 % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
                 %              to understand something about the time-freezing reformulation which is ugly.
@@ -300,7 +315,7 @@ classdef stewart < vdx.problems.Mpcc
             obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(obj.w.x(ii,jj,opts.n_s),...
                 model.x_ref_end_val,...
                 p);
-            
+
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
                 error("Currently unsupported")
@@ -315,7 +330,7 @@ classdef stewart < vdx.problems.Mpcc
                 end
               case 1 % l_1
                 obj.w.s_terminal_ell_1 = {{'s_terminal_ell_1', dims.n_g_terminal}, 0, inf, 10};
-                
+
                 g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_1();
                     -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_1()];
                 obj.g.terminal = {g_terminal, -inf, 0}
@@ -325,7 +340,7 @@ classdef stewart < vdx.problems.Mpcc
                 obj.f = obj.f + obj.p.rho_terminal_p()*(g_terminal-model.lbg_terminal)'*(g_terminal-model.lbg_terminal);
               case 3 % l_inf
                 obj.w.s_terminal_ell_inf = {{'s_terminal_ell_inf', 1}, 0, inf, 1e3};
-                
+
                 g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_inf();
                     -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_inf()];
                 obj.g.terminal = {g_terminal, -inf, 0}

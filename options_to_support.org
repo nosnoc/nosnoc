@@ -20,8 +20,9 @@ How do we allow people to tie into the homotopy in `mpccsol`
 ** DONE relax_terminal_numerical_time
 ** relax_terminal_physical_time
 Will be done when time-freezing is implemented
-** TODO cost_integration
+** DONE cost_integration
 ** DONE least squares costs
+** DONE g_path_comp
 * General improvements 
 ** Fix the spagghetti that is the time handling code
 Currently the code that handles the constraints for time are _incredibly_ hard to parse and therefore almost certainly  very error prone. 
