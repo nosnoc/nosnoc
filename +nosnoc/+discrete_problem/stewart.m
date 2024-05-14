@@ -33,6 +33,10 @@ classdef stewart < vdx.problems.Mpcc
             if opts.use_speed_of_time_variables && ~opts.local_speed_of_time_variable
                 obj.w.sot = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
+            if opts.time_optimal_problem
+                obj.w.T_final = {{'T_final', 1}, opts.T_final_min, opts.T_final_max, opts.T}
+                obj.f = obj.f + obj.w.T_final();
+            end
 
             % 1d vars
             obj.w.u(1:opts.N_stages) = {{'u', dims.n_u}, model.lbu, model.ubu, model.u0};
@@ -43,7 +47,14 @@ classdef stewart < vdx.problems.Mpcc
 
             % 2d vars
             if obj.opts.use_fesd
-                obj.w.h(1:opts.N_stages,1:opts.N_finite_elements(1)) = {{'h', 1}, (1-opts.gamma_h)*h0, (1+opts.gamma_h)*h0, h0};
+                ubh = (1 + opts.gamma_h) * h0;
+                lbh = (1 - opts.gamma_h) * h0;
+                if opts.time_rescaling && ~opts.use_speed_of_time_variables
+                    % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
+                    ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
+                    lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                end
+                obj.w.h(1:opts.N_stages,1:opts.N_finite_elements(1)) = {{'h', 1}, lbh, ubh, h0};
             end
             if (strcmp(obj.opts.step_equilibration,'linear')||...
                 strcmp(obj.opts.step_equilibration,'linear_tanh')||...
@@ -123,6 +134,8 @@ classdef stewart < vdx.problems.Mpcc
                     if obj.opts.use_fesd
                         h = obj.w.h(ii,jj);
                         sum_h = sum_h + h;
+                    elseif opts.time_optimal_problem && ~opts.use_spee_of_time_variables
+                        h = 0; % TODO
                     else
                         h = h0;
                     end
@@ -237,21 +250,26 @@ classdef stewart < vdx.problems.Mpcc
 
                 % Least Squares Costs
                 % TODO we should convert the refs to params
-                obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_x_fun(obj.w.x(ii,opts.N_finite_elements(ii),opts.n_s),...
+                obj.f = obj.f + t_stage*dcs.f_lsq_x_fun(obj.w.x(ii,opts.N_finite_elements(ii),opts.n_s),...
                     model.x_ref_val(:,ii),...
                     p);
-                obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_u_fun(obj.w.u(ii),...
+                obj.f = obj.f + t_stage*dcs.f_lsq_u_fun(obj.w.u(ii),...
                     model.u_ref_val(:,ii),...
                     p);
                 
-                % Clock Constraints
-                if obj.opts.use_fesd
-                    obj.g.sum_h(ii) = {t_stage-sum_h};
-                end
-                if obj.opts.use_speed_of_time_variables
-                    x_end = obj.w.x(ii,opts.N_finite_elements(end),opts.n_s);
-                    x_start = obj.w.x(0,0,opts.n_s);
-                    obj.g.g_equidistant_grid(ii) = {(x_end(end)-x_start(end)) - t_stage*ii};
+                % Clock <Constraints
+                % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
+                %              to understand something about the time-freezing reformulation which is ugly.
+                if obj.opts.use_fesd && opts.equidistant_control_grid
+                    if opts.time_optimal_problem
+                        if opts.use_speed_of_time_variables
+                            obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;sot*sum_h - obj.w.T_final()/opts.N_stages]};
+                        else
+                            obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages};
+                        end
+                    else
+                        obj.g.equidistant_control_grid(ii) = {t_stage-sum_h};
+                    end
                 end
             end
 

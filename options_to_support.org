@@ -10,8 +10,8 @@ Maybe this is not actually necessary anymore?
 ** DONE g_path_at_stg
 ** DONE x_box_at_fe
 ** DONE x_box_at_stg
-** TODO time_optimal_problem
-** TODO equidistant_control_grid
+** DONE time_optimal_problem
+** DONE equidistant_control_grid
 ** TODO relax_terminal_constraint
 ** TODO relax_terminal_constraint_from_above 
 Do we actually need this?
@@ -21,3 +21,7 @@ How do we allow people to tie into the homotopy in `mpccsol`
 ** TODO relax_terminal_physical_time
 ** TODO cost_integration
 ** DONE least squares costs
+* General improvements 
+** Fix the spagghetti that is the time handling code
+Currently the code that handles the constraints for time are _incredibly_ hard to parse and therefore almost certainly  very error prone. 
+Due to this we should figure out a way to simplify them and not have the time-freezing reformulation leaking into the dicrete_problem.
