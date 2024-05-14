@@ -1,0 +1,23 @@
+* Remaining Options to implement for Stewart pipeline
+** TODO irk_representation
+*** TODO differential
+*** TODO differential_lift_x
+** TODO irk_scheme
+*** TODO Cases where c_n != 1
+** TODO lift_complementarities
+Maybe this is not actually necessary anymore?
+** TODO g_path_at_fe
+** TODO g_path_at_stg
+** TODO x_box_at_fe
+** TODO x_box_at_stg
+** TODO time_optimal_problem
+** TODO equidistant_control_grid
+** TODO relax_terminal_constraint
+** TODO relax_terminal_constraint_from_above 
+Do we actually need this?
+** TODO relax_terminal_constraint_homotopy
+How do we allow people to tie into the homotopy in `mpccsol`
+** TODO relax_terminal_numerical_time
+** TODO relax_terminal_physical_time
+** TODO cost_integration
+** TODO least squares costs
