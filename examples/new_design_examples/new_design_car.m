@@ -10,9 +10,9 @@ solver_options = nosnoc.solver.Options();
 %% set some options
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
-problem_options.N_stages = 10; % number of control intervals
+problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
-problem_options.T = 10;    % Time horizon
+problem_options.T = 40;    % Time horizon
 problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 %% Create model
 % model = nosnoc.model.stewart();
@@ -40,7 +40,10 @@ model.g_terminal = [q-200;v-0];
 % solver = NosnocSolver(mpcc, solver_options);
 % solver = nosnoc.solver(mpcc, solver_options);
 ocp_solver = nosnoc.ocp.solver(model, problem_options, solver_options);
-[results,stats] = ocp_solver.solve();
+ocp_solver.solve();
+
+x = ocp_solver.getX();
+u = ocp_solver.getU();
 
 % how to create an integrator?
 % integrator = nosnoc.integrator(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.

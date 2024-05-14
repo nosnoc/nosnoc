@@ -9,18 +9,35 @@ classdef stewart < nosnoc.dcs.base
         mu
         mu_sys
 
+        z_all
+
         f_x
         g_Stewart
 
         sys_idx
 
         dims
+
+        % TODO some of these should be in base perhaps
+        f_x_fun
+        f_q_fun
+        g_z_fun
+        g_alg_fun
+        g_Stewart_fun
+        lambda00_fun
+        g_path_fun
+        g_comp_path_fun
+        g_terminal_fun
+        f_q_T_fun
+        f_lsq_x_fun
+        f_lsq_u_fun
+        f_lsq_T_fun
     end
 
     methods
         function obj = stewart(model)
             obj.model = model;
-            dims = model.dims;
+            obj.dims = model.dims;
         end
         
         function generate_variables(obj, opts)
@@ -29,24 +46,26 @@ classdef stewart < nosnoc.dcs.base
             % dimensions
             dims.n_theta = sum(obj.dims.n_f_sys); % number of modes
             dims.n_lambda = dims.n_theta;
+            dims.n_mu = dims.n_sys;
             idx = 1;
             for ii = 1:dims.n_sys
                 sys_idx{ii} = idx:(idx + obj.dims.n_f_sys(ii)-1);
                 idx = idx + obj.dims.n_f_sys(ii);
                 ii_str = num2str(ii);
                 % define theta (Filippov multiplers)
-                obj.theta_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['theta_' ii_str],obj.dims.n_f_sys(ii));
+                obj.theta_sys{ii} = define_casadi_symbolic(opts.casadi_symbolic_mode,['theta_' ii_str],obj.dims.n_f_sys(ii));
                 obj.theta = [obj.theta;obj.theta_sys{ii}];
                 % define mu_i (Lagrange multipler of e'theta =1;)
-                obj.mu_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['mu_' ii_str],1);
+                obj.mu_sys{ii} = define_casadi_symbolic(opts.casadi_symbolic_mode,['mu_' ii_str],1);
                 obj.mu = [obj.mu;obj.mu_sys{ii}];
                 % define lambda_i (Lagrange multipler of theta >= 0;)
-                obj.lambda_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['lambda_' ii_str],obj.dims.n_f_sys(ii));
+                obj.lambda_sys{ii} = define_casadi_symbolic(opts.casadi_symbolic_mode,['lambda_' ii_str],obj.dims.n_f_sys(ii));
                 obj.lambda = [obj.lambda;obj.lambda_sys{ii}];
             end
 
             % symbolic variables z = [theta;lambda;mu_Stewart];
-            obj.z_all = [obj.theta;obj.lambda;obj.mu;obj.z];
+            obj.z_all = [obj.theta;obj.lambda;obj.mu;obj.model.z];
+            obj.dims = dims;
         end
 
         function generate_equations(obj, opts)
@@ -56,8 +75,8 @@ classdef stewart < nosnoc.dcs.base
             
             obj.f_x = zeros(dims.n_x,1);
             for ii = 1:dims.n_sys
-                obj.f_x = obj.f_x + obj.F{ii}*obj.theta_sys{ii};
-                obj.g_Stewart{ii} = -obj.S{ii}*obj.c{ii};
+                obj.f_x = obj.f_x + model.F{ii}*obj.theta_sys{ii};
+                obj.g_Stewart{ii} = -model.S{ii}*model.c{ii};
             end
 
             g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i, 0 = c(x)-lambda_p+lambda_n
@@ -79,19 +98,19 @@ classdef stewart < nosnoc.dcs.base
             end
             g_alg = [g_switching;g_convex];
 
-            obj.f_x_fun = Function('f_x', {obj.x, obj.z, obj.lambda, obj.theta, obj.mu, obj.u, obj.v_global, obj.p}, {obj.f_x, model.f_q});
-            obj.f_q_fun = Function('f_q', {obj.x, obj.z, obj.lambda, obj.theta, obj.mu, obj.u, obj.v_global, obj.p}, {model.f_q});
-            obj.g_z_fun = Function('g_z', {obj.x, obj.z, obj.u, obj.v_global, obj.p}, {model.g_z});
-            obj.g_alg_fun = Function('g_alg', {obj.x, obj.z, obj.lambda, obj.theta, obj.mu, obj.u, obj.v_global, obj.p}, {g_alg});
-            obj.g_Stewart_fun = Function('g_Stewart', {obj.x, obj.z, obj.v_global, obj.p}, {obj.g_Stewart{:}});
-            obj.lambda00_fun = Function('lambda00', {obj.x, obj.z, obj.v_global, obj.p_global}, {lambda00_expr});
-            obj.g_path_fun = Function('g_path', {obj.x, obj.z, obj.u, obj.v_global, obj.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
-            obj.g_comp_path_fun  = Function('g_comp_path', {obj.x, obj.z, obj.u, obj.v_global, obj.p}, {obj.g_comp_path});
-            obj.g_terminal_fun  = Function('g_terminal', {obj.x, obj.z, obj.v_global, obj.p_global}, {obj.g_terminal});
-            obj.f_q_T_fun = Function('f_q_T', {obj.x, obj.z, obj.v_global, obj.p}, {obj.f_q_T});
-            obj.f_lsq_x_fun = Function('f_lsq_x_fun',{obj.x,obj.x_ref,obj.p},{obj.f_lsq_x});
-            obj.f_lsq_u_fun = Function('f_lsq_u_fun',{obj.u,obj.u_ref,obj.p},{obj.f_lsq_u});
-            obj.f_lsq_T_fun = Function('f_lsq_T_fun',{obj.x,obj.x_ref_end,obj.p_global},{obj.f_lsq_T});
+            obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
+            obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {model.f_q});
+            obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
+            obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {g_alg});
+            obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {obj.g_Stewart{:}});
+            obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
+            obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
+            obj.g_comp_path_fun  = Function('g_comp_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_comp_path});
+            obj.g_terminal_fun  = Function('g_terminal', {model.x, model.z, model.v_global, model.p_global}, {model.g_terminal});
+            obj.f_q_T_fun = Function('f_q_T', {model.x, model.z, model.v_global, model.p}, {model.f_q_T});
+            obj.f_lsq_x_fun = Function('f_lsq_x_fun',{model.x,model.x_ref,model.p},{model.f_lsq_x});
+            obj.f_lsq_u_fun = Function('f_lsq_u_fun',{model.u,model.u_ref,model.p},{model.f_lsq_u});
+            obj.f_lsq_T_fun = Function('f_lsq_T_fun',{model.x,model.x_ref_end,model.p_global},{model.f_lsq_T});
         end
     end
 end

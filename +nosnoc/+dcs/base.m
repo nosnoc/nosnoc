@@ -1,4 +1,4 @@
-classdef base < matlab.mixin.Scalar
+classdef base < matlab.mixin.Scalar & handle
     properties
     end
 

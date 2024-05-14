@@ -1,4 +1,4 @@
-classdef base < matlab.mixin.Scalar
+classdef base < matlab.mixin.Scalar & handle
     properties
         % Differential state
         x
@@ -391,20 +391,20 @@ classdef base < matlab.mixin.Scalar
             %% Terminal constraints
             if size(obj.g_terminal, 1) ~= 0
                 dims.n_g_terminal = length(obj.g_terminal);
-                if size(obj.g_terminal_lb, 1) ~= 0
-                    if length(obj.g_terminal_lb)~=dims.n_g_terminal
-                        error('nosnoc: The provided vector g_terminal_lb has the wrong size.')
+                if size(obj.lbg_terminal, 1) ~= 0
+                    if length(obj.lbg_terminal)~=dims.n_g_terminal
+                        error('nosnoc: The provided vector lbg_terminal has the wrong size.')
                     end
                 else
-                    obj.g_terminal_lb = 0*ones(dims.n_g_terminal,1);
+                    obj.lbg_terminal = 0*ones(dims.n_g_terminal,1);
                 end
 
-                if size(obj.g_terminal_ub, 1) ~= 0
-                    if length(obj.g_terminal_ub)~=dims.n_g_terminal
-                        error('nosnoc: The provided vector g_terminal_ub has the wrong size.')
+                if size(obj.ubg_terminal, 1) ~= 0
+                    if length(obj.ubg_terminal)~=dims.n_g_terminal
+                        error('nosnoc: The provided vector ubg_terminal has the wrong size.')
                     end
                 else
-                    obj.g_terminal_ub =  0*ones(dims.n_g_terminal,1);
+                    obj.ubg_terminal =  0*ones(dims.n_g_terminal,1);
                 end
             else
                 dims.n_g_terminal = 0;

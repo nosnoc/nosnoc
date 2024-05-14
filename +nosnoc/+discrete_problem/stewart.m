@@ -3,6 +3,8 @@ classdef stewart < vdx.problems.Mpcc
         model
         dcs
         opts
+
+        populated
     end
 
     methods
@@ -17,6 +19,7 @@ classdef stewart < vdx.problems.Mpcc
             dims = obj.dcs.dims;
             dcs = obj.dcs;
             model = obj.model;
+            opts = obj.opts;
             
             obj.p.rho_h_p = {{'rho_h_p',1}, 1};
             obj.p.T = {{'T',1}, opts.T};
@@ -65,6 +68,8 @@ classdef stewart < vdx.problems.Mpcc
             import casadi.*
             model = obj.model;
             opts = obj.opts;
+            dcs = obj.dcs;
+            
             if obj.opts.use_fesd
                 t_stage = obj.p.T()/opts.N_stages;
                 h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(1));
@@ -114,7 +119,7 @@ classdef stewart < vdx.problems.Mpcc
                         end
                         obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
                         obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                        obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p_global, p_stage), model.lbg_path, model.ubg_path};
+                        obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
                         % also integrate the objective
                         obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
@@ -132,10 +137,10 @@ classdef stewart < vdx.problems.Mpcc
             end
 
             % Terminal cost
-            obj.f = obj.f + model.f_q_T_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global);
+            obj.f = obj.f + dcs.f_q_T_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global);
 
             % Terminal constraint
-            obj.g.terminal = {model.g_terminal_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global), model.lbg_terminal, model.ubg_terminal};
+            obj.g.terminal = {dcs.g_terminal_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global), model.lbg_terminal, model.ubg_terminal};
         end
 
         function generate_complementarities(obj)
@@ -171,14 +176,14 @@ classdef stewart < vdx.problems.Mpcc
                     % Do cross comp for distance with lambda
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_lambda = lambda_prev + sum1(obj.w.lambda(ii,jj,:));
+                            sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
                             Gij = {};
                             Hij = {};
                             for kk=1:opts.n_s
                                 theta_ijk = obj.w.theta(ii,jj,kk);
                                 
-                                Gij = vertcat(Gij, sum_lambda);
-                                Hij = vertcat(Hij, theta_ijk);
+                                Gij = vertcat(Gij, {sum_lambda});
+                                Hij = vertcat(Hij, {theta_ijk});
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
@@ -190,14 +195,14 @@ classdef stewart < vdx.problems.Mpcc
                     % Do cross comp for distance with lambda
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_theta = sum1(obj.w.theta(ii,jj,:));
+                            sum_theta = sum2(obj.w.theta(ii,jj,:));
                             Gij = {lambda_prev};
                             Hij = {sum_theta};
                             for kk=1:opts.n_s
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
                                 
-                                Gij = vertcat(Gij, lambda_ijk);
-                                Hij = vertcat(Hij, sum_theta);
+                                Gij = vertcat(Gij, {lambda_ijk});
+                                Hij = vertcat(Hij, {sum_theta});
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
@@ -475,8 +480,8 @@ classdef stewart < vdx.problems.Mpcc
             obj.g.sort_by_index();
 
             solver_options.assume_lower_bounds = true;
-            
-            create_solver@vdx.problems.Mpcc(obj, solver_options, plugin);
+
+            obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj.to_casadi_struct(), solver_options);
         end
     end
 end

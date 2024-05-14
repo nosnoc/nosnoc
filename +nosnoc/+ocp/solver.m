@@ -15,10 +15,17 @@ classdef solver < handle
             obj.opts = opts;
             obj.solver_opts = solver_opts;
 
+            % Always process model and options
+            opts.preprocess();
+            model.verify_and_backfill(opts);
+
+            % Run pipeline
             switch class(model)
               case "nosnoc.model.pss"
                 if opts.dcs_mode == DcsMode.Stewart
                     obj.dcs = nosnoc.dcs.stewart(model);
+                    obj.dcs.generate_variables(opts);
+                    obj.dcs.generate_equations(opts);
                     obj.discrete_problem = nosnoc.discrete_problem.stewart(obj.dcs, opts);
                     obj.discrete_problem.populate_problem();
                 elseif opts.dcs_mode == DcsMode.Step % TODO: RENAME
@@ -39,13 +46,13 @@ classdef solver < handle
             if ~exist('plugin', 'var')
                 plugin = 'scholtes_ineq';
             end
-            obj.discrete_problem.create_solver(obj.solver_options, plugin);
+            obj.discrete_problem.create_solver(obj.solver_opts, plugin);
 
             obj.stats = obj.discrete_problem.solve();
         end
 
         function x = getX(obj)
-            x = obj.discrete_problem.w.u(:,:,obj.opts.n_s).res;
+            x = obj.discrete_problem.w.x(:,:,obj.opts.n_s).res;
         end
 
         function u = getU(obj)

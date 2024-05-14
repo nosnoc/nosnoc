@@ -48,6 +48,7 @@ classdef pss < nosnoc.model.base
                 end
             end
 
+            dims.n_c_sys = [];
             for ii = 1:dims.n_sys
                 if size(obj.S{ii},2) ~= length(obj.c{ii})
                     error('nosnoc: The matrix S and vector c do not have compatible dimension.');
