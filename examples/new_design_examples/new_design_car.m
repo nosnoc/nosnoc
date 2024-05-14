@@ -35,16 +35,16 @@ model.c = v-10;
 model.g_terminal = [q-200;v-0];
 
 %% create solver and solve problem
-% mpcc = nosnoc.mpcc(problem_options, model); % WHY call here the mpcc creation? this should be internal
-% mpcc = NosnocMPCC(problem_options, model);
-% solver = NosnocSolver(mpcc, solver_options);
-% solver = nosnoc.solver(mpcc, solver_options);
 ocp_solver = nosnoc.ocp.solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
 x = ocp_solver.getX();
 u = ocp_solver.getU();
+t_grid = ocp_solver.getTimeGrid();
+t_grid_u = ocp_solver.getControlGrid();
 
+plot(t_grid, x);
+stairs(t_grid_u, [u,u(end)])
 % how to create an integrator?
 % integrator = nosnoc.integrator(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.
 % [results,stats] = integrator.solve();

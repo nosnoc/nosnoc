@@ -58,5 +58,18 @@ classdef solver < handle
         function u = getU(obj)
             u = obj.discrete_problem.w.u(:).res;
         end
+
+        function t_grid = getTimeGrid(obj)
+            h = obj.discrete_problem.w.h(:,:).res;
+            t_grid = cumsum([0, h]);
+        end
+
+        function t_grid = getControlGrid(obj)
+            t_grid = [0];
+            for ii=1:obj.opts.N_stages
+                h_sum = sum(obj.discrete_problem.w.h(ii,:).res);
+                t_grid = [t_grid, t_grid(end)+h_sum];
+            end
+        end
     end
 end
