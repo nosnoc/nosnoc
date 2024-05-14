@@ -139,13 +139,10 @@ classdef Options < handle
         rho_terminal_physical_time(1,1) double {mustBeNonnegative} = 1e2
         relax_terminal_physical_time_homotopy (1,1) logical = 0; % us the homotopy parameter for the penalty
 
+        cost_integration(1,1) logical = 1
+
         % Experimental:
         no_initial_impacts(1,1) logical = 0
-        cost_integration(1,1) logical = 1
-        upperbound_pds_lambda(1,1) double = inf;
-        lb_sdf_pts double = [-inf];
-        ub_sdf_pts double = [inf];
-        lambda_minimization_constant(1,1) double = 0;
         
 
         % All MPCC parameters
