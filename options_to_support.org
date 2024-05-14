@@ -6,8 +6,8 @@
 *** TODO Cases where c_n != 1
 ** TODO lift_complementarities
 Maybe this is not actually necessary anymore?
-** TODO g_path_at_fe
-** TODO g_path_at_stg
+** DONE g_path_at_fe
+** DONE g_path_at_stg
 ** DONE x_box_at_fe
 ** DONE x_box_at_stg
 ** TODO time_optimal_problem

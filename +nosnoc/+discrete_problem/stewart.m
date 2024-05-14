@@ -144,10 +144,16 @@ classdef stewart < vdx.problems.Mpcc
                             end
                             obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                            obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
+
+                            if opts.g_path_at_stg
+                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            end
                             % also integrate the objective
                             obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
+                        end
+                        if ~opts.g_path_at_stg && opts.g_path_at_fe
+                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case IrkRepresentation.differential
                         X_ijk = {};
@@ -174,8 +180,15 @@ classdef stewart < vdx.problems.Mpcc
                             x_ij_end = x_ij_end + h*opts.b_irk(kk)*v_ijk;
                             obj.g.v(ii,jj,kk) = {fj - v_ijk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                            obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
+                            if opts.g_path_at_stg
+                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            end
+                            % also integrate the objective
+                            obj.f = obj.f + opts.b_irk(kk)*h*qj;
+                        end
+                        if ~opts.g_path_at_stg && opts.g_path_at_fe
+                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                         obj.g.dynamics(ii,jj) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                       case IrkRepresentation.differential_lift_x
@@ -202,12 +215,24 @@ classdef stewart < vdx.problems.Mpcc
                             x_ij_end = x_ij_end + h*opts.b_irk(kk)*v_ijk;
                             obj.g.v(ii,jj,kk) = {fj - v_ijk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                            obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
+                            if opts.g_path_at_stg
+                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            end
+                            % also integrate the objective
+                            obj.f = obj.f + opts.b_irk(kk)*h*qj;
+                        end
+                        if ~opts.g_path_at_stg && opts.g_path_at_fe
+                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                         obj.g.dynamics(ii,jj) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s);
+                end
+                if ~opts.g_path_at_stg && ~opts.g_path_at_fe
+                    x_i = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s);
+                    z_i = obj.w.z(ii, opts.N_finite_elements(ii), opts.n_s);
+                    obj.g.path(ii) = {dcs.g_path_fun(x_i, z_i, ui, v_global, p), model.lbg_path, model.ubg_path};
                 end
 
                 % Least Squares Costs
