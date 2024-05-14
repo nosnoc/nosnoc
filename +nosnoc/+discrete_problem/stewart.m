@@ -59,7 +59,16 @@ classdef stewart < vdx.problems.Mpcc
 
             % 3d vars
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
-            obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+            if (opts.irk_representation == IrkRepresentation.integral ||...
+                        opts.irk_representation == IrkRepresentation.differential_lift_x)
+                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+            else
+                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+            end
+            if (opts.irk_representation == IrkRepresentation.differential ||...
+                opts.irk_representation == IrkRepresentation.differential_lift_x)
+                obj.w.v(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'v', dims.n_x}};
+            end
             obj.w.z(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda_0'], dims.n_lambda},0,inf};
             obj.w.lambda(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'lambda', dims.n_lambda},0, inf};
@@ -90,7 +99,7 @@ classdef stewart < vdx.problems.Mpcc
                 ui = obj.w.u(ii);
                 p_stage = obj.p.p_time_var(ii);
                 p = [p_global;p_stage];
-                if obj.opts.use_speed_of_time_variables && problem_options.local_speed_of_time_variable
+                if obj.opts.use_speed_of_time_variables && opts.local_speed_of_time_variable
                     s_sot = obj.w.sot(ii);
                 elseif obj.opts.use_speed_of_time_variables
                     s_sot = obj.w.sot();
@@ -106,26 +115,86 @@ classdef stewart < vdx.problems.Mpcc
                     else
                         h = h0;
                     end
-                    for kk=1:opts.n_s
-                        x_ijk = obj.w.x(ii,jj,kk);
-                        z_ijk = obj.w.z(ii,jj,kk);
-                        lambda_ijk = obj.w.lambda(ii,jj,kk);
-                        theta_ijk = obj.w.theta(ii,jj,kk);
-                        mu_ijk = obj.w.mu(ii,jj,kk);
+                    switch opts.irk_representation
+                      case IrkRepresentation.integral
+                        for kk=1:opts.n_s
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
+                            lambda_ijk = obj.w.lambda(ii,jj,kk);
+                            theta_ijk = obj.w.theta(ii,jj,kk);
+                            mu_ijk = obj.w.mu(ii,jj,kk);
 
-                        fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
-                        qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
-                        xk = opts.C_irk(1, kk+1) * x_prev;
-                        for rr=1:opts.n_s % TODO(@anton) handle other modes.
-                            x_ijr = obj.w.x(ii,jj,rr);
-                            xk = xk + opts.C_irk(rr+1, kk+1) * x_ijr;
+                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
+                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
+                            xk = opts.C_irk(1, kk+1) * x_prev;
+                            for rr=1:opts.n_s % TODO(@anton) handle other modes.
+                                x_ijr = obj.w.x(ii,jj,rr);
+                                xk = xk + opts.C_irk(rr+1, kk+1) * x_ijr;
+                            end
+                            obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
+                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
+                            % also integrate the objective
+                            obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
                         end
-                        obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
-                        obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                        obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
-                        obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
-                        % also integrate the objective
-                        obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
+                      case IrkRepresentation.differential
+                        X_ijk = {};
+                        for kk = 1:opts.n_s
+                            x_temp = x_prev;
+                            for rr = 1:opts.n_s
+                                x_temp = x_temp + h*opts.A_irk(kk,rr)*obj.w.v(ii,jj,rr);
+                            end
+                            X_ijk = [X_ijk {x_temp}];
+                        end
+                        X_ijk = [X_ijk, {obj.w.x(ii,jj,opts.n_s)}];
+                        x_ij_end = x_prev;
+                        for kk=1:opts.n_s
+                            x_ijk = X_ijk{kk};
+                            v_ijk = obj.w.v(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
+                            lambda_ijk = obj.w.lambda(ii,jj,kk);
+                            theta_ijk = obj.w.theta(ii,jj,kk);
+                            mu_ijk = obj.w.mu(ii,jj,kk);
+
+                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
+                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
+
+                            x_ij_end = x_ij_end + h*opts.b_irk(kk)*v_ijk;
+                            obj.g.v(ii,jj,kk) = {fj - v_ijk};
+                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
+                        end
+                        obj.g.dynamics(ii,jj) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
+                      case IrkRepresentation.differential_lift_x
+                        for kk = 1:opts.n_s
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            x_temp = x_prev;
+                            for rr = 1:opts.n_s
+                                x_temp = x_temp + h*opts.A_irk(kk,rr)*obj.w.v(ii,jj,rr);
+                            end
+                            obj.g.lift_x(ii,jj,kk) = {x_ijk - x_temp};
+                        end
+                        x_ij_end = x_prev;
+                        for kk=1:opts.n_s
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            v_ijk = obj.w.v(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
+                            lambda_ijk = obj.w.lambda(ii,jj,kk);
+                            theta_ijk = obj.w.theta(ii,jj,kk);
+                            mu_ijk = obj.w.mu(ii,jj,kk);
+
+                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
+                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
+
+                            x_ij_end = x_ij_end + h*opts.b_irk(kk)*v_ijk;
+                            obj.g.v(ii,jj,kk) = {fj - v_ijk};
+                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
+                        end
+                        obj.g.dynamics(ii,jj) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s);
                 end

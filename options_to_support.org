@@ -1,7 +1,7 @@
 * Remaining Options to implement for Stewart pipeline
-** TODO irk_representation
-*** TODO differential
-*** TODO differential_lift_x
+** DONE irk_representation
+*** DONE differential
+*** DONE differential_lift_x
 ** TODO irk_scheme
 *** TODO Cases where c_n != 1
 ** TODO lift_complementarities

@@ -9,6 +9,7 @@ solver_options = nosnoc.solver.Options();
 
 %% set some options
 problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.irk_representation = IrkRepresentation.differential_lift_x;
 problem_options.n_s = 2;
 problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
@@ -34,7 +35,7 @@ model.c = v-10;
 % Add terminal constraint
 model.g_terminal = [q-200;v-0];
 % lsq on control
-model.lsq_u = {u, 0, 1}
+model.lsq_u = {u, 0, 1};
 
 %% create solver and solve problem
 ocp_solver = nosnoc.ocp.solver(model, problem_options, solver_options);
