@@ -8,8 +8,8 @@
 Maybe this is not actually necessary anymore?
 ** TODO g_path_at_fe
 ** TODO g_path_at_stg
-** TODO x_box_at_fe
-** TODO x_box_at_stg
+** DONE x_box_at_fe
+** DONE x_box_at_stg
 ** TODO time_optimal_problem
 ** TODO equidistant_control_grid
 ** TODO relax_terminal_constraint

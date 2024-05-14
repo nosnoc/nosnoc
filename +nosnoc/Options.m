@@ -282,6 +282,9 @@ classdef Options < handle
                 obj.b_irk = b_irk;
                 obj.c_irk = c_irk;
             end
+            if obj.irk_representation == IrkRepresentation.differential
+                obj.x_box_at_stg = 0;
+            end
             obj.right_boundary_point_explicit = right_boundary_point_explicit;
         end
 

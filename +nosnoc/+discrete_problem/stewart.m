@@ -74,6 +74,17 @@ classdef stewart < vdx.problems.Mpcc
             obj.w.lambda(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'lambda', dims.n_lambda},0, inf};
             obj.w.theta(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'theta', dims.n_theta},0, 1};
             obj.w.mu(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'mu', dims.n_mu},0,inf};
+
+            % Handle x_box settings
+            if ~opts.x_box_at_stg && opts.irk_representation ~= IrkRepresentation.differential
+                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s-1)).lb = -inf*ones(dims.n_x, 1);
+                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s-1)).ub = inf*ones(dims.n_x, 1);
+            end
+
+            if ~opts.x_box_at_fe
+                obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(1)-1),opts.n_s).lb = -inf*ones(dims.n_x, 1);
+                obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(1)-1),opts.n_s).ub = inf*ones(dims.n_x, 1);
+            end
         end
 
         function forward_sim_constraints(obj)
