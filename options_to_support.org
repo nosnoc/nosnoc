@@ -15,10 +15,11 @@ Maybe this is not actually necessary anymore?
 ** DONE relax_terminal_constraint
 ** DONE relax_terminal_constraint_from_above 
 Do we actually need this?
-** TODO relax_terminal_constraint_homotopy
+** relax_terminal_constraint_homotopy
 How do we allow people to tie into the homotopy in `mpccsol`
-** TODO relax_terminal_numerical_time
-** TODO relax_terminal_physical_time
+** DONE relax_terminal_numerical_time
+** relax_terminal_physical_time
+Will be done when time-freezing is implemented
 ** TODO cost_integration
 ** DONE least squares costs
 * General improvements 

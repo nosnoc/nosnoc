@@ -164,8 +164,10 @@ classdef stewart < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            % also integrate the objective
-                            obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
+                            if opts.cost_integration
+                                % also integrate the objective
+                                obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
+                            end
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -199,8 +201,10 @@ classdef stewart < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            % also integrate the objective
-                            obj.f = obj.f + opts.b_irk(kk)*h*qj;
+                            if opts.cost_integration
+                                % also integrate the objective
+                                obj.f = obj.f + opts.b_irk(kk)*h*qj;
+                            end
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -234,8 +238,10 @@ classdef stewart < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            % also integrate the objective
-                            obj.f = obj.f + opts.b_irk(kk)*h*qj;
+                            if opts.cost_integration
+                                % also integrate the objective
+                                obj.f = obj.f + opts.b_irk(kk)*h*qj;
+                            end
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -258,6 +264,9 @@ classdef stewart < vdx.problems.Mpcc
                 obj.f = obj.f + t_stage*dcs.f_lsq_u_fun(obj.w.u(ii),...
                     model.u_ref_val(:,ii),...
                     p);
+                if ~opts.cost_ingration
+                    obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
+                end
                 
                 % Clock <Constraints
                 % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
@@ -270,7 +279,16 @@ classdef stewart < vdx.problems.Mpcc
                             obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages};
                         end
                     else
-                        obj.g.equidistant_control_grid(ii) = {t_stage-sum_h};
+                        if opts.relax_terminal_numerical_time
+                            % TODO(@armin) why is this allowed to be negative?
+                            obj.w.s_numerical_time(ii) = {{'s_numerical', 1}, -2*opts.h, 2*opts.h, opts.h/2};
+                            g_eq_grid = [sum_h - t_stage - obj.w.s_numerical_time(ii);
+                                -(sum_h - t_stage) - obj.w.s_numerical_time(ii)];
+                            obj.g.equidistant_control_grid(ii) = {g_eq_grid, -inf, 0};
+                            obj.f = obj.f + opts.rho_terminal_numerical_time*obj.w.s_numerical_time(ii);
+                        else
+                            obj.g.equidistant_control_grid(ii) = {t_stage-sum_h};
+                        end
                     end
                 end
             end

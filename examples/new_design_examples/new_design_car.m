@@ -19,6 +19,7 @@ problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 %problem_options.x_box_at_stg = 0;
 %problem_options.x_box_at_fe = 0;
 problem_options.relax_terminal_constraint = 3;
+problem_options.relax_terminal_numerical_time = true;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.pss(); 
