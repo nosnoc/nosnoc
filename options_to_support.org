@@ -28,3 +28,5 @@ Will be done when time-freezing is implemented
 ** Fix the spagghetti that is the time handling code
 Currently the code that handles the constraints for time are _incredibly_ hard to parse and therefore almost certainly very error prone. 
 Due to this we should figure out a way to simplify them and not have the time-freezing reformulation leaking into the dicrete_problem.
+* Other Features left to implement
+** DONE integrator

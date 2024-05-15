@@ -27,7 +27,7 @@ classdef stewart < vdx.problems.Mpcc
             obj.p.p_global = {model.p_global, model.p_global_val};
 
             % other derived values
-            h0 = opts.h;
+            h0 = opts.h_k;
 
             % 0d vars
             obj.w.v_global = {{'v_global',dims.n_v_global}, model.lbv_global, model.ubv_global, model.v0_global};
@@ -166,7 +166,7 @@ classdef stewart < vdx.problems.Mpcc
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
 
-                            x_ij_end = x_ij_end + opts.D_irk(j+1)*x_ijk;
+                            x_ij_end = x_ij_end + opts.D_irk(kk+1)*x_ijk;
                             
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -490,7 +490,6 @@ classdef stewart < vdx.problems.Mpcc
         function step_equilibration(obj)
             model = obj.model;
             opts = obj.opts;
-            h0 = opts.h;
             v_global = obj.w.v_global();
             p_global = obj.p.p_global();
 
@@ -501,13 +500,15 @@ classdef stewart < vdx.problems.Mpcc
             switch obj.opts.step_equilibration
               case 'heuristic_mean'
                 for ii=1:opts.N_stages
-                    for jj=1:opts.N_finite_elements(1)
+                    for jj=1:opts.N_finite_elements(ii)
+                        h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
                         obj.f = obj.f + obj.p.rho_h_p()*(h0-obj.w.h(ii,jj))^2;
                     end
                 end
               case 'heuristic_diff'
                 for ii=1:opts.N_stages
-                    for jj=2:opts.N_finite_elements(1)
+                    for jj=2:opts.N_finite_elements(ii)
+                        h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
                         obj.f = obj.f + obj.p.rho_h_p()*(obj.w.h(ii,jj)-obj.w.h(ii,jj-1))^2;
                     end
                 end
@@ -606,7 +607,8 @@ classdef stewart < vdx.problems.Mpcc
                 obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
               case 'mlcp'
                 for ii=1:opts.N_stages
-                    for jj=2:opts.N_finite_elements(1)
+                    for jj=2:opts.N_finite_elements(ii)
+                        h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
@@ -678,6 +680,29 @@ classdef stewart < vdx.problems.Mpcc
             solver_options.assume_lower_bounds = true;
 
             obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj.to_casadi_struct(), solver_options);
+        end
+
+        function stats = solve(obj)
+            opts = obj.opts;
+            T_val = obj.p.T().val;
+
+            for ii=1:opts.N_stages
+                for jj=1:opts.N_finite_elements(ii)
+                    % Recalculate ubh and lbh based on T_val
+                    h0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
+                    ubh = (1 + opts.gamma_h) * h0;
+                    lbh = (1 - opts.gamma_h) * h0;
+                    if opts.time_rescaling && ~opts.use_speed_of_time_variables
+                        % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
+                        ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
+                        lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                    end
+                    obj.w.h(ii,jj).lb = lbh;
+                    obj.w.h(ii,jj).ub = ubh;
+                end
+            end
+
+            stats = solve@vdx.problems.Mpcc(obj);
         end
     end
 end
