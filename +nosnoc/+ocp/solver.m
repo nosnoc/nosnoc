@@ -77,5 +77,9 @@ classdef solver < handle
                 t_grid = [t_grid, t_grid(end)+h_sum];
             end
         end
+
+        function results = getResults(obj)
+            results = obj.discrete_problem.get_results_struct();
+        end
     end
 end

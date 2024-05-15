@@ -83,10 +83,12 @@ classdef stewart < vdx.problems.Mpcc
                 opts.irk_representation == IrkRepresentation.differential_lift_x)
                 obj.w.v(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'v', dims.n_x}};
             end
+            obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.z(1:opts.N_stages,1:opts.N_finite_elements(1),(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-            obj.w.lambda(0,0,opts.n_s) = {{['lambda_0'], dims.n_lambda},0,inf};
+            obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf};
             obj.w.lambda(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf};
             obj.w.theta(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s)) = {{'theta', dims.n_theta},0, 1};
+            obj.w.mu(0,0,opts.n_s) = {{'mu', dims.n_mu},0,inf};
             obj.w.mu(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},0,inf};
 
             % Handle x_box settings
@@ -121,6 +123,13 @@ classdef stewart < vdx.problems.Mpcc
             p_global = obj.p.p_global();
 
             x_0 = obj.w.x(0,0,opts.n_s);
+            z_0 = obj.w.z(0,0,opts.n_s);
+            lambda_0 = obj.w.lambda(0,0,opts.n_s);
+            mu_0 = obj.w.mu(0,0,opts.n_s);
+
+            obj.g.z(0,0,opts.n_s) = {dcs.g_z_fun(x_0, z_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
+            obj.g.switching(0,0,opts.n_s) = {dcs.g_switching_fun(x_0, z_0, lambda_0, mu_0, v_global, [p_global;obj.p.p_time_var(1)])};
+            
 
             x_prev = obj.w.x(0,0,opts.n_s);
             for ii=1:opts.N_stages
@@ -703,6 +712,60 @@ classdef stewart < vdx.problems.Mpcc
             end
 
             stats = solve@vdx.problems.Mpcc(obj);
+        end
+
+        function results = get_results_struct(obj)
+            opts = obj.opts;
+            model = obj.model;
+
+            rbp = ~opts.right_boundary_point_explicit;
+            
+            if opts.right_boundary_point_explicit
+                results.x = obj.discrete_problem.w.x(:,:,obj.opts.n_s).res;
+                results.z = obj.discrete_problem.w.z(:,:,obj.opts.n_s).res;
+                results.lambda = obj.discrete_problem.w.lambda(:,:,obj.opts.n_s).res;
+                results.mu = obj.discrete_problem.w.mu(:,:,obj.opts.n_s).res;
+                results.theta = obj.discrete_problem.w.theta(:,:,obj.opts.n_s).res;
+            else
+                results.x = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                results.z = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                results.lambda = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                results.mu = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                results.theta = obj.discrete_problem.w.theta(:,:,obj.opts.n_s+1).res;
+            end
+            results.u = obj.w.u.res;
+
+            % TODO also speed of time/etc here.
+            if opts.use_fesd
+                results.h = obj.w.h.res;
+            else
+                results.h = [];
+                for ii=1:opts.N_stages
+                    h = obj.p.T.val/(opts.N_stages*opts.N_finite_elements(ii));
+                    results.h = [results.h,h*ones(1, opts.N_finite_elements(ii))];
+                end
+            end
+            results.t_grid = t_grid = cumsum([0, results.h]);
+            if ~isempty(results.u)
+                if opts.use_fesd
+                    t_grid_u = [0];
+                    for ii=1:opts.N_stages
+                        h_sum = sum(obj.discrete_problem.w.h(ii,:).res);
+                        t_grid_u = [t_grid_u, t_grid(end)+h_sum];
+                    end
+                    results.t_grid_u = t_grid_u;
+                else
+                    results.t_grid_u = linspace(0, obj.p.T.val, opts.N_stages+1);
+                end
+            end
+
+            fields = fieldnames(S)
+            empty_fields = cellfun(@(field) isempty(results.(field)), fields)
+            results = rmfield(S, fields(empty_fields))
         end
     end
 end
