@@ -269,18 +269,18 @@ classdef Options < handle
                 obj.D_rk = D;
                 % also get time steps
                 [~, ~, c_rk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
-                obj.c_rk = c_irk;
+                obj.c_rk = c_rk;
 
               case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
-                [A_rk,b_irk,c_irk,order_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
-                if c_rk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
+                [A_rk,b_rk,c_rk,order_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
+                if c_rk(end) <= 1+1e-9 && c_rk(end) >= 1-1e-9
                     right_boundary_point_explicit  = 1;
                 else
                     right_boundary_point_explicit  = 0;
                 end
-                obj.A_rk = A_irk;
-                obj.b_rk = b_irk;
-                obj.c_rk = c_irk;
+                obj.A_rk = A_rk;
+                obj.b_rk = b_rk;
+                obj.c_rk = c_rk;
             end
             if obj.irk_representation == IrkRepresentation.differential
                 obj.x_box_at_stg = 0;

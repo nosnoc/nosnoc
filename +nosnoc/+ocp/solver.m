@@ -26,7 +26,7 @@ classdef solver < handle
                     obj.dcs = nosnoc.dcs.stewart(model);
                     obj.dcs.generate_variables(opts);
                     obj.dcs.generate_equations(opts);
-                    obj.discrete_time_problem = nosnoc.discrete_problem.stewart(obj.dcs, opts);
+                    obj.discrete_time_problem = nosnoc.discrete_time_problem.stewart(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
                 elseif opts.dcs_mode == DcsMode.Step % TODO: RENAME
                     error("not implemented")
