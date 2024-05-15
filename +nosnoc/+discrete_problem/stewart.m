@@ -166,16 +166,16 @@ classdef stewart < vdx.problems.Mpcc
 
                             fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
                             qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
-                            xk = opts.C_irk(1, kk+1) * x_prev;
+                            xk = opts.C_rk(1, kk+1) * x_prev;
                             for rr=1:opts.n_s
                                 x_ijr = obj.w.x(ii,jj,rr);
-                                xk = xk + opts.C_irk(rr+1, kk+1) * x_ijr;
+                                xk = xk + opts.C_rk(rr+1, kk+1) * x_ijr;
                             end
                             obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
 
-                            x_ij_end = x_ij_end + opts.D_irk(kk+1)*x_ijk;
+                            x_ij_end = x_ij_end + opts.D_rk(kk+1)*x_ijk;
                             
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -187,7 +187,7 @@ classdef stewart < vdx.problems.Mpcc
                             end
                             if opts.cost_integration
                                 % also integrate the objective
-                                obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
+                                obj.f = obj.f + opts.B_rk(kk+1)*h*qj;
                             end
                         end
                         if ~opts.right_boundary_point_explicit
@@ -208,7 +208,7 @@ classdef stewart < vdx.problems.Mpcc
                         for kk = 1:opts.n_s
                             x_temp = x_prev;
                             for rr = 1:opts.n_s
-                                x_temp = x_temp + h*opts.A_irk(kk,rr)*obj.w.v(ii,jj,rr);
+                                x_temp = x_temp + h*opts.A_rk(kk,rr)*obj.w.v(ii,jj,rr);
                             end
                             X_ijk = [X_ijk {x_temp}];
                         end
@@ -225,7 +225,7 @@ classdef stewart < vdx.problems.Mpcc
                             fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
                             qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
 
-                            x_ij_end = x_ij_end + h*opts.b_irk(kk)*v_ijk;
+                            x_ij_end = x_ij_end + h*opts.b_rk(kk)*v_ijk;
                             obj.g.v(ii,jj,kk) = {fj - v_ijk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
@@ -239,7 +239,7 @@ classdef stewart < vdx.problems.Mpcc
                             end
                             if opts.cost_integration
                                 % also integrate the objective
-                                obj.f = obj.f + opts.b_irk(kk)*h*qj;
+                                obj.f = obj.f + opts.b_rk(kk)*h*qj;
                             end
                         end
                         if ~opts.right_boundary_point_explicit
@@ -262,7 +262,7 @@ classdef stewart < vdx.problems.Mpcc
                             x_ijk = obj.w.x(ii,jj,kk);
                             x_temp = x_prev;
                             for rr = 1:opts.n_s
-                                x_temp = x_temp + h*opts.A_irk(kk,rr)*obj.w.v(ii,jj,rr);
+                                x_temp = x_temp + h*opts.A_rk(kk,rr)*obj.w.v(ii,jj,rr);
                             end
                             obj.g.lift_x(ii,jj,kk) = {x_ijk - x_temp};
                         end
@@ -278,7 +278,7 @@ classdef stewart < vdx.problems.Mpcc
                             fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
                             qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
 
-                            x_ij_end = x_ij_end + h*opts.b_irk(kk)*v_ijk;
+                            x_ij_end = x_ij_end + h*opts.b_rk(kk)*v_ijk;
                             obj.g.v(ii,jj,kk) = {fj - v_ijk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
@@ -292,7 +292,7 @@ classdef stewart < vdx.problems.Mpcc
                             end
                             if opts.cost_integration
                                 % also integrate the objective
-                                obj.f = obj.f + opts.b_irk(kk)*h*qj;
+                                obj.f = obj.f + opts.b_rk(kk)*h*qj;
                             end
                         end
                         if ~opts.right_boundary_point_explicit

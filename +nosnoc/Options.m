@@ -150,12 +150,12 @@ classdef Options < handle
         p_val
 
         % Butcher Tableu
-        A_irk double
-        B_irk double
-        b_irk double
-        C_irk double
-        D_irk double
-        c_irk double
+        A_rk double
+        B_rk double
+        b_rk double
+        C_rk double
+        D_rk double
+        c_rk double
 
         right_boundary_point_explicit(1,1) logical
     end
@@ -264,23 +264,23 @@ classdef Options < handle
                 else
                     right_boundary_point_explicit  = 0;
                 end
-                obj.B_irk = B;
-                obj.C_irk = C;
-                obj.D_irk = D;
+                obj.B_rk = B;
+                obj.C_rk = C;
+                obj.D_rk = D;
                 % also get time steps
-                [~, ~, c_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
-                obj.c_irk = c_irk;
+                [~, ~, c_rk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
+                obj.c_rk = c_irk;
 
               case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
-                [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
-                if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
+                [A_rk,b_irk,c_irk,order_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
+                if c_rk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
                     right_boundary_point_explicit  = 1;
                 else
                     right_boundary_point_explicit  = 0;
                 end
-                obj.A_irk = A_irk;
-                obj.b_irk = b_irk;
-                obj.c_irk = c_irk;
+                obj.A_rk = A_irk;
+                obj.b_rk = b_irk;
+                obj.c_rk = c_irk;
             end
             if obj.irk_representation == IrkRepresentation.differential
                 obj.x_box_at_stg = 0;
