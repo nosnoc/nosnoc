@@ -721,21 +721,21 @@ classdef stewart < vdx.problems.Mpcc
             rbp = ~opts.right_boundary_point_explicit;
             
             if opts.right_boundary_point_explicit
-                results.x = obj.discrete_problem.w.x(:,:,obj.opts.n_s).res;
-                results.z = obj.discrete_problem.w.z(:,:,obj.opts.n_s).res;
-                results.lambda = obj.discrete_problem.w.lambda(:,:,obj.opts.n_s).res;
-                results.mu = obj.discrete_problem.w.mu(:,:,obj.opts.n_s).res;
-                results.theta = obj.discrete_problem.w.theta(:,:,obj.opts.n_s).res;
+                results.x = obj.discrete_time_problem.w.x(:,:,obj.opts.n_s).res;
+                results.z = obj.discrete_time_problem.w.z(:,:,obj.opts.n_s).res;
+                results.lambda = obj.discrete_time_problem.w.lambda(:,:,obj.opts.n_s).res;
+                results.mu = obj.discrete_time_problem.w.mu(:,:,obj.opts.n_s).res;
+                results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s).res;
             else
-                results.x = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
-                results.z = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
-                results.lambda = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
-                results.mu = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
-                results.theta = obj.discrete_problem.w.theta(:,:,obj.opts.n_s+1).res;
+                results.x = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                results.z = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                results.lambda = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                results.mu = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s+1).res;
             end
             results.u = obj.w.u.res;
 
@@ -754,7 +754,7 @@ classdef stewart < vdx.problems.Mpcc
                 if opts.use_fesd
                     t_grid_u = [0];
                     for ii=1:opts.N_stages
-                        h_sum = sum(obj.discrete_problem.w.h(ii,:).res);
+                        h_sum = sum(obj.discrete_time_problem.w.h(ii,:).res);
                         t_grid_u = [t_grid_u, t_grid(end)+h_sum];
                     end
                     results.t_grid_u = t_grid_u;
