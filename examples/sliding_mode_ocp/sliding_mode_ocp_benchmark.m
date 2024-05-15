@@ -38,7 +38,7 @@ settings.N_homotopy = 15;
 settings.complementarity_tol = 1e-12;
 settings.irk_representation = 'differential';
 N_stages = 6;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.irk_scheme = RKSchemes.RADAU_IIA;
 settings.n_s = 2;
 scenario.N_finite_elements = 2;
 
@@ -62,7 +62,7 @@ settings.heuristic_step_equilibration = 0;
 %% Basic
 mpcc_mode_fesd = [5 5 5 3 3];
 mpcc_mode_std = [3 3 3 3 3];
-irk_schemes = {IRKSchemes.RADAU_IIA,IRKSchemes.LOBATTO_IIIA,IRKSchemes.LOBATTO_IIIC,IRKSchemes.GAUSS_LEGENDRE,IRKSchemes.EXPLICIT_RK};
+irk_schemes = {RKSchemes.RADAU_IIA,RKSchemes.LOBATTO_IIIA,RKSchemes.LOBATTO_IIIC,RKSchemes.GAUSS_LEGENDRE,RKSchemes.EXPLICIT_RK};
 n_s_vec = {[1:4],[2:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
 N_finite_elements_vec = 2:2:12;
@@ -71,7 +71,7 @@ N_experiments = 1:5;
 %%
 mpcc_mode_fesd = [5 5 3 3];
 mpcc_mode_std = [3 3 3 3];
-irk_schemes = {IRKSchemes.RADAU_IIA,IRKSchemes.LOBATTO_IIIC,IRKSchemes.GAUSS_LEGENDRE,IRKSchemes.EXPLICIT_RK};
+irk_schemes = {RKSchemes.RADAU_IIA,RKSchemes.LOBATTO_IIIC,RKSchemes.GAUSS_LEGENDRE,RKSchemes.EXPLICIT_RK};
 n_s_vec = {[1:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
 % N_finite_elements_vec = 2:2:12;

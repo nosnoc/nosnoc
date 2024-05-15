@@ -18,7 +18,7 @@ settings = NosnocOptions();
 model = NosnocModel();
 %%
 settings.print_level = 5;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.irk_scheme = RKSchemes.RADAU_IIA;
 settings.n_s = 2;
 %% homotopy settings
 settings.cross_comp_mode = 1;

@@ -51,7 +51,7 @@ end
 
 %% Butcher tabelus
 switch irk_scheme
-  case IRKSchemes.RADAU_I
+  case RKSchemes.RADAU_I
     order = 2*n_s-1;
     switch n_s
       case 2
@@ -69,7 +69,7 @@ switch irk_scheme
         error('Radau-I IRK schemes avilable only for n_s =  {2,3}');
     end
 
-  case IRKSchemes.RADAU_IA
+  case RKSchemes.RADAU_IA
     order = 2*n_s-1;
     switch n_s
       case 1
@@ -92,7 +92,7 @@ switch irk_scheme
         error('Radau I-A IRK schemes avilable only for n_s =  {1,2,3}');
     end
 
-  case IRKSchemes.RADAU_IIA
+  case RKSchemes.RADAU_IIA
     order = 2*n_s-1;
     switch n_s
       case 1
@@ -171,7 +171,7 @@ switch irk_scheme
         error('Radau-IIA IRK schemes avilable only for n_s =  {1,...,9}.');
     end
     %% GAUSS
-  case IRKSchemes.GAUSS_LEGENDRE
+  case RKSchemes.GAUSS_LEGENDRE
     order = 2*n_s;
     switch n_s
       case 1
@@ -252,7 +252,7 @@ switch irk_scheme
         error('Gauss-Legendre IRK schemes avilable only for n_s =  {1,...,9}.');
     end
     %% Lobatto
-  case IRKSchemes.LOBATTO_III
+  case RKSchemes.LOBATTO_III
     order = 2*n_s-2;
     switch n_s
       case 1
@@ -286,7 +286,7 @@ switch irk_scheme
       otherwise
         error('Lobatto-III IRK schemes avilable only for n_s =  {2,3,4,5}.');
     end
-  case IRKSchemes.LOBATTO_IIIA
+  case RKSchemes.LOBATTO_IIIA
     order = 2*n_s-2;
     switch n_s
       case 1
@@ -323,7 +323,7 @@ switch irk_scheme
     end
 
 
-  case IRKSchemes.LOBATTO_IIIB
+  case RKSchemes.LOBATTO_IIIB
     order = 2*n_s-2;
     switch n_s
       case 1
@@ -361,7 +361,7 @@ switch irk_scheme
         error('Lobatto-IIIB IRK schemes avilable only for n_s =  {2,3,4,5}.');
     end
 
-  case IRKSchemes.LOBATTO_IIIC
+  case RKSchemes.LOBATTO_IIIC
     order = 2*n_s-2;
     switch n_s
       case 2
@@ -396,7 +396,7 @@ switch irk_scheme
         error('Lobatto-IIIC IRK schemes avilable only for n_s =  {2,3,4,5}.');
     end
 
-  case IRKSchemes.EXPLICIT_RK
+  case RKSchemes.EXPLICIT_RK
     switch n_s
       case 1
         % explicit Euler

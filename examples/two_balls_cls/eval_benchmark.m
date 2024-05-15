@@ -12,8 +12,8 @@ save(ref_sol_filename, "t_grid_ref", "x_traj_ref", "n_bounces_ref");
 % load(ref_sol_filename)
 
 
-% for irk_scheme = [IRKSchemes.RADAU_IIA]
-for irk_scheme = [IRKSchemes.GAUSS_LEGENDRE]
+% for irk_scheme = [RKSchemes.RADAU_IIA]
+for irk_scheme = [RKSchemes.GAUSS_LEGENDRE]
     %%
     x_ref = x_traj_ref(end, :)';
     

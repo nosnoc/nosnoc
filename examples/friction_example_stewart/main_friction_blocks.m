@@ -42,7 +42,7 @@ import casadi.*
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 problem_options.n_s = 2;                            
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;     
+problem_options.irk_scheme = RKSchemes.RADAU_IIA;     
 % problem_options.irk_representation = IrkRepresentation.differential_lift_x;
 problem_options.use_fesd = 1;
 problem_options.cross_comp_mode = 3;

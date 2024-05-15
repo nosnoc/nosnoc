@@ -45,7 +45,7 @@ classdef NosnocProblemOptions < handle
 
         % IRK and FESD Settings
         n_s(1,1) {mustBeInteger} = 2
-        irk_scheme(1,1) IRKSchemes = IRKSchemes.RADAU_IIA
+        irk_scheme(1,1) RKSchemes = RKSchemes.RADAU_IIA
         irk_representation IrkRepresentation = IrkRepresentation.integral;
 
         cross_comp_mode(1,1) CrossCompMode = CrossCompMode.FE_STAGE
@@ -194,7 +194,7 @@ classdef NosnocProblemOptions < handle
             obj.h_k = obj.h./obj.N_finite_elements;
 
             % check irk scheme compatibility
-            if ismember(obj.irk_scheme, IRKSchemes.differential_only)
+            if ismember(obj.irk_scheme, RKSchemes.differential_only)
                 if obj.print_level >=1
                     fprintf(['Info: The user provided RK scheme: ' char(obj.irk_scheme) ' is only available in the differential representation.\n']);
                 end

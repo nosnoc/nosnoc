@@ -48,7 +48,7 @@ solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %% settings
 problem_options.use_fesd = 1;
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA; %IRKSchemes.GAUSS_LEGENDRE;
+problem_options.irk_scheme = RKSchemes.RADAU_IIA; %RKSchemes.GAUSS_LEGENDRE;
 solver_options.print_level = 2;
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'Stewart'; % 'Step;

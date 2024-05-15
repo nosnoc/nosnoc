@@ -7,7 +7,7 @@ close all
 settings = NosnocOptions();
 model = NosnocModel();
 %%
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+settings.irk_scheme = RKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;
 settings.print_level = 3;
 settings.N_homotopy = 20;

@@ -7,7 +7,7 @@ import casadi.*
 settings = NosnocOptions();  
 model = NosnocModel();
 %% settings
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.irk_scheme = RKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.mpcc_mode = 'elastic_ineq';
 settings.opts_casadi_nlp.ipopt.max_iter = 1e3;

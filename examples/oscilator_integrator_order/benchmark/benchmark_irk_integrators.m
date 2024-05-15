@@ -44,7 +44,7 @@ legend_str = {'Midpoint Rule','Gauss-Legendre 4','Gauss-Legendre 6','Gauss-Legen
 settings.use_fesd = 1;
 settings.print_level = 0;
 
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+settings.irk_scheme = RKSchemes.GAUSS_LEGENDRE;
 settings.irk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
@@ -66,7 +66,7 @@ settings.scenario_name = 'irk_gauss_legendre_std_differential';
 % Radau II-A with FESD
 legend_str = {'Implicit Euler','Radau-IIA 3','Radau-IIA 5','Radau-IIA 7','Radau-IIA 9','Radau-IIA 11','Radau-IIA 13','Radau-IIA 15','Radau-IIA 17'};
 settings.use_fesd = 1;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.irk_scheme = RKSchemes.RADAU_IIA;
 settings.irk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
@@ -240,7 +240,7 @@ settings.scenario_name = 'erk_std_differential';
 %  
 legend_str = {'Implicit Euler','Radau-IIA 3','Radau-IIA 5','Radau-IIA 7','Radau-IIA 9','Radau-IIA 11','Radau-IIA 13','Radau-IIA 15','Radau-IIA 17'};
 settings.use_fesd = 1;
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.irk_scheme = RKSchemes.RADAU_IIA;
 settings.irk_representation = 'integral';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
@@ -263,7 +263,7 @@ settings.scenario_name = 'irk_radau_iia_std_integral';
  
 legend_str = {'Midpoint Rule','Gauss-Legendre 4','Gauss-Legendre 6','Gauss-Legendre 8','Gauss-Legendre 10','Gauss-Legendre 12','Gauss-Legendre 14','Gauss-Legendre 16','Gauss-Legendre 18'};
 settings.use_fesd = 1;
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+settings.irk_scheme = RKSchemes.GAUSS_LEGENDRE;
 settings.irk_representation = 'integral';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];

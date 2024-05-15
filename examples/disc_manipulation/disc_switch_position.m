@@ -39,7 +39,7 @@ filename = 'discs_switch_position.gif';
 %%
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.irk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;  
 problem_options.time_freezing = 1;
 problem_options.pss_lift_step_functions = 1;

@@ -3,11 +3,11 @@ function [B,C,D,tau_root] = generate_butcher_tableu_integral(n_s,irk_scheme)
 import casadi.*
 
 % TODO what about the other radau schemes?
-if isequal(irk_scheme,IRKSchemes.RADAU_IIA)
+if isequal(irk_scheme,RKSchemes.RADAU_IIA)
     irk_scheme = 'radau';
 end
 
-if isequal(irk_scheme,IRKSchemes.GAUSS_LEGENDRE)
+if isequal(irk_scheme,RKSchemes.GAUSS_LEGENDRE)
     irk_scheme = 'legendre';
 end
 

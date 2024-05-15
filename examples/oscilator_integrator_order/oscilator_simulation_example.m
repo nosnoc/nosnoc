@@ -47,7 +47,7 @@ solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %% settings
 problem_options.use_fesd = 1;       % switch detection method on/off
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA; %'Gauss-Legendre';
+problem_options.irk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
 solver_options.print_level = 2;
 problem_options.n_s = 4;
 problem_options.dcs_mode = 'Step'; % 'Step;

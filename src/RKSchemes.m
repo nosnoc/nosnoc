@@ -25,7 +25,7 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef IRKSchemes
+classdef RKSchemes
     enumeration
         RADAU_I
         RADAU_IA

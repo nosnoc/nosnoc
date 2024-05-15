@@ -1,7 +1,7 @@
 classdef TestSlidingMode < matlab.unittest.TestCase
     properties (TestParameter)
         irk_representation = {'differential','integral'};
-        irk_scheme = {IRKSchemes.RADAU_IIA,IRKSchemes.GAUSS_LEGENDRE};
+        irk_scheme = {RKSchemes.RADAU_IIA,RKSchemes.GAUSS_LEGENDRE};
         dcs_mode = {'Step','Stewart'};
         cross_comp_mode = {1, 3, 4, 7}; 
     end
