@@ -2,10 +2,10 @@
 ** DONE irk_representation
 *** DONE differential
 *** DONE differential_lift_x
-** TODO irk_scheme
-*** TODO Cases where c_n != 1
-** TODO lift_complementarities
-Maybe this is not actually necessary anymore?
+** DONE irk_scheme
+*** DONE Cases where c_n != 1
+** lift_complementarities
+Maybe this is not actually necessary anymore? IMO no as solver handles this.
 ** DONE g_path_at_fe
 ** DONE g_path_at_stg
 ** DONE x_box_at_fe
@@ -23,7 +23,8 @@ Will be done when time-freezing is implemented
 ** DONE cost_integration
 ** DONE least squares costs
 ** DONE g_path_comp
+** DONE step_equilibration
 * General improvements 
 ** Fix the spagghetti that is the time handling code
-Currently the code that handles the constraints for time are _incredibly_ hard to parse and therefore almost certainly  very error prone. 
+Currently the code that handles the constraints for time are _incredibly_ hard to parse and therefore almost certainly very error prone. 
 Due to this we should figure out a way to simplify them and not have the time-freezing reformulation leaking into the dicrete_problem.

@@ -69,11 +69,13 @@ classdef stewart < vdx.problems.Mpcc
                 obj.w.nu(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'nu', 1},0,inf};
             end
 
+            % For c_n ~= 1 case
+            rbp = ~problem_options.right_boundary_point_explicit;
             % 3d vars
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             if (opts.irk_representation == IrkRepresentation.integral ||...
                         opts.irk_representation == IrkRepresentation.differential_lift_x)
-                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
             else
                 obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
             end
@@ -81,21 +83,21 @@ classdef stewart < vdx.problems.Mpcc
                 opts.irk_representation == IrkRepresentation.differential_lift_x)
                 obj.w.v(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'v', dims.n_x}};
             end
-            obj.w.z(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
+            obj.w.z(1:opts.N_stages,1:opts.N_finite_elements(1),(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda_0'], dims.n_lambda},0,inf};
-            obj.w.lambda(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'lambda', dims.n_lambda},0, inf};
-            obj.w.theta(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'theta', dims.n_theta},0, 1};
-            obj.w.mu(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'mu', dims.n_mu},0,inf};
+            obj.w.lambda(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf};
+            obj.w.theta(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s)) = {{'theta', dims.n_theta},0, 1};
+            obj.w.mu(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},0,inf};
 
             % Handle x_box settings
             if ~opts.x_box_at_stg && opts.irk_representation ~= IrkRepresentation.differential
-                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s-1)).lb = -inf*ones(dims.n_x, 1);
-                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s-1)).ub = inf*ones(dims.n_x, 1);
+                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp-1)).lb = -inf*ones(dims.n_x, 1);
+                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp-1)).ub = inf*ones(dims.n_x, 1);
             end
 
             if ~opts.x_box_at_fe
-                obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(1)-1),opts.n_s).lb = -inf*ones(dims.n_x, 1);
-                obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(1)-1),opts.n_s).ub = inf*ones(dims.n_x, 1);
+                obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(1)-1),opts.n_s+rbp).lb = -inf*ones(dims.n_x, 1);
+                obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(1)-1),opts.n_s+rbp).ub = inf*ones(dims.n_x, 1);
             end
         end
 
@@ -105,6 +107,8 @@ classdef stewart < vdx.problems.Mpcc
             opts = obj.opts;
             dcs = obj.dcs;
             dims = obj.dcs.dims;
+
+            rbp = ~opts.right_boundary_point_explicit;
 
             if obj.opts.use_fesd
                 t_stage = obj.p.T()/opts.N_stages;
@@ -143,6 +147,7 @@ classdef stewart < vdx.problems.Mpcc
                     end
                     switch opts.irk_representation
                       case IrkRepresentation.integral
+                        x_ij_end = x_prev;
                         for kk=1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk);
                             z_ijk = obj.w.z(ii,jj,kk);
@@ -153,7 +158,7 @@ classdef stewart < vdx.problems.Mpcc
                             fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
                             qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p);
                             xk = opts.C_irk(1, kk+1) * x_prev;
-                            for rr=1:opts.n_s % TODO(@anton) handle other modes.
+                            for rr=1:opts.n_s
                                 x_ijr = obj.w.x(ii,jj,rr);
                                 xk = xk + opts.C_irk(rr+1, kk+1) * x_ijr;
                             end
@@ -161,6 +166,8 @@ classdef stewart < vdx.problems.Mpcc
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
 
+                            x_ij_end = x_ij_end + opts.D_irk(j+1)*x_ijk;
+                            
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
@@ -173,6 +180,15 @@ classdef stewart < vdx.problems.Mpcc
                                 % also integrate the objective
                                 obj.f = obj.f + opts.B_irk(kk+1)*h*qj;
                             end
+                        end
+                        if ~opts.right_boundary_point_explicit
+                            x_ijk = obj.w.x(ii,jj,opts.n_s+1);
+                            z_ijk = obj.w.z(ii,jj,opts.n_s+1);
+                            lambda_ijk = obj.w.lambda(ii,jj,opts.n_s+1);
+                            mu_ijk = obj.w.mu(ii,jj,opts.n_s+1);
+
+                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
+                            obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_ijk, mu_ijk, v_global, p)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -216,6 +232,15 @@ classdef stewart < vdx.problems.Mpcc
                                 obj.f = obj.f + opts.b_irk(kk)*h*qj;
                             end
                         end
+                        if ~opts.right_boundary_point_explicit
+                            x_ijk = obj.w.x(ii,jj,opts.n_s+1);
+                            z_ijk = obj.w.z(ii,jj,opts.n_s+1);
+                            lambda_ijk = obj.w.lambda(ii,jj,opts.n_s+1);
+                            mu_ijk = obj.w.mu(ii,jj,opts.n_s+1);
+
+                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
+                            obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_ijk, mu_ijk, v_global, p)};
+                        end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
@@ -258,12 +283,21 @@ classdef stewart < vdx.problems.Mpcc
                                 obj.f = obj.f + opts.b_irk(kk)*h*qj;
                             end
                         end
+                        if ~opts.right_boundary_point_explicit
+                            x_ijk = obj.w.x(ii,jj,opts.n_s+1);
+                            z_ijk = obj.w.z(ii,jj,opts.n_s+1);
+                            lambda_ijk = obj.w.lambda(ii,jj,opts.n_s+1);
+                            mu_ijk = obj.w.mu(ii,jj,opts.n_s+1);
+
+                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
+                            obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_ijk, mu_ijk, v_global, p)};
+                        end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                         obj.g.dynamics(ii,jj) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                     end
-                    x_prev = obj.w.x(ii,jj,opts.n_s);
+                    x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
                 end
                 if ~opts.g_path_at_stg && ~opts.g_path_at_fe
                     x_i = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s);
@@ -355,6 +389,8 @@ classdef stewart < vdx.problems.Mpcc
             model = obj.model;
             % Do Cross-Complementarity
 
+            rbp = ~problem_options.right_boundary_point_explicit;
+            
             if opts.use_fesd
                 switch opts.cross_comp_mode
                   case CrossCompMode.STAGE_STAGE
@@ -362,8 +398,8 @@ classdef stewart < vdx.problems.Mpcc
                         for jj=1:opts.N_finite_elements(ii);
                             Gij = {};
                             Hij = {};
-                            for kk=1:opts.n_s
-                                lambda_ijk = obj.w.theta(ii,jj,kk);
+                            for kk=1:(opts.n_s + rbp)
+                                lambda_ijk = obj.w.lambda(ii,jj,kk);
                                 for rr=1:opts.n_s
                                     theta_ijr = obj.w.theta(ii,jj,rr);
 
@@ -403,7 +439,7 @@ classdef stewart < vdx.problems.Mpcc
                             sum_theta = sum2(obj.w.theta(ii,jj,:));
                             Gij = {lambda_prev};
                             Hij = {sum_theta};
-                            for kk=1:opts.n_s
+                            for kk=1:(opts.n_s + rbp)
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
 
                                 Gij = vertcat(Gij, {lambda_ijk});
@@ -419,17 +455,10 @@ classdef stewart < vdx.problems.Mpcc
                     % Do cross comp for distance with lambda
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
-                            Gij = [];
-                            Hij = [];
-                            for kk=1:opts.n_s
-                                lambda_ijk = obj.w.lambda(ii,jj,kk);
-                                theta_ijk = obj.w.theta(ii,jj,kk);
-
-                                Gij = Gij + lambda_ijk;
-                                Hij = Hij + theta_ijk;
-                            end
-                            obj.G.cross_comp(ii,jj) = {Gij};
-                            obj.H.cross_comp(ii,jj) = {Hij};
+                            sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
+                            sum_theta = sum2(obj.w.theta(ii,jj,:));
+                            obj.G.cross_comp(ii,jj) = {sum_lambda};
+                            obj.H.cross_comp(ii,jj) = {sum_theta};
                             lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
                         end
                     end
@@ -478,22 +507,13 @@ classdef stewart < vdx.problems.Mpcc
               case 'l2_relaxed_scaled'
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(1)
-                        sigma_lambda_B = 0;
-                        sigma_theta_B = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_B = sigma_lambda_B + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
-                            sigma_theta_B = sigma_theta_B + obj.w.lambda(ii,jj-1,kk);
-                        end
-                        sigma_lambda_F = 0;
-                        sigma_theta_F = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_F = sigma_lambda_F + c_fun(obj.w.x(ii,jj,kk), v_global, p);
-                            sigma_theta_F = sigma_theta_F + obj.w.lambda(ii,jj,kk);
-                        end
-
+                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
+                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        
+                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        
                         pi_lambda = sigma_lambda_B .* sigma_lambda_F;
                         pi_theta = sigma_theta_B .* sigma_theta_F;
                         nu = pi_lambda + pi_theta;
@@ -509,21 +529,12 @@ classdef stewart < vdx.problems.Mpcc
               case 'l2_relaxed'
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(1)
-                        sigma_lambda_B = 0;
-                        sigma_theta_B = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_B = sigma_lambda_B + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
-                            sigma_theta_B = sigma_theta_B + obj.w.lambda(ii,jj-1,kk);
-                        end
-                        sigma_lambda_F = 0;
-                        sigma_theta_F = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_F = sigma_lambda_F + c_fun(obj.w.x(ii,jj,kk), v_global, p);
-                            sigma_theta_F = sigma_theta_F + obj.w.lambda(ii,jj,kk);
-                        end
+                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
+                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        
+                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
                         pi_lambda = sigma_lambda_B .* sigma_lambda_F;
                         pi_theta = sigma_theta_B .* sigma_theta_F;
@@ -540,21 +551,12 @@ classdef stewart < vdx.problems.Mpcc
               case 'direct'
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(1)
-                        sigma_lambda_B = 0;
-                        sigma_theta_B = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_B = sigma_lambda_B + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
-                            sigma_theta_B = sigma_theta_B + obj.w.lambda(ii,jj-1,kk);
-                        end
-                        sigma_lambda_F = 0;
-                        sigma_theta_F = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_F = sigma_lambda_F + c_fun(obj.w.x(ii,jj,kk), v_global, p);
-                            sigma_theta_F = sigma_theta_F + obj.w.lambda(ii,jj,kk);
-                        end
+                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
+                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        
+                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
                         pi_lambda = sigma_lambda_B .* sigma_lambda_F;
                         pi_theta = sigma_theta_B .* sigma_theta_F;
@@ -570,23 +572,15 @@ classdef stewart < vdx.problems.Mpcc
                 end
                 obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
               case 'direct_homotopy'
+                error("not currently implemented")
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(1)
-                        sigma_lambda_B = 0;
-                        sigma_theta_B = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_B = sigma_lambda_B + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
-                            sigma_theta_B = sigma_theta_B + obj.w.lambda(ii,jj-1,kk);
-                        end
-                        sigma_lambda_F = 0;
-                        sigma_theta_F = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_F = sigma_lambda_F + c_fun(obj.w.x(ii,jj,kk), v_global, p);
-                            sigma_theta_F = sigma_theta_F + obj.w.lambda(ii,jj,kk);
-                        end
+                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
+                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        
+                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
                         pi_lambda = sigma_lambda_B .* sigma_lambda_F;
                         pi_theta = sigma_theta_B .* sigma_theta_F;
@@ -605,22 +599,12 @@ classdef stewart < vdx.problems.Mpcc
                 obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
               case 'mlcp'
                 for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(1)
-                        sigma_lambda_b = 0;
-                        sigma_theta_b = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_b = sigma_lambda_b + c_fun(obj.w.x(ii,jj-1,kk), v_global, p);
-                            sigma_theta_b = sigma_theta_b + obj.w.lambda(ii,jj-1,kk);
-                        end
-                        sigma_lambda_f = 0;
-                        sigma_theta_f = 0;
-                        for kk=1:opts.n_s
-                            sigma_lambda_f = sigma_lambda_f + c_fun(obj.w.x(ii,jj,kk), v_global, p);
-                            sigma_theta_f = sigma_theta_f + obj.w.lambda(ii,jj,kk);
-                        end
-
+                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
+                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        
+                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
                         % todo ideally we output G and H instead of doing all of the stuff here but ok.
                         lambda_lambda = obj.w.lambda_lambda(ii,jj);
