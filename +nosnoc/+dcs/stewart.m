@@ -73,11 +73,11 @@ classdef stewart < nosnoc.dcs.base
             import casadi.*
             model = obj.model;
             dims = obj.dims;
+
             
             obj.f_x = zeros(dims.n_x,1);
             for ii = 1:dims.n_sys
                 obj.f_x = obj.f_x + model.F{ii}*obj.theta_sys{ii};
-                obj.g_Stewart{ii} = -model.S{ii}*model.c{ii};
             end
 
             g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i, 0 = c(x)-lambda_p+lambda_n
@@ -93,9 +93,9 @@ classdef stewart < nosnoc.dcs.base
                 % lambda_i >= 0;    for all i = 1,..., n_sys
                 % theta_i >= 0;     for all i = 1,..., n_sys
                 % Gradient of Lagrange Function of indicator LP
-                g_switching = [g_switching; obj.g_Stewart{ii} - obj.lambda_sys{ii}+obj.mu_sys{ii}*ones(dims.n_f_sys(ii),1)];
+                g_switching = [g_switching; model.g_ind{ii} - obj.lambda_sys{ii}+obj.mu_sys{ii}*ones(dims.n_f_sys(ii),1)];
                 g_convex = [g_convex;ones(dims.n_f_sys(ii),1)'*obj.theta_sys{ii} - 1];
-                lambda00_expr = [lambda00_expr; obj.g_Stewart{ii} - min(obj.g_Stewart{ii})];
+                lambda00_expr = [lambda00_expr; model.g_ind{ii} - min(model.g_ind{ii})];
             end
             g_alg = [g_switching;g_convex];
 
@@ -104,7 +104,7 @@ classdef stewart < nosnoc.dcs.base
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {g_alg});
             obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_switching});
-            obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {obj.g_Stewart{:}});
+            obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {model.g_ind{:}});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.g_comp_path_fun  = Function('g_comp_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_comp_path});

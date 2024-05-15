@@ -749,7 +749,7 @@ classdef stewart < vdx.problems.Mpcc
                     results.h = [results.h,h*ones(1, opts.N_finite_elements(ii))];
                 end
             end
-            results.t_grid = t_grid = cumsum([0, results.h]);
+            results.t_grid = cumsum([0, results.h]);
             if ~isempty(results.u)
                 if opts.use_fesd
                     t_grid_u = [0];
