@@ -52,7 +52,13 @@ classdef solver < handle
         end
 
         function x = getX(obj)
-            x = obj.discrete_problem.w.x(:,:,obj.opts.n_s).res;
+            opts = obj.opts;
+            if opts.right_boundary_point_explicit
+                x = obj.discrete_problem.w.x(:,:,obj.opts.n_s).res;
+            else
+                x = [obj.discrete_problem.w.x(0,0,obj.opts.n_s).res,...
+                    obj.discrete_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+            end
         end
 
         function u = getU(obj)

@@ -103,7 +103,7 @@ classdef stewart < nosnoc.dcs.base
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {g_alg});
-            obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_alg});
+            obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_switching});
             obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {obj.g_Stewart{:}});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants

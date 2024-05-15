@@ -70,7 +70,7 @@ classdef stewart < vdx.problems.Mpcc
             end
 
             % For c_n ~= 1 case
-            rbp = ~problem_options.right_boundary_point_explicit;
+            rbp = ~opts.right_boundary_point_explicit;
             % 3d vars
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             if (opts.irk_representation == IrkRepresentation.integral ||...
@@ -189,6 +189,7 @@ classdef stewart < vdx.problems.Mpcc
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_ijk, mu_ijk, v_global, p)};
+                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -240,11 +241,13 @@ classdef stewart < vdx.problems.Mpcc
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_ijk, mu_ijk, v_global, p)};
+                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                        else
+                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
-                        obj.g.dynamics(ii,jj) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                       case IrkRepresentation.differential_lift_x
                         for kk = 1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk);
@@ -291,11 +294,13 @@ classdef stewart < vdx.problems.Mpcc
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_ijk, mu_ijk, v_global, p)};
+                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                        else
+                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
-                        obj.g.dynamics(ii,jj) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
                 end
@@ -354,7 +359,9 @@ classdef stewart < vdx.problems.Mpcc
             if opts.relax_terminal_constraint_homotopy
                 error("Currently unsupported")
             end
-            g_terminal = dcs.g_terminal_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,kk), v_global, p_global);
+            g_terminal = dcs.g_terminal_fun(obj.w.x(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp),...
+                obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp),...
+                v_global, p_global);
             switch opts.relax_terminal_constraint
               case 0 % hard constraint
                 if opts.relax_terminal_constraint_from_above
@@ -389,7 +396,7 @@ classdef stewart < vdx.problems.Mpcc
             model = obj.model;
             % Do Cross-Complementarity
 
-            rbp = ~problem_options.right_boundary_point_explicit;
+            rbp = ~opts.right_boundary_point_explicit;
             
             if opts.use_fesd
                 switch opts.cross_comp_mode

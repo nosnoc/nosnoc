@@ -8,7 +8,7 @@ problem_options = nosnoc.Options(); % problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 
 %% set some options
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
 problem_options.irk_representation = IrkRepresentation.differential_lift_x;
 problem_options.n_s = 2;
 problem_options.N_stages = 20; % number of control intervals
@@ -18,8 +18,8 @@ problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 
 %problem_options.x_box_at_stg = 0;
 %problem_options.x_box_at_fe = 0;
-problem_options.relax_terminal_constraint = 3;
-problem_options.relax_terminal_numerical_time = true;
+problem_options.relax_terminal_constraint = 1;
+%problem_options.relax_terminal_numerical_time = false;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.pss(); 
