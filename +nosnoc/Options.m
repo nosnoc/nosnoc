@@ -46,7 +46,7 @@ classdef Options < handle
         % IRK and FESD Settings
         n_s(1,1) {mustBeInteger} = 2
         irk_scheme(1,1) RKSchemes = RKSchemes.RADAU_IIA
-        irk_representation IrkRepresentation = IrkRepresentation.integral;
+        irk_representation RKRepresentation = RKRepresentation.integral;
 
         cross_comp_mode(1,1) CrossCompMode = CrossCompMode.FE_STAGE
         gamma_h(1,1) double {mustBeReal} = 1
@@ -257,7 +257,7 @@ classdef Options < handle
             % create Butcher tableau
             % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
             switch obj.irk_representation
-              case IrkRepresentation.integral
+              case RKRepresentation.integral
                 [B, C, D, tau_root] = generate_butcher_tableu_integral(obj.n_s, obj.irk_scheme);
                 if tau_root(end) == 1
                     right_boundary_point_explicit  = 1;
@@ -271,7 +271,7 @@ classdef Options < handle
                 [~, ~, c_rk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
                 obj.c_rk = c_rk;
 
-              case {IrkRepresentation.differential, IrkRepresentation.differential_lift_x}
+              case {RKRepresentation.differential, RKRepresentation.differential_lift_x}
                 [A_rk,b_rk,c_rk,order_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
                 if c_rk(end) <= 1+1e-9 && c_rk(end) >= 1-1e-9
                     right_boundary_point_explicit  = 1;
@@ -282,7 +282,7 @@ classdef Options < handle
                 obj.b_rk = b_rk;
                 obj.c_rk = c_rk;
             end
-            if obj.irk_representation == IrkRepresentation.differential
+            if obj.irk_representation == RKRepresentation.differential
                 obj.x_box_at_stg = 0;
             end
             obj.right_boundary_point_explicit = right_boundary_point_explicit;

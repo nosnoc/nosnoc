@@ -73,14 +73,14 @@ classdef stewart < vdx.problems.Mpcc
             rbp = ~opts.right_boundary_point_explicit;
             % 3d vars
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
-            if (opts.irk_representation == IrkRepresentation.integral ||...
-                        opts.irk_representation == IrkRepresentation.differential_lift_x)
+            if (opts.irk_representation == RKRepresentation.integral ||...
+                        opts.irk_representation == RKRepresentation.differential_lift_x)
                 obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
             else
                 obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
             end
-            if (opts.irk_representation == IrkRepresentation.differential ||...
-                opts.irk_representation == IrkRepresentation.differential_lift_x)
+            if (opts.irk_representation == RKRepresentation.differential ||...
+                opts.irk_representation == RKRepresentation.differential_lift_x)
                 obj.w.v(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'v', dims.n_x}};
             end
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
@@ -92,7 +92,7 @@ classdef stewart < vdx.problems.Mpcc
             obj.w.mu(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},0,inf};
 
             % Handle x_box settings
-            if ~opts.x_box_at_stg && opts.irk_representation ~= IrkRepresentation.differential
+            if ~opts.x_box_at_stg && opts.irk_representation ~= RKRepresentation.differential
                 obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp-1)).lb = -inf*ones(dims.n_x, 1);
                 obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp-1)).ub = inf*ones(dims.n_x, 1);
             end
@@ -155,7 +155,7 @@ classdef stewart < vdx.problems.Mpcc
                         h = h0;
                     end
                     switch opts.irk_representation
-                      case IrkRepresentation.integral
+                      case RKRepresentation.integral
                         x_ij_end = x_prev;
                         for kk=1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk);
@@ -203,7 +203,7 @@ classdef stewart < vdx.problems.Mpcc
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
-                      case IrkRepresentation.differential
+                      case RKRepresentation.differential
                         X_ijk = {};
                         for kk = 1:opts.n_s
                             x_temp = x_prev;
@@ -257,7 +257,7 @@ classdef stewart < vdx.problems.Mpcc
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
-                      case IrkRepresentation.differential_lift_x
+                      case RKRepresentation.differential_lift_x
                         for kk = 1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk);
                             x_temp = x_prev;
