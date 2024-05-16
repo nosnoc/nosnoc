@@ -168,6 +168,7 @@ classdef stewart < vdx.problems.Mpcc
                     end
                     switch opts.rk_representation
                       case RKRepresentation.integral
+                        % In integral representation stage variables are states.
                         x_ij_end = x_prev;
                         for kk=1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk);
@@ -216,6 +217,7 @@ classdef stewart < vdx.problems.Mpcc
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case RKRepresentation.differential
+                        % In differential representation stage variables are the state derivatives.
                         X_ijk = {};
                         for kk = 1:opts.n_s
                             x_temp = x_prev;
@@ -270,6 +272,8 @@ classdef stewart < vdx.problems.Mpcc
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case RKRepresentation.differential_lift_x
+                        % In differential representation with lifted state stage variables are the state derivatives and we
+                        % lift the states at each stage point as well.
                         for kk = 1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk);
                             x_temp = x_prev;
