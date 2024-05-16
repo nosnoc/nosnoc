@@ -424,7 +424,14 @@ classdef Stewart < vdx.problems.Mpcc
             if opts.use_fesd
                 switch opts.cross_comp_mode
                   case CrossCompMode.STAGE_STAGE
+                    lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
+                        for rr=1:opts.n_s
+                            theta_ijr = obj.w.theta(ii,jj,rr);
+
+                            Gij = vertcat(Gij, lambda_prev);
+                            Hij = vertcat(Hij, theta_ijr);
+                        end
                         for jj=1:opts.N_finite_elements(ii);
                             Gij = {};
                             Hij = {};
@@ -439,12 +446,11 @@ classdef Stewart < vdx.problems.Mpcc
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
-                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
+                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
                         end
                     end
                   case CrossCompMode.FE_STAGE
                     lambda_prev = obj.w.lambda(0,0,opts.n_s);
-                    % Do cross comp for distance with lambda
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
@@ -458,12 +464,11 @@ classdef Stewart < vdx.problems.Mpcc
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
-                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
+                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
                         end
                     end
                   case CrossCompMode.STAGE_FE
                     lambda_prev = obj.w.lambda(0,0,opts.n_s);
-                    % Do cross comp for distance with lambda
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
                             sum_theta = sum2(obj.w.theta(ii,jj,:));
@@ -477,19 +482,18 @@ classdef Stewart < vdx.problems.Mpcc
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
-                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
+                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
                         end
                     end
                   case CrossCompMode.FE_FE
                     lambda_prev = obj.w.lambda(0,0,opts.n_s);
-                    % Do cross comp for distance with lambda
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
                             sum_theta = sum2(obj.w.theta(ii,jj,:));
                             obj.G.cross_comp(ii,jj) = {sum_lambda};
                             obj.H.cross_comp(ii,jj) = {sum_theta};
-                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s);
+                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
                         end
                     end
                 end
@@ -499,7 +503,7 @@ classdef Stewart < vdx.problems.Mpcc
                         Gij = {};
                         Hij = {};
                         for kk=1:opts.n_s
-                            lambda_ijk = obj.w.theta(ii,jj,kk);
+                            lambda_ijk = obj.w.lambda(ii,jj,kk);
                             theta_ijk = obj.w.theta(ii,jj,kk);
 
                             obj.G.standard_comp(ii,jj, kk) = {lambda_ijk};
