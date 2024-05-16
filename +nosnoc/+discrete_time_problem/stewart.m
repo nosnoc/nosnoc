@@ -21,13 +21,14 @@ classdef stewart < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
 
+            % Parameters
             obj.p.rho_h_p = {{'rho_h_p',1}, 1};
             obj.p.rho_terminal_p = {{'rho_terminal_p',1}, 1};
             obj.p.T = {{'T',1}, opts.T};
             obj.p.p_global = {model.p_global, model.p_global_val};
 
 
-            % 0d vars
+            % 0d vars: Variables which only exist once globally. 
             obj.w.v_global = {{'v_global',dims.n_v_global}, model.lbv_global, model.ubv_global, model.v0_global};
             if opts.use_speed_of_time_variables && ~opts.local_speed_of_time_variable
                 obj.w.sot = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
@@ -37,7 +38,7 @@ classdef stewart < vdx.problems.Mpcc
                 obj.f = obj.f + obj.w.T_final();
             end
 
-            % 1d vars
+            % 1d vars: Variables that are defined per control stage
             obj.w.u(1:opts.N_stages) = {{'u', dims.n_u}, model.lbu, model.ubu, model.u0};
             obj.p.p_time_var(1:opts.N_stages) = {{'p_time_var', dims.n_p_time_var}, model.p_time_var_val};
             if opts.use_speed_of_time_variables && opts.local_speed_of_time_variable
@@ -49,7 +50,7 @@ classdef stewart < vdx.problems.Mpcc
             %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
             %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
             %              on the whole queue which is _significantly_ faster.
-            % 2d vars
+            % 2d vars: Variables that are defined for each finite element.
             for ii=1:opts.N_stages
                 % other derived values
                 h0 = opts.h_k(ii);
@@ -78,7 +79,9 @@ classdef stewart < vdx.problems.Mpcc
 
             % For c_n ~= 1 case
             rbp = ~opts.right_boundary_point_explicit;
-            % 3d vars
+            
+            % 3d vars: Variables defined on each rk stage
+            %          some of which are also defined at the initial point:
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf};
