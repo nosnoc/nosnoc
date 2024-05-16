@@ -50,7 +50,7 @@ legend_str = [legend_str(n_s_vec)];
 %% settings
 settings = NosnocOptions();
 settings.rk_representation = rk_representation;
-settings.irk_scheme = irk_scheme;
+settings.rk_scheme = rk_scheme;
 settings.use_fesd = use_fesd;
 settings.print_level = 0;
 settings.mpcc_mode = 3;
@@ -106,7 +106,7 @@ for i = 1:length(n_s_vec)
         x_fesd = results.x_res(:,end);
         error_x = norm(x_fesd-x_star,"inf");
         max_complementarity_exp = max(stats.complementarity_stats);
-        fprintf([settings.irk_scheme ' scheme with n_s = %d, total stage points: %d , run: %d of %d \n'],n_s,M_true_current,j,length(N_sim_vec))
+        fprintf([settings.rk_scheme ' scheme with n_s = %d, total stage points: %d , run: %d of %d \n'],n_s,M_true_current,j,length(N_sim_vec))
         fprintf('Error with (h = %2.5f, M = %d, n_s = %d ) is %5.2e : \n',h_sim ,M_true_current,n_s,error_x);
         fprintf('Complementarity residual %5.2e : \n',max_complementarity_exp);
         % save date current experiemnt

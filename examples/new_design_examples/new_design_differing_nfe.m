@@ -8,7 +8,7 @@ problem_options = nosnoc.Options(); % problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 
 %% set some options
-problem_options.irk_scheme = RKSchemes.GAUSS_LEGENDRE;
+problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_representation = RKRepresentation.differential_lift_x;
 problem_options.n_s = 2;
 problem_options.N_stages = 20; % number of control intervals

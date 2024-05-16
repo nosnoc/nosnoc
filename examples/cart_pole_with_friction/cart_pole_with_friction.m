@@ -35,7 +35,7 @@ x_ref = [0; 180/180*pi; 0; 0]; % target position
 % Discretization options
 problem_options = NosnocProblemOptions();
 problem_options.T = 5;  % Time horizon
-problem_options.irk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 3;
 problem_options.dcs_mode = 'Stewart';
 problem_options.N_stages = 20; % number of control intervals

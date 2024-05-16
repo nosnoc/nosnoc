@@ -24,7 +24,7 @@ scenario.width_vec = [];
 model = NosnocModel();
 settings.use_fesd = 1;
 settings.print_level = 4;
-settings.irk_scheme = RKSchemes.RADAU_IIA;
+settings.rk_scheme = RKSchemes.RADAU_IIA;
 %% homotopy settings
 settings.cross_comp_mode = 3;
 settings.opts_casadi_nlp.ipopt.max_iter = 1500;

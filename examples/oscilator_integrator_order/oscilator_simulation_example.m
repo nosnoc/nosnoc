@@ -47,7 +47,7 @@ solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %% settings
 problem_options.use_fesd = 1;       % switch detection method on/off
-problem_options.irk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
+problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
 solver_options.print_level = 2;
 problem_options.n_s = 4;
 problem_options.dcs_mode = 'Step'; % 'Step;
@@ -93,7 +93,7 @@ integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
 %% numerical error
 x_fesd = results.x(:,end);
 error_x = norm(x_fesd-x_star,"inf");
-fprintf(['Numerical error with h = %2.3f and ' char(problem_options.irk_scheme) ' with n_s = %d stages is: %5.2e: \n'],problem_options.h_sim,problem_options.n_s,error_x);
+fprintf(['Numerical error with h = %2.3f and ' char(problem_options.rk_scheme) ' with n_s = %d stages is: %5.2e: \n'],problem_options.h_sim,problem_options.n_s,error_x);
 %% plot_solution_trajectory
 t_star = R_osc; % eact switching time
 x_res = results.x;

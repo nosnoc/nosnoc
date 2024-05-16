@@ -43,7 +43,7 @@ delete three_carts2.gif
 %%
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
-problem_options.irk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;  % number of stages in IRK methods
 
 solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints

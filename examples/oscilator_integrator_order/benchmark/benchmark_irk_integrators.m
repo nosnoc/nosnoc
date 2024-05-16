@@ -44,7 +44,7 @@ legend_str = {'Midpoint Rule','Gauss-Legendre 4','Gauss-Legendre 6','Gauss-Legen
 settings.use_fesd = 1;
 settings.print_level = 0;
 
-settings.irk_scheme = RKSchemes.GAUSS_LEGENDRE;
+settings.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
@@ -66,7 +66,7 @@ settings.scenario_name = 'irk_gauss_legendre_std_differential';
 % Radau II-A with FESD
 legend_str = {'Implicit Euler','Radau-IIA 3','Radau-IIA 5','Radau-IIA 7','Radau-IIA 9','Radau-IIA 11','Radau-IIA 13','Radau-IIA 15','Radau-IIA 17'};
 settings.use_fesd = 1;
-settings.irk_scheme = RKSchemes.RADAU_IIA;
+settings.rk_scheme = RKSchemes.RADAU_IIA;
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
@@ -91,7 +91,7 @@ settings.scenario_name = 'irk_radau_iia_std_differential';
  
 legend_str = {'no Lobatto with n_s=1', 'Lobatto-IIIC 2','Lobatto-IIIC 4','Lobatto-IIIC 6','Lobatto-IIIC 8'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Lobatto-IIIC';
+settings.rk_scheme = 'Lobatto-IIIC';
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 % settings.n_s_vec = [2 3 4 5];
@@ -111,7 +111,7 @@ settings.scenario_name = 'irk_Lobatto_iiic_std_differential';
  
 legend_str = {'no Lobatto with n_s=1', 'Lobatto-IIIB 2','Lobatto-IIIB 4','Lobatto-IIIB 6','Lobatto-IIIB 8'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Lobatto-IIIB';
+settings.rk_scheme = 'Lobatto-IIIB';
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 % settings.n_s_vec = [2 3 4 5];
@@ -133,7 +133,7 @@ settings.scenario_name = 'irk_Lobatto_iiib_std_differential';
  
 legend_str = {'no Lobatto with n_s=1', 'Lobatto-IIIA 2','Lobatto-IIIA 4','Lobatto-IIIA 6','Lobatto-IIIA 8'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Lobatto-IIIA';
+settings.rk_scheme = 'Lobatto-IIIA';
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [2 3 4 5];
@@ -154,7 +154,7 @@ settings.scenario_name = 'irk_Lobatto_iiia_std_differential';
  
 legend_str = {'no Lobatto with n_s=1', 'Lobatto-III 2','Lobatto-III 4','Lobatto-III 6','Lobatto-III 8'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Lobatto-III';
+settings.rk_scheme = 'Lobatto-III';
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [2 3 4 5];
@@ -177,7 +177,7 @@ settings.scenario_name = 'irk_Lobatto_iii_std_differential';
  
 legend_str = {'no Radau-I with n_s=1', 'Radau-I 3','Radau-I 5'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Radau-I';
+settings.rk_scheme = 'Radau-I';
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [2 3];
@@ -195,7 +195,7 @@ settings.scenario_name = 'irk_radau_i_std_differential';
 %% Radau-IA
 legend_str = {'Radau-IA 1', 'Radau-IA 3','Radau-IA 5'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Radau-IA';
+settings.rk_scheme = 'Radau-IA';
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3];
@@ -216,7 +216,7 @@ settings.scenario_name = 'irk_radau_ia_std_differential';
 %  
 legend_str = {'Explicit Euler', 'Heun 2','Kutta 3','Runge-Kutta 4','no','Nystrom 5'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Explicit-RK';
+settings.rk_scheme = 'Explicit-RK';
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
@@ -240,7 +240,7 @@ settings.scenario_name = 'erk_std_differential';
 %  
 legend_str = {'Implicit Euler','Radau-IIA 3','Radau-IIA 5','Radau-IIA 7','Radau-IIA 9','Radau-IIA 11','Radau-IIA 13','Radau-IIA 15','Radau-IIA 17'};
 settings.use_fesd = 1;
-settings.irk_scheme = RKSchemes.RADAU_IIA;
+settings.rk_scheme = RKSchemes.RADAU_IIA;
 settings.rk_representation = 'integral';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];
@@ -263,7 +263,7 @@ settings.scenario_name = 'irk_radau_iia_std_integral';
  
 legend_str = {'Midpoint Rule','Gauss-Legendre 4','Gauss-Legendre 6','Gauss-Legendre 8','Gauss-Legendre 10','Gauss-Legendre 12','Gauss-Legendre 14','Gauss-Legendre 16','Gauss-Legendre 18'};
 settings.use_fesd = 1;
-settings.irk_scheme = RKSchemes.GAUSS_LEGENDRE;
+settings.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 settings.rk_representation = 'integral';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];

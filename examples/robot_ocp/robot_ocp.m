@@ -30,7 +30,7 @@ scenario.width_vec = [0.5 0.5 0.5];
 settings = NosnocOptions();
 model = NosnocModel();
 settings.print_level = 3;
-settings.irk_scheme = RKSchemes.RADAU_IIA;
+settings.rk_scheme = RKSchemes.RADAU_IIA;
 settings.n_s = 2;
 settings.pss_lift_step_functions = 0;
 %% homotopy settings

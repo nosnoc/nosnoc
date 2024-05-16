@@ -38,7 +38,7 @@ settings.N_homotopy = 15;
 settings.complementarity_tol = 1e-12;
 settings.rk_representation = 'differential';
 N_stages = 6;
-settings.irk_scheme = RKSchemes.RADAU_IIA;
+settings.rk_scheme = RKSchemes.RADAU_IIA;
 settings.n_s = 2;
 scenario.N_finite_elements = 2;
 
@@ -62,7 +62,7 @@ settings.heuristic_step_equilibration = 0;
 %% Basic
 mpcc_mode_fesd = [5 5 5 3 3];
 mpcc_mode_std = [3 3 3 3 3];
-irk_schemes = {RKSchemes.RADAU_IIA,RKSchemes.LOBATTO_IIIA,RKSchemes.LOBATTO_IIIC,RKSchemes.GAUSS_LEGENDRE,RKSchemes.EXPLICIT_RK};
+rk_schemes = {RKSchemes.RADAU_IIA,RKSchemes.LOBATTO_IIIA,RKSchemes.LOBATTO_IIIC,RKSchemes.GAUSS_LEGENDRE,RKSchemes.EXPLICIT_RK};
 n_s_vec = {[1:4],[2:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
 N_finite_elements_vec = 2:2:12;
@@ -71,7 +71,7 @@ N_experiments = 1:5;
 %%
 mpcc_mode_fesd = [5 5 3 3];
 mpcc_mode_std = [3 3 3 3];
-irk_schemes = {RKSchemes.RADAU_IIA,RKSchemes.LOBATTO_IIIC,RKSchemes.GAUSS_LEGENDRE,RKSchemes.EXPLICIT_RK};
+rk_schemes = {RKSchemes.RADAU_IIA,RKSchemes.LOBATTO_IIIC,RKSchemes.GAUSS_LEGENDRE,RKSchemes.EXPLICIT_RK};
 n_s_vec = {[1:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
 % N_finite_elements_vec = 2:2:12;
@@ -90,7 +90,7 @@ error_temrinal_std = {};
 
 %% FESD
 for k = 1:length(N_experiments)
-    settings.irk_scheme = irk_schemes{k};
+    settings.rk_scheme = rk_schemes{k};
 
     f_obj_fesd_k  = [];
     cpu_fesd_k  = [];
@@ -111,7 +111,7 @@ for k = 1:length(N_experiments)
         for ii = N_finite_elements_vec
             settings.n_s = jj;
             scenario.N_finite_elements = ii;
-            scenario.scenario_name = [settings.irk_scheme '_n_s_' num2str(settings.n_s) '_N_FE_' num2str(scenario.N_finite_elements) '_FESD_' num2str(settings.use_fesd)];
+            scenario.scenario_name = [settings.rk_scheme '_n_s_' num2str(settings.n_s) '_N_FE_' num2str(scenario.N_finite_elements) '_FESD_' num2str(settings.use_fesd)];
 
             [results] = sliding_mode_ocp_experiment(scenario,model,settings);
             f_obj_temp  = [f_obj_temp,results.f_opt];
@@ -136,7 +136,7 @@ for k = 1:length(N_experiments)
         for ii = N_finite_elements_vec
             settings.n_s = jj;
             scenario.N_finite_elements = ii;
-            scenario.scenario_name = [settings.irk_scheme '_n_s_' num2str(settings.n_s) '_N_FE_' num2str(scenario.N_finite_elements) '_FESD_' num2str(settings.use_fesd)];
+            scenario.scenario_name = [settings.rk_scheme '_n_s_' num2str(settings.n_s) '_N_FE_' num2str(scenario.N_finite_elements) '_FESD_' num2str(settings.use_fesd)];
             [results] = sliding_mode_ocp_experiment(scenario,model,settings);
             f_obj_temp  = [f_obj_temp,results.f_opt];
             cpu_temp  = [cpu_temp,results.cpu_time];
@@ -175,7 +175,7 @@ results_benchmark.cpu_fesd  = cpu_fesd ;
 results_benchmark.comp_resiudal_fesd  = comp_resiudal_fesd;
 results_benchmark.error_temrinal_fesd  = error_temrinal_fesd;
 % scnearios
-results_benchmark.irk_schemes = irk_schemes;
+results_benchmark.rk_schemes = rk_schemes;
 results_benchmark.N_experiments = N_experiments;
 results_benchmark.N_finite_elements_vec  = N_finite_elements_vec ;
 results_benchmark.n_s_vec  = n_s_vec ;

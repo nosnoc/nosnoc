@@ -2,7 +2,7 @@
 ** DONE rk_representation
 *** DONE differential
 *** DONE differential_lift_x
-** DONE irk_scheme
+** DONE rk_scheme
 *** DONE Cases where c_n != 1
 ** lift_complementarities
 Maybe this is not actually necessary anymore? IMO no as solver handles this.

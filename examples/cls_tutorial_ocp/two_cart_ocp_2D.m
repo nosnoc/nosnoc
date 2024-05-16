@@ -40,7 +40,7 @@ no_friction = 0;
 
 %%
 [settings] = NosnocOptions();
-settings.irk_scheme = RKSchemes.RADAU_IIA;
+settings.rk_scheme = RKSchemes.RADAU_IIA;
 settings.n_s = 2;  % number of stages in IRK methods
 settings.dcs_mode = 'CLS';
 settings.cross_comp_mode = 1;

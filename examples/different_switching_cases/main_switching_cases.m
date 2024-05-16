@@ -49,7 +49,7 @@ problem_options.T_sim = 1.5;
 
 problem_options.N_finite_elements = 2;
 problem_options.n_s = 2;
-problem_options.irk_scheme = RKSchemes.GAUSS_LEGENDRE;
+problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_representation= 'differential';
 problem_options.cross_comp_mode = 7;
 
@@ -83,7 +83,7 @@ switch switching_case
         model.F = [f_1 f_2];
         % implicit methods more accurate, explicit Euler enables "random"
         % leaving
-        problem_options.irk_scheme = RKSchemes.RADAU_IIA;
+        problem_options.rk_scheme = RKSchemes.RADAU_IIA;
         problem_options.n_s = 1;
         problem_options.N_finite_elements = 3; % set 4, 5 for different outcomes
     case 'leave_sliding_mode'

@@ -1,20 +1,20 @@
-function [B,C,D,tau_root] = generate_butcher_tableu_integral(n_s,irk_scheme)
+function [B,C,D,tau_root] = generate_butcher_tableu_integral(n_s,rk_scheme)
 
 import casadi.*
 
 % TODO what about the other radau schemes?
-if isequal(irk_scheme,RKSchemes.RADAU_IIA)
-    irk_scheme = 'radau';
+if isequal(rk_scheme,RKSchemes.RADAU_IIA)
+    rk_scheme = 'radau';
 end
 
-if isequal(irk_scheme,RKSchemes.GAUSS_LEGENDRE)
-    irk_scheme = 'legendre';
+if isequal(rk_scheme,RKSchemes.GAUSS_LEGENDRE)
+    rk_scheme = 'legendre';
 end
 
-if isequal(irk_scheme,'lobbato')
+if isequal(rk_scheme,'lobbato')
     error('Lobbato scheme are not supported with rk_representation = ''integral''.')
 else
-    tau_root = [0 collocation_points(n_s, irk_scheme)];
+    tau_root = [0 collocation_points(n_s, rk_scheme)];
 end
 
 % Coefficients of the collocation equation

@@ -27,7 +27,7 @@
 
 %
 %
-function [A,b,c,order] = generate_butcher_tableu(n_s,irk_scheme)
+function [A,b,c,order] = generate_butcher_tableu(n_s,rk_scheme)
 
 % currently supported schmes are: Radau-IA, Radau-IIA, Gauss-Legendre, Lobatto-IIIA, Lobatto-IIIB, Lobatto-IIIC
 %  if radau is passed then Radau-IIA is used
@@ -39,18 +39,18 @@ A = [];
 b = [];
 c = [];
 
-if isequal(irk_scheme,'radau')
-    irk_scheme = 'Radau-IIA';
+if isequal(rk_scheme,'radau')
+    rk_scheme = 'Radau-IIA';
 end
-if isequal(irk_scheme,'legendre')
-    irk_scheme = 'Gauss-Legendre';
+if isequal(rk_scheme,'legendre')
+    rk_scheme = 'Gauss-Legendre';
 end
-if isequal(irk_scheme,'Lobatto')
-    irk_scheme = 'Lobatto-IIIC';
+if isequal(rk_scheme,'Lobatto')
+    rk_scheme = 'Lobatto-IIIC';
 end
 
 %% Butcher tabelus
-switch irk_scheme
+switch rk_scheme
   case RKSchemes.RADAU_I
     order = 2*n_s-1;
     switch n_s

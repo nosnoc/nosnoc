@@ -1,4 +1,4 @@
-function [results,stats,model,problem_options, solver_options] = test_simple_switch(rk_representation, irk_scheme, dcs_mode, cross_comp_mode)
+function [results,stats,model,problem_options, solver_options] = test_simple_switch(rk_representation, rk_scheme, dcs_mode, cross_comp_mode)
     import casadi.*
     problem_options = NosnocProblemOptions();
     solver_options = nosnoc.solver.Options();
@@ -6,7 +6,7 @@ function [results,stats,model,problem_options, solver_options] = test_simple_swi
 
     problem_options.n_s = 2;
     solver_options.homotopy_update_slope = 0.1;
-    problem_options.irk_scheme = irk_scheme;
+    problem_options.rk_scheme = rk_scheme;
     
     problem_options.cross_comp_mode = cross_comp_mode;
     problem_options.rk_representation= rk_representation;

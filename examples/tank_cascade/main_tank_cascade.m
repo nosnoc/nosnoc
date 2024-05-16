@@ -9,7 +9,7 @@ close all
 %% settings
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
-problem_options.irk_scheme = RKSchemes.GAUSS_LEGENDRE;   
+problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;   
 problem_options.n_s = 1;                
 % solver_options.N_homotopy = 8;
 solver_options.homotopy_update_rule = 'superlinear';

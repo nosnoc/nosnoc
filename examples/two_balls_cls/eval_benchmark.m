@@ -12,8 +12,8 @@ save(ref_sol_filename, "t_grid_ref", "x_traj_ref", "n_bounces_ref");
 % load(ref_sol_filename)
 
 
-% for irk_scheme = [RKSchemes.RADAU_IIA]
-for irk_scheme = [RKSchemes.GAUSS_LEGENDRE]
+% for rk_scheme = [RKSchemes.RADAU_IIA]
+for rk_scheme = [RKSchemes.GAUSS_LEGENDRE]
     %%
     x_ref = x_traj_ref(end, :)';
     
@@ -29,7 +29,7 @@ for irk_scheme = [RKSchemes.GAUSS_LEGENDRE]
         for with_guess = [0]
         for N_sim = NSIM_VALUES
             for N_FE = NFE_VALUES
-                results_filename = get_results_filename(n_s, N_sim, N_FE, irk_scheme, with_guess);
+                results_filename = get_results_filename(n_s, N_sim, N_FE, rk_scheme, with_guess);
                 try
                     load(results_filename);
                 catch
@@ -91,7 +91,7 @@ for irk_scheme = [RKSchemes.GAUSS_LEGENDRE]
     
     set(gcf, 'Color', 'w');
     set(gca,'TickLabelInterpreter','latex');
-    filename = strcat('order_plot_', string(irk_scheme), '.pdf');
+    filename = strcat('order_plot_', string(rk_scheme), '.pdf');
     export_fig(filename)
 
     fail_percentage = 100*(1 - (length(all_h_vals) / (length(NSIM_VALUES) * length(NS_VALUES))));
@@ -101,9 +101,9 @@ end
 
 
 function label = get_label(settings)
-    if settings.irk_scheme == "GAUSS_LEGENDRE"
+    if settings.rk_scheme == "GAUSS_LEGENDRE"
         label = sprintf('Gauss-Legendre: %d', 2*settings.n_s);
-    elseif settings.irk_scheme == "RADAU_IIA"
+    elseif settings.rk_scheme == "RADAU_IIA"
         label = sprintf('Radau IIA: %d', 2*settings.n_s-1);
         if settings.n_s == 1
             label = sprintf('implicit Euler');

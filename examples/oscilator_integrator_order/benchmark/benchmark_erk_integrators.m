@@ -10,7 +10,7 @@ N_samples = 5;
 %  
 legend_str = {'Explicit Euler', 'Heun 2','Heun 3','Runge-Kutta 4','no','Nystrom 5'};
 settings.use_fesd = 1;
-settings.irk_scheme = 'Explicit-RK';
+settings.rk_scheme = 'Explicit-RK';
 settings.rk_representation = 'differential';
 settings.save_results = 1;
 settings.n_s_vec = [1 2 3 4];

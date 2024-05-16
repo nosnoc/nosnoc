@@ -20,7 +20,7 @@ save(ref_sol_filename, "t_grid_guess", "x_traj_guess", "n_bounces_guess", "lambd
 tic
 
 %% run experiments
-for irk_scheme = IRK_SCHEMES
+for rk_scheme = IRK_SCHEMES
     for with_guess = [0]
         for n_s = NS_VALUES
             for N_sim = NSIM_VALUES
@@ -36,7 +36,7 @@ for irk_scheme = IRK_SCHEMES
                     % settings
                     problem_options = NosnocProblemOptions();
                     solver_options = nosnoc.solver.Options();
-                    problem_options.irk_scheme = irk_scheme;
+                    problem_options.rk_scheme = rk_scheme;
                     % problem_options.rk_representation = 'differential';
                     problem_options.n_s = n_s;
                     solver_options.print_level = 3;
@@ -75,7 +75,7 @@ for irk_scheme = IRK_SCHEMES
                         [results,stats] = integrator.solve();
                     end
 
-                    results_filename = get_results_filename(n_s, N_sim, N_FE, problem_options.irk_scheme, with_guess);
+                    results_filename = get_results_filename(n_s, N_sim, N_FE, problem_options.rk_scheme, with_guess);
                     save(results_filename, 'results', 'stats', 'problem_options', 'solver_options')
 
                     clear model solver

@@ -45,7 +45,7 @@ classdef NosnocProblemOptions < handle
 
         % IRK and FESD Settings
         n_s(1,1) {mustBeInteger} = 2
-        irk_scheme(1,1) RKSchemes = RKSchemes.RADAU_IIA
+        rk_scheme(1,1) RKSchemes = RKSchemes.RADAU_IIA
         rk_representation RKRepresentation = RKRepresentation.integral;
 
         cross_comp_mode(1,1) CrossCompMode = CrossCompMode.FE_STAGE
@@ -194,9 +194,9 @@ classdef NosnocProblemOptions < handle
             obj.h_k = obj.h./obj.N_finite_elements;
 
             % check irk scheme compatibility
-            if ismember(obj.irk_scheme, RKSchemes.differential_only)
+            if ismember(obj.rk_scheme, RKSchemes.differential_only)
                 if obj.print_level >=1
-                    fprintf(['Info: The user provided RK scheme: ' char(obj.irk_scheme) ' is only available in the differential representation.\n']);
+                    fprintf(['Info: The user provided RK scheme: ' char(obj.rk_scheme) ' is only available in the differential representation.\n']);
                 end
                 obj.rk_representation = 'differential';
             end
@@ -256,7 +256,7 @@ classdef NosnocProblemOptions < handle
             % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
             switch obj.rk_representation
               case RKRepresentation.integral
-                [B, C, D, tau_root] = generate_butcher_tableu_integral(obj.n_s, obj.irk_scheme);
+                [B, C, D, tau_root] = generate_butcher_tableu_integral(obj.n_s, obj.rk_scheme);
                 if tau_root(end) == 1
                     right_boundary_point_explicit  = 1;
                 else
@@ -266,11 +266,11 @@ classdef NosnocProblemOptions < handle
                 obj.C_irk = C;
                 obj.D_irk = D;
                 % also get time steps
-                [~, ~, c_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
+                [~, ~, c_irk] = generate_butcher_tableu(obj.n_s,obj.rk_scheme);
                 obj.c_irk = c_irk;
 
               case {RKRepresentation.differential, RKRepresentation.differential_lift_x}
-                [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(obj.n_s,obj.irk_scheme);
+                [A_irk,b_irk,c_irk,order_irk] = generate_butcher_tableu(obj.n_s,obj.rk_scheme);
                 if c_irk(end) <= 1+1e-9 && c_irk(end) >= 1-1e-9
                     right_boundary_point_explicit  = 1;
                 else

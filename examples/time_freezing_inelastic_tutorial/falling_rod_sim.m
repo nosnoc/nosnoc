@@ -10,7 +10,7 @@ problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %%
-problem_options.irk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.print_level = 3;

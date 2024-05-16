@@ -7,7 +7,7 @@ problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %%
-problem_options.irk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 solver_options.print_level = 3;
 problem_options.cross_comp_mode = 1;
 %problem_options.lift_complementarities = 1;
