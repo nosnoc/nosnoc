@@ -64,9 +64,7 @@ classdef stewart < vdx.problems.Mpcc
                     end
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
-                if (strcmp(obj.opts.step_equilibration,'linear')||...
-                    strcmp(obj.opts.step_equilibration,'linear_tanh')||...
-                    strcmp(obj.opts.step_equilibration,'linear_relaxed'))
+                if obj.opts.step_equilibration == StepEquilibrationMode.mlcp
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
                     obj.w.pi_theta(ii,2:opts.N_finite_elements(ii)) = {{'pi_theta', dims.n_theta},-inf,inf};
                     obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
@@ -523,21 +521,21 @@ classdef stewart < vdx.problems.Mpcc
             end
 
             switch obj.opts.step_equilibration
-              case 'heuristic_mean'
+              case StepEquilibrationMode.heuristic_mean
                 for ii=1:opts.N_stages
                     for jj=1:opts.N_finite_elements(ii)
                         h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
                         obj.f = obj.f + obj.p.rho_h_p()*(h0-obj.w.h(ii,jj))^2;
                     end
                 end
-              case 'heuristic_diff'
+              case StepEquilibrationMode.heuristic_diff
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
                         h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
                         obj.f = obj.f + obj.p.rho_h_p()*(obj.w.h(ii,jj)-obj.w.h(ii,jj-1))^2;
                     end
                 end
-              case 'l2_relaxed_scaled'
+              case StepEquilibrationMode.l2_relaxed_scaled
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
@@ -559,7 +557,7 @@ classdef stewart < vdx.problems.Mpcc
                         obj.f = obj.f + obj.p.rho_h_p() * tanh(eta/opts.step_equilibration_sigma) * delta_h.^2;
                     end
                 end
-              case 'l2_relaxed'
+              case StepEquilibrationMode.l2_relaxed
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
@@ -581,7 +579,7 @@ classdef stewart < vdx.problems.Mpcc
                         obj.f = obj.f + obj.p.rho_h_p() * eta * delta_h.^2
                     end
                 end
-              case 'direct'
+              case StepEquilibrationMode.direct
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
@@ -604,7 +602,7 @@ classdef stewart < vdx.problems.Mpcc
                     end
                 end
                 obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
-              case 'direct_homotopy'
+              case StepEquilibrationMode.direct_homotopy
                 error("not currently implemented")
                 eta_vec = [];
                 for ii=1:opts.N_stages
@@ -630,7 +628,7 @@ classdef stewart < vdx.problems.Mpcc
                     end
                 end
                 obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
-              case 'mlcp'
+              case StepEquilibrationMode.mlcp
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
                         h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
@@ -699,6 +697,8 @@ classdef stewart < vdx.problems.Mpcc
             if ~exist('plugin')
                 plugin = 'scholtes_ineq';
             end
+
+            % Sort by indices to recover almost block-band structure.
             obj.w.sort_by_index();
             obj.g.sort_by_index();
 
