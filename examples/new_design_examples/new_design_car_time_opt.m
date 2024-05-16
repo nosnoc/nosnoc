@@ -19,7 +19,7 @@ problem_options.time_optimal_problem = true;
 problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 %% Create model
 % model = nosnoc.model.stewart();
-model = nosnoc.model.pss(); 
+model = nosnoc.model.Pss(); 
 q = SX.sym('q'); 
 v = SX.sym('v'); 
 u = SX.sym('u');

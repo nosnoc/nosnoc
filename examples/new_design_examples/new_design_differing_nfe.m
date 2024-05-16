@@ -23,7 +23,7 @@ problem_options.relax_terminal_constraint = 1;
 %problem_options.relax_terminal_numerical_time = false;
 %% Create model
 % model = nosnoc.model.stewart();
-model = nosnoc.model.pss(); 
+model = nosnoc.model.Pss(); 
 q = SX.sym('q'); 
 v = SX.sym('v'); 
 u = SX.sym('u');

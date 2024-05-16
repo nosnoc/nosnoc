@@ -1,4 +1,4 @@
-classdef stewart < vdx.problems.Mpcc
+classdef Stewart < vdx.problems.Mpcc
     properties
         model
         dcs
@@ -8,7 +8,7 @@ classdef stewart < vdx.problems.Mpcc
     end
 
     methods
-        function obj = stewart(dcs, opts)
+        function obj = Stewart(dcs, opts)
             obj = obj@vdx.problems.Mpcc();
             obj.model = dcs.model;
             obj.dcs = dcs;

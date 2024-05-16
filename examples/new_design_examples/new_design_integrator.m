@@ -22,7 +22,7 @@ problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
 
 
-model = nosnoc.model.pss();
+model = nosnoc.model.Pss();
 
 model.x0 = -0.50;
 x = SX.sym('x',1);

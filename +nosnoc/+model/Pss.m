@@ -1,4 +1,4 @@
-classdef pss < nosnoc.model.base
+classdef Pss < nosnoc.model.base
     properties
         F
         S
@@ -7,7 +7,7 @@ classdef pss < nosnoc.model.base
     end
 
     methods
-        function obj = pss()
+        function obj = Pss()
             obj = obj@nosnoc.model.base();
         end
         

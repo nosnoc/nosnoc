@@ -1,4 +1,4 @@
-classdef stewart < nosnoc.dcs.base
+classdef Stewart < nosnoc.dcs.base
     properties
         model
 
@@ -24,7 +24,7 @@ classdef stewart < nosnoc.dcs.base
     end
 
     methods
-        function obj = stewart(model)
+        function obj = Stewart(model)
             obj.model = model;
             obj.dims = model.dims;
         end

@@ -21,12 +21,12 @@ classdef solver < handle
 
             % Run pipeline
             switch class(model)
-              case "nosnoc.model.pss"
+              case "nosnoc.model.Pss"
                 if opts.dcs_mode == DcsMode.Stewart
-                    obj.dcs = nosnoc.dcs.stewart(model);
+                    obj.dcs = nosnoc.dcs.Stewart(model);
                     obj.dcs.generate_variables(opts);
                     obj.dcs.generate_equations(opts);
-                    obj.discrete_time_problem = nosnoc.discrete_time_problem.stewart(obj.dcs, opts);
+                    obj.discrete_time_problem = nosnoc.discrete_time_problem.Stewart(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
                 elseif opts.dcs_mode == DcsMode.Step % TODO: RENAME
                     error("not implemented")
