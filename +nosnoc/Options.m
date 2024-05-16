@@ -54,12 +54,7 @@ classdef Options < handle
 
         % lift complementarities
         lift_complementarities(1,1) logical = 0
-        experimental_supervertical_form(1,1) logical = 0
         lower_bound_comp_lift(1,1) logical = 0
-
-        % TODO: Initialization is really a solver concern, but there is not really a good extraction approach yet.
-        % Initialization - Stewart
-        lp_initialization(1,1) logical = 0
 
         % Initialization - Step
         initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1
@@ -126,7 +121,7 @@ classdef Options < handle
 
 
         % Relaxation of terminal constraint
-        relax_terminal_constraint(1,1) {mustBeInteger} = 0; %  0  - hard constraint, 1 - ell_1 , 2  - ell_2 , 3 - ell_inf TODO enum
+        relax_terminal_constraint(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE; %  If/how to relax the 
         relax_terminal_constraint_from_above(1,1) logical = 0;
         rho_terminal(1,1) double {mustBePositive} = 1e2;
         relax_terminal_constraint_homotopy(1,1) logical = 0; % terminal penalty is governed by homotopy parameter
@@ -193,24 +188,19 @@ classdef Options < handle
                 error('terminal time T must be a positive scalar.');
             end
             obj.h = obj.T/obj.N_stages;
-            obj.h_k = obj.h./obj.N_finite_elements;
 
             % check irk scheme compatibility
             if ismember(obj.rk_scheme, RKSchemes.differential_only)
                 if obj.print_level >=1
                     fprintf(['Info: The user provided RK scheme: ' char(obj.rk_scheme) ' is only available in the differential representation.\n']);
                 end
-                obj.rk_representation = 'differential';
+                obj.rk_representation = RKRepresentation.differential;
             end
             if obj.n_s < 1 || obj.n_s > 9
                 error("n_s must be in [1, 9]");
             end
 
 
-            %
-            if obj.relax_terminal_constraint > 3 || obj.relax_terminal_constraint < 0
-                error("relax_terminal_constraint must be in [0, 3]");
-            end
             if obj.gamma_h < 0 || obj.gamma_h > 1
                 error("gamma_h must be in [0, 1]");
             end
@@ -239,6 +229,8 @@ classdef Options < handle
                     error('settings.N_finite_elements must be length 1 or N_stages');
                 end
             end
+
+            obj.h_k = obj.h./obj.N_finite_elements;
 
             if ~obj.time_rescaling
                 if obj.print_level >= 1 && obj.use_speed_of_time_variables

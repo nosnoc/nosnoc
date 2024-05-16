@@ -388,23 +388,23 @@ classdef stewart < vdx.problems.Mpcc
                 obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp),...
                 v_global, p_global);
             switch opts.relax_terminal_constraint
-              case 0 % hard constraint
+              case ConstraintRelaxationMode.NONE % hard constraint
                 if opts.relax_terminal_constraint_from_above
                     obj.g.terminal = {g_terminal, model.lbg_terminal, inf*ones(dims.n_g_terminal,1)};
                 else
                     obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal};
                 end
-              case 1 % l_1
+              case ConstraintRelaxationMode.ELL_1 % l_1
                 obj.w.s_terminal_ell_1 = {{'s_terminal_ell_1', dims.n_g_terminal}, 0, inf, 10};
 
                 g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_1();
                     -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_1()];
                 obj.g.terminal = {g_terminal, -inf, 0}
                 obj.f = obj.f + obj.p.rho_terminal_p()*sum(obj.w.s_terminal_ell_1());
-              case 2 % l_2
+              case ConstraintRelaxationMode.ELL_2 % l_2
                      % TODO(@anton): this is as it was implemented before. should handle lb != ub?
                 obj.f = obj.f + obj.p.rho_terminal_p()*(g_terminal-model.lbg_terminal)'*(g_terminal-model.lbg_terminal);
-              case 3 % l_inf
+              case ConstraintRelaxationMode.ELL_INF % l_inf
                 obj.w.s_terminal_ell_inf = {{'s_terminal_ell_inf', 1}, 0, inf, 1e3};
 
                 g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_inf();

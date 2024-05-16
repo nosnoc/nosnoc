@@ -24,15 +24,11 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef StepEquilibrationMode
+classdef ConstraintRelaxationMode
     enumeration
-        heuristic_mean
-        heuristic_diff
-        l2_relaxed_scaled
-        l2_relaxed
-        direct
-        direct_homotopy
-        direct_homotopy_lift
-        mlcp
+        NONE
+        ELL_1
+        ELL_2
+        ELL_INF
     end
 end
