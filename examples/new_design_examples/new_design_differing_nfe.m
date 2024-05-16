@@ -47,10 +47,10 @@ model.lsq_u = {u, 0, 1};
 ocp_solver = nosnoc.ocp.solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
-x = ocp_solver.getX();
+x = ocp_solver.get_x();
 u = ocp_solver.getU();
-t_grid = ocp_solver.getTimeGrid();
-t_grid_u = ocp_solver.getControlGrid();
+t_grid = ocp_solver.get_time_grid();
+t_grid_u = ocp_solver.get_control_grid();
 
 figure
 plot(t_grid, x);

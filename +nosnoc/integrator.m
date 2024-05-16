@@ -65,24 +65,24 @@ classdef integrator < handle
             opts = obj.opts;
             x_res = obj.model.x0;
             t_grid = 0;
-            obj.setX0(obj.model.x0);
+            obj.set_x0(obj.model.x0);
 
             for ii=1:opts.N_sim
                 obj.solve(plugin);
-                x_step = obj.getX();
+                x_step = obj.get_x();
                 x_res = [x_res, x_step(:,2:end)];
                 h = obj.discrete_time_problem.w.h(:,:).res;
                 t_grid = [t_grid, t_grid(end) + cumsum(h)];
-                obj.setX0(x_step(:,end));
+                obj.set_x0(x_step(:,end));
             end
         end
 
-        function t_grid = getTimeGrid(obj)
+        function t_grid = get_time_grid(obj)
             h = obj.discrete_time_problem.w.h(:,:).res;
             t_grid = cumsum([0, h]);
         end
 
-        function x = getX(obj)
+        function x = get_x(obj)
             opts = obj.opts;
             if opts.right_boundary_point_explicit
                 x = obj.discrete_time_problem.w.x(:,:,obj.opts.n_s).res;
@@ -92,7 +92,7 @@ classdef integrator < handle
             end
         end
 
-        function x = getXend(obj)
+        function x = get_xend(obj)
             if opts.right_boundary_point_explicit
                 x = obj.discrete_time_problem.w.x(1,opts.N_finite_elements,obj.opts.n_s).res;
             else
@@ -100,7 +100,7 @@ classdef integrator < handle
             end
         end
 
-        function setX0(obj, x0)
+        function set_x0(obj, x0)
             obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).init = x0;
             obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).lb = x0;
             obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).ub = x0;

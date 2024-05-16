@@ -51,7 +51,7 @@ classdef solver < handle
             obj.stats = obj.discrete_time_problem.solve();
         end
 
-        function x = getX(obj)
+        function x = get_x(obj)
             opts = obj.opts;
             if opts.right_boundary_point_explicit
                 x = obj.discrete_time_problem.w.x(:,:,obj.opts.n_s).res;
@@ -65,12 +65,12 @@ classdef solver < handle
             u = obj.discrete_time_problem.w.u(:).res;
         end
 
-        function t_grid = getTimeGrid(obj)
+        function t_grid = get_time_grid(obj)
             h = obj.discrete_time_problem.w.h(:,:).res;
             t_grid = cumsum([0, h]);
         end
 
-        function t_grid = getControlGrid(obj)
+        function t_grid = get_control_grid(obj)
             t_grid = [0];
             for ii=1:obj.opts.N_stages
                 h_sum = sum(obj.discrete_time_problem.w.h(ii,:).res);
