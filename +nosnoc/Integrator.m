@@ -1,4 +1,4 @@
-classdef solver < handle
+classdef Integrator < handle
     properties % TODO separate these by Get/Set access
         model
         opts
@@ -10,13 +10,20 @@ classdef solver < handle
     end
 
     methods
-        function obj = solver(model, opts, solver_opts)
+        function obj = Integrator(model, opts, solver_opts)
             obj.model = model;
             obj.opts = opts;
             obj.solver_opts = solver_opts;
 
             % Always process model and options
+            % for integrator also take the extra step of re-calculating N_stages/N_finite_elements
             opts.preprocess();
+            if opts.N_stages > 1
+                warning("Integrator created with more than 1 control stage. Converting this to finite elements.")
+                N_fe = sum(opts.N_finite_elements)
+                opts.N_finite_elements = N_fe;
+                opts.N_stages = 1;
+            end
             model.verify_and_backfill(opts);
 
             % Run pipeline
@@ -51,6 +58,30 @@ classdef solver < handle
             obj.stats = obj.discrete_time_problem.solve();
         end
 
+        function [t_grid,x_res] = simulate(obj)
+            if ~exist('plugin', 'var')
+                plugin = 'scholtes_ineq';
+            end
+            opts = obj.opts;
+            x_res = obj.model.x0;
+            t_grid = 0;
+            obj.set_x0(obj.model.x0);
+
+            for ii=1:opts.N_sim
+                obj.solve(plugin);
+                x_step = obj.get_x();
+                x_res = [x_res, x_step(:,2:end)];
+                h = obj.discrete_time_problem.w.h(:,:).res;
+                t_grid = [t_grid, t_grid(end) + cumsum(h)];
+                obj.set_x0(x_step(:,end));
+            end
+        end
+
+        function t_grid = get_time_grid(obj)
+            h = obj.discrete_time_problem.w.h(:,:).res;
+            t_grid = cumsum([0, h]);
+        end
+
         function x = get_x(obj)
             opts = obj.opts;
             if opts.right_boundary_point_explicit
@@ -61,25 +92,18 @@ classdef solver < handle
             end
         end
 
-        function u = getU(obj)
-            u = obj.discrete_time_problem.w.u(:).res;
-        end
-
-        function t_grid = get_time_grid(obj)
-            h = obj.discrete_time_problem.w.h(:,:).res;
-            t_grid = cumsum([0, h]);
-        end
-
-        function t_grid = get_control_grid(obj)
-            t_grid = [0];
-            for ii=1:obj.opts.N_stages
-                h_sum = sum(obj.discrete_time_problem.w.h(ii,:).res);
-                t_grid = [t_grid, t_grid(end)+h_sum];
+        function x = get_xend(obj)
+            if opts.right_boundary_point_explicit
+                x = obj.discrete_time_problem.w.x(1,opts.N_finite_elements,obj.opts.n_s).res;
+            else
+                x = obj.discrete_time_problem.w.x(1,opts.N_finite_elements,obj.opts.n_s+1).res;
             end
         end
 
-        function results = getResults(obj)
-            results = obj.discrete_time_problem.get_results_struct();
+        function set_x0(obj, x0)
+            obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).init = x0;
+            obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).lb = x0;
+            obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).ub = x0;
         end
     end
 end

@@ -44,7 +44,7 @@ model.g_terminal = [q-200;v-0];
 model.lsq_u = {u, 0, 1};
 
 %% create solver and solve problem
-ocp_solver = nosnoc.ocp.solver(model, problem_options, solver_options);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
 x = ocp_solver.get_x();
@@ -57,5 +57,5 @@ plot(t_grid, x);
 figure
 stairs(t_grid_u, [u,u(end)])
 % how to create an integrator?
-% integrator = nosnoc.integrator(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.
+% integrator = nosnoc.Integrator(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.
 % [results,stats] = integrator.solve();

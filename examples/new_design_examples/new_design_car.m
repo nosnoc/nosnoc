@@ -45,7 +45,7 @@ model.g_terminal = [q-200;v-0];
 %model.lsq_u = {u, 0, 1};
 
 %% create solver and solve problem
-ocp_solver = nosnoc.ocp.solver(model, problem_options, solver_options);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
 x = ocp_solver.get_x();
