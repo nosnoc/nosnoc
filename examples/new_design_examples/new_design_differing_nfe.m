@@ -9,7 +9,7 @@ solver_options = nosnoc.solver.Options();
 
 %% set some options
 problem_options.irk_scheme = RKSchemes.GAUSS_LEGENDRE;
-problem_options.irk_representation = RKRepresentation.differential_lift_x;
+problem_options.rk_representation = RKRepresentation.differential_lift_x;
 problem_options.n_s = 2;
 problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 2*ones(20,1); % number of finite element on every control interval (optionally a vector might be passed)

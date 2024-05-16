@@ -285,8 +285,8 @@ classdef FiniteElement < NosnocFormulationObject
             for ii = 1:dims.n_s
                 % state / state derivative variables
                 % TODO @Anton better v initialization.
-                if (problem_options.irk_representation == RKRepresentation.differential ||...
-                        problem_options.irk_representation == RKRepresentation.differential_lift_x)
+                if (problem_options.rk_representation == RKRepresentation.differential ||...
+                        problem_options.rk_representation == RKRepresentation.differential_lift_x)
                     v = define_casadi_symbolic(problem_options.casadi_symbolic_mode,...
                         ['V_' num2str(ctrl_idx-1) '_' num2str(fe_idx-1) '_' num2str(ii)'],...
                         dims.n_x);
@@ -297,8 +297,8 @@ classdef FiniteElement < NosnocFormulationObject
                         zeros(dims.n_x,1),...
                         ii);
                 end
-                if (problem_options.irk_representation == RKRepresentation.integral ||...
-                        problem_options.irk_representation == RKRepresentation.differential_lift_x)
+                if (problem_options.rk_representation == RKRepresentation.integral ||...
+                        problem_options.rk_representation == RKRepresentation.differential_lift_x)
                     if problem_options.x_box_at_stg
                         lbx = model.lbx;
                         ubx = model.ubx;
@@ -804,7 +804,7 @@ classdef FiniteElement < NosnocFormulationObject
             end
 
             if (~problem_options.right_boundary_point_explicit ||...
-                    problem_options.irk_representation == RKRepresentation.differential)
+                    problem_options.rk_representation == RKRepresentation.differential)
                 if problem_options.x_box_at_stg || problem_options.x_box_at_fe || fe_idx == problem_options.N_finite_elements(ctrl_idx)
                     lbx = model.lbx;
                     ubx = model.ubx;
@@ -1224,10 +1224,10 @@ classdef FiniteElement < NosnocFormulationObject
                 X_k0 = obj.prev_fe.x{end};
             end
 
-            if problem_options.irk_representation == RKRepresentation.integral
+            if problem_options.rk_representation == RKRepresentation.integral
                 X_ki = obj.x;
                 Xk_end = problem_options.D_irk(1) * X_k0;
-            elseif problem_options.irk_representation == RKRepresentation.differential
+            elseif problem_options.rk_representation == RKRepresentation.differential
                 X_ki = {};
                 for j = 1:dims.n_s
                     x_temp = X_k0;
@@ -1238,7 +1238,7 @@ classdef FiniteElement < NosnocFormulationObject
                 end
                 X_ki = [X_ki, {obj.x{end}}];
                 Xk_end = X_k0;
-            elseif problem_options.irk_representation == RKRepresentation.differential_lift_x
+            elseif problem_options.rk_representation == RKRepresentation.differential_lift_x
                 X_ki = obj.x;
                 Xk_end = X_k0;
                 for j = 1:dims.n_s
@@ -1258,7 +1258,7 @@ classdef FiniteElement < NosnocFormulationObject
                 gj = model.g_z_all_fun(X_ki{j}, obj.rkStageZ(j), Uk, p_stage, model.v_global);
 
                 obj.addConstraint(gj);
-                if problem_options.irk_representation == RKRepresentation.integral
+                if problem_options.rk_representation == RKRepresentation.integral
                     xj = problem_options.C_irk(1, j+1) * X_k0;
                     for r = 1:dims.n_s
                         xj = xj + problem_options.C_irk(r+1, j+1) * X_ki{r};
@@ -1304,7 +1304,7 @@ classdef FiniteElement < NosnocFormulationObject
 
             % end constraints
             if (~problem_options.right_boundary_point_explicit ||...
-                    problem_options.irk_representation == RKRepresentation.differential)
+                    problem_options.rk_representation == RKRepresentation.differential)
                 obj.addConstraint(Xk_end - obj.x{end});
             end
             if (~problem_options.right_boundary_point_explicit &&...

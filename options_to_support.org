@@ -1,5 +1,5 @@
 * Remaining Options to implement for Stewart pipeline
-** DONE irk_representation
+** DONE rk_representation
 *** DONE differential
 *** DONE differential_lift_x
 ** DONE irk_scheme

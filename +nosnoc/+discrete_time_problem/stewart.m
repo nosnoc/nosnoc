@@ -87,14 +87,14 @@ classdef stewart < vdx.problems.Mpcc
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf};
             obj.w.mu(0,0,opts.n_s) = {{'mu', dims.n_mu},0,inf};
             for ii=1:opts.N_stages
-                if (opts.irk_representation == RKRepresentation.integral ||...
-                    opts.irk_representation == RKRepresentation.differential_lift_x)
+                if (opts.rk_representation == RKRepresentation.integral ||...
+                    opts.rk_representation == RKRepresentation.differential_lift_x)
                     obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 else
                     obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 end
-                if (opts.irk_representation == RKRepresentation.differential ||...
-                    opts.irk_representation == RKRepresentation.differential_lift_x)
+                if (opts.rk_representation == RKRepresentation.differential ||...
+                    opts.rk_representation == RKRepresentation.differential_lift_x)
                     obj.w.v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'v', dims.n_x}};
                 end
                 
@@ -104,7 +104,7 @@ classdef stewart < vdx.problems.Mpcc
                 obj.w.mu(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},0,inf};
 
                 % Handle x_box settings
-                if ~opts.x_box_at_stg && opts.irk_representation ~= RKRepresentation.differential
+                if ~opts.x_box_at_stg && opts.rk_representation ~= RKRepresentation.differential
                     obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp-1)).lb = -inf*ones(dims.n_x, 1);
                     obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp-1)).ub = inf*ones(dims.n_x, 1);
                 end
@@ -166,7 +166,7 @@ classdef stewart < vdx.problems.Mpcc
                     else
                         h = h0;
                     end
-                    switch opts.irk_representation
+                    switch opts.rk_representation
                       case RKRepresentation.integral
                         x_ij_end = x_prev;
                         for kk=1:opts.n_s

@@ -49,7 +49,7 @@ legend_str = [legend_str(n_s_vec)];
 
 %% settings
 settings = NosnocOptions();
-settings.irk_representation = irk_representation;
+settings.rk_representation = rk_representation;
 settings.irk_scheme = irk_scheme;
 settings.use_fesd = use_fesd;
 settings.print_level = 0;

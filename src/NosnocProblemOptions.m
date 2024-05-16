@@ -46,7 +46,7 @@ classdef NosnocProblemOptions < handle
         % IRK and FESD Settings
         n_s(1,1) {mustBeInteger} = 2
         irk_scheme(1,1) RKSchemes = RKSchemes.RADAU_IIA
-        irk_representation RKRepresentation = RKRepresentation.integral;
+        rk_representation RKRepresentation = RKRepresentation.integral;
 
         cross_comp_mode(1,1) CrossCompMode = CrossCompMode.FE_STAGE
         gamma_h(1,1) double {mustBeReal} = 1
@@ -198,7 +198,7 @@ classdef NosnocProblemOptions < handle
                 if obj.print_level >=1
                     fprintf(['Info: The user provided RK scheme: ' char(obj.irk_scheme) ' is only available in the differential representation.\n']);
                 end
-                obj.irk_representation = 'differential';
+                obj.rk_representation = 'differential';
             end
             if obj.n_s < 1 || obj.n_s > 9
                 error("n_s must be in [1, 9]");
@@ -254,7 +254,7 @@ classdef NosnocProblemOptions < handle
 
             % create Butcher tableau
             % TODO this should live somewhere else. (i.e. butcher tableu should not be in settings)
-            switch obj.irk_representation
+            switch obj.rk_representation
               case RKRepresentation.integral
                 [B, C, D, tau_root] = generate_butcher_tableu_integral(obj.n_s, obj.irk_scheme);
                 if tau_root(end) == 1

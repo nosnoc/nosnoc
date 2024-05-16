@@ -1,6 +1,6 @@
 classdef TestSlidingMode < matlab.unittest.TestCase
     properties (TestParameter)
-        irk_representation = {'differential','integral'};
+        rk_representation = {'differential','integral'};
         irk_scheme = {RKSchemes.RADAU_IIA,RKSchemes.GAUSS_LEGENDRE};
         dcs_mode = {'Step','Stewart'};
         cross_comp_mode = {1, 3, 4, 7}; 
@@ -9,10 +9,10 @@ classdef TestSlidingMode < matlab.unittest.TestCase
     methods (Test)
     end
     methods (Test, ParameterCombination = 'exhaustive')
-        function test_sliding(testCase,irk_representation, irk_scheme, dcs_mode, cross_comp_mode)
+        function test_sliding(testCase,rk_representation, irk_scheme, dcs_mode, cross_comp_mode)
             import matlab.unittest.constraints.IssuesNoWarnings;
             issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 5);
-            testCase.verifyThat(@() test_sliding_mode(irk_representation, irk_scheme, dcs_mode, cross_comp_mode), issuesNoWarningsConstraint);
+            testCase.verifyThat(@() test_sliding_mode(rk_representation, irk_scheme, dcs_mode, cross_comp_mode), issuesNoWarningsConstraint);
 
             [results,stats,model,problem_options, solver_options] = issuesNoWarningsConstraint.FunctionOutputs{:};
 

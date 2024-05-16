@@ -12,7 +12,7 @@ if isequal(irk_scheme,RKSchemes.GAUSS_LEGENDRE)
 end
 
 if isequal(irk_scheme,'lobbato')
-    error('Lobbato scheme are not supported with irk_representation = ''integral''.')
+    error('Lobbato scheme are not supported with rk_representation = ''integral''.')
 else
     tau_root = [0 collocation_points(n_s, irk_scheme)];
 end

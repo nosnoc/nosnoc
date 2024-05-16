@@ -1,4 +1,4 @@
-function [results,stats,model,problem_options] = test_integrator(use_fesd, irk_representation, irk_scheme, dcs_mode)
+function [results,stats,model,problem_options] = test_integrator(use_fesd, rk_representation, irk_scheme, dcs_mode)
 import casadi.*
 % discretization settings
 N_finite_elements = 2;
@@ -7,12 +7,12 @@ N_sim  = 29;
 R_osc  = 1;
 
 
-fprintf('use_fesd\tirk_representation\tirk_scheme\tdcs_mode\n')
-fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, irk_representation, irk_scheme, dcs_mode);
+fprintf('use_fesd\trk_representation\tirk_scheme\tdcs_mode\n')
+fprintf('%d\t\t\t%s\t\t\t%s\t\t\t%s\n',use_fesd, rk_representation, irk_scheme, dcs_mode);
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 problem_options.use_fesd = use_fesd;
-problem_options.irk_representation = irk_representation;
+problem_options.rk_representation = rk_representation;
 problem_options.irk_scheme = irk_scheme;
 solver_options.real_time_plot = 0;
 solver_options.print_level = 2;
