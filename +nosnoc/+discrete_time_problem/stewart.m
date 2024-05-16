@@ -414,7 +414,7 @@ classdef stewart < vdx.problems.Mpcc
             end
         end
 
-        function generate_complementarities(obj)
+        function generate_complementarity_constraints(obj)
             import casadi.*
             opts = obj.opts;
             dcs = obj.dcs;
@@ -685,7 +685,7 @@ classdef stewart < vdx.problems.Mpcc
         function populate_problem(obj)
             obj.create_variables();
             obj.direct_transcription();
-            obj.generate_complementarities();
+            obj.generate_complementarity_constraints();
             obj.step_equilibration();
 
             obj.populated = true;
