@@ -26,8 +26,6 @@ classdef stewart < vdx.problems.Mpcc
             obj.p.T = {{'T',1}, opts.T};
             obj.p.p_global = {model.p_global, model.p_global_val};
 
-            % other derived values
-            h0 = opts.h_k;
 
             % 0d vars
             obj.w.v_global = {{'v_global',dims.n_v_global}, model.lbv_global, model.ubv_global, model.v0_global};
@@ -46,60 +44,72 @@ classdef stewart < vdx.problems.Mpcc
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
 
+            % TODO(@anton) This _severely_ hurts performance over the vectorized assignment by doing N_stages vertcats of
+            %              casadi symbolics vs just a vectorized assignment which does one. As such there needs to be backend
+            %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
+            %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
+            %              on the whole queue which is _significantly_ faster.
             % 2d vars
-            if obj.opts.use_fesd
-                ubh = (1 + opts.gamma_h) * h0;
-                lbh = (1 - opts.gamma_h) * h0;
-                if opts.time_rescaling && ~opts.use_speed_of_time_variables
-                    % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
-                    ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
-                    lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+            for ii=1:opts.N_stages
+                % other derived values
+                h0 = opts.h_k(ii);
+                if obj.opts.use_fesd
+                    ubh = (1 + opts.gamma_h) * h0;
+                    lbh = (1 - opts.gamma_h) * h0;
+                    if opts.time_rescaling && ~opts.use_speed_of_time_variables
+                        % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
+                        ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
+                        lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                    end
+                    obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
-                obj.w.h(1:opts.N_stages,1:opts.N_finite_elements(1)) = {{'h', 1}, lbh, ubh, h0};
-            end
-            if (strcmp(obj.opts.step_equilibration,'linear')||...
-                strcmp(obj.opts.step_equilibration,'linear_tanh')||...
-                strcmp(obj.opts.step_equilibration,'linear_relaxed'))
-                obj.w.B_max(1:opts.N_stages,2:opts.N_finite_elements) = {{'B_max', dims.n_lambda},-inf,inf};
-                obj.w.pi_theta(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'pi_theta', dims.n_theta},-inf,inf};
-                obj.w.pi_lambda(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
-                obj.w.lambda_theta(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'lambda_theta', dims.n_theta},0,inf};
-                obj.w.lambda_lambda(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'lambda_lambda', dims.n_lambda},0,inf};
-                obj.w.eta(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'eta', dims.n_lambda},0,inf};
-                obj.w.nu(1:opts.N_stages,2:opts.N_finite_elements(1)) = {{'nu', 1},0,inf};
+                if (strcmp(obj.opts.step_equilibration,'linear')||...
+                    strcmp(obj.opts.step_equilibration,'linear_tanh')||...
+                    strcmp(obj.opts.step_equilibration,'linear_relaxed'))
+                    obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
+                    obj.w.pi_theta(ii,2:opts.N_finite_elements(ii)) = {{'pi_theta', dims.n_theta},-inf,inf};
+                    obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
+                    obj.w.lambda_theta(ii,2:opts.N_finite_elements(ii)) = {{'lambda_theta', dims.n_theta},0,inf};
+                    obj.w.lambda_lambda(ii,2:opts.N_finite_elements(ii)) = {{'lambda_lambda', dims.n_lambda},0,inf};
+                    obj.w.eta(ii,2:opts.N_finite_elements(ii)) = {{'eta', dims.n_lambda},0,inf};
+                    obj.w.nu(ii,2:opts.N_finite_elements(ii)) = {{'nu', 1},0,inf};
+                end
             end
 
             % For c_n ~= 1 case
             rbp = ~opts.right_boundary_point_explicit;
             % 3d vars
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
-            if (opts.irk_representation == RKRepresentation.integral ||...
-                        opts.irk_representation == RKRepresentation.differential_lift_x)
-                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
-            else
-                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
-            end
-            if (opts.irk_representation == RKRepresentation.differential ||...
-                opts.irk_representation == RKRepresentation.differential_lift_x)
-                obj.w.v(1:opts.N_stages,1:opts.N_finite_elements(1),1:opts.n_s) = {{'v', dims.n_x}};
-            end
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-            obj.w.z(1:opts.N_stages,1:opts.N_finite_elements(1),(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf};
-            obj.w.lambda(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf};
-            obj.w.theta(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s)) = {{'theta', dims.n_theta},0, 1};
             obj.w.mu(0,0,opts.n_s) = {{'mu', dims.n_mu},0,inf};
-            obj.w.mu(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},0,inf};
+            for ii=1:opts.N_stages
+                if (opts.irk_representation == RKRepresentation.integral ||...
+                    opts.irk_representation == RKRepresentation.differential_lift_x)
+                    obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                else
+                    obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                end
+                if (opts.irk_representation == RKRepresentation.differential ||...
+                    opts.irk_representation == RKRepresentation.differential_lift_x)
+                    obj.w.v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'v', dims.n_x}};
+                end
+                
+                obj.w.z(ii,1:opts.N_finite_elements(ii),(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
+                obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf};
+                obj.w.theta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'theta', dims.n_theta},0, 1};
+                obj.w.mu(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},0,inf};
 
-            % Handle x_box settings
-            if ~opts.x_box_at_stg && opts.irk_representation ~= RKRepresentation.differential
-                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp-1)).lb = -inf*ones(dims.n_x, 1);
-                obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),1:(opts.n_s+rbp-1)).ub = inf*ones(dims.n_x, 1);
-            end
+                % Handle x_box settings
+                if ~opts.x_box_at_stg && opts.irk_representation ~= RKRepresentation.differential
+                    obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp-1)).lb = -inf*ones(dims.n_x, 1);
+                    obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp-1)).ub = inf*ones(dims.n_x, 1);
+                end
 
-            if ~opts.x_box_at_fe
-                obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(1)-1),opts.n_s+rbp).lb = -inf*ones(dims.n_x, 1);
-                obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(1)-1),opts.n_s+rbp).ub = inf*ones(dims.n_x, 1);
+                if ~opts.x_box_at_fe
+                    obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(ii)-1),opts.n_s+rbp).lb = -inf*ones(dims.n_x, 1);
+                    obj.w.x(1:opts.N_stages,1:(opts.N_finite_elements(ii)-1),opts.n_s+rbp).ub = inf*ones(dims.n_x, 1);
+                end
             end
         end
 
@@ -112,13 +122,6 @@ classdef stewart < vdx.problems.Mpcc
 
             rbp = ~opts.right_boundary_point_explicit;
 
-            if obj.opts.use_fesd
-                t_stage = obj.p.T()/opts.N_stages;
-                h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(1));
-            else
-                h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(1));
-            end
-
             v_global = obj.w.v_global();
             p_global = obj.p.p_global();
 
@@ -130,9 +133,15 @@ classdef stewart < vdx.problems.Mpcc
             obj.g.z(0,0,opts.n_s) = {dcs.g_z_fun(x_0, z_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
             obj.g.switching(0,0,opts.n_s) = {dcs.g_switching_fun(x_0, z_0, lambda_0, mu_0, v_global, [p_global;obj.p.p_time_var(1)])};
             
-
             x_prev = obj.w.x(0,0,opts.n_s);
             for ii=1:opts.N_stages
+                if obj.opts.use_fesd
+                    t_stage = obj.p.T()/opts.N_stages;
+                    h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
+                else
+                    h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
+                end
+                
                 ui = obj.w.u(ii);
                 p_stage = obj.p.p_time_var(ii);
                 p = [p_global;p_stage];
@@ -524,7 +533,7 @@ classdef stewart < vdx.problems.Mpcc
               case 'l2_relaxed_scaled'
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    for jj=2:opts.N_finite_elements(1)
+                    for jj=2:opts.N_finite_elements(ii)
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
@@ -546,7 +555,7 @@ classdef stewart < vdx.problems.Mpcc
               case 'l2_relaxed'
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    for jj=2:opts.N_finite_elements(1)
+                    for jj=2:opts.N_finite_elements(ii)
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
@@ -568,7 +577,7 @@ classdef stewart < vdx.problems.Mpcc
               case 'direct'
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    for jj=2:opts.N_finite_elements(1)
+                    for jj=2:opts.N_finite_elements(ii)
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
@@ -592,7 +601,7 @@ classdef stewart < vdx.problems.Mpcc
                 error("not currently implemented")
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    for jj=2:opts.N_finite_elements(1)
+                    for jj=2:opts.N_finite_elements(ii)
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
@@ -677,7 +686,7 @@ classdef stewart < vdx.problems.Mpcc
 
         function create_solver(obj, solver_options, plugin)
             if ~obj.populated
-                obj.populate_problem()
+                obj.populate_problem();
             end
 
             if ~exist('plugin')
@@ -728,13 +737,13 @@ classdef stewart < vdx.problems.Mpcc
                 results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s).res;
             else
                 results.x = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
                 results.z = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
                 results.lambda = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
                 results.mu = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
                 results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s+1).res;
             end
             results.u = obj.w.u.res;
@@ -763,9 +772,9 @@ classdef stewart < vdx.problems.Mpcc
                 end
             end
 
-            fields = fieldnames(S)
-            empty_fields = cellfun(@(field) isempty(results.(field)), fields)
-            results = rmfield(S, fields(empty_fields))
+            fields = fieldnames(S);
+            empty_fields = cellfun(@(field) isempty(results.(field)), fields);
+            results = rmfield(S, fields(empty_fields));
         end
     end
 end
