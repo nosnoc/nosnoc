@@ -116,7 +116,7 @@ classdef stewart < vdx.problems.Mpcc
             end
         end
 
-        function forward_sim_constraints(obj)
+        function direct_transcription(obj)
             import casadi.*
             model = obj.model;
             opts = obj.opts;
@@ -680,7 +680,7 @@ classdef stewart < vdx.problems.Mpcc
 
         function populate_problem(obj)
             obj.create_variables();
-            obj.forward_sim_constraints();
+            obj.direct_transcription();
             obj.generate_complementarities();
             obj.step_equilibration();
 
