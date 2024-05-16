@@ -11,13 +11,12 @@ solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation = RKRepresentation.integral;
 problem_options.n_s = 2;
-problem_options.N_stages = 10; % number of control intervals
+problem_options.N_stages = 11; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
-problem_options.T = 1;    % Time horizon
+problem_options.T = 1.0;    % Time horizon
 problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 problem_options.time_optimal_problem = true;
-problem_options.x_box_at_stg = 0;
-problem_options.x_box_at_fe = 0;
+problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.pss(); 
@@ -46,11 +45,14 @@ x = ocp_solver.getX();
 u = ocp_solver.getU();
 t_grid = ocp_solver.getTimeGrid();
 t_grid_u = ocp_solver.getControlGrid();
+h_res = ocp_solver.discrete_time_problem.w.h.res;
 
 figure
 plot(t_grid, x);
 figure
 stairs(t_grid_u, [u,u(end)])
+figure
+stairs(t_grid, [h_res, h_res(end)])
 % how to create an integrator?
 % integrator = nosnoc.integrator(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.
 % [results,stats] = integrator.solve();

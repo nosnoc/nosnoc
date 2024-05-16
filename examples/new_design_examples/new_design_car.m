@@ -8,13 +8,15 @@ problem_options = nosnoc.Options(); % problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 
 %% set some options
-problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
-problem_options.rk_representation = RKRepresentation.differential_lift_x;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_representation = RKRepresentation.integral;
 problem_options.n_s = 2;
-problem_options.N_stages = 20; % number of control intervals
+problem_options.N_stages = 50; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
-problem_options.T = 40;    % Time horizon
-problem.options.dcs_mode = "Stewart"; % or "Heaviside"
+problem_options.T = 15;    % Time horizon
+problem_options.dcs_mode = "Stewart"; % or "Heaviside"
+
+%problem_options.step_equilibration = StepEquilibrationMode.mlcp;
 
 %problem_options.x_box_at_stg = 0;
 %problem_options.x_box_at_fe = 0;
@@ -40,7 +42,7 @@ model.c = v-10;
 % Add terminal constraint
 model.g_terminal = [q-200;v-0];
 % lsq on control
-model.lsq_u = {u, 0, 1};
+%model.lsq_u = {u, 0, 1};
 
 %% create solver and solve problem
 ocp_solver = nosnoc.ocp.solver(model, problem_options, solver_options);

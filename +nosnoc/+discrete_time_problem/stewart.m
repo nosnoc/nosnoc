@@ -34,7 +34,7 @@ classdef stewart < vdx.problems.Mpcc
                 obj.w.sot = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
             if opts.time_optimal_problem
-                obj.w.T_final = {{'T_final', 1}, opts.T_final_min, opts.T_final_max, opts.T}
+                obj.w.T_final = {{'T_final', 1}, opts.T_final_min, opts.T_final_max, opts.T};
                 obj.f = obj.f + obj.w.T_final();
             end
 
@@ -397,7 +397,7 @@ classdef stewart < vdx.problems.Mpcc
 
                 g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_1();
                     -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_1()];
-                obj.g.terminal = {g_terminal, -inf, 0}
+                obj.g.terminal = {g_terminal, -inf, 0};
                 obj.f = obj.f + obj.p.rho_terminal_p()*sum(obj.w.s_terminal_ell_1());
               case ConstraintRelaxationMode.ELL_2 % l_2
                      % TODO(@anton): this is as it was implemented before. should handle lb != ub?
@@ -407,7 +407,7 @@ classdef stewart < vdx.problems.Mpcc
 
                 g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_inf();
                     -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_inf()];
-                obj.g.terminal = {g_terminal, -inf, 0}
+                obj.g.terminal = {g_terminal, -inf, 0};
                 obj.f = obj.f + obj.p.rho_terminal_p()*obj.w.s_terminal_ell_inf();
             end
         end
@@ -511,14 +511,17 @@ classdef stewart < vdx.problems.Mpcc
         end
 
         function generate_step_equilibration_constraints(obj)
+            import casadi.*
             model = obj.model;
             opts = obj.opts;
+            dims = obj.dcs.dims;
             v_global = obj.w.v_global();
             p_global = obj.p.p_global();
 
             if ~opts.use_fesd % do nothing
                 return
             end
+            rbp = ~opts.right_boundary_point_explicit;
 
             switch obj.opts.step_equilibration
               case StepEquilibrationMode.heuristic_mean
@@ -542,7 +545,7 @@ classdef stewart < vdx.problems.Mpcc
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
-                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
                         sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
                         
                         pi_lambda = sigma_lambda_B .* sigma_lambda_F;
@@ -564,7 +567,7 @@ classdef stewart < vdx.problems.Mpcc
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
-                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) +sum2(obj.w.lambda(ii,jj,:));
                         sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
                         pi_lambda = sigma_lambda_B .* sigma_lambda_F;
@@ -586,7 +589,7 @@ classdef stewart < vdx.problems.Mpcc
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
-                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
                         sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
                         pi_lambda = sigma_lambda_B .* sigma_lambda_F;
@@ -601,7 +604,7 @@ classdef stewart < vdx.problems.Mpcc
                         obj.g.step_equilibration(ii,jj) = {eta*delta_h, 0, 0};
                     end
                 end
-                obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
+                %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.direct_homotopy
                 error("not currently implemented")
                 eta_vec = [];
@@ -610,7 +613,7 @@ classdef stewart < vdx.problems.Mpcc
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
-                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
                         sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
                         pi_lambda = sigma_lambda_B .* sigma_lambda_F;
@@ -627,7 +630,7 @@ classdef stewart < vdx.problems.Mpcc
                         obj.g.step_equilibration(ii,jj) = {homotopy_eq, [-inf;0], [0;inf]};
                     end
                 end
-                obj.eta_fun = Function('eta_fun', {obj.w.w}, {eta_vec});
+                %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.mlcp
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
@@ -635,10 +638,9 @@ classdef stewart < vdx.problems.Mpcc
                         sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
                         sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
                         
-                        sigma_lambda_F = sum2(obj.w.lambda(ii,jj,:));
+                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
                         sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
-                        % todo ideally we output G and H instead of doing all of the stuff here but ok.
                         lambda_lambda = obj.w.lambda_lambda(ii,jj);
                         lambda_theta = obj.w.lambda_theta(ii,jj);
                         B_max = obj.w.B_max(ii,jj);
@@ -647,29 +649,29 @@ classdef stewart < vdx.problems.Mpcc
                         eta = obj.w.eta(ii,jj);
                         nu = obj.w.nu(ii,jj);
 
-                        obj.g.pi_lambda_or(ii,jj) = {[pi_lambda-sigma_lambda_f;pi_lambda-sigma_lambda_b;sigma_lambda_f+sigma_lambda_b-pi_lambda],0,inf};
-                        obj.g.pi_theta_or(ii,jj) = {[pi_theta-sigma_theta_f;pi_theta-sigma_theta_b;sigma_theta_f+sigma_theta_b-pi_theta],0,inf};
+                        obj.g.pi_lambda_or(ii,jj) = {[pi_lambda-sigma_lambda_F;pi_lambda-sigma_lambda_B;sigma_lambda_F+sigma_lambda_B-pi_lambda],0,inf};
+                        obj.g.pi_theta_or(ii,jj) = {[pi_theta-sigma_theta_F;pi_theta-sigma_theta_B;sigma_theta_F+sigma_theta_B-pi_theta],0,inf};
 
                         % kkt conditions for min B, B>=sigmaB, B>=sigmaF
                         kkt_max = [1-lambda_theta-lambda_lambda;
                             B_max-pi_lambda;
-                            B_max-pi_theta;
-                            (B_max-pi_lambda).*lambda_lambda - sigma;
-                            (B_max-pi_theta).*lambda_theta - sigma];
+                            B_max-pi_theta];
                         obj.g.kkt_max(ii,jj) = {kkt_max,
-                            [0*ones(n_lambda,1);0*ones(n_lambda,1);0*ones(n_lambda,1);-inf*ones(n_lambda,1);-inf*ones(n_lambda,1)],
-                            [0*ones(n_lambda,1);inf*ones(n_lambda,1);inf*ones(n_lambda,1);0*ones(n_lambda,1);0*ones(n_lambda,1)]};
+                            [0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1)],
+                            [0*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
 
+                        obj.G.step_eq_kkt_max(ii,jj) = {[(B_max-pi_lambda);(B_max-pi_theta)]};
+                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_lambda;lambda_theta]};
+                        
                         % eta calculation
                         eta_const = [eta-pi_theta;eta-pi_lambda;eta-pi_theta-pi_lambda+B_max];
                         obj.g.eta_const(ii,jj) = {eta_const,
-                            [-inf*ones(n_lambda,1);-inf*ones(n_lambda,1);zeros(n_lambda,1)],
-                            [zeros(n_lambda,1);zeros(n_lambda,1);inf*ones(n_lambda,1)]};
+                            [-inf*ones(dims.n_lambda,1);-inf*ones(dims.n_lambda,1);zeros(dims.n_lambda,1)],
+                            [zeros(dims.n_lambda,1);zeros(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
 
                         obj.g.nu_or(ii,jj) = {[nu-eta;sum(eta)-nu],0,inf};
 
                         % the actual step eq conditions
-                        %M = 1e5;
                         M=obj.p.T()/opts.N_stages;
                         delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
                         step_equilibration = [delta_h + (1/h0)*nu*M;
