@@ -1,4 +1,4 @@
-classdef Stewart < nosnoc.dcs.base
+classdef Stewart < nosnoc.dcs.Base
     properties
         model
 

@@ -1,4 +1,4 @@
-classdef base < matlab.mixin.Scalar & handle
+classdef Base < matlab.mixin.Scalar & handle
     properties
         f_x_fun
         f_q_fun

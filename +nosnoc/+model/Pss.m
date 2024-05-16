@@ -1,4 +1,4 @@
-classdef Pss < nosnoc.model.base
+classdef Pss < nosnoc.model.Base
     properties
         F
         S
@@ -8,7 +8,7 @@ classdef Pss < nosnoc.model.base
 
     methods
         function obj = Pss()
-            obj = obj@nosnoc.model.base();
+            obj = obj@nosnoc.model.Base();
         end
         
         function verify_and_backfill(obj, opts)
@@ -17,7 +17,7 @@ classdef Pss < nosnoc.model.base
                 opts nosnoc.Options
             end
             import casadi.*
-            verify_and_backfill@nosnoc.model.base(obj,opts);
+            verify_and_backfill@nosnoc.model.Base(obj,opts);
 
             dims = obj.dims;
 
