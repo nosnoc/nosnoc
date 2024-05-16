@@ -670,12 +670,12 @@ classdef Heaviside < vdx.problems.Mpcc
                         nu = obj.w.nu(ii,jj);
 
                         obj.g.pi_lambda_n_or(ii,jj) = {[pi_lambda_n-sigma_lambda_n_F;pi_lambda_n-sigma_lambda_n_B;sigma_lambda_n_F+sigma_lambda_n_B-pi_lambda_n],0,inf};
-                        obj.g.pi_lambda_p_or(ii,jj) = {[pi_lambda_p-sigma_lambda_p_F;pi_theta-sigma_lambda_p_B;sigma_lambda_p_F+sigma_lambda_p_B-pi_lambda_p],0,inf};
+                        obj.g.pi_lambda_p_or(ii,jj) = {[pi_lambda_p-sigma_lambda_p_F;pi_lambda_p-sigma_lambda_p_B;sigma_lambda_p_F+sigma_lambda_p_B-pi_lambda_p],0,inf};
 
                         % kkt conditions for min B, B>=sigmaB, B>=sigmaF
                         kkt_max = [1-lambda_lambda_p-lambda_lambda_p;
                             B_max-pi_lambda_n;
-                            B_max-pi_theta_p];
+                            B_max-pi_lambda_p];
                         obj.g.kkt_max(ii,jj) = {kkt_max,
                             [0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1)],
                             [0*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};

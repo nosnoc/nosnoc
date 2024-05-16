@@ -1,4 +1,4 @@
-classdef Heaviside < nosnoc.dcs.base
+classdef Heaviside < nosnoc.dcs.Base
     properties
         model
 
@@ -77,13 +77,13 @@ classdef Heaviside < nosnoc.dcs.base
                 idx = idx + obj.dims.n_c_sys(ii);
                 ii_str = num2str(ii);
                 % define alpha (selection of a set valued step function)
-                obj.alpha_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['alpha_' ii_str],obj.dims.n_c_sys(ii));
+                obj.alpha_sys{ii} = define_casadi_symbolic(opts.casadi_symbolic_mode,['alpha_' ii_str],obj.dims.n_c_sys(ii));
                 obj.alpha = [obj.alpha;obj.alpha_sys{ii}];
                 % define lambda_n_i (Lagrange multipler of alpha >= 0;)
-                obj.lambda_n_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['lambda_n_' ii_str],obj.dims.n_c_sys(ii));
+                obj.lambda_n_sys{ii} = define_casadi_symbolic(opts.casadi_symbolic_mode,['lambda_n_' ii_str],obj.dims.n_c_sys(ii));
                 obj.lambda_n = [obj.lambda_n;obj.lambda_n_sys{ii}];
                 % define lambda_p_i (Lagrange multipler of alpha <= 1;)
-                obj.lambda_p_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['lambda_p_' ii_str],obj.dims.n_c_sys(ii));
+                obj.lambda_p_sys{ii} = define_casadi_symbolic(opts.casadi_symbolic_mode,['lambda_p_' ii_str],obj.dims.n_c_sys(ii));
                 obj.lambda_p = [obj.lambda_p;obj.lambda_p_sys{ii}];
             end
 
@@ -106,31 +106,28 @@ classdef Heaviside < nosnoc.dcs.base
 
             % generate theta_expressions
             for ii = 1:dims.n_sys
-                theta_ii = [];
-                ii_str = num2str(ii);
-                S_temp = obj.S{ii};
-                if problem_options.pss_lift_step_functions
+                theta_i = [];
+                S_temp = model.S{ii};
+                if opts.pss_lift_step_functions
                     % TODO implement automatic lifting
                 else
-                    if ~problem_options.time_freezing_inelastic
-                        for jj = 1:size(S_temp,1)
-                            theta_jk = 1;
-                            for kk = 1:size(S_temp,2)
-                                % create multiaffine term
-                                if S_temp(jj,kk) ~=0
-                                    theta_jk = theta_jk * (0.5*(1-S_temp(jj,kk))+S_temp(jj,kk)*obj.alpha_sys{ii}(kk));
-                                end
+                    for jj = 1:size(S_temp,1)
+                        theta_jk = 1;
+                        for kk = 1:size(S_temp,2)
+                            % create multiaffine term
+                            if S_temp(jj,kk) ~=0
+                                theta_jk = theta_jk * (0.5*(1-S_temp(jj,kk))+S_temp(jj,kk)*obj.alpha_sys{ii}(kk));
                             end
-                            theta_ii = [theta_ii;theta_jk];
                         end
-                    end
+                        theta_i = [theta_i;theta_jk];
+                    end                    
                 end
-                obj.theta_expr_sys{ii} = theta_ii;
+                obj.theta_expr_sys{ii} = theta_i;
             end
 
             obj.f_x = zeros(dims.n_x,1);
             for ii = 1:dims.n_sys
-                obj.f_x = obj.f_x + obj.F{ii}*obj.theta_expr_sys{ii};
+                obj.f_x = obj.f_x + model.F{ii}*obj.theta_expr_sys{ii};
             end
 
             g_switching = []; % collects switching function algebraic equations, 0 = c(x)-lambda_p+lambda_n
@@ -142,8 +139,8 @@ classdef Heaviside < nosnoc.dcs.base
                 % lambda_n_i >= 0;    for all i = 1,..., n_sys
                 % lambda_p_i >= 0;    for all i = 1,..., n_sys
                 % alpha_i >= 0;     for all i = 1,..., n_sys
-                g_switching = [g_switching;obj.c{ii}-obj.lambda_p_sys{ii}+obj.lambda_n_sys{ii}];
-                lambda00_expr = [lambda00_expr; -min(obj.c{ii}, 0); max(obj.c{ii},0)];
+                g_switching = [g_switching;model.c{ii}-obj.lambda_p_sys{ii}+obj.lambda_n_sys{ii}];
+                lambda00_expr = [lambda00_expr; -min(model.c{ii}, 0); max(model.c{ii},0)];
             end
             g_alg = [g_switching];
 
@@ -152,7 +149,6 @@ classdef Heaviside < nosnoc.dcs.base
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {g_alg});
             obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda_n, obj.lambda_p, model.v_global, model.p}, {g_switching});
-            obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {model.g_ind{:}});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.g_comp_path_fun  = Function('g_comp_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_comp_path});
