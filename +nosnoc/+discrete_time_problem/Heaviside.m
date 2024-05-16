@@ -66,10 +66,10 @@ classdef Heaviside < vdx.problems.Mpcc
                 end
                 if obj.opts.step_equilibration == StepEquilibrationMode.mlcp
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
-                    obj.w.pi_alpha(ii,2:opts.N_finite_elements(ii)) = {{'pi_theta', dims.n_alpha},-inf,inf};
-                    obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
-                    obj.w.lambda_alpha(ii,2:opts.N_finite_elements(ii)) = {{'lambda_theta', dims.n_alpha},0,inf};
-                    obj.w.lambda_lambda(ii,2:opts.N_finite_elements(ii)) = {{'lambda_lambda', dims.n_lambda},0,inf};
+                    obj.w.pi_lambda_n(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda_n', dims.n_lambda},-inf,inf};
+                    obj.w.pi_lambda_p(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda_p', dims.n_lambda},-inf,inf};
+                    obj.w.lambda_lambda_n(ii,2:opts.N_finite_elements(ii)) = {{'lambda_lambda_n', dims.n_lambda},0,inf};
+                    obj.w.lambda_lambda_p(ii,2:opts.N_finite_elements(ii)) = {{'lambda_lambda_p', dims.n_lambda},0,inf};
                     obj.w.eta(ii,2:opts.N_finite_elements(ii)) = {{'eta', dims.n_lambda},0,inf};
                     obj.w.nu(ii,2:opts.N_finite_elements(ii)) = {{'nu', 1},0,inf};
                 end
@@ -562,15 +562,15 @@ classdef Heaviside < vdx.problems.Mpcc
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        sigma_lambda_n_B = sum2(obj.w.lambda_n(ii,jj-1,:));
+                        sigma_lambda_p_B = sum2(obj.w.lambda_p(ii,jj-1,:));
                         
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_lambda_n_F = obj.w.lambda_n(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_n(ii,jj,:));
+                        sigma_lambda_p_F = obj.w.lambda_p(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_p(ii,jj,:));
                         
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
+                        pi_lambda_n = sigma_lambda_n_B .* sigma_lambda_n_F;
+                        pi_lambda_p = sigma_lambda_p_B .* sigma_lambda_p_F;
+                        nu = pi_lambda_n + pi_lambda_p;
                         eta = 1;
                         for jjj=1:length(nu)
                             eta = eta*nu(jjj);
@@ -584,15 +584,15 @@ classdef Heaviside < vdx.problems.Mpcc
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        sigma_lambda_n_B = sum2(obj.w.lambda_n(ii,jj-1,:));
+                        sigma_lambda_p_B = sum2(obj.w.lambda_p(ii,jj-1,:));
                         
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) +sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_lambda_n_F = obj.w.lambda_n(ii,jj-1,opts.n_s + rbp) +sum2(obj.w.lambda_n(ii,jj,:));
+                        sigma_lambda_p_F = obj.w.lambda_p(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_p(ii,jj,:));
 
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
+                        pi_lambda_n = sigma_lambda_n_B .* sigma_lambda_n_F;
+                        pi_lambda_p = sigma_lambda_p_B .* sigma_lambda_p_F;
+                        nu = pi_lambda_n + pi_lambda_p;
                         eta = 1;
                         for jjj=1:length(nu)
                             eta = eta*nu(jjj);
@@ -606,15 +606,15 @@ classdef Heaviside < vdx.problems.Mpcc
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        sigma_lambda_n_B = sum2(obj.w.lambda_n(ii,jj-1,:));
+                        sigma_lambda_p_B = sum2(obj.w.lambda_p(ii,jj-1,:));
                         
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_lambda_n_F = obj.w.lambda_n(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_n(ii,jj,:));
+                        sigma_lambda_p_F = obj.w.lambda_p(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_p(ii,jj,:));
 
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
+                        pi_lambda_n = sigma_lambda_n_B .* sigma_lambda_n_F;
+                        pi_lambda_p = sigma_lambda_p_B .* sigma_lambda_p_F;
+                        nu = pi_lambda_n + pi_lambda_p;
                         eta = 1;
                         for jjj=1:length(nu)
                             eta = eta*nu(jjj);
@@ -630,15 +630,15 @@ classdef Heaviside < vdx.problems.Mpcc
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        sigma_lambda_n_B = sum2(obj.w.lambda_n(ii,jj-1,:));
+                        sigma_lambda_p_B = sum2(obj.w.lambda_p(ii,jj-1,:));
                         
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_lambda_n_F = obj.w.lambda_n(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_n(ii,jj,:));
+                        sigma_lambda_p_F = obj.w.lambda_p(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_p(ii,jj,:));
 
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
+                        pi_lambda_n = sigma_lambda_n_B .* sigma_lambda_n_F;
+                        pi_lambda_p = sigma_lambda_p_B .* sigma_lambda_p_F;
+                        nu = pi_lambda_n + pi_lambda_p;
                         eta = 1;
                         for jjj=1:length(nu)
                             eta = eta*nu(jjj);
@@ -655,36 +655,36 @@ classdef Heaviside < vdx.problems.Mpcc
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
                         h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
+                        sigma_lambda_n_B = sum2(obj.w.lambda_n(ii,jj-1,:));
+                        sigma_lambda_p_B = sum2(obj.w.lambda_p(ii,jj-1,:));
                         
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_lambda_n_F = obj.w.lambda_n(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_n(ii,jj,:));
+                        sigma_lambda_p_F = obj.w.lambda_p(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda_p(ii,jj,:));
 
-                        lambda_lambda = obj.w.lambda_lambda(ii,jj);
-                        lambda_theta = obj.w.lambda_theta(ii,jj);
+                        lambda_lambda_n = obj.w.lambda_lambda_n(ii,jj);
+                        lambda_lambda_p = obj.w.lambda_lambda_p(ii,jj);
                         B_max = obj.w.B_max(ii,jj);
-                        pi_lambda = obj.w.pi_lambda(ii,jj);
-                        pi_theta = obj.w.pi_theta(ii,jj);
+                        pi_lambda_n = obj.w.pi_lambda_n(ii,jj);
+                        pi_lambda_p = obj.w.pi_lambda_p(ii,jj);
                         eta = obj.w.eta(ii,jj);
                         nu = obj.w.nu(ii,jj);
 
-                        obj.g.pi_lambda_or(ii,jj) = {[pi_lambda-sigma_lambda_F;pi_lambda-sigma_lambda_B;sigma_lambda_F+sigma_lambda_B-pi_lambda],0,inf};
-                        obj.g.pi_theta_or(ii,jj) = {[pi_theta-sigma_theta_F;pi_theta-sigma_theta_B;sigma_theta_F+sigma_theta_B-pi_theta],0,inf};
+                        obj.g.pi_lambda_n_or(ii,jj) = {[pi_lambda_n-sigma_lambda_n_F;pi_lambda_n-sigma_lambda_n_B;sigma_lambda_n_F+sigma_lambda_n_B-pi_lambda_n],0,inf};
+                        obj.g.pi_lambda_p_or(ii,jj) = {[pi_lambda_p-sigma_lambda_p_F;pi_theta-sigma_lambda_p_B;sigma_lambda_p_F+sigma_lambda_p_B-pi_lambda_p],0,inf};
 
                         % kkt conditions for min B, B>=sigmaB, B>=sigmaF
-                        kkt_max = [1-lambda_theta-lambda_lambda;
-                            B_max-pi_lambda;
-                            B_max-pi_theta];
+                        kkt_max = [1-lambda_lambda_p-lambda_lambda_p;
+                            B_max-pi_lambda_n;
+                            B_max-pi_theta_p];
                         obj.g.kkt_max(ii,jj) = {kkt_max,
                             [0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1)],
                             [0*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
 
-                        obj.G.step_eq_kkt_max(ii,jj) = {[(B_max-pi_lambda);(B_max-pi_theta)]};
-                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_lambda;lambda_theta]};
+                        obj.G.step_eq_kkt_max(ii,jj) = {[(B_max-pi_lambda_n);(B_max-pi_lambda_p)]};
+                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_lambda_n;lambda_lambda_p]};
                         
                         % eta calculation
-                        eta_const = [eta-pi_theta;eta-pi_lambda;eta-pi_theta-pi_lambda+B_max];
+                        eta_const = [eta-pi_lambda_p;eta-pi_lambda_n;eta-pi_lambda_p-pi_lambda_n+B_max];
                         obj.g.eta_const(ii,jj) = {eta_const,
                             [-inf*ones(dims.n_lambda,1);-inf*ones(dims.n_lambda,1);zeros(dims.n_lambda,1)],
                             [zeros(dims.n_lambda,1);zeros(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
