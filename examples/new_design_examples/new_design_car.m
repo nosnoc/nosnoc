@@ -14,13 +14,13 @@ problem_options.n_s = 2;
 problem_options.N_stages = 50; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 15;    % Time horizon
-problem_options.dcs_mode = "Stewart"; % or "Heaviside"
+problem_options.dcs_mode = "Step"; % or "Heaviside"
 
 problem_options.step_equilibration = StepEquilibrationMode.mlcp;
 
 %problem_options.x_box_at_stg = 0;
 %problem_options.x_box_at_fe = 0;
-problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_1;
+problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_2;
 %problem_options.relax_terminal_numerical_time = false;
 %% Create model
 % model = nosnoc.model.stewart();
@@ -42,7 +42,7 @@ model.c = v-10;
 % Add terminal constraint
 model.g_terminal = [q-200;v-0];
 % lsq on control
-%model.lsq_u = {u, 0, 1};
+model.lsq_u = {u, 0, 1};
 
 %% create solver and solve problem
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);

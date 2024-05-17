@@ -673,7 +673,7 @@ classdef Heaviside < vdx.problems.Mpcc
                         obj.g.pi_lambda_p_or(ii,jj) = {[pi_lambda_p-sigma_lambda_p_F;pi_lambda_p-sigma_lambda_p_B;sigma_lambda_p_F+sigma_lambda_p_B-pi_lambda_p],0,inf};
 
                         % kkt conditions for min B, B>=sigmaB, B>=sigmaF
-                        kkt_max = [1-lambda_lambda_p-lambda_lambda_p;
+                        kkt_max = [1-lambda_lambda_n-lambda_lambda_p;
                             B_max-pi_lambda_n;
                             B_max-pi_lambda_p];
                         obj.g.kkt_max(ii,jj) = {kkt_max,
