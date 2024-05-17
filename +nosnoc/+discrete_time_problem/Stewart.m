@@ -426,26 +426,22 @@ classdef Stewart < vdx.problems.Mpcc
                   case CrossCompMode.STAGE_STAGE
                     lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
-                        Gi = [];
-                        Hi = [];
-                        for rr=1:opts.n_s
-                            theta_ijr = obj.w.theta(ii,jj,rr);
-
-                            Gi = vertcat(Gij, lambda_prev);
-                            Hi = vertcat(Hij, theta_ijr);
-                        end
-                        obj.G.cross_comp(ii,0) = {Gi};
-                        obj.H.cross_comp(ii,0) = {Hi};
                         for jj=1:opts.N_finite_elements(ii);
                             Gij = {};
                             Hij = {};
+                            for rr=1:opts.n_s
+                                theta_ijr = obj.w.theta(ii,jj,rr);
+
+                                Gi = vertcat(Gij, {lambda_prev});
+                                Hi = vertcat(Hij, {theta_ijr});
+                            end    
                             for kk=1:(opts.n_s + rbp)
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
                                 for rr=1:opts.n_s
                                     theta_ijr = obj.w.theta(ii,jj,rr);
 
-                                    Gij = vertcat(Gij, lambda_ijk);
-                                    Hij = vertcat(Hij, theta_ijr);
+                                    Gij = vertcat(Gij, {lambda_ijk});
+                                    Hij = vertcat(Hij, {theta_ijr});
                                 end
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
