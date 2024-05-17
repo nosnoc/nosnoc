@@ -370,21 +370,21 @@ classdef Stewart < vdx.problems.Mpcc
                 end
             end
 
+            x_end = obj.w.x(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp);
+            z_end = obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp);
             % Terminal cost
-            obj.f = obj.f + dcs.f_q_T_fun(obj.w.x(ii,jj,kk), obj.w.z(ii,jj,opts.n_s), v_global, p_global);
-
+            obj.f = obj.f + dcs.f_q_T_fun(x_end, z_end, v_global, p_global);
+            
             % Terminal_lsq_cost
-            obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(obj.w.x(ii,jj,opts.n_s),...
-                model.x_ref_end_val,...
-                p);
-
+            obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(x_end,...
+                    model.x_ref_end_val,...
+                    p);
+            
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
                 error("Currently unsupported")
-            end
-            g_terminal = dcs.g_terminal_fun(obj.w.x(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp),...
-                obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp),...
-                v_global, p_global);
+                end
+            g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             switch opts.relax_terminal_constraint
               case ConstraintRelaxationMode.NONE % hard constraint
                 if opts.relax_terminal_constraint_from_above
