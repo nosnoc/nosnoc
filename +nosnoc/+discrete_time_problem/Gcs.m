@@ -363,12 +363,12 @@ classdef Gcs < vdx.problems.Mpcc
             x_end = obj.w.x(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp);
             z_end = obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp)
             % Terminal cost
-            obj.f = obj.f + dcs.f_q_T_fun(x_end), z_end, v_global, p_global);
+            obj.f = obj.f + dcs.f_q_T_fun(x_end, z_end, v_global, p_global);
 
             % Terminal_lsq_cost
             obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(x_end,...
                 model.x_ref_end_val,...
-                p);
+                p_global);
 
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
@@ -410,12 +410,19 @@ classdef Gcs < vdx.problems.Mpcc
             % Do Cross-Complementarity
 
             rbp = ~opts.right_boundary_point_explicit;
-            
+
+            v_global = obj.w.v_global();
+            p_global = obj.p.p_global();
+
+            x_prev = obj.w.x(0,0,opts.n_s);
+            z_prev = obj.w.z(0,0,opts.n_s);
+            lambda_prev = obj.w.lambda(0,0,opts.n_s);
+
             if opts.use_fesd
                 switch opts.cross_comp_mode
                   case CrossCompMode.STAGE_STAGE
-                    lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
+                        p_stage = obj.p.p_time_var(ii);
                         for rr=1:opts.n_s
                             theta_ijr = obj.w.theta(ii,jj,rr);
 
@@ -440,7 +447,6 @@ classdef Gcs < vdx.problems.Mpcc
                         end
                     end
                   case CrossCompMode.FE_STAGE
-                    lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
@@ -458,7 +464,6 @@ classdef Gcs < vdx.problems.Mpcc
                         end
                     end
                   case CrossCompMode.STAGE_FE
-                    lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
                             sum_theta = sum2(obj.w.theta(ii,jj,:));
@@ -476,7 +481,6 @@ classdef Gcs < vdx.problems.Mpcc
                         end
                     end
                   case CrossCompMode.FE_FE
-                    lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
