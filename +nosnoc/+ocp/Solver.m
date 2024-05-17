@@ -37,11 +37,15 @@ classdef Solver < handle
                 else
                     error("PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
                 end
-              case "nosnoc.model.heaviside"
+              case "nosnoc.model.Heaviside"
+                obj.dcs = nosnoc.dcs.Heaviside(model);
+                obj.dcs.generate_variables(opts);
+                obj.dcs.generate_equations(opts);
+                obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
+                obj.discrete_time_problem.populate_problem();
+              case "nosnoc.model.Cls"
                 error("not implemented")
-              case "nosnoc.model.cls"
-                error("not implemented")
-              case "nosnoc.model.pds"
+              case "nosnoc.model.Pds"
                 error("not implemented")
             end
         end

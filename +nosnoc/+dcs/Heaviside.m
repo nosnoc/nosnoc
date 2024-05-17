@@ -95,8 +95,29 @@ classdef Heaviside < nosnoc.dcs.Base
         function generate_variables_from_heaviside(obj, opts)
             import casadi.*
             dims = obj.dims;
-            % dimensions
+            model = obj.model;
 
+            obj.alpha = model.alpha;
+            % dimensions
+            dims.n_lambda = dims.n_alpha;
+            idx = 1;
+            for ii = 1:dims.n_sys
+                sys_idx{ii} = idx:(idx + obj.dims.n_c_sys(ii)-1);
+                idx = idx + obj.dims.n_c_sys(ii);
+                ii_str = num2str(ii);
+                % define alpha (selection of a set valued step function)
+                obj.alpha_sys{ii} = obj.alpha(sys_idx{ii});
+                % define lambda_n_i (Lagrange multipler of alpha >= 0;)
+                obj.lambda_n_sys{ii} = define_casadi_symbolic(opts.casadi_symbolic_mode,['lambda_n_' ii_str],obj.dims.n_c_sys(ii));
+                obj.lambda_n = [obj.lambda_n;obj.lambda_n_sys{ii}];
+                % define lambda_p_i (Lagrange multipler of alpha <= 1;)
+                obj.lambda_p_sys{ii} = define_casadi_symbolic(opts.casadi_symbolic_mode,['lambda_p_' ii_str],obj.dims.n_c_sys(ii));
+                obj.lambda_p = [obj.lambda_p;obj.lambda_p_sys{ii}];
+            end
+
+            % symbolic variables z = [alpha;obj.lambda_n;obj.lambda_p];
+            obj.z_all = [obj.alpha;obj.lambda_n;obj.lambda_p;obj.model.z];
+            obj.dims = dims;
         end
 
         function generate_equations_from_pss(obj, opts)
@@ -164,36 +185,27 @@ classdef Heaviside < nosnoc.dcs.Base
             model = obj.model;
             dims = obj.dims;
            
-            obj.f_x = zeros(dims.n_x,1);
-            for ii = 1:dims.n_sys
-                obj.f_x = obj.f_x + model.F{ii}*obj.theta_sys{ii};
-            end
+            obj.f_x = model.f_x;
 
-            g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i, 0 = c(x)-lambda_p+lambda_n
-            g_convex = []; % equation for the convex multiplers 1 = e' \theta
-            
+            g_switching = []; % collects switching function algebraic equations, 0 = c(x)-lambda_p+lambda_n
             lambda00_expr =[];
             for ii = 1:dims.n_sys
-                % basic algebraic equations and complementarity condtions of the DCS
-                % (Note that the cross complementarities are later defined when the discrete
-                % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
-                % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_sys
-                % lambda_i'*theta_i = 0; for all i = 1,..., n_sys
-                % lambda_i >= 0;    for all i = 1,..., n_sys
-                % theta_i >= 0;     for all i = 1,..., n_sys
-                % Gradient of Lagrange Function of indicator LP
-                g_switching = [g_switching; model.g_ind{ii} - obj.lambda_sys{ii}+obj.mu_sys{ii}*ones(dims.n_f_sys(ii),1)];
-                g_convex = [g_convex;ones(dims.n_f_sys(ii),1)'*obj.theta_sys{ii} - 1];
-                lambda00_expr = [lambda00_expr; model.g_ind{ii} - min(model.g_ind{ii})];
+                % c_i(x) - (lambda_p_i-lambda_n_i)  = 0; for all i = 1,..., n_sys
+                % lambda_n_i'*alpha_i  = 0; for all i = 1,..., n_sys
+                % lambda_p_i'*(e-alpha_i)  = 0; for all i = 1,..., n_sys
+                % lambda_n_i >= 0;    for all i = 1,..., n_sys
+                % lambda_p_i >= 0;    for all i = 1,..., n_sys
+                % alpha_i >= 0;     for all i = 1,..., n_sys
+                g_switching = [g_switching;model.c{ii}-obj.lambda_p_sys{ii}+obj.lambda_n_sys{ii}];
+                lambda00_expr = [lambda00_expr; -min(model.c{ii}, 0); max(model.c{ii},0)];
             end
-            g_alg = [g_switching;g_convex];
+            g_alg = [g_switching];
 
-            obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
-            obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {model.f_q});
+            obj.f_x_fun = Function('f_x', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
+            obj.f_q_fun = Function('f_q', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
-            obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {g_alg});
-            obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_switching});
-            obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {model.g_ind{:}});
+            obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {g_alg});
+            obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda_n, obj.lambda_p, model.v_global, model.p}, {g_switching});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.g_comp_path_fun  = Function('g_comp_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_comp_path});
