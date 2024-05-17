@@ -434,8 +434,8 @@ classdef Heaviside < vdx.problems.Mpcc
                             for rr=1:opts.n_s
                                 alpha_ijr = obj.w.alpha(ii,jj,rr);
 
-                                Gij = vertcat(Gij, lambda_n_prev, lambda_p_prev);
-                                Hij = vertcat(Hij, alpha_ijr, 1-alpha_ijr);
+                                Gij = vertcat(Gij, {lambda_n_prev}, {lambda_p_prev});
+                                Hij = vertcat(Hij, {alpha_ijr}, {1-alpha_ijr});
                             end
                             for kk=1:(opts.n_s + rbp)
                                 lambda_n_ijk = obj.w.lambda_n(ii,jj,kk);
@@ -443,8 +443,8 @@ classdef Heaviside < vdx.problems.Mpcc
                                 for rr=1:opts.n_s
                                     alpha_ijr = obj.w.alpha(ii,jj,rr);
 
-                                    Gij = vertcat(Gij, lambda_n_ijk, lambda_p_ijk);
-                                    Hij = vertcat(Hij, alpha_ijr, 1-alpha_ijr);
+                                    Gij = vertcat(Gij, {lambda_n_ijk}, {lambda_p_ijk});
+                                    Hij = vertcat(Hij, {alpha_ijr}, {1-alpha_ijr});
                                 end
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
