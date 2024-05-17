@@ -66,9 +66,9 @@ classdef Gcs < vdx.problems.Mpcc
                 end
                 if obj.opts.step_equilibration == StepEquilibrationMode.mlcp
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
-                    obj.w.pi_theta(ii,2:opts.N_finite_elements(ii)) = {{'pi_theta', dims.n_theta},-inf,inf};
+                    obj.w.pi_c(ii,2:opts.N_finite_elements(ii)) = {{'pi_c', dims.n_c},-inf,inf};
                     obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
-                    obj.w.lambda_theta(ii,2:opts.N_finite_elements(ii)) = {{'lambda_theta', dims.n_theta},0,inf};
+                    obj.w.lambda_c(ii,2:opts.N_finite_elements(ii)) = {{'lambda_c', dims.n_c},0,inf};
                     obj.w.lambda_lambda(ii,2:opts.N_finite_elements(ii)) = {{'lambda_lambda', dims.n_lambda},0,inf};
                     obj.w.eta(ii,2:opts.N_finite_elements(ii)) = {{'eta', dims.n_lambda},0,inf};
                     obj.w.nu(ii,2:opts.N_finite_elements(ii)) = {{'nu', 1},0,inf};
@@ -430,7 +430,7 @@ classdef Gcs < vdx.problems.Mpcc
                         for jj=1:opts.N_finite_elements(ii);
                             Gij = {};
                             Hij = {};
-                            for rr=1:opts.n_s
+                            for rr=1:(opts.n_s + rbp)
                                 x_ijr = obj.w.x(ii,jj,rr);
                                 z_ijr = obj.w.z(ii,jj,rr);
                                 c_ijr = dcs.c_fun(x_ijr,z_ijr, v_global, p);
@@ -438,7 +438,7 @@ classdef Gcs < vdx.problems.Mpcc
                                 Gij = vertcat(Gij, {lambda_prev});
                                 Hij = vertcat(Hij, {c_ijr});
                             end
-                            for rr=1:opts.n_s
+                            for rr=1:(opts.n_s + rbp)
                                 lambda_ijr = obj.w.lambda(ii,jj,rr);
 
                                 Gij = vertcat(Gij, {lambda_prev});
@@ -446,7 +446,7 @@ classdef Gcs < vdx.problems.Mpcc
                             end
                             for kk=1:(opts.n_s + rbp)
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
-                                for rr=1:opts.n_s
+                                for rr=1:(opts.n_s + rbp)
                                     x_ijr = obj.w.x(ii,jj,rr);
                                     z_ijr = obj.w.z(ii,jj,rr);
                                     c_ijr = dcs.c_fun(x_ijr,z_ijr, v_global, p);
@@ -471,7 +471,7 @@ classdef Gcs < vdx.problems.Mpcc
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
                             Gij = {sum_lambda};
                             Hij = {c_prev};
-                            for kk=1:opts.n_s
+                            for kk=1:(opts.n_s + rbp)
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
                                 c_ijk = dcs.c_fun(x_ijk,z_ijk, v_global, p);
@@ -493,7 +493,7 @@ classdef Gcs < vdx.problems.Mpcc
                         p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
                             sum_c = c_fun(x_prev);
-                            for kk=1:opts.n_s
+                            for kk=1:(opts.n_s + rbp)
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
                                 c_ijk = dcs.c_fun(x_ijk,z_ijk,v_global,p);
@@ -522,7 +522,7 @@ classdef Gcs < vdx.problems.Mpcc
                         for jj=1:opts.N_finite_elements(ii);
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
                             sum_c = c_fun(x_prev);
-                            for kk=1:opts.n_s
+                            for kk=1:(opts.n_s + rbp)
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
                                 c_ijk = dcs.c_fun(x_ijk,z_ijk,v_global,p);
@@ -538,14 +538,13 @@ classdef Gcs < vdx.problems.Mpcc
                     end
                 end
             else
-                
                 obj.G.standard_comp(0,0,opts.n_s) = {lambda_prev};
                 obj.H.standard_comp(0,0,opts.n_s) = {c_prev};
                 for ii=1:opts.N_stages
                     for jj=1:opts.N_finite_elements(ii);
                         Gij = {};
                         Hij = {};
-                        for kk=1:opts.n_s
+                        for kk=1:(opts.n_s + rbp)
                             lambda_ijk = obj.w.lambda(ii,jj,kk);
                             x_ijk = obj.w.x(ii,jj,kk);
                             z_ijk = obj.w.z(ii,jj,kk);
@@ -590,16 +589,28 @@ classdef Gcs < vdx.problems.Mpcc
               case StepEquilibrationMode.l2_relaxed_scaled
                 eta_vec = [];
                 for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
-                        
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
-                        
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
+                        sigma_c_B = 0;
+                        sigma_lambda_B = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            sigma_c_B = sigma_c_B + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_B = sigma_lambda_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_c_F = 0;
+                        sigma_lambda_F = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
+
+                            sigma_c_F = sigma_c_F + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_F = sigma_lambda_F + obj.w.lambda(ii,jj,kk);
+                        end
+
+                        pi_c = sigma_c_B .* sigma_c_F;
+                        pi_lam = sigma_lambda_B .* sigma_lambda_F;
+                        nu = pi_c + pi_lam;
                         eta = 1;
                         for jjj=1:length(nu)
                             eta = eta*nu(jjj);
@@ -608,20 +619,32 @@ classdef Gcs < vdx.problems.Mpcc
                         delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
                         obj.f = obj.f + obj.p.rho_h_p() * tanh(eta/opts.step_equilibration_sigma) * delta_h.^2;
                     end
-                end
+                                end
               case StepEquilibrationMode.l2_relaxed
                 eta_vec = [];
                 for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
-                        
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) +sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_c_B = 0;
+                        sigma_lambda_B = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            sigma_c_B = sigma_c_B + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_B = sigma_lambda_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_c_F = 0;
+                        sigma_lambda_F = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
 
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
+                            sigma_c_F = sigma_c_F + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_F = sigma_lambda_F + obj.w.lambda(ii,jj,kk);
+                        end
+
+                        pi_c = sigma_c_B .* sigma_c_F;
+                        pi_lam = sigma_lambda_B .* sigma_lambda_F;
+                        nu = pi_c + pi_lam;
                         eta = 1;
                         for jjj=1:length(nu)
                             eta = eta*nu(jjj);
@@ -634,16 +657,29 @@ classdef Gcs < vdx.problems.Mpcc
               case StepEquilibrationMode.direct
                 eta_vec = [];
                 for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
-                        
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_c_B = 0;
+                        sigma_lambda_B = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            sigma_c_B = sigma_c_B + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_B = sigma_lambda_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_c_F = 0;
+                        sigma_lambda_F = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
 
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
+                            sigma_c_F = sigma_c_F + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_F = sigma_lambda_F + obj.w.lambda(ii,jj,kk);
+                        end
+
+                        pi_c = sigma_c_B .* sigma_c_F;
+                        pi_lam = sigma_lambda_B .* sigma_lambda_F;
+                        nu = pi_c + pi_lam;
+
                         eta = 1;
                         for jjj=1:length(nu)
                             eta = eta*nu(jjj);
@@ -658,16 +694,28 @@ classdef Gcs < vdx.problems.Mpcc
                 error("not currently implemented")
                 eta_vec = [];
                 for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
-                        
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_c_B = 0;
+                        sigma_lambda_B = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            sigma_c_B = sigma_c_B + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_B = sigma_lambda_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_c_F = 0;
+                        sigma_lambda_F = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
 
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
+                            sigma_c_F = sigma_c_F + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_F = sigma_lambda_F + obj.w.lambda(ii,jj,kk);
+                        end
+
+                        pi_c = sigma_c_B .* sigma_c_F;
+                        pi_lam = sigma_lambda_B .* sigma_lambda_F;
+                        nu = pi_c + pi_lam;
                         eta = 1;
                         for jjj=1:length(nu)
                             eta = eta*nu(jjj);
@@ -682,38 +730,49 @@ classdef Gcs < vdx.problems.Mpcc
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.mlcp
                 for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(ii)
-                        h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
-                        
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
+                        sigma_c_B = 0;
+                        sigma_lambda_B = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            sigma_c_B = sigma_c_B + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_B = sigma_lambda_B + obj.w.lambda(ii,jj-1,kk);
+                        end
+                        sigma_c_F = 0;
+                        sigma_lambda_F = 0;
+                        for kk=1:(opts.n_s + rbp)
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
+
+                            sigma_c_F = sigma_c_F + dcs.c_fun(x_ijk,z_ijk, v_global, p);
+                            sigma_lambda_F = sigma_lambda_F + obj.w.lambda(ii,jj,kk);
+                        end
 
                         lambda_lambda = obj.w.lambda_lambda(ii,jj);
-                        lambda_theta = obj.w.lambda_theta(ii,jj);
+                        lambda_c = obj.w.lambda_c(ii,jj);
                         B_max = obj.w.B_max(ii,jj);
                         pi_lambda = obj.w.pi_lambda(ii,jj);
-                        pi_theta = obj.w.pi_theta(ii,jj);
+                        pi_c = obj.w.pi_c(ii,jj);
                         eta = obj.w.eta(ii,jj);
                         nu = obj.w.nu(ii,jj);
 
                         obj.g.pi_lambda_or(ii,jj) = {[pi_lambda-sigma_lambda_F;pi_lambda-sigma_lambda_B;sigma_lambda_F+sigma_lambda_B-pi_lambda],0,inf};
-                        obj.g.pi_theta_or(ii,jj) = {[pi_theta-sigma_theta_F;pi_theta-sigma_theta_B;sigma_theta_F+sigma_theta_B-pi_theta],0,inf};
+                        obj.g.pi_c_or(ii,jj) = {[pi_c-sigma_c_F;pi_c-sigma_c_B;sigma_c_F+sigma_c_B-pi_c],0,inf};
 
                         % kkt conditions for min B, B>=sigmaB, B>=sigmaF
-                        kkt_max = [1-lambda_theta-lambda_lambda;
+                        kkt_max = [1-lambda_c-lambda_lambda;
                             B_max-pi_lambda;
-                            B_max-pi_theta];
+                            B_max-pi_c];
                         obj.g.kkt_max(ii,jj) = {kkt_max,
                             [0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1)],
                             [0*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
 
-                        obj.G.step_eq_kkt_max(ii,jj) = {[(B_max-pi_lambda);(B_max-pi_theta)]};
-                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_lambda;lambda_theta]};
+                        obj.G.step_eq_kkt_max(ii,jj) = {[(B_max-pi_lambda);(B_max-pi_c)]};
+                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_lambda;lambda_c]};
                         
                         % eta calculation
-                        eta_const = [eta-pi_theta;eta-pi_lambda;eta-pi_theta-pi_lambda+B_max];
+                        eta_const = [eta-pi_c;eta-pi_lambda;eta-pi_c-pi_lambda+B_max];
                         obj.g.eta_const(ii,jj) = {eta_const,
                             [-inf*ones(dims.n_lambda,1);-inf*ones(dims.n_lambda,1);zeros(dims.n_lambda,1)],
                             [zeros(dims.n_lambda,1);zeros(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
