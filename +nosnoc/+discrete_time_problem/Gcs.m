@@ -208,6 +208,7 @@ classdef Gcs < vdx.problems.Mpcc
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case RKRepresentation.differential
+                        error("Differential representation is currently unsupported")
                         % In differential representation stage variables are the state derivatives.
                         X_ijk = {};
                         for kk = 1:opts.n_s
@@ -408,6 +409,7 @@ classdef Gcs < vdx.problems.Mpcc
             dcs = obj.dcs;
             model = obj.model;
             % Do Cross-Complementarity
+            % TODO(@anton) correctly handle differential rk representation.
 
             rbp = ~opts.right_boundary_point_explicit;
 
@@ -417,91 +419,140 @@ classdef Gcs < vdx.problems.Mpcc
             x_prev = obj.w.x(0,0,opts.n_s);
             z_prev = obj.w.z(0,0,opts.n_s);
             lambda_prev = obj.w.lambda(0,0,opts.n_s);
+            c_prev = dcs.c_fun(x_prev,z_prev, v_global, [p_global;obj.p.p_time_var(1)]);
 
             if opts.use_fesd
                 switch opts.cross_comp_mode
                   case CrossCompMode.STAGE_STAGE
                     for ii=1:opts.N_stages
                         p_stage = obj.p.p_time_var(ii);
-                        for rr=1:opts.n_s
-                            theta_ijr = obj.w.theta(ii,jj,rr);
-
-                            Gij = vertcat(Gij, lambda_prev);
-                            Hij = vertcat(Hij, theta_ijr);
-                        end
+                        p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
                             Gij = {};
                             Hij = {};
+                            for rr=1:opts.n_s
+                                x_ijr = obj.w.x(ii,jj,rr);
+                                z_ijr = obj.w.z(ii,jj,rr);
+                                c_ijr = dcs.c_fun(x_ijr,z_ijr, v_global, p);
+
+                                Gij = vertcat(Gij, {lambda_prev});
+                                Hij = vertcat(Hij, {c_ijr});
+                            end
+                            for rr=1:opts.n_s
+                                lambda_ijr = obj.w.lambda(ii,jj,rr);
+
+                                Gij = vertcat(Gij, {lambda_prev});
+                                Hij = vertcat(Hij, {c_prev});
+                            end
                             for kk=1:(opts.n_s + rbp)
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
                                 for rr=1:opts.n_s
-                                    theta_ijr = obj.w.theta(ii,jj,rr);
-
-                                    Gij = vertcat(Gij, lambda_ijk);
-                                    Hij = vertcat(Hij, theta_ijr);
+                                    x_ijr = obj.w.x(ii,jj,rr);
+                                    z_ijr = obj.w.z(ii,jj,rr);
+                                    c_ijr = dcs.c_fun(x_ijr,z_ijr, v_global, p);
+                                    
+                                    Gij = vertcat(Gij, {lambda_ijk});
+                                    Hij = vertcat(Hij, {c_ijr});
                                 end
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
                             lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                            x_prev = obj.w.x(ii,jj,opts.n_s + rbp);
+                            z_prev = obj.w.z(ii,jj,opts.n_s + rbp);
+                            c_prev = dcs.c_fun(x_prev,z_prev, v_global, p);
                         end
                     end
                   case CrossCompMode.FE_STAGE
                     for ii=1:opts.N_stages
+                        p_stage = obj.p.p_time_var(ii);
+                        p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
-                            Gij = {};
-                            Hij = {};
+                            Gij = {sum_lambda};
+                            Hij = {c_prev};
                             for kk=1:opts.n_s
-                                theta_ijk = obj.w.theta(ii,jj,kk);
+                                x_ijk = obj.w.x(ii,jj,kk);
+                                z_ijk = obj.w.z(ii,jj,kk);
+                                c_ijk = dcs.c_fun(x_ijk,z_ijk, v_global, p);
 
                                 Gij = vertcat(Gij, {sum_lambda});
-                                Hij = vertcat(Hij, {theta_ijk});
+                                Hij = vertcat(Hij, {c_ijk});
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
                             lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                            x_prev = obj.w.x(ii,jj,opts.n_s + rbp);
+                            z_prev = obj.w.z(ii,jj,opts.n_s + rbp);
+                            c_prev = dcs.c_fun(x_prev,z_prev, v_global, p);
                         end
                     end
                   case CrossCompMode.STAGE_FE
                     for ii=1:opts.N_stages
+                        p_stage = obj.p.p_time_var(ii);
+                        p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_theta = sum2(obj.w.theta(ii,jj,:));
+                            sum_c = c_fun(x_prev);
+                            for kk=1:opts.n_s
+                                x_ijk = obj.w.x(ii,jj,kk);
+                                z_ijk = obj.w.z(ii,jj,kk);
+                                c_ijk = dcs.c_fun(x_ijk,z_ijk,v_global,p);
+                                sum_c = sum_c + c_ijk;
+                            end
                             Gij = {lambda_prev};
-                            Hij = {sum_theta};
+                            Hij = {sum_c};
                             for kk=1:(opts.n_s + rbp)
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
 
                                 Gij = vertcat(Gij, {lambda_ijk});
-                                Hij = vertcat(Hij, {sum_theta});
+                                Hij = vertcat(Hij, {sum_c});
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
                             lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                            x_prev = obj.w.x(ii,jj,opts.n_s + rbp);
+                            z_prev = obj.w.z(ii,jj,opts.n_s + rbp);
+                            c_prev = dcs.c_fun(x_prev,z_prev, v_global, p);
                         end
                     end
                   case CrossCompMode.FE_FE
                     for ii=1:opts.N_stages
+                        p_stage = obj.p.p_time_var(ii);
+                        p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
-                            sum_theta = sum2(obj.w.theta(ii,jj,:));
+                            sum_c = c_fun(x_prev);
+                            for kk=1:opts.n_s
+                                x_ijk = obj.w.x(ii,jj,kk);
+                                z_ijk = obj.w.z(ii,jj,kk);
+                                c_ijk = dcs.c_fun(x_ijk,z_ijk,v_global,p);
+                                sum_c = sum_c + c_ijk;
+                            end
                             obj.G.cross_comp(ii,jj) = {sum_lambda};
-                            obj.H.cross_comp(ii,jj) = {sum_theta};
+                            obj.H.cross_comp(ii,jj) = {sum_c};
                             lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                            x_prev = obj.w.x(ii,jj,opts.n_s + rbp);
+                            z_prev = obj.w.z(ii,jj,opts.n_s + rbp);
+                            c_prev = dcs.c_fun(x_prev,z_prev, v_global, p);
                         end
                     end
                 end
             else
+                
+                obj.G.standard_comp(0,0,opts.n_s) = {lambda_prev};
+                obj.H.standard_comp(0,0,opts.n_s) = {c_prev};
                 for ii=1:opts.N_stages
                     for jj=1:opts.N_finite_elements(ii);
                         Gij = {};
                         Hij = {};
                         for kk=1:opts.n_s
                             lambda_ijk = obj.w.lambda(ii,jj,kk);
-                            theta_ijk = obj.w.theta(ii,jj,kk);
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            z_ijk = obj.w.z(ii,jj,kk);
+                            c_ijk = dcs.c_fun(x_ijk,z_ijk,v_global,p);
 
                             obj.G.standard_comp(ii,jj, kk) = {lambda_ijk};
-                            obj.H.standard_comp(ii,jj, kk) = {theta_ijk};
+                            obj.H.standard_comp(ii,jj, kk) = {c_ijk};
                         end
                     end
                 end
