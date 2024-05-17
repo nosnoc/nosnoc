@@ -11,9 +11,12 @@ solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.time_optimal_problem = 1;
-problem_options.N_stages = 10; % number of control intervals
+problem_options.N_stages = 11; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 1;    % Time horizon
+
+problem_options.step_equilibration = StepEquilibrationMode.mlcp;
+
 % problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 %% Create model
 model = nosnoc.model.Heaviside();  % same as PSS+Heaviside, this creates a nosnoc.dcs.heaviside
@@ -35,7 +38,6 @@ model.f_x = f_rhs;
 model.c = c;
 % Add terminal constraint
 model.g_terminal = [x-2];
-model.f_q = u^2;
 
 %% create solver and solve problem
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
