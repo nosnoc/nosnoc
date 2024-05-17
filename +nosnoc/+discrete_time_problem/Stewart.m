@@ -378,7 +378,7 @@ classdef Stewart < vdx.problems.Mpcc
             % Terminal_lsq_cost
             obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(x_end,...
                     model.x_ref_end_val,...
-                    p);
+                    p_global);
             
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
