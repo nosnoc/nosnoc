@@ -761,19 +761,19 @@ classdef Heaviside < vdx.problems.Mpcc
             if opts.right_boundary_point_explicit
                 results.x = obj.discrete_time_problem.w.x(:,:,obj.opts.n_s).res;
                 results.z = obj.discrete_time_problem.w.z(:,:,obj.opts.n_s).res;
-                results.lambda = obj.discrete_time_problem.w.lambda(:,:,obj.opts.n_s).res;
-                results.mu = obj.discrete_time_problem.w.mu(:,:,obj.opts.n_s).res;
-                results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s).res;
+                results.lambda_n = obj.discrete_time_problem.w.lambda_n(:,:,obj.opts.n_s).res;
+                results.lambda_p = obj.discrete_time_problem.w.lambda_p(:,:,obj.opts.n_s).res;
+                results.alpha = obj.discrete_time_problem.w.alpha(:,:,obj.opts.n_s).res;
             else
                 results.x = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
                     obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
                 results.z = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
                     obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.lambda = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.mu = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s+1).res;
+                results.lambda_n = [obj.discrete_time_problem.w.lambda_n(0,0,obj.opts.n_s).res,...
+                    obj.discrete_time_problem.w.lambda_n(1:opts.N_stages,:,obj.opts.n_s+1).res];
+                results.lambda_p = [obj.discrete_time_problem.w.lambda_p(0,0,obj.opts.n_s).res,...
+                    obj.discrete_time_problem.w.lambda_p(1:opts.N_stages,:,obj.opts.n_s+1).res];
+                results.alpha = obj.discrete_time_problem.w.alpha(:,:,obj.opts.n_s+1).res;
             end
             results.u = obj.w.u.res;
 
