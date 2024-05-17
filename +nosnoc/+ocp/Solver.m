@@ -47,6 +47,8 @@ classdef Solver < handle
                 error("not implemented")
               case "nosnoc.model.Pds"
                 error("not implemented")
+              otherwise
+                error("Unknown model type")
             end
         end
 
