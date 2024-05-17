@@ -304,7 +304,6 @@ classdef Gcs < vdx.problems.Mpcc
                             x_ijk = obj.w.x(ii,jj,opts.n_s+1);
                             z_ijk = obj.w.z(ii,jj,opts.n_s+1);
                             lambda_ijk = obj.w.lambda(ii,jj,opts.n_s+1);
-                            mu_ijk = obj.w.mu(ii,jj,opts.n_s+1);
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.c_lb(ii,jj,opts.n_s+1) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};

@@ -46,7 +46,11 @@ classdef Solver < handle
               case "nosnoc.model.Cls"
                 error("not implemented")
               case "nosnoc.model.Pds"
-                error("not implemented")
+                obj.dcs = nosnoc.dcs.Gcs(model);
+                obj.dcs.generate_variables(opts);
+                obj.dcs.generate_equations(opts);
+                obj.discrete_time_problem = nosnoc.discrete_time_problem.Gcs(obj.dcs, opts);
+                obj.discrete_time_problem.populate_problem();
               otherwise
                 error("Unknown model type")
             end

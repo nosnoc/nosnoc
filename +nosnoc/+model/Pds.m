@@ -26,15 +26,15 @@ classdef Pds < nosnoc.model.Base
 
             dims.n_c = size(obj.c,1);
 
-            if ~isempty(E)
-                if size(E, 1) ~= size(E,2)
-                    error("nosnoc: Projection matrix E must be square.");
+            if ~isempty(obj.E)
+                if size(obj.E, 1) ~= dims.n_x
+                    error("nosnoc: Projection matrix E must be an n_x by n_x matrix where n_x is the number of functions defining the set C.")
                 end
-                if size(E, 1) ~= dims.n_c
-                    error("nosnoc: Projection matrix E must be an n_c by n_c matrix where n_c is the number of functions defining the set C.")
+                if size(obj.E, 2) ~= dims.n_x
+                    error("nosnoc: Projection matrix E must be an n_x by n_x matrix where n_x is the number of functions defining the set C.")
                 end
             else
-                E = eye(dims.n_c);
+                obj.E = eye(dims.n_c);
             end
 
             obj.dims = dims;
