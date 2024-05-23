@@ -97,7 +97,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     if opts.decreasing_s_elastic_upper_bound
                         nlp.g.s_ub = {nlp.w.s_elastic() - nlp.p.sigma_p(), -inf, 0};
                     end
-                    
+
                     sigma = nlp.w.s_elastic(); % Here s_elastic takes the role of sigma in direct, and sigma_p is used to define a penalty parameter for the elastic variable s_elastic
                     if opts.objective_scaling_direct
                         nlp.f = nlp.f + (1/nlp.p.sigma_p())*sigma; % penalize the elastic more and more with decreasing sigma_p
@@ -112,7 +112,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     if opts.decreasing_s_elastic_upper_bound
                         nlp.g.s_ub = {nlp.w.s_elastic() - nlp.p.sigma_p(), -inf, 0};
                     end
-                    
+
                     sigma = nlp.w.s_elastic();
                     sum_elastic = sum1(sigma);
                     if opts.objective_scaling_direct
@@ -777,6 +777,11 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             ii = 0;
             last_iter_failed = 0;
             timeout = 0;
+
+            % reset s_elastic
+            if opts.homotopy_steering_strategy ~= 'DIRECT'
+                obj.nlp.w.s_elastic().init = opts.s_elastic_0;
+            end
 
             if opts.print_level >= 3
                 plugin.print_nlp_iter_header();
