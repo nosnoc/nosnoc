@@ -3,16 +3,16 @@ classdef Stewart < nosnoc.dcs.Base
         model
 
         theta
-        theta_sys
+        theta_sys % cell containing the thete variables of every subsystem, wheras theta stores the concatenation of all these vectors;
         lambda
-        lambda_sys
+        lambda_sys  % same as theta_sys
         mu
-        mu_sys
+        mu_sys % same as theta_sys
 
-        z_all
+        z_all % all algebraic variables (user provided and Stewart DCS specific)
 
-        f_x
-        g_Stewart
+        f_x  % r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems
+        g_Stewart % TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
 
         sys_idx
 
@@ -52,7 +52,7 @@ classdef Stewart < nosnoc.dcs.Base
                 obj.lambda = [obj.lambda;obj.lambda_sys{ii}];
             end
 
-            % symbolic variables z = [theta;lambda;mu_Stewart];
+            % symbolic variables z_all = [theta;lambda_stewart;mu_stewart;z_user_algebarics];
             obj.z_all = [obj.theta;obj.lambda;obj.mu;obj.model.z];
             obj.dims = dims;
         end
@@ -68,12 +68,12 @@ classdef Stewart < nosnoc.dcs.Base
                 obj.f_x = obj.f_x + model.F{ii}*obj.theta_sys{ii};
             end
 
-            g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i, 0 = c(x)-lambda_p+lambda_n
+            g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i
             g_convex = []; % equation for the convex multiplers 1 = e' \theta
             
             lambda00_expr =[];
             for ii = 1:dims.n_sys
-                % basic algebraic equations and complementarity condtions of the DCS
+                % algebraic equations and complementarity condtions of the DCS
                 % (Note that the cross complementarities are later defined when the discrete
                 % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
                 % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_sys
