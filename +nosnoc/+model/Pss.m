@@ -1,9 +1,9 @@
 classdef Pss < nosnoc.model.Base
     properties
-        F
-        S
-        c
-        g_ind
+        F % n_x times n_f matrix whose columns define the vector fields in the correspoding PSS regions
+        S % sign matrix
+        c % switching functions defining region boundaries
+        g_ind % Vector of length n_f containing all Stewart indicator functions
     end
 
     methods
@@ -61,7 +61,7 @@ classdef Pss < nosnoc.model.Base
                 end
             else
                 if ~iscell(obj.g_ind)
-                    obj.g_ind = {obj.g_ind}
+                    obj.g_ind = {obj.g_ind};
                 end
             end
 

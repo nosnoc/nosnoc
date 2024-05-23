@@ -19,13 +19,13 @@ classdef Base < matlab.mixin.Scalar & handle
         ubu
         u0
 
-        % global variables
+        % global variables (not time dependent)
         v_global
         v0_global
         lbv_global
         ubv_global
         
-        % global parameters
+        % global parameters (not time dependent)
         p_global
         p_global_val
 
@@ -34,7 +34,7 @@ classdef Base < matlab.mixin.Scalar & handle
         p_time_var_val
         % params
         p_time_var_stages
-        % All params
+        % all params
         p
 
         % TODO: maybe a separate OCP class common to all model types?
