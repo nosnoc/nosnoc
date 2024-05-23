@@ -84,7 +84,7 @@ ocp_solver.solve();
 
 %% Plot results
 x = ocp_solver.get_x();
-u = ocp_solver.getU();
+u = ocp_solver.get_u();
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();
 
