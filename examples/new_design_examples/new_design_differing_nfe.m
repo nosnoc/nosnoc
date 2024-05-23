@@ -6,7 +6,6 @@ import nosnoc.*
 %% populate options
 problem_options = nosnoc.Options(); % problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
-
 %% set some options
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_representation = RKRepresentation.differential_lift_x;
@@ -14,15 +13,16 @@ problem_options.n_s = 2;
 problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 2*ones(20,1); % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.N_finite_elements(1:5) = 4;
-problem_options.T = 40;    % Time horizon
+% problem_options.N_finite_elements(10:end) = 1;
+problem_options.T = 20;    % Time horizon
 problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 
-%problem_options.x_box_at_stg = 0;
-%problem_options.x_box_at_fe = 0;
-problem_options.relax_terminal_constraint = 1;
+problem_options.x_box_at_stg = 0;
+problem_options.x_box_at_fe = 0;
+problem_options.relax_terminal_constraint = "NONE";
+problem_options.rho_terminal = 1e4; 
 %problem_options.relax_terminal_numerical_time = false;
 %% Create model
-% model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 
 q = SX.sym('q'); 
 v = SX.sym('v'); 
@@ -31,7 +31,7 @@ model.x = [q;v];
 model.x0 = [0;0];
 model.lbx = [-inf;-20]; model.ubx = [inf;20];
 model.u = u;
-model.lbu = -5; model.ubu = 5;
+model.lbu = -10; model.ubu = 10;
 % Dyanmics and the regions
 f_1 = [v;u]; % mode 1 - nominal
 f_2 = [v;3*u]; % mode 2 - turbo
@@ -51,9 +51,14 @@ x = ocp_solver.get_x();
 u = ocp_solver.getU();
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();
-
+%% plot
 figure
-plot(t_grid, x);
+subplot(121)
+plot(t_grid, x(1,:));
+grid on
+subplot(122)
+plot(t_grid, x(2,:));
+grid on
 figure
 stairs(t_grid_u, [u,u(end)])
 % how to create an integrator?
