@@ -11,7 +11,6 @@ T_sim = 0.75;
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.n_s = 1;
-settings.homotopy_update_slope = 0.1;
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation= 'differential';
@@ -20,7 +19,6 @@ problem_options.dcs_mode = 'Stewart';
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
-
 
 model = nosnoc.model.Pss();
 

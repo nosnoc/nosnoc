@@ -17,6 +17,7 @@ problem_options.T = 1.0;    % Time horizon
 problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 problem_options.time_optimal_problem = true;
 problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
+
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 
