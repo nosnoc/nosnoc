@@ -19,6 +19,7 @@ problem_options.dcs_mode = 'Stewart';
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
+problem_options.use_fesd  = 0;
 
 model = nosnoc.model.Pss();
 
