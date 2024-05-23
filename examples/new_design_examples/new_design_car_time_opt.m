@@ -44,18 +44,21 @@ ocp_solver.solve();
 
 %% Plot resukts
 x = ocp_solver.get_x();
-u = ocp_solver.getU();
+u = ocp_solver.get_u();
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();
-h_res = ocp_solver.discrete_time_problem.w.h.res;
 figure
 plot(t_grid, x(1,:));
 figure
 plot(t_grid, x(2,:));
 figure
 stairs(t_grid_u, [u,u(end)])
-figure
-stairs(t_grid, [h_res, h_res(end)])
+
+if problem_options.use_fesd 
+    h_res = ocp_solver.discrete_time_problem.w.h.res;
+    figure
+    stairs(t_grid, [h_res, h_res(end)])
+end
 % how to create an integrator?
 % integrator = nosnoc.Integrator(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.
 % [results,stats] = integrator.solve();

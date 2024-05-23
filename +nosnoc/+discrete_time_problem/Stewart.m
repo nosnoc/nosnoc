@@ -136,12 +136,7 @@ classdef Stewart < vdx.problems.Mpcc
             
             x_prev = obj.w.x(0,0,opts.n_s);
             for ii=1:opts.N_stages
-                if obj.opts.use_fesd
-                    t_stage = obj.p.T()/opts.N_stages;
-                    h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
-                else
-                    h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
-                end
+                h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
                 
                 ui = obj.w.u(ii);
                 p_stage = obj.p.p_time_var(ii);
@@ -153,14 +148,22 @@ classdef Stewart < vdx.problems.Mpcc
                 else
                     s_sot = 1;
                 end
+                if opts.time_optimal_problem && ~opts.use_speed_of_time_variables
+                    t_stage = obj.w.T_final()/(opts.N_stages*opts.N_finite_elements(ii));
+                elseif opts.time_optimal_problem
+                    t_stage = s_sot*obj.p.T()/opts.N_stages;
+                else
+                    t_stage = obj.p.T()/opts.N_stages;
+                end
+
 
                 sum_h = 0;
                 for jj=1:opts.N_finite_elements(ii)
                     if obj.opts.use_fesd
                         h = obj.w.h(ii,jj);
                         sum_h = sum_h + h;
-                    elseif opts.time_optimal_problem && ~opts.use_spee_of_time_variables
-                        h = 0; % TODO
+                    elseif opts.time_optimal_problem && ~opts.use_speed_of_time_variables
+                        h = obj.w.T_final()/(opts.N_stages*opts.N_finite_elements(ii));
                     else
                         h = h0;
                     end
@@ -717,19 +720,21 @@ classdef Stewart < vdx.problems.Mpcc
             opts = obj.opts;
             T_val = obj.p.T().val;
 
-            for ii=1:opts.N_stages
-                for jj=1:opts.N_finite_elements(ii)
-                    % Recalculate ubh and lbh based on T_val
-                    h0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
-                    ubh = (1 + opts.gamma_h) * h0;
-                    lbh = (1 - opts.gamma_h) * h0;
-                    if opts.time_rescaling && ~opts.use_speed_of_time_variables
-                        % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
-                        ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
-                        lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+            if opts.use_fesd
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(ii)
+                        % Recalculate ubh and lbh based on T_val
+                        h0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
+                        ubh = (1 + opts.gamma_h) * h0;
+                        lbh = (1 - opts.gamma_h) * h0;
+                        if opts.time_rescaling && ~opts.use_speed_of_time_variables
+                            % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
+                            ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
+                            lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                        end
+                        obj.w.h(ii,jj).lb = lbh;
+                        obj.w.h(ii,jj).ub = ubh;
                     end
-                    obj.w.h(ii,jj).lb = lbh;
-                    obj.w.h(ii,jj).ub = ubh;
                 end
             end
 

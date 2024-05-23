@@ -61,19 +61,27 @@ classdef Solver < handle
             end
         end
 
-        function u = getU(obj)
+        function u = get_u(obj)
             u = obj.discrete_time_problem.w.u(:).res;
         end
 
         function t_grid = get_time_grid(obj)
-            h = obj.discrete_time_problem.w.h(:,:).res;
+            if obj.opts.use_fesd
+                h = obj.discrete_time_problem.w.h(:,:).res;
+            else
+                h = obj.discrete_time_problem.p.T().val/(sum(obj.opts.N_finite_elements))*(ones(1, sum(obj.opts.N_finite_elements)));
+            end
             t_grid = cumsum([0, h]);
         end
 
         function t_grid = get_control_grid(obj)
             t_grid = [0];
             for ii=1:obj.opts.N_stages
-                h_sum = sum(obj.discrete_time_problem.w.h(ii,:).res);
+                if obj.opts.use_fesd
+                    h_sum = sum(obj.discrete_time_problem.w.h(ii,:).res);
+                else
+                    h_sum = obj.discrete_time_problem.p.T().val/obj.opts.N_stages;
+                end
                 t_grid = [t_grid, t_grid(end)+h_sum];
             end
         end
