@@ -17,7 +17,7 @@ problem_options.T = 1.0;    % Time horizon
 problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 problem_options.time_optimal_problem = true;
 problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
-
+problem_options.use_fesd = 0;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 
@@ -42,14 +42,16 @@ model.g_terminal = [q-200;v-0];
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
+%% Plot resukts
 x = ocp_solver.get_x();
 u = ocp_solver.getU();
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();
 h_res = ocp_solver.discrete_time_problem.w.h.res;
-
 figure
-plot(t_grid, x);
+plot(t_grid, x(1,:));
+figure
+plot(t_grid, x(2,:));
 figure
 stairs(t_grid_u, [u,u(end)])
 figure
