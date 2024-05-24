@@ -16,7 +16,7 @@ classdef Stewart < nosnoc.dcs.Base
 
         dims
 
-        g_switching_fun
+        g_lp_stationarity_fun
         g_Stewart_fun
         lambda00_fun
     end
@@ -66,7 +66,7 @@ classdef Stewart < nosnoc.dcs.Base
                 obj.f_x = obj.f_x + model.F{ii}*obj.theta_sys{ii};
             end
 
-            g_switching = []; % collects switching function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i
+            g_lp_stationarity = []; % collects lp_stationarity function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i
             g_convex = []; % equation for the convex multiplers 1 = e' \theta
             
             lambda00_expr =[];
@@ -79,17 +79,17 @@ classdef Stewart < nosnoc.dcs.Base
                 % lambda_i >= 0;    for all i = 1,..., n_sys
                 % theta_i >= 0;     for all i = 1,..., n_sys
                 % Gradient of Lagrange Function of indicator LP
-                g_switching = [g_switching; model.g_ind{ii} - obj.lambda_sys{ii}+obj.mu_sys{ii}*ones(dims.n_f_sys(ii),1)];
+                g_lp_stationarity = [g_lp_stationarity; model.g_ind{ii} - obj.lambda_sys{ii}+obj.mu_sys{ii}*ones(dims.n_f_sys(ii),1)];
                 g_convex = [g_convex;ones(dims.n_f_sys(ii),1)'*obj.theta_sys{ii} - 1];
                 lambda00_expr = [lambda00_expr; model.g_ind{ii} - min(model.g_ind{ii})];
             end
-            g_alg = [g_switching;g_convex];
+            g_alg = [g_lp_stationarity;g_convex];
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {g_alg});
-            obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_switching});
+            obj.g_lp_stationarity_fun = Function('g_lp_stationarity', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_lp_stationarity});
             obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {model.g_ind{:}});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
