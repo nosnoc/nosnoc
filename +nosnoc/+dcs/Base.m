@@ -5,7 +5,8 @@ classdef Base < matlab.mixin.Scalar & handle
         g_z_fun
         g_alg_fun
         g_path_fun
-        g_comp_path_fun
+        G_path_fun
+        H_path_fun
         g_terminal_fun
         f_q_T_fun
         f_lsq_x_fun

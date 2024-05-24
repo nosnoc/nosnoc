@@ -37,7 +37,6 @@ classdef Base < matlab.mixin.Scalar & handle
         % all params
         p
 
-        % TODO: maybe a separate OCP class common to all model types?
         % Objective
         f_q
         f_q_T
@@ -66,8 +65,9 @@ classdef Base < matlab.mixin.Scalar & handle
         lbg_terminal
         ubg_terminal
 
-        % 
-        g_comp_path
+        % Path Complementarities
+        G_path
+        H_path
 
         % Dimensions
         dims
@@ -379,14 +379,10 @@ classdef Base < matlab.mixin.Scalar & handle
             end
 
             %% Check path complementarity constraints
-            g_comp_path_constraint  = 0;
-            if size(obj.g_comp_path, 1) ~= 0
-                g_comp_path_constraint = 1;
-                if size(obj.g_comp_path, 2) ~= 2
-                    error('g_comp_path must be of size (m, 2)')
+            if size(obj.G_path, 1) ~= 0
+                if size(obj.G_path, 1) ~= size(obj.H_path, 1)
+                    error('G_path and H_path must be the same size')
                 end
-            else
-                g_comp_path_constraint = 0;
             end
             %% Terminal constraints
             if size(obj.g_terminal, 1) ~= 0

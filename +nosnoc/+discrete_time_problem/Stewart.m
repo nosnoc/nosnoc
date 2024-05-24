@@ -83,7 +83,6 @@ classdef Stewart < vdx.problems.Mpcc
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf, 1};
-            %obj.w.theta(0,0,opts.n_s) = {{['theta'], dims.n_lambda},0,inf, 1/dims.n_theta};
             obj.w.mu(0,0,opts.n_s) = {{'mu', dims.n_mu},0,inf};
             for ii=1:opts.N_stages
                 if (opts.rk_representation == RKRepresentation.integral ||...
@@ -195,10 +194,11 @@ classdef Stewart < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
-                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            if size(model.G_path, 1) > 0
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {G_path};
+                                obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
@@ -248,10 +248,11 @@ classdef Stewart < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
-                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            if size(model.G_path, 1) > 0
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {G_path};
+                                obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
@@ -303,10 +304,11 @@ classdef Stewart < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
-                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            if size(model.G_path, 1) > 0
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {G_path};
+                                obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
