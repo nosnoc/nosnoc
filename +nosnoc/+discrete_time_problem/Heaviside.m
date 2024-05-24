@@ -191,10 +191,11 @@ classdef Heaviside < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
-                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            if size(model.G_path, 1) > 0
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {G_path};
+                                obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
@@ -244,10 +245,11 @@ classdef Heaviside < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
-                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            if size(model.G_path, 1) > 0
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {G_path};
+                                obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
@@ -300,10 +302,11 @@ classdef Heaviside < vdx.problems.Mpcc
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
-                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            if size(model.G_path, 1) > 0
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                obj.G.path(ii,jj,kk) = {G_path};
+                                obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
