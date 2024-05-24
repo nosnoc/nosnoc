@@ -19,7 +19,7 @@ problem_options.dcs_mode = 'Stewart';
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
-problem_options.use_fesd  = 0;
+problem_options.use_fesd = 1;
 
 model = nosnoc.model.Pss();
 
@@ -41,5 +41,28 @@ xlabel('$t$','Interpreter','latex')
 ylabel('$x(t)$','Interpreter','latex')
 grid on
 
+% or an alternate way to get data:
+t_grid = integrator.get_time_grid();
+x_res = integrator.get('x');
+lam_res = integrator.get('lambda');
+theta_res = integrator.get('theta');
+figure
+plot(t_grid, x_res)
+grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$x(t)$','Interpreter','latex')
+grid on
 
+figure
+plot(t_grid, lam_res)
+grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$\lambda(t)$','Interpreter','latex')
+grid on
 
+figure
+plot(t_grid(2:end), theta_res)
+grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$\theta(t)$','Interpreter','latex')
+grid on

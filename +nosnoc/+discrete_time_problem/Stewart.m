@@ -83,6 +83,7 @@ classdef Stewart < vdx.problems.Mpcc
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf, 1};
+            %obj.w.theta(0,0,opts.n_s) = {{['theta'], dims.n_lambda},0,inf, 1/dims.n_theta};
             obj.w.mu(0,0,opts.n_s) = {{'mu', dims.n_mu},0,inf};
             for ii=1:opts.N_stages
                 if (opts.rk_representation == RKRepresentation.integral ||...

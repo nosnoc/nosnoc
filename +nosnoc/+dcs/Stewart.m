@@ -14,8 +14,6 @@ classdef Stewart < nosnoc.dcs.Base
         f_x  % r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems
         g_Stewart % TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
 
-        sys_idx
-
         dims
 
         g_switching_fun
