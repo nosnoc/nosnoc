@@ -49,7 +49,8 @@ ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
 x = ocp_solver.get_x();
-u = ocp_solver.getU();
+u = ocp_solver.get_u();
+theta = ocp_solver.get('theta');
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();
 
@@ -57,3 +58,5 @@ figure
 plot(t_grid, x);
 figure
 stairs(t_grid_u, [u,u(end)])
+figure
+plot(t_grid(2:end), theta);

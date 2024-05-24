@@ -65,6 +65,37 @@ classdef Solver < handle
             u = obj.discrete_time_problem.w.u(:).res;
         end
 
+        function ret = get(obj, field)
+            opts = obj.opts;
+            try
+                var = obj.discrete_time_problem.w.(field);
+            catch
+                error([char(field) ' is not a valid field for this OCP']);
+            end
+            if var.depth == 3
+                if opts.right_boundary_point_explicit
+                    ret = var(:,:,obj.opts.n_s).res;
+                else
+                    ret = [var(0,0,obj.opts.n_s).res,...
+                        var(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                end
+            else
+                indexing(1:var.depth) = {':'};
+                ret = var(indexing{:}).res;
+            end
+        end
+
+        function ret = get_full(obj, field)
+            opts = obj.opts;
+            try
+                var = obj.discrete_time_problem.w.(field);
+            catch
+                error([char(field) ' is not a valid field for this OCP']);
+            end
+            indexing(1:var.depth) = {':'};
+            ret = var(indexing{:}).res;
+        end
+
         function t_grid = get_time_grid(obj)
             if obj.opts.use_fesd
                 h = obj.discrete_time_problem.w.h(:,:).res;
