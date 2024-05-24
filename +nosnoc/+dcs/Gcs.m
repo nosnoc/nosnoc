@@ -52,4 +52,14 @@ classdef Gcs < nosnoc.dcs.Base
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{model.x,model.x_ref_end,model.p_global},{model.f_lsq_T});
         end
     end
+
+    methods(Access=protected)
+        function propgrp = getPropertyGroups(obj)
+            propgrp = getPropertyGroups@nosnoc.dcs.Base(obj);
+            group_title = 'Variables';
+            var_list = struct;
+            var_list.lambda;
+            propgrp(2) = matlab.mixin.util.PropertyGroup(var_list, group_title);
+        end
+    end
 end
