@@ -132,7 +132,7 @@ classdef Heaviside < vdx.problems.Mpcc
             lambda_p_0 = obj.w.lambda_p(0,0,opts.n_s);
 
             obj.g.z(0,0,opts.n_s) = {dcs.g_z_fun(x_0, z_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
-            obj.g.switching(0,0,opts.n_s) = {dcs.g_switching_fun(x_0, z_0, lambda_n_0, lambda_p_0, v_global, [p_global;obj.p.p_time_var(1)])};
+            obj.g.lp_stationarity(0,0,opts.n_s) = {dcs.g_lp_stationarity_fun(x_0, z_0, lambda_n_0, lambda_p_0, v_global, [p_global;obj.p.p_time_var(1)])};
             
             x_prev = obj.w.x(0,0,opts.n_s);
             for ii=1:opts.N_stages
@@ -208,7 +208,7 @@ classdef Heaviside < vdx.problems.Mpcc
                             lambda_p_ijk = obj.w.lambda_p(ii,jj,opts.n_s+1);
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_p_ijk, lambda_p_ijk, v_global, p)};
+                            obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_p_ijk, lambda_p_ijk, v_global, p)};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
@@ -262,7 +262,7 @@ classdef Heaviside < vdx.problems.Mpcc
                             lambda_p_ijk = obj.w.lambda_p(ii,jj,kk);
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p_ijk, v_global, p)};
+                            obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p_ijk, v_global, p)};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
@@ -317,7 +317,7 @@ classdef Heaviside < vdx.problems.Mpcc
                             lambda_p_ijk = obj.w.lambda_p(ii,jj,kk);
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.switching(ii,jj,opts.n_s+1) = {dcs.g_switching_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p.ijk, v_global, p)};
+                            obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p.ijk, v_global, p)};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};

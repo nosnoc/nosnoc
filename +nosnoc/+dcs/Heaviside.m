@@ -18,13 +18,10 @@ classdef Heaviside < nosnoc.dcs.Base
         z_all
 
         f_x
-        g_Stewart
-
-        sys_idx
-
+        
         dims
 
-        g_switching_fun
+        g_lp_stationarity_fun
         lambda00_fun
     end
 
@@ -65,7 +62,7 @@ classdef Heaviside < nosnoc.dcs.Base
 
             % Check pss popluated S and c;
             if isempty(model.S)
-                error("The PSS model must containt the switching matrix S and switching function c.");
+                error("The PSS model must containt the lp_stationarity matrix S and lp_stationarity function c.");
             end
                 
             % dimensions
@@ -151,7 +148,7 @@ classdef Heaviside < nosnoc.dcs.Base
                 obj.f_x = obj.f_x + model.F{ii}*obj.theta_expr_sys{ii};
             end
 
-            g_switching = []; % collects switching function algebraic equations, 0 = c(x)-lambda_p+lambda_n
+            g_lp_stationarity = []; % collects lp_stationarity function algebraic equations, 0 = c(x)-lambda_p+lambda_n
             lambda00_expr =[];
             for ii = 1:dims.n_sys
                 % c_i(x) - (lambda_p_i-lambda_n_i)  = 0; for all i = 1,..., n_sys
@@ -160,16 +157,16 @@ classdef Heaviside < nosnoc.dcs.Base
                 % lambda_n_i >= 0;    for all i = 1,..., n_sys
                 % lambda_p_i >= 0;    for all i = 1,..., n_sys
                 % alpha_i >= 0;     for all i = 1,..., n_sys
-                g_switching = [g_switching;model.c{ii}-obj.lambda_p_sys{ii}+obj.lambda_n_sys{ii}];
+                g_lp_stationarity = [g_lp_stationarity;model.c{ii}-obj.lambda_p_sys{ii}+obj.lambda_n_sys{ii}];
                 lambda00_expr = [lambda00_expr; -min(model.c{ii}, 0); max(model.c{ii},0)];
             end
-            g_alg = [g_switching];
+            g_alg = [g_lp_stationarity];
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {g_alg});
-            obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda_n, obj.lambda_p, model.v_global, model.p}, {g_switching});
+            obj.g_lp_stationarity_fun = Function('g_lp_stationarity', {model.x, model.z, obj.lambda_n, obj.lambda_p, model.v_global, model.p}, {g_lp_stationarity});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.g_comp_path_fun  = Function('g_comp_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_comp_path});
@@ -187,7 +184,7 @@ classdef Heaviside < nosnoc.dcs.Base
            
             obj.f_x = model.f_x;
 
-            g_switching = []; % collects switching function algebraic equations, 0 = c(x)-lambda_p+lambda_n
+            g_lp_stationarity = []; % collects lp_stationarity function algebraic equations, 0 = c(x)-lambda_p+lambda_n
             lambda00_expr =[];
             for ii = 1:dims.n_sys
                 % c_i(x) - (lambda_p_i-lambda_n_i)  = 0; for all i = 1,..., n_sys
@@ -196,16 +193,16 @@ classdef Heaviside < nosnoc.dcs.Base
                 % lambda_n_i >= 0;    for all i = 1,..., n_sys
                 % lambda_p_i >= 0;    for all i = 1,..., n_sys
                 % alpha_i >= 0;     for all i = 1,..., n_sys
-                g_switching = [g_switching;model.c{ii}-obj.lambda_p_sys{ii}+obj.lambda_n_sys{ii}];
+                g_lp_stationarity = [g_lp_stationarity;model.c{ii}-obj.lambda_p_sys{ii}+obj.lambda_n_sys{ii}];
                 lambda00_expr = [lambda00_expr; -min(model.c{ii}, 0); max(model.c{ii},0)];
             end
-            g_alg = [g_switching];
+            g_alg = [g_lp_stationarity];
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {g_alg});
-            obj.g_switching_fun = Function('g_switching', {model.x, model.z, obj.lambda_n, obj.lambda_p, model.v_global, model.p}, {g_switching});
+            obj.g_lp_stationarity_fun = Function('g_lp_stationarity', {model.x, model.z, obj.lambda_n, obj.lambda_p, model.v_global, model.p}, {g_lp_stationarity});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.g_comp_path_fun  = Function('g_comp_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_comp_path});
@@ -216,4 +213,17 @@ classdef Heaviside < nosnoc.dcs.Base
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{model.x,model.x_ref_end,model.p_global},{model.f_lsq_T});
         end
     end
+
+    methods(Access=protected)
+        function propgrp = getPropertyGroups(obj)
+            propgrp = getPropertyGroups@nosnoc.dcs.Base(obj);
+            group_title = 'Variables';
+            var_list = struct;
+            var_list.lambda_p = obj.lambda_p;
+            var_list.lambda_n = obj.lambda_n;
+            var_list.alpha = obj.alpha;
+            propgrp(2) = matlab.mixin.util.PropertyGroup(var_list, group_title);
+        end
+    end
+
 end
