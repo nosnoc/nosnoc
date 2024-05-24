@@ -1,6 +1,5 @@
 classdef Stewart < nosnoc.dcs.Base
     properties
-        model
 
         theta
         theta_sys % cell containing the thete variables of every subsystem, wheras theta stores the concatenation of all these vectors;
@@ -100,6 +99,18 @@ classdef Stewart < nosnoc.dcs.Base
             obj.f_lsq_x_fun = Function('f_lsq_x_fun',{model.x,model.x_ref,model.p},{model.f_lsq_x});
             obj.f_lsq_u_fun = Function('f_lsq_u_fun',{model.u,model.u_ref,model.p},{model.f_lsq_u});
             obj.f_lsq_T_fun = Function('f_lsq_T_fun',{model.x,model.x_ref_end,model.p_global},{model.f_lsq_T});
+        end
+    end
+
+    methods(Access=protected)
+        function propgrp = getPropertyGroups(obj)
+            propgrp = getPropertyGroups@nosnoc.dcs.Base(obj);
+            group_title = 'Variables';
+            var_list = struct;
+            var_list.lambda = obj.lambda;
+            var_list.theta = obj.theta;
+            var_list.mu = obj.mu;
+            propgrp(2) = matlab.mixin.util.PropertyGroup(var_list, group_title);
         end
     end
 end

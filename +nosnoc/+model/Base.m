@@ -1,4 +1,4 @@
-classdef Base < matlab.mixin.Scalar & handle
+classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
     properties
         % Differential state
         x
@@ -287,9 +287,9 @@ classdef Base < matlab.mixin.Scalar & handle
                 obj.x_ref = define_casadi_symbolic(opts.casadi_symbolic_mode,'x_ref',n_x_ref_rows);
                 obj.f_lsq_x = (obj.lsq_x{1}-obj.x_ref)'*obj.lsq_x{3}*(obj.lsq_x{1}-obj.x_ref);
             else
-                obj.x_ref = define_casadi_symbolic(opts.casadi_symbolic_mode,'x_ref',1);
-                obj.f_lsq_x = 0;
-                obj.x_ref_val = zeros(1,opts.N_stages);
+                obj.x_ref = [];
+                obj.f_lsq_x = [];
+                obj.x_ref_val = [];
             end
 
             % least square terms for control inputs
@@ -319,9 +319,9 @@ classdef Base < matlab.mixin.Scalar & handle
                 obj.u_ref = define_casadi_symbolic(opts.casadi_symbolic_mode,'u_ref',n_u_ref_rows);
                 obj.f_lsq_u = (obj.lsq_u{1}-obj.u_ref)'*obj.lsq_u{3}*(obj.lsq_u{1}-obj.u_ref);
             else
-                obj.u_ref = define_casadi_symbolic(opts.casadi_symbolic_mode,'u_ref',1);
-                obj.f_lsq_u = 0;
-                obj.u_ref_val = zeros(1,opts.N_stages);
+                obj.u_ref = [];
+                obj.f_lsq_u = [];
+                obj.u_ref_val = [];
             end
 
             % least square terms for control inputs
@@ -349,9 +349,9 @@ classdef Base < matlab.mixin.Scalar & handle
                 obj.x_ref_end = define_casadi_symbolic(opts.casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
                 obj.f_lsq_T = (obj.lsq_T{1}-obj.x_ref_end)'*obj.lsq_T{3}*(obj.lsq_T{1}-obj.x_ref_end);
             else
-                obj.x_ref_end  = define_casadi_symbolic(opts.casadi_symbolic_mode,'x_ref_end',1);
-                obj.f_lsq_T = 0;
-                obj.x_ref_end_val = 0;
+                obj.x_ref_end = [];
+                obj.f_lsq_T = [];
+                obj.x_ref_end_val = [];
             end
 
             %% Inequality constraints check
@@ -407,6 +407,45 @@ classdef Base < matlab.mixin.Scalar & handle
             end
 
             obj.dims = dims;
+        end
+    end
+
+    methods(Access=protected)
+        function propgrp = getPropertyGroups(obj)
+            gTitle1 = 'Populated Properties';
+            propList1 = struct;
+            names = properties(obj);
+            for ii=1:length(names)
+                name = names{ii};
+                
+                if any(size(obj.(name)) == 0)
+                    continue
+                end
+
+                % some custom handling for objective functions:
+                if strcmp(name, 'f_q')
+                    if obj.f_q == 0
+                        continue
+                    end
+                end
+                if strcmp(name, 'f_q_T')
+                    if obj.f_q_T == 0
+                        continue
+                    end
+                end
+                
+                propList1.(names{ii}) = obj.(name);% TODO(@anton) better custom display here
+            end
+            propgrp(1) = matlab.mixin.util.PropertyGroup(propList1,gTitle1);
+        end
+
+        function displayScalarObject(obj)
+            className = matlab.mixin.CustomDisplay.getClassNameForHeader(obj);
+            scalarHeader = [className ' Model'];
+            header = sprintf('%s\n',scalarHeader);
+            disp(header)
+            propgroup = getPropertyGroups(obj);
+            matlab.mixin.CustomDisplay.displayPropertyGroups(obj,propgroup)
         end
     end
 end
