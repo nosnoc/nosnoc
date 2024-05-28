@@ -70,7 +70,8 @@ classdef Solver < handle
             try
                 var = obj.discrete_time_problem.w.(field);
             catch
-                error([char(field) ' is not a valid field for this OCP']);
+                error(['nosnoc:' char(field) ' is not a valid field for this OCP']);
+                % TODO@anton print list of valid fields.
             end
             if var.depth == 3
                 if opts.right_boundary_point_explicit
@@ -90,7 +91,8 @@ classdef Solver < handle
             try
                 var = obj.discrete_time_problem.w.(field);
             catch
-                error([char(field) ' is not a valid field for this OCP']);
+                error(['nosnoc:' char(field) ' is not a valid field for this OCP']);
+                % TODO@anton print list of valid fields.
             end
             indexing(1:var.depth) = {':'};
             ret = var(indexing{:}).res;
