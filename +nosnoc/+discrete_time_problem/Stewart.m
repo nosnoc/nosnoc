@@ -1,10 +1,10 @@
 classdef Stewart < vdx.problems.Mpcc
     properties
-        model
-        dcs
-        opts
-
-        populated
+        model % Model object
+        dcs % Dcs object
+        opts % Option object
+        
+        populated % Boolean variable indicating are the pupulating functions executed.
     end
 
     methods
@@ -21,7 +21,7 @@ classdef Stewart < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
 
-            % Parameters
+            % OCP/Simulation problem parameters 
             obj.p.rho_h_p = {{'rho_h_p',1}, 1};
             obj.p.rho_terminal_p = {{'rho_terminal_p',1}, 1};
             obj.p.T = {{'T',1}, opts.T};
@@ -29,42 +29,53 @@ classdef Stewart < vdx.problems.Mpcc
 
 
             % 0d vars: Variables which only exist once globally. 
+            % Remark: VDX syntax for defining variables: 
+            % obj.w.variable = {{'variable_name', length}, lower_bound, upper_bound, initial_guess};
             obj.w.v_global = {{'v_global',dims.n_v_global}, model.lbv_global, model.ubv_global, model.v0_global};
             if opts.use_speed_of_time_variables && ~opts.local_speed_of_time_variable
                 obj.w.sot = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
             if opts.time_optimal_problem
                 obj.w.T_final = {{'T_final', 1}, opts.T_final_min, opts.T_final_max, opts.T};
+                % obj.w.T_final(); gives back the symbolic variable of
+                % T_final, the () indicates that it is a scalar CasADi symbolic variable
                 obj.f = obj.f + obj.w.T_final();
             end
 
             % 1d vars: Variables that are defined per control stage
             obj.w.u(1:opts.N_stages) = {{'u', dims.n_u}, model.lbu, model.ubu, model.u0};
-            obj.p.p_time_var(1:opts.N_stages) = {{'p_time_var', dims.n_p_time_var}, model.p_time_var_val};
             if opts.use_speed_of_time_variables && opts.local_speed_of_time_variable
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
+            % Remark, VDX syntax for defining parameters
+            % obj.p.parameter_name(indexing) = {{'parameter_name', length}, parameter_value};
+            obj.p.p_time_var(1:opts.N_stages) = {{'p_time_var', dims.n_p_time_var}, model.p_time_var_val};
 
             % TODO(@anton) This _severely_ hurts performance over the vectorized assignment by doing N_stages vertcats of
             %              casadi symbolics vs just a vectorized assignment which does one. As such there needs to be backend
             %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
             %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
             %              on the whole queue which is _significantly_ faster.
-            % 2d vars: Variables that are defined for each finite element.
+
+
+            % 2d vars: Variables that are defined for each finite element (and each control stage)
             for ii=1:opts.N_stages
                 % other derived values
-                h0 = opts.h_k(ii);
+                h0 = opts.h_k(ii); % initial guess for length of current FE
                 if obj.opts.use_fesd
-                    ubh = (1 + opts.gamma_h) * h0;
-                    lbh = (1 - opts.gamma_h) * h0;
+                    ubh = (1 + opts.gamma_h) * h0; % upper bound for FE length
+                    lbh = (1 - opts.gamma_h) * h0; % lower bound for FE length
                     if opts.time_rescaling && ~opts.use_speed_of_time_variables
                         % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
                         ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
                         lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
                     end
+                    % define finte elements lengths as variables
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
                 if obj.opts.step_equilibration == StepEquilibrationMode.mlcp
+                    % define auxiliary variables needed to write step equlibration constraints
+                    % Remark: only this step equilibration mode needs auxliary variables.
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
                     obj.w.pi_theta(ii,2:opts.N_finite_elements(ii)) = {{'pi_theta', dims.n_theta},-inf,inf};
                     obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
@@ -78,15 +89,19 @@ classdef Stewart < vdx.problems.Mpcc
             % For c_n ~= 1 case
             rbp = ~opts.right_boundary_point_explicit;
             
-            % 3d vars: Variables defined on each rk stage
-            %          some of which are also defined at the initial point:
+            % 3d vars: Variables defined on each rk stage (and every finite element, and every control stage)
+            
+            % Remark on VDX syntax obj.w.x(index_of_control_stage,index_of_fe,index_of_rk_stage)
+            % some are also defined at the initial point:
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf, 1};
             obj.w.mu(0,0,opts.n_s) = {{'mu', dims.n_mu},0,inf};
+            % others are defined across all levels
             for ii=1:opts.N_stages
                 if (opts.rk_representation == RKRepresentation.integral ||...
                     opts.rk_representation == RKRepresentation.differential_lift_x)
+                    % Remark on VDX syntax obj.w.x(ii,1:_NFE,1:n_s+rbp) - vectorized definition of variables
                     obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 else
                     obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
@@ -95,13 +110,13 @@ classdef Stewart < vdx.problems.Mpcc
                     opts.rk_representation == RKRepresentation.differential_lift_x)
                     obj.w.v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'v', dims.n_x}};
                 end
-                
+                % TODO @Anton, at some point we might provide initial guesse for lambda,mu, theta
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
                 obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf, 1};
                 obj.w.theta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'theta', dims.n_theta},0, 1, 1/dims.n_theta};
                 obj.w.mu(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},0,inf};
 
-                % Handle x_box settings
+                % Handle x_box settings (i.e., manage at which points the box constraints are enforced)
                 if ~opts.x_box_at_stg && opts.rk_representation ~= RKRepresentation.differential
                     obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp-1)).lb = -inf*ones(dims.n_x, 1);
                     obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp-1)).ub = inf*ones(dims.n_x, 1);
@@ -113,7 +128,7 @@ classdef Stewart < vdx.problems.Mpcc
                 end
             end
         end
-
+        % define core runge kutta equations
         function generate_direct_transcription_constraints(obj)
             import casadi.*
             model = obj.model;
@@ -130,21 +145,24 @@ classdef Stewart < vdx.problems.Mpcc
             z_0 = obj.w.z(0,0,opts.n_s);
             lambda_0 = obj.w.lambda(0,0,opts.n_s);
             mu_0 = obj.w.mu(0,0,opts.n_s);
-
+            
+            % Remark on VDX syntax, define symbolic expressions for
+            % constraints g. the constraints are also grouped into, e.g. .z user algebraic functions), 
+            % .lp_stationarity (lp stationarity constraint from the Stewart DCS)
             obj.g.z(0,0,opts.n_s) = {dcs.g_z_fun(x_0, z_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
             obj.g.lp_stationarity(0,0,opts.n_s) = {dcs.g_lp_stationarity_fun(x_0, z_0, lambda_0, mu_0, v_global, [p_global;obj.p.p_time_var(1)])};
             
-            x_prev = obj.w.x(0,0,opts.n_s);
+            x_prev = obj.w.x(0,0,opts.n_s); % last point of previous FE, needed for continuity conditions
             for ii=1:opts.N_stages
-                h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
+                h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii)); % TODO@Anton, why not h0 = opts.h_k(ii), easier to read.
                 
-                ui = obj.w.u(ii);
-                p_stage = obj.p.p_time_var(ii);
+                ui = obj.w.u(ii); % read symbolc control variable of current control stage.
+                p_stage = obj.p.p_time_var(ii); % read symbolc parameter of current control stage.
                 p = [p_global;p_stage];
                 if obj.opts.use_speed_of_time_variables && opts.local_speed_of_time_variable
-                    s_sot = obj.w.sot(ii);
+                    s_sot = obj.w.sot(ii); % here, sot is a vector
                 elseif obj.opts.use_speed_of_time_variables
-                    s_sot = obj.w.sot();
+                    s_sot = obj.w.sot(); % here, sot is a scalar
                 else
                     s_sot = 1;
                 end
@@ -167,12 +185,13 @@ classdef Stewart < vdx.problems.Mpcc
                     else
                         h = h0;
                     end
+
                     switch opts.rk_representation
                       case RKRepresentation.integral
                         % In integral representation stage variables are states.
                         x_ij_end = x_prev;
                         for kk=1:opts.n_s
-                            x_ijk = obj.w.x(ii,jj,kk);
+                            x_ijk = obj.w.x(ii,jj,kk); % k-th RK stage variable, in j-th finite element, in i-th control stage
                             z_ijk = obj.w.z(ii,jj,kk);
                             lambda_ijk = obj.w.lambda(ii,jj,kk);
                             theta_ijk = obj.w.theta(ii,jj,kk);
@@ -185,12 +204,14 @@ classdef Stewart < vdx.problems.Mpcc
                                 x_ijr = obj.w.x(ii,jj,rr);
                                 xk = xk + opts.C_rk(rr+1, kk+1) * x_ijr;
                             end
+                            % add stagewise constraint to vdx mpcc.
                             obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, ui, v_global, p)};
 
                             x_ij_end = x_ij_end + opts.D_rk(kk+1)*x_ijk;
                             
+                            % add path constraints at every stage
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                             end
@@ -328,12 +349,14 @@ classdef Stewart < vdx.problems.Mpcc
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
+                            % if path constraints are evaluated at control and FE grid points
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
                 end
                 if ~opts.g_path_at_stg && ~opts.g_path_at_fe
+                    % if path constraints are only evaluated at the control grid nodes
                     x_i = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s);
                     z_i = obj.w.z(ii, opts.N_finite_elements(ii), opts.n_s);
                     obj.g.path(ii) = {dcs.g_path_fun(x_i, z_i, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -357,7 +380,8 @@ classdef Stewart < vdx.problems.Mpcc
 
                 % Clock <Constraints
                 % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
-                %              to understand something about the time-freezing reformulation which is ugly.
+                %              to understand something about the
+                %              time-freezing reformulation which is ugly. (It is also just a quite complicated thing)
                 if obj.opts.use_fesd && opts.equidistant_control_grid
                     if opts.time_optimal_problem
                         if opts.use_speed_of_time_variables
@@ -367,7 +391,7 @@ classdef Stewart < vdx.problems.Mpcc
                         end
                     else
                         if opts.relax_terminal_numerical_time
-                            % TODO(@armin) why is this allowed to be negative?
+                            % Negative values sometimes help convergence.
                             obj.w.s_numerical_time(ii) = {{'s_numerical', 1}, -2*opts.h, 2*opts.h, opts.h/2};
                             g_eq_grid = [sum_h - t_stage - obj.w.s_numerical_time(ii);
                                 -(sum_h - t_stage) - obj.w.s_numerical_time(ii)];
@@ -394,8 +418,10 @@ classdef Stewart < vdx.problems.Mpcc
             
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
-                error("Currently unsupported")
-                end
+                % TODO: we should have an enum for treating terminal
+                % constraints (or relaxing constraints in general, cf. https://github.com/nurkanovic/nosnoc/issues/96
+                error("Currently unsupported.")
+            end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             switch opts.relax_terminal_constraint
               case ConstraintRelaxationMode.NONE % hard constraint
@@ -429,7 +455,7 @@ classdef Stewart < vdx.problems.Mpcc
             opts = obj.opts;
             dcs = obj.dcs;
             model = obj.model;
-            % Do Cross-Complementarity
+            % Define standard complementarity and cross-complementarity constraints
 
             rbp = ~opts.right_boundary_point_explicit;
             
@@ -622,7 +648,7 @@ classdef Stewart < vdx.problems.Mpcc
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.direct_homotopy
-                error("not currently implemented")
+                error("nosnoc:Currently not supported/implemented.")
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
