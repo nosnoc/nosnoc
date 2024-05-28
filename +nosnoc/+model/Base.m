@@ -41,7 +41,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
         f_q % CasADi symbolic expression
         f_q_T % CasADi symbolic expression
 
-        % least squares
+        % least squares (TODO @Anton: more precise description, e.g. where are the weight matrices)
         lsq_x % TODO Described
         x_ref % Subset of x?
         f_lsq_x % CasADi symbolic expression
@@ -340,7 +340,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 n_x_T_rows = size(obj.lsq_T{2},1);
                 n_x_T_cols = size(obj.lsq_T{2},2);
                 if n_x_T_cols == 1
-                    fprintf('nosnoc: the provided reference for the terminal cost is ok. \n');
+                    fprintf('nosnoc: The provided reference for the terminal cost is ok. \n');
                 else
                     fprintf('nosnoc: The reference in lsq_T has to be a vector of length %d. \n',length(obj.lsq_T{1}));
                     error('nosnoc: Please provide a reference vector in lsq_T{2} with an appropriate size.')
@@ -381,7 +381,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
             %% Check path complementarity constraints
             if size(obj.G_path, 1) ~= 0
                 if size(obj.G_path, 1) ~= size(obj.H_path, 1)
-                    error('G_path and H_path must be the same size')
+                    error('G_path and H_path must be the same size.')
                 end
             end
             %% Terminal constraints
@@ -409,7 +409,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
             obj.dims = dims;
         end
     end
-
+    % Print output in a structured way.
     methods(Access=protected)
         function propgrp = getPropertyGroups(obj)
             gTitle1 = 'Populated Properties';
