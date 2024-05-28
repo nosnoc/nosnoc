@@ -1,73 +1,73 @@
 classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
     properties
         % Differential state
-        x
-        lbx
-        ubx
-        x0
+        x % CasADi symbolic variable
+        lbx % Double vector
+        ubx % Double vector
+        x0 % Double vector
 
         % user algebraics
-        z
-        z0
-        lbz
-        ubz
-        g_z % user algebraic constraints
+        z % CasADi symbolic variable
+        z0 % Double vector
+        lbz % Double vector
+        ubz % Double vector
+        g_z % user algebraic constraints - CasADi symbolic expression
 
         % Controls
-        u
-        lbu
-        ubu
-        u0
+        u % CasADi symbolic variable
+        lbu % Double vector
+        ubu % Double vector
+        u0 % Double vector
 
         % global variables (not time dependent)
-        v_global
-        v0_global
-        lbv_global
-        ubv_global
+        v_global % CasADi symbolic variable
+        v0_global % Double vector
+        lbv_global % Double vector
+        ubv_global % Double vector
         
         % global parameters (not time dependent)
-        p_global
+        p_global % CasADi symbolic variable
         p_global_val
 
         % time varying parameters
-        p_time_var
+        p_time_var % CasADi symbolic variable
         p_time_var_val
         % params
-        p_time_var_stages
+        p_time_var_stages % CasADi symbolic variable
         % all params
-        p
+        p % CasADi symbolic variable (TODO: Also algoritmic parameters??)
 
         % Objective
-        f_q
-        f_q_T
+        f_q % CasADi symbolic expression
+        f_q_T % CasADi symbolic expression
 
         % least squares
-        lsq_x
-        x_ref
-        f_lsq_x
-        x_ref_val
-        lsq_u
-        u_ref
-        f_lsq_u
-        u_ref_val
-        lsq_T
-        x_ref_end
-        f_lsq_T
-        x_ref_end_val
+        lsq_x % TODO Described
+        x_ref % Subset of x?
+        f_lsq_x % CasADi symbolic expression
+        x_ref_val % Double vector
+        lsq_u % CasADi symbolic expression
+        u_ref % Subset of u?
+        f_lsq_u % CasADi symbolic expression
+        u_ref_val % Double vector
+        lsq_T % CasADi symbolic expression
+        x_ref_end % Subset of x?
+        f_lsq_T % CasADi symbolic expression
+        x_ref_end_val % Double vector
 
         % Path constraints
-        g_path
-        lbg_path
-        ubg_path
+        g_path % CasADi symbolic expression
+        lbg_path % Double vector
+        ubg_path % Double vector
 
         % Terminal constraints
-        g_terminal
-        lbg_terminal
-        ubg_terminal
+        g_terminal % CasADi symbolic expression
+        lbg_terminal % Double vector
+        ubg_terminal % Double vector
 
         % Path Complementarities
-        G_path
-        H_path
+        G_path % CasADi symbolic expression
+        H_path % CasADi symbolic expression
 
         % Dimensions
         dims
