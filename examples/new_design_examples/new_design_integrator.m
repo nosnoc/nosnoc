@@ -10,7 +10,7 @@ T_sim = 0.75;
 %% NOSNOC settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.n_s = 1;
+problem_options.n_s = 2;
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation= 'differential';
@@ -20,6 +20,7 @@ problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
 problem_options.use_fesd = 1;
+problem_options.print_level = 5;
 
 model = nosnoc.model.Pss();
 
