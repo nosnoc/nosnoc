@@ -24,7 +24,7 @@ classdef Integrator < handle
             opts.preprocess();
             if opts.N_stages > 1
                 warning("Integrator created with more than 1 control stage. Converting this to finite elements.")
-                N_fe = sum(opts.N_finite_elements)
+                N_fe = sum(opts.N_finite_elements);
                 opts.N_finite_elements = N_fe;
                 opts.N_stages = 1;
             end
@@ -97,7 +97,7 @@ classdef Integrator < handle
             try
                 var = obj.discrete_time_problem.w.(field);
             catch
-                error([char(field) ' is not a valid field for this integrator.']);
+                error(['nosnoc:' char(field) ' is not a valid field for this integrator.']);
             end
 
             obj.discrete_time_problem.w.res = obj.w_all(:,1);
@@ -141,7 +141,7 @@ classdef Integrator < handle
             try
                 var = obj.discrete_time_problem.w.(field);
             catch
-                error([char(field) ' is not a valid field for this integrator.']);
+                error(['nosnoc:' char(field) ' is not a valid field for this integrator.']);
             end
 
             obj.discrete_time_problem.w.res = obj.w_all(:,1);
