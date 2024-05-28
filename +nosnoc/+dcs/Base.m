@@ -1,26 +1,27 @@
 classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
     properties
         model
-        
-        f_x_fun
-        f_q_fun
-        g_z_fun
-        g_alg_fun
-        g_path_fun
-        G_path_fun
-        H_path_fun
-        g_terminal_fun
-        f_q_T_fun
-        f_lsq_x_fun
-        f_lsq_u_fun
-        f_lsq_T_fun
+
+        f_x_fun % CasADi function - Related to DCS 
+        f_q_fun % CasADi function - Related to DCS 
+        g_z_fun % CasADi function - Related to DCS 
+        g_alg_fun % CasADi function - Related to DCS 
+        % No
+        g_path_fun % CasADi function - Only defined in an OCP
+        G_path_fun % CasADi function - Only defined in an OCP
+        H_path_fun % CasADi function - Only defined in an OCP
+        g_terminal_fun % CasADi function - Only defined in an OCP
+        f_q_T_fun % CasADi function - Only defined in an OCP
+        f_lsq_x_fun % CasADi function - Only defined in an OCP
+        f_lsq_u_fun % CasADi function - Only defined in an OCP
+        f_lsq_T_fun % CasADi function - Only defined in an OCP
     end
 
     methods(Abstract)
         generate_variables(obj, opts)
         generate_equations(obj, opts)
     end
-
+    % Print dcs output
     methods(Access=protected)
         function propgrp = getPropertyGroups(obj)
             gTitle1 = 'Populated Functions';

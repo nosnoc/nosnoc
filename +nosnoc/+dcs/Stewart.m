@@ -1,23 +1,23 @@
 classdef Stewart < nosnoc.dcs.Base
     properties
 
-        theta
+        theta % CasADi symbolic variable
         theta_sys % cell containing the thete variables of every subsystem, wheras theta stores the concatenation of all these vectors;
-        lambda
+        lambda % CasADi symbolic variable
         lambda_sys  % same as theta_sys
-        mu
+        mu % CasADi symbolic variable
         mu_sys % same as theta_sys
 
-        z_all % all algebraic variables (user provided and Stewart DCS specific)
+        z_all % CasADi symbolic variable - all algebraic variables (user provided and Stewart DCS specific)
 
-        f_x  % r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems
-        g_Stewart % TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
+        f_x  % CasADi symbolic expression -  r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems
+        g_Stewart % CasADi symbolic expression - TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
 
         dims
-
-        g_lp_stationarity_fun
-        g_Stewart_fun
-        lambda00_fun
+        % functions specific to the stewart DCS
+        g_lp_stationarity_fun % CasADi function - related to DCS
+        g_Stewart_fun % CasADi function - related to DCS
+        lambda00_fun % CasADi function - related to DCS
     end
 
     methods
