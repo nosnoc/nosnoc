@@ -328,12 +328,16 @@ classdef Gcs < vdx.problems.Mpcc
 
                 % Least Squares Costs
                 % TODO we should convert the refs to params
-                obj.f = obj.f + t_stage*dcs.f_lsq_x_fun(obj.w.x(ii,opts.N_finite_elements(ii),opts.n_s),...
-                    model.x_ref_val(:,ii),...
-                    p);
-                obj.f = obj.f + t_stage*dcs.f_lsq_u_fun(obj.w.u(ii),...
-                    model.u_ref_val(:,ii),...
-                    p);
+                if ~isempty(model.x_ref_val)
+                    obj.f = obj.f + t_stage*dcs.f_lsq_x_fun(obj.w.x(ii,opts.N_finite_elements(ii),opts.n_s),...
+                        model.x_ref_val(:,ii),...
+                        p);
+                end
+                if ~isempty(model.u_ref_val)
+                    obj.f = obj.f + t_stage*dcs.f_lsq_u_fun(obj.w.u(ii),...
+                        model.u_ref_val(:,ii),...
+                        p);
+                end
                 if ~opts.cost_integration
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
                 end
@@ -369,9 +373,11 @@ classdef Gcs < vdx.problems.Mpcc
             obj.f = obj.f + dcs.f_q_T_fun(x_end, z_end, v_global, p_global);
 
             % Terminal_lsq_cost
-            obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(x_end,...
-                model.x_ref_end_val,...
-                p_global);
+            if ~isempty(model.x_ref_end_val)
+                obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(x_end,...
+                    model.x_ref_end_val,...
+                    p_global);
+            end
 
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
@@ -494,7 +500,7 @@ classdef Gcs < vdx.problems.Mpcc
                         p_stage = obj.p.p_time_var(ii);
                         p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_c = c_fun(x_prev);
+                            sum_c = dcs.c_fun(x_prev);
                             for kk=1:(opts.n_s + rbp)
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
@@ -523,7 +529,7 @@ classdef Gcs < vdx.problems.Mpcc
                         p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
                             sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
-                            sum_c = c_fun(x_prev);
+                            sum_c = c_prev;
                             for kk=1:(opts.n_s + rbp)
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);

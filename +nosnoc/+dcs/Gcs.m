@@ -1,7 +1,5 @@
 classdef Gcs < nosnoc.dcs.Base
     properties
-        model
-
         lambda
 
         f_x
@@ -10,6 +8,7 @@ classdef Gcs < nosnoc.dcs.Base
 
         nabla_c_fun
         c_fun
+        g_comp_path_fun
     end
 
     methods
@@ -35,7 +34,9 @@ classdef Gcs < nosnoc.dcs.Base
 
             nabla_c = model.c.jacobian(model.x)';
             
-            obj.f_x = model.f_x + model.E*nabla_c*obj.lambda;            
+            obj.f_x = model.f_x + model.E*nabla_c*obj.lambda;
+
+            obj.c_dot = nabla_c*model.f_x;
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {model.f_q});
@@ -44,7 +45,7 @@ classdef Gcs < nosnoc.dcs.Base
             obj.c_fun = Function('c_fun', {model.x, model.z, model.v_global, model.p}, {model.c});
             obj.nabla_c_fun = Function('c_fun', {model.x, model.z, model.v_global, model.p}, {nabla_c});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
-            obj.g_comp_path_fun  = Function('g_comp_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_comp_path});
+            obj.g_comp_path_fun  = Function('g_comp_path', {model.x, model.z, model.u, model.v_global, model.p}, {[model.G_path,model.H_path]});
             obj.g_terminal_fun  = Function('g_terminal', {model.x, model.z, model.v_global, model.p_global}, {model.g_terminal});
             obj.f_q_T_fun = Function('f_q_T', {model.x, model.z, model.v_global, model.p}, {model.f_q_T});
             obj.f_lsq_x_fun = Function('f_lsq_x_fun',{model.x,model.x_ref,model.p},{model.f_lsq_x});
