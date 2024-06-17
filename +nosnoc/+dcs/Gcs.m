@@ -36,8 +36,6 @@ classdef Gcs < nosnoc.dcs.Base
             
             obj.f_x = model.f_x + model.E*nabla_c*obj.lambda;
 
-            obj.c_dot = nabla_c*model.f_x;
-
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});

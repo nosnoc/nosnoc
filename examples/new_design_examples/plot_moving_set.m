@@ -1,10 +1,13 @@
-function plot_moving_set(h,pos,r,type,fig,vidname)
+function plot_moving_set(h,pos,r,type,fig,vidname,export_frames)
     n = length(r);
     if ~exist('type')
         type = [];
         for ii=1:n
             type = [type, "circle"];
         end
+    end
+    if ~exist('export_frames')
+        export_frames = false;
     end
     if length(type) ~= n
         error('not all types specified')
@@ -67,7 +70,9 @@ function plot_moving_set(h,pos,r,type,fig,vidname)
         writer = VideoWriter([vidname '.avi']);
         open(writer);
         frame = getframe(gca);
-        exportgraphics(gca, [vidname '_frames/' num2str(1) '.pdf'])
+        if export_frames
+            exportgraphics(gca, [vidname '_frames/' num2str(1) '.pdf'])
+        end
         writeVideo(writer,frame)
     end
     pause(0.1);

@@ -10,8 +10,7 @@ T_sim = 10;
 %% NOSNOC settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.n_s = 2;
-settings.homotopy_update_slope = 0.1;
+problem_options.n_s = 4;
 %problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 %problem_options.rk_scheme = RKSchemes.LOBATTO_IIIC;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
@@ -25,6 +24,7 @@ problem_options.T_sim = T_sim;
 problem_options.rho_h = 1e-4;
 %solver_options.homotopy_steering_strategy = 'ELL_INF';
 solver_options.complementarity_tol = 1e-12;
+solver_options.print_level = 2;
 
 model = nosnoc.model.Pds();
 
@@ -50,4 +50,3 @@ c_fun = casadi.Function('c', {model.x}, {model.c});
 c = full(c_fun(integrator.get_full('x')))';
 x_full = integrator.get_full('x');
 lam_full = integrator.get_full('lambda');
-[x_full',c,lam_full']

@@ -368,7 +368,7 @@ classdef Gcs < vdx.problems.Mpcc
             end
 
             x_end = obj.w.x(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp);
-            z_end = obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp)
+            z_end = obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp);
             % Terminal cost
             obj.f = obj.f + dcs.f_q_T_fun(x_end, z_end, v_global, p_global);
 
