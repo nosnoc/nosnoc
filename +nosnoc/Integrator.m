@@ -63,15 +63,18 @@ classdef Integrator < handle
             obj.stats = [obj.stats,stats];
         end
 
-        function [t_grid,x_res] = simulate(obj)
+        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj)
             if ~exist('plugin', 'var')
                 plugin = 'scholtes_ineq';
             end
             opts = obj.opts;
             x_res = obj.model.x0;
+            x_res_full = obj.model.x0;
             t_grid = 0;
+            t_grid_full = 0;
             obj.set_x0(obj.model.x0);
             obj.w_all = []; % Clear simulation data.
+            opj.stats = []; % Clear simulation stats.
             t_current = 0;
             
             for ii=1:opts.N_sim
@@ -84,14 +87,21 @@ classdef Integrator < handle
                         ii, opts.N_sim, t_current, opts.T_sim, solver_stats.cpu_time_total);
                 end
                 obj.w_all = [obj.w_all,obj.discrete_time_problem.w.res];
-                x_step = obj.get_x();
+                x_step = obj.discrete_time_problem.w.x(:,:,opts.n_s).res;
+                x_step_full = obj.discrete_time_problem.w.x(:,:,:).res;
                 x_res = [x_res, x_step(:,2:end)];
+                x_res_full = [x_res_full, x_step_full(:,2:end)];
                 if opts.use_fesd
                     h = obj.discrete_time_problem.w.h(:,:).res;
                 else
                     h = ones(1,opts.N_finite_elements) * obj.discrete_time_problem.p.T().val/opts.N_finite_elements;
                 end
                 t_grid = [t_grid, t_grid(end) + cumsum(h)];
+                for ii = 1:length(h)
+                    for jj = 1:opts.n_s
+                        t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
+                    end
+                end
                 obj.set_x0(x_step(:,end));
             end
         end
@@ -156,7 +166,7 @@ classdef Integrator < handle
             obj.discrete_time_problem.w.res = obj.w_all(:,1);
             indexing(2:var.depth) = {':'};
             if var.depth
-                indexing(1) = {1};
+                indexing(1) = {':'};
             end
             ret = var(indexing{:}).res;
 
@@ -183,21 +193,21 @@ classdef Integrator < handle
             t_grid = cumsum([0, h]);
         end
 
-        function x = get_x(obj)
+        function t_grid_full = get_time_grid_full(obj)
             opts = obj.opts;
-            if opts.right_boundary_point_explicit
-                x = obj.discrete_time_problem.w.x(:,:,obj.opts.n_s).res;
+            if opts.use_fesd
+                h = obj.get('h');
             else
-                x = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                h = [];
+                for ii=1:size(obj.w_all,2)
+                    h = [h,ones(1,opts.N_finite_elements) * obj.discrete_time_problem.p.T().val/opts.N_finite_elements];
+                end
             end
-        end
-
-        function x = get_xend(obj)
-            if opts.right_boundary_point_explicit
-                x = obj.discrete_time_problem.w.x(1,opts.N_finite_elements,obj.opts.n_s).res;
-            else
-                x = obj.discrete_time_problem.w.x(1,opts.N_finite_elements,obj.opts.n_s+1).res;
+            t_grid_full = 0;
+            for ii = 1:length(h)
+                for jj = 1:opts.n_s
+                    t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
+                end
             end
         end
 

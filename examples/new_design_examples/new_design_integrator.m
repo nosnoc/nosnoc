@@ -33,10 +33,16 @@ f_1 = [1]; f_2 = [-1];
 model.F = [f_1 f_2];
 
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
-[t_grid, x_res] = integrator.simulate();
-%
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
+% Plotting step end points and full x vs t
 figure
 plot(t_grid, x_res)
+grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$x(t)$','Interpreter','latex')
+grid on
+figure
+plot(t_grid_full, x_res_full)
 grid on
 xlabel('$t$','Interpreter','latex')
 ylabel('$x(t)$','Interpreter','latex')
@@ -44,9 +50,12 @@ grid on
 
 % or an alternate way to get data:
 t_grid = integrator.get_time_grid();
+t_grid_full = integrator.get_time_grid_full();
 x_res = integrator.get('x');
 lam_res = integrator.get('lambda');
+lam_res_full = integrator.get_full('lambda');
 theta_res = integrator.get('theta');
+theta_res_full = integrator.get_full('theta');
 figure
 plot(t_grid, x_res)
 grid on
@@ -60,9 +69,21 @@ grid on
 xlabel('$t$','Interpreter','latex')
 ylabel('$\lambda(t)$','Interpreter','latex')
 grid on
+figure
+plot(t_grid_full, lam_res_full)
+grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$\lambda(t)$','Interpreter','latex')
+grid on
 
 figure
 plot(t_grid(2:end), theta_res)
+grid on
+xlabel('$t$','Interpreter','latex')
+ylabel('$\theta(t)$','Interpreter','latex')
+grid on
+figure
+plot(t_grid_full(2:end), theta_res_full)
 grid on
 xlabel('$t$','Interpreter','latex')
 ylabel('$\theta(t)$','Interpreter','latex')
