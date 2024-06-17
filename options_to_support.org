@@ -30,3 +30,13 @@ Currently the code that handles the constraints for time are _incredibly_ hard t
 Due to this we should figure out a way to simplify them and not have the time-freezing reformulation leaking into the dicrete_problem.
 * Other Features left to implement
 ** DONE integrator
+* Remaining comments
+** DONE integrator verbose 
+** DONE integrator stats
+** TODO integrator extended t grid
+** TODO remove old get_*
+** TODO dcs printing include model vars
+** TODO time_var parameter disambiguation
+** TODO upper bounds on path complementarities?
+** TODO variable names `lambda_lambda` and `lambda_theta` replacement?
+** TODO mlcp name replacement?

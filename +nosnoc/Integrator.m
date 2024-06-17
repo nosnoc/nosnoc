@@ -53,13 +53,14 @@ classdef Integrator < handle
             end
         end
 
-        function solve(obj, plugin)
+        function stats = solve(obj, plugin)
             if ~exist('plugin', 'var')
                 plugin = 'scholtes_ineq';
             end
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
 
-            obj.stats = obj.discrete_time_problem.solve();
+            stats = obj.discrete_time_problem.solve();
+            obj.stats = [obj.stats,stats];
         end
 
         function [t_grid,x_res] = simulate(obj)
@@ -71,9 +72,17 @@ classdef Integrator < handle
             t_grid = 0;
             obj.set_x0(obj.model.x0);
             obj.w_all = []; % Clear simulation data.
-
+            t_current = 0;
+            
             for ii=1:opts.N_sim
-                obj.solve(plugin);
+                solver_stats = obj.solve(plugin);
+                t_current = t_current + opts.T;
+                if solver_stats.converged == 0
+                    disp(['integrator_fesd: did not converge in step ', num2str(ii), ' constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+                elseif opts.print_level >=2
+                    fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
+                        ii, opts.N_sim, t_current, opts.T_sim, solver_stats.cpu_time_total);
+                end
                 obj.w_all = [obj.w_all,obj.discrete_time_problem.w.res];
                 x_step = obj.get_x();
                 x_res = [x_res, x_step(:,2:end)];
