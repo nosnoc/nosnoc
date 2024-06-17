@@ -36,7 +36,8 @@ Due to this we should figure out a way to simplify them and not have the time-fr
 ** DONE integrator extended t grid
 ** DONE remove old get_*
 ** DONE dcs printing include model vars
-** TODO time_var parameter disambiguation
+** DONE time_var parameter disambiguation
 ** TODO upper bounds on path complementarities?
 ** TODO variable names `lambda_lambda` and `lambda_theta` replacement?
 ** TODO mlcp name replacement?
+** DONE extended t_grid in ocp solver

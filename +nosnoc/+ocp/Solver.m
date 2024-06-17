@@ -93,6 +93,20 @@ classdef Solver < handle
             t_grid = cumsum([0, h]);
         end
 
+        function t_grid_full = get_time_grid_full(obj)
+            if obj.opts.use_fesd
+                h = obj.discrete_time_problem.w.h(:,:).res;
+            else
+                h = obj.discrete_time_problem.p.T().val/(sum(obj.opts.N_finite_elements))*(ones(1, sum(obj.opts.N_finite_elements)));
+            end
+            t_grid_full = 0;
+            for ii = 1:length(h)
+                for jj = 1:opts.n_s
+                    t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
+                end
+            end
+        end
+
         function t_grid = get_control_grid(obj)
             t_grid = [0];
             for ii=1:obj.opts.N_stages
