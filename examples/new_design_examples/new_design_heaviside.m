@@ -43,8 +43,8 @@ model.g_terminal = [x-2];
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
-x = ocp_solver.get_x();
-u = ocp_solver.get_u();
+x = ocp_solver.get('x');
+u = ocp_solver.get('u');
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();
 
