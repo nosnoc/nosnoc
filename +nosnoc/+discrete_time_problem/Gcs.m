@@ -342,7 +342,7 @@ classdef Gcs < vdx.problems.Mpcc
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
                 end
 
-                % Clock <Constraints
+                % Clock Constraints
                 % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
                 %              to understand something about the time-freezing reformulation which is ugly.
                 if obj.opts.use_fesd && opts.equidistant_control_grid
