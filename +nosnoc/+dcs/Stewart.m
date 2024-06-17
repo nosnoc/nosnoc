@@ -107,6 +107,13 @@ classdef Stewart < nosnoc.dcs.Base
             propgrp = getPropertyGroups@nosnoc.dcs.Base(obj);
             group_title = 'Variables';
             var_list = struct;
+            var_list.x = obj.model.x;
+            if ~any(size(obj.model.u) == 0)
+                var_list.u = obj.model.u;
+            end
+            if ~any(size(obj.model.z) == 0)
+                var_list.z = obj.model.z;
+            end
             var_list.lambda = obj.lambda;
             var_list.theta = obj.theta;
             var_list.mu = obj.mu;
