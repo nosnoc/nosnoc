@@ -32,8 +32,6 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
         % time varying parameters
         p_time_var % CasADi symbolic variable
         p_time_var_val
-        % params
-        p_time_var_stages % CasADi symbolic variable
         % all params
         p % CasADi symbolic variable (TODO: Also algoritmic parameters??)
 
@@ -236,16 +234,9 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 else
                     obj.p_time_var_val = zeros(dims.n_p_time_var, opts.N_stages);
                 end
-
-                obj.p_time_var_stages = [];
-                for ii=1:opts.N_stages
-                    var_full = define_casadi_symbolic(opts.casadi_symbolic_mode, ['p_time_var_' num2str(ii)], dims.n_p_time_var);
-                    obj.p_time_var_stages = horzcat(obj.p_time_var_stages, var_full);
-                end
             else
                 dims.n_p_time_var = 0;
                 obj.p_time_var = define_casadi_symbolic(opts.casadi_symbolic_mode,'',0);
-                obj.p_time_var_stages = define_casadi_symbolic(opts.casadi_symbolic_mode,'', [0, opts.N_stages]);
                 obj.p_time_var_val = double.empty(0,opts.N_stages);
             end
 
