@@ -22,6 +22,7 @@ problem_options.dcs_mode = 'Stewart'; % 'Step;
 problem_options.N_finite_elements = N_finite_elements;
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
+problem_options.print_level  = 5;
 
 %% Time settings
 x_star = [exp(1);0];
@@ -97,11 +98,11 @@ if plot_integrator_output
 end
 
 %% plot_continious_time_sol
-x_res_extened = integrator.get_full('x');
-
+x_res_extended = integrator.get_full('x');
+tgrid_long  = integrator.get_time_grid_full();
+%%
 if plot_continious_time_sol
-    x_res_extended = results.extended.x;
-    tgrid_long = results.extended.t_grid;
+    % tgrid_long = results.extended.t_grid;
 
     %
     x1_very_fine = [];
