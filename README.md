@@ -1,13 +1,13 @@
-# NOSNOC
-**NOSNOC** is an open-source `MATLAB` software package for NOnSmooth Numerical Optimal Control.
+# `nosnoc`
+**nosnoc** is an open-source `MATLAB` software package for NOnSmooth Numerical Optimal Control.
 The `Python` package `nosnoc_py` with similar functionality is available as well.
 
-A detailed overview of the theory and methods behind NOSNOC can be found in the course material of the
+A detailed overview of the theory and methods behind nosnoc can be found in the course material of the
 [Summer School on Direct Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/teaching/ss2023/summer-school-direct-methods-optimal-control-nonsmooth-systems).
 
 
 ## General
-**NOSNOC** is a tool for numerically solving optimal control problems with nonsmooth dynamical systems with switches and/or state jumps.
+**nosnoc** is a tool for numerically solving optimal control problems with nonsmooth dynamical systems with switches and/or state jumps.
 It supports:
 
 1. Automatic discretization via the FESD method - high accuracy and correct sensitivities. Note that classical time-stepping methods only have first-order accuracy and wrong sensitivities even when they appear to be differentiable.
@@ -18,15 +18,15 @@ It supports:
 3. Solving the nonsmooth nonlinear programs via homotopy methods. Enables the use of off-the-shelf solvers like IPOPT and SNOPT.
 
 
-**NOSNOC** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of systems with switches and jumps.
+**nosnoc** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of systems with switches and jumps.
 It enables the treatment of a broad class of nonsmooth systems in a unified way.
 
-NOSNOC offers several ways to treat switched systems, piecewise smooth systems, Filippov systems, hybrid systems, rigid body models with impacts and friction in simulation, and optimal control.
+nosnoc offers several ways to treat switched systems, piecewise smooth systems, Filippov systems, hybrid systems, rigid body models with impacts and friction in simulation, and optimal control.
 It discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting mathematical program with complementarity constraints (MPCCs).
 The MPCCs are solved in a homotopy loop with a standard solver like IPOPT or SNOPT.
 The user may directly provide a DCS or define the different modes of a Filippov system and the reformulation is automated.
 
-With NOSNOC one can simulate and solve optimal control problems subject to different kinds of nonsmooth systems, by declaring the `dcs_mode`:
+With nosnoc one can simulate and solve optimal control problems subject to different kinds of nonsmooth systems, by declaring the `dcs_mode`:
 1. `settings.dcs_mode = 'Stewart'` - for treating Filippov systems via Stewart's reformulation
 2. `settings.dcs_mode = 'Step'` - for treating nonsmooth systems via set valued step functions (covers also all Filippov systems that are treated with Stewart's).
 3. `settings.dcs_mode = 'CLS'` - for rigid bodies with friction and impact (also called complementarity Lagrangian systems (CLS)) - uses FESD tailored to CLS.
@@ -34,7 +34,7 @@ With NOSNOC one can simulate and solve optimal control problems subject to diffe
 
 ## Installation
 
-**NOSNOC** requires `CasADi` version 3.5.5 and Matlab version R2021b or later.
+**nosnoc** requires `CasADi` version 3.5.5 and Matlab version R2021b or later.
 
 ### Installation for MATLAB
 
@@ -46,7 +46,7 @@ For `CasADi` installation instructions follow visit: https://web.casadi.org/get/
 git clone --recursive https://github.com/nurkanovic/nosnoc.git
 ```
 
-3. Open the `NOSNOC` folder in Matlab and run the `install_nosnoc` script
+3. Open the `nosnoc` folder in Matlab and run the `install_nosnoc` script
 ```
 >> install_nosnoc
 ```
@@ -55,28 +55,11 @@ Note that `IPOPT` is shipped with `CasADi`. More information including detailed 
 
 ### Installation for python
 
-Go to the [nosnoc_py](https://github.com/FreyJo/nosnoc_py) repository and clone it.
+Go to the [nosnoc_py](https://github.com/FreyJo/nosnoc_py) repository for more info.
 
-Afterward,
+## Using nosnoc
 
-1. Setup virtual environment:
-```
-virtualenv env --python=python3
-```
-
-2. Source environment:
-```
-source env/bin/activate
-```
-
-3. Install
-```
-pip install -e .
-```
-
-## Using NOSNOC
-
-The interface of **NOSNOC** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).
+The interface of **nosnoc** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).
 User inputs should be given as `CasADi` expressions.
 
 To get started we recommend you look into our example libraries for
@@ -85,28 +68,46 @@ To get started we recommend you look into our example libraries for
 ## Literature - theory and algorithms
 
 ### FESD
-[Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://arxiv.org/abs/2205.05337) \
+[Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://link.springer.com/article/10.1007/s00211-024-01412-z) \
 A.Nurkanović, M. Sperl, S. Albrecht, M. Diehl \
-arXiv preprint 2022
-
+Numerische Mathematik (2024): 1-48
 ```
-@article{Nurkanovic2022,
+@article{Nurkanovic2024,
   title={Finite elements with switch detection for direct optimal control of nonsmooth systems},
   author={Nurkanovi{\'c}, Armin and Sperl, Mario and Albrecht, Sebastian and Diehl, Moritz},
-  journal={arXiv preprint arXiv:2205.05337},
-  year={2022}
+  journal={Numerische Mathematik},
+  pages={1--48},
+  year={2024},
+  publisher={Springer}
+}
+```
+
+[Finite Elements with Switch Detection for numerical optimal control of nonsmooth dynamical systems with set-valued heaviside step functions](https://www.sciencedirect.com/science/article/pii/S1751570X24000554) \
+A. Nurkanović, A. Pozharskiy, J. Frey, M. Diehl\
+Nonlinear Analysis: Hybrid Systems 54, 101518	
+
+```
+@article{Nurkanovic2024a,
+  title={Finite Elements with Switch Detection for numerical optimal control of nonsmooth dynamical systems with set-valued heaviside step functions},
+  author={Nurkanovi{\'c}, Armin and Pozharskiy, Anton and Frey, Jonathan and Diehl, Moritz},
+  journal={Nonlinear Analysis: Hybrid Systems},
+  volume={54},
+  pages={101518},
+  year={2024},
+  publisher={Elsevier}
 }
 ```
 
 
-### Time - Freezing
+
+### Time-Freezing
 [A Time-Freezing Approach for Numerical Optimal Control of Nonsmooth Differential Equations with State Jumps](https://cdn.syscop.de/publications/Nurkanovic2021.pdf) \
 A. Nurkanović, T. Sartor, S. Albrecht, M. Diehl \
 IEEE Control Systems Letters 2021
 
-[The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps](https://arxiv.org/abs/2111.06759) \
+[The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps](https://www.sciencedirect.com/science/article/pii/S0005109823004594) \
 A. Nurkanović, S. Albrecht, B. Brogliato, M. Diehl \
-Automatica 2023 (accepted for publication)
+Automatica 158 (2023): 111295.
 
 [Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing](https://cdn.syscop.de/publications/Nurkanovic2022a.pdf) \
 A.Nurkanović , M. Diehl \
@@ -115,15 +116,15 @@ IEEE Control Systems Letters 2022
 
 ## Literature - Software
 
-### NOSNOC
+### nosnoc
 
-[NOSNOC: A Software Package for Numerical Optimal Control of Nonsmooth Systems](https://cdn.syscop.de/publications/Nurkanovic2022b.pdf) \
+[nosnoc: A Software Package for Numerical Optimal Control of Nonsmooth Systems](https://cdn.syscop.de/publications/Nurkanovic2022b.pdf) \
 A.Nurkanović , M. Diehl \
 IEEE Control Systems Letters 2022
 
 ```
 @article{Nurkanovic2022,
-  title={NOSNOC: A software package for numerical optimal control of nonsmooth systems},
+  title={nosnoc: A software package for numerical optimal control of nonsmooth systems},
   author={Nurkanovi{\'c}, Armin and Diehl, Moritz},
   journal={IEEE Control Systems Letters},
   volume={6},
@@ -148,10 +149,12 @@ Mathematical programming, 2006
 
 ## Contact
 
-Feel free to contact one of the main developers directly: 
-Armin Nurkanović, [armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)
-Anton Pozharskiy [anton.pozharskiy@imtek.uni-freiburg.de](mailto:anton.pozharskiy@imtek.uni-freiburg.de)
-Jonathan Frey [jonathan.frey@imtek.uni-freiburg.de](mailto:jonathan.frey@imtek.uni-freiburg.de)
 If you have questions, remarks, or comments, you are strongly encouraged to report them by creating a new issue on this Github page.
+
+Feel free to contact one of the main developers directly: 
+Armin Nurkanović ([armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)),
+Anton Pozharskiy ([anton.pozharskiy@imtek.uni-freiburg.de](mailto:anton.pozharskiy@imtek.uni-freiburg.de)),
+Jonathan Frey ([jonathan.frey@imtek.uni-freiburg.de](mailto:jonathan.frey@imtek.uni-freiburg.de)).
+
 Success stories and source code contributions are very welcome.
 
