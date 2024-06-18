@@ -16,7 +16,7 @@ problem_options.N_finite_elements = 2; % number of finite element on every contr
 problem_options.T = 15;    % Time horizon
 problem_options.dcs_mode = "Step"; % or "Heaviside"
 
-problem_options.step_equilibration = StepEquilibrationMode.mlcp;
+problem_options.step_equilibration = StepEquilibrationMode.linear_complementarity;
 
 %problem_options.x_box_at_stg = 0;
 %problem_options.x_box_at_fe = 0;

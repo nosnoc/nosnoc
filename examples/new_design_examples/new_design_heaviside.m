@@ -15,7 +15,7 @@ problem_options.N_stages = 11; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 1;    % Time horizon
 
-problem_options.step_equilibration = StepEquilibrationMode.mlcp;
+problem_options.step_equilibration = StepEquilibrationMode.linear_complementarity;
 
 % problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 %% Create model

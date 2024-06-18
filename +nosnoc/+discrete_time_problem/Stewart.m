@@ -73,7 +73,7 @@ classdef Stewart < vdx.problems.Mpcc
                     % define finte elements lengths as variables
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
-                if obj.opts.step_equilibration == StepEquilibrationMode.mlcp
+                if obj.opts.step_equilibration == StepEquilibrationMode.linear_complementarity
                     % define auxiliary variables needed to write step equlibration constraints
                     % Remark: only this step equilibration mode needs auxliary variables.
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
@@ -673,7 +673,7 @@ classdef Stewart < vdx.problems.Mpcc
                     end
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
-              case StepEquilibrationMode.mlcp
+              case StepEquilibrationMode.linear_complementarity
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
                         h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
