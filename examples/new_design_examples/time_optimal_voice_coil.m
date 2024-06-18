@@ -25,11 +25,17 @@ problem_options.time_optimal_problem = true;
 problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 problem_options.use_fesd = 1;
 
+% problem_options.gamma_h = 0;
+% problem_options.N_finite_elements = 1;
+% problem_options.use_fesd = 1;
+% problem_options.print_level  = 5;
+% problem_options.equidistant_control_grid = 0;
+
 % solver options
 solver_options.N_homotopy = 7;
 solver_options.homotopy_update_rule = 'superlinear';
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
-
+% solver_options.print_level =  5;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 
@@ -80,11 +86,12 @@ model.g_terminal = x-x_target;
 
 %% create solver and solve problem
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+tic
 ocp_solver.solve();
-
+toc
 %% Plot results
-x = ocp_solver.get("x");
-u = ocp_solver.get("u");
+x = ocp_solver.get('x');
+u = ocp_solver.get('u');
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();
 

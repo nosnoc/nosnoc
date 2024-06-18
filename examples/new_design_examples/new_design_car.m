@@ -47,9 +47,9 @@ model.g_terminal = [q-200;v-0];
 %% create solver and solve problem
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
-
-x = ocp_solver.get_x();
-u = ocp_solver.get_u();
+%% get results and plot
+x = ocp_solver.get('x');
+u = ocp_solver.get('u');
 theta = ocp_solver.get('theta');
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();

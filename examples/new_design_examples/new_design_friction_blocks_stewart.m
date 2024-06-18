@@ -91,8 +91,8 @@ model.F = {F1 F2 F3};
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res] = integrator.simulate();
 
-integrator.dcs
-integrator.discrete_time_problem.dcs
+% integrator.dcs
+% integrator.discrete_time_problem.dcs
 %%
 figure
 subplot(211)

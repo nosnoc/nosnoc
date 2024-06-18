@@ -22,7 +22,7 @@ problem_options.dcs_mode = 'Stewart'; % 'Step;
 problem_options.N_finite_elements = N_finite_elements;
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
-problem_options.print_level  = 5;
+problem_options.print_level  = 1;
 
 %% Time settings
 x_star = [exp(1);0];

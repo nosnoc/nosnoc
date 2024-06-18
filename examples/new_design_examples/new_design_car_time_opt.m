@@ -11,13 +11,13 @@ solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation = RKRepresentation.integral;
 problem_options.n_s = 2;
-problem_options.N_stages = 11; % number of control intervals
+problem_options.N_stages = 10; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
-problem_options.T = 1.0;    % Time horizon
+problem_options.T = 1;    % Time horizon
 problem.options.dcs_mode = "Stewart"; % or "Heaviside"
 problem_options.time_optimal_problem = true;
 problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
-problem_options.use_fesd = 0;
+problem_options.use_fesd = 1;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 
@@ -43,8 +43,8 @@ ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
 %% Plot resukts
-x = ocp_solver.get_x();
-u = ocp_solver.get_u();
+x = ocp_solver.get('x');
+u = ocp_solver.get('u');
 t_grid = ocp_solver.get_time_grid();
 t_grid_u = ocp_solver.get_control_grid();
 figure
