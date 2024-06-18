@@ -203,10 +203,11 @@ classdef Integrator < handle
                     h = [h,ones(1,opts.N_finite_elements) * obj.discrete_time_problem.p.T().val/opts.N_finite_elements];
                 end
             end
+            t_grid = cumsum([0, h]);
             t_grid_full = 0;
             for ii = 1:length(h)
                 for jj = 1:opts.n_s
-                    t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
+                    t_grid_full = [t_grid_full; t_grid(ii) + opts.c_rk(jj)*h(ii)];
                 end
             end
         end
