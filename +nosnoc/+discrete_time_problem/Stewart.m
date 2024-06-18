@@ -79,8 +79,8 @@ classdef Stewart < vdx.problems.Mpcc
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
                     obj.w.pi_theta(ii,2:opts.N_finite_elements(ii)) = {{'pi_theta', dims.n_theta},-inf,inf};
                     obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
-                    obj.w.lambda_theta(ii,2:opts.N_finite_elements(ii)) = {{'lambda_theta', dims.n_theta},0,inf};
-                    obj.w.lambda_lambda(ii,2:opts.N_finite_elements(ii)) = {{'lambda_lambda', dims.n_lambda},0,inf};
+                    obj.w.theta_mult(ii,2:opts.N_finite_elements(ii)) = {{'theta_mult', dims.n_theta},0,inf};
+                    obj.w.lambda_mult(ii,2:opts.N_finite_elements(ii)) = {{'lambda_mult', dims.n_lambda},0,inf};
                     obj.w.eta(ii,2:opts.N_finite_elements(ii)) = {{'eta', dims.n_lambda},0,inf};
                     obj.w.nu(ii,2:opts.N_finite_elements(ii)) = {{'nu', 1},0,inf};
                 end
@@ -683,8 +683,8 @@ classdef Stewart < vdx.problems.Mpcc
                         sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
                         sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
 
-                        lambda_lambda = obj.w.lambda_lambda(ii,jj);
-                        lambda_theta = obj.w.lambda_theta(ii,jj);
+                        lambda_mult = obj.w.lambda_mult(ii,jj);
+                        theta_mult = obj.w.theta_mult(ii,jj);
                         B_max = obj.w.B_max(ii,jj);
                         pi_lambda = obj.w.pi_lambda(ii,jj);
                         pi_theta = obj.w.pi_theta(ii,jj);
@@ -695,7 +695,7 @@ classdef Stewart < vdx.problems.Mpcc
                         obj.g.pi_theta_or(ii,jj) = {[pi_theta-sigma_theta_F;pi_theta-sigma_theta_B;sigma_theta_F+sigma_theta_B-pi_theta],0,inf};
 
                         % kkt conditions for min B, B>=sigmaB, B>=sigmaF
-                        kkt_max = [1-lambda_theta-lambda_lambda;
+                        kkt_max = [1-theta_mult-lambda_mult;
                             B_max-pi_lambda;
                             B_max-pi_theta];
                         obj.g.kkt_max(ii,jj) = {kkt_max,
@@ -703,7 +703,7 @@ classdef Stewart < vdx.problems.Mpcc
                             [0*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
 
                         obj.G.step_eq_kkt_max(ii,jj) = {[(B_max-pi_lambda);(B_max-pi_theta)]};
-                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_lambda;lambda_theta]};
+                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_mult;theta_mult]};
                         
                         % eta calculation
                         eta_const = [eta-pi_theta;eta-pi_lambda;eta-pi_theta-pi_lambda+B_max];
