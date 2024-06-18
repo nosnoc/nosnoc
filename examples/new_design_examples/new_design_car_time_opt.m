@@ -21,7 +21,7 @@ problem_options.use_fesd = 1;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 
-% model = nosnoc.model.Heaviside(); 
+model = nosnoc.model.Heaviside(); 
 q = SX.sym('q'); 
 v = SX.sym('v'); 
 u = SX.sym('u');
