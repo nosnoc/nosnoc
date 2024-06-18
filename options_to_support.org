@@ -1,0 +1,43 @@
+* Remaining Options to implement for Stewart pipeline
+** DONE rk_representation
+*** DONE differential
+*** DONE differential_lift_x
+** DONE rk_scheme
+*** DONE Cases where c_n != 1
+** lift_complementarities
+Maybe this is not actually necessary anymore? IMO no as solver handles this.
+** DONE g_path_at_fe
+** DONE g_path_at_stg
+** DONE x_box_at_fe
+** DONE x_box_at_stg
+** DONE time_optimal_problem
+** DONE equidistant_control_grid
+** DONE relax_terminal_constraint
+** DONE relax_terminal_constraint_from_above 
+Do we actually need this?
+** relax_terminal_constraint_homotopy
+How do we allow people to tie into the homotopy in `mpccsol`
+** DONE relax_terminal_numerical_time
+** relax_terminal_physical_time
+Will be done when time-freezing is implemented
+** DONE cost_integration
+** DONE least squares costs
+** DONE g_path_comp
+** DONE step_equilibration
+* General improvements 
+** Fix the spagghetti that is the time handling code
+Currently the code that handles the constraints for time are _incredibly_ hard to parse and therefore almost certainly very error prone. 
+Due to this we should figure out a way to simplify them and not have the time-freezing reformulation leaking into the dicrete_problem.
+* Other Features left to implement
+** DONE integrator
+* Remaining comments
+** DONE integrator verbose 
+** DONE integrator stats
+** DONE integrator extended t grid
+** DONE remove old get_*
+** DONE dcs printing include model vars
+** DONE time_var parameter disambiguation
+** TODO upper bounds on path complementarities?
+** TODO variable names `lambda_lambda` and `lambda_theta` replacement?
+** TODO mlcp name replacement?
+** DONE extended t_grid in ocp solver

@@ -18,7 +18,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     model = NosnocModel();
     %%
     solver_options.print_level = 5;
-    problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+    problem_options.rk_scheme = RKSchemes.RADAU_IIA;
     problem_options.n_s = 2;
     %% homotopy settings
     problem_options.cross_comp_mode = 1;

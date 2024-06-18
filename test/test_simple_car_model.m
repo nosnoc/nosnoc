@@ -4,7 +4,7 @@ function [results,stats,model,problem_options] = test_simple_car_model(cross_com
 import casadi.*
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 % set the cross complimentarity mode that 
 problem_options.cross_comp_mode = cross_comp;
 solver_options.mpcc_mode = mpcc_mode;

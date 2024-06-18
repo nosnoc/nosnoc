@@ -6,7 +6,7 @@ import casadi.*
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 solver_options.print_level = 3;
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 
 % set the cross complimentarity mode that 
 problem_options.cross_comp_mode = 3;

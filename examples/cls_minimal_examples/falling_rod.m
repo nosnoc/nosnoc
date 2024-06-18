@@ -10,7 +10,7 @@ above_ground = 0.1;
 %%)
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'CLS';
 problem_options.friction_model = "Polyhedral";

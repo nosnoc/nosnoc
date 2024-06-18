@@ -12,7 +12,7 @@ problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %% settings
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;
 problem_options.dcs_mode = 'Step';
 problem_options.pss_lift_step_functions= 1;

@@ -5,7 +5,7 @@ import casadi.*
 %%
 linewidth = 2.5;
 [settings] = NosnocOptions();  
-settings.irk_scheme = IRKSchemes.RADAU_IIA;
+settings.rk_scheme = RKSchemes.RADAU_IIA;
 settings.n_s = 1;
 settings.N_homotopy = 6;
 settings.opts_casadi_nlp.ipopt.max_iter = 5e2;

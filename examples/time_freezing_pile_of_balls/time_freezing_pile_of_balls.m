@@ -14,7 +14,7 @@ video_speed_up = 0.25;
 %% nosnoc settings
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;
 solver_options.print_level = 3;
 solver_options.N_homotopy = 5;

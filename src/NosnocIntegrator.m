@@ -268,9 +268,9 @@ classdef NosnocIntegrator < handle
             fprintf('\n');
             fprintf('-----------------------------------------------------------------\n');
             if problem_options.use_fesd
-                fprintf( ['Simulation with the FESD ' char(problem_options.irk_scheme) ' with %d-RK stages completed.\n'], problem_options.n_s);
+                fprintf( ['Simulation with the FESD ' char(problem_options.rk_scheme) ' with %d-RK stages completed.\n'], problem_options.n_s);
             else
-                fprintf( ['Simulation with the standard ' char(problem_options.irk_scheme) ' with %d-RK stages completed.\n'], problem_options.n_s);
+                fprintf( ['Simulation with the standard ' char(problem_options.rk_scheme) ' with %d-RK stages completed.\n'], problem_options.n_s);
             end
             fprintf('---------------- Stats summary ----------------------------\n');
             fprintf('N_sim\t step-size\t\tN_stg\tN_FE\t CPU Time (s)\t Max. CPU (s)/iter\tMin. CPU (s)/iter\tMax. comp.\tMin. comp.\n');

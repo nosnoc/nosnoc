@@ -12,7 +12,7 @@ minlp_time_limit = 600;
 % Degree of interpolating polynomial
 n_s = settings.n_s;
 % Get collocation points
-collocation_scheme = settings.irk_scheme; % 'legendre' .  'radau'
+collocation_scheme = settings.rk_scheme; % 'legendre' .  'radau'
 tau = collocation_points(n_s, collocation_scheme);
 % Collocation linear maps
 [C,D,B] = collocation_coeff(tau);

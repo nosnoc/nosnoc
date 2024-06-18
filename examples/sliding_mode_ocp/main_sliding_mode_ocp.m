@@ -45,8 +45,8 @@ model = NosnocModel();
 problem_options.n_s = 3;
 N_finite_elements = 3;
 
-problem_options.irk_representation = 'integral';
-problem_options.irk_scheme = IRKSchemes.RADAU_IIA;
+problem_options.rk_representation = 'integral';
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.cross_comp_mode = 7;
 %problem_options.lift_complementarities = 1;
 

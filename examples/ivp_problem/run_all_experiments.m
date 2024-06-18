@@ -41,7 +41,7 @@ scenario.save_results = 1;
 %% settings
 settings = NosnocOptions();
 settings.n_s = 2;
-settings.irk_scheme = IRKSchemes.GAUSS_LEGENDRE;
+settings.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 settings.equidistant_control_grid = 0;
 %% Generate Model
 problem_options.T = 2;

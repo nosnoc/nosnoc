@@ -1,4 +1,4 @@
-classdef IrkRepresentation
+classdef RKRepresentation
     enumeration
         integral
         differential

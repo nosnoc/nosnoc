@@ -1,7 +1,6 @@
-
 % BSD 2-Clause License
 
-% Copyright (c) 2023, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
+% Copyright (c) 2022, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
 
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions are met:
@@ -25,20 +24,26 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef IRKSchemes
-    enumeration
-        RADAU_I
-        RADAU_IA
-        RADAU_IIA
-        GAUSS_LEGENDRE
-        LOBATTO_III
-        LOBATTO_IIIA
-        LOBATTO_IIIB
-        LOBATTO_IIIC
-        EXPLICIT_RK
-    end
 
-    properties(Constant)
-        differential_only = ["LOBATTO_III" "LOBATTO_IIIA" "LOBATTO_IIIB" "LOBATTO_IIIC" "EXPLICIT_RK"]
-    end
+function [U,V] = oscilator_eval(X,Y)
+%OSCILATOR_EVAL Summary of this function goes here
+%   Detailed explanation goes here
+omega = 2*pi;
+A1 = [1 omega;...
+    -omega 1];
+A2 = [1 -omega;...
+    omega 1];
+U = [];
+V = [];
+for ii=1:size(X,1)
+    x = X(ii,:);
+    y = Y(ii,:);
+    u = 0.5*(1+sign(x.^2+y.^2-1)).*(A1(1,1).*x+A1(1,2).*y) + 0.5*(1-sign(x.^2+y.^2-1)).*(A2(1,1).*x+A2(1,2).*y);
+    v = 0.5*(1+sign(x.^2+y.^2-1)).*(A1(2,1).*x+A1(2,2).*y) + 0.5*(1-sign(x.^2+y.^2-1)).*(A2(2,1).*x+A2(2,2).*y);
+    U = [U;u];
+    V = [V;v];
 end
+
+
+end
+
