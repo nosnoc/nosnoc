@@ -1,17 +1,17 @@
 classdef Heaviside < nosnoc.dcs.Base
     properties
-        alpha
-        alpha_sys
-        lambda_n
-        lambda_n_sys
-        lambda_p
-        lambda_p_sys
-        % These are relevant only for lifting. For now wait to implement until re-implementing time freezing
+        alpha % CasADi symbolic variable for selection of the Heaviside step function
+        alpha_sys % cell containing the alpha variables of every subsystem, wheras alpha stores the concatenation of all these vectors;
+        lambda_n % CasADi symbolic variable 
+        lambda_n_sys % cell
+        lambda_p % CasADi symbolic variable 
+        lambda_p_sys % cell
+        % These are relevant only for lifting. For now wait to implement until re-implementing time-freezing
         % beta 
         % gamma
         % theta
         % theta_sys
-        theta_expr_sys
+        theta_expr_sys 
 
         z_all
 

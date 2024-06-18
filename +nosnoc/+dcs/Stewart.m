@@ -2,7 +2,7 @@ classdef Stewart < nosnoc.dcs.Base
     properties
 
         theta % CasADi symbolic variable
-        theta_sys % cell containing the thete variables of every subsystem, wheras theta stores the concatenation of all these vectors;
+        theta_sys % cell containing the theta variables of every subsystem, wheras theta stores the concatenation of all these vectors;
         lambda % CasADi symbolic variable
         lambda_sys  % same as theta_sys
         mu % CasADi symbolic variable
