@@ -19,8 +19,6 @@ problem_options = nosnoc.Options();
 % load nosnoc mpcc solver options
 solver_options = nosnoc.solver.Options();
 solver_options.N_homotopy = 10;
-solver_options.use_previous_solution_as_initial_guess = 1; 
-% (this is more of an integrator options and should thus live in problem options?)
 
 problem_options.n_s = 2;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
@@ -31,6 +29,7 @@ problem_options.N_sim = N_sim;
 problem_options.T_sim = T_sim;
 problem_options.cross_comp_mode = 3;
 problem_options.print_level = 3;
+problem_options.use_previous_solution_as_initial_guess = 1; 
 % solver_options.print_level = 2;
 
 % create nosnoc pss model object

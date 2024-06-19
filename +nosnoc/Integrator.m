@@ -110,6 +110,10 @@ classdef Integrator < handle
                         t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
                     end
                 end
+
+                if opts.use_previous_solution_as_initial_guess
+                    obj.discrete_time_problem.w.init = obj.discrete_time_problem.w.res;
+                end
                 obj.set_x0(x_step(:,end));
             end
         end

@@ -491,14 +491,14 @@ classdef Stewart < vdx.problems.Mpcc
                     lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
-                            Gij = {};
-                            Hij = {};
-                            for kk=1:opts.n_s
-                                theta_ijk = obj.w.theta(ii,jj,kk);
+                            sum_theta = sum2(obj.w.theta(ii,jj,:));
+                            Gij = {lambda_prev};
+                            Hij = {sum_theta};
+                            for kk=1:(opts.n_s + rbp)
+                                lambda_ijk = obj.w.lambda(ii,jj,kk);
 
-                                Gij = vertcat(Gij, {sum_lambda});
-                                Hij = vertcat(Hij, {theta_ijk});
+                                Gij = vertcat(Gij, {lambda_ijk});
+                                Hij = vertcat(Hij, {sum_theta});
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
@@ -509,14 +509,14 @@ classdef Stewart < vdx.problems.Mpcc
                     lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_theta = sum2(obj.w.theta(ii,jj,:));
-                            Gij = {lambda_prev};
-                            Hij = {sum_theta};
-                            for kk=1:(opts.n_s + rbp)
-                                lambda_ijk = obj.w.lambda(ii,jj,kk);
+                            sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
+                            Gij = {};
+                            Hij = {};
+                            for kk=1:opts.n_s
+                                theta_ijk = obj.w.theta(ii,jj,kk);
 
-                                Gij = vertcat(Gij, {lambda_ijk});
-                                Hij = vertcat(Hij, {sum_theta});
+                                Gij = vertcat(Gij, {sum_lambda});
+                                Hij = vertcat(Hij, {theta_ijk});
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};

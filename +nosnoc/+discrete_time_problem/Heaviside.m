@@ -463,28 +463,7 @@ classdef Heaviside < vdx.problems.Mpcc
                             lambda_p_prev = obj.w.lambda_p(ii,jj,opts.n_s+rbp);
                         end
                     end
-                  case CrossCompMode.FE_STAGE
-                    lambda_n_prev = obj.w.lambda_n(0,0,opts.n_s);
-                    lambda_p_prev = obj.w.lambda_p(0,0,opts.n_s);
-                    for ii=1:opts.N_stages
-                        for jj=1:opts.N_finite_elements(ii)
-                            sum_lambda_n = lambda_n_prev + sum2(obj.w.lambda_n(ii,jj,:));
-                            sum_lambda_p = lambda_p_prev + sum2(obj.w.lambda_p(ii,jj,:));
-                            Gij = {};
-                            Hij = {};
-                            for kk=1:opts.n_s
-                                alpha_ijk = obj.w.alpha(ii,jj,kk);
-
-                                Gij = vertcat(Gij, {sum_lambda_n}, {sum_lambda_p});
-                                Hij = vertcat(Hij, {alpha_ijk}, {1-alpha_ijk});
-                            end
-                            obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
-                            obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
-                            lambda_n_prev = obj.w.lambda_n(ii,jj,opts.n_s+rbp);
-                            lambda_p_prev = obj.w.lambda_p(ii,jj,opts.n_s+rbp);
-                        end
-                    end
-                  case CrossCompMode.STAGE_FE
+                  case CrossCompMode.FE_STAGE                    
                     lambda_n_prev = obj.w.lambda_n(0,0,opts.n_s);
                     lambda_p_prev = obj.w.lambda_p(0,0,opts.n_s);
                     for ii=1:opts.N_stages
@@ -499,6 +478,27 @@ classdef Heaviside < vdx.problems.Mpcc
 
                                 Gij = vertcat(Gij, {lambda_n_ijk}, {lambda_p_ijk});
                                 Hij = vertcat(Hij, {sum_alpha}, {sum_alpha_n});
+                            end
+                            obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
+                            obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
+                            lambda_n_prev = obj.w.lambda_n(ii,jj,opts.n_s+rbp);
+                            lambda_p_prev = obj.w.lambda_p(ii,jj,opts.n_s+rbp);
+                        end
+                    end
+                  case CrossCompMode.STAGE_FE
+                    lambda_n_prev = obj.w.lambda_n(0,0,opts.n_s);
+                    lambda_p_prev = obj.w.lambda_p(0,0,opts.n_s);
+                    for ii=1:opts.N_stages
+                        for jj=1:opts.N_finite_elements(ii)
+                            sum_lambda_n = lambda_n_prev + sum2(obj.w.lambda_n(ii,jj,:));
+                            sum_lambda_p = lambda_p_prev + sum2(obj.w.lambda_p(ii,jj,:));
+                            Gij = {};
+                            Hij = {};
+                            for kk=1:opts.n_s
+                                alpha_ijk = obj.w.alpha(ii,jj,kk);
+
+                                Gij = vertcat(Gij, {sum_lambda_n}, {sum_lambda_p});
+                                Hij = vertcat(Hij, {alpha_ijk}, {1-alpha_ijk});
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};

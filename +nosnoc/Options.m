@@ -138,7 +138,9 @@ classdef Options < handle
 
         % Experimental:
         no_initial_impacts(1,1) logical = 0
-        
+
+        % Integrator
+        use_previous_solution_as_initial_guess(1,1) logical = 0
 
         % All MPCC parameters
         T_val(1,1) double {mustBePositive} = 1
