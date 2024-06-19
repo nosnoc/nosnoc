@@ -56,8 +56,6 @@ classdef Stewart < vdx.problems.Mpcc
             %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
             %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
             %              on the whole queue which is _significantly_ faster.
-
-
             % 2d vars: Variables that are defined for each finite element (and each control stage)
             for ii=1:opts.N_stages
                 % other derived values
