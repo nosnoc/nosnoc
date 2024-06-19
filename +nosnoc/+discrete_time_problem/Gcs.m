@@ -64,7 +64,7 @@ classdef Gcs < vdx.problems.Mpcc
                     end
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
-                if obj.opts.step_equilibration == StepEquilibrationMode.mlcp
+                if obj.opts.step_equilibration == StepEquilibrationMode.linear_complementarity
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
                     obj.w.pi_c(ii,2:opts.N_finite_elements(ii)) = {{'pi_c', dims.n_c},-inf,inf};
                     obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
@@ -736,7 +736,7 @@ classdef Gcs < vdx.problems.Mpcc
                     end
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
-              case StepEquilibrationMode.mlcp
+              case StepEquilibrationMode.linear_complementarity
                 for ii=1:opts.N_stages
                     p_stage = obj.p.p_time_var(ii);
                     p =[p_global;p_stage];
