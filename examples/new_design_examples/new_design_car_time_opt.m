@@ -16,8 +16,8 @@ problem_options.N_finite_elements = 4; % number of finite element on every contr
 problem_options.T = 1.0;    % Time horizon
 problem_options.dcs_mode = "Heaviside"; % or "Heaviside"
 problem_options.time_optimal_problem = true;
-problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
-problem_options.use_fesd = 1;
+problem_options.step_equilibration = StepEquilibrationMode.linear_complementarity;
+problem_options.use_fesd = 0;
 %% Create model
 model = nosnoc.model.Pss(); 
 q = SX.sym('q'); 
