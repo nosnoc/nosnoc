@@ -1,4 +1,6 @@
 classdef Heaviside < nosnoc.model.Base
+    % A nonsmooth model which allows a more general than a PSS as it implements the Aizermann-Pyatnitskii extension.
+    % In particular it allows multipliers for example in the form :math:`1-\alpha_1\alpha_2`.
     properties
         f_x
 
