@@ -39,7 +39,7 @@ classdef Integrator < handle
                     obj.dcs.generate_equations(opts);
                     obj.discrete_time_problem = nosnoc.discrete_time_problem.Stewart(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
-                elseif opts.dcs_mode == DcsMode.Step % TODO: RENAME
+                elseif opts.dcs_mode == DcsMode.Heaviside % TODO: RENAME
                     obj.dcs = nosnoc.dcs.Heaviside(model);
                     obj.dcs.generate_variables(opts);
                     obj.dcs.generate_equations(opts);

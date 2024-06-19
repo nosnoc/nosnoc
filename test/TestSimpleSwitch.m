@@ -2,7 +2,7 @@ classdef TestSimpleSwitch < matlab.unittest.TestCase
     properties (TestParameter)
         rk_representation = {'differential','integral'};
         rk_scheme = {RKSchemes.RADAU_IIA,RKSchemes.GAUSS_LEGENDRE};
-        dcs_mode = {'Step','Stewart'};
+        dcs_mode = {'Heaviside','Stewart'};
         cross_comp_mode = {1, 3, 4, 7}; 
     end
     

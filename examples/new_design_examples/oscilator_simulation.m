@@ -18,7 +18,7 @@ model = nosnoc.model.Pss();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
 problem_options.n_s = 4;
-problem_options.dcs_mode = 'Step'; % 'Step;
+problem_options.dcs_mode = 'Heaviside'; % 'Step;
 problem_options.N_finite_elements = N_finite_elements;
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;

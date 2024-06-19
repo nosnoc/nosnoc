@@ -211,7 +211,7 @@ classdef Options < handle
                     fprintf(['nosnoc: User uses dcs_mode.CLS and time_freezing = true at the same time. Defaulting to time freezing as it is currently more competitive\n']);
                 end
                 obj.time_freezing = 1;
-                obj.dcs_mode = DcsMode.Step;
+                obj.dcs_mode = DcsMode.Heaviside;
             end
 
             if obj.time_freezing

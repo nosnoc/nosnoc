@@ -585,7 +585,7 @@ classdef NosnocMPCC < NosnocFormulationObject
             switch obj.problem_options.dcs_mode
                 case 'Stewart'
                     lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
-                case 'Step'
+                case 'Heaviside'
                     lambda00 = full(model.lambda00_fun(x0, model.p_global_val));
                 case 'CLS'
                     % TODO: reconsider this if 0th element has an impulse

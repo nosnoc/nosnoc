@@ -30,7 +30,7 @@ function plot_n_stage_experiment(filename)
     plot(stages, sparse_cpu, 'Xb-', 'LineWidth', line_width, 'MarkerSize', marker_size)
     xlabel('$N$', 'interpreter', 'latex', 'FontSize', 20)
     ylabel('cpu time [s]', 'interpreter', 'latex', 'FontSize', 20)
-    legend(["Stewart","Step"],  'Location', 'northwest', 'FontSize', 20)
+    legend(["Stewart","Heaviside"],  'Location', 'northwest', 'FontSize', 20)
     hold off;
     saveas(fig,'cpu_time_monoped.pdf')
 
@@ -41,7 +41,7 @@ function plot_n_stage_experiment(filename)
     plot(stages, sparse_cpu./sparse_iters, 'Xb-', 'LineWidth', line_width, 'MarkerSize', marker_size)
     xlabel('$N$', 'interpreter', 'latex', 'FontSize', 20)
     ylabel('cpu time per NLP iteration [s]', 'interpreter', 'latex', 'FontSize', 20)
-    legend(["Stewart","Step"], 'Location', 'northwest', 'FontSize', 20)
+    legend(["Stewart","Heaviside"], 'Location', 'northwest', 'FontSize', 20)
     hold off;
     saveas(fig,'cpu_time_per_iter_monoped.pdf')
 
