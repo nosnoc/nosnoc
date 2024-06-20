@@ -29,6 +29,7 @@ model.x = [q;v];
 model.x0 = [0;0];
 model.lbx = [-inf;-20]; model.ubx = [inf;20];
 model.u = u;
+model.u0 = 1;
 model.lbu = -5; model.ubu = 5;
 % Dyanmics and the regions
 f_1 = [v;u]; % mode 1 - nominal
