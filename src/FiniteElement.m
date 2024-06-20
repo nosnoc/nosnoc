@@ -366,7 +366,7 @@ classdef FiniteElement < NosnocFormulationObject
                             ii,...
                             ij);
                     end
-                elseif problem_options.dcs_mode == DcsMode.Step
+                elseif problem_options.dcs_mode == DcsMode.Heaviside
                     % add alpha
                     for ij = 1:dims.n_sys
                         alpha = define_casadi_symbolic(problem_options.casadi_symbolic_mode,...
@@ -761,7 +761,7 @@ classdef FiniteElement < NosnocFormulationObject
                             ij);
                     end
 
-                elseif problem_options.dcs_mode == DcsMode.Step
+                elseif problem_options.dcs_mode == DcsMode.Heaviside
                     % add lambda_n
                     for ij = 1:dims.n_sys
                         lambda_n = define_casadi_symbolic(problem_options.casadi_symbolic_mode,...
@@ -873,7 +873,7 @@ classdef FiniteElement < NosnocFormulationObject
                             end
                         end
                     end
-                case DcsMode.Step
+                case DcsMode.Heaviside
                     rbp_allowance = ~problem_options.right_boundary_point_explicit;
                     n_cont = dims.n_s+1+rbp_allowance;
                     n_discont = dims.n_s;
@@ -1054,7 +1054,7 @@ classdef FiniteElement < NosnocFormulationObject
                         pi_cont = sigma_cont_B .* sigma_cont_F;
                         pi_discont = sigma_discont_B .* sigma_discont_F;
                         nu = pi_cont + pi_discont;
-                    case DcsMode.Step
+                    case DcsMode.Heaviside
                         lam_p_F = cellfun(@(x) obj.w(x), obj.ind_lambda_p, 'uni', false);
                         lam_p_B = cellfun(@(x) obj.prev_fe.w(x), obj.prev_fe.ind_lambda_p, 'uni', false);
                         lam_n_F = cellfun(@(x) obj.w(x), obj.ind_lambda_n, 'uni', false);

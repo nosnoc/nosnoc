@@ -48,7 +48,7 @@ solver_options = nosnoc.solver.Options();
 problem_options.use_fesd = 1;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
-problem_options.dcs_mode = 'Step'; % General inclusions only possible in step mode.
+problem_options.dcs_mode = 'Heaviside'; % General inclusions only possible in step mode.
 solver_options.print_level = 3;
 solver_options.homotopy_update_rule = 'superlinear';
 

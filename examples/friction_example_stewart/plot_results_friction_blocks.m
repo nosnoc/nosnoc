@@ -46,7 +46,7 @@ switch dcs_mode
         xlabel('$t$','interpreter','latex');
         ylabel('$\theta(t)$','interpreter','latex');
         legend({'$\theta_5(t)$','$\theta_6(t)$'},'interpreter','latex');
-    case 'Step'
+    case 'Heaviside'
         figure
         subplot(311)
         plot(t_grid,[alpha(1,:),nan])
@@ -104,7 +104,7 @@ switch dcs_mode
         xlabel('$t$','interpreter','latex');
         ylabel('$\mu(t)$','interpreter','latex');
         legend({'$\mu_1(t)$','$\mu_2(t)$','$\mu_3(t)$'},'interpreter','latex');
-    case 'Step'
+    case 'Heaviside'
         subplot(311)
         plot(t_grid,[lambda_n(1,:),nan])
         hold on

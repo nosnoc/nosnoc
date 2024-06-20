@@ -28,7 +28,7 @@ The user may directly provide a DCS or define the different modes of a Filippov 
 
 With nosnoc one can simulate and solve optimal control problems subject to different kinds of nonsmooth systems, by declaring the `dcs_mode`:
 1. `settings.dcs_mode = 'Stewart'` - for treating Filippov systems via Stewart's reformulation
-2. `settings.dcs_mode = 'Step'` - for treating nonsmooth systems via set valued step functions (covers also all Filippov systems that are treated with Stewart's).
+2. `settings.dcs_mode = 'Heaviside'` - for treating nonsmooth systems via set valued step functions (covers also all Filippov systems that are treated with Stewart's).
 3. `settings.dcs_mode = 'CLS'` - for rigid bodies with friction and impact (also called complementarity Lagrangian systems (CLS)) - uses FESD tailored to CLS.
 4. `settings.time_freezing = 1` - and using for the `dcs_mode = Step`, the CLS is reformulated into an equivalent Filippov system and treated with FESD.
 

@@ -33,6 +33,6 @@ classdef StepEquilibrationMode
         direct
         direct_homotopy
         direct_homotopy_lift
-        mlcp
+        linear_complementarity
     end
 end

@@ -27,7 +27,7 @@
 classdef DcsMode
     enumeration
         Stewart
-        Step
+        Heaviside
         CLS
     end
 end

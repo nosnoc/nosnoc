@@ -40,7 +40,7 @@ problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation= 'differential';
 problem_options.rk_representation= 'integral';
-problem_options.dcs_mode = 'Step';
+problem_options.dcs_mode = 'Heaviside';
 
 % discretization parameters
 N_sim = 1;

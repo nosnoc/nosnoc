@@ -14,7 +14,7 @@ model = NosnocModel();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;
-problem_options.dcs_mode = 'Step';
+problem_options.dcs_mode = 'Heaviside';
 problem_options.pss_lift_step_functions= 1;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 3e2;
 solver_options.print_level = 2;

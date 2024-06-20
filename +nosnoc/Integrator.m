@@ -39,13 +39,21 @@ classdef Integrator < handle
                     obj.dcs.generate_equations(opts);
                     obj.discrete_time_problem = nosnoc.discrete_time_problem.Stewart(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
-                elseif opts.dcs_mode == DcsMode.Step % TODO: RENAME
-                    error("not implemented")
+                elseif opts.dcs_mode == DcsMode.Heaviside % TODO: RENAME
+                    obj.dcs = nosnoc.dcs.Heaviside(model);
+                    obj.dcs.generate_variables(opts);
+                    obj.dcs.generate_equations(opts);
+                    obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
+                    obj.discrete_time_problem.populate_problem();
                 else
                     error("PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
                 end
               case "nosnoc.model.heaviside"
-                error("not implemented")
+                obj.dcs = nosnoc.dcs.Heaviside(model);
+                obj.dcs.generate_variables(opts);
+                obj.dcs.generate_equations(opts);
+                obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
+                obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.cls"
                 error("not implemented")
               case "nosnoc.model.pds"
@@ -101,6 +109,10 @@ classdef Integrator < handle
                     for jj = 1:opts.n_s
                         t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
                     end
+                end
+
+                if opts.use_previous_solution_as_initial_guess
+                    obj.discrete_time_problem.w.init = obj.discrete_time_problem.w.res;
                 end
                 obj.set_x0(x_step(:,end));
             end

@@ -28,17 +28,27 @@ classdef Solver < handle
                     obj.dcs.generate_equations(opts);
                     obj.discrete_time_problem = nosnoc.discrete_time_problem.Stewart(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
-                elseif opts.dcs_mode == DcsMode.Step % TODO: RENAME
-                    error("not implemented")
+                elseif opts.dcs_mode == DcsMode.Heaviside % TODO: RENAME
+                    obj.dcs = nosnoc.dcs.Heaviside(model);
+                    obj.dcs.generate_variables(opts);
+                    obj.dcs.generate_equations(opts);
+                    obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
+                    obj.discrete_time_problem.populate_problem();
                 else
                     error("PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
                 end
-              case "nosnoc.model.heaviside"
+              case "nosnoc.model.Heaviside"
+                obj.dcs = nosnoc.dcs.Heaviside(model);
+                obj.dcs.generate_variables(opts);
+                obj.dcs.generate_equations(opts);
+                obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
+                obj.discrete_time_problem.populate_problem();
+              case "nosnoc.model.Cls"
                 error("not implemented")
-              case "nosnoc.model.cls"
+              case "nosnoc.model.Pds"
                 error("not implemented")
-              case "nosnoc.model.pds"
-                error("not implemented")
+              otherwise
+                error("Unknown model type")
             end
         end
 

@@ -11,15 +11,16 @@ solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation = RKRepresentation.integral;
 problem_options.n_s = 2;
-problem_options.N_stages = 10; % number of control intervals
-problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
-problem_options.T = 1;    % Time horizon
-problem.options.dcs_mode = "Stewart"; % or "Heaviside"
+problem_options.N_stages = 11; % number of control intervals
+problem_options.N_finite_elements = 4; % number of finite element on every control interval (optionally a vector might be passed)
+problem_options.T = 1.0;    % Time horizon
+problem_options.dcs_mode = "Heaviside"; % or "Heaviside"
 problem_options.time_optimal_problem = true;
-problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
+problem_options.step_equilibration = StepEquilibrationMode.linear_complementarity;
 problem_options.use_fesd = 1;
+problem_options.use_speed_of_time_variables = 1;
+problem_options.local_speed_of_time_variable = 1;
 %% Create model
-% model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 
 q = SX.sym('q'); 
 v = SX.sym('v'); 
@@ -28,6 +29,7 @@ model.x = [q;v];
 model.x0 = [0;0];
 model.lbx = [-inf;-20]; model.ubx = [inf;20];
 model.u = u;
+model.u0 = 1;
 model.lbu = -5; model.ubu = 5;
 % Dyanmics and the regions
 f_1 = [v;u]; % mode 1 - nominal

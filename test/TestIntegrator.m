@@ -5,7 +5,7 @@ classdef TestIntegrator < matlab.unittest.TestCase
         use_fesd = {0,1};
         rk_representation = {'differential','integral'};
         rk_scheme = {RKSchemes.RADAU_IIA,RKSchemes.GAUSS_LEGENDRE};
-        dcs_mode = {'Step','Stewart'};
+        dcs_mode = {'Heaviside','Stewart'};
     end
 
     methods (Test)

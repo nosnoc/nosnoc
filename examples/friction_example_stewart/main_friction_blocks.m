@@ -62,7 +62,7 @@ T_sim = 12;
 N_sim = 85;
 
 problem_options.dcs_mode = 'Stewart';
-% problem_options.dcs_mode = 'Step';
+% problem_options.dcs_mode = 'Heaviside';
 
 problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;

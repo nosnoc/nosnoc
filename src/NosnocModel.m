@@ -224,7 +224,7 @@ classdef NosnocModel < handle
                     switch dcs_mode
                       case 'Stewart'
                         obj.f_x = obj.f_x + obj.F{ii}*obj.theta_sys{ii};
-                      case 'Step'
+                      case 'Heaviside'
                         obj.f_x = obj.f_x + obj.F{ii}*obj.theta_step_sys{ii};
                       case 'CLS'
                         if ~problem_options.lift_velocity_state
@@ -280,7 +280,7 @@ classdef NosnocModel < handle
                     g_convex = [g_convex;ones(dims.n_f_sys(ii),1)'*obj.theta_sys{ii}-1];
                     lambda00_expr = [lambda00_expr; obj.g_Stewart{ii}- min(obj.g_Stewart{ii})];
                     f_comp_residual = f_comp_residual + obj.lambda_sys{ii}'*obj.theta_sys{ii};
-                  case 'Step'
+                  case 'Heaviside'
                     % c_i(x) - (lambda_p_i-lambda_n_i)  = 0; for all i = 1,..., n_sys
                     % lambda_n_i'*alpha_i  = 0; for all i = 1,..., n_sys
                     % lambda_p_i'*(e-alpha_i)  = 0; for all i = 1,..., n_sys
@@ -447,7 +447,7 @@ classdef NosnocModel < handle
                     obj.lambda_sys{ii} = define_casadi_symbolic(casadi_symbolic_mode,['lambda_' ii_str],obj.dims.n_f_sys(ii));
                     obj.lambda = [obj.lambda;obj.lambda_sys{ii}];
                 end
-              case 'Step'
+              case 'Heaviside'
                 n_alpha = sum(obj.dims.n_c_sys);
                 n_lambda_n = sum(obj.dims.n_c_sys);
                 n_lambda_p = sum(obj.dims.n_c_sys);
@@ -757,7 +757,7 @@ classdef NosnocModel < handle
                 % symbolic variables z = [theta;lambda;mu_Stewart];
                 obj.z_all = [obj.theta;obj.lambda;obj.mu];
                 obj.z_switching = [obj.lambda;obj.mu];
-              case 'Step'
+              case 'Heaviside'
                 obj.z_all = [obj.alpha;obj.lambda_n;obj.lambda_p;obj.beta;obj.theta_step];
                 obj.z_switching = [obj.lambda_n;obj.lambda_p];
               case 'CLS'
@@ -1273,7 +1273,7 @@ classdef NosnocModel < handle
                 end
             end
 
-            if isequal(problem_options.dcs_mode,'Step') || isequal(problem_options.dcs_mode,'Stewart')
+            if isequal(problem_options.dcs_mode,'Heaviside') || isequal(problem_options.dcs_mode,'Stewart')
                 if isempty(obj.F)
                     % Don't need F
                     if ~obj.general_inclusion
@@ -1314,7 +1314,7 @@ classdef NosnocModel < handle
                                         'Either provide the matrix S and the expression for c, or the expression for g_ind.']);
                             end
                         else
-                            error(['nosnoc: The user uses problem_options.dcs_mode = ''Step'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
+                            error(['nosnoc: The user uses problem_options.dcs_mode = ''Heaviside'', but the sign matrix S is not provided. Please provide the matrix S and the expressions for c(x) (definfing the region boundaries).']);
                         end
                     else
                         if isempty(obj.c)
@@ -1359,9 +1359,9 @@ classdef NosnocModel < handle
                         for ii = 1:dims.n_sys
                             if any(sum(abs(obj.S{ii}),2)<size(obj.S{ii},2))
                                 if dims.n_sys == 1
-                                    error('nosnoc: The matrix S is not dense. Either provide a dense matrix or use problem_options.mode = ''Step''.');
+                                    error('nosnoc: The matrix S is not dense. Either provide a dense matrix or use problem_options.mode = ''Heaviside''.');
                                 else
-                                    error(['The matrix S{' num2str(ii) '} of the provided matrices is not dense. Either provide all dense matrices or use problem_options.mode = ''Step''.']);
+                                    error(['The matrix S{' num2str(ii) '} of the provided matrices is not dense. Either provide all dense matrices or use problem_options.mode = ''Heaviside''.']);
                                 end
                             end
                         end
@@ -1377,7 +1377,7 @@ classdef NosnocModel < handle
                             case 'Stewart'
                                 % Create Stewart's indicator functions g_ind_ii
                                 obj.g_Stewart{ii} = -obj.S{ii}*obj.c{ii};
-                            case 'Step'
+                            case 'Heaviside'
                                 %eval(['c_' num2str(ii) '= c{ii};']);
                         end
                         % dimensions of c
@@ -1392,7 +1392,7 @@ classdef NosnocModel < handle
                     dims.n_c_sys = 0;
                 end
 
-                if max(dims.n_c_sys) < 2 && isequal(problem_options.dcs_mode,'Step')
+                if max(dims.n_c_sys) < 2 && isequal(problem_options.dcs_mode,'Heaviside')
                     pss_lift_step_functions = 0;
                     if problem_options.print_level >=1
                         fprintf('nosnoc: problem_options.pss_lift_step_functions set to 0, as are step fucntion selections are already entering the ODE linearly.\n')
@@ -1615,7 +1615,7 @@ classdef NosnocModel < handle
                 if obj.e == 0
                     % Basic problem_options
                     problem_options.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
-                    problem_options.dcs_mode = 'Step'; % time freezing inelastic works better step (very inefficient with stewart)
+                    problem_options.dcs_mode = 'Heaviside'; % time freezing inelastic works better step (very inefficient with stewart)
                     %% switching function
                     if problem_options.nonsmooth_switching_fun
                         obj.c = [max_smooth_fun(obj.f_c,v_normal,0);v_tangent];
@@ -1684,7 +1684,7 @@ classdef NosnocModel < handle
                     end
                 else
                     % elastic
-                    dcs_mode = 'Step';
+                    dcs_mode = 'Heaviside';
                     if isempty(obj.k_aux)
                         obj.k_aux = 10;
                         if problem_options.print_level > 1

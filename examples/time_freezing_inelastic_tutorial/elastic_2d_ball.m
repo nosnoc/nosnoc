@@ -7,7 +7,7 @@ close all
 problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
-problem_options.dcs_mode = DcsMode.Step;
+problem_options.dcs_mode = DcsMode.Heaviside;
 problem_options.n_s = 3;
 problem_options.cross_comp_mode = 1;
 solver_options.print_level = 2;
