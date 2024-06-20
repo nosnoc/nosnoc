@@ -17,7 +17,9 @@ problem_options.T = 1.0;    % Time horizon
 problem_options.dcs_mode = "Heaviside"; % or "Heaviside"
 problem_options.time_optimal_problem = true;
 problem_options.step_equilibration = StepEquilibrationMode.linear_complementarity;
-problem_options.use_fesd = 0;
+problem_options.use_fesd = 1;
+problem_options.use_speed_of_time_variables = 1;
+problem_options.local_speed_of_time_variable = 1;
 %% Create model
 model = nosnoc.model.Pss(); 
 q = SX.sym('q'); 
