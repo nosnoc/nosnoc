@@ -278,6 +278,8 @@ classdef Options < handle
 
         use_previous_solution_as_initial_guess(1,1) logical = 0 % boolean: When simulating use the previous step as an initial guess for the current one.
 
+        has_clock_state(1,1) logical = 0
+        
         T_val(1,1) double {mustBePositive} = 1
         p_val
 
