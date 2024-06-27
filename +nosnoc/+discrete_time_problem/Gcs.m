@@ -211,60 +211,8 @@ classdef Gcs < vdx.problems.Mpcc
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case RKRepresentation.differential
-                        error("Differential representation is currently unsupported")
-                        % In differential representation stage variables are the state derivatives.
-                        X_ijk = {};
-                        for kk = 1:opts.n_s
-                            x_temp = x_prev;
-                            for rr = 1:opts.n_s
-                                x_temp = x_temp + h*opts.A_rk(kk,rr)*obj.w.v(ii,jj,rr);
-                            end
-                            X_ijk = [X_ijk {x_temp}];
-                        end
-                        X_ijk = [X_ijk, {obj.w.x(ii,jj,opts.n_s)}];
-                        x_ij_end = x_prev;
-                        for kk=1:opts.n_s
-                            x_ijk = X_ijk{kk};
-                            v_ijk = obj.w.v(ii,jj,kk);
-                            z_ijk = obj.w.z(ii,jj,kk);
-                            lambda_ijk = obj.w.lambda(ii,jj,kk);
-                            
-                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
-                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
-
-                            x_ij_end = x_ij_end + h*opts.b_rk(kk)*v_ijk;
-                            obj.g.v(ii,jj,kk) = {fj - v_ijk};
-                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                            obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};
-                            
-                            if opts.g_path_at_stg
-                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
-                            end
-                            if size(model.G_path, 1) > 0
-                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                obj.G.path(ii,jj,kk) = {G_path};
-                                obj.H.path(ii,jj,kk) = {H_path};
-                            end
-                            if opts.cost_integration
-                                % also integrate the objective
-                                obj.f = obj.f + opts.b_rk(kk)*h*qj;
-                            end
-                        end
-                        if ~opts.right_boundary_point_explicit
-                            x_ijk = obj.w.x(ii,jj,opts.n_s+1);
-                            z_ijk = obj.w.z(ii,jj,opts.n_s+1);
-                            lambda_ijk = obj.w.lambda(ii,jj,opts.n_s+1);
-                            
-                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.c_lb(ii,jj,opts.n_s+1) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                        else
-                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
-                        end
-                        if ~opts.g_path_at_stg && opts.g_path_at_fe
-                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
-                        end
+                        error("Differential representation without lifting is unsupported for gradient complementarity systems")
+                        
                       case RKRepresentation.differential_lift_x
                         % In differential representation with lifted state stage variables are the state derivatives and we
                         % lift the states at each stage point as well.

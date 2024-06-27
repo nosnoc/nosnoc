@@ -11,20 +11,20 @@ T_sim = 10;
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.n_s = 4;
-%problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
+problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 %problem_options.rk_scheme = RKSchemes.LOBATTO_IIIC;
-problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-%problem_options.rk_representation= RKRepresentation.differential_lift_x; 
-problem_options.rk_representation = RKRepresentation.integral;
+%problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_representation= RKRepresentation.differential_lift_x; 
+%problem_options.rk_representation = RKRepresentation.integral;
 problem_options.cross_comp_mode = CrossCompMode.STAGE_STAGE;
-problem_options.cross_comp_mode = CrossCompMode.FE_FE;
+%problem_options.cross_comp_mode = CrossCompMode.FE_FE;
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
 problem_options.rho_h = 1e-4;
 %solver_options.homotopy_steering_strategy = 'ELL_INF';
-solver_options.complementarity_tol = 1e-12;
-solver_options.print_level = 2;
+solver_options.complementarity_tol = 1e-10;
+solver_options.print_level = 3;
 
 model = nosnoc.model.Pds();
 
