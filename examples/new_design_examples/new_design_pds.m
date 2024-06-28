@@ -10,12 +10,12 @@ T_sim = 10;
 %% NOSNOC settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.n_s = 4;
+problem_options.n_s = 3;
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 %problem_options.rk_scheme = RKSchemes.LOBATTO_IIIC;
 %problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.rk_representation= RKRepresentation.differential_lift_x; 
-%problem_options.rk_representation = RKRepresentation.integral;
+%problem_options.rk_representation= RKRepresentation.differential_lift_x; 
+problem_options.rk_representation = RKRepresentation.integral;
 problem_options.cross_comp_mode = CrossCompMode.STAGE_STAGE;
 %problem_options.cross_comp_mode = CrossCompMode.FE_FE;
 problem_options.N_sim = N_sim;
