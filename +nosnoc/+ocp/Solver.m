@@ -70,7 +70,13 @@ classdef Solver < handle
             try
                 var = obj.discrete_time_problem.w.(field);
             catch
-                error(['nosnoc:' char(field) ' is not a valid field for this OCP']);
+                if strcmp(field, 'T_final')
+                    warning("You are trying to get the final time from a non-time-optimal problem. Instead returning the fixed time.")
+                    ret = obj.discrete_time_problem.p.T.val;
+                    return
+                else
+                    error(['nosnoc:' char(field) ' is not a valid field for this OCP']);
+                end
                 % TODO@anton print list of valid fields.
             end
             if var.depth == 3

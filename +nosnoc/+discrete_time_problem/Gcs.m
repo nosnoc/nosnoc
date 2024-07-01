@@ -419,7 +419,7 @@ classdef Gcs < vdx.problems.Mpcc
                             for rr=1:(opts.n_s + rbp)
                                 lambda_ijr = obj.w.lambda(ii,jj,rr);
 
-                                Gij = vertcat(Gij, {lambda_prev});
+                                Gij = vertcat(Gij, {lambda_ijr});
                                 Hij = vertcat(Hij, {c_prev});
                             end
                             for kk=1:(opts.n_s + rbp)
