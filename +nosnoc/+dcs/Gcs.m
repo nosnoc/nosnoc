@@ -1,6 +1,7 @@
 classdef Gcs < nosnoc.dcs.Base
     properties
         lambda
+        c_lift
 
         f_x
 
@@ -10,6 +11,7 @@ classdef Gcs < nosnoc.dcs.Base
         nabla_c_fun
         c_fun
         g_comp_path_fun
+        g_c_lift_fun
     end
 
     methods
@@ -23,8 +25,14 @@ classdef Gcs < nosnoc.dcs.Base
             dims = obj.dims;
             % dimensions
             dims.n_lambda = dims.n_c;
+            if opts.gcs_lift_gap_functions
+                dims.n_c_lift = dims.n_c;
+            else
+                dims.n_c_lift = 0;
+            end
             obj.lambda = define_casadi_symbolic(opts.casadi_symbolic_mode,'lambda',dims.n_lambda);
-
+            obj.c_lift = define_casadi_symbolic(opts.casadi_symbolic_mode,'c_lift',dims.n_c_lift);
+            
             obj.dims = dims;
         end
 
@@ -34,6 +42,13 @@ classdef Gcs < nosnoc.dcs.Base
             dims = obj.dims;
 
             nabla_c = model.c.jacobian(model.x)';
+            if opts.gcs_lift_gap_functions
+                g_c_lift = obj.c_lift - model.c;
+                c = obj.c_lift;
+            else
+                g_c_lift = [];
+                c = model.c;
+            end
             
             obj.f_x = model.f_x + model.E*nabla_c*obj.lambda;
 
@@ -42,7 +57,8 @@ classdef Gcs < nosnoc.dcs.Base
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {[]});
-            obj.c_fun = Function('c_fun', {model.x, model.z, model.v_global, model.p}, {model.c});
+            obj.c_fun = Function('c_fun', {model.x, obj.c_lift, model.z, model.v_global, model.p}, {c});
+            obj.g_c_lift_fun = Function('c_fun', {model.x, obj.c_lift, model.z, model.v_global, model.p}, {g_c_lift});
             obj.nabla_c_fun = Function('c_fun', {model.x, model.z, model.v_global, model.p}, {nabla_c});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.G_path_fun  = Function('G_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.G_path});

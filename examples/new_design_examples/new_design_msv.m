@@ -21,6 +21,7 @@ problem_options.T = 1;
 problem_options.rho_h = 1e-4;
 problem_options.time_optimal_problem = true;
 problem_options.use_fesd = true;
+problem_options.gcs_lift_gap_functions = false;
 %solver_options.homotopy_steering_strategy = 'ELL_INF';
 solver_options.complementarity_tol = 1e-10;
 solver_options.print_level = 3;
