@@ -1,7 +1,5 @@
 API
 ===
 
-.. automodule:: +nosnoc/+model
+.. module:: +nosnoc.+model
 .. autoclass:: Pds
-   :show-inheritance:
-   :members:
