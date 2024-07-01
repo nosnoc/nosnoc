@@ -20,6 +20,7 @@ problem_options.N_stages = 25;
 problem_options.T = 1;
 problem_options.rho_h = 1e-4;
 problem_options.time_optimal_problem = true;
+problem_options.use_fesd = true;
 %solver_options.homotopy_steering_strategy = 'ELL_INF';
 solver_options.complementarity_tol = 1e-10;
 solver_options.print_level = 3;
@@ -60,8 +61,10 @@ u_res = ocp_solver.get('u');
 u_rep = kron(u_res, ones(1,problem_options.N_finite_elements(1)));
 T_final = ocp_solver.get('T_final');
 lambda_res = ocp_solver.get('lambda');
-h_res = ocp_solver.get('h');
-t_res = [0,cumsum(h_res)];
+t_res = ocp_solver.get_time_grid();
+if ~problem_options.use_fesd
+    t_res = t_res*T_final
+end
 c_fun = casadi.Function('nabla_c', {x}, {model.c});
 nabla_c_fun = casadi.Function('nabla_c', {x}, {model.c.jacobian(x)'});
 c_res = full(c_fun(x_res(1:4,:)));

@@ -4,8 +4,8 @@ classdef Gcs < vdx.problems.Mpcc
         dcs
         opts
 
-        populated
-        sorted
+        populated = false
+        sorted = false
     end
 
     methods
@@ -519,6 +519,8 @@ classdef Gcs < vdx.problems.Mpcc
                 obj.G.standard_comp(0,0,opts.n_s) = {lambda_prev};
                 obj.H.standard_comp(0,0,opts.n_s) = {c_prev};
                 for ii=1:opts.N_stages
+                    p_stage = obj.p.p_time_var(ii);
+                    p = [p_global;p_stage];
                     for jj=1:opts.N_finite_elements(ii);
                         Gij = {};
                         Hij = {};
@@ -808,19 +810,21 @@ classdef Gcs < vdx.problems.Mpcc
             opts = obj.opts;
             T_val = obj.p.T().val;
 
-            for ii=1:opts.N_stages
-                for jj=1:opts.N_finite_elements(ii)
-                    % Recalculate ubh and lbh based on T_val
-                    h0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
-                    ubh = (1 + opts.gamma_h) * h0;
-                    lbh = (1 - opts.gamma_h) * h0;
-                    if opts.time_rescaling && ~opts.use_speed_of_time_variables
-                        % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
-                        ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
-                        lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+            if opts.use_fesd
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(ii)
+                        % Recalculate ubh and lbh based on T_val
+                        h0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
+                        ubh = (1 + opts.gamma_h) * h0;
+                        lbh = (1 - opts.gamma_h) * h0;
+                        if opts.time_rescaling && ~opts.use_speed_of_time_variables
+                            % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
+                            ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
+                            lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                        end
+                        obj.w.h(ii,jj).lb = lbh;
+                        obj.w.h(ii,jj).ub = ubh;
                     end
-                    obj.w.h(ii,jj).lb = lbh;
-                    obj.w.h(ii,jj).ub = ubh;
                 end
             end
 
