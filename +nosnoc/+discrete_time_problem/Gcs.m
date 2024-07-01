@@ -93,7 +93,7 @@ classdef Gcs < vdx.problems.Mpcc
             for ii=1:opts.N_stages
                 obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 if opts.rk_representation == RKRepresentation.differential_lift_x)
-                    obj.w.v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'v', dims.n_x}};
+                    obj.w.v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'v', dims.n_x}}; % v = f_x
                 end
                 
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
@@ -355,7 +355,6 @@ classdef Gcs < vdx.problems.Mpcc
             dcs = obj.dcs;
             model = obj.model;
             % Do Cross-Complementarity
-            % TODO(@anton) correctly handle differential rk representation.
 
             rbp = ~opts.right_boundary_point_explicit;
 
