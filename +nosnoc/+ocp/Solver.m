@@ -49,6 +49,9 @@ classdef Solver < handle
                 if ~opts.right_boundary_point_explicit
                     error("You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA")
                 end
+                if opts.rk_representation == RKRepresentation.differential
+                    error("Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation")
+                end
                 obj.dcs = nosnoc.dcs.Gcs(model);
                 obj.dcs.generate_variables(opts);
                 obj.dcs.generate_equations(opts);

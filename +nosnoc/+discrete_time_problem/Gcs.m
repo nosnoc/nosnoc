@@ -91,14 +91,8 @@ classdef Gcs < vdx.problems.Mpcc
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf};
             for ii=1:opts.N_stages
-                if (opts.rk_representation == RKRepresentation.integral ||...
-                    opts.rk_representation == RKRepresentation.differential_lift_x)
-                    obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
-                else
-                    obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
-                end
-                if (opts.rk_representation == RKRepresentation.differential ||...
-                    opts.rk_representation == RKRepresentation.differential_lift_x)
+                obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                if opts.rk_representation == RKRepresentation.differential_lift_x)
                     obj.w.v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'v', dims.n_x}};
                 end
                 
@@ -106,7 +100,7 @@ classdef Gcs < vdx.problems.Mpcc
                 obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf};
                 
                 % Handle x_box settings
-                if ~opts.x_box_at_stg && opts.rk_representation ~= RKRepresentation.differential
+                if ~opts.x_box_at_stg
                     obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp-1)).lb = -inf*ones(dims.n_x, 1);
                     obj.w.x(1:opts.N_stages,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp-1)).ub = inf*ones(dims.n_x, 1);
                 end
