@@ -1,8 +1,8 @@
 classdef Pds < nosnoc.model.Base
     properties
-        f_x_unconstrained
-        c
-        E
+        f_x_unconstrained % casadi.SX or casadi.MX: Unconstrained state dynamics
+        c                 % casadi.SX or casadi.MX: Function used to define the feasible set $C = \{x | c(x) \ge 0\}$
+        E                 % double: Projection matrix which can be used to 
     end
 
     methods
@@ -34,7 +34,7 @@ classdef Pds < nosnoc.model.Base
                     error("nosnoc: Projection matrix E must be an n_x by n_x matrix where n_x is the number of functions defining the set C.")
                 end
             else
-                obj.E = eye(dims.n_c);
+                obj.E = eye(dims.n_x);
             end
 
             obj.dims = dims;

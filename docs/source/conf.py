@@ -6,7 +6,7 @@ import os
 
 project = 'nosnoc'
 copyright = '2024, Armin Nurkanovic, Jonathan Frey, Anton Pozharskiy, Moritz Diehl'
-author = 'Anton Pozharskiy'
+author = 'Armin Nurkanovic'
 
 release = '0.5'
 version = '0.5.0'
@@ -19,6 +19,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
     'sphinxcontrib.matlab',
 ]
 
