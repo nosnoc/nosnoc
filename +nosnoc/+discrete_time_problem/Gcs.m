@@ -5,6 +5,7 @@ classdef Gcs < vdx.problems.Mpcc
         opts
 
         populated
+        sorted
     end
 
     methods
@@ -66,11 +67,17 @@ classdef Gcs < vdx.problems.Mpcc
                 end
                 if obj.opts.step_equilibration == StepEquilibrationMode.linear_complementarity
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
+                    % forward sum of c(x) or backward sum of c(x).
                     obj.w.pi_c(ii,2:opts.N_finite_elements(ii)) = {{'pi_c', dims.n_c},-inf,inf};
+                    % forward sum of lambda or backward sum of lambda.
                     obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
-                    obj.w.lambda_c(ii,2:opts.N_finite_elements(ii)) = {{'lambda_c', dims.n_c},0,inf};
-                    obj.w.lambda_lambda(ii,2:opts.N_finite_elements(ii)) = {{'lambda_lambda', dims.n_lambda},0,inf};
+                    % multipliers for c(x) in max kkt conditions.
+                    obj.w.c_mult(ii,2:opts.N_finite_elements(ii)) = {{'c_mult', dims.n_c},0,inf};
+                    % multipliers for lambda in max kkt conditions.
+                    obj.w.lambda_mult(ii,2:opts.N_finite_elements(ii)) = {{'lambda_mult', dims.n_lambda},0,inf};
+                    % pi_c and pi_lambda, i.e. vector of switch indicators.
                     obj.w.eta(ii,2:opts.N_finite_elements(ii)) = {{'eta', dims.n_lambda},0,inf};
+                    % an or of all the switch indicators.
                     obj.w.nu(ii,2:opts.N_finite_elements(ii)) = {{'nu', 1},0,inf};
                 end
                 if ~opts.right_boundary_point_explicit
@@ -138,7 +145,7 @@ classdef Gcs < vdx.problems.Mpcc
             for ii=1:opts.N_stages
                 h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
                 
-                ui = obj.w.u(ii);
+                u_i = obj.w.u(ii);
                 p_stage = obj.p.p_time_var(ii);
                 p = [p_global;p_stage];
                 if obj.opts.use_speed_of_time_variables && opts.local_speed_of_time_variable
@@ -175,31 +182,31 @@ classdef Gcs < vdx.problems.Mpcc
                             z_ijk = obj.w.z(ii,jj,kk);
                             lambda_ijk = obj.w.lambda(ii,jj,kk);
 
-                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
-                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
+                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
+                            q_ijk = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
                             xk = opts.C_rk(1, kk+1) * x_prev;
                             for rr=1:opts.n_s
                                 x_ijr = obj.w.x(ii,jj,rr);
                                 xk = xk + opts.C_rk(rr+1, kk+1) * x_ijr;
                             end
-                            obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
-                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.dynamics(ii,jj,kk) = {h * f_ijk - xk};
+                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};
 
                             x_ij_end = x_ij_end + opts.D_rk(kk+1)*x_ijk;
                             
                             if opts.g_path_at_stg
-                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                             end
                             if size(model.G_path, 1) > 0
-                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
-                                obj.f = obj.f + opts.B_rk(kk+1)*h*qj;
+                                obj.f = obj.f + opts.B_rk(kk+1)*h*q_ijk;
                             end
                         end
                         if ~opts.right_boundary_point_explicit
@@ -208,7 +215,7 @@ classdef Gcs < vdx.problems.Mpcc
                             lambda_ijk = obj.w.lambda(ii,jj,opts.n_s+1);
                             mu_not_c_ij = obj.w.mu_not_c(ii,jj);
                             not_c_primals_ij = obj.w.not_c_primals(ii,jj);
-                            f_ijk = dcs.f_fun(x_ijk, z_ijk, ui, v_global, p);
+                            f_ijk = dcs.f_fun(x_ijk, z_ijk, u_i, v_global, p);
                             nabla_c_ijk = dcs.nabla_c_fun(x_ijk, z_ijk, v_global, p);
                             lambda_cf_ijk = inv(nabla_c_ijk'*nabla_c_ijk)*nabla_c_ijk'*f_ijk;
 
@@ -220,10 +227,10 @@ classdef Gcs < vdx.problems.Mpcc
                             obj.g.lambda_explicit(ii,jj) = {[lambda_ijk-c*lambda_cf_ijk]};
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.c_lb(ii,jj,opts.n_s+1) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
-                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case RKRepresentation.differential
                         error("Differential representation without lifting is unsupported for gradient complementarity systems")
@@ -246,26 +253,26 @@ classdef Gcs < vdx.problems.Mpcc
                             z_ijk = obj.w.z(ii,jj,kk);
                             lambda_ijk = obj.w.lambda(ii,jj,kk);
                            
-                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
-                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
+                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
+                            q_ijk = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
 
                             x_ij_end = x_ij_end + h*opts.b_rk(kk)*v_ijk;
-                            obj.g.v(ii,jj,kk) = {fj - v_ijk};
-                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.v(ii,jj,kk) = {f_ijk - v_ijk};
+                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};
                             
                             if opts.g_path_at_stg
-                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                             end
                             if size(model.G_path, 1) > 0
-                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
-                                obj.f = obj.f + opts.b_rk(kk)*h*qj;
+                                obj.f = obj.f + opts.b_rk(kk)*h*q_ijk;
                             end
                         end
                         if ~opts.right_boundary_point_explicit
@@ -275,12 +282,12 @@ classdef Gcs < vdx.problems.Mpcc
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.c_lb(ii,jj,opts.n_s+1) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
-                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                         end
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
@@ -288,7 +295,7 @@ classdef Gcs < vdx.problems.Mpcc
                 if ~opts.g_path_at_stg && ~opts.g_path_at_fe
                     x_i = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s);
                     z_i = obj.w.z(ii, opts.N_finite_elements(ii), opts.n_s);
-                    obj.g.path(ii) = {dcs.g_path_fun(x_i, z_i, ui, v_global, p), model.lbg_path, model.ubg_path};
+                    obj.g.path(ii) = {dcs.g_path_fun(x_i, z_i, u_i, v_global, p), model.lbg_path, model.ubg_path};
                 end
 
                 % Least Squares Costs
@@ -304,12 +311,10 @@ classdef Gcs < vdx.problems.Mpcc
                         p);
                 end
                 if ~opts.cost_integration
-                    obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, ui, v_global, p);
+                    obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
                 end
 
                 % Clock Constraints
-                % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
-                %              to understand something about the time-freezing reformulation which is ugly.
                 if obj.opts.use_fesd && opts.equidistant_control_grid
                     if opts.time_optimal_problem
                         if opts.use_speed_of_time_variables
@@ -722,8 +727,8 @@ classdef Gcs < vdx.problems.Mpcc
                             sigma_lambda_F = sigma_lambda_F + obj.w.lambda(ii,jj,kk);
                         end
 
-                        lambda_lambda = obj.w.lambda_lambda(ii,jj);
-                        lambda_c = obj.w.lambda_c(ii,jj);
+                        lambda_mult = obj.w.lambda_mult(ii,jj);
+                        c_mult = obj.w.c_mult(ii,jj);
                         B_max = obj.w.B_max(ii,jj);
                         pi_lambda = obj.w.pi_lambda(ii,jj);
                         pi_c = obj.w.pi_c(ii,jj);
@@ -734,7 +739,7 @@ classdef Gcs < vdx.problems.Mpcc
                         obj.g.pi_c_or(ii,jj) = {[pi_c-sigma_c_F;pi_c-sigma_c_B;sigma_c_F+sigma_c_B-pi_c],0,inf};
 
                         % kkt conditions for min B, B>=sigmaB, B>=sigmaF
-                        kkt_max = [1-lambda_c-lambda_lambda;
+                        kkt_max = [1-c_mult-lambda_mult;
                             B_max-pi_lambda;
                             B_max-pi_c];
                         obj.g.kkt_max(ii,jj) = {kkt_max,
@@ -742,7 +747,7 @@ classdef Gcs < vdx.problems.Mpcc
                             [0*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
 
                         obj.G.step_eq_kkt_max(ii,jj) = {[(B_max-pi_lambda);(B_max-pi_c)]};
-                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_lambda;lambda_c]};
+                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_mult;c_mult]};
                         
                         % eta calculation
                         eta_const = [eta-pi_c;eta-pi_lambda;eta-pi_c-pi_lambda+B_max];
@@ -772,7 +777,7 @@ classdef Gcs < vdx.problems.Mpcc
             obj.populated = true;
         end
 
-        function create_solver(obj, solver_options, plugin)
+        function create_solver(obj, solver_options, plugin, regenerate)
             if ~obj.populated
                 obj.populate_problem();
             end
@@ -781,13 +786,22 @@ classdef Gcs < vdx.problems.Mpcc
                 plugin = 'scholtes_ineq';
             end
 
-            % Sort by indices to recover almost block-band structure.
-            obj.w.sort_by_index();
-            obj.g.sort_by_index();
+            if ~exist('regenerate')
+                regenerate = false;
+            end
 
+            % Sort by indices to recover almost block-band structure.
+            % TODO: Maybe it would be useful to do a custom sorting for FESD to make the problem maximally block band.
+            %       This is almost certainly necessary if we want to take advantage of e.g. FATROP. 
+            if ~obj.sorted
+                obj.w.sort_by_index();
+                obj.g.sort_by_index();
+            end
             solver_options.assume_lower_bounds = true;
 
-            obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj.to_casadi_struct(), solver_options);
+            if regenerate || isempty(obj.solver) || (nosnoc.solver.MpccMethod(plugin) ~= obj.solver.relaxation_type)
+                obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj.to_casadi_struct(), solver_options);
+            end
         end
 
         function stats = solve(obj)
@@ -823,8 +837,6 @@ classdef Gcs < vdx.problems.Mpcc
                 results.x = obj.discrete_time_problem.w.x(:,:,obj.opts.n_s).res;
                 results.z = obj.discrete_time_problem.w.z(:,:,obj.opts.n_s).res;
                 results.lambda = obj.discrete_time_problem.w.lambda(:,:,obj.opts.n_s).res;
-                results.mu = obj.discrete_time_problem.w.mu(:,:,obj.opts.n_s).res;
-                results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s).res;
             else
                 results.x = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
                     obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
@@ -832,9 +844,6 @@ classdef Gcs < vdx.problems.Mpcc
                     obj.discrete_time_problem.w.z(1:opts.N_stages,:,obj.opts.n_s+1).res];
                 results.lambda = [obj.discrete_time_problem.w.lambda(0,0,obj.opts.n_s).res,...
                     obj.discrete_time_problem.w.lambda(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.mu = [obj.discrete_time_problem.w.mu(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.mu(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s+1).res;
             end
             results.u = obj.w.u.res;
 

@@ -87,7 +87,7 @@ function plot_moving_set(h,pos,r,type,fig,vidname,export_frames)
             end
             discs{ii}.Vertices = v;
         end
-        t = pos(end,jj);
+        t = pos(end,jj+1);
         v_C = circ([sin(t);cos(t)],1);
         C.Vertices = v_C;
         drawnow limitrate;

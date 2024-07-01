@@ -75,7 +75,7 @@ classdef Integrator < handle
             obj.stats = [obj.stats,stats];
         end
 
-        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj)
+        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin)
             if ~exist('plugin', 'var')
                 plugin = 'scholtes_ineq';
             end

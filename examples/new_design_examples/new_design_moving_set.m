@@ -33,13 +33,13 @@ model.f_x = [0; 0; 1];
 model.E = diag([1,1,0]);
 
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
-[t_grid, x_res] = integrator.simulate();
+[t_grid, x_res] = integrator.simulate('natural_residual_ineq');
 %
 figure
 plot(x_res(1,:), x_res(2,:))
 grid on
-xlabel('$t$','Interpreter','latex')
-ylabel('$x(t)$','Interpreter','latex')
+xlabel('$x_1(t)$','Interpreter','latex')
+ylabel('$x_2(t)$','Interpreter','latex')
 grid on
 
 fig = figure('Position', [10 10 1600 800]);

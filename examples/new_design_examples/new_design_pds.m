@@ -42,8 +42,8 @@ integrator = nosnoc.Integrator(model, problem_options, solver_options);
 figure
 plot(x_res(1,:), x_res(2,:))
 grid on
-xlabel('$t$','Interpreter','latex')
-ylabel('$x(t)$','Interpreter','latex')
+xlabel('$x_1(t)$','Interpreter','latex')
+ylabel('$x_2(t)$','Interpreter','latex')
 grid on
 
 c_fun = casadi.Function('c', {model.x}, {model.c});
