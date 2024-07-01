@@ -130,6 +130,7 @@ classdef Gcs < vdx.problems.Mpcc
             v_global = obj.w.v_global();
             p_global = obj.p.p_global();
 
+            % Recall that we treat (0,0,n_s) as the initial point. This is done for ergonomics in extracting results.
             x_0 = obj.w.x(0,0,opts.n_s);
             z_0 = obj.w.z(0,0,opts.n_s);
             lambda_0 = obj.w.lambda(0,0,opts.n_s);
