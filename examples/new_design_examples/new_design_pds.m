@@ -34,7 +34,7 @@ model.x0 = [sqrt(2)/2;sqrt(2)/2];
 x = SX.sym('x',2);
 model.x = x;
 model.c = x(2)+0.2;
-model.f_x = [x(2);-x(1)];
+model.f_x_unconstrained = [x(2);-x(1)];
 
 model.x0 = [0;pi-2];
 

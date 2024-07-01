@@ -29,7 +29,7 @@ x = SX.sym('x',2);
 t = SX.sym('t');
 model.x = [x;t];
 model.c = [-norm(x - [sin(t);cos(t)])^2+(1-0.5)^2];
-model.f_x = [0; 0; 1];
+model.f_x_unconstrained = [0; 0; 1];
 model.E = diag([1,1,0]);
 
 integrator = nosnoc.Integrator(model, problem_options, solver_options);

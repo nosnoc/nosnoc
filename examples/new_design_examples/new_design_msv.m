@@ -45,7 +45,7 @@ model.ubu = [100/sqrt(2);100/sqrt(2);60/sqrt(2);60/sqrt(2)];
 %model.ubu = [100/sqrt(2);100/sqrt(2);0;0];
 model.u0 = model.ubu;
 model.c = [norm_2(x2-x1)-2*R];
-model.f_x = [u1;u2];
+model.f_x_unconstrained = [u1;u2];
 
 % costs
 model.f_q = 0;

@@ -1,6 +1,6 @@
 classdef Pds < nosnoc.model.Base
     properties
-        f_x
+        f_x_unconstrained
         c
         E
     end
@@ -20,8 +20,8 @@ classdef Pds < nosnoc.model.Base
 
             dims = obj.dims;
 
-            if size(obj.f_x,1) ~= dims.n_x
-                error("nosnoc: f_x has incorrect dimension. It must have the same dimension as x.")
+            if size(obj.f_x_unconstrained,1) ~= dims.n_x
+                error("nosnoc: f_x_unconstrained has incorrect dimension. It must have the same dimension as x.")
             end
 
             dims.n_c = size(obj.c,1);

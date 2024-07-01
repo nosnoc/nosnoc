@@ -7,10 +7,9 @@ classdef Gcs < nosnoc.dcs.Base
 
         dims
 
-        f_fun
+        f_unconstrained_fun
         nabla_c_fun
         c_fun
-        g_comp_path_fun
         g_c_lift_fun
     end
 
@@ -50,10 +49,10 @@ classdef Gcs < nosnoc.dcs.Base
                 c = model.c;
             end
             
-            obj.f_x = model.f_x + model.E*nabla_c*obj.lambda;
+            obj.f_x = model.f_x_unconstrained + model.E*nabla_c*obj.lambda;
 
-            obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
-            obj.f_fun = Function('f', {model.x, model.z, model.u, model.v_global, model.p}, {model.f_x});
+            obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {obj.f_x});
+            obj.f_unconstrained_fun = Function('f_unconstrained', {model.x, model.z, model.u, model.v_global, model.p}, {model.f_x_unconstrained});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, model.u, model.v_global, model.p}, {[]});
@@ -76,7 +75,17 @@ classdef Gcs < nosnoc.dcs.Base
             propgrp = getPropertyGroups@nosnoc.dcs.Base(obj);
             group_title = 'Variables';
             var_list = struct;
-            var_list.lambda;
+            var_list.x = obj.model.x;
+            if ~any(size(obj.model.u) == 0)
+                var_list.u = obj.model.u;
+            end
+            if ~any(size(obj.model.z) == 0)
+                var_list.z = obj.model.z;
+            end
+            var_list.lambda = obj.lambda;
+            if ~any(size(obj.c_lift) == 0)
+                var_list.c_lift = obj.c_lift;
+            end
             propgrp(2) = matlab.mixin.util.PropertyGroup(var_list, group_title);
         end
     end
