@@ -1,16 +1,16 @@
 classdef Gcs < nosnoc.dcs.Base
     properties
-        lambda
-        c_lift
+        lambda %casadi.SX or casadi.MX: Lagrange multipliers for the gradient complementarity system.
+        c_lift %casadi.SX or casadi.MX: Lift variables for the gap functions in :class:`nosnoc.model.Pds`.
 
-        f_x
+        f_x % casadi.SX or casadi.MX: Right hand side of the gradient complementarity system
 
-        dims
+        dims % struct: dimensions struct.
 
-        f_unconstrained_fun
-        nabla_c_fun
-        c_fun
-        g_c_lift_fun
+        f_unconstrained_fun % casadi.Function: Unconstrained dynamics
+        nabla_c_fun % casadi.Function: Gradient of the gap functions.
+        c_fun % casadi.Function: Gap Functions
+        g_c_lift_fun % casadi.Function: Lifting constraints for the gap functions in :class:`nosnoc.model.Pds`.
     end
 
     methods

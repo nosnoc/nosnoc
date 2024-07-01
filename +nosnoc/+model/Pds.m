@@ -1,8 +1,8 @@
 classdef Pds < nosnoc.model.Base
     properties
-        f_x_unconstrained % casadi.SX or casadi.MX: Unconstrained state dynamics
-        c                 % casadi.SX or casadi.MX: Function used to define the feasible set $C = \{x | c(x) \ge 0\}$
-        E                 % double: Projection matrix which can be used to 
+        f_x_unconstrained % casadi.SX or casadi.MX: Unconstrained state dynamics.
+        c                 % casadi.SX or casadi.MX: Function used to define the feasible set $C = \{x | c(x) \ge 0\}$.
+        E                 % double: (EXPERIMENTAL) Projection matrix which can be used to adjust the projection used for the PDS.
     end
 
     methods
