@@ -46,6 +46,9 @@ classdef Solver < handle
               case "nosnoc.model.Cls"
                 error("not implemented")
               case "nosnoc.model.Pds"
+                if ~opts.right_boundary_point_explicit
+                    error("You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA")
+                end
                 obj.dcs = nosnoc.dcs.Gcs(model);
                 obj.dcs.generate_variables(opts);
                 obj.dcs.generate_equations(opts);

@@ -80,10 +80,6 @@ classdef Gcs < vdx.problems.Mpcc
                     % an or of all the switch indicators.
                     obj.w.nu(ii,2:opts.N_finite_elements(ii)) = {{'nu', 1},0,inf};
                 end
-                if ~opts.right_boundary_point_explicit
-                    obj.w.not_c_primals(ii,1:opts.N_finite_elements(ii)) = {{'not_c_primal', 2}, 0 inf, 0.5};
-                    obj.w.mu_not_c(ii,1:opts.N_finite_elements(ii)) = {{'mu_lambda', 3}, 0 inf, 0.5};
-                end
             end
 
             % For c_n ~= 1 case
@@ -210,24 +206,7 @@ classdef Gcs < vdx.problems.Mpcc
                             end
                         end
                         if ~opts.right_boundary_point_explicit
-                            x_ijk = obj.w.x(ii,jj,opts.n_s+1);
-                            z_ijk = obj.w.z(ii,jj,opts.n_s+1);
-                            lambda_ijk = obj.w.lambda(ii,jj,opts.n_s+1);
-                            mu_not_c_ij = obj.w.mu_not_c(ii,jj);
-                            not_c_primals_ij = obj.w.not_c_primals(ii,jj);
-                            f_ijk = dcs.f_fun(x_ijk, z_ijk, u_i, v_global, p);
-                            nabla_c_ijk = dcs.nabla_c_fun(x_ijk, z_ijk, v_global, p);
-                            lambda_cf_ijk = inv(nabla_c_ijk'*nabla_c_ijk)*nabla_c_ijk'*f_ijk;
-
-                            c = not_c_primals_ij(1); d = not_c_primals_ij(2);
-                            c_ijk = dcs.c_fun(x_ijk, z_ijk, v_global, p);
-                            obj.g.not_c(ii,jj) = {[c + d*c_ijk - 1;1-mu_not_c_ij(1) - mu_not_c_ij(2);mu_not_c_ij(1)*c_ijk + mu_not_c_ij(3)], [0;0;0], [inf;0;0]};
-                            obj.G.not_c(ii,jj) = {[c + d*c_ijk - 1;c;d]};
-                            obj.H.not_c(ii,jj) = {[mu_not_c_ij]};
-                            obj.g.lambda_explicit(ii,jj) = {[lambda_ijk-c*lambda_cf_ijk]};
-                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.c_lb(ii,jj,opts.n_s+1) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
+                            error("not implemented")
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
@@ -276,13 +255,7 @@ classdef Gcs < vdx.problems.Mpcc
                             end
                         end
                         if ~opts.right_boundary_point_explicit
-                            x_ijk = obj.w.x(ii,jj,opts.n_s+1);
-                            z_ijk = obj.w.z(ii,jj,opts.n_s+1);
-                            lambda_ijk = obj.w.lambda(ii,jj,opts.n_s+1);
-
-                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.c_lb(ii,jj,opts.n_s+1) = {dcs.c_fun(x_ijk, z_ijk, v_global, p), 0, inf};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
+                            error("not implemented");
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
