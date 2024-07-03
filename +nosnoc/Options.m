@@ -146,7 +146,7 @@ classdef Options < handle
 
         % int: Level of verbosity that the `nosnoc` reformulator uses.
         %
-        % TODO:
+        % Todo:
         %    @anton, @armin document this better.
         print_level = 3
 

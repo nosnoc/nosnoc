@@ -1,20 +1,28 @@
 classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
+% Base class for Dynamic Complementarity Systems of the (most generic) form
+%
+% .. math::
+%     :nowrap:
+%
+%     \begin{align*}
+%        \dot{x}&= f(x,z) \\
+%        0 &\le h(x,z) \perp z \ge 0
+%     \end{align*}
     properties
         model
 
-        f_x_fun % CasADi function - Related to DCS 
-        f_q_fun % CasADi function - Related to DCS 
-        g_z_fun % CasADi function - Related to DCS 
-        g_alg_fun % CasADi function - Related to DCS 
-        % No
-        g_path_fun % CasADi function - Only defined in an OCP
-        G_path_fun % CasADi function - Only defined in an OCP
-        H_path_fun % CasADi function - Only defined in an OCP
-        g_terminal_fun % CasADi function - Only defined in an OCP
-        f_q_T_fun % CasADi function - Only defined in an OCP
-        f_lsq_x_fun % CasADi function - Only defined in an OCP
-        f_lsq_u_fun % CasADi function - Only defined in an OCP
-        f_lsq_T_fun % CasADi function - Only defined in an OCP
+        f_x_fun % casadi.Function: Right hand side of the DCS.
+        f_q_fun % casadi.Function: Lagrange cost term function.
+        g_z_fun % casadi.Function: User algebraic constraints cost function.
+        g_alg_fun % casadi.Function: Constraints for algorithmically defined algebraics. 
+        g_path_fun % casadi.Function: Function for non-box path constraints. Only defined in an OCP.
+        G_path_fun % casadi.Function: Function for one half of path complementarity. Only defined in an OCP.
+        H_path_fun % casadi.Function: Function for one half of path complementarity. Only defined in an OCP.
+        g_terminal_fun % casadi.Function: Function for terminal constraints. Only defined in an OCP.
+        f_q_T_fun % casadi.Function: Function for Mayer cost term. Only defined in an OCP.
+        f_lsq_x_fun % casadi.Function: Function for least squares cost on the differential state. Only defined in an OCP.
+        f_lsq_u_fun % casadi.Function: Function for least squares cost on the controls. Only defined in an OCP.
+        f_lsq_T_fun % casadi.Function: Function for least squares cost on the terminal state. Only defined in an OCP.
     end
 
     methods(Abstract)

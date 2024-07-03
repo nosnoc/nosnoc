@@ -1,15 +1,25 @@
 classdef Gcs < nosnoc.dcs.Base
+% A particular class of Dynamic Complementarity system called a Gradient complementarity system.
+% It is defined by the dynamics:
+%
+% .. math::
+%     :nowrap:
+%
+%     \begin{align*}
+%        \dot{x} &= f(x) + \nabla c(x)\lambda \\
+%        0 &\le c(x) \perp \lambda \ge 0
+%     \end{align*}
     properties
-        lambda %casadi.SX or casadi.MX: Lagrange multipliers for the gradient complementarity system.
-        c_lift %casadi.SX or casadi.MX: Lift variables for the gap functions in :class:`nosnoc.model.Pds`.
-
+        lambda % casadi.SX|casadi.MX: Lagrange multipliers for the gradient complementarity system.
+        c_lift % casadi.SX|casadi.MX: Lift variables for the gap functions in :class:`nosnoc.model.Pds`.
+        
         f_x % casadi.SX or casadi.MX: Right hand side of the gradient complementarity system
 
-        dims % struct: dimensions struct.
+        dims % struct: dimensions struct TODO document members
 
-        f_unconstrained_fun % casadi.Function: Unconstrained dynamics
+        f_unconstrained_fun % casadi.Function: Unconstrained dynamics.
         nabla_c_fun % casadi.Function: Gradient of the gap functions.
-        c_fun % casadi.Function: Gap Functions
+        c_fun % casadi.Function: Gap Functions.
         g_c_lift_fun % casadi.Function: Lifting constraints for the gap functions in :class:`nosnoc.model.Pds`.
     end
 
