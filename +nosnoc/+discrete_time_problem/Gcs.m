@@ -87,8 +87,8 @@ classdef Gcs < vdx.problems.Mpcc
             
             % 3d vars: Variables defined on each rk stage
             %          some of which are also defined at the initial point:
-            obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
-            obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
+            obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0}; % differential state
+            obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0}; % user algebraics
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf};
             obj.w.c_lift(0,0,opts.n_s) = {{['c_lift'], dims.n_c_lift},-inf,inf};
             for ii=1:opts.N_stages

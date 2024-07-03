@@ -1,5 +1,5 @@
 classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
-% Base class for all nosnoc models. It contains shared properties such as the state, user algebraics, controls etc.
+% Base class for all ``nosnoc`` models. It contains shared properties such as the state, user algebraics, controls etc.
 % It also contains the fields used to populate an Optimal Control problem such as Lagrange and Mayer cost terms,
 % an interface for least squares costs as well as non-box path and terminal constraints.
     properties
