@@ -81,6 +81,7 @@ classdef Options < handle
         initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\alpha$ in the Heaviside step reformulation.
         initial_beta(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta$ when lifting is enabled in the Heaviside step reformulation.
         initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\theta$ when lifting is enabled in the Heaviside step reformulation.
+        initial_lambda_gcs(1,1) double {mustBeReal, mustBeFinite} = 0 % double: Initial value for $\lambda$ in the Gradient Comlementarity System.
 
         % boolean: If true then the convex multiplier expressions are lifted in the Heaviside step reformulation.
         %

@@ -89,7 +89,7 @@ classdef Gcs < vdx.problems.Mpcc
             %          some of which are also defined at the initial point:
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0}; % differential state
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0}; % user algebraics
-            obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf};
+            obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf, opts.initial_lambda_gcs};
             obj.w.c_lift(0,0,opts.n_s) = {{['c_lift'], dims.n_c_lift},-inf,inf};
             for ii=1:opts.N_stages
                 obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
@@ -98,7 +98,7 @@ classdef Gcs < vdx.problems.Mpcc
                 end
                 
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-                obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf};
+                obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf, opts.initial_lambda_gcs};
                 obj.w.c_lift(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'c_lift', dims.n_c_lift},-inf,inf};
                 % Handle x_box settings
                 if ~opts.x_box_at_stg
