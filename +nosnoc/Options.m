@@ -28,7 +28,7 @@ classdef Options < handle
 % The main options class for `nosnoc`. It contains the options for simulation and optimal control reformulations but *does not*
 % contain settings for the MPCC solver.
     properties
-        % boolean: If true the FESD discretization is used, otherwise a direct time-stepping discretization is used
+        % boolean: If true the FESD discretization is used, otherwise a direct time-stepping discretization is used.
         use_fesd(1,1) logical = 1;
 
         % string: Which casadi symbolics to use. Can either be `'casadi.SX'` or `'casadi.MX'.`
@@ -38,9 +38,9 @@ classdef Options < handle
         N_sim
         h_sim
 
-        h % double: Step size
-        h_k % double: Finite element step size
-        T % double: Terminal time TODO: why is there also T_val, do we need both?
+        h % double: Control stage Step size.
+        h_k % double: Finite element step size.
+        T % double: Terminal time.
 
         N_stages(1,1) {mustBeInteger, mustBePositive} = 1; % int: Number of control stages.
 
@@ -145,6 +145,7 @@ classdef Options < handle
         kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5 % double: Constant used for stabilizing auxiliary dynamics in \nabla f_c(q) direction.
 
         % int: Level of verbosity that the `nosnoc` reformulator uses.
+        %
         % TODO:
         %    @anton, @armin document this better.
         print_level = 3
