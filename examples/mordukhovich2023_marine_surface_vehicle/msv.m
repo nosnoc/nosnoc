@@ -41,8 +41,6 @@ u2 = SX.sym('u2', 2);
 model.u = [u1;u2];
 model.lbu = [-100/sqrt(2);-100/sqrt(2);-60/sqrt(2);-60/sqrt(2)];
 model.ubu = [100/sqrt(2);100/sqrt(2);60/sqrt(2);60/sqrt(2)];
-%model.lbu = [-100/sqrt(2);-100/sqrt(2);0;0];
-%model.ubu = [100/sqrt(2);100/sqrt(2);0;0];
 model.u0 = model.ubu;
 model.c = [norm_2(x2-x1)-2*R];
 model.f_x_unconstrained = [u1;u2];
@@ -70,7 +68,6 @@ c_fun = casadi.Function('nabla_c', {x}, {model.c});
 nabla_c_fun = casadi.Function('nabla_c', {x}, {model.c.jacobian(x)'});
 c_res = full(c_fun(x_res(1:4,:)));
 nabla_c_res = full(nabla_c_fun(x_res(1:4,:)));
-%plot_discs(h_res,x_res,[3.5,3.5], ["circle", "circle"])
 v_res = u_rep + repmat(lambda_res(2:end),4,1).*nabla_c_res(:, 2:end);
 figure('Position', [0,0, 400. 400])
 ax = subplot(3,1,1);
