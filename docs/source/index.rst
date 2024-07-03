@@ -15,3 +15,4 @@ Contents
 
    usage
    models
+   options

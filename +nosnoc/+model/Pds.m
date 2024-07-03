@@ -8,7 +8,7 @@ classdef Pds < nosnoc.model.Base
 
         c % casadi.SX|casadi.MX: The gap functions $c(x)$ used in the definition of the feasible set $\mathcal{C}$. 
 
-        E % double: Square matrix $E \in \mathbb{R}^{n_x\times n_x}$ that is used as the weighting matrix for the projection operator.
+        E % double: Square matrix $E \in \mathbb{R}^{n_x\times n_x}$ that is used as the weighting matrix for the projection operator. By default this is the identity matrix.
     end
 
     methods

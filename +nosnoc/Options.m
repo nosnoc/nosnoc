@@ -25,134 +25,186 @@
 
 % This file is part of NOSNOC.
 classdef Options < handle
+% The main options class for `nosnoc`. It contains the options for simulation and optimal control reformulations but *does not*
+% contain settings for the MPCC solver.
     properties
-        % General
-        use_fesd(1,1) logical = 1
-        casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX'
+        % boolean: If true the FESD discretization is used, otherwise a direct time-stepping discretization is used
+        use_fesd(1,1) logical = 1;
 
-        % In case of simulation problem
+        % string: Which casadi symbolics to use. Can either be `'casadi.SX'` or `'casadi.MX'.`
+        casadi_symbolic_mode {mustBeMember(casadi_symbolic_mode,{'casadi.SX', 'casadi.MX'})} = 'casadi.SX';
+
         T_sim
         N_sim
         h_sim
 
-        h % Step size
-        h_k % Finite element step size
-        T % Terminal time % TODO: why is there also T_val, do we need both?
+        h % double: Step size
+        h_k % double: Finite element step size
+        T % double: Terminal time TODO: why is there also T_val, do we need both?
 
-        % descritization
-        N_stages(1,1) {mustBeInteger, mustBePositive} = 1;
+        N_stages(1,1) {mustBeInteger, mustBePositive} = 1; % int: Number of control stages.
+
+        % int: Number of finite elements in each control stage. This can either be a scalar value
+        % in which case it is transformed into a vector for that value when :meth:`preprocess` is called.
+        % Alternatively you can pass a vector of size :attr:`N_stages`.
         N_finite_elements {mustBeInteger, mustBePositive} = 2;
 
-        % IRK and FESD Settings
-        n_s(1,1) {mustBeInteger} = 2
+        n_s(1,1) {mustBeInteger} = 2 % int: Number of Stages in the Runge-Kutta scheme.
+
+        % RKSchemes: Which Runge-Kutta scheme family to use.
+        %
+        % See Also:
+        %    `RKSchemes` for more details as to the how to choose a Runge-Kutta Scheme and
+        %    for differences between them.
         rk_scheme(1,1) RKSchemes = RKSchemes.RADAU_IIA
+
+        % RKRepresentation: Which representation of Runge-Kutta discretization to use.
+        %
+        % See Also:
+        %     `RKRepresentation` for a description of the representations.
         rk_representation RKRepresentation = RKRepresentation.integral;
 
+        % CrossCompMode: Which cross complementarity mode to use.
+        %
+        % See Also:
+        %     `CrossCompMode` for a description of the representations.
         cross_comp_mode(1,1) CrossCompMode = CrossCompMode.FE_STAGE
+
+        % double: Fraction in the range $\gamma_h \in [0,1]$ by which the step size is relaxed:
+        % $$(1-\gamma_h) h_0\le h \le (1+\gamma_h) h_0$$
         gamma_h(1,1) double {mustBeReal} = 1
-        dcs_mode DcsMode = DcsMode.Stewart
+        dcs_mode DcsMode = DcsMode.Stewart % DcsMode: Which DCS to reformulate the problem into.
 
-        % lift complementarities
-        lift_complementarities(1,1) logical = 0
-        lower_bound_comp_lift(1,1) logical = 0
+        lift_complementarities(1,1) logical = 0 % boolean: Whether complementarities are lifted. TODO(@anton) should this still live in MPCC generation?
+        lower_bound_comp_lift(1,1) logical = 0 % boolean: If true we add additional lower bounds to the lifted variables.
 
-        % Initialization - Step
-        initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_beta(1,1) double {mustBeReal, mustBeFinite} = 1
-        initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1
+        initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\alpha$ in the Heaviside step reformulation.
+        initial_beta(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta$ when lifting is enabled in the Heaviside step reformulation.
+        initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\theta$ when lifting is enabled in the Heaviside step reformulation.
 
-        % Step theta lifting
-        pss_lift_step_functions(1,1) logical = 0
-        n_depth_step_lifting(1,1) {mustBeInteger, mustBeGreaterThanOrEqual(n_depth_step_lifting, 2)} = 2
+        % boolean: If true then the convex multiplier expressions are lifted in the Heaviside step reformulation.
+        %
+        % Warning:
+        %     This is not currently implemented for generic Heaviside step DCS.
+        pss_lift_step_functions(1,1) logical = 0 
+        n_depth_step_lifting(1,1) {mustBeInteger, mustBeGreaterThanOrEqual(n_depth_step_lifting, 2)} = 2 % int: Depth to which the Heaviside step convex multipliers are lifted.
 
-        % lift c in gcs
-        gcs_lift_gap_functions(1,1) logical = 0
+        gcs_lift_gap_functions(1,1) logical = 1 % boolean: If true the step functions $c(x)$ are lifted in the gradient complementarity system reformulation.
 
-        % linear_complementarity M multiplier. for smaller step sizes
-        linear_complemtarity_M(1,1) double {mustBeReal, mustBePositive} = 1000
+        linear_complemtarity_M(1,1) double {mustBeReal, mustBePositive} = 1000 % double: $M$ multiplier used in the linear complementarity step equilibration fromulation. Larger values alleviate infeasibility for smaller step sizes.
 
-        %General NLP/OCP Settings
-        g_path_at_fe(1,1) logical = 0 % evaluate nonlinear path constraint at every finte element boundary
-        g_path_at_stg(1,1) logical = 0 % evaluate nonlinear path constraint at every stage
+        g_path_at_fe(1,1) logical = 0 % boolean: If true we evaluate nonlinear path constraint at every finte element boundary.
+        g_path_at_stg(1,1) logical = 0 % boolean: If true evaluate nonlinear path constraint at every stage.
 
-        x_box_at_fe(1,1) logical = 1 % evaluate box constraint for diff states at every finite element boundary point
-        x_box_at_stg(1,1) logical = 1 % evaluate box constraint for diff states at every stage point. (is set to zero per default in differential irk mode, as it becomes a linear instead of box constraint)
-        time_optimal_problem(1,1) = 0
+        x_box_at_fe(1,1) logical = 1 % boolean: If true we evaluate box constraint for diff states at every finite element boundary point.
 
-        % Step equilibration
-        rho_h(1,1) double {mustBeNonnegative} = 1
-        step_equilibration(1,1) StepEquilibrationMode = StepEquilibrationMode.heuristic_mean % heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, direct_homotopy_lift
-        step_equilibration_sigma(1,1) double {mustBePositive} = 0.1 % slope at zero in rescaling the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma)
+        % boolean: If true we evaluate box constraint for diff states at every stage point.
+        %
+        % Note:
+        %    This is set to zero per default in differential rk mode, as it becomes a linear instead of box constraint.
+        x_box_at_stg(1,1) logical = 1
+        time_optimal_problem(1,1) = 0 % boolean: If true for an OCP we automatically reformulate the problem to be time optimal.
 
-        % Multiple shooting type discretization
-        equidistant_control_grid(1,1) logical = 1
+        rho_h(1,1) double {mustBeNonnegative} = 1 % double: Weight used in heuristic or relaxed step equilibration modes.
 
-        % Time-Setting & Time-Freezing
-        time_freezing(1,1) logical = 0
-        time_freezing_inelastic(1,1) logical = 0
-        % for time optimal problems and equidistant control grids in physical time
-        use_speed_of_time_variables(1,1) logical = 0
-        local_speed_of_time_variable(1,1) logical = 0
-        stagewise_clock_constraint(1,1) logical = 1
-        impose_terminal_phyisical_time(1,1) logical = 1
-        s_sot0(1,1) double {mustBePositive} = 1
-        s_sot_max(1,1) double {mustBePositive} = 25
-        s_sot_min(1,1) double {mustBePositive} = 1
-        S_sot_nominal(1,1) double {mustBePositive} = 1
-        rho_sot(1,1) double {mustBeReal, mustBeNonnegative} = 0
+        % StepEquilibrationMode: Which step equilibration mode to use.
+        %
+        % See Also:
+        %     `StepEquilibrationMode` for more details on how each mode works.
+        step_equilibration(1,1) StepEquilibrationMode = StepEquilibrationMode.heuristic_mean
+        step_equilibration_sigma(1,1) double {mustBePositive} = 0.1 % double: Slope at zero for the sigmoid used to rescale the indicator function, nu_ki_rescaled = tanh(nu_ki/step_equilibration_sigma).
 
-        T_final_max(1,1) double {mustBePositive} = 1e2
-        T_final_min(1,1) double {mustBeReal, mustBeNonnegative} = 0
-        time_freezing_reduced_model(1,1) logical = 0 % analytic reduction of lifter formulation, less algebraic variables (experimental)
-        time_freezing_hysteresis(1,1) logical = 0 % do not do automatic time freezing generation for hysteresis, it is not supported yet.
-        time_freezing_nonlinear_friction_cone(1,1) logical = 1 % 1 - use nonlienar friction cone, 0 - use polyhedral l_inf approximation.
+        equidistant_control_grid(1,1) logical = 1 % boolean: If true each control stage is fixed length.
 
-        time_freezing_quadrature_state(1,1) logical = 0 % make a nonsmooth quadrature state to integrate only if physical time is running
-        time_freezing_lift_forces(1,1) logical = 0 % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0
+        time_freezing(1,1) logical = 0 % boolean: Use a time freezing reformulation for the given model.
+        time_freezing_inelastic(1,1) logical = 0 % boolean: Use the specailized time freezing reformulation for systems with inelastic collisions and friction. 
+        
+        use_speed_of_time_variables(1,1) logical = 0 % boolean: If true speed of time variables are used for the time freezing reformulation or time optimal problem
+        local_speed_of_time_variable(1,1) logical = 0 % boolean: If true then each control stage has a speed of time variable. Otherwise a single speed of time variable is used.
+        stagewise_clock_constraint(1,1) logical = 1 % boolean: If true the control grid is fixed with constraints for each control stage.
+        impose_terminal_phyisical_time(1,1) logical = 1 % boolean: If true the terminal physical time in a time freezing system is constrained to be exactly the desired horizon length.
+        s_sot0(1,1) double {mustBePositive} = 1 % double: Initial value for speed of time variables.
+        s_sot_max(1,1) double {mustBePositive} = 25 % double: Maximum for speed of time variables.
+        s_sot_min(1,1) double {mustBePositive} = 1 % double: Minimum for speed of time variables.
+        S_sot_nominal(1,1) double {mustBePositive} = 1 % double: Nominal speed of time used for regularizing the speed of time variables.
+        rho_sot(1,1) double {mustBeReal, mustBeNonnegative} = 0 % double: Weight used for the speed of time regularization.
 
-        % exerimental expert options
-        nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
-        % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
-        stabilizing_q_dynamics(1,1) logical = 0
-        kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5
-        % Verbose
+        T_final_max(1,1) double {mustBePositive} = 1e2 % double: Maximum final time for a time optimal problem.
+        T_final_min(1,1) double {mustBeReal, mustBeNonnegative} = 0 % double: Minimum final time for a time optimal problem.
+
+
+        time_freezing_reduced_model(1,1) logical = 0 % boolean: Analytic reduction of lifter formulation, less algebraic variables (experimental). TODO(@armin) What was this supposed to be?
+        time_freezing_hysteresis(1,1) logical = 0 
+        time_freezing_nonlinear_friction_cone(1,1) logical = 1 % boolean: If true we use the nonlinear friction cone, otherwise use polyhedral l_inf approximation.
+
+        time_freezing_quadrature_state(1,1) logical = 0 % boolean: If true make a nonsmooth quadrature state to integrate only if physical time is running.
+        time_freezing_lift_forces(1,1) logical = 0 % If true replace $\dot{v} = M(q)^{-1}f(q,v,u)$ by $dot{v} = z,  M(q)z - f(q,v,u) = 0$.
+
+        nonsmooth_switching_fun(1,1) logical = 0 % boolean: Experimental, use $c = \max(c1,c2)$ insetad of $c = c_1c_2$.
+        stabilizing_q_dynamics(1,1) logical = 0 % boolean: Experimental, stabilize auxiliary dynamics in \nabla f_c(q) direction.
+        kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5 % double: Constant used for stabilizing auxiliary dynamics in \nabla f_c(q) direction.
+
+        % int: Level of verbosity that the `nosnoc` reformulator uses.
+        % TODO:
+        %    @anton, @armin document this better.
         print_level = 3
 
-        % Settings specific to CLS
-        friction_model (1,1) FrictionModel = FrictionModel.Conic; % use nonlinear friction ('Conic') or polyhedral approximation ('Polyhedral');
-        conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs; % How to treat switch detection in v_t.
-        kappa_friction_reg (1,1) double {mustBeReal, mustBeNonnegative} = 0; % reg. term in friction equations to avoid large multipliers if no contact happens.
-        lift_velocity_state(1,1) logical = 0; % define auxliary algebraic vairable, dot{v} = z_v, to avoid symbolic inversion of the inertia matrix;
-        eps_cls double = 1e-3 % constraint: enforce f_c at Euler step with h * eps_cls
+        % FrictionModel: Which Friction model to use for the Complementarity Lagrangian System.
+        %
+        % See Also:
+        %     `FrictionModel` for more details as to the differences between the friction models.
+        friction_model (1,1) FrictionModel = FrictionModel.Conic;
 
+        % ConicModelSwitchHandling: Which velocity switch handling mode to use when using the Conic friction model
+        % See Also:
+        %     `ConicModelSwitchHandling` for more details as to the differences between the switch handling modes.
+        conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs;
+        
+        kappa_friction_reg (1,1) double {mustBeReal, mustBeNonnegative} = 0; % double: Regularization term in friction equations to avoid large multipliers if no contact happens.
+        
+        lift_velocity_state(1,1) logical = 0; % boolean: If true define auxliary algebraic vairable, $dot{v} = z_v$, to avoid symbolic inversion of the inertia matrix.
+        eps_cls double = 1e-3 % double: enforce $f_c$ at Euler step with h * eps_cls
 
-        % Relaxation of terminal constraint
-        relax_terminal_constraint(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE; %  If/how to relax the 
-        relax_terminal_constraint_from_above(1,1) logical = 0;
-        rho_terminal(1,1) double {mustBePositive} = 1e2;
-        relax_terminal_constraint_homotopy(1,1) logical = 0; % terminal penalty is governed by homotopy parameter
+        % ConstraintRelaxationMode: What (if any) relaxation to apply to the terminal constraints.
+        %
+        % See Also:
+        %    `ConstraintRelaxationMode` for a detailed description of the available relaxation modes.
+        relax_terminal_constraint(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE; 
+        relax_terminal_constraint_from_above(1,1) logical = 0; % boolean: If true we only relax the upper bound of the terminal constraint. TODO(@armin) do we still want this. I have never seen it be useful.
+        rho_terminal(1,1) double {mustBePositive} = 1e2; % double: Weight used to penalize terminal constraint violation.
 
-        % Relaxation of terminal (or stage for equidistant grids) numerical/phyisical time constraints
-        relax_terminal_numerical_time(1,1) logical = 0; % instead of imposing \sum_h = T, add it as ell1_penalty term
-        rho_terminal_numerical_time(1,1) double {mustBeNonnegative} = 1e2
-        relax_terminal_numerical_time_homotopy (1,1) logical = 0; % us the homotopy parameter for the penalty
-        relax_terminal_physical_time(1,1) logical = 0; % instead of imposing \sum_h = T, add it as ell1_penalty term
-        rho_terminal_physical_time(1,1) double {mustBeNonnegative} = 1e2
-        relax_terminal_physical_time_homotopy (1,1) logical = 0; % us the homotopy parameter for the penalty
+        % boolean: If True the terminal constraint violation penalty is governed by homotopy parameter.
+        %
+        % Warning:
+        %     This option is currently unimplemented.
+        relax_terminal_constraint_homotopy(1,1) logical = 0; 
 
-        cost_integration(1,1) logical = 1
+        relax_terminal_numerical_time(1,1) logical = 0; %boolean: If true instead of imposing $\sum h = T$, add it as $\ell_1$ penalty term.
+        rho_terminal_numerical_time(1,1) double {mustBeNonnegative} = 1e2 % double: Weight used to penalize terminal numerical time violation.
+        
+        % boolean: If True the terminal numerical time constraint violation penalty is governed by homotopy parameter
+        %
+        % Warning:
+        %     This option is currently unimplemented
+        relax_terminal_numerical_time_homotopy (1,1) logical = 0; % us the homotopy parameter for the penalty.
+        relax_terminal_physical_time(1,1) logical = 0; % instead of imposing $t(T) = T$, add it as $\ell_1$ penalty term.
+        rho_terminal_physical_time(1,1) double {mustBeNonnegative} = 1e2 % double: Weight used to penalize terminal physical time violation.
 
-        % Experimental:
-        no_initial_impacts(1,1) logical = 0
+        % boolean: If True the terminal physical time constraint violation penalty is governed by homotopy parameter.
+        %
+        % Warning:
+        %     This option is currently unimplemented.
+        relax_terminal_physical_time_homotopy (1,1) logical = 0;
+        
+        cost_integration(1,1) logical = 1 % boolean: If true then the Lagrange term is integrated correctly, otherwise we only evaluate it at the ends of control stages. Setting this to false allows us to do parameter estimation with a nonlinear cost function.
 
-        % Integrator
-        use_previous_solution_as_initial_guess(1,1) logical = 0
+        no_initial_impacts(1,1) logical = 0 % boolan: If true we disallow impulsive contacts at the beginning of the first control stage. 
 
-        % All MPCC parameters
+        use_previous_solution_as_initial_guess(1,1) logical = 0 % boolean: When simulating use the previous step as an initial guess for the current one.
+
         T_val(1,1) double {mustBePositive} = 1
         p_val
 
-        % Butcher Tableu
         A_rk double
         B_rk double
         b_rk double
