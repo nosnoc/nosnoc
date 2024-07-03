@@ -1,5 +1,5 @@
 classdef Gcs < nosnoc.dcs.Base
-% A particular class of Dynamic Complementarity system called a Gradient complementarity system.
+% A particular class of dynamic complementarity system called a gradient complementarity system.
 % It is defined by the dynamics:
 %
 % .. math::
