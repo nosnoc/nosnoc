@@ -1,8 +1,14 @@
 classdef Pds < nosnoc.model.Base
+% A model that represents a Projected dynamical system. Which has the dynamics:
+% $$\dot{x} = \operatorname{P}_{\mathcal{T}_{\mathcal{C}(x)}}(f(x))$$
+% with $\operatorname{P}_K(v) = \operatorname{arg\, min}_{s\in K} \frac{1}{2}||s-v||^2_2$,
+% and the feasible set set $\mathcal{C} = \{x | c(x) \ge 0\}$.
     properties
-        f_x_unconstrained % casadi.SX or casadi.MX: Unconstrained state dynamics.
-        c                 % casadi.SX or casadi.MX: Function used to define the feasible set $C = \{x | c(x) \ge 0\}$.
-        E                 % double: (EXPERIMENTAL) Projection matrix which can be used to adjust the projection used for the PDS.
+        f_x_unconstrained % casadi.SX|casadi.MX: Unconstrained system dynamics expression $f(x)$.
+
+        c % casadi.SX|casadi.MX: The gap functions $c(x)$ used in the definition of the feasible set $\mathcal{C}$. 
+
+        E % double: Square matrix $E \in \mathbb{R}^{n_x\times n_x}$ that is used as the weighting matrix for the projection operator.
     end
 
     methods

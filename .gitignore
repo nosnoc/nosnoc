@@ -40,3 +40,4 @@ qt_temp*
 *~
 
 examples/*/*.pdf
+docs/build

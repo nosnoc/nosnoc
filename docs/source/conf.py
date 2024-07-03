@@ -15,11 +15,11 @@ version = '0.5.0'
 
 
 extensions = [
+    'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinxcontrib.matlab',
-    'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx_math_dollar',
 ]
@@ -45,15 +45,10 @@ primary_domain = "mat"
 default_role = "obj"
 autodoc_member_order = 'bysource'
 
-napoleon_numpy_docstring = False
-napoleon_preprocess_types = True
-napoleon_use_param = False
-napoleon_attr_annotations = False
-
 autodoc_default_options = {'members': True, 'show-inheritance': True}
 autosummary_generate = True
 
-# -- magic to kill mathjax
+# -- magic to prevent mathjax from overriding sphinx_math_dollar.
 
 mathjax3_config = {
   "tex": {
