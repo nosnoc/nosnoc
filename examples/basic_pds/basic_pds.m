@@ -10,8 +10,6 @@ T_sim = 10;
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.n_s = 3;
-%problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
-%problem_options.rk_scheme = RKSchemes.LOBATTO_IIIC;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 %problem_options.rk_representation= RKRepresentation.differential_lift_x; 
 problem_options.rk_representation = RKRepresentation.integral;
@@ -43,11 +41,26 @@ integrator = nosnoc.Integrator(model, problem_options, solver_options);
 figure
 plot(x_res(1,:), x_res(2,:))
 grid on
-xlabel('$x_1(t)$','Interpreter','latex')
-ylabel('$x_2(t)$','Interpreter','latex')
+xlabel('$x_1$','Interpreter','latex')
+ylabel('$x_2$','Interpreter','latex')
 grid on
 
 c_fun = casadi.Function('c', {model.x}, {model.c});
 c = full(c_fun(integrator.get_full('x')))';
 x_full = integrator.get_full('x');
-lam_full = integrator.get_full('lambda');
+lambda = integrator.get('lambda');
+
+% extened values over all rk stage points
+t_grid_full = integrator.get_time_grid_full();
+lambda_full = integrator.get_full('lambda');
+
+%
+
+figure
+plot(t_grid,lambda,'LineWidth',2)
+hold on
+plot(t_grid,x_res,'LineWidth',1.5)
+grid on
+xlabel('$t$','Interpreter','latex')
+legend({'$\lambda(t)$','$x_1(t)$','$x_2(t)$'},'interpreter','latex');
+

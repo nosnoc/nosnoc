@@ -9,11 +9,11 @@ T_sim = 10;
 %% NOSNOC settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.n_s = 3;
+problem_options.n_s = 1;
 %problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-%problem_options.rk_representation= 'differential_lift_x'; 
-problem_options.rk_representation= 'integral';
+problem_options.rk_representation= 'differential_lift_x'; 
+% problem_options.rk_representation= 'integral';
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
@@ -37,8 +37,8 @@ integrator = nosnoc.Integrator(model, problem_options, solver_options);
 figure
 plot(x_res(1,:), x_res(2,:))
 grid on
-xlabel('$x_1(t)$','Interpreter','latex')
-ylabel('$x_2(t)$','Interpreter','latex')
+xlabel('$x_1$','Interpreter','latex')
+ylabel('$x_2$','Interpreter','latex')
 grid on
 
 fig = figure('Position', [10 10 1600 800]);

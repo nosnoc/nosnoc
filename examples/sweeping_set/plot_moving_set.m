@@ -37,8 +37,8 @@ function plot_moving_set(h,pos,r,type,fig,vidname,export_frames)
     ylim([-3,3])
     ax.XAxis.FontSize = 36;
     ax.YAxis.FontSize = 36;
-    xlabel("$c_x$", "fontsize", 32)
-    ylabel("$c_y$", "fontsize", 32)
+    xlabel("$c_x$", "fontsize", 32,'Interpreter','latex')
+    ylabel("$c_y$", "fontsize", 32,'Interpreter','latex')
     
     %axis off
     discs = {};
