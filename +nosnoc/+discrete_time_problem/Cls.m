@@ -8,9 +8,9 @@ classdef Cls < vdx.problems.Mpcc
     end
 
     properties(Access=private)
-        z_alg
-        z_impulse
-        z_alg_f_x
+        z_alg % vdx.VariableGroup:
+        z_impulse % vdx.VariableGroup:
+        z_alg_f_x % vdx.VariableGroup:
     end
 
     methods
@@ -308,7 +308,7 @@ classdef Cls < vdx.problems.Mpcc
                     switch opts.rk_representation
                       case RKRepresentation.integral
                         % In integral representation stage variables are states.
-                        x_ij_end = x_lbp;
+                        x_ij_end = opts.D_rk(1)*x_lbp;
                         for kk=1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk);
                             z_ijk = obj.w.z(ii,jj,kk);
@@ -338,9 +338,6 @@ classdef Cls < vdx.problems.Mpcc
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
-                                % also integrate the objective
-                                % TODO(@anton) make an option
-                                %obj.f = obj.f + opts.B_rk(kk+1)*h*(qj + 1e-7*obj.w.lambda_normal(ii,jj,kk).^2);
                                 obj.f = obj.f + opts.B_rk(kk+1)*h*qj;
                             end
                         end
