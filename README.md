@@ -2,35 +2,42 @@
 **nosnoc** is an open-source `MATLAB` software package for NOnSmooth Numerical Optimal Control.
 The `Python` package `nosnoc_py` with similar functionality is available as well.
 
+
+Documnetation is [avilable here](https://nosnoc.readthedocs.io/en/latest/index.html). 
+
 A detailed overview of the theory and methods behind nosnoc can be found in the course material of the
 [Summer School on Direct Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/teaching/ss2023/summer-school-direct-methods-optimal-control-nonsmooth-systems).
 
 
 ## General
-**nosnoc** is a tool for numerically solving optimal control problems with nonsmooth dynamical systems with switches and/or state jumps.
-It supports:
+**nosnoc** is a tool for numerically solving optimal control problems with nonsmooth dynamical systems that have switches and/or state jumps. It supports:
 
-1. Automatic discretization via the FESD method - high accuracy and correct sensitivities. Note that classical time-stepping methods only have first-order accuracy and wrong sensitivities even when they appear to be differentiable.
+1. **Automatic discretization via the FESD method**:
+   - High accuracy and correct sensitivities.
+   - Classical time-stepping methods only have first-order accuracy and incorrect sensitivities, even when they appear to be differentiable.
 
-2. Automatic reformulations of systems with state jumps (e.g. contact problems) via time-freezing into Filippov systems/PSS.
-(enables high accuracy even for systems with state jumps)
+2. **Automatic reformulations of systems with state jumps**:
+   - For example, contact problems via time-freezing into Filippov systems/Piecewise Smooth Systems (PSS).
+   - This enables high accuracy even for systems with state jumps.
 
-3. Solving the nonsmooth nonlinear programs via homotopy methods. Enables the use of off-the-shelf solvers like IPOPT and SNOPT.
+3. **Solving nonsmooth nonlinear programs via homotopy methods**:
+   - Enables the use of off-the-shelf solvers like IPOPT and SNOPT.
 
+**nosnoc** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of systems with switches and jumps. It treats a broad class of nonsmooth systems in a unified way.
 
-**nosnoc** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of systems with switches and jumps.
-It enables the treatment of a broad class of nonsmooth systems in a unified way.
+With **nosnoc**, one can solve optimal control problems subject to several classes of hybrid and nonsmooth systems:
+- Switched systems
+- Piecewise affine, piecewise smooth systems
+- Filippov systems
+- Systems with logical Heaviside step functions
+- Relay systems
+- Projected dynamical systems
+- First-order Sweeping processes
+- Rigid body models with impacts and friction
+- Hybrid systems with hysteresis
 
-nosnoc offers several ways to treat switched systems, piecewise smooth systems, Filippov systems, hybrid systems, rigid body models with impacts and friction in simulation, and optimal control.
-It discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting mathematical program with complementarity constraints (MPCCs).
-The MPCCs are solved in a homotopy loop with a standard solver like IPOPT or SNOPT.
-The user may directly provide a DCS or define the different modes of a Filippov system and the reformulation is automated.
+It discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting mathematical program with complementarity constraints (MPCCs). The MPCCs are solved in a homotopy loop with a standard solver like **IPOPT** or **SNOPT**. Users may directly provide a DCS or the problem in a standard form which is automatically reformulated into a DCS.
 
-With nosnoc one can simulate and solve optimal control problems subject to different kinds of nonsmooth systems, by declaring the `dcs_mode`:
-1. `settings.dcs_mode = 'Stewart'` - for treating Filippov systems via Stewart's reformulation
-2. `settings.dcs_mode = 'Heaviside'` - for treating nonsmooth systems via set valued step functions (covers also all Filippov systems that are treated with Stewart's).
-3. `settings.dcs_mode = 'CLS'` - for rigid bodies with friction and impact (also called complementarity Lagrangian systems (CLS)) - uses FESD tailored to CLS.
-4. `settings.time_freezing = 1` - and using for the `dcs_mode = Step`, the CLS is reformulated into an equivalent Filippov system and treated with FESD.
 
 ## Installation
 
@@ -59,11 +66,13 @@ Go to the [nosnoc_py](https://github.com/FreyJo/nosnoc_py) repository for more i
 
 ## Using nosnoc
 
-The interface of **nosnoc** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/).
-User inputs should be given as `CasADi` expressions.
+The interface of **nosnoc** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/). User inputs should be provided as `CasADi` expressions.
 
-To get started we recommend you look into our example libraries for
-[MATLAB](https://github.com/nurkanovic/nosnoc/tree/main/examples/matlab) or [python](https://github.com/FreyJo/nosnoc_py/tree/main/examples).
+To get started, we recommend you look into our example libraries for:
+- [MATLAB](https://github.com/nurkanovic/nosnoc/tree/main/examples/matlab)
+- [Python](https://github.com/FreyJo/nosnoc_py/tree/main/examples)
+
+
 
 ## Literature - theory and algorithms
 
