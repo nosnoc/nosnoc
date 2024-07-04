@@ -1,51 +1,49 @@
 classdef Cls < nosnoc.dcs.Base
+% A class which defines the specific DCS used for the discretization of :mat:class:`~nosnoc.model.Cls`.
     properties
-        % CLS stage vars
-        lambda_normal
-        y_gap
-        lambda_tangent
-        gamma_d
-        beta_d
-        delta_d
-        beta
-        gamma
-        p_vt
-        n_vt
-        alpha_vt
-        z_v
+        lambda_normal % casadi.SX|casadi.MX: $\lambda_n\in\mathbb{R}^{n_c}$, the normal contact force.
+        y_gap % casadi.SX|casadi.MX: Lifting variables for $f_c(q)$.
+        lambda_tangent % casadi.SX|casadi.MX: $\lambda_t\in\mathbb{R}^{n_c n_t}$, the tangential friction force.
+        gamma_d % casadi.SX|casadi.MX:
+        beta_d % casadi.SX|casadi.MX: Polyhedral friction cone bound lifting variables.
+        delta_d % casadi.SX|casadi.MX: Polyhedral friction lagrangian lifting variables.
+        beta % casadi.SX|casadi.MX: Conic friction cone bound lifting variables.
+        gamma % casadi.SX|casadi.MX:
+        p_vt % casadi.SX|casadi.MX: Positive tangential velocity lifting variables.
+        n_vt % casadi.SX|casadi.MX: Negative tangential velocity lifting variables.
+        alpha_vt % casadi.SX|casadi.MX: Step function which is zero when tangential velocity is negative and 1 when positive.
+        z_v % casadi.SX|casadi.MX:
 
-        % CLS impulse vars
-        Lambda_normal
-        Y_gap
-        L_vn
-        P_vn
-        N_vn
-        Lambda_tangent
-        Gamma_d
-        Beta_d
-        Delta_d
-        Gamma
-        Beta
-        P_vt
-        N_vt
-        Alpha_vt
+        Lambda_normal % casadi.SX|casadi.MX: $\Lambda_n\in\mathbb{R}^{n_c}$, the impulsive normal contact force.
+        Y_gap % casadi.SX|casadi.MX: Lifting variables for the the gap at $t^+$.
+        P_vn % casadi.SX|casadi.MX: Positive normal velocity lifting variables.
+        N_vn % casadi.SX|casadi.MX: Negative normal velocity lifting variables.
+        Lambda_tangent % casadi.SX|casadi.MX: $\Lambda_t\in\mathbb{R}^{n_c n_t}$, the impulsive tangential friction force.
+        Gamma_d % casadi.SX|casadi.MX:
+        Beta_d % casadi.SX|casadi.MX: Polyhedral impulsive friction cone bound lifting variables.
+        Delta_d % casadi.SX|casadi.MX: Polyhedral impulsive friction lagrangian lifting variables.
+        Gamma % casadi.SX|casadi.MX:
+        Beta % casadi.SX|casadi.MX: Conic impulsive friction cone bound lifting variables.
+        P_vt % casadi.SX|casadi.MX: Positive tangential velocity lifting variables.
+        N_vt % casadi.SX|casadi.MX: Negative tangential velocity lifting variables.
+        Alpha_vt % casadi.SX|casadi.MX: Step function which is zero when tangential velocity is negative and 1 when positive.
 
-        g_lift
+        g_lift % casadi.SX|casadi.MX: Lifting function.
 
-        z_alg
-        z_impulse
+        z_alg % casadi.SX|casadi.MX: Non-impulsive algebraics.
+        z_impulse % casadi.SX|casadi.MX: Impulsive algebraics.
 
-        f_x
+        f_x % casadi.SX|casadi.MX:  Right hand side of the CLS.
 
-        M_fun
-        invM_fun
-        f_c_fun
-        g_impulse_fun
-        J_normal_fun
-        J_tangent_fun
-        D_tangent_fun
+        M_fun % casadi.Function: Function for :mat:attr:`~nosnoc.model.Cls.M`.
+        invM_fun % casadi.Function: Function for :mat:attr:`~nosnoc.model.Cls.invM`.
+        f_c_fun % casadi.Function: Function for gap functions :mat:attr:`~nosnoc.model.Cls.f_c`.
+        g_impulse_fun % casadi.Function: Function collating the algebraic constraints on impulsive variables.
+        J_normal_fun % casadi.Function: Function for :mat:attr:`~nosnoc.model.Cls.J_normal`.
+        J_tangent_fun % casadi.Function: Function for :mat:attr:`~nosnoc.model.Cls.J_tangent`.
+        D_tangent_fun % casadi.Function: Function for :mat:attr:`~nosnoc.model.Cls.D_tangent`.
 
-        dims
+        dims % struct: Struct with dimensions TODO(@anton) document what is populated in it.
     end
 
     methods
@@ -64,7 +62,6 @@ classdef Cls < nosnoc.dcs.Base
             % Variables for impulse equations
             obj.Lambda_normal = define_casadi_symbolic(opts.casadi_symbolic_mode,'Lambda_normal',dims.n_c);
             obj.Y_gap = define_casadi_symbolic(opts.casadi_symbolic_mode,'Y_gap',dims.n_c);
-            %obj.L_vn = define_casadi_symbolic(opts.casadi_symbolic_mode,'L_vn',dims.n_c); % lifting variable for state jump law
             obj.P_vn = define_casadi_symbolic(opts.casadi_symbolic_mode,'P_vn',dims.n_c); % lifting variable for state jump law
             obj.N_vn = define_casadi_symbolic(opts.casadi_symbolic_mode,'N_vn',dims.n_c); % lifting variable for state jump law
             if model.friction_exists

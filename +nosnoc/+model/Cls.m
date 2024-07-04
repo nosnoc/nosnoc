@@ -8,8 +8,8 @@ classdef Cls < nosnoc.model.Base
 %        \dot{q}       &= v, \\
 %        M\dot{v}     &= f_v(q,v) + \sum_{i=1}^{n_c} J_n^i \lambda_n^i + J_t^i \lambda_t^i, \\
 %        0            &\le \lambda_n^i \perp f_c^i(q) \ge 0\\
-%        0            &= J_n^i(q(t_s))^\top (v(t_s^+) + ev(t_s^-))\ \mathrm{if}\ f_c^i(t_s) = 0\ \mathrm{and}\ J_n^i(q(t_s))^\top v(t_s^-) < 0 \\
-%        \lambda_t^i  &\in \operatorname{arg\, min}_{\lambda_t^i\in\mathbb{R}^{n_t}} -v^\top  J_t^i \lambda_t^i\ \mathrm{s.t.}\ ||\lambda_t^i||_2 \le \mu^i \lambda_n^i
+%        0            &= J_n^i(q(t_s))^\top (v(t_s^+) + ev(t_s^-))\quad \mathrm{if}\ f_c^i(t_s) = 0\ \mathrm{and}\ J_n^i(q(t_s))^\top v(t_s^-) < 0 \\
+%        \lambda_t^i  &\in \operatorname{arg\, min}_{\lambda_t^i\in\mathbb{R}^{n_t}} -v^\top  J_t^i \lambda_t^i\quad \mathrm{s.t.}\quad ||\lambda_t^i||_2 \le \mu^i \lambda_n^i
 %     \end{align*}
 %
 % With $i = 1\ldots n_c$.

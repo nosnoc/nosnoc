@@ -88,7 +88,6 @@ classdef Cls < vdx.problems.Mpcc
                 end
                 % 2d Impulse vars
                 obj.w.Lambda_normal(ii,start_fe:opts.N_finite_elements(ii)) = {{'Lambda_normal', dims.n_c}, 0, inf, 1};
-                %obj.w.L_vn(ii,start_fe:opts.N_finite_elements(ii)) = {{'L_vn', dims.n_c}, -inf, inf, 1};
                 obj.w.P_vn(ii,start_fe:opts.N_finite_elements(ii)) = {{'P_vn', dims.n_c}, 0, inf, 1};
                 obj.w.N_vn(ii,start_fe:opts.N_finite_elements(ii)) = {{'N_vn', dims.n_c}, 0, inf, 1};
                 obj.w.Y_gap(ii,start_fe:opts.N_finite_elements(ii)) = {{'Y_gap', dims.n_c}, 0, inf, 1};
