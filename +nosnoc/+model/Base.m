@@ -1,74 +1,67 @@
 classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
+% Base class for all ``nosnoc`` models. It contains shared properties such as the state, user algebraics, controls etc.
+% It also contains the fields used to populate an Optimal Control problem such as Lagrange and Mayer cost terms,
+% an interface for least squares costs as well as non-box path and terminal constraints.
     properties
-        % Differential state
-        x % CasADi symbolic variable
-        lbx % Double vector
-        ubx % Double vector
-        x0 % Double vector
+        x % casadi.SX|casadi.MX: Differential state $x \in \mathbb{R}^{n_x}$
+        lbx % double: $\underline{x} \in \mathbb{R}^{n_x}$, differential state lower bound.
+        ubx % double: $\bar{x} \in \mathbb{R}^{n_x}$, differential state upper bound.
+        x0 % double: $x_0 \in \mathbb{R}^{n_x}$, initial differential state, also used to initialize all differential state variables in the resulting MPCC.
 
-        % user algebraics
-        z % CasADi symbolic variable
-        z0 % Double vector
-        lbz % Double vector
-        ubz % Double vector
-        g_z % user algebraic constraints - CasADi symbolic expression
+        z % casadi.SX|casadi.MX: User algebraics $z \in \mathbb{R}^{n_z}$
+        z0 % double: $z_0 \in \mathbb{R}^{n_z}$, used to initialize all user algebraic variables in the resulting MPCC.
+        lbz % double: $\underline{z} \in \mathbb{R}^{n_z}$, user algebraic lower bound.
+        ubz % double: $\bar{z} \in \mathbb{R}^{n_z}$, user algebraic upper bound.
+        g_z % casadi.SX|casadi.MX: Constraint expression used to define the behavior of user algebraics.
 
-        % Controls
-        u % CasADi symbolic variable
-        lbu % Double vector
-        ubu % Double vector
-        u0 % Double vector
+        u % casadi.SX|casadi.MX: Controls $u \in \mathbb{R}^{n_u}$.
+        lbu % double: $\underline{u} \in \mathbb{R}^{n_u}$, controls lower bound.
+        ubu % double: $\bar{u} \in \mathbb{R}^{n_u}$, controls upper bound.
+        u0 % double: $u_0 \in \mathbb{R}^{n_u}$, used to initialize all control variables in the resulting MPCC.
 
-        % global variables (not time dependent)
-        v_global % CasADi symbolic variable
-        v0_global % Double vector
-        lbv_global % Double vector
-        ubv_global % Double vector
+        v_global % casadi.SX|casadi.MX: $\nu \in \mathbb{R}^{n_{\nu}}$ global variables (not time dependent).
+        v0_global % double: $\nu_0 \in \mathbb{R}^{n_{\nu}}$, used to initialize all global variables in the resulting MPCC.
+        lbv_global % double: $\underline{\nu} \in \mathbb{R}^{n_{\nu}}$, global variables lower bound.
+        ubv_global % double: $\bar{\nu} \in \mathbb{R}^{n_{\nu}}$, global variables upper bound.
         
-        % global parameters (not time dependent)
-        p_global % CasADi symbolic variable
-        p_global_val
+        p_global % casadi.SX|casadi.MX: Global parameters.
+        p_global_val % double: Values for global parameters
 
-        % time varying parameters
-        p_time_var % CasADi symbolic variable
-        p_time_var_val
-        % all params
-        p % CasADi symbolic variable (TODO: Also algoritmic parameters??)
+        p_time_var % casadi.SX|casadi.MX: Time varying parameters which are considered to be constant over each control/integration interval.
+        p_time_var_val % double: Values for time varying parameters.
+        p % casadi.SX|casadi.MX: All model parameters
 
-        % Objective
-        f_q % CasADi symbolic expression
-        f_q_T % CasADi symbolic expression
+        f_q % casadi.SX|casadi.MX: Lagrange term cost.
+        f_q_T % casadi.SX|casadi.MX: Mayer term cost.
 
         % least squares (TODO @Anton: more precise description, e.g. where are the weight matrices)
-        lsq_x % TODO Described
-        x_ref % Subset of x?
-        f_lsq_x % CasADi symbolic expression
-        x_ref_val % Double vector
-        lsq_u % CasADi symbolic expression
-        u_ref % Subset of u?
-        f_lsq_u % CasADi symbolic expression
-        u_ref_val % Double vector
-        lsq_T % CasADi symbolic expression
-        x_ref_end % Subset of x?
-        f_lsq_T % CasADi symbolic expression
-        x_ref_end_val % Double vector
+        % TODO(@anton) perhaps the calculated parts of the lsq interface should be read only
 
-        % Path constraints
-        g_path % CasADi symbolic expression
-        lbg_path % Double vector
-        ubg_path % Double vector
+        lsq_x % cell: TODO describe
+        x_ref % casadi.SX|casadi.MX:
+        f_lsq_x % casadi.SX|casadi.MX:
+        x_ref_val % double: 
+        lsq_u % casadi.SX|casadi.MX:
+        u_ref % casadi.SX|casadi.MX:
+        f_lsq_u % casadi.SX|casadi.MX:
+        u_ref_val % double: vector
+        lsq_T % casadi.SX|casadi.MX:
+        x_ref_end % casadi.SX|casadi.MX:
+        f_lsq_T % casadi.SX|casadi.MX:
+        x_ref_end_val % double: vector
 
-        % Terminal constraints
-        g_terminal % CasADi symbolic expression
-        lbg_terminal % Double vector
-        ubg_terminal % Double vector
+        g_path % casadi.SX|casadi.MX: Path constraints.
+        lbg_path % double: Lower bound on path constraints.
+        ubg_path % double: Upper bound on path constraints.
 
-        % Path Complementarities
-        G_path % CasADi symbolic expression
-        H_path % CasADi symbolic expression
+        g_terminal % casadi.SX|casadi.MX: Terminal constraints.
+        lbg_terminal % double: Lower bound on path constraints.
+        ubg_terminal % double: Upper bound on path constraints.
 
-        % Dimensions
-        dims
+        G_path % casadi.SX|casadi.MX: One half of path complementarities.
+        H_path % casadi.SX|casadi.MX: One half of path complementarities.
+
+        dims % struct: Dimensions struct, the contents of which depends on the subclass.
     end
 
     methods
