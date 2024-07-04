@@ -9,8 +9,7 @@ T_sim = 10;
 %% NOSNOC settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.n_s = 1;
-%problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
+problem_options.n_s = 2;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation= 'differential_lift_x'; 
 % problem_options.rk_representation= 'integral';
@@ -19,7 +18,7 @@ problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
 
 %solver_options.homotopy_steering_strategy = 'ELL_INF';
-solver_options.print_level = 2;
+solver_options.print_level = 3;
 
 model = nosnoc.model.Pds();
 

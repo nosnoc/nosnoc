@@ -231,6 +231,7 @@ classdef Gcs < vdx.problems.Mpcc
                             v_ijk = obj.w.v(ii,jj,kk);
                             z_ijk = obj.w.z(ii,jj,kk);
                             lambda_ijk = obj.w.lambda(ii,jj,kk);
+                            c_lift_ijk = obj.w.c_lift(ii,jj,kk);
                            
                             f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
                             q_ijk = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
@@ -254,11 +255,6 @@ classdef Gcs < vdx.problems.Mpcc
                                 % also integrate the objective
                                 obj.f = obj.f + opts.b_rk(kk)*h*q_ijk;
                             end
-                        end
-                        if ~opts.right_boundary_point_explicit
-                            error("not implemented");
-                        else
-                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
