@@ -3,9 +3,9 @@
 The `Python` package `nosnoc_py` with similar functionality is available as well.
 
 
-Documnetation is [avilable here](https://nosnoc.readthedocs.io/en/latest/index.html). 
+- Documnetation is [avilable here](https://nosnoc.readthedocs.io/en/latest/index.html). 
 
-A detailed overview of the theory and methods behind nosnoc can be found in the course material of the
+- A detailed overview of the theory and methods behind nosnoc can be found in the course material of the
 [Summer School on Direct Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/teaching/ss2023/summer-school-direct-methods-optimal-control-nonsmooth-systems).
 
 
@@ -21,9 +21,8 @@ A detailed overview of the theory and methods behind nosnoc can be found in the 
    - This enables high accuracy even for systems with state jumps.
 
 3. **Solving nonsmooth nonlinear programs via homotopy methods**:
+   - Supports numerous relaxation-based for solving mathematical program with complementarity constraints (MPCCs) 
    - Enables the use of off-the-shelf solvers like IPOPT and SNOPT.
-
-**nosnoc** relies on the recently introduced Finite Elements with Switch Detection (FESD) which enables high accuracy optimal control of systems with switches and jumps. It treats a broad class of nonsmooth systems in a unified way.
 
 With **nosnoc**, one can solve optimal control problems subject to several classes of hybrid and nonsmooth systems:
 - Switched systems
@@ -36,7 +35,9 @@ With **nosnoc**, one can solve optimal control problems subject to several class
 - Rigid body models with impacts and friction
 - Hybrid systems with hysteresis
 
-It discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting mathematical program with complementarity constraints (MPCCs). The MPCCs are solved in a homotopy loop with a standard solver like **IPOPT** or **SNOPT**. Users may directly provide a DCS or the problem in a standard form which is automatically reformulated into a DCS.
+Users may directly provide a DCS or the problem in a standard form which is automatically reformulated into a DCS.
+**nosnoc** discretizes a Dynamic Complementarity System (DCS) with the FESD method and solves the resulting MPCCs. 
+
 
 
 ## Installation
