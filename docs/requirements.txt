@@ -1,5 +1,5 @@
 sphinx==7.3.7
-sphinx-rtd-theme==1.3.0rc1
 furo==2024.05.06
 sphinxcontrib-matlabdomain @ git+https://github.com/apozharski/matlabdomain@master
 sphinx-math-dollar
+sphinxcontrib-bibtex==2.6.2

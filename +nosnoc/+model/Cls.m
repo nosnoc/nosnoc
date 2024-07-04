@@ -1,19 +1,48 @@
 classdef Cls < nosnoc.model.Base
+% A class of systems of rigid bodies with contacts and friction with model equations:
+%
+% .. math::
+%     :nowrap:
+%
+%     \begin{align*}
+%        \dot{q}       &= v, \\
+%        M\dot{v}     &= f_v(q,v) + \sum_{i=1}^{n_c} J_n^i \lambda_n^i + J_t^i \lambda_t^i, \\
+%        0            &\le \lambda_n^i \perp f_c^i(q) \ge 0\\
+%        0            &= J_n^i(q(t_s))^\top (v(t_s^+) + ev(t_s^-))\ \mathrm{if}\ f_c^i(t_s) = 0\ \mathrm{and}\ J_n^i(q(t_s))^\top v(t_s^-) < 0 \\
+%        \lambda_t^i  &\in \operatorname{arg\, min}_{\lambda_t^i\in\mathbb{R}^{n_t}} -v^\top  J_t^i \lambda_t^i\ \mathrm{s.t.}\ ||\lambda_t^i||_2 \le \mu^i \lambda_n^i
+%     \end{align*}
+%
+% With $i = 1\ldots n_c$.
+%
+% See Also:
+%     More information about this model and its discretization can be found in :cite:`Nurkanovic2024`.
     properties
-        q
-        v
-        f_v
-        f_c
+        q % casadi.SX|casadi.MX: Gemeralized coordinates $q\in\mathbb{R}^{n_q}$.
+        v % casadi.SX|casadi.MX: Gemeralized velocities $v\in\mathbb{R}^{n_q}$.
+        f_v % casadi.SX|casadi.MX: Generalized acceleration $\dot{v} = f_v(x)\in\mathbb{R}^{n_q}$.
+        f_c % casadi.SX|casadi.MX: Contact gap functions $f_c(q)\in\mathbb{R}^{n_c}$.
+
+        % double: Friction coefficients $0\le\mu$. If a scalar value is passed then it is assumed all
+        % contacts have the same friction coefficient. Otherwise this needs to be a vector of size $n_c$.
         mu
+
+        % double: Coefficient of restituition $0\le e \le 1$. If a scalar value is passed then it is
+        % assumed that all contact have the same coefficient of restitution. Otherwise this needs to
+        % be a vector of size $n_c$.
         e
-        M
-        invM
 
-        friction_exists
+        M % casadi.SX|casadi.MX|double: Generalized inertia matrix. Can be a function of the state $q$.
+        invM % casadi.SX|casadi.MX|double: Inverse of the generalized inertial matrix. TODO(@anton) should this be private/readonly
 
-        J_normal
-        J_tangent
-        D_tangent
+        friction_exists % boolean: Set to true if any $\mu \neq 0$.
+
+        J_normal % casadi.SX|casadi.MX: Normal contact Jacobian $J_n$. This can be calculated automatically from the contact gap functions.
+        J_tangent % casadi.SX|casadi.MX: Tangent contact Jacobian $J_t$. This must be provided if there is friction and using the Conic :attr:`~nosnoc.Options.friction_model`.
+
+        % casadi.SX|casadi.MX: Tangent contact polyherdal approximation.
+        % This must be provided if there is friction and using the Polyhedral :mat:attr:`~nosnoc.Options.friction_model`.
+        % For every row $D_i$, $-D_i$ must also be a row in $D$.
+        D_tangent 
     end
 
     methods
