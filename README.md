@@ -21,7 +21,7 @@ The `Python` package `nosnoc_py` with similar functionality is available as well
    - This enables high accuracy even for systems with state jumps.
 
 3. **Solving nonsmooth nonlinear programs via homotopy methods**:
-   - Supports numerous relaxation-based for solving mathematical program with complementarity constraints (MPCCs) 
+   - Supports numerous relaxation-based algorithms for solving mathematical programs with complementarity constraints (MPCCs). 
    - Enables the use of off-the-shelf solvers like IPOPT and SNOPT.
 
 With **nosnoc**, one can solve optimal control problems subject to several classes of hybrid and nonsmooth systems:
