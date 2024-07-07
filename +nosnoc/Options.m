@@ -153,11 +153,14 @@ classdef Options < handle
 
         % FrictionModel: Which Friction model to use for the Complementarity Lagrangian System.
         %
+        % Default: :mat:class:`FrictionModel.Conic`
+        %
         % See Also:
         %     `FrictionModel` for more details as to the differences between the friction models.
         friction_model (1,1) FrictionModel = FrictionModel.Conic;
 
         % ConicModelSwitchHandling: Which velocity switch handling mode to use when using the Conic friction model
+        %
         % See Also:
         %     `ConicModelSwitchHandling` for more details as to the differences between the switch handling modes.
         conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs;

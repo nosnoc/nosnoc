@@ -52,6 +52,7 @@ bibtex_default_style = 'plain'
 
 matlab_src_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 matlab_keep_package_prefix = False
+matlab_show_property_default_value = True
 primary_domain = "mat"
 default_role = "obj"
 autodoc_member_order = 'bysource'
