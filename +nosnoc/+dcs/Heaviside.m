@@ -1,26 +1,28 @@
 classdef Heaviside < nosnoc.dcs.Base
     properties
-        alpha % CasADi symbolic variable for selection of the Heaviside step function
-        alpha_sys % cell containing the alpha variables of every subsystem, wheras alpha stores the concatenation of all these vectors;
-        lambda_n % CasADi symbolic variable 
-        lambda_n_sys % cell
-        lambda_p % CasADi symbolic variable 
-        lambda_p_sys % cell
+        alpha % casadi.SX|casadi.MX: selection of the Heaviside step function.
+        alpha_sys % cell(casadi.SX|casadi.MX): alpha variables of every subsystem, wheras alpha stores the concatenation of all these vectors.
+        lambda_n % casadi.SX|casadi.MX:
+        lambda_n_sys % cell(casadi.SX|casadi.MX): 
+        lambda_p % casadi.SX|casadi.MX:
+        lambda_p_sys % cell(casadi.SX|casadi.MX): 
+        
         % These are relevant only for lifting. For now wait to implement until re-implementing time-freezing
         % beta 
         % gamma
         % theta
         % theta_sys
-        theta_expr_sys 
 
-        z_all
+        theta_expr_sys % cell(casadi.SX|casadi.MX): 
 
-        f_x
+        z_all % casadi.SX|casadi.MX: All algebraic variables (user provided and Stewart DCS specific).
+
+        f_x % casadi.SX|casadi.MX: r.h.s. of the ODE.
         
-        dims
+        dims % struct: dimensions struct TODO document members.
 
-        g_lp_stationarity_fun
-        lambda00_fun
+        g_lp_stationarity_fun % casadi.Function: $\nabla \mathcal{L} = 0$ for Heaviside step LP.
+        lambda00_fun % casadi.Function: $\lambda_n(x_0)$ and $\lambda_p(x_0)$.
     end
 
     methods

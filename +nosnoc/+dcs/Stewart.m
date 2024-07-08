@@ -1,23 +1,28 @@
 classdef Stewart < nosnoc.dcs.Base
+% 
+% $$\xdot \in \Set{\sum f_i(x,u)\theta_i}{\sum \theta_i,\ \theta_i\ge 0,\ \theta_i = 0\ \mathrm{if}\ x\notin \bar{R_i}}$$
+%
+% See Also:
+%    More information about this model and its discretization can be found in :cite:`Nurkanovic2024a`.
     properties
 
-        theta % CasADi symbolic variable
-        theta_sys % cell containing the theta variables of every subsystem, wheras theta stores the concatenation of all these vectors;
-        lambda % CasADi symbolic variable
-        lambda_sys  % same as theta_sys
-        mu % CasADi symbolic variable
-        mu_sys % same as theta_sys
+        theta % casadi.SX|casadi.MX: 
+        theta_sys % cell(casadi.SX|casadi.MX): cell containing the theta variables of every subsystem, wheras theta stores the concatenation of all these vectors.
+        lambda % casadi.SX|casadi.MX:
+        lambda_sys  % cell(casadi.SX|casadi.MX): 
+        mu % casadi.SX|casadi.MX:
+        mu_sys % cell(casadi.SX|casadi.MX): 
 
-        z_all % CasADi symbolic variable - all algebraic variables (user provided and Stewart DCS specific)
+        z_all % casadi.SX|casadi.MX: All algebraic variables (user provided and Stewart DCS specific).
 
-        f_x  % CasADi symbolic expression -  r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems
-        g_Stewart % CasADi symbolic expression - TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
+        f_x  % casadi.SX|casadi.MX: r.h.s. of the ODE, $f_x = \sum_i F_i\theta_i$ , i is the index of the subystems
+        g_Stewart % casadi.SX|casadi.MX: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
 
-        dims
-        % functions specific to the stewart DCS
-        g_lp_stationarity_fun % CasADi function - related to DCS
-        g_Stewart_fun % CasADi function - related to DCS
-        lambda00_fun % CasADi function - related to DCS
+        dims % struct: dimensions struct TODO document members.
+        
+        g_lp_stationarity_fun % casadi.Function: $\nabla \mathcal{L} = 0$ for the stewart convexification.
+        g_Stewart_fun % casadi.Function: $g_i(x)$ from stewart formulation. 
+        lambda00_fun % casadi.Function: $\lambda(x_0)$.
     end
 
     methods

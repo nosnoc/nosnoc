@@ -1,9 +1,21 @@
 classdef Pss < nosnoc.model.Base
+% A model that represents a Piecewise Smooth System with regions $R_i\subset \R^{n_x}$ and dynamics $f_i(u,x)$.
+% $$\xdot = f_i(x,u),\ \mathrm{if}\ x\in R_i$$
+% for $i= 1,\ldots,n_f$.
+%
+% This system is convexified via the Filippov convexification which under an existance assumptions $\dot{x}$ is:
+% $$\xdot\in\overline{\conv}\Set{f_i(x,u)}{i = 1,\ldots,n_f}$$
+%
+% Todo:
+%     Document independent systems.
+%
+% See Also:
+%    More information about this model and its discretization can be found in :cite:`Nurkanovic2024a`.
     properties
-        F % n_x times n_f matrix whose columns define the vector fields in the correspoding PSS regions
-        S % sign matrix
-        c % switching functions defining region boundaries
-        g_ind % Vector of length n_f containing all Stewart indicator functions
+        F % cell(casadi.SX|casadi.MX): $n_x$ times $n_f$ matrix whose columns define the vector fields in the correspoding PSS regions $R_i$.
+        S % cell(casadi.SX|casadi.MX): Sign matrix.
+        c % cell(casadi.SX|casadi.MX): Switching functions defining region boundaries.
+        g_ind % cell(casadi.SX|casadi.MX): Vector of length $n_f$ containing all Stewart indicator functions
     end
 
     methods

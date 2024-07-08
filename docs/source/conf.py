@@ -63,8 +63,18 @@ autosummary_generate = True
 # -- magic to prevent mathjax from overriding sphinx_math_dollar.
 
 mathjax3_config = {
-  "tex": {
-    "inlineMath": [['\\(', '\\)']],
-    "displayMath": [["\\[", "\\]"]],
-  }
+    "tex": {
+        "inlineMath": [['\\(', '\\)']],
+        "displayMath": [["\\[", "\\]"]],
+        "macros": {
+            # Math notation
+            "R": "\\mathbb{R}",
+            "C": "\\mathcal{C}",
+            "xdot": "\\dot{x}",
+            "Set": ["\\left\\{\\, #1\\ \\middle|\\ #2\\,\\right\\}", 2],
+            "argmin": "\\operatorname{arg\\,min}",
+            "argmax": "\\operatorname{arg\\,max}",
+            "conv": "\\operatorname{conv}",
+        }
+    }
 }
