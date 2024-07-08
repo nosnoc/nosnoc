@@ -7,7 +7,7 @@ n_s = 3;
 T = 10;
 x_target = [0;-4];
 
-Ns = [5, 10, 15, 20, 25];
+Ns = [5, 10, 15, 20, 25, 50, 100];
 %% Define and solve OCP
 fesd_errors = [];
 h_ks = [];
