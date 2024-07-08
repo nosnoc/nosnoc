@@ -1,4 +1,4 @@
-function [x_res, u_res, t_res, t_control] = solve_pds_ocp(use_fesd, N_stages, n_s, T, x_target)
+function [x_res, u_res, t_res, t_control, lambda_res, c_res] = solve_pds_ocp(use_fesd, N_stages, n_s, T, x_target)
     
     solver_options = nosnoc.solver.Options();
     solver_options.complementarity_tol = 1e-10;
@@ -12,6 +12,8 @@ function [x_res, u_res, t_res, t_control] = solve_pds_ocp(use_fesd, N_stages, n_
 
     x_res = ocp_solver.get('x');
     u_res = ocp_solver.get('u');
+    lambda_res = ocp_solver.get('lambda');
+    c_res = ocp_solver.get('c_lift');
     t_res = ocp_solver.get_time_grid();
     t_control = ocp_solver.get_control_grid();
 end

@@ -10,7 +10,7 @@ T = 10;
 x_target = [0;-4];
 
 %% Define and solve OCP
-[x_res, u_res, t_res, t_control] = solve_pds_ocp(use_fesd, N_stages, n_s, T, x_target);
+[x_res, u_res, t_res, t_control, lambda_res, c_res] = solve_pds_ocp(use_fesd, N_stages, n_s, T, x_target);
 
 %% plot OCP results
 fontsize = 18;
@@ -40,11 +40,32 @@ xlabel("$x$")
 ylabel("$y$")
 legend("Location", "northeastoutside")
 hold off
+grid on
 
+% Plot controls
 figure
 stairs(t_control, [u_res, u_res(:, end)]', "LineWidth", 2)
+xlabel("$t$")
+ylabel("$u(t)$")
+ax = gca;
+ax.FontSize = fontsize;
 ylim([-1.1, 1.1])
+legend(["$u_x(t)$", "$u_y(t)$"])
+grid on
 
+
+figure
+subplot(2,1,1)
+plot(t_res, lambda_res, "LineWidth", 2)
+xlabel("$t$")
+ylabel("$\lambda(t)$")
+ax = gca;
+ax.FontSize = fontsize;
+subplot(2,1,2)
+plot(t_res, c_res, "LineWidth", 2)
+xlabel("$t$")
+ylabel("$c(x(t))$")
+grid on
 %% Make integrator and plot results
 x_sim = integrate_system(N_stages, T, u_res);
 
