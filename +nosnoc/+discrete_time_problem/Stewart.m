@@ -564,6 +564,8 @@ classdef Stewart < vdx.problems.Mpcc
             rbp = ~opts.right_boundary_point_explicit;
 
             switch obj.opts.step_equilibration
+              case StepEquilibrationMode.none
+                % Do nothing
               case StepEquilibrationMode.heuristic_mean
                 for ii=1:opts.N_stages
                     for jj=1:opts.N_finite_elements(ii)

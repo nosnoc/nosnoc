@@ -7,7 +7,7 @@ plot_integrator_output = 1;
 plot_continious_time_sol = 1;
 %% discretization settings
 T_sim = pi/2;
-N_sim  = 29;
+N_sim  = 3;
 N_finite_elements = 2;
 R_osc  = 1;
 
@@ -23,6 +23,8 @@ problem_options.N_finite_elements = N_finite_elements;
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
 problem_options.print_level  = 1;
+problem_options.cross_comp_mode = 1;
+problem_options.step_equilibration = 'none';
 
 %% Time settings
 x_star = [exp(1);0];
@@ -129,8 +131,8 @@ if plot_continious_time_sol
         plot(t_eval,yy1,'b');
         hold on;
         plot(t_eval,yy2,'r');
-        plot(tt,xx1,'b.');
-        plot(tt,xx2,'r.');
+        plot(tt,xx1,'b.', 'Markersize', 40);
+        plot(tt,xx2,'r.', 'Markersize', 40);
         grid on
     end
     xline(R_osc,'m')

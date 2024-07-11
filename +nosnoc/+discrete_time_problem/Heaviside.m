@@ -104,9 +104,9 @@ classdef Heaviside < vdx.problems.Mpcc
                 end
                 
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-                obj.w.alpha(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'alpha', dims.n_alpha},0, 1};
-                obj.w.lambda_n(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_n', dims.n_lambda},0, inf};
-                obj.w.lambda_p(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_p', dims.n_lambda},0, inf};
+                obj.w.alpha(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'alpha', dims.n_alpha},0, 1, opts.initial_alpha};
+                obj.w.lambda_n(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_n', dims.n_lambda},0, inf, 0.5};
+                obj.w.lambda_p(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_p', dims.n_lambda},0, inf, 0.5};
                 
                 % Handle x_box settings
                 if ~opts.x_box_at_stg && opts.rk_representation ~= RKRepresentation.differential
@@ -563,6 +563,8 @@ classdef Heaviside < vdx.problems.Mpcc
             rbp = ~opts.right_boundary_point_explicit;
 
             switch obj.opts.step_equilibration
+              case StepEquilibrationMode.none
+                % Do nothing
               case StepEquilibrationMode.heuristic_mean
                 for ii=1:opts.N_stages
                     for jj=1:opts.N_finite_elements(ii)

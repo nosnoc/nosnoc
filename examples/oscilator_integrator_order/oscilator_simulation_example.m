@@ -36,9 +36,9 @@ plot_integrator_output = 1;
 plot_continious_time_sol = 1;
 %% discretization settings
 T_sim = pi/2;
-N_sim  = 29;
+N_sim  = 3;
 N_finite_elements = 2;
-R_osc  = 1;
+R_osc = 1;
 
 %% Init
 % collocation settings
@@ -48,6 +48,7 @@ model = NosnocModel();
 %% settings
 problem_options.use_fesd = 1;       % switch detection method on/off
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
+problem_options.step_equilibration = 'none';
 solver_options.print_level = 2;
 problem_options.n_s = 4;
 problem_options.dcs_mode = 'Heaviside'; % 'Step;
@@ -173,6 +174,7 @@ if plot_continious_time_sol
         plot(t_eval,yy2,'r');
         plot(tt,xx1,'b.');
         plot(tt,xx2,'r.');
+        xlim([0,1.7])
         grid on
     end
     xline(R_osc,'m')

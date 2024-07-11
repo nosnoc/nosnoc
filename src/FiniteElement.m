@@ -1627,6 +1627,8 @@ classdef FiniteElement < NosnocFormulationObject
                 obj.addConstraint([obj.nu_lift-nu;obj.nu_lift*delta_h_ki-rho_h_p;-obj.nu_lift*delta_h_ki-rho_h_p],...
                     [0;-inf;-inf],...
                     [0;0;0]);
+            elseif problem_options.step_equilibration == StepEquilibrationMode.none
+                % Do nothing :)
             else
                 error("Step equilibration mode not implemented");
             end

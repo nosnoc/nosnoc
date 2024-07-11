@@ -26,6 +26,7 @@
 % This file is part of NOSNOC.
 classdef StepEquilibrationMode
     enumeration
+        none
         heuristic_mean
         heuristic_diff
         l2_relaxed_scaled

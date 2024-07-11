@@ -133,6 +133,7 @@ classdef Integrator < handle
         end
 
         function ret = get(obj, field)
+            warning off vdx:indexing:dot_reference_returns_vdx_var;
             if isempty(obj.w_all)
                 ret = [];
                 return
@@ -174,9 +175,11 @@ classdef Integrator < handle
                     ret = [ret,var(indexing{:}).res];
                 end 
             end
+            warning on vdx:indexing:dot_reference_returns_vdx_var;
         end
 
         function ret = get_full(obj, field)
+            warning off vdx:indexing:dot_reference_returns_vdx_var;
             if isempty(obj.w_all)
                 ret = [];
                 return
@@ -204,6 +207,7 @@ classdef Integrator < handle
                 end
                 ret = [ret,var(indexing{:}).res];
             end
+            warning on vdx:indexing:dot_reference_returns_vdx_var;
         end
 
         function t_grid = get_time_grid(obj)
@@ -239,11 +243,13 @@ classdef Integrator < handle
         end
 
         function set(obj, varname, field, indices, value)
+            warning off vdx:indexing:dot_reference_returns_vdx_var;
             if ~obj.discrete_time_problem.w.has_var(varname)
                 error(['nosnoc:' char(varname) ' is not a valid field for this integrator.']);
             end
             var = obj.discrete_time_problem.w.(varname);
             var(indices{:}).(field) = value;
+            warning on vdx:indexing:dot_reference_returns_vdx_var;
         end
 
         function set_x0(obj, x0)
