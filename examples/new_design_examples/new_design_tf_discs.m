@@ -137,6 +137,7 @@ ocp_solver.solve();
 x_res = ocp_solver.get('x');
 h_res = ocp_solver.get('h');
 p_res = x_res(1:4,:);
+v_res = x_res(5:end,:);
 p1 = x_res(1,:);
 p2 = x_res(2,:);
 p3 = x_res(3,:);
@@ -147,6 +148,11 @@ v3 = x_res(7,:);
 v4 = x_res(8,:);
 t_opt = x_res(9,:);
 
+frozen = logical([0, diff(t_opt) < 1e-3,]);
+p_unfrozen = p_res;
+v_unfrozen = v_res;
+p_unfrozen(:, frozen) = [];
+v_unfrozen(:, frozen) = [];
 %% animation
 t = linspace(0,2*pi,360).';t(end) = [];
 pgon1 = polyshape(r1*cos(t), r1*sin(t));
@@ -156,13 +162,13 @@ linecolor1 = facecolor1*0.7;
 facecolor2 = [0.8500 0.3250 0.0980];
 linecolor2 = facecolor2*0.7;
 
-fig = figure('Position', [10 10 1600 800]);
+fig = figure('Position', [10 10 1600 1000]);
 hold on
 plot(translate(pgon1, [-1,1]), 'FaceColor', facecolor1, 'FaceAlpha', 0.5, 'LineStyle', '--', 'EdgeColor' , linecolor1);
 plot(translate(pgon2, [0,0]), 'FaceColor', facecolor2, 'FaceAlpha', 0.5, 'LineStyle', '--', 'EdgeColor' , linecolor2);
 hold off
 
-plot_balls(h_res, p_res, {1:2, 3:4}, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2}, fig, 'tf_discs')
+plot_balls(t_opt, p_res, {1:2, 3:4}, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2}, fig, 'tf_discs')
 
 
 %%
