@@ -144,5 +144,13 @@ classdef Solver < handle
                 t_grid = [t_grid, t_grid(end)+h_sum];
             end
         end
+
+        function set(obj, varname, field, indices, value)
+            if ~obj.discrete_time_problem.w.has_var(varname)
+                error(['nosnoc:' char(varname) ' is not a valid field for this integrator.']);
+            end
+            var = obj.discrete_time_problem.w.(varname);
+            var(indices{:}).(field) = value;
+        end
     end
 end

@@ -79,6 +79,12 @@ classdef Integrator < handle
 
             stats = obj.discrete_time_problem.solve();
             obj.stats = [obj.stats,stats];
+            obj.w_all = [obj.w_all,obj.discrete_time_problem.w.res];
+        end
+
+        function clear_history(obj)
+            obj.w_all = []; % Clear simulation data.
+            obj.stats = []; % Clear simulation stats.
         end
 
         function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin)
@@ -91,8 +97,7 @@ classdef Integrator < handle
             t_grid = 0;
             t_grid_full = 0;
             obj.set_x0(obj.model.x0);
-            obj.w_all = []; % Clear simulation data.
-            opj.stats = []; % Clear simulation stats.
+            obj.clear_history();
             t_current = 0;
             
             for ii=1:opts.N_sim
@@ -104,7 +109,6 @@ classdef Integrator < handle
                     fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
                         ii, opts.N_sim, t_current, opts.T_sim, solver_stats.cpu_time_total);
                 end
-                obj.w_all = [obj.w_all,obj.discrete_time_problem.w.res];
                 x_step = obj.discrete_time_problem.w.x(:,:,opts.n_s).res;
                 x_step_full = obj.discrete_time_problem.w.x(:,:,:).res;
                 x_res = [x_res, x_step(:,2:end)];
@@ -232,6 +236,14 @@ classdef Integrator < handle
                     t_grid_full = [t_grid_full; t_grid(ii) + opts.c_rk(jj)*h(ii)];
                 end
             end
+        end
+
+        function set(obj, varname, field, indices, value)
+            if ~obj.discrete_time_problem.w.has_var(varname)
+                error(['nosnoc:' char(varname) ' is not a valid field for this integrator.']);
+            end
+            var = obj.discrete_time_problem.w.(varname);
+            var(indices{:}).(field) = value;
         end
 
         function set_x0(obj, x0)
