@@ -404,7 +404,6 @@ classdef Heaviside < vdx.problems.Mpcc
                     if relax.is_relaxed
                         obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
-
                 end
             end
 
@@ -430,16 +429,16 @@ classdef Heaviside < vdx.problems.Mpcc
                 % Terminal Phyisical Time (Possible terminal constraint on the clock state if time freezing is active).
                 if opts.time_optimal_problem
                     obj.g.terminal_physical_time = {x_end(end)-(obj.w.T_final()+t0), relax};
-                else
-                    if opts.impose_terminal_phyisical_time && ~opts.stagewise_clock_constraint
-                        obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax};
-                    else
-                        % no terminal constraint on the numerical time
+                    if relax.is_relaxed
+                        obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
+                    end
+                elseif opts.impose_terminal_phyisical_time && ~opts.stagewise_clock_constraint
+                    obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax};
+                    if relax.is_relaxed
+                        obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
                 end
-                if relax.is_relaxed
-                    obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
-                end
+                
             else
                 if ~opts.use_fesd
                     if opts.time_optimal_problem
@@ -522,6 +521,9 @@ classdef Heaviside < vdx.problems.Mpcc
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
             obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal, relax};
+            if(relax.is_relaxed)
+                obj.p.rho_physical_time().val = opts.rho_terminal;
+            end
         end
 
         function generate_complementarity_constraints(obj)
