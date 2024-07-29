@@ -1105,19 +1105,23 @@ classdef Cls < vdx.problems.Mpcc
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
                         if jj ~= 2 || ~opts.no_initial_impacts
-                            sigma_c_B = obj.w.Y_gap(ii,jj-1,kk);
+                            sigma_c_B = obj.w.Y_gap(ii,jj-1);
                         else
                             sigma_c_B = 0;
                         end
                         sigma_lambda_B = 0;
                         for kk=1:(opts.n_s + rbp)
                             sigma_c_B = sigma_c_B + obj.w.y_gap(ii,jj-1,kk);
+                        end
+                        for kk=1:(opts.n_s)
                             sigma_lambda_B = sigma_lambda_B + obj.w.lambda_normal(ii,jj-1,kk);
                         end
-                        sigma_c_F = obj.w.Y_gap(ii,jj,kk);
+                        sigma_c_F = obj.w.Y_gap(ii,jj);
                         sigma_lambda_F = 0;
                         for kk=1:(opts.n_s + rbp)
                             sigma_c_F = sigma_c_F + obj.w.y_gap(ii,jj,kk);
+                        end
+                        for kk=1:(opts.n_s)
                             sigma_lambda_F = sigma_lambda_F + obj.w.lambda_normal(ii,jj,kk);
                         end
 
@@ -1180,23 +1184,25 @@ classdef Cls < vdx.problems.Mpcc
               case StepEquilibrationMode.l2_relaxed
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(ii)
                         if jj ~= 2 || ~opts.no_initial_impacts
-                            sigma_c_B = obj.w.Y_gap(ii,jj-1,kk);
+                            sigma_c_B = obj.w.Y_gap(ii,jj-1);
                         else
                             sigma_c_B = 0;
                         end
                         sigma_lambda_B = 0;
                         for kk=1:(opts.n_s + rbp)
                             sigma_c_B = sigma_c_B + obj.w.y_gap(ii,jj-1,kk);
+                        end
+                        for kk=1:(opts.n_s)
                             sigma_lambda_B = sigma_lambda_B + obj.w.lambda_normal(ii,jj-1,kk);
                         end
-                        sigma_c_F = obj.w.Y_gap(ii,jj,kk);
+                        sigma_c_F = obj.w.Y_gap(ii,jj);
                         sigma_lambda_F = 0;
                         for kk=1:(opts.n_s + rbp)
                             sigma_c_F = sigma_c_F + obj.w.y_gap(ii,jj,kk);
+                        end
+                        for kk=1:(opts.n_s)
                             sigma_lambda_F = sigma_lambda_F + obj.w.lambda_normal(ii,jj,kk);
                         end
 
@@ -1253,29 +1259,31 @@ classdef Cls < vdx.problems.Mpcc
                         end
                         eta_vec = [eta_vec;eta];
                         delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        obj.f = obj.f + obj.p.rho_h_p() * eta * delta_h.^2
+                        obj.f = obj.f + obj.p.rho_h_p() * eta * delta_h.^2;
                     end
                 end
               case StepEquilibrationMode.direct
                 eta_vec = [];
                 for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
                     for jj=2:opts.N_finite_elements(ii)
                         if jj ~= 2 || ~opts.no_initial_impacts
-                            sigma_c_B = obj.w.Y_gap(ii,jj-1,kk);
+                            sigma_c_B = obj.w.Y_gap(ii,jj-1);
                         else
                             sigma_c_B = 0;
                         end
                         sigma_lambda_B = 0;
                         for kk=1:(opts.n_s + rbp)
                             sigma_c_B = sigma_c_B + obj.w.y_gap(ii,jj-1,kk);
+                        end
+                        for kk=1:(opts.n_s)
                             sigma_lambda_B = sigma_lambda_B + obj.w.lambda_normal(ii,jj-1,kk);
                         end
-                        sigma_c_F = obj.w.Y_gap(ii,jj,kk);
+                        sigma_c_F = obj.w.Y_gap(ii,jj);
                         sigma_lambda_F = 0;
                         for kk=1:(opts.n_s + rbp)
                             sigma_c_F = sigma_c_F + obj.w.y_gap(ii,jj,kk);
+                        end
+                        for kk=1:(opts.n_s)
                             sigma_lambda_F = sigma_lambda_F + obj.w.lambda_normal(ii,jj,kk);
                         end
 
