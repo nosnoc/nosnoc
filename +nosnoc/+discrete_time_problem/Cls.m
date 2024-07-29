@@ -160,9 +160,7 @@ classdef Cls < vdx.problems.Mpcc
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
                 obj.w.lambda_normal(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'lambda_normal', dims.n_c}, 0, 50, 0};
                 obj.w.y_gap(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'y_gap', dims.n_c}, 0, inf, 0};
-                if rbp
-                    obj.w.y_gap(ii,opts.N_finite_elements(ii),(opts.n_s+rbp)) = {{'y_gap', dims.n_c}, 0, inf, 0};
-                end
+                
                 if model.friction_exists
                     switch opts.friction_model
                       case 'Polyhedral'
@@ -348,7 +346,7 @@ classdef Cls < vdx.problems.Mpcc
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                            obj.g.y_gap_rbp(ii.jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
+                            obj.g.y_gap_rbp(ii,jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
@@ -401,7 +399,7 @@ classdef Cls < vdx.problems.Mpcc
                             
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                            obj.g.y_gap_rbp(ii.jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
+                            obj.g.y_gap_rbp(ii,jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
@@ -455,7 +453,7 @@ classdef Cls < vdx.problems.Mpcc
                             
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
-                            obj.g.y_gap_rbp(ii.jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
+                            obj.g.y_gap_rbp(ii,jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
