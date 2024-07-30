@@ -39,36 +39,36 @@ solver_options = nosnoc.solver.Options();
 %% Options
 problem_options.time_freezing = 1;
 problem_options.time_freezing_hysteresis = 1;
-%problem_options.time_optimal_problem = 1;
+problem_options.time_optimal_problem = 0;
 % Time-freezing scaling / speed of time
 problem_options.s_sot_max = 100;
 problem_options.s_sot_min = 0.1;
-problem_options.rho_sot = 0;
+problem_options.rho_sot = 1e-1;
 problem_options.use_speed_of_time_variables = 1; 
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 1;
-problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_2;
-problem_options.rho_terminal = 1e5;
-% problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_2;
-% problem_options.rho_terminal_physical_time = 1e4;
+% problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_2;
+% problem_options.rho_terminal = 1e5;
+%problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_2;
+%problem_options.rho_terminal_physical_time = 1e4;
 % problem_options.relax_terminal_numerical_time = ConstraintRelaxationMode.ELL_1;
 % problem_options.rho_terminal_numerical_time = 1e4;
 problem_options.step_equilibration = StepEquilibrationMode.direct;
 problem_options.rho_h = 1;
-problem_options.n_s = 2;
+problem_options.n_s = 1;
 problem_options.N_finite_elements = 3;
 problem_options.N_stages = 10;
-problem_options.T = 10;
-problem_options.cross_comp_mode = 3;
+problem_options.T = 8;
+problem_options.cross_comp_mode = 4;
 
 % solver settings
-solver_options.complementarity_tol = 1e-6;
+solver_options.complementarity_tol = 1e-9;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e4;
 solver_options.opts_casadi_nlp.ipopt.tol = 1e-7;
 solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
 solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-solver_options.sigma_0 = 1;
-solver_options.N_homotopy = 7;
+solver_options.sigma_0 = 10;
+solver_options.N_homotopy = 10;
 solver_options.print_level = 3;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
@@ -76,7 +76,7 @@ solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 model = nosnoc.model.Pss();
 %% Terminal constraint and bounds
 q_goal = 150;
-v_goal = 0;
+v_goal = 20;
 v_max = 25;
 u_max = 5;
 %% Model Parameters
@@ -146,7 +146,6 @@ model.F = [f_1 f_2 f_3 f_4];
 model.f_q = fuel_cost_on*L;
 % terminal constraint
 model.g_terminal = [q-q_goal;v-v_goal];
-%model.a_n = 1000;
 % g_terminal_lb = zeros(2,1);
 % g_terminal_ub = zeros(2,1);
 % f_q_T = 1e3*[q-q_goal;v-v_goal]'*[q-q_goal;v-v_goal];
@@ -155,6 +154,7 @@ ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 %% Read and plot Result
 x_res_full = ocp_solver.get_full("x");
+x_res = ocp_solver.get("x");
 theta_res_full = ocp_solver.get_full("theta");
 lambda_res_full = ocp_solver.get_full("lambda");
 h_res = ocp_solver.get("h");
@@ -210,6 +210,14 @@ hold off
 subplot(2,1,2)
 hold on
 plot(t_num_full, x_res_full(2,:))
+for ii=1:length(t_num)
+    xline(t_num(ii),'k:')
+end
+hold off
+
+figure
+hold on
+plot(t_num_full, x_res_full(4,:))
 for ii=1:length(t_num)
     xline(t_num(ii),'k:')
 end

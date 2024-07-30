@@ -56,6 +56,11 @@ classdef Heaviside < vdx.problems.Mpcc
                     obj.f = obj.f + obj.p.rho_sot()*sum((obj.w.sot(:)-1).^2);
                 end
             end
+            if opts.use_fesd && opts.use_numerical_clock_state
+                obj.w.numerical_time(0:opts.N_stages) = {{'t', 1}};
+                obj.w.numerical_time(0).lb = 0;
+                obj.w.numerical_time(0).ub = 0;
+            end
             % Remark, VDX syntax for defining parameters
             % obj.p.parameter_name(indexing) = {{'parameter_name', length}, parameter_value};
             obj.p.p_time_var(1:opts.N_stages) = {{'p_time_var', dims.n_p_time_var}, model.p_time_var_val};
@@ -163,6 +168,7 @@ classdef Heaviside < vdx.problems.Mpcc
                     s_sot = 1;
                 end
                 if opts.time_optimal_problem && ~opts.use_speed_of_time_variables
+                    % TODO I think this is wrong
                     t_stage = obj.w.T_final()/(opts.N_stages*opts.N_finite_elements(ii));
                 elseif opts.time_optimal_problem
                     t_stage = s_sot*obj.p.T()/opts.N_stages;
@@ -348,6 +354,13 @@ classdef Heaviside < vdx.problems.Mpcc
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
                 end
+
+                if opts.use_fesd && opts.use_numerical_clock_state
+                    prev_t = obj.w.numerical_time(ii-1);
+                    curr_t = obj.w.numerical_time(ii);
+                    obj.g.numerical_time_integrator(ii) = {curr_t - (prev_t + s_sot*sum_h)};
+                end
+
                 if ~opts.g_path_at_stg && ~opts.g_path_at_fe
                     x_i = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s);
                     z_i = obj.w.z(ii, opts.N_finite_elements(ii), opts.n_s);
@@ -370,25 +383,46 @@ classdef Heaviside < vdx.problems.Mpcc
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, alpha_ijk, lambda_n_ijk, lambda_n_ijk, u_i, v_global, p);
                 end
 
+                % handle numerical time
+                if opts.use_fesd && opts.equidistant_control_grid
+                    relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+
+                    if opts.time_optimal_problem
+                        ecg_rhs = obj.w.T_final()/opts.N_stages;
+                    else
+                        ecg_rhs = obj.p.T()/opts.N_stages;
+                    end
+
+                    if opts.use_numerical_clock_state
+                        curr_t = obj.w.numerical_time(ii);
+                        obj.g.equidistant_numerical_grid(ii) = {curr_t - ii*ecg_rhs, relax};
+                    else
+                        obj.g.equidistant_numerical_grid(ii) = {s_sot*sum_h - ecg_rhs, relax};
+                    end
+                    if relax.is_relaxed
+                        obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
+                    end
+                end
                 % Clock <Constraints
                 % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
                 %              to understand something about the time-freezing reformulation which is ugly.
-                if opts.use_fesd && opts.equidistant_control_grid
-                    relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
-                    if opts.time_optimal_problem
-                        if opts.use_speed_of_time_variables
-                            obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;s_sot*sum_h - obj.w.T_final()/opts.N_stages], relax};
-                        else
-                            obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages, relax};
-                        end
-                    elseif ~(opts.time_freezing && ~opts.use_speed_of_time_variables) 
-                        obj.g.equidistant_control_grid(ii) = {t_stage-sum_h, relax};
-                    end
-                    if relax.is_relaxed
-                        obj.p.rho_numerical_time().val = opts.rho_terminal_physical_time;
-                    end
-                end
+                % if opts.use_fesd && opts.equidistant_control_grid
+                %     relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                %     if opts.time_optimal_problem
+                %         if opts.use_speed_of_time_variables
+                %             obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;s_sot*sum_h - obj.w.T_final()/opts.N_stages], relax};
+                %         else
+                %             obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages, relax};
+                %         end
+                %     elseif ~(opts.time_freezing && ~opts.use_speed_of_time_variables) 
+                %         obj.g.equidistant_control_grid(ii) = {t_stage-sum_h, relax};
+                %     end
+                %     if relax.is_relaxed
+                %         obj.p.rho_numerical_time().val = opts.rho_terminal_physical_time;
+                %     end
+                % end
 
+                % Handle possible physical time
                 if opts.time_freezing && opts.stagewise_clock_constraint
                     x0 = obj.w.x(0,0,opts.n_s);
                     t0 = x0(end);
@@ -521,8 +555,10 @@ classdef Heaviside < vdx.problems.Mpcc
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
             obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal, relax};
+            obj.g.terminal.set_is_terminal(true);
             if(relax.is_relaxed)
-                obj.p.rho_physical_time().val = opts.rho_terminal;
+                obj.p.rho_terminal().val = opts.rho_terminal;
+                obj.w.s_terminal.set_is_terminal(true);
             end
         end
 
@@ -921,4 +957,5 @@ classdef Heaviside < vdx.problems.Mpcc
             results = rmfield(S, fields(empty_fields));
         end
     end
+
 end

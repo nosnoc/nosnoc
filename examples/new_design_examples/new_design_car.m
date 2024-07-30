@@ -8,13 +8,14 @@ problem_options = nosnoc.Options(); % problem_options = NosnocProblemOptions();
 solver_options = nosnoc.solver.Options();
 
 %% set some options
-problem_options.rk_scheme = RKSchemes.LOBATTO_IIIC;
-problem_options.rk_representation = RKRepresentation.differential_lift_x;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_representation = RKRepresentation.integral;
 problem_options.n_s = 2;
-problem_options.N_stages = 50; % number of control intervals
+problem_options.N_stages = 5; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 15;    % Time horizon
 problem_options.dcs_mode = "Heaviside"; % or "Heaviside"
+problem_options.use_numerical_clock_state = false;
 
 problem_options.step_equilibration = StepEquilibrationMode.linear_complementarity;
 

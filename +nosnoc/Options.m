@@ -226,6 +226,11 @@ classdef Options < handle
         c_rk double
 
         right_boundary_point_explicit(1,1) logical
+
+        % experimental:
+        %---------------------------------------------------------------------%
+
+        use_numerical_clock_state(1,1) logical = false
     end
 
     properties(Dependent)
