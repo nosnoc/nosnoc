@@ -15,9 +15,9 @@ problem_options.N_stages = 5; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 15;    % Time horizon
 problem_options.dcs_mode = "Heaviside"; % or "Heaviside"
-problem_options.use_numerical_clock_state = false;
+problem_options.use_numerical_clock_state = true;
 
-problem_options.step_equilibration = StepEquilibrationMode.linear_complementarity;
+problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 
 %problem_options.x_box_at_stg = 0;
 %problem_options.x_box_at_fe = 0;

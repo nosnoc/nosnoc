@@ -231,7 +231,8 @@ classdef Options < handle
         %---------------------------------------------------------------------%
 
         use_numerical_clock_state(1,1) logical = false
-    end
+    end        
+
 
     properties(Dependent)
         time_rescaling

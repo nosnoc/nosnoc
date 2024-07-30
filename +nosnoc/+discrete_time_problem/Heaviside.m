@@ -56,11 +56,6 @@ classdef Heaviside < vdx.problems.Mpcc
                     obj.f = obj.f + obj.p.rho_sot()*sum((obj.w.sot(:)-1).^2);
                 end
             end
-            if opts.use_fesd && opts.use_numerical_clock_state
-                obj.w.numerical_time(0:opts.N_stages) = {{'t', 1}};
-                obj.w.numerical_time(0).lb = 0;
-                obj.w.numerical_time(0).ub = 0;
-            end
             % Remark, VDX syntax for defining parameters
             % obj.p.parameter_name(indexing) = {{'parameter_name', length}, parameter_value};
             obj.p.p_time_var(1:opts.N_stages) = {{'p_time_var', dims.n_p_time_var}, model.p_time_var_val};
@@ -71,6 +66,12 @@ classdef Heaviside < vdx.problems.Mpcc
             %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
             %              on the whole queue which is _significantly_ faster.
             % 2d vars: Variables that are defined for each finite element.
+            if opts.use_fesd && opts.use_numerical_clock_state
+                obj.w.numerical_time(0,0) = {{'t0', 1}};
+                obj.w.numerical_time(0,0).lb = 0;
+                obj.w.numerical_time(0,0).ub = 0;
+            end
+
             for ii=1:opts.N_stages
                 % other derived values
                 h0 = opts.h_k(ii);
@@ -84,6 +85,10 @@ classdef Heaviside < vdx.problems.Mpcc
                     end
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
+                if opts.use_fesd && opts.use_numerical_clock_state
+                    obj.w.numerical_time(ii, 1:opts.N_finite_elements(ii)) = {{['t_' num2str(ii)], 1}};
+                end
+
                 if obj.opts.step_equilibration == StepEquilibrationMode.linear_complementarity
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
                     obj.w.pi_lambda_n(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda_n', dims.n_lambda},-inf,inf};
@@ -154,6 +159,9 @@ classdef Heaviside < vdx.problems.Mpcc
             obj.g.lp_stationarity(0,0,opts.n_s) = {dcs.g_lp_stationarity_fun(x_0, z_0, lambda_n_0, lambda_p_0, v_global, [p_global;obj.p.p_time_var(1)])};
             
             x_prev = obj.w.x(0,0,opts.n_s);
+            if opts.use_fesd && opts.use_numerical_clock_state
+                t_prev = obj.w.numerical_time(0,0);
+            end
             for ii=1:opts.N_stages
                 h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
                 
@@ -177,6 +185,7 @@ classdef Heaviside < vdx.problems.Mpcc
                 end
 
                 sum_h = 0;
+                
                 for jj=1:opts.N_finite_elements(ii)
                     if obj.opts.use_fesd
                         h = obj.w.h(ii,jj);
@@ -185,6 +194,15 @@ classdef Heaviside < vdx.problems.Mpcc
                         h = obj.w.T_final()/(opts.N_stages*opts.N_finite_elements(ii));
                     else
                         h = h0;
+                    end
+                    if opts.use_fesd && opts.use_numerical_clock_state
+                        t_curr = obj.w.numerical_time(ii, jj);
+                        if ~opts.time_freezing
+                            obj.g.numerical_time_integrator(ii,jj) = {t_curr - (t_prev + s_sot*h)};
+                        else
+                            obj.g.numerical_time_integrator(ii,jj) = {t_curr - (t_prev + h)};
+                        end
+                        t_prev = t_curr;
                     end
                     
                     switch opts.rk_representation
@@ -355,12 +373,6 @@ classdef Heaviside < vdx.problems.Mpcc
                     x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
                 end
 
-                if opts.use_fesd && opts.use_numerical_clock_state
-                    prev_t = obj.w.numerical_time(ii-1);
-                    curr_t = obj.w.numerical_time(ii);
-                    obj.g.numerical_time_integrator(ii) = {curr_t - (prev_t + s_sot*sum_h)};
-                end
-
                 if ~opts.g_path_at_stg && ~opts.g_path_at_fe
                     x_i = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s);
                     z_i = obj.w.z(ii, opts.N_finite_elements(ii), opts.n_s);
@@ -394,10 +406,14 @@ classdef Heaviside < vdx.problems.Mpcc
                     end
 
                     if opts.use_numerical_clock_state
-                        curr_t = obj.w.numerical_time(ii);
+                        curr_t = obj.w.numerical_time(ii,opts.N_finite_elements(ii));
                         obj.g.equidistant_numerical_grid(ii) = {curr_t - ii*ecg_rhs, relax};
                     else
-                        obj.g.equidistant_numerical_grid(ii) = {s_sot*sum_h - ecg_rhs, relax};
+                        if ~opts.time_freezing
+                            obj.g.equidistant_numerical_grid(ii) = {s_sot*sum_h - ecg_rhs, relax};
+                        else
+                            obj.g.equidistant_numerical_grid(ii) = {sum_h - ecg_rhs, relax};
+                        end
                     end
                     if relax.is_relaxed
                         obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
