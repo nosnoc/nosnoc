@@ -57,10 +57,15 @@ problem_options.N_finite_elements = N_FE;
 problem_options.a_n = 10;
 problem_options.dcs_mode = DcsMode.Heaviside;
 problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_1;
-problem_options.rho_terminal_physical_time = 1e4;
+problem_options.rho_terminal_physical_time = 1e5;
+problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
+problem_options.gamma_h = .95;
+problem_options.use_numerical_clock_state = false;
+problem_options.time_freezing_quadrature_state = true;
 
 %solver_options.homotopy_update_rule = 'superlinear';
 solver_options.homotopy_update_slope = 0.1;
+solver_options.sigma_0 = 0.1;
 solver_options.N_homotopy = 100;
 solver_options.complementarity_tol = 1e-8;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
@@ -146,7 +151,7 @@ v1 = x_res(5,:);
 v2 = x_res(6,:);
 v3 = x_res(7,:);
 v4 = x_res(8,:);
-t_opt = x_res(9,:);
+t_opt = x_res(end,:);
 
 frozen = logical([0, diff(t_opt) < 1e-3,]);
 p_unfrozen = p_res;

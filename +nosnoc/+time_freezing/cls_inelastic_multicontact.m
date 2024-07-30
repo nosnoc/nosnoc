@@ -82,7 +82,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     % TODO put this in problem opts
     if true
         inv_M_aux = eye(dims.n_q);
-        inv_M_ext = blkdiag(zeros(dims.n_q),cls_model.invM,0);
+        inv_M_ext = blkdiag(zeros(dims.n_q),cls_model.invM,zeros(1+dims.n_quad));
     else
         inv_M_aux = cls_model.invM;
         inv_M_ext = eye(dims.n_x+1);
@@ -95,7 +95,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     else
         f_q_dynamics = zeros(dims.n_q,dims.n_contacts);
     end
-    f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1,dims.n_contacts)];
+    f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad,1)];
 
     if opts.nonsmooth_switching_fun
         heaviside_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    
@@ -112,12 +112,12 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
             % auxiliary tangent;
             if dims.n_dim_contact == 2
                 v_tangent_ii = cls_model.J_tangent(:,ii)'*cls_model.v;
-                f_aux_pos_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)-cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;0]; % for v>0
-                f_aux_neg_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)+cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;0]; % for v<0
+                f_aux_pos_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)-cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;zeros(1+dims.n_quad,1)]; % for v>0
+                f_aux_neg_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)+cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;zeros(1+dims.n_quad,1)]; % for v<0
             else
                 v_tangent_ii = v_tangent(:,ii);
-                f_aux_pos_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n-cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
-                f_aux_neg_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n+cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));0]; % for v>0
+                f_aux_pos_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n-cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));zeros(1+dims.n_quad,1)]; % for v>0
+                f_aux_neg_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n+cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));zeros(1+dims.n_quad,1)]; % for v>0
             end
             f_aux_pos = [f_aux_pos,f_aux_pos_ii];
             f_aux_neg = [f_aux_neg,f_aux_neg_ii];
