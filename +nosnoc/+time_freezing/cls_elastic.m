@@ -1,4 +1,13 @@
 function [pss_model] = cls_elastic(cls_model, opts)
+% Applies the time freezing reformulation for elastic impacts to the given complementarity lagrangian system.
+% This function assumes that the cls_model has only elastic impacts.
+% 
+% Args:
+%     cls_model (nosnoc.model.Cls): The complementarity Lagrange system to be transformed.
+%     opts (nosnoc.Options): Options object.
+%
+% Returns:
+%     nosnoc.model.Pss: Returns a model that is a Piecewise smooth system.
     dims = cls_model.dims;
     pss_model = nosnoc.model.Pss();
     pss_model.dims = dims;
