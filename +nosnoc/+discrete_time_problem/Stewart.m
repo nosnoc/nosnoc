@@ -65,6 +65,11 @@ classdef Stewart < vdx.problems.Mpcc
             %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
             %              on the whole queue which is _significantly_ faster.
             % 2d vars: Variables that are defined for each finite element (and each control stage)
+            if opts.use_fesd && opts.use_numerical_clock_state
+                obj.w.numerical_time(0,0) = {{'t0', 1}};
+                obj.w.numerical_time(0,0).lb = 0;
+                obj.w.numerical_time(0,0).ub = 0;
+            end
             for ii=1:opts.N_stages
                 % other derived values
                 h0 = opts.h_k(ii); % initial guess for length of current FE
@@ -76,12 +81,16 @@ classdef Stewart < vdx.problems.Mpcc
                         ubh = ubh*opts.s_sot_max;
                         lbh = lbh/opts.s_sot_min;
                     elseif opts.time_optimal_problem
-                        %ubh = ubh*(opts.T_final_max/opts.T);
-                        %lbh = lbh/((opts.T_final_min+eps)/opts.T);
+                        ubh = ubh*(opts.T_final_max/opts.T);
+                        lbh = lbh/((opts.T_final_min+eps)/opts.T);
                     end
                     % define finte elements lengths as variables
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
+                if opts.use_fesd && opts.use_numerical_clock_state
+                    obj.w.numerical_time(ii, 1:opts.N_finite_elements(ii)) = {{['t_' num2str(ii)], 1}};
+                end
+                
                 if obj.opts.step_equilibration == StepEquilibrationMode.linear_complementarity
                     % define auxiliary variables needed to write step equlibration constraints
                     % Remark: only this step equilibration mode needs auxliary variables.
@@ -164,6 +173,9 @@ classdef Stewart < vdx.problems.Mpcc
             obj.g.algebraic(0,0,opts.n_s) = {dcs.g_alg_fun(x_0, z_0, lambda_0, theta_0, mu_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
             
             x_prev = obj.w.x(0,0,opts.n_s); % last point of previous FE, needed for continuity conditions
+            if opts.use_fesd && opts.use_numerical_clock_state
+                t_prev = obj.w.numerical_time(0,0);
+            end
             for ii=1:opts.N_stages
                 h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii)); % TODO@Anton, why not h0 = opts.h_k(ii), easier to read.
                 
@@ -195,6 +207,15 @@ classdef Stewart < vdx.problems.Mpcc
                         h = obj.w.T_final()/(opts.N_stages*opts.N_finite_elements(ii));
                     else
                         h = h0;
+                    end
+                    if opts.use_fesd && opts.use_numerical_clock_state
+                        t_curr = obj.w.numerical_time(ii, jj);
+                        if ~opts.time_freezing
+                            obj.g.numerical_time_integrator(ii,jj) = {t_curr - (t_prev + s_sot*h)};
+                        else
+                            obj.g.numerical_time_integrator(ii,jj) = {t_curr - (t_prev + h)};
+                        end
+                        t_prev = t_curr;
                     end
 
                     switch opts.rk_representation
@@ -395,7 +416,6 @@ classdef Stewart < vdx.problems.Mpcc
                 % handle numerical time
                 if opts.use_fesd && opts.equidistant_control_grid
                     relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
-
                     if opts.time_optimal_problem && ~opts.time_freezing
                         ecg_rhs = obj.w.T_final()/opts.N_stages;
                     else
