@@ -71,7 +71,6 @@ classdef Heaviside < vdx.problems.Mpcc
                 obj.w.numerical_time(0,0).lb = 0;
                 obj.w.numerical_time(0,0).ub = 0;
             end
-
             for ii=1:opts.N_stages
                 % other derived values
                 h0 = opts.h_k(ii);
@@ -82,6 +81,9 @@ classdef Heaviside < vdx.problems.Mpcc
                         % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
                         ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
                         lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                    elseif opts.time_optimal_problem
+                        ubh = ubh*(opts.T_final_max/opts.T);
+                        lbh = lbh/((opts.T_final_min+eps)/opts.T);
                     end
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
@@ -109,6 +111,7 @@ classdef Heaviside < vdx.problems.Mpcc
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda_n(0,0,opts.n_s) = {{['lambda_n'], dims.n_lambda},0,inf};
             obj.w.lambda_p(0,0,opts.n_s) = {{['lambda_p'], dims.n_lambda},0,inf};
+            obj.w.alpha(0,0,opts.n_s) = {{['alpha'], dims.n_alpha},0, 1};
             for ii=1:opts.N_stages
                 if (opts.rk_representation == RKRepresentation.integral ||...
                     opts.rk_representation == RKRepresentation.differential_lift_x)
@@ -153,12 +156,13 @@ classdef Heaviside < vdx.problems.Mpcc
 
             x_0 = obj.w.x(0,0,opts.n_s);
             z_0 = obj.w.z(0,0,opts.n_s);
+            alpha_0 = obj.w.alpha(0,0,opts.n_s);
             lambda_n_0 = obj.w.lambda_n(0,0,opts.n_s);
             lambda_p_0 = obj.w.lambda_p(0,0,opts.n_s);
 
-            obj.g.lp_stationarity(0,0,opts.n_s) = {dcs.g_lp_stationarity_fun(x_0, z_0, lambda_n_0, lambda_p_0, v_global, [p_global;obj.p.p_time_var(1)])};
+            obj.g.algebraic(0,0,opts.n_s) = {dcs.g_alg_fun(x_0, z_0, alpha_0, lambda_n_0, lambda_p_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
             
-            x_prev = obj.w.x(0,0,opts.n_s);
+            x_prev = obj.w.x(0,0,opts.n_s); % last point of previous FE, needed for continuity conditions
             if opts.use_fesd && opts.use_numerical_clock_state
                 t_prev = obj.w.numerical_time(0,0);
             end
@@ -395,15 +399,13 @@ classdef Heaviside < vdx.problems.Mpcc
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, alpha_ijk, lambda_n_ijk, lambda_n_ijk, u_i, v_global, p);
                 end
 
-
                 % Clock Constraints
                 % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
                 %              to understand something about the time-freezing reformulation which is ugly.
                 % handle numerical time
                 if opts.use_fesd && opts.equidistant_control_grid
                     relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
-
-                    if opts.time_optimal_problem
+                    if opts.time_optimal_problem && ~opts.time_freezing
                         ecg_rhs = obj.w.T_final()/opts.N_stages;
                     else
                         ecg_rhs = obj.p.T()/opts.N_stages;
@@ -571,6 +573,14 @@ classdef Heaviside < vdx.problems.Mpcc
             model = obj.model;
             % Do Cross-Complementarity
 
+            lambda_n_0 = obj.w.lambda_n(0,0,opts.n_s);
+            lambda_p_0 = obj.w.lambda_p(0,0,opts.n_s);
+            alpha_0 = obj.w.alpha(0,0,opts.n_s);
+
+            % inital_comp
+            obj.G.initial_comp = {[lambda_n_0; lambda_p_0]};
+            obj.H.initial_comp = {[alpha_0;1-alpha_0]};
+            
             rbp = ~opts.right_boundary_point_explicit;
             
             if opts.use_fesd
