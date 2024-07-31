@@ -80,7 +80,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     % TODO put this in problem opts
     if true
         inv_M_aux = eye(dims.n_q);
-        inv_M_ext = blkdiag(zeros(dims.n_q),cls_model.invM,0);
+        inv_M_ext = blkdiag(zeros(dims.n_q),cls_model.invM,zeros(1+dims.n_quad));
     else
         inv_M_aux = cls_model.invM;
         inv_M_ext = eye(dims.n_x+1);
@@ -93,7 +93,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     else
         f_q_dynamics = zeros(dims.n_q,dims.n_contacts);
     end
-    f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1,dims.n_contacts)];
+    f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad, 1)];
 
     if opts.nonsmooth_switching_fun
         pss_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    
@@ -183,8 +183,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     pss_model.F = horzcat(F{:});
 
     S(~S) = -1;
-    pss_model.S = S; % dummy value to pass error checks
-                     % number of auxiliary dynamics modes
+    pss_model.S = S;
     
     pss_model.dims = dims;
 end

@@ -62,6 +62,8 @@ problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 problem_options.gamma_h = .95;
 problem_options.use_numerical_clock_state = false;
 problem_options.time_freezing_quadrature_state = true;
+problem_options.tf_multicontact = false;
+problem_options.dcs_mode = "Stewart";
 
 %solver_options.homotopy_update_rule = 'superlinear';
 solver_options.homotopy_update_slope = 0.1;
