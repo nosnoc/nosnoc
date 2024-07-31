@@ -395,6 +395,10 @@ classdef Heaviside < vdx.problems.Mpcc
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, alpha_ijk, lambda_n_ijk, lambda_n_ijk, u_i, v_global, p);
                 end
 
+
+                % Clock Constraints
+                % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
+                %              to understand something about the time-freezing reformulation which is ugly.
                 % handle numerical time
                 if opts.use_fesd && opts.equidistant_control_grid
                     relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
@@ -419,25 +423,7 @@ classdef Heaviside < vdx.problems.Mpcc
                         obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
                     end
                 end
-                % Clock <Constraints
-                % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
-                %              to understand something about the time-freezing reformulation which is ugly.
-                % if opts.use_fesd && opts.equidistant_control_grid
-                %     relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
-                %     if opts.time_optimal_problem
-                %         if opts.use_speed_of_time_variables
-                %             obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;s_sot*sum_h - obj.w.T_final()/opts.N_stages], relax};
-                %         else
-                %             obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages, relax};
-                %         end
-                %     elseif ~(opts.time_freezing && ~opts.use_speed_of_time_variables) 
-                %         obj.g.equidistant_control_grid(ii) = {t_stage-sum_h, relax};
-                %     end
-                %     if relax.is_relaxed
-                %         obj.p.rho_numerical_time().val = opts.rho_terminal_physical_time;
-                %     end
-                % end
-
+                
                 % Handle possible physical time
                 if opts.time_freezing && opts.stagewise_clock_constraint
                     x0 = obj.w.x(0,0,opts.n_s);

@@ -73,8 +73,11 @@ classdef Stewart < vdx.problems.Mpcc
                     lbh = (1 - opts.gamma_h) * h0; % lower bound for FE length
                     if opts.time_rescaling && ~opts.use_speed_of_time_variables
                         % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
-                        ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
-                        lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                        ubh = ubh*opts.s_sot_max;
+                        lbh = lbh/opts.s_sot_min;
+                    elseif opts.time_optimal_problem
+                        %ubh = ubh*(opts.T_final_max/opts.T);
+                        %lbh = lbh/((opts.T_final_min+eps)/opts.T);
                     end
                     % define finte elements lengths as variables
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
@@ -389,25 +392,32 @@ classdef Stewart < vdx.problems.Mpcc
                 % Clock Constraints
                 % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
                 %              to understand something about the time-freezing reformulation which is ugly.
+                % handle numerical time
                 if opts.use_fesd && opts.equidistant_control_grid
                     relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+
                     if opts.time_optimal_problem && ~opts.time_freezing
-                        if opts.use_speed_of_time_variables
-                            obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;s_sot*sum_h - obj.w.T_final()/opts.N_stages], relax};
+                        ecg_rhs = obj.w.T_final()/opts.N_stages;
+                    else
+                        ecg_rhs = obj.p.T()/opts.N_stages;
+                    end
+
+                    if opts.use_numerical_clock_state
+                        curr_t = obj.w.numerical_time(ii,opts.N_finite_elements(ii));
+                        obj.g.equidistant_numerical_grid(ii) = {curr_t - ii*ecg_rhs, relax};
+                    else
+                        if ~opts.time_freezing
+                            obj.g.equidistant_numerical_grid(ii) = {s_sot*sum_h - ecg_rhs, relax};
                         else
-                            obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages, relax};
+                            obj.g.equidistant_numerical_grid(ii) = {sum_h - ecg_rhs, relax};
                         end
-                        if relax.is_relaxed
-                            obj.p.rho_numerical_time().val = opts.rho_terminal_physical_time;
-                        end
-                    elseif ~(opts.time_freezing && ~opts.use_speed_of_time_variables)
-                        obj.g.equidistant_control_grid(ii) = {t_stage-sum_h, relax};
-                        if relax.is_relaxed
-                            obj.p.rho_numerical_time().val = opts.rho_terminal_physical_time;
-                        end
+                    end
+                    if relax.is_relaxed
+                        obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
                     end
                 end
 
+                % Handle possible physical time
                 if opts.time_freezing && opts.stagewise_clock_constraint
                     x0 = obj.w.x(0,0,opts.n_s);
                     t0 = x0(end);
@@ -868,6 +878,9 @@ classdef Stewart < vdx.problems.Mpcc
                             % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
                             ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
                             lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                        elseif opts.time_optimal_problem
+                            ubh = ubh*(opts.T_final_max/opts.T);
+                            lbh = lbh/((opts.T_final_min+eps)/opts.T);
                         end
                         obj.w.h(ii,jj).lb = lbh;
                         obj.w.h(ii,jj).ub = ubh;

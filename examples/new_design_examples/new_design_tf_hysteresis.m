@@ -41,25 +41,29 @@ problem_options.time_freezing = 1;
 problem_options.time_freezing_hysteresis = 1;
 problem_options.time_optimal_problem = 0;
 % Time-freezing scaling / speed of time
-problem_options.s_sot_max = 100;
+problem_options.T_final_max = 15;
+problem_options.s_sot_max = 2;
 problem_options.s_sot_min = 0.1;
 problem_options.rho_sot = 1e-1;
 problem_options.use_speed_of_time_variables = 1; 
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 1;
-% problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_2;
-% problem_options.rho_terminal = 1e5;
-%problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_2;
-%problem_options.rho_terminal_physical_time = 1e4;
-% problem_options.relax_terminal_numerical_time = ConstraintRelaxationMode.ELL_1;
-% problem_options.rho_terminal_numerical_time = 1e4;
-problem_options.step_equilibration = StepEquilibrationMode.direct;
+% problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_1;
+% problem_options.rho_terminal = 1e8;
+% problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_2;
+% problem_options.rho_terminal_physical_time = 1e5;
+% problem_options.relax_terminal_numerical_time = ConstraintRelaxationMode.ELL_2;
+% problem_options.rho_terminal_numerical_time = 1e5;
+problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 problem_options.rho_h = 1;
-problem_options.n_s = 1;
+problem_options.n_s = 3;
 problem_options.N_finite_elements = 3;
 problem_options.N_stages = 10;
-problem_options.T = 8;
-problem_options.cross_comp_mode = 4;
+problem_options.T = 12;
+problem_options.cross_comp_mode = 3;
+problem_options.g_path_at_fe = 1;
+problem_options.g_path_at_stg = 1;
+problem_options.gamma_h = 1;
 
 % solver settings
 solver_options.complementarity_tol = 1e-9;
@@ -67,8 +71,8 @@ solver_options.opts_casadi_nlp.ipopt.max_iter = 1e4;
 solver_options.opts_casadi_nlp.ipopt.tol = 1e-7;
 solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
 solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-solver_options.sigma_0 = 10;
-solver_options.N_homotopy = 10;
+solver_options.sigma_0 = 1e-2;
+solver_options.N_homotopy = 5;
 solver_options.print_level = 3;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
@@ -76,16 +80,16 @@ solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 model = nosnoc.model.Pss();
 %% Terminal constraint and bounds
 q_goal = 150;
-v_goal = 20;
-v_max = 25;
+v_goal = 0;
+v_max = 50;
 u_max = 5;
 %% Model Parameters
 % Hystheresis parameters
 v1 = 10;
 v2 = 15;
 % fual costs of turbo and nominal
-Pn = 0;
-Pt = 0;
+Pn = 1;
+Pt = 1;
 
 %% Variable defintion
 % states
@@ -100,7 +104,7 @@ u= SX.sym('u');
 
 model.x = x;
 model.u = u;
-%model.u0 = 5;
+%model.u0 = 0;
 
 % Bounds on x and u
 model.lbx = -[inf;v_max;inf;inf;inf];
@@ -126,10 +130,10 @@ g_4 = norm([psi;w]-z4)^2;
 model.g_ind = [g_1;g_2;g_3;g_4];
 
 % modes of the ODEs layers
-f_A = [v;u;Pn;0;1];
-f_B = [v;3*u;Pt;0;1];
+f_A = [v;u;Pn*u;0;1];
+f_B = [v;3*u;Pt*u;0;1];
 
-a_push = 1;
+a_push = 2;
 gamma_p = a_push*(psi^2/(1+psi^2));
 gamma_n = a_push*((psi-1)^2/(1+(psi-1)^2));
 
@@ -142,6 +146,10 @@ f_4 = 2*f_B-f_3;
 f_1 = 2*f_A-f_2;
 % in matrix form
 model.F = [f_1 f_2 f_3 f_4];
+%% guiding constraint. maybe helps
+model.g_path = [w - (0.5*tanh(10*(v-(v1-1)))+0.6);w - (0.5*tanh(10*(v-(v2+1)))+0.4)];
+model.lbg_path = [-inf;0];
+model.ubg_path = [0;inf];
 %% objective and terminal constraint
 model.f_q = fuel_cost_on*L;
 % terminal constraint
@@ -151,6 +159,12 @@ model.g_terminal = [q-q_goal;v-v_goal];
 % f_q_T = 1e3*[q-q_goal;v-v_goal]'*[q-q_goal;v-v_goal];
 %% solve OCP
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.set("u", "init", {1:5}, 5);
+%ocp_solver.set("u", "lb", {1:5}, 5);
+%ocp_solver.set("u", "ub", {1:5}, 5);
+ocp_solver.set("u", "init", {6:10}, -5);
+%ocp_solver.set("u", "lb", {6:10}, -5);
+%ocp_solver.set("u", "ub", {6:10}, -5);
 ocp_solver.solve();
 %% Read and plot Result
 x_res_full = ocp_solver.get_full("x");
@@ -159,6 +173,7 @@ theta_res_full = ocp_solver.get_full("theta");
 lambda_res_full = ocp_solver.get_full("lambda");
 h_res = ocp_solver.get("h");
 u_res = ocp_solver.get("u")
+sot_res = ocp_solver.get("sot");
 t_res = x_res(end,:);
 t_num = ocp_solver.get_time_grid();
 t_num_full = ocp_solver.get_time_grid_full();
@@ -168,7 +183,7 @@ figure
 subplot(4,1,1)
 hold on
 plot(t_num_full, theta_res_full(1,:))
-plot(t_num_full, lambda_res_full(1,:))
+%plot(t_num_full, lambda_res_full(1,:))
 for ii=1:length(t_num)
     xline(t_num(ii),'k:')
 end
@@ -176,7 +191,7 @@ hold off
 subplot(4,1,2)
 hold on
 plot(t_num_full, theta_res_full(2,:))
-plot(t_num_full, lambda_res_full(2,:))
+%plot(t_num_full, lambda_res_full(2,:))
 for ii=1:length(t_num)
     xline(t_num(ii),'k:')
 end
@@ -184,7 +199,7 @@ hold off
 subplot(4,1,3)
 hold on
 plot(t_num_full, theta_res_full(3,:))
-plot(t_num_full, lambda_res_full(3,:))
+%plot(t_num_full, lambda_res_full(3,:))
 for ii=1:length(t_num)
     xline(t_num(ii),'k:')
 end
@@ -192,7 +207,7 @@ hold off
 subplot(4,1,4)
 hold on
 plot(t_num_full, theta_res_full(4,:))
-plot(t_num_full, lambda_res_full(4,:))
+%plot(t_num_full, lambda_res_full(4,:))
 for ii=1:length(t_num)
     xline(t_num(ii),'k:')
 end
