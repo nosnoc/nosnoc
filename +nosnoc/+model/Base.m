@@ -96,6 +96,16 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 else
                     obj.ubx = inf*ones(dims.n_x,1);
                 end
+                
+                % check x0
+                if size(obj.x0, 1) ~= 0
+                    if length(obj.x0) ~= dims.n_x
+                        error('nosnoc:model:Base:x0_size',...
+                            'nosnoc: The vector x0, for the initial guess of x has the wrong size.')
+                    end
+                else
+                    obj.x0 = 0*ones(dims.n_x,1);
+                end
             else
                 error('nosnoc:model:Base:x_missing',...
                     'nosnoc: Please provide the state vector x, a CasADi symbolic variable.');
