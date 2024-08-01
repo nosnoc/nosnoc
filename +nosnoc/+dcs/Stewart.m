@@ -1,5 +1,5 @@
 classdef Stewart < nosnoc.dcs.Base
-% 
+% A DCS generated from the Stewart reformulation of a Fillipov convexified Piecewise Smooth System:
 % $$\xdot \in \Set{\sum f_i(x,u)\theta_i}{\sum \theta_i,\ \theta_i\ge 0,\ \theta_i = 0\ \mathrm{if}\ x\notin \bar{R_i}}$$
 %
 % See Also:

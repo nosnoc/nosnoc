@@ -1,10 +1,13 @@
 classdef Heaviside < nosnoc.model.Base
-    % A nonsmooth model which allows a more general than a PSS as it implements the Aizermann-Pyatnitskii extension.
-    % In particular it allows multipliers for example in the form :math:`1-\alpha_1\alpha_2`.
+% A nonsmooth model which allows a more general than a PSS as it implements the Aizermann-Pyatnitskii extension.
+% In particular it allows multipliers for example in the form :math:`1-\alpha_1\alpha_2`.
     properties
-        f_x
+        f_x % casadi.SX|casadi.MX: $\xdot = f(x,\alpha)$ i.e. the state dynamics. 
 
-        c
+        c % casadi.SX|casadi.MX: $c(x)$ representing the switching function for the $\alpha$ multipliers. 
+
+        % casadi.SX|casadi.MX: Step functions $\alpha$ which are definied by: $\alpha = 1$ if $c(x) > 0$,
+        % $\alpha = 0$ if $c(x) < 0$, and $\alpha \in [0, 1]$ if $c(x) = 0$.
         alpha
     end
 

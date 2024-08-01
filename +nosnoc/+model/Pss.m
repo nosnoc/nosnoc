@@ -12,10 +12,10 @@ classdef Pss < nosnoc.model.Base
 % See Also:
 %    More information about this model and its discretization can be found in :cite:`Nurkanovic2024a`.
     properties
-        F % cell(casadi.SX|casadi.MX): $n_x$ times $n_f$ matrix whose columns define the vector fields in the correspoding PSS regions $R_i$.
-        S % cell(casadi.SX|casadi.MX): Sign matrix.
-        c % cell(casadi.SX|casadi.MX): Switching functions defining region boundaries.
-        g_ind % cell(casadi.SX|casadi.MX): Vector of length $n_f$ containing all Stewart indicator functions
+        F % cell<casadi.SX|casadi.MX>: $n_x \times n_f$ matrix whose columns define the vector fields in the correspoding PSS regions $R_i$.
+        S % cell<casadi.SX|casadi.MX>: Sign matrix.
+        c % cell<casadi.SX|casadi.MX>: Switching functions defining region boundaries.
+        g_ind % cell<casadi.SX|casadi.MX>: Vector of length $n_f$ containing all Stewart indicator functions
     end
 
     methods
