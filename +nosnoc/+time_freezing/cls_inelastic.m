@@ -1,4 +1,15 @@
 function [pss_model] = cls_inelastic(cls_model, opts)
+% Applies the time freezing reformulation for inelastic impacts to the given complementarity lagrangian system.
+% This *does not* use time freezing multi-contact formulation and as such may be used with the Stewart or
+% Heaviside PSS reformulation.
+% This function assumes that the cls_model has only inelastic impacts.
+% 
+% Args:
+%     cls_model (nosnoc.model.Cls): The complementarity Lagrange system to be transformed.
+%     opts (nosnoc.Options): Options object.
+%
+% Returns:
+%     nosnoc.model.Pss: Returns a model that is a Piecewise smooth system.
     import casadi.*
     dims = cls_model.dims;
     pss_model = nosnoc.model.Pss();

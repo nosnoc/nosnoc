@@ -1,4 +1,14 @@
 function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
+% Applies the time freezing reformulation for inelastic impacts to the given complementarity lagrangian system.
+% This uses the time freezing multi-contact formulation and as such may only be used with the Heaviside formulation.
+% This function assumes that the cls_model has only inelastic impacts.
+% 
+% Args:
+%     cls_model (nosnoc.model.Cls): The complementarity Lagrange system to be transformed.
+%     opts (nosnoc.Options): Options object.
+%
+% Returns:
+%     nosnoc.model.Heaviside: Returns a model that is a Heaviside model.
     import casadi.*
     dims = cls_model.dims;
     heaviside_model = nosnoc.model.Heaviside();
