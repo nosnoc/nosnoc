@@ -19,6 +19,12 @@ classdef Solver < handle
             opts.preprocess();
             model.verify_and_backfill(opts);
 
+            if class(model) == "nosnoc.model.Cls" && opts.time_freezing
+                model = nosnoc.time_freezing.reformulation(model, opts);
+                model.verify_and_backfill(opts);
+                obj.model = model;
+            end
+
             % Run pipeline
             switch class(model)
               case "nosnoc.model.Pss"
@@ -44,7 +50,11 @@ classdef Solver < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Cls"
-                error("not implemented")
+                obj.dcs = nosnoc.dcs.Cls(model);
+                obj.dcs.generate_variables(opts);
+                obj.dcs.generate_equations(opts);
+                obj.discrete_time_problem = nosnoc.discrete_time_problem.Cls(obj.dcs, opts);
+                obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Pds"
                 if ~opts.right_boundary_point_explicit
                     error("You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA")
@@ -98,37 +108,66 @@ classdef Solver < handle
             end
         end
 
+        function set_param(obj, param, value)
+        % TODO (@anton) figure out how to do a set with indexing
+            if ~obj.discrete_time_problem.p.has_var(param);
+                error(['nosnoc:' char(param) ' does not exist as a parameter for this OCP']);
+            end
+            obj.discrete_time_problem.p.(param)().val = value;
+        end
+
         function ret = get_full(obj, field)
             opts = obj.opts;
             try
                 var = obj.discrete_time_problem.w.(field);
             catch
                 error(['nosnoc:' char(field) ' is not a valid field for this OCP']);
-                % TODO@anton print list of valid fields.
+                % TODO @anton print list of valid fields.
             end
             indexing(1:var.depth) = {':'};
             ret = var(indexing{:}).res;
         end
 
         function t_grid = get_time_grid(obj)
-            if obj.opts.use_fesd
+            opts = obj.opts;
+            if opts.use_fesd
                 h = obj.discrete_time_problem.w.h(:,:).res;
             else
-                h = obj.discrete_time_problem.p.T().val/(sum(obj.opts.N_finite_elements))*(ones(1, sum(obj.opts.N_finite_elements)));
+                h = obj.discrete_time_problem.p.T().val/(sum(opts.N_finite_elements))*(ones(1, sum(opts.N_finite_elements)));
+            end
+            if opts.use_speed_of_time_variables
+                if opts.local_speed_of_time_variable
+                    sot = repelem(obj.get("sot"), opts.N_finite_elements);
+                    h = sot.*h;
+                else
+                    sot = obj.get("sot");
+                    h = sot*h;
+                end
             end
             t_grid = cumsum([0, h]);
         end
 
         function t_grid_full = get_time_grid_full(obj)
-            if obj.opts.use_fesd
+            opts = obj.opts;
+            if opts.use_fesd
                 h = obj.discrete_time_problem.w.h(:,:).res;
             else
-                h = obj.discrete_time_problem.p.T().val/(sum(obj.opts.N_finite_elements))*(ones(1, sum(obj.opts.N_finite_elements)));
+                h = obj.discrete_time_problem.p.T().val/(sum(opts.N_finite_elements))*(ones(1, sum(opts.N_finite_elements)));
             end
             t_grid_full = 0;
+            if opts.use_speed_of_time_variables
+                if opts.local_speed_of_time_variable
+                    sot = repelem(obj.get("sot"), opts.N_finite_elements);
+                    h = sot.*h;
+                else
+                    sot = obj.get("sot");
+                    h = sot*h;
+                end
+            end
             for ii = 1:length(h)
+                start = t_grid_full(end);
                 for jj = 1:opts.n_s
-                    t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
+                    t_grid_full = [t_grid_full; start + opts.c_rk(jj)*h(ii)];
                 end
             end
         end

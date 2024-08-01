@@ -4,4 +4,7 @@ All ``nosnoc`` models are derived from :mat:class:`nosnoc.model.Base` and share 
 
 .. module:: +nosnoc.+model
 .. autoclass:: Base
+.. autoclass:: Pss
+.. autoclass:: Heaviside
 .. autoclass:: Pds
+.. autoclass:: Cls

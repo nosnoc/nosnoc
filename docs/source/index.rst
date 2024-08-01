@@ -17,3 +17,4 @@ Contents
    options
    models
    dcs
+   bib

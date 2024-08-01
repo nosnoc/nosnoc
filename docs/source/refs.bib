@@ -1,0 +1,260 @@
+@String { ACC      = {Proceedings of the American Control Conference (ACC)} }
+@String { accc     = {Proc.\ Amer.\ Contr.\ Conf.} }
+@String { ADCHEM   = {IFAC Symposium on Advanced Control of Chemical Processes (ADCHEM)} }
+@String { aiche    = {AIChE J.} }
+@String { auto     = {Automatica} }
+@String { automat  = {Automatisierungstechnik} }
+@String { autoprax = {Automatisierungstechnische Praxis} }
+@String { CCA      = {Proceedings of the IEEE Conference on Control Applications (CCA)} }
+@String { cce      = {Comp.\ \& Chem.\ Eng.} }
+@String { CDC      = {Proceedings of the IEEE Conference on Decision and Control (CDC)} }
+@String { CDC-ECC  = {Proceedings of the IEEE Conference on Decision and Control and European Control Conference (CDC-ECC)} }
+@String { cec      = {Chem.\ Eng.\ Commun.} }
+@String { ces      = {Chem.\ Eng.\ Sci.} }
+@String { circuit  = {IEEE Transactions on Circuits and Systems} }
+@String { ctaat    = {CONTROL-THEORY AND ADVANCED TECHNOLOGY} }
+@String { ECC      = {Proceedings of the European Control Conference (ECC)} }
+@String { ejc      = {Europ.\ J.\ Contr.} }
+@String { ICRA     = {Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)} }
+@String { ieee     = {IEEE Trans.\ Automat.\ Contr.} }
+@String { ieepartd = {IEE Proceedings, Part D} }
+@String { IFAC     = {Proceedings of the IFAC World Congress} }
+@String { int      = {Int.\ J.\ Contr.} }
+@String { IROS     = {Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)} }
+@String { jmsec    = {Journal of Mathematical Systems, Estimation, and Control} }
+@String { jota     = {J.\ Opt.\ Theory \ and Appl.} }
+@String { jpc      = {J.\ Proc.\ Contr.} }
+@String { lett     = {Syst.\ Contr.\ Lett.} }
+@String { linappl  = {Linear Algebra and its Applications} }
+@String { magazin  = {IEEE Contr.\ Syst.\ Magazine} }
+@String { mcss     = {Mathematics of Control, Signals, and Systems} }
+@String { MOVED    = {XXXXXXXXXXXXXXXXXXXXXXXXXXXX {\PackageError{Syscop_bib}{The paper has been moved}{}} NEW KEY:} }
+@String { MSC      = {Proceedings of the IEEE Multi-conference on Systems and Control (MSC)} }
+@String { NMPC     = {Proceedings of the IFAC Conference on Nonlinear Model Predictive Control (NMPC)} }
+@String { rnc      = {Int.\ J.\ of Robust and Nonlinear Control} }
+@String { rt       = {Regelungstechnik} }
+@String { siam     = {SIAM J.\ Contr.\ Optim.} }
+@String { siam_o   = {SIAM J.\ Contr.} }
+@String { siopt    = {SIAM J.\ Optim.} }
+@String { TAC      = {IEEE Transactions on Automatic Control} }
+@String { zamm     = {Z.\ angew.\ Math.\ Mech.} }
+
+@Article{Nurkanovic2024,
+  Title                    = {FESD-J: Finite Elements with Switch Detection for numerical optimal control of rigid bodies with impacts and Coulomb friction},
+  Author                   = {Armin Nurkanovi{\'c} and Jonathan Frey and Anton Pozharskiy and Moritz Diehl},
+  Journal                  = {Nonlinear Analysis: Hybrid Systems},
+  Year                     = {2024},
+  Pages                    = {101460},
+  Volume                   = {52},
+
+  Abstract                 = {The Finite Elements with Switch Detection (FESD) is a high-accuracy method for the numerical simulation and solution of optimal control problems subject to discontinuous ODEs. In this article, we extend the FESD method (Nurkanović et al., 2022) to the dynamic equations of multiple rigid bodies that exhibit state jumps due to impacts and Coulomb friction. This new method is referred to as FESD with Jumps (FESD-J). Starting from the standard Runge–Kutta equations, we let the integration step sizes be degrees of freedom. Additional constraints are introduced to ensure exact switch detection and to remove spurious degrees of freedom if no switches occur. Moreover, at the boundaries of each integration interval (finite element), we impose the impact equations in their complementarity form, at both the position and velocity level. They compute the normal and tangential impulses in case of contact making. Otherwise, they are reduced to the continuity conditions for the velocities. FESD-J treats multiple contacts, where each contact can have a different coefficient of restitution and friction. All methods introduced in this paper are implemented in the open-source software package NOSNOC (Nurkanović and Diehl, 2022). We illustrate the use of FESD-J in both simulation and optimal control examples.},
+  Doi                      = {https://doi.org/10.1016/j.nahs.2023.101460},
+  File                     = {Nurkanovic2024.pdf:pdf/Nurkanovic2024.pdf:PDF},
+  ISSN                     = {1751-570X},
+  Keywords                 = {Nonsmooth mechanics, Numerical optimal control, Numerical simulation, Hybrid systems, syscop-public},
+  Owner                    = {Armin},
+  Url                      = {https://www.sciencedirect.com/science/article/pii/S1751570X23001310}
+}
+
+@Article{Nurkanovic2023,
+  Title                    = {Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems with Set-Valued Step Functions},
+  Author                   = {Nurkanovi{\'c}, Armin and Frey, Jonathan and Pozharskiy, Anton and Diehl, Moritz},
+  Journal                  = {IEEE Conference on Decision and Control},
+  Year                     = {2023},
+
+  Booktitle                = {IEEE Conference on Decision and Control},
+  File                     = {Nurkanovic2023.pdf:pdf/Nurkanovic2023.pdf:PDF},
+  Keywords                 = {syscop-public}
+}
+
+<<<<<<< HEAD
+
+=======
+>>>>>>> 250278d (start adding Stewart and Heaviside docs)
+@Article{Nurkanovic2024b,
+  Title                    = {Solving mathematical programs with complementarity constraints arising in nonsmooth optimal control},
+  Author                   = {Nurkanovi{\'c}, Armin and Pozharskiy, Anton and Diehl, Moritz},
+  Journal                  = {Vietnam Journal of Mathematics (accepted for publication)},
+  Year                     = {2024},
+
+  File                     = {Nurkanovic2024b.pdf:pdf/Nurkanovic2024b.pdf:PDF},
+  Keywords                 = {syscop-public},
+  Owner                    = {armin},
+  Timestamp                = {2024.05.02}
+}
+
+@Article{Nurkanovic2023c,
+  Title                    = {Finite Elements with Switch Detection for Numerical Optimal Control of Nonsmooth Dynamical Systems with Set-Valued Step Functions},
+  Author                   = {Nurkanovi{\'c}, Armin and Pozharskiy, Anton and Frey, Jonathan and Diehl, Moritz},
+  Journal                  = {arXiv preprint arXiv:2307.03482},
+  Year                     = {2023}
+}
+
+@Article{Nurkanovic2023a,
+  Title                    = {The time-freezing reformulation for numerical optimal control of complementarity Lagrangian systems with state jumps},
+  Author                   = {Armin Nurkanovi\'c and Sebastian Albrecht and Bernard Brogliato and Moritz Diehl},
+  Journal                  = {Automatica},
+  Year                     = {2023},
+  Pages                    = {111295},
+  Volume                   = {158},
+
+  Doi                      = {https://doi.org/10.1016/j.automatica.2023.111295},
+  File                     = {Nurkanovic2023a.pdf:pdf/Nurkanovic2023a.pdf:PDF},
+  ISSN                     = {0005-1098},
+  Keywords                 = {syscop-public, noc},
+  Owner                    = {armin},
+  Url                      = {https://www.sciencedirect.com/science/article/pii/S0005109823004594}
+}
+
+@Article{Nurkanovic2023d,
+  Title                    = {The {T}ime-{F}reezing {R}eformulation for {N}umerical {O}ptimal {C}ontrol of {C}omplementarity {L}agrangian {S}ystems with {S}tate {J}umps -{E}xtended {V}ersion},
+  Author                   = {Armin Nurkanovi\'c and Sebastian Albrecht and Bernard Brogliato and Moritz Diehl},
+  Journal                  = {arXiv preprint arXiv:2111.06759},
+  Year                     = {2023},
+
+  Keywords                 = {nosnoc, nonsmooth, time-freezing},
+  Owner                    = {armin}
+}
+
+@Article{Nurkanovic2021b,
+  Title                    = {Multi-level {I}terations for {E}conomic {N}onlinear {M}odel {P}redictive {C}ontrol},
+  Author                   = {Nurkanovi\'c, A.
+ and Albrecht, S.
+ and Diehl, M.},
+  Journal                  = {Recent Advances in Model Predictive Control: Theory, Algorithms, and Applications},
+  Year                     = {2021},
+  Pages                    = {65--105},
+
+  Abstract                 = {Solving the nonlinear optimal control problem (OCP) arising from Economic Nonlinear model predictive control (ENMPC) reliably in real time is still a challenge. In this chapter, we present an extended multi-level iteration scheme (MLI) and discuss the interplay of exact Hessian and Hessian approximations. We show the importance of proper use of regularization strategies for indefinite Hessian matrices and compare it to quasi-Newton methods. The influence of inexact derivatives and different regularization strategies on generalized tangential predictors is shown in a tutorial example.},
+  Booktitle                = {Recent Advances in Model Predictive Control: Theory, Algorithms, and Applications},
+  Doi                      = {10.1007/978-3-030-63281-6_4},
+  Editor                   = {Faulwasser, Timm
+and M{\"u}ller, Matthias A.
+and Worthmann, Karl},
+  File                     = {Nurkanovic2021b.pdf:pdf/Nurkanovic2021b.pdf:PDF},
+  ISBN                     = {978-3-030-63281-6},
+  Keywords                 = {syscop-public},
+  Url                      = {https://doi.org/10.1007/978-3-030-63281-6_4}
+}
+
+@InProceedings{Nurkanovic2020,
+  Title                    = {Limits of {MPCC} {F}ormulations in {D}irect {O}ptimal {C}ontrol with {N}onsmooth {D}ifferential {E}quations},
+  Author                   = {Nurkanovi\'c, Armin and Albrecht, Sebastian and Diehl, Moritz},
+  Booktitle                = {2020 European Control Conference (ECC)},
+  Year                     = {2020},
+  Pages                    = {2015-2020},
+
+  Doi                      = {10.23919/ECC51009.2020.9143593},
+  File                     = {Nurkanovic2020.pdf:pdf/Nurkanovic2020.pdf:PDF},
+  Keywords                 = {syscop-public},
+  Owner                    = {armin}
+}
+
+@Article{Nurkanovic2022a,
+  Title                    = {Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing},
+  Author                   = {Armin {Nurkanovi\'c} and Moritz {Diehl}},
+  Journal                  = {IEEE Control Systems Letters},
+  Year                     = {2022},
+
+  File                     = {Nurkanovic2022a.pdf:pdf/Nurkanovic2022a.pdf:PDF},
+  Keywords                 = {syscop-public},
+  Owner                    = {armin},
+  Timestamp                = {2022.06.07}
+}
+
+@Article{Nurkanovic2022b,
+  Title                    = {{NOSNOC}: A Software Package for Numerical Optimal Control of Nonsmooth Systems},
+  Author                   = {Armin {Nurkanovi\'c} and Moritz {Diehl}},
+  Journal                  = {IEEE Control Systems Letters},
+  Year                     = {2022},
+
+  File                     = {Nurkanovic2022b.pdf:pdf/Nurkanovic2022b.pdf:PDF},
+  Keywords                 = {syscop-public},
+  Owner                    = {armin},
+  Timestamp                = {2022.06.07}
+}
+
+@Article{Nurkanovic2020d,
+  Title                    = {Optimization-based primary and secondary control of microgrids},
+  Author                   = {Armin Nurkanovi\'c and Amer Me{\v s}anovi\'c and Mario Sperl and Sebastian Albrecht and Ulrich Münz and Rolf Findeisen and Moritz Diehl},
+  Journal                  = {at - Automatisierungstechnik},
+  Year                     = {2020},
+  Number                   = {12},
+  Pages                    = {1044--1058},
+  Volume                   = {68},
+
+  Doi                      = {doi:10.1515/auto-2020-0088},
+  File                     = {Nurkanovic2020d.pdf:pdf/Nurkanovic2020d.pdf:PDF},
+  Keywords                 = {syscop-public, acados-simulation},
+  Owner                    = {armin},
+  Url                      = {https://doi.org/10.1515/auto-2020-0088}
+}
+
+@InProceedings{Nurkanovic2020a,
+  Title                    = {Real-Time Nonlinear Model Predictive Control for Microgrid Operation},
+  Author                   = {Armin Nurkanovi\'c and Amer Me{\v s}anovi\'c and Andrea Zanelli and Jonathan Frey and Gianluca Frison and Sebastian Albrecht and Moritz Diehl},
+  Booktitle                = {Proceedings of the American Control Conference (ACC)},
+  Year                     = {2020},
+
+  Address                  = {Denver, USA},
+  Month                    = {July},
+
+  Doi                      = {10.23919/ACC45564.2020.9147816},
+  File                     = {Nurkanovic2020a.pdf:pdf/Nurkanovic2020a.pdf:PDF},
+  Keywords                 = {syscop-public, acados-simulation},
+  Owner                    = {armin},
+  Timestamp                = {2019.11.06}
+}
+
+@Article{Nurkanovic2021,
+  Title                    = {A {T}ime-{F}reezing {A}pproach for {N}umerical {O}ptimal {C}ontrol of {N}onsmooth {D}ifferential {E}quations with {S}tate {J}umps},
+  Author                   = {Nurkanovi\'c , Armin and Sartor, Tommaso and Albrecht, Sebastian and Diehl, Moritz},
+  Journal                  = {IEEE Control Systems Letters},
+  Year                     = {2021},
+  Number                   = {2},
+  Pages                    = {439-444},
+  Volume                   = {5},
+
+  Doi                      = {10.1109/LCSYS.2020.3003419},
+  File                     = {Nurkanovic2021.pdf:pdf/Nurkanovic2021.pdf:PDF},
+  Keywords                 = {syscop-public},
+  Owner                    = {armin},
+  Timestamp                = {2020.07.09}
+}
+
+@Article{Nurkanovic2024a,
+  Title                    = {{F}inite {E}lements with {S}witch {D}etection for {D}irect {O}ptimal {C}ontrol of {N}onsmooth {S}ystems},
+  Author                   = {Armin {Nurkanovi\'c} and Mario {Sperl} and Sebastian {Albrecht} and Moritz {Diehl}},
+  Journal                  = {Numerische Mathematik (accepted for publication)},
+  Year                     = {2024},
+
+  File                     = {Nurkanovic2024a.pdf:pdf/Nurkanovic2024a.pdf:PDF},
+  Keywords                 = {syscop-public,Optimization and Control (math.OC), FOS: Mathematics, FOS: Mathematics, 34A36, 49M25, 49Q12, 65L99, 49M37},
+  Owner                    = {armin},
+  Publisher                = {Springer}
+}
+
+@InProceedings{Nurkanovic2019a,
+  Title                    = {{T}he {A}dvanced {S}tep {R}eal {T}ime {I}teration for {N}{M}{P}{C}},
+  Author                   = {Armin Nurkanovi\'c and Andrea Zanelli and Sebastian Albrecht and Moritz Diehl},
+  Booktitle                = CDC,
+  Year                     = {2019},
+
+  File                     = {Nurkanovic2019a.pdf:pdf/Nurkanovic2019a.pdf:PDF},
+  Keywords                 = {syscop-public},
+  Owner                    = {armin},
+  Timestamp                = {2019.09.19}
+}
+
+@InProceedings{Nurkanovic2020b,
+  Title                    = {Contraction Properties of the Advanced Step Real-Time Iteration},
+  Author                   = {Armin Nurkanovi\'c and Andrea Zanelli and Gianluca Frison and Sebastian Albrecht and Moritz Diehl},
+  Booktitle                = {Proceedings of the IFAC World Congress},
+  Year                     = {2020},
+  Number                   = {1},
+  Volume                   = {51},
+
+  File                     = {Nurkanovic2020b.pdf:pdf/Nurkanovic2020b.pdf:PDF},
+  Keywords                 = {syscop-public, acados-simulation},
+  Owner                    = {armin}
+}

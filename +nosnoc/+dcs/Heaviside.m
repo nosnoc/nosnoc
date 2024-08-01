@@ -1,26 +1,28 @@
 classdef Heaviside < nosnoc.dcs.Base
     properties
-        alpha % CasADi symbolic variable for selection of the Heaviside step function
-        alpha_sys % cell containing the alpha variables of every subsystem, wheras alpha stores the concatenation of all these vectors;
-        lambda_n % CasADi symbolic variable 
-        lambda_n_sys % cell
-        lambda_p % CasADi symbolic variable 
-        lambda_p_sys % cell
+        alpha % casadi.SX|casadi.MX: selection of the Heaviside step function.
+        alpha_sys % cell(casadi.SX|casadi.MX): alpha variables of every subsystem, wheras alpha stores the concatenation of all these vectors.
+        lambda_n % casadi.SX|casadi.MX:
+        lambda_n_sys % cell(casadi.SX|casadi.MX): 
+        lambda_p % casadi.SX|casadi.MX:
+        lambda_p_sys % cell(casadi.SX|casadi.MX): 
+        
         % These are relevant only for lifting. For now wait to implement until re-implementing time-freezing
         % beta 
         % gamma
         % theta
         % theta_sys
-        theta_expr_sys 
 
-        z_all
+        theta_expr_sys % cell(casadi.SX|casadi.MX): 
 
-        f_x
+        z_all % casadi.SX|casadi.MX: All algebraic variables (user provided and Stewart DCS specific).
+
+        f_x % casadi.SX|casadi.MX: r.h.s. of the ODE.
         
-        dims
+        dims % struct: dimensions struct TODO document members.
 
-        g_lp_stationarity_fun
-        lambda00_fun
+        g_lp_stationarity_fun % casadi.Function: $\nabla \mathcal{L} = 0$ for Heaviside step LP.
+        lambda00_fun % casadi.Function: $\lambda_n(x_0)$ and $\lambda_p(x_0)$.
     end
 
     methods
@@ -31,6 +33,9 @@ classdef Heaviside < nosnoc.dcs.Base
         
         function generate_variables(obj, opts)
             import casadi.*
+            if class(obj.model) == "nosnoc.model.Cls"
+                obj.time_freezing(opts);
+            end
             dims = obj.dims;
             model = obj.model;
 
@@ -129,7 +134,7 @@ classdef Heaviside < nosnoc.dcs.Base
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {model.f_q});
-            obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
+            obj.g_z_fun = Function('g_z', {model.x, obj.alpha, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {g_alg});
             obj.g_lp_stationarity_fun = Function('g_lp_stationarity', {model.x, model.z, obj.lambda_n, obj.lambda_p, model.v_global, model.p}, {g_lp_stationarity});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
@@ -155,5 +160,4 @@ classdef Heaviside < nosnoc.dcs.Base
             propgrp(2) = matlab.mixin.util.PropertyGroup(var_list, group_title);
         end
     end
-
 end

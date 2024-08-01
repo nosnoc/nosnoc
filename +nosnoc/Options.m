@@ -153,11 +153,14 @@ classdef Options < handle
 
         % FrictionModel: Which Friction model to use for the Complementarity Lagrangian System.
         %
+        % Default: :mat:class:`FrictionModel.Conic`
+        %
         % See Also:
         %     `FrictionModel` for more details as to the differences between the friction models.
         friction_model (1,1) FrictionModel = FrictionModel.Conic;
 
         % ConicModelSwitchHandling: Which velocity switch handling mode to use when using the Conic friction model
+        %
         % See Also:
         %     `ConicModelSwitchHandling` for more details as to the differences between the switch handling modes.
         conic_model_switch_handling (1,1) ConicModelSwitchHandling = ConicModelSwitchHandling.Abs;
@@ -181,7 +184,7 @@ classdef Options < handle
         %     This option is currently unimplemented.
         relax_terminal_constraint_homotopy(1,1) logical = 0; 
 
-        relax_terminal_numerical_time(1,1) logical = 0; %boolean: If true instead of imposing $\sum h = T$, add it as $\ell_1$ penalty term.
+        relax_terminal_numerical_time(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE; %boolean: If true instead of imposing $\sum h = T$, add it as $\ell_1$ penalty term.
         rho_terminal_numerical_time(1,1) double {mustBeNonnegative} = 1e2 % double: Weight used to penalize terminal numerical time violation.
         
         % boolean: If True the terminal numerical time constraint violation penalty is governed by homotopy parameter
@@ -189,7 +192,7 @@ classdef Options < handle
         % Warning:
         %     This option is currently unimplemented
         relax_terminal_numerical_time_homotopy (1,1) logical = 0; % us the homotopy parameter for the penalty.
-        relax_terminal_physical_time(1,1) logical = 0; % instead of imposing $t(T) = T$, add it as $\ell_1$ penalty term.
+        relax_terminal_physical_time(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE; % instead of imposing $t(T) = T$, add it as $\ell_1$ penalty term.
         rho_terminal_physical_time(1,1) double {mustBeNonnegative} = 1e2 % double: Weight used to penalize terminal physical time violation.
 
         % boolean: If True the terminal physical time constraint violation penalty is governed by homotopy parameter.
@@ -204,9 +207,17 @@ classdef Options < handle
 
         use_previous_solution_as_initial_guess(1,1) logical = 0 % boolean: When simulating use the previous step as an initial guess for the current one.
 
+        has_clock_state(1,1) logical = 0
+        
         T_val(1,1) double {mustBePositive} = 1
         p_val
 
+        % Time Freezing constants
+        a_n(1,1) double {mustBePositive} = 100;
+        k_aux(1,1) double {mustBePositive} = 10;
+        tf_multicontact(1,1) logical = true;
+        
+        % Butcher Tableu
         A_rk double
         B_rk double
         b_rk double
@@ -215,7 +226,13 @@ classdef Options < handle
         c_rk double
 
         right_boundary_point_explicit(1,1) logical
-    end
+
+        % experimental:
+        %---------------------------------------------------------------------%
+
+        use_numerical_clock_state(1,1) logical = false
+    end        
+
 
     properties(Dependent)
         time_rescaling
