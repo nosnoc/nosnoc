@@ -23,6 +23,8 @@ problem_options.rho_terminal_physical_time = 1e4;
 %problem_options.relax_terminal_numerical_time = ConstraintRelaxationMode.NONE;
 %problem_options.rho_terminal_numerical_time = 1e3;
 %problem_options.step_equilibration = StepEquilibrationMode.linear_complementarity;
+problem_options.tf_multicontact = false;
+problem_options.dcs_mode = "Stewart";
 
 solver_options.print_level = 3;
 solver_options.complementarity_tol = 1e-10;
