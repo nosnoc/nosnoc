@@ -87,8 +87,25 @@ classdef TestModelBase < matlab.unittest.TestCase
             model1.verify_and_backfill(opts1);
 
             % x
-            tc.assertTrue(isfield(model1.dims, 'n_x'))
+            tc.assertTrue(isfield(model1.dims, 'n_x'));
+            tc.assertTrue(isfield(model1.dims, 'n_u'));
+            tc.assertTrue(isfield(model1.dims, 'n_z'));
+            tc.assertTrue(isfield(model1.dims, 'n_v_global'));
+            tc.assertTrue(isfield(model1.dims, 'n_p_global'));
+            tc.assertTrue(isfield(model1.dims, 'n_p_time_var'));
+            tc.assertTrue(isfield(model1.dims, 'n_g_path'));
+            tc.assertTrue(isfield(model1.dims, 'n_g_comp'));
+            tc.assertTrue(isfield(model1.dims, 'n_g_terminal'));
 
+            tc.verifyEqual(model1.dims.n_x, 1);
+            tc.verifyEqual(model1.dims.n_u, 2);
+            tc.verifyEqual(model1.dims.n_z, 3);
+            tc.verifyEqual(model1.dims.n_v_global, 4);
+            tc.verifyEqual(model1.dims.n_p_global, 0);
+            tc.verifyEqual(model1.dims.n_p_time_var, 0);
+            tc.verifyEqual(model1.dims.n_g_path, 0);
+            tc.verifyEqual(model1.dims.n_g_comp, 0);
+            tc.verifyEqual(model1.dims.n_g_terminal, 0);
             
         end
     end

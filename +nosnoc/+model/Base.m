@@ -402,10 +402,13 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
             %% Check path complementarity constraints
             if size(obj.G_path, 1) ~= 0
+                dims.n_g_comp = size(obj.G_path, 1);
                 if size(obj.G_path, 1) ~= size(obj.H_path, 1)
                     error('nosnoc:model:Base:path_complementarity_mismatch',...
                         'G_path and H_path must be the same size.')
                 end
+            else
+                dims.n_g_comp = 0;
             end
             %% Terminal constraints
             if size(obj.g_terminal, 1) ~= 0
