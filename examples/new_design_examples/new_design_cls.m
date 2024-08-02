@@ -10,10 +10,11 @@ T_sim = 0.75;
 %% NOSNOC settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.n_s = 2;
-problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.n_s = 1;
+problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_representation= 'integral';
-problem_options.dcs_mode = DcsMode.CLS;;
+% problem_options.rk_representation= 'differential'; % TODO: Check this bug
+problem_options.dcs_mode = DcsMode.CLS;
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = 2;
 problem_options.T_sim = T_sim;
@@ -26,15 +27,15 @@ solver_options.homotopy_steering_strategy = 'DIRECT';
 model = nosnoc.model.Cls();
 
 g = 10;
-x0 = [0.8;0];
+x0 = [0.8;5];
 
 q = SX.sym('q',1);
 v = SX.sym('v',1);
 model.M = 1;
 model.x = [q;v];
 model.e = 0;
-%model.e = 1;
-model.e = .35;
+model.e = 1;
+% model.e = .35;
 %model.mu = 0;
 model.x0 = x0;
 model.f_v = -g;
