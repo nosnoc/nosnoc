@@ -1,8 +1,6 @@
 classdef Cls < nosnoc.dcs.Base
 % A class which defines the specific DCS used for the discretization of :mat:class:`~nosnoc.model.Cls`.
-% For more information on the variable, problem functions and the
-% discretization cf.
-% https://www.sciencedirect.com/science/article/pii/S1751570X23001310 (or https://publications.syscop.de/Nurkanovic2024.pdf)
+% More information about this model and its discretization can be found in :cite:`Nurkanovic2024`.
     properties
         lambda_normal % casadi.SX|casadi.MX: $\lambda_n\in\mathbb{R}^{n_c}$, the normal contact force.
         y_gap % casadi.SX|casadi.MX: Lifting variables for $f_c(q)$ (i.e., $y-f_c(q)=0$, for linearity in comp. constraints).
