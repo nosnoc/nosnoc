@@ -40,6 +40,10 @@ classdef TestModelBase < matlab.unittest.TestCase
             tc.verifySize(model1.lbv_global, [3,1]);
             tc.verifySize(model1.ubv_global, [3,1]);
             tc.verifySize(model1.v0_global, [3,1]);
+
+            % verify that costs set to zero
+            tc.verifyEqual(model1.f_q, 0);
+            tc.verifyEqual(model1.f_q_T, 0);
         end
         
         function test_correct_bound_and_init_population2(tc)
@@ -106,7 +110,6 @@ classdef TestModelBase < matlab.unittest.TestCase
             tc.verifyEqual(model1.dims.n_g_path, 0);
             tc.verifyEqual(model1.dims.n_g_comp, 0);
             tc.verifyEqual(model1.dims.n_g_terminal, 0);
-            
         end
     end
 end
