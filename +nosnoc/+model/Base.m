@@ -344,7 +344,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 dims.n_g_path = length(obj.g_path);
                 if size(obj.lbg_path, 1) ~= 0
                     if length(obj.lbg_path)~=dims.n_g_path;
-                        error('The user provided vector lbg_path has the wrong size.')
+                        error('nosnoc: The user provided vector lbg_path has the wrong size.')
                     end
                 else
                     obj.lbg_path = -inf*ones(dims.n_g_path,1);
@@ -352,7 +352,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
                 if size(obj.ubg_path, 1) ~= 0
                     if length(obj.ubg_path)~=dims.n_g_path;
-                        error('The user provided vector ubg_path has the wrong size.')
+                        error('nosnoc: The user provided vector ubg_path has the wrong size.')
                     end
                 else
                     obj.ubg_path =  0*ones(dims.n_g_path,1);
@@ -365,7 +365,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
             %% Check path complementarity constraints
             if size(obj.G_path, 1) ~= 0
                 if size(obj.G_path, 1) ~= size(obj.H_path, 1)
-                    error('G_path and H_path must be the same size.')
+                    error('nosnoc: G_path and H_path must be the same size.')
                 end
             end
             %% Terminal constraints
