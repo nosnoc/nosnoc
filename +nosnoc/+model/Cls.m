@@ -6,10 +6,10 @@ classdef Cls < nosnoc.model.Base
 %
 %     \begin{align*}
 %        \dot{q}       &= v, \\
-%        M\dot{v}     &= f_v(q,v) + \sum_{i=1}^{n_c} J_n^i \lambda_n^i + J_t^i \lambda_t^i, \\
-%        0            &\le \lambda_n^i \perp f_c^i(q) \ge 0\\
-%        0            &= J_n^i(q(t_s))^\top (v(t_s^+) + ev(t_s^-))\quad \mathrm{if}\ f_c^i(t_s) = 0\ \mathrm{and}\ J_n^i(q(t_s))^\top v(t_s^-) < 0 \\
-%        \lambda_t^i  &\in \operatorname{arg\, min}_{\lambda_t^i\in\mathbb{R}^{n_t}} -v^\top  J_t^i \lambda_t^i\quad \mathrm{s.t.}\quad ||\lambda_t^i||_2 \le \mu^i \lambda_n^i
+%        M\dot{v}     &= f_v(q,v) + \sum_{i=1}^{n_c} J_{\mathrm{n}}^i \lambda_{\mathrm{n}}^i + J_{\mathrm{t}}^i \lambda_{\mathrm{t}}^i, \\
+%        0            &\le \lambda_{\mathrm{n}}^i \perp f_c^i(q) \ge 0\\
+%        0            &= J_{\mathrm{n}}^i(q(t_s))^\top (v(t_s^+) + ev(t_s^-))\quad \mathrm{if}\ f_c^i(t_s) = 0\ \mathrm{and}\ J_{\mathrm{n}}^i(q(t_s))^\top v(t_s^-) < 0 \\
+%        \lambda_{\mathrm{t}}^i  &\in \operatorname{arg\, min}_{\lambda_{\mathrm{t}}^i\in\mathbb{R}^{n_{\mathrm{t}}}} -v^\top  J_{\mathrm{t}}^i \lambda_{\mathrm{t}}^i\quad \mathrm{s.t.}\quad ||\lambda_{\mathrm{t}}^i||_2 \le \mu^i \lambda_{\mathrm{n}}^i
 %     \end{align*}
 %
 % With $i = 1\ldots n_c$.
@@ -17,8 +17,8 @@ classdef Cls < nosnoc.model.Base
 % See Also:
 %     More information about this model and its discretization can be found in :cite:`Nurkanovic2024`.
     properties
-        q % casadi.SX|casadi.MX: Gemeralized coordinates $q\in\mathbb{R}^{n_q}$.
-        v % casadi.SX|casadi.MX: Gemeralized velocities $v\in\mathbb{R}^{n_q}$.
+        q % casadi.SX|casadi.MX: Generalized coordinates $q\in\mathbb{R}^{n_q}$.
+        v % casadi.SX|casadi.MX: Generalized velocities $v\in\mathbb{R}^{n_q}$.
         f_v % casadi.SX|casadi.MX: Generalized acceleration $\dot{v} = f_v(x)\in\mathbb{R}^{n_q}$.
         f_c % casadi.SX|casadi.MX: Contact gap functions $f_c(q)\in\mathbb{R}^{n_c}$.
 
@@ -32,7 +32,7 @@ classdef Cls < nosnoc.model.Base
         e
 
         M % casadi.SX|casadi.MX|double: Generalized inertia matrix. Can be a function of the state $q$.
-        invM % casadi.SX|casadi.MX|double: Inverse of the generalized inertial matrix. TODO(@anton) should this be private/readonly
+        invM % casadi.SX|casadi.MX|double: Inverse of the generalized inertial matrix. TODO(@anton) should this be private/readonly (remark: the casadi computation of the symbolic might be very inefficient, the user may have a "closed form" expression for the inverse.
 
         friction_exists % boolean: Set to true if any $\mu \neq 0$.
 
@@ -69,11 +69,11 @@ classdef Cls < nosnoc.model.Base
                 obj.v = obj.x((dims.n_x/2 + 1):end);
             end
 
-            dims.n_q = dims.n_x/2;
+            dims.n_q = dims.n_x/2; % TODO(@anton): Or to be in line with the strict interface =length(obj.q)
             dims.n_v = dims.n_x/2;
             
             if size(obj.f_v,1) ~= dims.n_v
-                error("nosnoc: f_v has incorrect dimension. It must have the same dimension as x.")
+                error("nosnoc: f_v has incorrect dimension. It must have the same dimension as v.")
             end
 
             dims.n_c = size(obj.f_c,1);
@@ -95,7 +95,7 @@ classdef Cls < nosnoc.model.Base
             % coefficient of friction checks
             if size(obj.mu, 1) ~= 0
                 if length(obj.mu) ~= 1 && length(obj.mu) ~= dims.n_c
-                    error('The length of model.mu has to be one or match the length of model.f_c')
+                    error('The length of model.mu has to be one or match the length of model.f_c.')
                 end
                 if length(obj.mu) == 1
                     obj.mu = obj.mu*ones(dims.n_c,1);
@@ -138,7 +138,7 @@ classdef Cls < nosnoc.model.Base
                 J_normal_exists = 1;
             else
                 obj.J_normal = obj.f_c.jacobian(obj.q)';
-                fprintf('nosnoc: normal contact Jacobian not provided, but it is computed from the gap functions.\n');
+                fprintf('nosnoc: Normal contact Jacobian not provided, but it is computed from the gap functions.\n');
                 J_normal_exists = 1;
             end
 
@@ -150,13 +150,13 @@ classdef Cls < nosnoc.model.Base
                             error('nosnoc: J_tangent has the wrong size.')
                         end
                     else
-                        error('nosnoc: please provide the tangent Jacobian in model.J_tangent.')
+                        error('nosnoc: Please provide the tangent Jacobian in model.J_tangent.')
                     end
                 end
 
                 if isequal(opts.friction_model,'Polyhedral')
                     if isempty(obj.D_tangent)
-                        error('nosnoc: please provide the polyhedral tangent Jacobian in model.D_tangent, e.g., using the conic tangent Jacobian model.J_tangent: D_tangent = [J_tangent(q_0),-J_tangent(q_0)].')
+                        error('nosnoc: Please provide the polyhedral tangent Jacobian in model.D_tangent, e.g., using the conic tangent Jacobian model.J_tangent: D_tangent = [J_tangent(q_0),-J_tangent(q_0)].')
                     end
                 end
             end
