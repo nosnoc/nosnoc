@@ -286,7 +286,7 @@ classdef Options < handle
         % Time Freezing constants
         a_n(1,1) double {mustBePositive} = 100;
         k_aux(1,1) double {mustBePositive} = 10;
-        tf_multicontact(1,1) logical = true;
+        time_freezing_Heaviside_lifting(1,1) logical = true; % boolean: Exploit the time-freezing PSS structure for tailored lifting in Heaviside reformulation, and drastically reduce the number of  algebraic variables.
         
         % Butcher Tableu
         A_rk double
