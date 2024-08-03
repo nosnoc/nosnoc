@@ -25,46 +25,39 @@
 
 % This file is part of NOSNOC.
 
-%
-%
-
 %% Manipulation of two discs
-
-%%
-clear all;
-close all;
-clc;
+clear; close all; clc;
 import casadi.*
-
+import nosnoc.*
 %%
 filename = 'discs_manipulation.gif';
 %% discretizatioon
-N_stg = 10; % control intervals
-N_FE = 4;  % integration steps per control interval
+N_stg = 15; % control intervals
+N_FE = 2;  % integration steps per control interval
 T = 2;
 %% init
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = nosnoc.model.Cls();
-% settings
+%% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.n_s = 2;  % number of stages in IRK methods
-problem_options.time_freezing = 1;
-problem_options.cross_comp_mode = 7;
+problem_options.n_s = 2;  % number of stages in IRK methods (TODO@Anton, other variations, e.g. Stewart, with n_s>1 converge nicely, this setting very slow)
+problem_options.cross_comp_mode = "STAGE_STAGE";
 problem_options.T = T;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements = N_FE;
+
+problem_options.time_freezing = 1;
 problem_options.a_n = 10;
-problem_options.dcs_mode = DcsMode.Heaviside;
 problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_1;
 problem_options.rho_terminal_physical_time = 1e5;
-problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
-problem_options.gamma_h = .95;
 problem_options.use_numerical_clock_state = false;
 problem_options.time_freezing_quadrature_state = true;
-problem_options.tf_multicontact = false;
-problem_options.dcs_mode = "Stewart";
 
+problem_options.time_freezing_Heaviside_lifting = true; % (TODO@Anton this false and n_s = 1 breaks the plot)
+problem_options.dcs_mode = "Heaviside";
+
+%% Solver settings
 %solver_options.homotopy_update_rule = 'superlinear';
 solver_options.homotopy_update_slope = 0.1;
 solver_options.sigma_0 = 0.1;
@@ -74,7 +67,7 @@ solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
 solver_options.print_level = 3;
 solver_options.warm_start_duals = true;
 % IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% model parameters
 m1 = 2;
@@ -117,10 +110,8 @@ model.e = 0;
 model.mu = 0.0;
 model.x0 = x0;
 
-
 model.M = diag([m1;m1;m2;m2]); % inertia/mass matrix;
-model.f_v = [u;...
-    zeros(2,1)];
+model.f_v = [u;zeros(2,1)];
 
 % gap functions
 model.f_c = norm(q1-q2)^2-(r1+r2)^2;
@@ -174,9 +165,7 @@ hold on
 plot(translate(pgon1, [-1,1]), 'FaceColor', facecolor1, 'FaceAlpha', 0.5, 'LineStyle', '--', 'EdgeColor' , linecolor1);
 plot(translate(pgon2, [0,0]), 'FaceColor', facecolor2, 'FaceAlpha', 0.5, 'LineStyle', '--', 'EdgeColor' , linecolor2);
 hold off
-
 plot_balls(t_opt, p_res, {1:2, 3:4}, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2}, fig, 'tf_discs')
-
 
 %%
 if 1
