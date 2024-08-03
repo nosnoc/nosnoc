@@ -94,7 +94,7 @@ classdef Solver < handle
                     ret = var(:,:,obj.opts.n_s).res;
                 else
                     ret = [var(0,0,obj.opts.n_s).res,...
-                        var(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                        var(1:opts.N_stages,1:opts.N_finite_elements(1),end).res];
                 end
             else
                 indexing(1:var.depth) = {':'};
@@ -131,8 +131,9 @@ classdef Solver < handle
             end
             t_grid_full = 0;
             for ii = 1:length(h)
+                start = t_grid_full(end);
                 for jj = 1:opts.n_s
-                    t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
+                    t_grid_full = [t_grid_full; start + opts.c_rk(jj)*h(ii)];
                 end
             end
         end
