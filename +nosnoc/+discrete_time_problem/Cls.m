@@ -71,7 +71,7 @@ classdef Cls < vdx.problems.Mpcc
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
                 if obj.opts.step_equilibration == StepEquilibrationMode.linear_complementarity
-                    % TODO fix this :)
+                    % TODO(@anton) implement this though we already have such pain w.r.t solving it may not be super useful
                     obj.w.B_max(ii,2:opts.N_finite_elements(ii)) = {{'B_max', dims.n_lambda},-inf,inf};
                     obj.w.pi_c(ii,2:opts.N_finite_elements(ii)) = {{'pi_c', dims.n_c},-inf,inf};
                     obj.w.pi_lambda(ii,2:opts.N_finite_elements(ii)) = {{'pi_lambda', dims.n_lambda},-inf,inf};
@@ -252,9 +252,9 @@ classdef Cls < vdx.problems.Mpcc
             
             x_prev = obj.w.x(0,0,opts.n_s);
             for ii=1:opts.N_stages
-                h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
+                h_0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii));
                 
-                ui = obj.w.u(ii);
+                u_i = obj.w.u(ii);
                 p_stage = obj.p.p_time_var(ii);
                 p = [p_global;p_stage];
                 if obj.opts.use_speed_of_time_variables && opts.local_speed_of_time_variable
@@ -280,7 +280,7 @@ classdef Cls < vdx.problems.Mpcc
                     elseif opts.time_optimal_problem && ~opts.use_speed_of_time_variables
                         h = obj.w.T_final()/(opts.N_stages*opts.N_finite_elements(ii));
                     else
-                        h = h0;
+                        h = h_0;
                     end
 
                     % left boundary point handling
@@ -313,25 +313,25 @@ classdef Cls < vdx.problems.Mpcc
                             z_alg_ijk = obj.z_alg(ii,jj,kk);
                             z_alg_f_x_ijk = obj.z_alg_f_x(ii,jj,kk);
 
-                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, z_alg_f_x_ijk, ui, v_global, p);
-                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, ui, v_global, p);
+                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, z_alg_f_x_ijk, u_i, v_global, p);
+                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, u_i, v_global, p);
                             xk = opts.C_rk(1, kk+1) * x_lbp;
                             for rr=1:opts.n_s
                                 x_ijr = obj.w.x(ii,jj,rr);
                                 xk = xk + opts.C_rk(rr+1, kk+1) * x_ijr;
                             end
                             obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
-                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, z_alg_ijk, v_global, p)};
 
                             x_ij_end = x_ij_end + opts.D_rk(kk+1)*x_ijk;
                             
                             if opts.g_path_at_stg
-                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                             end
                             if size(model.G_path, 1) > 0
-                                G_path = dcs.G_path_fun(x_ijk, z_ijk, ui, v_global, p);
-                                H_path = dcs.H_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
@@ -345,11 +345,11 @@ classdef Cls < vdx.problems.Mpcc
                             y_gap_ijk = obj.w.z(ii,jj,opts.n_s+1);
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.y_gap_rbp(ii,jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
-                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case RKRepresentation.differential
                         % In differential representation stage variables are the state derivatives.
@@ -370,19 +370,19 @@ classdef Cls < vdx.problems.Mpcc
                             z_alg_ijk = obj.z_alg(ii,jj,kk);
                             z_alg_f_x_ijk = obj.z_alg_f_x(ii,jj,kk);
                             
-                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, z_alg_f_x_ijk, ui, v_global, p);
-                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, ui, v_global, p);
+                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, z_alg_f_x_ijk, u_i, v_global, p);
+                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, u_i, v_global, p);
 
                             x_ij_end = x_ij_end + h*opts.b_rk(kk)*v_ijk;
                             obj.g.v(ii,jj,kk) = {fj - v_ijk};
-                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, z_alg_ijk, v_global, p)};
                             
                             if opts.g_path_at_stg
-                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                             end
                             if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
                                 obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
                             end
@@ -398,13 +398,13 @@ classdef Cls < vdx.problems.Mpcc
                             
                             
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.y_gap_rbp(ii,jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
-                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case RKRepresentation.differential_lift_x
                         % In differential representation with lifted state stage variables are the state derivatives and we
@@ -425,19 +425,19 @@ classdef Cls < vdx.problems.Mpcc
                             z_alg_ijk = obj.z_alg(ii,jj,kk);
                             z_alg_f_x_ijk = obj.z_alg_f_x(ii,jj,kk);
                            
-                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, z_alg_f_x_ijk, ui, v_global, p);
-                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, ui, v_global, p);
+                            fj = s_sot*dcs.f_x_fun(x_ijk, z_ijk, z_alg_f_x_ijk, u_i, v_global, p);
+                            qj = s_sot*dcs.f_q_fun(x_ijk, z_ijk, u_i, v_global, p);
 
                             x_ij_end = x_ij_end + h*opts.b_rk(kk)*v_ijk;
                             obj.g.v(ii,jj,kk) = {fj - v_ijk};
-                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, z_alg_ijk, v_global, p)};
                             
                             if opts.g_path_at_stg
-                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                                obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                             end
                             if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p);
+                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
                                 obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
                             end
@@ -452,13 +452,13 @@ classdef Cls < vdx.problems.Mpcc
                             y_gap_ijk = obj.w.y_gap(ii,jj,opts.n_s+1);
                             
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, ui, v_global, p)};
+                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.y_gap_rbp(ii,jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
-                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, ui, v_global, p), model.lbg_path, model.ubg_path};
+                            obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                         end
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
@@ -466,7 +466,7 @@ classdef Cls < vdx.problems.Mpcc
                 if ~opts.g_path_at_stg && ~opts.g_path_at_fe
                     x_i = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s);
                     z_i = obj.w.z(ii, opts.N_finite_elements(ii), opts.n_s);
-                    obj.g.path(ii) = {dcs.g_path_fun(x_i, z_i, ui, v_global, p), model.lbg_path, model.ubg_path};
+                    obj.g.path(ii) = {dcs.g_path_fun(x_i, z_i, u_i, v_global, p), model.lbg_path, model.ubg_path};
                 end
 
                 % Least Squares Costs
@@ -482,7 +482,7 @@ classdef Cls < vdx.problems.Mpcc
                         p);
                 end
                 if ~opts.cost_integration
-                    obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, ui, v_global, p);
+                    obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, u_i, v_global, p);
                 end
 
                 % Clock <Constraints
@@ -517,7 +517,7 @@ classdef Cls < vdx.problems.Mpcc
 
             % Terminal_lsq_cost
             if ~isempty(model.x_ref_end_val)
-                obj.f = obj.f + h0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(x_end,...
+                obj.f = obj.f + h_0*opts.N_finite_elements(ii)*dcs.f_lsq_T_fun(x_end,...
                     model.x_ref_end_val,...
                     p_global);
             end
@@ -1089,14 +1089,14 @@ classdef Cls < vdx.problems.Mpcc
               case StepEquilibrationMode.heuristic_mean
                 for ii=1:opts.N_stages
                     for jj=1:opts.N_finite_elements(ii)
-                        h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
-                        obj.f = obj.f + obj.p.rho_h_p()*(h0-obj.w.h(ii,jj))^2;
+                        h_0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
+                        obj.f = obj.f + obj.p.rho_h_p()*(h_0-obj.w.h(ii,jj))^2;
                     end
                 end
               case StepEquilibrationMode.heuristic_diff
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
-                        h0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
+                        h_0 = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
                         obj.f = obj.f + obj.p.rho_h_p()*(obj.w.h(ii,jj)-obj.w.h(ii,jj-1))^2;
                     end
                 end
@@ -1485,8 +1485,8 @@ classdef Cls < vdx.problems.Mpcc
                         % the actual step eq conditions
                         M=obj.p.T()/opts.N_stages;
                         delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        step_equilibration = [delta_h + (1/h0)*nu*M;
-                            delta_h - (1/h0)*nu*M];
+                        step_equilibration = [delta_h + (1/h_0)*nu*M;
+                            delta_h - (1/h_0)*nu*M];
                         obj.g.step_equilibration(ii,jj) = {step_equilibration,[0;-inf],[inf;0]};
                     end
                 end
@@ -1527,13 +1527,13 @@ classdef Cls < vdx.problems.Mpcc
             for ii=1:opts.N_stages
                 for jj=1:opts.N_finite_elements(ii)
                     % Recalculate ubh and lbh based on T_val
-                    h0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
-                    ubh = (1 + opts.gamma_h) * h0;
-                    lbh = (1 - opts.gamma_h) * h0;
+                    h_0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
+                    ubh = (1 + opts.gamma_h) * h_0;
+                    lbh = (1 - opts.gamma_h) * h_0;
                     if opts.time_rescaling && ~opts.use_speed_of_time_variables
                         % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
-                        ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
-                        lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                        ubh = (1+opts.gamma_h)*h_0*opts.s_sot_max;
+                        lbh = (1-opts.gamma_h)*h_0/opts.s_sot_min;
                     end
                     obj.w.h(ii,jj).lb = lbh;
                     obj.w.h(ii,jj).ub = ubh;
