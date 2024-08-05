@@ -39,28 +39,29 @@ solver_options = nosnoc.solver.Options();
 model = nosnoc.model.Cls();
 %%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.n_s = 2;  % number of stages in IRK methods
+problem_options.n_s = 2;  % number of stages in RK methods
 
 problem_options.use_fesd = 1;
-solver_options.N_homotopy = 7;
 problem_options.dcs_mode = 'CLS';
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 problem_options.g_path_at_fe = 1;
+problem_options.cross_comp_mode = 7;
+problem_options.gamma_h = 0;
+problem_options.relax_terminal_numerical_time  = 1;
+problem_options.time_optimal_problem = true;
+problem_options.use_speed_of_time_variables = true;
+
 % 
 solver_options.homotopy_update_slope = 0.2;
 solver_options.N_homotopy = 100;
-problem_options.g_path_at_fe = 1;
-problem_options.cross_comp_mode = 7;
 solver_options.sigma_0 = 1e1;
 solver_options.complementarity_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 2e3;
-problem_options.gamma_h = 0;
-problem_options.relax_terminal_numerical_time  = 1;
+
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
-N_stg = 25; % control intervals
+N_stg = 50; % control intervals
 N_FE = 1;  % integration steps per control interval
 T = 4;
 

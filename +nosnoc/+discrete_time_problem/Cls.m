@@ -289,7 +289,7 @@ classdef Cls < vdx.problems.Mpcc
                     end
                     % additional y_eps constraint
                     if opts.eps_cls > 0
-                        if opts.use_fixed_eps_cls
+                        if opts.fixed_eps_cls
                             x_eps = vertcat(q_lbp + opts.eps_cls * v_lbp, v_lbp);
                         else
                             x_eps = vertcat(q_lbp + h * opts.eps_cls * v_lbp, v_lbp);
@@ -483,7 +483,7 @@ classdef Cls < vdx.problems.Mpcc
                 if opts.equidistant_control_grid
                     if opts.time_optimal_problem
                         if opts.use_speed_of_time_variables
-                            obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;sot*sum_h - obj.w.T_final()/opts.N_stages]};
+                            obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;s_sot*sum_h - obj.w.T_final()/opts.N_stages]};
                         else
                             obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages};
                         end
