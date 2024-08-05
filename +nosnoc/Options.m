@@ -235,6 +235,7 @@ classdef Options < handle
         
         lift_velocity_state(1,1) logical = 0; % boolean: If true define auxliary algebraic vairable, $dot{v} = z_v$, to avoid symbolic inversion of the inertia matrix.
         eps_cls double = 1e-3 % double: enforce $f_c$ at Euler step with h * eps_cls
+        fixed_eps_cls logical = false % boolean: use fixed step eps_cls instead of a multiple of h.
 
         % ConstraintRelaxationMode: What (if any) relaxation to apply to the terminal constraints.
         %

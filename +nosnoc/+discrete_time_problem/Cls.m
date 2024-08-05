@@ -289,7 +289,11 @@ classdef Cls < vdx.problems.Mpcc
                     end
                     % additional y_eps constraint
                     if opts.eps_cls > 0
-                        x_eps = vertcat(q_lbp + h * opts.eps_cls * v_lbp, v_lbp);
+                        if opts.use_fixed_eps_cls
+                            x_eps = vertcat(q_lbp + opts.eps_cls * v_lbp, v_lbp);
+                        else
+                            x_eps = vertcat(q_lbp + h * opts.eps_cls * v_lbp, v_lbp);
+                        end
                         obj.g.f_c_eps(ii,jj) = {dcs.f_c_fun(x_eps), 0, inf};
                     end
                     
