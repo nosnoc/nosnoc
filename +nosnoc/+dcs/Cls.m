@@ -29,7 +29,7 @@ classdef Cls < nosnoc.dcs.Base
         N_vt % casadi.SX|casadi.MX: NNegative part of the tangential velocity at impacts.
         Alpha_vt % casadi.SX|casadi.MX: Step function which is zero when tangential velocity at impacts is negative and 1 when positive.
 
-        g_lift % casadi.SX|casadi.MX: Lifting function.
+        g_lift_v % casadi.SX|casadi.MX: Lifting function.
 
         z_alg % casadi.SX|casadi.MX: Non-impulsive algebraics.
         z_impulse % casadi.SX|casadi.MX: Impulsive algebraics.
@@ -43,6 +43,7 @@ classdef Cls < nosnoc.dcs.Base
         J_normal_fun % casadi.Function: Function for normal contat Jacobian :mat:attr:`~nosnoc.model.Cls.J_normal`.
         J_tangent_fun % casadi.Function: Function for tangetial contat Jacobian :mat:attr:`~nosnoc.model.Cls.J_tangent`.
         D_tangent_fun % casadi.Function: Function for vectors spanning the polyhedral friction cone :mat:attr:`~nosnoc.model.Cls.D_tangent`.
+        g_lift_v_fun % casadi.Function: Function for lifting velocity to avoid symbolic inverse
 
         dims % struct: Struct with dimensions TODO(@anton) document what is populated in it.
     end
@@ -141,7 +142,7 @@ classdef Cls < nosnoc.dcs.Base
                 else
                     g_lift_v =  model.M*obj.z_v - (model.f_v+model.J_normal*obj.lambda_normal);
                 end
-                obj.g_lift = [obj.g_lift;g_lift_v];
+                obj.g_lift_v = g_lift_v;
             end
                        
             % dummy variables for impact quations:
@@ -189,7 +190,6 @@ classdef Cls < nosnoc.dcs.Base
             g_alg = g_alg_cls;
 
             z_alg = [obj.lambda_normal; obj.y_gap; obj.lambda_tangent; obj.gamma_d; obj.beta_d; obj.delta_d; obj.gamma; obj.beta; obj.p_vt; obj.n_vt; obj.alpha_vt];
-            %z_impulse = [obj.Lambda_normal; obj.Y_gap; obj.L_vn; obj.Lambda_tangent; obj.Gamma_d; obj.Beta_d; obj.Delta_d; obj.Gamma; obj.Beta; obj.P_vt; obj.N_vt; obj.Alpha_vt];
             z_impulse = [obj.Lambda_normal; obj.Y_gap; obj.P_vn; obj.N_vn; obj.Lambda_tangent; obj.Gamma_d; obj.Beta_d; obj.Delta_d; obj.Gamma; obj.Beta; obj.P_vt; obj.N_vt; obj.Alpha_vt];
             z_alg_f_x = [obj.lambda_normal; obj.lambda_tangent; obj.z_v];
             % Remark: model.z are user algebaric variables, z_alg are algebarics related to contact forces 
@@ -199,6 +199,7 @@ classdef Cls < nosnoc.dcs.Base
             obj.f_q_fun = Function('f_q', {model.x, model.z, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, z_alg, model.v_global, model.p}, {g_alg});
+            obj.g_lift_v_fun = Function('g_lift_v', {model.x, model.z, z_alg_f_x, model.u, model.v_global, model.p}, {obj.g_lift_v});
             obj.g_impulse_fun = Function('g_impulse', {model.q, v_post_impact, v_pre_impact, z_impulse, model.v_global, model.p}, {g_impulse}); % TODO (@anton) user algebraics pre and post impact?
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.G_path_fun  = Function('G_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.G_path});

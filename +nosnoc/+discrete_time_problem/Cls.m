@@ -317,7 +317,8 @@ classdef Cls < vdx.problems.Mpcc
                             obj.g.dynamics(ii,jj,kk) = {h * fj - xk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, z_alg_ijk, v_global, p)};
-
+                            obj.g.lift_v(ii,jj,kk) = {dcs.g_lift_v_fun(x_ijk, z_ijk, z_alg_f_x_ijk, u_i, v_global, p)};
+                            
                             x_ij_end = x_ij_end + opts.D_rk(kk+1)*x_ijk;
                             
                             if opts.g_path_at_stg
@@ -371,14 +372,16 @@ classdef Cls < vdx.problems.Mpcc
                             obj.g.v(ii,jj,kk) = {fj - v_ijk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, z_alg_ijk, v_global, p)};
+                            obj.g.lift_v(ii,jj,kk) = {dcs.g_lift_v_fun(x_ijk, z_ijk, z_alg_f_x_ijk, u_i, v_global, p)};
                             
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p);
-                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
-                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            if size(model.G_path, 1) > 0
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
+                                obj.G.path(ii,jj,kk) = {G_path};
+                                obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
@@ -426,14 +429,16 @@ classdef Cls < vdx.problems.Mpcc
                             obj.g.v(ii,jj,kk) = {fj - v_ijk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.algebraic(ii,jj,kk) = {dcs.g_alg_fun(x_ijk, z_ijk, z_alg_ijk, v_global, p)};
+                            obj.g.lift_v(ii,jj,kk) = {dcs.g_lift_v_fun(x_ijk, z_ijk, z_alg_f_x_ijk, u_i, v_global, p)};
                             
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                             end
-                            if size(model.g_comp_path, 1) > 0
-                                g_comp_path = dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p);
-                                obj.G.path(ii,jj,kk) = {g_comp_path(:,1)};
-                                obj.H.path(ii,jj,kk) = {g_comp_path(:,2)};
+                            if size(model.G_path, 1) > 0
+                                G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
+                                H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
+                                obj.G.path(ii,jj,kk) = {G_path};
+                                obj.H.path(ii,jj,kk) = {H_path};
                             end
                             if opts.cost_integration
                                 % also integrate the objective
