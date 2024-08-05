@@ -304,7 +304,7 @@ classdef Options < handle
         % experimental:
         %---------------------------------------------------------------------%
 
-        use_numerical_clock_state(1,1) logical = false
+        use_numerical_clock_state(1,1) logical = false % logical: instead of sum of $h$ being used for equidistant control steps use a simple integrated state.
     end        
 
 

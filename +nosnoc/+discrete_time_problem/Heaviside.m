@@ -404,7 +404,11 @@ classdef Heaviside < vdx.problems.Mpcc
                 %              to understand something about the time-freezing reformulation which is ugly.
                 % handle numerical time
                 if opts.use_fesd && opts.equidistant_control_grid
-                    relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                    % Create a vdx relaxation struct which holds the information needed by vdx to automatically
+                    % relax a constraint vector. It takes the type of relaxation, the name of the vdx.Variable
+                    % to store the slacks, and the name of the vdx.Variable to store the relaxation parameter.
+                    % This struct can be passed as the last element of the rhs of a vdx variable assignment.
+                    relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                     if opts.time_optimal_problem && ~opts.time_freezing
                         ecg_rhs = obj.w.T_final()/opts.N_stages;
                     else
@@ -413,15 +417,15 @@ classdef Heaviside < vdx.problems.Mpcc
 
                     if opts.use_numerical_clock_state
                         curr_t = obj.w.numerical_time(ii,opts.N_finite_elements(ii));
-                        obj.g.equidistant_numerical_grid(ii) = {curr_t - ii*ecg_rhs, relax};
+                        obj.g.equidistant_numerical_grid(ii) = {curr_t - ii*ecg_rhs, relax_num_time_struct};
                     else
                         if ~opts.time_freezing
-                            obj.g.equidistant_numerical_grid(ii) = {s_sot*sum_h - ecg_rhs, relax};
+                            obj.g.equidistant_numerical_grid(ii) = {s_sot*sum_h - ecg_rhs, relax_num_time_struct};
                         else
-                            obj.g.equidistant_numerical_grid(ii) = {sum_h - ecg_rhs, relax};
+                            obj.g.equidistant_numerical_grid(ii) = {sum_h - ecg_rhs, relax_num_time_struct};
                         end
                     end
-                    if relax.is_relaxed
+                    if relax_num_time_struct.is_relaxed
                         obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
                     end
                 end
