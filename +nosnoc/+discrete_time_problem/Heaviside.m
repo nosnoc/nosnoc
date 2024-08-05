@@ -96,7 +96,7 @@ classdef Heaviside < vdx.problems.Mpcc
                     opts.rk_representation == RKRepresentation.differential_lift_x)
                     obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 else
-                    obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                    obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s+rbp) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 end
                 if (opts.rk_representation == RKRepresentation.differential ||...
                     opts.rk_representation == RKRepresentation.differential_lift_x)
@@ -207,7 +207,7 @@ classdef Heaviside < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.B_rk(kk+1)*h*q_ijk;
                             end
@@ -261,7 +261,7 @@ classdef Heaviside < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.b_rk(kk)*h*q_ijk;
                             end
@@ -318,7 +318,7 @@ classdef Heaviside < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.b_rk(kk)*h*q_ijk;
                             end
@@ -359,7 +359,7 @@ classdef Heaviside < vdx.problems.Mpcc
                         model.u_ref_val(:,ii),...
                         p);
                 end
-                if ~opts.cost_integration
+                if opts.euler_cost_integration
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, alpha_ijk, lambda_n_ijk, lambda_n_ijk, u_i, v_global, p);
                 end
 
@@ -771,60 +771,6 @@ classdef Heaviside < vdx.problems.Mpcc
             end
 
             stats = solve@vdx.problems.Mpcc(obj);
-        end
-
-        function results = get_results_struct(obj)
-            opts = obj.opts;
-            model = obj.model;
-
-            rbp = ~opts.right_boundary_point_explicit;
-            
-            if opts.right_boundary_point_explicit
-                results.x = obj.discrete_time_problem.w.x(:,:,obj.opts.n_s).res;
-                results.z = obj.discrete_time_problem.w.z(:,:,obj.opts.n_s).res;
-                results.lambda_n = obj.discrete_time_problem.w.lambda_n(:,:,obj.opts.n_s).res;
-                results.lambda_p = obj.discrete_time_problem.w.lambda_p(:,:,obj.opts.n_s).res;
-                results.alpha = obj.discrete_time_problem.w.alpha(:,:,obj.opts.n_s).res;
-            else
-                results.x = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.z = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.lambda_n = [obj.discrete_time_problem.w.lambda_n(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.lambda_n(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.lambda_p = [obj.discrete_time_problem.w.lambda_p(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.lambda_p(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.alpha = obj.discrete_time_problem.w.alpha(:,:,obj.opts.n_s+1).res;
-            end
-            results.u = obj.w.u.res;
-
-            % TODO also speed of time/etc here.
-            if opts.use_fesd
-                results.h = obj.w.h.res;
-            else
-                results.h = [];
-                for ii=1:opts.N_stages
-                    h = obj.p.T.val/(opts.N_stages*opts.N_finite_elements(ii));
-                    results.h = [results.h,h*ones(1, opts.N_finite_elements(ii))];
-                end
-            end
-            results.t_grid = cumsum([0, results.h]);
-            if ~isempty(results.u)
-                if opts.use_fesd
-                    t_grid_u = [0];
-                    for ii=1:opts.N_stages
-                        h_sum = sum(obj.discrete_time_problem.w.h(ii,:).res);
-                        t_grid_u = [t_grid_u, t_grid(end)+h_sum];
-                    end
-                    results.t_grid_u = t_grid_u;
-                else
-                    results.t_grid_u = linspace(0, obj.p.T.val, opts.N_stages+1);
-                end
-            end
-
-            fields = fieldnames(S);
-            empty_fields = cellfun(@(field) isempty(results.(field)), fields);
-            results = rmfield(S, fields(empty_fields));
         end
     end
 end

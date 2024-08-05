@@ -7,6 +7,8 @@ classdef Integrator < handle
         dcs
         discrete_time_problem
         stats
+
+        solver_exists = false;
     end
 
     properties(Access=private)
@@ -55,7 +57,11 @@ classdef Integrator < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Cls"
-                error("not implemented")
+                obj.dcs = nosnoc.dcs.Cls(model);
+                obj.dcs.generate_variables(opts);
+                obj.dcs.generate_equations(opts);
+                obj.discrete_time_problem = nosnoc.discrete_time_problem.Cls(obj.dcs, opts);
+                obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Pds"
                 if ~opts.right_boundary_point_explicit
                     error("You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA")
@@ -75,7 +81,13 @@ classdef Integrator < handle
             if ~exist('plugin', 'var')
                 plugin = 'scholtes_ineq';
             end
-            obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
+            if ~obj.solver_exists
+                obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
+                if isfield(obj.solver_opts.opts_casadi_nlp,'iteration_callback')
+                    obj.solver_opts.opts_casadi_nlp.iteration_callback.mpcc = obj.discrete_time_problem;
+                end
+                obj.solver_exists = true;
+            end
 
             stats = obj.discrete_time_problem.solve();
             obj.stats = [obj.stats,stats];
@@ -99,7 +111,9 @@ classdef Integrator < handle
             obj.set_x0(obj.model.x0);
             obj.clear_history();
             t_current = 0;
-            
+            w0 = obj.discrete_time_problem.w.init;
+            rbp = ~opts.right_boundary_point_explicit;
+
             for ii=1:opts.N_sim
                 solver_stats = obj.solve(plugin);
                 t_current = t_current + opts.T;
@@ -109,22 +123,54 @@ classdef Integrator < handle
                     fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
                         ii, opts.N_sim, t_current, opts.T_sim, solver_stats.cpu_time_total);
                 end
-                x_step = obj.discrete_time_problem.w.x(:,:,opts.n_s).res;
-                x_step_full = obj.discrete_time_problem.w.x(:,:,:).res;
-                x_res = [x_res, x_step(:,2:end)];
-                x_res_full = [x_res_full, x_step_full(:,2:end)];
-                if opts.use_fesd
-                    h = obj.discrete_time_problem.w.h(:,:).res;
-                else
-                    h = ones(1,opts.N_finite_elements) * obj.discrete_time_problem.p.T().val/opts.N_finite_elements;
-                end
-                t_grid = [t_grid, t_grid(end) + cumsum(h)];
-                for ii = 1:length(h)
-                    for jj = 1:opts.n_s
-                        t_grid_full = [t_grid_full; t_grid_full(end) + opts.c_rk(jj)*h(ii)];
+                obj.w_all = [obj.w_all,obj.discrete_time_problem.w.res];
+                                
+                if obj.opts.dcs_mode ~= DcsMode.CLS
+                    if rbp
+                        x_step = obj.discrete_time_problem.w.x(0,0,opts.n_s).res;
+                    else
+                        x_step = []
                     end
+                    x_step = [x_step, obj.discrete_time_problem.w.x(:,:,opts.n_s+rbp).res];
+                    x_step_full = obj.discrete_time_problem.w.x(:,:,:).res;
+                    x_res = [x_res, x_step(:,2:end)];
+                    x_res_full = [x_res_full, x_step_full(:,2:end)];
+                    if opts.use_fesd
+                        h = obj.discrete_time_problem.w.h(:,:).res;
+                    else
+                        h = ones(1,opts.N_finite_elements) * obj.discrete_time_problem.p.T().val/opts.N_finite_elements;
+                    end
+                    t_grid = [t_grid, t_grid(end) + cumsum(h)];
+                    for ii = 1:length(h)
+                        start = t_grid_full(end);
+                        for jj = 1:opts.n_s
+                            t_grid_full = [t_grid_full; start + opts.c_rk(jj)*h(ii)];
+                        end
+                        if rbp
+                            t_grid_full = [t_grid_full; start + h(ii)];
+                        end
+                    end
+                else
+                    if rbp
+                        x_step = obj.discrete_time_problem.w.x(0,0,opts.n_s).res;
+                    else
+                        x_step = [];
+                    end
+                    x_step = [x_step, obj.discrete_time_problem.w.x(:,:,[0,opts.n_s+rbp]).res];
+                    x_step_full = obj.discrete_time_problem.w.x(:,:,:).res;
+                    x_res = [x_res, x_step(:,(2+opts.no_initial_impacts):end)];
+                    x_res_full = [x_res_full, x_step_full(:,(2+opts.no_initial_impacts):end)];
+                    h = obj.discrete_time_problem.w.h(:,:).res;
+                    for ii=1:length(h)
+                        hi = h(ii);
+                        if opts.no_initial_impacts && ii==1 
+                            t_grid = [t_grid, t_grid(end)+hi];
+                        else
+                            t_grid = [t_grid, t_grid(end), t_grid(end)+hi];
+                        end
+                    end
+                    % TODO(@anton) do full grid
                 end
-
                 if opts.use_previous_solution_as_initial_guess
                     obj.discrete_time_problem.w.init = obj.discrete_time_problem.w.res;
                 end
@@ -147,11 +193,12 @@ classdef Integrator < handle
 
             obj.discrete_time_problem.w.res = obj.w_all(:,1);
             if var.depth == 3
+                rbp = ~opts.right_boundary_point_explicit;
                 if opts.right_boundary_point_explicit
                     ret = var(:,:,obj.opts.n_s).res;
                 else
                     ret = [var(0,0,obj.opts.n_s).res,...
-                        var(1:opts.N_stages,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                        var(1:opts.N_stages,1:opts.N_finite_elements(1),end).res];
                 end
             else
                 indexing(1:var.depth) = {':'};
@@ -164,7 +211,7 @@ classdef Integrator < handle
                     if opts.right_boundary_point_explicit
                         ret = [ret, var(1,:,obj.opts.n_s).res];
                     else
-                        ret = [ret, var(1,1:opts.N_finite_elements(1),obj.opts.n_s+1).res];
+                        ret = [ret, var(1,1:opts.N_finite_elements(1),end).res];
                     end
                 else
                     indexing(2:var.depth) = {':'};
@@ -221,6 +268,7 @@ classdef Integrator < handle
 
         function t_grid_full = get_time_grid_full(obj)
             opts = obj.opts;
+            rbp = ~opts.right_boundary_point_explicit;
             if opts.use_fesd
                 h = obj.get('h');
             else
@@ -232,8 +280,12 @@ classdef Integrator < handle
             t_grid = cumsum([0, h]);
             t_grid_full = 0;
             for ii = 1:length(h)
+                start = t_grid_full(end);
                 for jj = 1:opts.n_s
-                    t_grid_full = [t_grid_full; t_grid(ii) + opts.c_rk(jj)*h(ii)];
+                    t_grid_full = [t_grid_full; start + opts.c_rk(jj)*h(ii)];
+                end
+                if rbp
+                    t_grid_full = [t_grid_full; start + h(ii)];
                 end
             end
         end
