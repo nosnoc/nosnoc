@@ -49,6 +49,7 @@ problem_options.gamma_h = 0;
 problem_options.relax_terminal_numerical_time  = 1;
 problem_options.time_optimal_problem = true;
 problem_options.use_speed_of_time_variables = true;
+problem_options.lift_velocity_state = true;
 
 % 
 solver_options.homotopy_update_slope = 0.2;

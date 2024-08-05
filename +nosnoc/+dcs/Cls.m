@@ -106,7 +106,7 @@ classdef Cls < nosnoc.dcs.Base
                 end
             end
             if opts.lift_velocity_state
-                obj.z_v = define_casadi_symbolic(casadi_symbolic_mode,['z_v'],dims.n_q);
+                obj.z_v = define_casadi_symbolic(opts.casadi_symbolic_mode,['z_v'],dims.n_q);
             end
             
             obj.dims = dims;
@@ -130,7 +130,7 @@ classdef Cls < nosnoc.dcs.Base
                 end
                 obj.f_x = [model.v;F_v];
             else
-                obj.f_x = [v;obj.z_v];
+                obj.f_x = [model.v;obj.z_v];
                 if model.friction_exists
                     switch opts.friction_model
                       case 'Conic'
@@ -139,7 +139,7 @@ classdef Cls < nosnoc.dcs.Base
                         g_lift_v =  model.M*obj.z_v -(model.f_v + model.J_normal*obj.lambda_normal + model.D_tangent*obj.lambda_tangent);
                     end
                 else
-                    g_lift_v =  model.M*obj.z_v -(model.f_v+model.J_normal*obj.lambda_n);
+                    g_lift_v =  model.M*obj.z_v - (model.f_v+model.J_normal*obj.lambda_normal);
                 end
                 obj.g_lift = [obj.g_lift;g_lift_v];
             end

@@ -147,7 +147,7 @@ classdef Cls < vdx.problems.Mpcc
                 end
 
                 if opts.lift_velocity_state
-                    obj.w.z_v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'z_v', dims.n_x}};
+                    obj.w.z_v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'z_v', dims.n_v}};
                 end
                 
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
@@ -222,7 +222,7 @@ classdef Cls < vdx.problems.Mpcc
                 end
             end
             if opts.lift_velocity_state
-                z_alg_f_x = [z_alg_f_x, {obj.w.z_v}]
+                z_alg_f_x = [z_alg_f_x, {obj.w.z_v}];
             end
             obj.z_alg = vdx.VariableGroup(z_alg);
             obj.z_impulse = vdx.VariableGroup(z_impulse);
