@@ -1470,59 +1470,5 @@ classdef Cls < vdx.problems.Mpcc
 
             stats = solve@vdx.problems.Mpcc(obj);
         end
-
-        function results = get_results_struct(obj)
-            opts = obj.opts;
-            model = obj.model;
-
-            rbp = ~opts.right_boundary_point_explicit;
-            
-            if opts.right_boundary_point_explicit
-                results.x = obj.discrete_time_problem.w.x(:,:,obj.opts.n_s).res;
-                results.z = obj.discrete_time_problem.w.z(:,:,obj.opts.n_s).res;
-                results.lambda = obj.discrete_time_problem.w.lambda(:,:,obj.opts.n_s).res;
-                results.mu = obj.discrete_time_problem.w.mu(:,:,obj.opts.n_s).res;
-                results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s).res;
-            else
-                results.x = [obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.x(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.z = [obj.discrete_time_problem.w.z(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.z(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.lambda = [obj.discrete_time_problem.w.lambda(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.lambda(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.mu = [obj.discrete_time_problem.w.mu(0,0,obj.opts.n_s).res,...
-                    obj.discrete_time_problem.w.mu(1:opts.N_stages,:,obj.opts.n_s+1).res];
-                results.theta = obj.discrete_time_problem.w.theta(:,:,obj.opts.n_s+1).res;
-            end
-            results.u = obj.w.u.res;
-
-            % TODO also speed of time/etc here.
-            if opts.use_fesd
-                results.h = obj.w.h.res;
-            else
-                results.h = [];
-                for ii=1:opts.N_stages
-                    h = obj.p.T.val/(opts.N_stages*opts.N_finite_elements(ii));
-                    results.h = [results.h,h*ones(1, opts.N_finite_elements(ii))];
-                end
-            end
-            results.t_grid = cumsum([0, results.h]);
-            if ~isempty(results.u)
-                if opts.use_fesd
-                    t_grid_u = [0];
-                    for ii=1:opts.N_stages
-                        h_sum = sum(obj.discrete_time_problem.w.h(ii,:).res);
-                        t_grid_u = [t_grid_u, t_grid(end)+h_sum];
-                    end
-                    results.t_grid_u = t_grid_u;
-                else
-                    results.t_grid_u = linspace(0, obj.p.T.val, opts.N_stages+1);
-                end
-            end
-
-            fields = fieldnames(S);
-            empty_fields = cellfun(@(field) isempty(results.(field)), fields);
-            results = rmfield(S, fields(empty_fields));
-        end
     end
 end
