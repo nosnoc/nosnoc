@@ -96,7 +96,7 @@ classdef Heaviside < vdx.problems.Mpcc
                     opts.rk_representation == RKRepresentation.differential_lift_x)
                     obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 else
-                    obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                    obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s+rbp) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 end
                 if (opts.rk_representation == RKRepresentation.differential ||...
                     opts.rk_representation == RKRepresentation.differential_lift_x)
