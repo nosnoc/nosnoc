@@ -46,11 +46,7 @@ classdef NosnocIpoptCallback < casadi.Callback
             obj.nlp = nlp;
             obj.settings = settings;
 
-            opts.input_scheme = casadi.nlpsol_out();
-
-            opts.output_scheme = 'ret';
-
-            obj.construct(name,opts);
+            obj.construct(name,struct);
 
             disp('Callback instance created')
 

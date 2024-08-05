@@ -29,7 +29,7 @@ function cls_callback(mpcc, nlp, opts, ipopt_solver, results)
     G = [G, mpcc.w.Lambda_normal(1,2).res];
     H = [H, -mpcc.w.N_vn(1,2).res];
 
-    x_prev = mpcc.w.x(1,1,2).res;
+    x_prev = mpcc.w.x(1,1,end).res;
     x = mpcc.w.x(1,2,0).res;
     h = mpcc.w.h(1,2).res;
     bx = [-1,10];
