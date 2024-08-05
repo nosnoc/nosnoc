@@ -16,7 +16,7 @@ problem_options.time_freezing = 1;
 problem_options.pss_lift_step_functions= 1;
 problem_options.impose_terminal_phyisical_time  = 1;
 problem_options.stagewise_clock_constraint = 0;
-problem_options.nonsmooth_switching_fun = 1;
+problem_options.time_freezing_nonsmooth_switching_fun = 1;
 problem_options.pss_lift_step_functions = 0;
 solver_options.use_previous_solution_as_initial_guess = 0;
 %%

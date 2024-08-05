@@ -95,7 +95,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     end
     f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad, 1)];
 
-    if opts.nonsmooth_switching_fun
+    if opts.time_freezing_nonsmooth_switching_fun
         pss_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    
     else
         if dims.n_dim_contact == 2
@@ -131,7 +131,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
 
     % Build logical functions because its easier than hand picking logic.
     alpha = SX.sym('alpha', length(pss_model.c));
-    if ~opts.nonsmooth_switching_fun
+    if ~opts.time_freezing_nonsmooth_switching_fun
         alpha_q = alpha(1:dims.n_contacts);
         alpha_v_normal = alpha(dims.n_contacts+1:2*dims.n_contacts);
         if cls_model.friction_exists
@@ -146,7 +146,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     alpha_ode = 1;
     alpha_aux = SX(zeros(dims.n_aux,1));
     for ii = 1:dims.n_contacts
-        if opts.nonsmooth_switching_fun
+        if opts.time_freezing_nonsmooth_switching_fun
             alpha_ode = alpha_ode*alpha_qv(ii);
             if cls_model.friction_exists
                 alpha_aux(ii) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));

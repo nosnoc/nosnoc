@@ -97,7 +97,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     end
     f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad,1)];
 
-    if opts.nonsmooth_switching_fun
+    if opts.time_freezing_nonsmooth_switching_fun
         heaviside_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    
     else
         if dims.n_dim_contact == 2
@@ -133,7 +133,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
 
     % Build logical functions because its easier than hand picking logic.
     alpha = SX.sym('alpha', length(heaviside_model.c));
-    if ~opts.nonsmooth_switching_fun
+    if ~opts.time_freezing_nonsmooth_switching_fun
         alpha_q = alpha(1:dims.n_contacts);
         alpha_v_normal = alpha(dims.n_contacts+1:2*dims.n_contacts);
         if cls_model.friction_exists
@@ -148,7 +148,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     alpha_ode = 1;
     alpha_aux = SX(zeros(dims.n_aux ,1));
     for ii = 1:dims.n_contacts
-        if opts.nonsmooth_switching_fun
+        if opts.time_freezing_nonsmooth_switching_fun
             alpha_ode = alpha_ode*alpha_qv(ii);
             if cls_model.friction_exists
                 alpha_aux(ii) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
@@ -181,7 +181,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
 
     if opts.pss_lift_step_functions
         % lift bilinear terms in product terms for free flight ode % (alpha_q*alpha_v)
-        if ~opts.nonsmooth_switching_fun
+        if ~opts.time_freezing_nonsmooth_switching_fun
             beta_bilinear_ode = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear_ode',dims.n_contacts);
             beta_bilinear_ode_expr = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) ',1);']);
             if cls_model.friction_exists
@@ -203,7 +203,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
 
     if ~opts.pss_lift_step_functions
         for ii = 1:dims.n_contacts
-            if opts.nonsmooth_switching_fun
+            if opts.time_freezing_nonsmooth_switching_fun
                 alpha_ode = alpha_ode*alpha_qv(ii);
                 if cls_model.friction_exists
                     alpha_aux(ii) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
@@ -223,7 +223,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
         end
     else
         % lift and have bilinear terms
-        if opts.nonsmooth_switching_fun
+        if opts.time_freezing_nonsmooth_switching_fun
             if dims.n_contacts <= 2
                 for ii = 1:dims.n_contacts
                     alpha_ode = alpha_ode*alpha_qv(ii);

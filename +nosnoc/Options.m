@@ -207,7 +207,10 @@ classdef Options < handle
         time_freezing_quadrature_state(1,1) logical = 0 % boolean: If true make a nonsmooth quadrature state to integrate only if physical time is running.
         time_freezing_lift_forces(1,1) logical = 0 % If true replace $\dot{v} = M(q)^{-1}f(q,v,u)$ by $dot{v} = z,  M(q)z - f(q,v,u) = 0$.
 
-        nonsmooth_switching_fun(1,1) logical = 0 % boolean: Experimental, use $c = \max(c1,c2)$ insetad of $c = c_1c_2$.
+        % boolean: Experimental, use $c = \max(c1,c2)$ insetad of $c = c_1c_2$.
+        % This is used to reduce the number of switching functions needed to generate the T shaped intersections
+        % in inelastic time freezing reformulation.
+        time_freezing_nonsmooth_switching_fun(1,1) logical = 0
         stabilizing_q_dynamics(1,1) logical = 0 % boolean: Experimental, stabilize auxiliary dynamics in \nabla f_c(q) direction.
         kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5 % double: Constant used for stabilizing auxiliary dynamics in \nabla f_c(q) direction.
 

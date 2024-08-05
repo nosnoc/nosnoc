@@ -18,7 +18,7 @@ problem_options.conic_model_switch_handling = "Abs";
 problem_options.pss_lift_step_functions= 0;
 problem_options.impose_terminal_phyisical_time  = 1;
 problem_options.stagewise_clock_constraint = 0;
-problem_options.nonsmooth_switching_fun = 0;
+problem_options.time_freezing_nonsmooth_switching_fun = 0;
 problem_options.pss_lift_step_functions = 0;
 problem_options.cross_comp_mode = 1;
 %%
