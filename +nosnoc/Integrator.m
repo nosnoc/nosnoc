@@ -154,7 +154,7 @@ classdef Integrator < handle
                     if rbp
                         x_step = obj.discrete_time_problem.w.x(0,0,opts.n_s).res;
                     else
-                        x_step = []
+                        x_step = [];
                     end
                     x_step = [x_step, obj.discrete_time_problem.w.x(:,:,[0,opts.n_s+rbp]).res];
                     x_step_full = obj.discrete_time_problem.w.x(:,:,:).res;
