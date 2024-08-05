@@ -1357,65 +1357,6 @@ classdef Cls < vdx.problems.Mpcc
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.linear_complementarity % TODO(@anton) implement this though we already have such pain w.r.t solving it may not be super useful
                 error("MLCP formulation of step equilibration not yet supported for FESD-J")
-                for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
-                    for jj=2:opts.N_finite_elements(ii)
-                        if jj ~= 2 || ~opts.no_initial_impacts
-                            sigma_c_B = obj.w.Y_gap(ii,jj-1,kk);
-                        else
-                            sigma_c_B = 0;
-                        end
-                        sigma_lambda_B = 0;
-                        for kk=1:(opts.n_s + rbp)
-                            sigma_c_B = sigma_c_B + obj.w.y_gap(ii,jj,kk);
-                            sigma_lambda_B = sigma_lambda_B + obj.w.lambda_normal(ii,jj-1,kk);
-                        end
-                        sigma_c_F = obj.w.Y_gap(ii,jj,kk);;
-                        sigma_lambda_F = 0;
-                        for kk=1:(opts.n_s + rbp)
-                            sigma_c_F = sigma_c_F + obj.w.y_gap(ii,jj,kk);
-                            sigma_lambda_F = sigma_lambda_F + obj.w.lambda_normal(ii,jj,kk);
-                        end
-
-                        lambda_lambda = obj.w.lambda_lambda_normal(ii,jj);
-                        lambda_c = obj.w.lambda_c(ii,jj);
-                        B_max = obj.w.B_max(ii,jj);
-                        pi_lambda = obj.w.pi_lambda(ii,jj);
-                        pi_c = obj.w.pi_c(ii,jj);
-                        eta = obj.w.eta(ii,jj);
-                        nu = obj.w.nu(ii,jj);
-
-                        obj.g.pi_lambda_or(ii,jj) = {[pi_lambda-sigma_lambda_F;pi_lambda-sigma_lambda_B;sigma_lambda_F+sigma_lambda_B-pi_lambda],0,inf};
-                        obj.g.pi_c_or(ii,jj) = {[pi_c-sigma_c_F;pi_c-sigma_c_B;sigma_c_F+sigma_c_B-pi_c],0,inf};
-
-                        % kkt conditions for min B, B>=sigmaB, B>=sigmaF
-                        kkt_max = [1-lambda_c-lambda_lambda;
-                            B_max-pi_lambda;
-                            B_max-pi_c];
-                        obj.g.kkt_max(ii,jj) = {kkt_max,
-                            [0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1);0*ones(dims.n_lambda,1)],
-                            [0*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
-
-                        obj.G.step_eq_kkt_max(ii,jj) = {[(B_max-pi_lambda);(B_max-pi_c)]};
-                        obj.H.step_eq_kkt_max(ii,jj) = {[lambda_lambda;lambda_c]};
-                        
-                        % eta calculation
-                        eta_const = [eta-pi_c;eta-pi_lambda;eta-pi_c-pi_lambda+B_max];
-                        obj.g.eta_const(ii,jj) = {eta_const,
-                            [-inf*ones(dims.n_lambda,1);-inf*ones(dims.n_lambda,1);zeros(dims.n_lambda,1)],
-                            [zeros(dims.n_lambda,1);zeros(dims.n_lambda,1);inf*ones(dims.n_lambda,1)]};
-
-                        obj.g.nu_or(ii,jj) = {[nu-eta;sum(eta)-nu],0,inf};
-
-                        % the actual step eq conditions
-                        M=obj.p.T()/opts.N_stages;
-                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        step_equilibration = [delta_h + (1/h_0)*nu*M;
-                            delta_h - (1/h_0)*nu*M];
-                        obj.g.step_equilibration(ii,jj) = {step_equilibration,[0;-inf],[inf;0]};
-                    end
-                end
             end
         end
 
