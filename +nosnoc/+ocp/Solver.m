@@ -28,14 +28,14 @@ classdef Solver < handle
                     obj.dcs.generate_equations(opts);
                     obj.discrete_time_problem = nosnoc.discrete_time_problem.Stewart(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
-                elseif opts.dcs_mode == DcsMode.Heaviside % TODO: RENAME
+                elseif opts.dcs_mode == DcsMode.Heaviside
                     obj.dcs = nosnoc.dcs.Heaviside(model);
                     obj.dcs.generate_variables(opts);
                     obj.dcs.generate_equations(opts);
                     obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
                 else
-                    error("PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
+                    error("nosnoc: PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
                 end
               case "nosnoc.model.Heaviside"
                 obj.dcs = nosnoc.dcs.Heaviside(model);
@@ -44,6 +44,9 @@ classdef Solver < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Cls"
+                if ~opts.use_fesd
+                    error("nosnoc: The FESD-J reformulation only makes sense with use_fesd=true.")
+                end
                 obj.dcs = nosnoc.dcs.Cls(model);
                 obj.dcs.generate_variables(opts);
                 obj.dcs.generate_equations(opts);
@@ -51,10 +54,10 @@ classdef Solver < handle
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Pds"
                 if ~opts.right_boundary_point_explicit
-                    error("You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA")
+                    error("nosnoc: You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA")
                 end
                 if opts.rk_representation == RKRepresentation.differential
-                    error("Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation")
+                    error("nosnoc: Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation")
                 end
                 obj.dcs = nosnoc.dcs.Gcs(model);
                 obj.dcs.generate_variables(opts);
@@ -62,7 +65,7 @@ classdef Solver < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Gcs(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               otherwise
-                error("Unknown model type")
+                error("nosnoc: Unknown model type")
             end
         end
 
