@@ -80,31 +80,31 @@ classdef Cls < vdx.problems.Mpcc
                     start_fe = 1;
                 end
                 % 2d Impulse vars
-                obj.w.Lambda_normal(ii,start_fe:opts.N_finite_elements(ii)) = {{'Lambda_normal', dims.n_c}, 0, inf, 1};
-                obj.w.P_vn(ii,start_fe:opts.N_finite_elements(ii)) = {{'P_vn', dims.n_c}, 0, inf, 1};
-                obj.w.N_vn(ii,start_fe:opts.N_finite_elements(ii)) = {{'N_vn', dims.n_c}, 0, inf, 1};
-                obj.w.Y_gap(ii,start_fe:opts.N_finite_elements(ii)) = {{'Y_gap', dims.n_c}, 0, inf, 1};
+                obj.w.Lambda_normal(ii,start_fe:opts.N_finite_elements(ii)) = {{'Lambda_normal', dims.n_c}, 0, opts.ub_Lambda_normal, opts.initial_Lambda_normal};
+                obj.w.P_vn(ii,start_fe:opts.N_finite_elements(ii)) = {{'P_vn', dims.n_c}, 0, opts.ub_P_vn, opts.initial_P_vn};
+                obj.w.N_vn(ii,start_fe:opts.N_finite_elements(ii)) = {{'N_vn', dims.n_c}, 0, opts.ub_N_vn, opts.initial_N_vn};
+                obj.w.Y_gap(ii,start_fe:opts.N_finite_elements(ii)) = {{'Y_gap', dims.n_c}, 0, opts.ub_Y_gap, opts.initial_Y_gap};
                 if model.friction_exists
                     switch opts.friction_model
                       case 'Polyhedral'
-                        obj.w.Lambda_tangent(ii,start_fe:opts.N_finite_elements(ii)) = {{'Lambda_tangent', dims.n_tangents}, 0, inf, 1};
-                        obj.w.Gamma_d(ii,start_fe:opts.N_finite_elements(ii)) = {{'Gamma_d', dims.n_c}, 0, inf, 1};
-                        obj.w.Beta_d(ii,start_fe:opts.N_finite_elements(ii)) = {{'Beta_d', dims.n_c}, 0, inf, 1};
-                        obj.w.Delta_d(ii,start_fe:opts.N_finite_elements(ii)) = {{'Delta_d', dims.n_tangents}, 0, inf, 1};
+                        obj.w.Lambda_tangent(ii,start_fe:opts.N_finite_elements(ii)) = {{'Lambda_tangent', dims.n_tangents}, 0, opts.ub_Lambda_tangent, opts.initial_Lambda_tangent};
+                        obj.w.Gamma_d(ii,start_fe:opts.N_finite_elements(ii)) = {{'Gamma_d', dims.n_c}, 0, opts.ub_Gamma_d, opts.initial_Gamma_d};
+                        obj.w.Beta_d(ii,start_fe:opts.N_finite_elements(ii)) = {{'Beta_d', dims.n_c}, 0, opts.ub_Beta_d, opts.initial_Beta_d};
+                        obj.w.Delta_d(ii,start_fe:opts.N_finite_elements(ii)) = {{'Delta_d', dims.n_tangents}, 0, opts.ub_Delta_d, opts.initial_Delta_d};
                       case 'Conic'
-                        obj.w.Lambda_tangent(ii,start_fe:opts.N_finite_elements(ii)) = {{'Lambda_tangent', dims.n_tangents}, -inf, inf, 0};
-                        obj.w.Gamma(ii,start_fe:opts.N_finite_elements(ii)) = {{'Gamma', dims.n_tangents}, 0, inf, 1};
-                        obj.w.Beta(ii,start_fe:opts.N_finite_elements(ii)) = {{'Beta', dims.n_tangents}, 0, inf, 1};
+                        obj.w.Lambda_tangent(ii,start_fe:opts.N_finite_elements(ii)) = {{'Lambda_tangent', dims.n_tangents}, -opts.ub_Lambda_tangent, opts.ub_Lambda_tangent, opts.initial_Lambda_tangent};
+                        obj.w.Gamma(ii,start_fe:opts.N_finite_elements(ii)) = {{'Gamma', dims.n_tangents}, 0, opts.ub_Gamma, opts.initial_Gamma};
+                        obj.w.Beta(ii,start_fe:opts.N_finite_elements(ii)) = {{'Beta', dims.n_tangents}, 0, opts.ub_Bet, opts.initial_Beta};
                         switch opts.conic_model_switch_handling
                           case 'Plain'
                             % no extra vars
                           case 'Abs'
-                            obj.w.P_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'P_vt', dims.n_tangents}, 0, inf, 1};
-                            obj.w.N_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'N_vt', dims.n_tangents}, 0, inf, 1};
+                            obj.w.P_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'P_vt', dims.n_tangents}, 0, opts.ub_P_vt, opts.initial_P_vt};
+                            obj.w.N_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'N_vt', dims.n_tangents}, 0, opts.ub_N_vt, opts.initial_N_vt};
                           case 'Lp'
-                            obj.w.P_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'P_vt', dims.n_tangents}, 0, inf, 1};
-                            obj.w.N_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'N_vt', dims.n_tangents}, 0, inf, 1};
-                            obj.w.Alpha_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'Alpha_vt', dims.n_tangents}, 0, inf, 1};
+                            obj.w.P_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'P_vt', dims.n_tangents}, 0, opts.ub_P_vt, opts.initial_P_vt};
+                            obj.w.N_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'N_vt', dims.n_tangents}, 0, opts.ub_N_vt, opts.initial_N_vt};
+                            obj.w.Alpha_vt(ii,start_fe:opts.N_finite_elements(ii)) = {{'Alpha_vt', dims.n_tangents}, 0, opts.ub_Alpha_vt, opts.initial_Alpha_vt};
                         end
                     end
                 end
@@ -120,16 +120,16 @@ classdef Cls < vdx.problems.Mpcc
             if model.friction_exists
                 switch opts.friction_model
                   case 'Polyhedral'
-                    obj.w.gamma_d(0,0,opts.n_s) = {{'gamma_d', dims.n_c}, 0, inf, 0};
-                    obj.w.delta_d(0,0,opts.n_s) = {{'delta_d', dims.n_tangents}, 0, inf, 0};
+                    obj.w.gamma_d(0,0,opts.n_s) = {{'gamma_d', dims.n_c}, 0, opts.ub_gamma_d, 0};
+                    obj.w.delta_d(0,0,opts.n_s) = {{'delta_d', dims.n_tangents}, 0, opts.ub_delta_d, 0};
                   case 'Conic'
-                    obj.w.gamma(0,0,opts.n_s) = {{'gamma', dims.n_tangents}, 0, inf, 0};
+                    obj.w.gamma(0,0,opts.n_s) = {{'gamma', dims.n_tangents}, 0, opts.ub_gamma, 0};
                     switch opts.conic_model_switch_handling
                       case 'Plain'
                         % nothing
                       case {'Abs', 'Lp'}
-                        obj.w.p_vt(0,0,opts.n_s) = {{'p_vt', dims.n_tangents}, 0, inf, 0};
-                        obj.w.n_vt(0,0,opts.n_s) = {{'n_vt', dims.n_tangents}, 0, inf, 0};
+                        obj.w.p_vt(0,0,opts.n_s) = {{'p_vt', dims.n_tangents}, 0, opts.ub_p_vt, 0};
+                        obj.w.n_vt(0,0,opts.n_s) = {{'n_vt', dims.n_tangents}, 0, opts.ub_n_vt, 0};
                     end
                 end
             end            
@@ -151,30 +151,30 @@ classdef Cls < vdx.problems.Mpcc
                 end
                 
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-                obj.w.lambda_normal(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'lambda_normal', dims.n_c}, 0, 50, 0};
-                obj.w.y_gap(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'y_gap', dims.n_c}, 0, inf, 0};
+                obj.w.lambda_normal(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'lambda_normal', dims.n_c}, 0, opts.ub_lambda_normal, opts.initial_lambda_normal};
+                obj.w.y_gap(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'y_gap', dims.n_c}, 0, opts.ub_y_gap, opts.initial_y_gap};
                 
                 if model.friction_exists
                     switch opts.friction_model
                       case 'Polyhedral'
-                        obj.w.lambda_tangent(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'lambda_tangent', dims.n_tangents}, 0, 50, 0};
-                        obj.w.gamma_d(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'gamma_d', dims.n_c}, 0, inf, 0};
-                        obj.w.beta_d(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'beta_d', dims.n_c}, 0, inf, 1};
-                        obj.w.delta_d(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'delta_d', dims.n_tangents}, 0, inf, 1};
+                        obj.w.lambda_tangent(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'lambda_tangent', dims.n_tangents}, 0, opts.ub_lambda_tangent, opts.initial_lambda_tangent};
+                        obj.w.gamma_d(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'gamma_d', dims.n_c}, 0, opts.ub_gamma_d, opts.initial_gamma_d};
+                        obj.w.beta_d(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'beta_d', dims.n_c}, 0, opts.ub_beta_d, opts.initial_beta_d};
+                        obj.w.delta_d(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'delta_d', dims.n_tangents}, 0, opts.ub_delta_d, opts.initial_delta_d};
                       case 'Conic'
-                        obj.w.lambda_tangent(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'lambda_tangent', dims.n_tangents}, -20, 20, 0};
-                        obj.w.gamma(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'gamma', dims.n_tangents}, 0, inf, 1};
-                        obj.w.beta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'beta', dims.n_tangents}, 0, inf, 1};
+                        obj.w.lambda_tangent(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'lambda_tangent', dims.n_tangents}, -opts.ub_lambda_tangent, opts.ub_lambda_tangent, opts.initial_lambda_tangent};
+                        obj.w.gamma(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'gamma', dims.n_tangents}, 0, opts.ub_gamma, opts.initial_gamma};
+                        obj.w.beta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'beta', dims.n_tangents}, 0, opts.ub_beta, opts.initial_beta};
                         switch opts.conic_model_switch_handling
                           case 'Plain'
                             % no extra vars
                           case 'Abs'
-                            obj.w.p_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'p_vt', dims.n_tangents}, 0, inf, 1};
-                            obj.w.n_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'n_vt', dims.n_tangents}, 0, inf, 1};
+                            obj.w.p_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'p_vt', dims.n_tangents}, 0, opts.ub_p_vt, opts.initial_p_vt};
+                            obj.w.n_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'n_vt', dims.n_tangents}, 0, opts.ub_n_vt, opts.initial_n_vt};
                           case 'Lp'
-                            obj.w.p_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'p_vt', dims.n_tangents}, 0, inf, 1};
-                            obj.w.n_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'n_vt', dims.n_tangents}, 0, inf, 1};
-                            obj.w.alpha_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'alpha_vt', dims.n_tangents}, 0, inf, 1};
+                            obj.w.p_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'p_vt', dims.n_tangents}, 0, opts.ub_p_vt, opts.initial_p_vt};
+                            obj.w.n_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'n_vt', dims.n_tangents}, 0, opts.ub_n_vt, opts.initial_n_vt};
+                            obj.w.alpha_vt(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'alpha_vt', dims.n_tangents}, 0, opts.ub_alpha_vt, opts.initial_alpha_vt};
                         end
                     end
                 end

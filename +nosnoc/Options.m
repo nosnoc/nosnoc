@@ -78,11 +78,77 @@ classdef Options < handle
         lift_complementarities(1,1) logical = 0 % boolean: Whether complementarities are lifted. TODO(@anton) should this still live in MPCC generation?
         lower_bound_comp_lift(1,1) logical = 0 % boolean: If true we add additional lower bounds to the lifted variables.
 
+        %--------------------- Initial Values ---------------------%
+        
         initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\alpha$ in the Heaviside step reformulation.
-        initial_beta(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta$ when lifting is enabled in the Heaviside step reformulation.
+        initial_beta_lift(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta$ when lifting is enabled in the Heaviside step reformulation.
         initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\theta$ when lifting is enabled in the Heaviside step reformulation.
         initial_lambda_gcs(1,1) double {mustBeReal, mustBeFinite} = 0 % double: Initial value for $\lambda$ in the Gradient Comlementarity System.
+        
+        initial_Lambda_normal(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\Lambda_n$ in FESD-J reformulation.
+        initial_P_vn(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for positive normal velocity slack in FESD-J reformulation impulse calculation.
+        initial_N_vn(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for negative normal velocity slack in FESD-J reformulation impulse calculation.
+        initial_Y_gap(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for gap function in FESD-J reformulation impulse calculation.
+        initial_Lambda_tangent(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\Lambda_t$ in FESD-J reformulation impulse calculation.
+        initial_Gamma_d(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\Gamma_d$ in FESD-J reformulation impulse calculation.
+        initial_Beta_d(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\Beta_d$ in FESD-J reformulation impulse calculation.
+        initial_Delta_d(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\Delta_d$ in FESD-J reformulation impulse calculation.
+        initial_Gamma(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\Gamma$ in FESD-J reformulation impulse calculation.
+        initial_Beta(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\Beta$ in FESD-J reformulation impulse calculation.
+        initial_P_vt(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for positive tangential velocity slack in FESD-J reformulation impulse calculation.
+        initial_N_vt(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for negative tangential velocity slack in FESD-J reformulation impulse calculation.
+        initial_Alpha_vt(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value fo tangential velocity step function in FESD-J reformulation impulse calculation.
 
+        initial_lambda_normal(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\lambda_n$ in FESD-J reformulation.
+        initial_p_vn(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for positive normal velocity slack in FESD-J reformulation.
+        initial_n_vn(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for negative normal velocity slack in FESD-J reformulation.
+        initial_y_gap(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for gap function in FESD-J reformulation.
+        initial_lambda_tangent(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\lambda_t$ in FESD-J reformulation.
+        initial_gamma_d(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\gamma_d$ in FESD-J reformulation.
+        initial_beta_d(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta_d$ in FESD-J reformulation.
+        initial_delta_d(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\delta_d$ in FESD-J reformulation.
+        initial_gamma(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\gamma$ in FESD-J reformulation.
+        initial_beta(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta$ in FESD-J reformulation.
+        initial_p_vt(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for positive tangential velocity slack in FESD-J reformulation.
+        initial_n_vt(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for negative tangential velocity slack in FESD-J reformulation.
+        initial_alpha_vt(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value fo tangential velocity step function in FESD-J reformulation.
+        
+        %--------------------- End Initial Values ---------------------%
+
+        %--------------------- Max Values ---------------------%
+        
+        ub_lambda_gcs(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\lambda$ in the Gradient Comlementarity System.
+        
+        ub_Lambda_normal(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\Lambda_n$ in FESD-J reformulation.
+        ub_P_vn(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for positive normal velocity slack in FESD-J reformulation impulse calculation.
+        ub_N_vn(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for negative normal velocity slack in FESD-J reformulation impulse calculation.
+        ub_Y_gap(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for gap function in FESD-J reformulation impulse calculation.
+        ub_Lambda_tangent(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\Lambda_t$ in FESD-J reformulation impulse calculation.
+        ub_Gamma_d(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\Gamma_d$ in FESD-J reformulation impulse calculation.
+        ub_Beta_d(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\Beta_d$ in FESD-J reformulation impulse calculation.
+        ub_Delta_d(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\Delta_d$ in FESD-J reformulation impulse calculation.
+        ub_Gamma(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\Gamma$ in FESD-J reformulation impulse calculation.
+        ub_Beta(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\Beta$ in FESD-J reformulation impulse calculation.
+        ub_P_vt(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for positive tangential velocity slack in FESD-J reformulation impulse calculation.
+        ub_N_vt(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for negative tangential velocity slack in FESD-J reformulation impulse calculation.
+        ub_Alpha_vt(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value fo tangential velocity step function in FESD-J reformulation impulse calculation.
+
+        ub_lambda_normal(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\lambda_n$ in FESD-J reformulation.
+        ub_p_vn(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for positive normal velocity slack in FESD-J reformulation.
+        ub_n_vn(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for negative normal velocity slack in FESD-J reformulation.
+        ub_y_gap(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for gap function in FESD-J reformulation.
+        ub_lambda_tangent(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\lambda_t$ in FESD-J reformulation.
+        ub_gamma_d(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\gamma_d$ in FESD-J reformulation.
+        ub_beta_d(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\beta_d$ in FESD-J reformulation.
+        ub_delta_d(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\delta_d$ in FESD-J reformulation.
+        ub_gamma(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\gamma$ in FESD-J reformulation.
+        ub_beta(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for $\beta$ in FESD-J reformulation.
+        ub_p_vt(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for positive tangential velocity slack in FESD-J reformulation.
+        ub_n_vt(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value for negative tangential velocity slack in FESD-J reformulation.
+        ub_alpha_vt(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value fo tangential velocity step function in FESD-J reformulation.
+
+        %--------------------- End Max Values ---------------------%
+       
         % boolean: If true then the convex multiplier expressions are lifted in the Heaviside step reformulation.
         %
         % Warning:
