@@ -558,7 +558,7 @@ classdef Heaviside < vdx.problems.Mpcc
             
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
-                error("Currently unsupported")
+                error("nosnoc: Currently unsupported.")
             end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
@@ -791,7 +791,7 @@ classdef Heaviside < vdx.problems.Mpcc
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.direct_homotopy
-                error("not currently implemented")
+                error("nosnoc: not currently implemented.")
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)

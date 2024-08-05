@@ -60,10 +60,10 @@ classdef Solver < handle
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Pds"
                 if ~opts.right_boundary_point_explicit
-                    error("nosnoc: You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA")
+                    error("nosnoc: You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA.")
                 end
                 if opts.rk_representation == RKRepresentation.differential
-                    error("nosnoc: Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation")
+                    error("nosnoc: Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation.")
                 end
                 obj.dcs = nosnoc.dcs.Gcs(model);
                 obj.dcs.generate_variables(opts);
@@ -71,7 +71,7 @@ classdef Solver < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Gcs(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               otherwise
-                error("nosnoc: Unknown model type")
+                error("nosnoc: Unknown model type.")
             end
         end
 
@@ -94,7 +94,7 @@ classdef Solver < handle
                     ret = obj.discrete_time_problem.p.T.val;
                     return
                 else
-                    error(['nosnoc:' char(field) ' is not a valid field for this OCP']);
+                    error(['nosnoc:' char(field) ' is not a valid field for this OCP.']);
                 end
                 % TODO@anton print list of valid fields.
             end
@@ -114,7 +114,7 @@ classdef Solver < handle
         function set_param(obj, param, value)
         % TODO (@anton) figure out how to do a set with indexing
             if ~obj.discrete_time_problem.p.has_var(param);
-                error(['nosnoc:' char(param) ' does not exist as a parameter for this OCP']);
+                error(['nosnoc:' char(param) ' does not exist as a parameter for this OCP.']);
             end
             obj.discrete_time_problem.p.(param)().val = value;
         end
@@ -124,7 +124,7 @@ classdef Solver < handle
             try
                 var = obj.discrete_time_problem.w.(field);
             catch
-                error(['nosnoc:' char(field) ' is not a valid field for this OCP']);
+                error(['nosnoc:' char(field) ' is not a valid field for this OCP.']);
                 % TODO @anton print list of valid fields.
             end
             indexing(1:var.depth) = {':'};
