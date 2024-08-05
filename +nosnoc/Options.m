@@ -267,8 +267,12 @@ classdef Options < handle
         % Warning:
         %     This option is currently unimplemented.
         relax_terminal_physical_time_homotopy (1,1) logical = 0;
-        
-        cost_integration(1,1) logical = 1 % boolean: If true then the Lagrange term is integrated correctly, otherwise we only evaluate it at the ends of control stages. Setting this to false allows us to do parameter estimation with a nonlinear cost function.
+
+        % boolean: If false then the Lagrange term is integrated correctly, otherwise we only evaluate it at the
+        % ends of control stages. Setting this to true allows us to do parameter estimation with a nonlinear cost function.
+        % This is useful to set to true when implementing a maximum liklihood estimator as in combination with
+        % an equidistant grid it allows for fixed time grid for measurements.
+        euler_cost_integration(1,1) logical = 0 
 
         no_initial_impacts(1,1) logical = 0 % boolan: If true we disallow impulsive contacts at the beginning of the first control stage. 
 

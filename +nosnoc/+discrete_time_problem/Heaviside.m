@@ -207,7 +207,7 @@ classdef Heaviside < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.B_rk(kk+1)*h*q_ijk;
                             end
@@ -261,7 +261,7 @@ classdef Heaviside < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.b_rk(kk)*h*q_ijk;
                             end
@@ -318,7 +318,7 @@ classdef Heaviside < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.b_rk(kk)*h*q_ijk;
                             end
@@ -359,7 +359,7 @@ classdef Heaviside < vdx.problems.Mpcc
                         model.u_ref_val(:,ii),...
                         p);
                 end
-                if ~opts.cost_integration
+                if opts.euler_cost_integration
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, alpha_ijk, lambda_n_ijk, lambda_n_ijk, u_i, v_global, p);
                 end
 

@@ -94,7 +94,7 @@ classdef Cls < vdx.problems.Mpcc
                       case 'Conic'
                         obj.w.Lambda_tangent(ii,start_fe:opts.N_finite_elements(ii)) = {{'Lambda_tangent', dims.n_tangents}, -opts.ub_Lambda_tangent, opts.ub_Lambda_tangent, opts.initial_Lambda_tangent};
                         obj.w.Gamma(ii,start_fe:opts.N_finite_elements(ii)) = {{'Gamma', dims.n_tangents}, 0, opts.ub_Gamma, opts.initial_Gamma};
-                        obj.w.Beta(ii,start_fe:opts.N_finite_elements(ii)) = {{'Beta', dims.n_tangents}, 0, opts.ub_Bet, opts.initial_Beta};
+                        obj.w.Beta(ii,start_fe:opts.N_finite_elements(ii)) = {{'Beta', dims.n_tangents}, 0, opts.ub_Beta, opts.initial_Beta};
                         switch opts.conic_model_switch_handling
                           case 'Plain'
                             % no extra vars
@@ -330,7 +330,7 @@ classdef Cls < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 obj.f = obj.f + opts.B_rk(kk+1)*h*qj;
                             end
                         end
@@ -383,7 +383,7 @@ classdef Cls < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.b_rk(kk)*h*qj;
                             end
@@ -440,7 +440,7 @@ classdef Cls < vdx.problems.Mpcc
                                 obj.G.path(ii,jj,kk) = {G_path};
                                 obj.H.path(ii,jj,kk) = {H_path};
                             end
-                            if opts.cost_integration
+                            if ~opts.euler_cost_integration
                                 % also integrate the objective
                                 obj.f = obj.f + opts.b_rk(kk)*h*qj;
                             end
@@ -480,7 +480,7 @@ classdef Cls < vdx.problems.Mpcc
                         model.u_ref_val(:,ii),...
                         p);
                 end
-                if ~opts.cost_integration
+                if opts.euler_cost_integration
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, u_i, v_global, p);
                 end
 
