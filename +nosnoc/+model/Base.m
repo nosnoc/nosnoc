@@ -408,12 +408,12 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
                 % some custom handling for objective functions:
                 if strcmp(name, 'f_q')
-                    if class(obj.f_q) ~= "casadi.SX" && obj.f_q == 0
+                    if class(obj.f_q) == "double" && obj.f_q == 0
                         continue
                     end
                 end
                 if strcmp(name, 'f_q_T')
-                    if class(obj.f_q_T) ~= "casadi.SX" && obj.f_q_T == 0
+                    if class(obj.f_q_T) == "double" && obj.f_q_T == 0
                         continue
                     end
                 end
