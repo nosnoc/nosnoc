@@ -1,4 +1,8 @@
 function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
+% Implements the custom lifting formulation that takes advantage of the inelastic time freezing formulation.
+% This allows for a non-exponential number of regions as a function of the number of contacts.
+% This is done by taking advantage of the shared free-flight region and the joint auxiliary dynamics:
+% $$F_{\mathrm{aux}} = \sum_{i=1}^{n_c} F_{\mathrm{aux}}^i(x)$$
     import casadi.*
     dims = cls_model.dims;
     heaviside_model = nosnoc.model.Heaviside();
