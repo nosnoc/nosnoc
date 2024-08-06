@@ -108,8 +108,8 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
                 f_aux_neg_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)+cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;zeros(1+dims.n_quad,1)]; % for v<0
             else
                 v_tangent_ii = v_tangent(:,ii);
-                f_aux_pos_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n-cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));zeros(1+dims.n_quad,1)]; % for v>0
-                f_aux_neg_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n+cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+1e-12));zeros(1+dims.n_quad,1)]; % for v>0
+                f_aux_pos_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n-cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+eps_t));zeros(1+dims.n_quad,1)]; % for v>0
+                f_aux_neg_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n+cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+eps_t));zeros(1+dims.n_quad,1)]; % for v>0
             end
             f_aux_pos = [f_aux_pos,f_aux_pos_ii];
             f_aux_neg = [f_aux_neg,f_aux_neg_ii];
@@ -138,7 +138,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     beta_prod_expr_guess = []; % extra expresion to make depend only on alpha (the one above depens on both and alpha and beta) - needed for eval. of inital guess
 
     alpha_ode = 1;
-    alpha_aux = SX(zeros(dims.n_aux ,1));
+    alpha_aux = [];
     % lift bilinear terms in product terms for free flight ode % (alpha_q*alpha_v)
     if ~opts.time_freezing_nonsmooth_switching_fun
         beta_bilinear_ode = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear_ode',dims.n_contacts);

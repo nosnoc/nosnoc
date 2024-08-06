@@ -1,7 +1,7 @@
 function [alpha_ode, alpha_aux] = build_unlifted_tf_alpha_expressions(alpha_q, alpha_qv, alpha_v_normal, alpha_v_tangent, cls_model, opts, dims)
     import casadi.*
     alpha_ode = 1;
-    alpha_aux = SX(zeros(dims.n_aux ,1));
+    alpha_aux = [];
     for ii = 1:dims.n_contacts
         if opts.time_freezing_nonsmooth_switching_fun
             alpha_ode = alpha_ode*alpha_qv(ii);
