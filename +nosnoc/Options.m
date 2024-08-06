@@ -80,7 +80,7 @@ classdef Options < handle
 
         %--------------------- Initial Values ---------------------%
         
-        initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\alpha$ in the Heaviside step reformulation.
+        initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 0.5 % double: Initial value for $\alpha$ in the Heaviside step reformulation.
         initial_lambda_n(1,1) double {mustBeReal, mustBeFinite} = 0.5 % double: Initial value for $\lambda_n$ in the Heaviside step reformulation.
         initial_lambda_p(1,1) double {mustBeReal, mustBeFinite} = 0.5 % double: Initial value for $\lambda_p$ in the Heaviside step reformulation.
         initial_beta_lift(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta$ when lifting is enabled in the Heaviside step reformulation.
@@ -213,8 +213,12 @@ classdef Options < handle
         % This is used to reduce the number of switching functions needed to generate the T shaped intersections
         % in inelastic time freezing reformulation.
         time_freezing_nonsmooth_switching_fun(1,1) logical = 0
-        stabilizing_q_dynamics(1,1) logical = 0 % boolean: Experimental, stabilize auxiliary dynamics in \nabla f_c(q) direction.
-        kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5 % double: Constant used for stabilizing auxiliary dynamics in \nabla f_c(q) direction.
+
+        % boolean: Stabilize auxiliary dynamics in \nabla f_c(q) direction in the style of Baumgartner stabilization.
+        stabilizing_q_dynamics(1,1) logical = 0
+
+        % double: Constant used for stabilizing auxiliary dynamics in \nabla f_c(q) direction.
+        kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5
 
         % int: Level of verbosity that the `nosnoc` reformulator uses.
         %

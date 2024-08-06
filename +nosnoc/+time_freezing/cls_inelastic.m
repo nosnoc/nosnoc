@@ -1,4 +1,4 @@
-function [pss_model] = cls_inelastic(cls_model, opts)
+function pss_model = cls_inelastic(cls_model, opts)
     import casadi.*
     dims = cls_model.dims;
     pss_model = nosnoc.model.Pss();
@@ -14,8 +14,8 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     dims.n_contacts = length(cls_model.f_c);
     % check dimensions of contacts
     if isempty(dims.n_dim_contact)
-        warning('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
-        dims.n_dim_contact = 2;
+        warning('nosnoc: Please set n_dim_contact, dimension of tangent space at contact (1, 2)')
+        dims.n_dim_contact = 1;
     end
     
     % quadrature state
@@ -49,8 +49,10 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     % normal and tangential velocities
     eps_t = opts.eps_t;
     v_normal = cls_model.J_normal'*cls_model.v;
+    v_tangent = [];
+    v_tangent_norms = [];
     if cls_model.friction_exists
-        if dims.n_dim_contact == 2
+        if dims.n_dim_contact == 1
             v_tangent = (cls_model.J_tangent'*cls_model.v)';
         else
             v_tangent = cls_model.J_tangent'*cls_model.v;
@@ -74,15 +76,8 @@ function [pss_model] = cls_inelastic(cls_model, opts)
         1];
 
     % Auxiliary dynamics
-    % where to use invM, in every auxiliary dynamics or only at the end
-    % TODO put this in problem opts
-    if true
-        inv_M_aux = eye(dims.n_q);
-        inv_M_ext = blkdiag(zeros(dims.n_q),cls_model.invM,zeros(1+dims.n_quad));
-    else
-        inv_M_aux = cls_model.invM;
-        inv_M_ext = eye(dims.n_x+1);
-    end
+    inv_M_aux = cls_model.invM;
+    inv_M_ext = eye(dims.n_x+1+dims.n_quad);
     f_aux_pos = []; % matrix with all auxiliary tangent dynamics
     f_aux_neg = [];
     % time freezing dynamics
@@ -96,7 +91,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     if opts.time_freezing_nonsmooth_switching_fun
         pss_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    
     else
-        if dims.n_dim_contact == 2
+        if dims.n_dim_contact == 1
             pss_model.c = [cls_model.f_c;v_normal;v_tangent'];
         else
             pss_model.c = [cls_model.f_c;v_normal;v_tangent_norms-eps_t];
@@ -106,14 +101,14 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     for ii = 1:dims.n_contacts
         if cls_model.friction_exists && cls_model.mu(ii)>0
             % auxiliary tangent;
-            if dims.n_dim_contact == 2
+            if dims.n_dim_contact == 1
                 v_tangent_ii = cls_model.J_tangent(:,ii)'*cls_model.v;
-                f_aux_pos_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)-cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;0]; % for v>0
-                f_aux_neg_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)+cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;0]; % for v<0
+                f_aux_pos_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)-cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;zeros(1+dims.n_quad,1)]; % for v>0
+                f_aux_neg_ii = [f_q_dynamics(:,ii) ;inv_M_aux*(cls_model.J_normal(:,ii)+cls_model.J_tangent(:,ii)*(cls_model.mu(ii)))*a_n;zeros(1+dims.n_quad,1)]; % for v<0
             else
                 v_tangent_ii = v_tangent(:,ii);
-                f_aux_pos_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n-cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+eps_t));0]; % for v>0
-                f_aux_neg_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n+cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+eps_t));0]; % for v>0
+                f_aux_pos_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n-cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+eps_t));zeros(1+dims.n_quad,1)]; % for v>0
+                f_aux_neg_ii = [f_q_dynamics(:,ii);inv_M_aux*(cls_model.J_normal(:,ii)*a_n+cls_model.J_tangent(:,ii*2-1:ii*2)*cls_model.mu(ii)*a_n*v_tangent_ii/norm(v_tangent_ii+eps_t));zeros(1+dims.n_quad,1)]; % for v>0
             end
             f_aux_pos = [f_aux_pos,f_aux_pos_ii];
             f_aux_neg = [f_aux_neg,f_aux_neg_ii];

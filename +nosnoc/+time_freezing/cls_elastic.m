@@ -11,11 +11,6 @@ function [pss_model] = cls_elastic(cls_model, opts)
     end
     
     dims.n_contacts = length(cls_model.f_c);
-    % check dimensions of contacts
-    if isempty(dims.n_dim_contact)
-        warning('nosnoc: Please n_dim_contact, dimension of tangent space at contact (1, 2 or 3)')
-        dims.n_dim_contact = 2;
-    end
     
     % quadrature state
     dims.n_quad = 0;
