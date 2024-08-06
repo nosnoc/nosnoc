@@ -240,6 +240,12 @@ classdef Options < handle
         eps_cls double = 1e-3 % double: enforce $f_c$ at Euler step with h * eps_cls
         fixed_eps_cls logical = false % boolean: use fixed step eps_cls instead of a multiple of h.
 
+        % double: The constant radius of relaxation for the friction force which enforces a nonempty interior around zero velocity
+        %
+        % See Also:
+        %     More details can be found in :cite:p:`Nurkanovic2023a`
+        eps_t double = 1e-7
+        
         % ConstraintRelaxationMode: What (if any) relaxation to apply to the terminal constraints.
         %
         % See Also:

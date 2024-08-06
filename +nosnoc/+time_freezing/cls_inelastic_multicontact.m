@@ -47,7 +47,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     heaviside_model.x0 = [heaviside_model.x0;0];
     
     % normal and tangential velocities
-    eps_t = 1e-7;
+    eps_t = opts.eps_t;
     v_normal = cls_model.J_normal'*cls_model.v;
     v_tangent = [];
     v_tangent_norms = [];
@@ -68,8 +68,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     end
     
     % parameter for auxiliary dynamics
-    % TODO add to options
-    a_n = 100;
+    a_n = opts.a_n;
     %% Time-freezing reformulation
     % unconstrained dynamics with clock state
     f_ode = [cls_model.v;...

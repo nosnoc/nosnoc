@@ -47,7 +47,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     pss_model.x0 = [pss_model.x0;0];
     
     % normal and tangential velocities
-    eps_t = 1e-7;
+    eps_t = opts.eps_t;
     v_normal = cls_model.J_normal'*cls_model.v;
     if cls_model.friction_exists
         if dims.n_dim_contact == 2
@@ -66,8 +66,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     end
     
     % parameter for auxiliary dynamics
-    % TODO add to options
-    a_n = 100;
+    a_n = opts.a_n;
     %% Time-freezing reformulation
     % unconstrained dynamics with clock state
     f_ode = [cls_model.v;...
