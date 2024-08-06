@@ -400,8 +400,6 @@ classdef Heaviside < vdx.problems.Mpcc
                 end
 
                 % Clock Constraints
-                % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
-                %              to understand something about the time-freezing reformulation which is ugly.
                 % handle numerical time
                 if opts.use_fesd && opts.equidistant_control_grid
                     % Create a vdx relaxation struct which holds the information needed by vdx to automatically
@@ -411,8 +409,12 @@ classdef Heaviside < vdx.problems.Mpcc
                     % See vdx documentation on relaxation: TODO add when vdx docs updated.
                     relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                     if opts.time_optimal_problem && ~opts.time_freezing
+                        % if time optimal and not time freezing we want T_final to be the rhs of the
+                        % equidistant control grid constraints.
                         ecg_rhs = obj.w.T_final()/opts.N_stages;
                     else
+                        % if time freezing or not time optimal we want T to be the rhs of the
+                        % equidistant control grid constraints.
                         ecg_rhs = obj.p.T()/opts.N_stages;
                     end
 
