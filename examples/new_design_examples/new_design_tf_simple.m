@@ -61,11 +61,11 @@ integrator = nosnoc.Integrator(model, problem_options, solver_options);
 %% plot algebraics
 figure
 if problem_options.dcs_mode == DcsMode.Stewart
-theta = integrator.get_full('theta');
-plot(theta')
+    theta = integrator.get_full('theta');
+    plot(t_grid_full, theta)
 else
-alpha= integrator.get_full('alpha');
-plot(alpha')
+    alpha= integrator.get_full('alpha');
+    plot(t_grid_full, alpha)
 end
 
 %% Plot

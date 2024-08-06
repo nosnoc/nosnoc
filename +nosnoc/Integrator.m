@@ -129,13 +129,12 @@ classdef Integrator < handle
                     fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
                         ii, opts.N_sim, t_current, opts.T_sim, solver_stats.cpu_time_total);
                 end
-                obj.w_all = [obj.w_all,obj.discrete_time_problem.w.res];
-                                
+                
                 if obj.opts.dcs_mode ~= DcsMode.CLS
                     if rbp
                         x_step = obj.discrete_time_problem.w.x(0,0,opts.n_s).res;
                     else
-                        x_step = []
+                        x_step = [];
                     end
                     x_step = [x_step, obj.discrete_time_problem.w.x(:,:,opts.n_s+rbp).res];
                     x_step_full = obj.discrete_time_problem.w.x(:,:,:).res;
@@ -150,10 +149,10 @@ classdef Integrator < handle
                     for ii = 1:length(h)
                         start = t_grid_full(end);
                         for jj = 1:opts.n_s
-                            t_grid_full = [t_grid_full; start + opts.c_rk(jj)*h(ii)];
+                            t_grid_full = [t_grid_full, start + opts.c_rk(jj)*h(ii)];
                         end
                         if rbp
-                            t_grid_full = [t_grid_full; start + h(ii)];
+                            t_grid_full = [t_grid_full, start + h(ii)];
                         end
                     end
                 else
@@ -175,7 +174,15 @@ classdef Integrator < handle
                             t_grid = [t_grid, t_grid(end), t_grid(end)+hi];
                         end
                     end
-                    % TODO(@anton) do full grid
+                    for ii = 1:length(h)
+                        start = t_grid_full(end);
+                        for jj = 1:opts.n_s
+                            t_grid_full = [t_grid_full, start + opts.c_rk(jj)*h(ii)];
+                        end
+                        if rbp
+                            t_grid_full = [t_grid_full, start + h(ii)];
+                        end
+                    end
                 end
                 if opts.use_previous_solution_as_initial_guess
                     obj.discrete_time_problem.w.init = obj.discrete_time_problem.w.res;
