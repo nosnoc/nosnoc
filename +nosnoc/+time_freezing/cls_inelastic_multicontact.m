@@ -130,41 +130,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
         dims.n_aux = dims.n_contacts;
     end
 
-    % Build logical functions because its easier than hand picking logic.
-    alpha = SX.sym('alpha', length(heaviside_model.c));
-    if ~opts.time_freezing_nonsmooth_switching_fun
-        alpha_q = alpha(1:dims.n_contacts);
-        alpha_v_normal = alpha(dims.n_contacts+1:2*dims.n_contacts);
-        if cls_model.friction_exists
-            alpha_v_tangent = alpha(2*dims.n_contacts+1:end);
-        end
-    else
-        alpha_qv = alpha(1:dims.n_contacts);
-        if cls_model.friction_exists
-            alpha_v_tangent = alpha(dims.n_contacts+1:end);
-        end
-    end
-    alpha_ode = 1;
-    alpha_aux = SX(zeros(dims.n_aux ,1));
-    for ii = 1:dims.n_contacts
-        if opts.time_freezing_nonsmooth_switching_fun
-            alpha_ode = alpha_ode*alpha_qv(ii);
-            if cls_model.friction_exists
-                alpha_aux(ii) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
-                alpha_aux(dims.n_contacts+ii) = (1-alpha_qv(ii))*(1-alpha_v_tangent(ii));
-            else
-                alpha_aux(ii)=(1-alpha_qv(ii));
-            end
-        else
-            alpha_ode = alpha_ode*(alpha_q(ii)+alpha_v_normal(ii)-alpha_q(ii)*alpha_v_normal(ii));
-            if cls_model.friction_exists
-                alpha_aux(ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii))*(alpha_v_tangent(ii));
-                alpha_aux(dims.n_contacts+ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii))*(1-alpha_v_tangent(ii));
-            else
-                alpha_aux(ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii));
-            end
-        end
-    end
+    [alpha, alpha_q, alpha_qv, alpha_v_normal, alpha_v_tangent] = generate_tf_inelastic_alphas(cls_model, heaviside_model, opts, dims);
     theta = define_casadi_symbolic(opts.casadi_symbolic_mode,'theta',dims.n_aux+1);
 
     % lifting variables
@@ -178,109 +144,95 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     beta_prod_expr = [];
     beta_prod_expr_guess = []; % extra expresion to make depend only on alpha (the one above depens on both and alpha and beta) - needed for eval. of inital guess
 
-    if opts.pss_lift_step_functions
-        % lift bilinear terms in product terms for free flight ode % (alpha_q*alpha_v)
-        if ~opts.time_freezing_nonsmooth_switching_fun
-            beta_bilinear_ode = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear_ode',dims.n_contacts);
-            beta_bilinear_ode_expr = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) ',1);']);
-            if cls_model.friction_exists
-                % lift bilinear terms defining aux dynamics (1-alpha_q)*(1-alpha_v)
-                beta_bilinear_aux = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear_aux',dims.n_contacts);
-                beta_bilinear_aux_expr = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) ',1);']);
-            end
-        end
-        if dims.n_contacts > 2
-            beta_prod = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear',dims.n_contacts-2);
-            beta_prod_expr = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) '-2,1);']);
-            beta_prod_expr_guess = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) '-2,1);']);
+    alpha_ode = 1;
+    alpha_aux = SX(zeros(dims.n_aux ,1));
+    % lift bilinear terms in product terms for free flight ode % (alpha_q*alpha_v)
+    if ~opts.time_freezing_nonsmooth_switching_fun
+        beta_bilinear_ode = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear_ode',dims.n_contacts);
+        beta_bilinear_ode_expr = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) ',1);']);
+        if cls_model.friction_exists
+            % lift bilinear terms defining aux dynamics (1-alpha_q)*(1-alpha_v)
+            beta_bilinear_aux = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear_aux',dims.n_contacts);
+            beta_bilinear_aux_expr = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) ',1);']);
         end
     end
+    if dims.n_contacts > 2
+        beta_prod = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear',dims.n_contacts-2);
+        beta_prod_expr = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) '-2,1);']);
+        beta_prod_expr_guess = eval([opts.casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) '-2,1);']);
+    end
+    
+    % lift and have bilinear terms
+    if opts.time_freezing_nonsmooth_switching_fun
+        if dims.n_contacts <= 2
+            for ii = 1:dims.n_contacts
+                alpha_ode = alpha_ode*alpha_qv(ii);
+            end
+        else
+            beta_prod_expr(1) = (alpha_qv(1))*(alpha_qv(2));
+            beta_prod_expr_guess(1) = (alpha_qv(1))*(alpha_qv(2));
+            % lifting terms in between
+            for ii = 3:dims.n_contacts-1
+                beta_prod_expr(ii-1) = beta_prod(ii-2)*(alpha_qv(ii)); % beta_{i} = beta{i-1}*(prod_term_i+1}
+                beta_prod_expr_guess(ii-1) = beta_prod_expr_guess(ii-2)*(alpha_qv(ii)); % this is to have an expression depending only on alpha for the inital guess eval
+            end
+            alpha_ode = beta_prod(end)*(alpha_qv(dims.n_contacts)); % last lifting term;
+        end
+        % lifting of aux dyn multiplier expressions
+        for ii = 1:dims.n_contacts
+            if cls_model.friction_exists
+                alpha_aux(ii) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
+                alpha_aux(dims.n_contacts+ii) = (1-alpha_qv(ii))*(1-alpha_v_tangent(ii));
+            else
+                alpha_aux(ii)=(1-alpha_qv(ii));
+            end
+        end
+    else
+        % with two smooth switching functions
+        beta_bilinear_ode_expr = alpha_q.*alpha_v_normal;
+        if cls_model.friction_exists
+            beta_bilinear_aux_expr = (1-alpha_q).*(1-alpha_v_normal);
+        end
+
+        if dims.n_contacts <= 2
+            % here no lifting of product terms
+            for ii = 1:dims.n_contacts
+                alpha_ode = alpha_ode*(alpha_q(ii)+alpha_v_normal(ii)-beta_bilinear_ode(ii));
+            end
+        else
+            % here lifting of product terms
+            g_z_tf_beta_prod  = [beta_prod(1) - (alpha_q(1)+alpha_v_normal(1)-beta_bilinear_ode(1))*(alpha_q(2)+alpha_v_normal(2)-beta_bilinear_ode(2))]; % first lifting terms
+                                                                                                                                                          % lifting terms in between
+            for ii = 3:dims.n_contacts-1
+                beta_prod_expr(ii-1) = beta_prod(ii-2)*(alpha_q(ii)+alpha_v_normal(ii)-beta_bilinear_ode(ii));
+                beta_prod_expr_guess(ii-1) = beta_prod_expr_guess(ii-2)*(alpha_q(ii)+alpha_v_normal(ii)-beta_bilinear_ode(ii));
+            end
+            % last lifting term;
+            alpha_ode = beta_prod(end)*(alpha_q(dims.n_contacts)+alpha_v_normal(dims.n_contacts)-beta_bilinear_ode(dims.n_contacts));
+        end
+        % lifting of aux dyn multiplier expressions
+        for ii = 1:dims.n_contacts
+            if cls_model.friction_exists
+                alpha_aux(ii) = beta_bilinear_aux(ii)*(alpha_v_tangent(ii));
+                alpha_aux(dims.n_contacts+ii) = beta_bilinear_aux(ii)*(1-alpha_v_tangent(ii));
+            else
+                alpha_aux(ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii));
+            end
+        end
+    end
+
     beta = [beta_bilinear_ode;
         beta_bilinear_aux;
         beta_prod];
 
+    beta0_fun = Function('beta0', {alpha}, {[beta_bilinear_ode_expr; beta_bilinear_aux_expr; beta_prod_expr]});
+    theta0_fun = Function('beta0', {alpha,beta}, {[alpha_ode;alpha_aux]});
+    
+    beta0 = full(beta0_fun(opts.initial_alpha*ones(size(alpha,1),1)));
+    theta0 = full(theta0_fun(opts.initial_alpha*ones(size(alpha,1),1),beta0));
 
-    if ~opts.pss_lift_step_functions
-        for ii = 1:dims.n_contacts
-            if opts.time_freezing_nonsmooth_switching_fun
-                alpha_ode = alpha_ode*alpha_qv(ii);
-                if cls_model.friction_exists
-                    alpha_aux(ii) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
-                    alpha_aux(dims.n_contacts+ii) = (1-alpha_qv(ii))*(1-alpha_v_tangent(ii));
-                else
-                    alpha_aux(ii)=(1-alpha_qv(ii));
-                end
-            else
-                alpha_ode = alpha_ode*(alpha_q(ii)+alpha_v_normal(ii)-alpha_q(ii)*alpha_v_normal(ii));
-                if cls_model.friction_exists
-                    alpha_aux(ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii))*(alpha_v_tangent(ii));
-                    alpha_aux(dims.n_contacts+ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii))*(1-alpha_v_tangent(ii));
-                else
-                    alpha_aux(ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii));
-                end
-            end
-        end
-    else
-        % lift and have bilinear terms
-        if opts.time_freezing_nonsmooth_switching_fun
-            if dims.n_contacts <= 2
-                for ii = 1:dims.n_contacts
-                    alpha_ode = alpha_ode*alpha_qv(ii);
-                end
-            else
-                beta_prod_expr(1) = (alpha_qv(1))*(alpha_qv(2));
-                beta_prod_expr_guess(1) = (alpha_qv(1))*(alpha_qv(2));
-                % lifting terms in between
-                for ii = 3:dims.n_contacts-1
-                    beta_prod_expr(ii-1) = beta_prod(ii-2)*(alpha_qv(ii)); % beta_{i} = beta{i-1}*(prod_term_i+1}
-                    beta_prod_expr_guess(ii-1) = beta_prod_expr_guess(ii-2)*(alpha_qv(ii)); % this is to have an expression depending only on alpha for the inital guess eval
-                end
-                alpha_ode = beta_prod(end)*(alpha_qv(dims.n_contacts)); % last lifting term;
-            end
-            % lifting of aux dyn multiplier expressions
-            for ii = 1:dims.n_contacts
-                if cls_model.friction_exists
-                    alpha_aux(ii) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
-                    alpha_aux(dims.n_contacts+ii) = (1-alpha_qv(ii))*(1-alpha_v_tangent(ii));
-                else
-                    alpha_aux(ii)=(1-alpha_qv(ii));
-                end
-            end
-        else
-            % with two smooth switching functions
-            beta_bilinear_ode_expr = alpha_q.*alpha_v_normal;
-            if cls_model.friction_exists
-                beta_bilinear_aux_expr = (1-alpha_q).*(1-alpha_v_normal);
-            end
-
-            if dims.n_contacts <= 2
-                % here no lifting of product terms
-                for ii = 1:dims.n_contacts
-                    alpha_ode = alpha_ode*(alpha_q(ii)+alpha_v_normal(ii)-beta_bilinear_ode(ii));
-                end
-            else
-                % here lifting of product terms
-                g_z_tf_beta_prod  = [beta_prod(1) - (alpha_q(1)+alpha_v_normal(1)-beta_bilinear_ode(1))*(alpha_q(2)+alpha_v_normal(2)-beta_bilinear_ode(2))]; % first lifting terms
-                                                                                                                                                              % lifting terms in between
-                for ii = 3:dims.n_contacts-1
-                    beta_prod_expr(ii-1) = beta_prod(ii-2)*(alpha_q(ii)+alpha_v_normal(ii)-beta_bilinear_ode(ii));
-                    beta_prod_expr_guess(ii-1) = beta_prod_expr_guess(ii-2)*(alpha_q(ii)+alpha_v_normal(ii)-beta_bilinear_ode(ii));
-                end
-                % last lifting term;
-                alpha_ode = beta_prod(end)*(alpha_q(dims.n_contacts)+alpha_v_normal(dims.n_contacts)-beta_bilinear_ode(dims.n_contacts));
-            end
-            % lifting of aux dyn multiplier expressions
-            for ii = 1:dims.n_contacts
-                if cls_model.friction_exists
-                    alpha_aux(ii) = beta_bilinear_aux(ii)*(alpha_v_tangent(ii));
-                    alpha_aux(dims.n_contacts+ii) = beta_bilinear_aux(ii)*(1-alpha_v_tangent(ii));
-                else
-                    alpha_aux(ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii));
-                end
-            end
-        end
-    end
     heaviside_model.z = [theta;beta];
+    heaviside_model.z0 = [theta0;beta0];
     heaviside_model.g_z = [theta-[alpha_ode;alpha_aux];
         beta - [beta_bilinear_ode_expr; beta_bilinear_aux_expr; beta_prod_expr]];
     

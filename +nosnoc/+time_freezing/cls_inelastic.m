@@ -55,7 +55,6 @@ function [pss_model] = cls_inelastic(cls_model, opts)
         else
             v_tangent = cls_model.J_tangent'*cls_model.v;
             v_tangent = reshape(v_tangent,2,dims.n_contacts); % 2 x n_c , the columns are the tangential velocities of the contact points
-
         end
         v_tangent_norms = [];
         for ii = 1:dims.n_contacts
@@ -129,50 +128,22 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     end
 
     % Build logical functions because its easier than hand picking logic.
-    alpha = SX.sym('alpha', length(pss_model.c));
-    if ~opts.time_freezing_nonsmooth_switching_fun
-        alpha_q = alpha(1:dims.n_contacts);
-        alpha_v_normal = alpha(dims.n_contacts+1:2*dims.n_contacts);
-        if cls_model.friction_exists
-            alpha_v_tangent = alpha(2*dims.n_contacts+1:end);
-        end
-    else
-        alpha_qv = alpha(1:dims.n_contacts);
-        if cls_model.friction_exists
-            alpha_v_tangent = alpha(dims.n_contacts+1:end);
-        end
-    end
-    alpha_ode = 1;
-    alpha_aux = SX(zeros(dims.n_aux,1));
-    for ii = 1:dims.n_contacts
-        if opts.time_freezing_nonsmooth_switching_fun
-            alpha_ode = alpha_ode*alpha_qv(ii);
-            if cls_model.friction_exists
-                alpha_aux(ii) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
-                alpha_aux(dims.n_contacts+ii) = (1-alpha_qv(ii))*(1-alpha_v_tangent(ii));
-            else
-                alpha_aux(ii)=(1-alpha_qv(ii));
-            end
-        else
-            alpha_ode = alpha_ode*(alpha_q(ii)+alpha_v_normal(ii)-alpha_q(ii)*alpha_v_normal(ii));
-            if cls_model.friction_exists
-                alpha_aux(ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii))*(alpha_v_tangent(ii));
-                alpha_aux(dims.n_contacts+ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii))*(1-alpha_v_tangent(ii));
-            else
-                alpha_aux(ii) = (1-alpha_q(ii))*(1-alpha_v_normal(ii));
-            end
-        end
-    end
+    [alpha, alpha_q, alpha_qv, alpha_v_normal, alpha_v_tangent] = generate_tf_inelastic_alphas(cls_model, pss_model, opts, dims);
+    [alpha_ode, alpha_aux] = build_unlifted_tf_alpha_expressions(alpha_q, alpha_qv, alpha_v_normal, alpha_v_tangent, cls_model, opts, dims);
+    % This function when passed 0,1 arguments returns 1 for which f should be used for the
+    % region defined by the arguments.
     indicator = Function('alpha_indicator', {alpha}, {[alpha_ode; alpha_aux]});
-    
+
+    % This generates the dense S matrix.
     S = dec2bin(0:2^((2+cls_model.friction_exists)*dims.n_contacts)-1) - '0';
     S = flip(S,1);
-
     indicators = full(indicator(S')');
 
+    % Generate vector of all f.
     f_all = [f_ode (inv_M_ext*f_aux)];
     F = {};
 
+    % Populate F by going through each row of S and selecting the correct f.
     for ii=1:size(S,1)
         ind = find(indicators(ii,:));
         f_i = f_all(:,ind);
@@ -181,6 +152,7 @@ function [pss_model] = cls_inelastic(cls_model, opts)
     
     pss_model.F = horzcat(F{:});
 
+    % Correct S to have -1 where the step function is zero for the corresponding c(x).
     S(~S) = -1;
     pss_model.S = S;
     

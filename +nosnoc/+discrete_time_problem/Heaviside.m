@@ -109,9 +109,9 @@ classdef Heaviside < vdx.problems.Mpcc
             %          some of which are also defined at the initial point:
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-            obj.w.lambda_n(0,0,opts.n_s) = {{['lambda_n'], dims.n_lambda},0,inf};
-            obj.w.lambda_p(0,0,opts.n_s) = {{['lambda_p'], dims.n_lambda},0,inf};
-            obj.w.alpha(0,0,opts.n_s) = {{['alpha'], dims.n_alpha},0, 1};
+            obj.w.lambda_n(0,0,opts.n_s) = {{['lambda_n'], dims.n_lambda},0,inf,opts.initial_lambda_n};
+            obj.w.lambda_p(0,0,opts.n_s) = {{['lambda_p'], dims.n_lambda},0,inf,opts.initial_lambda_p};
+            obj.w.alpha(0,0,opts.n_s) = {{['alpha'], dims.n_alpha},0, 1, opts.initial_alpha};
             for ii=1:opts.N_stages
                 if (opts.rk_representation == RKRepresentation.integral ||...
                     opts.rk_representation == RKRepresentation.differential_lift_x)
@@ -125,9 +125,9 @@ classdef Heaviside < vdx.problems.Mpcc
                 end
                 
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-                obj.w.alpha(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'alpha', dims.n_alpha},0, 1};
-                obj.w.lambda_n(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_n', dims.n_lambda},0, inf};
-                obj.w.lambda_p(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_p', dims.n_lambda},0, inf};
+                obj.w.alpha(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'alpha', dims.n_alpha},0, 1, opts.initial_alpha};
+                obj.w.lambda_n(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_n', dims.n_lambda},0, inf, opts.initial_lambda_n};
+                obj.w.lambda_p(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_p', dims.n_lambda},0, inf, opts.initial_lambda_p};
                 
                 % Handle x_box settings
                 if ~opts.x_box_at_stg && opts.rk_representation ~= RKRepresentation.differential

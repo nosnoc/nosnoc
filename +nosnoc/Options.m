@@ -81,6 +81,8 @@ classdef Options < handle
         %--------------------- Initial Values ---------------------%
         
         initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\alpha$ in the Heaviside step reformulation.
+        initial_lambda_n(1,1) double {mustBeReal, mustBeFinite} = 0.5 % double: Initial value for $\lambda_n$ in the Heaviside step reformulation.
+        initial_lambda_p(1,1) double {mustBeReal, mustBeFinite} = 0.5 % double: Initial value for $\lambda_p$ in the Heaviside step reformulation.
         initial_beta_lift(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta$ when lifting is enabled in the Heaviside step reformulation.
         initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\theta$ when lifting is enabled in the Heaviside step reformulation.
         initial_lambda_gcs(1,1) double {mustBeReal, mustBeFinite} = 0 % double: Initial value for $\lambda$ in the Gradient Comlementarity System.
