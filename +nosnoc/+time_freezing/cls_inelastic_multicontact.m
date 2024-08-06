@@ -91,7 +91,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     else
         f_q_dynamics = zeros(dims.n_q,dims.n_contacts);
     end
-    f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad,1)];
+    f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad,dims.n_contacts)];
 
     if opts.time_freezing_nonsmooth_switching_fun
         heaviside_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    
@@ -142,7 +142,11 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     beta_prod_expr_guess = []; % extra expresion to make depend only on alpha (the one above depens on both and alpha and beta) - needed for eval. of inital guess
 
     alpha_ode = 1;
-    alpha_aux = [];
+    if opts.casadi_symbolic_mode == "casadi.MX"
+        alpha_aux = MX(zeros(dims.n_aux, 1));
+    else
+        alpha_aux = SX(zeros(dims.n_aux, 1));
+    end
     % lift bilinear terms in product terms for free flight ode % (alpha_q*alpha_v)
     if ~opts.time_freezing_nonsmooth_switching_fun
         beta_bilinear_ode = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_bilinear_ode',dims.n_contacts);
