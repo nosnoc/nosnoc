@@ -480,25 +480,29 @@ classdef Stewart < vdx.problems.Mpcc
             if opts.time_freezing
                 x0 = obj.w.x(0,0,opts.n_s);
                 t0 = x0(end);
-                relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_terminal_physical_time', 'rho_physical_time');
+                relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
                 % Terminal Phyisical Time (Possible terminal constraint on the clock state if time freezing is active).
                 if opts.time_optimal_problem
+                    % in the case of time optimal time freezing problem, physical clock state must reach final time.
                     obj.g.terminal_physical_time = {x_end(end)-(obj.w.T_final()+t0), relax_phys_time_struct};
-                else
-                    if opts.impose_terminal_phyisical_time && ~opts.stagewise_clock_constraint
-                        obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax_phys_time_struct};
-                    else
-                        % no terminal constraint on the numerical time
+                    if relax_phys_time_struct.is_relaxed
+                        obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
+                    end
+                elseif opts.impose_terminal_phyisical_time && ~opts.stagewise_clock_constraint
+                    % in the case of a generic time freezing problem, physical clock state must reach final time if
+                    % we are imposing terminal physical time and we did not do so by apply stagewise constraints.
+                    obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax_phys_time_struct};
+                    if relax_phys_time_struct.is_relaxed
+                        obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
                 end
-                if relax_phys_time_struct.is_relaxed
-                    obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
-                end
+                
             else
                 if ~opts.use_fesd
                     if opts.time_optimal_problem
-                        % if time_freezing is on, everything is done via the clock state.
                         if opts.use_speed_of_time_variables
+                            % without FESD we need speed of time variables and the sum of
+                            % h*sot must be equal to the final time.
                             integral_clock_state = 0;
                             for ii=1:opts.N_stages
                                 if opts.local_speed_of_time_variable
@@ -527,6 +531,7 @@ classdef Stewart < vdx.problems.Mpcc
                         sum_h_all = sum2(obj.w.h(:,:));
                         
                         if ~opts.time_optimal_problem
+                            % not a time optimal problem so just sum of hs must be the terminal numerical time T.
                             relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                             obj.g.sum_h = {sum_h_all-obj.p.T(), relax_num_time_struct};
                             if relax_num_time_struct.is_relaxed
@@ -534,12 +539,15 @@ classdef Stewart < vdx.problems.Mpcc
                             end
                         else
                             if ~opts.use_speed_of_time_variables
+                                % a time optimal problem without sot so sum of hs must be the optimal terminal numerical time T_final.
                                 relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                                 obj.g.sum_h = {sum_h_all-obj.w.T_final(), relax_num_time_struct};
                                 if relax_num_time_struct.is_relaxed
                                     obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
                                 end
                             else
+                                % a time optimal problem with sot so sum of h*sot must be the optimal terminal "physical" time T_final.
+                                % and the sum of h needs to be the terminal numerical time T
                                 integral_clock_state = 0;
                                 for ii=1:opts.N_stages
                                     if opts.local_speed_of_time_variable
