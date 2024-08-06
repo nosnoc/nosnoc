@@ -11,6 +11,9 @@ function [pss_model] = cls_elastic(cls_model, opts)
     end
     
     dims.n_contacts = length(cls_model.f_c);
+    if dims.n_contacts > 1
+        error("nosnoc: time freezing for elastic contacts currently only supports a single contact.")
+    end
     
     % quadrature state
     dims.n_quad = 0;
@@ -32,7 +35,6 @@ function [pss_model] = cls_elastic(cls_model, opts)
         dims.n_quad = 1;
     end
     
-    % uneven number of states = it is assumed that the clock state is defined.
     t = define_casadi_symbolic(opts.casadi_symbolic_mode,'t',1);
     % update lower and upper bounds of lbx and ubx
     pss_model.lbx = [pss_model.lbx;-inf];
