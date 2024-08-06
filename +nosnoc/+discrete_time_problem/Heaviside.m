@@ -408,6 +408,7 @@ classdef Heaviside < vdx.problems.Mpcc
                     % relax a constraint vector. It takes the type of relaxation, the name of the vdx.Variable
                     % to store the slacks, and the name of the vdx.Variable to store the relaxation parameter.
                     % This struct can be passed as the last element of the rhs of a vdx variable assignment.
+                    % See vdx documentation on relaxation: TODO add when vdx docs updated.
                     relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                     if opts.time_optimal_problem && ~opts.time_freezing
                         ecg_rhs = obj.w.T_final()/opts.N_stages;
@@ -437,13 +438,13 @@ classdef Heaviside < vdx.problems.Mpcc
                     x_stage_end = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s+rbp);
                     t_stage_end = x_stage_end(end);
 
-                    relax = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
+                    relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
                     if opts.time_optimal_problem
-                        obj.g.stagewise_clock_constraint(ii) = {t_stage_end - (ii*(obj.w.T_final()/opts.N_stages) + t0), relax};
+                        obj.g.stagewise_clock_constraint(ii) = {t_stage_end - (ii*(obj.w.T_final()/opts.N_stages) + t0), relax_phys_time_struct};
                     else
-                        obj.g.stagewise_clock_constraint(ii) = {t_stage_end - (ii*t_stage + t0), relax};
+                        obj.g.stagewise_clock_constraint(ii) = {t_stage_end - (ii*t_stage + t0), relax_phys_time_struct};
                     end
-                    if relax.is_relaxed
+                    if relax_phys_time_struct.is_relaxed
                         obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
                 end
@@ -467,16 +468,16 @@ classdef Heaviside < vdx.problems.Mpcc
             if opts.time_freezing
                 x0 = obj.w.x(0,0,opts.n_s);
                 t0 = x0(end);
-                relax = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
+                relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
                 % Terminal Phyisical Time (Possible terminal constraint on the clock state if time freezing is active).
                 if opts.time_optimal_problem
-                    obj.g.terminal_physical_time = {x_end(end)-(obj.w.T_final()+t0), relax};
-                    if relax.is_relaxed
+                    obj.g.terminal_physical_time = {x_end(end)-(obj.w.T_final()+t0), relax_phys_time_struct};
+                    if relax_phys_time_struct.is_relaxed
                         obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
                 elseif opts.impose_terminal_phyisical_time && ~opts.stagewise_clock_constraint
-                    obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax};
-                    if relax.is_relaxed
+                    obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax_phys_time_struct};
+                    if relax_phys_time_struct.is_relaxed
                         obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
                 end
@@ -514,16 +515,16 @@ classdef Heaviside < vdx.problems.Mpcc
                         sum_h_all = sum2(obj.w.h(:,:));
                         
                         if ~opts.time_optimal_problem
-                            relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_nunerical_time');
-                            obj.g.sum_h = {sum_h_all-obj.p.T(), relax};
-                            if relax.is_relaxed
+                            relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                            obj.g.sum_h = {sum_h_all-obj.p.T(), relax_num_time_struct};
+                            if relax_num_time_struct.is_relaxed
                                 obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
                             end
                         else
                             if ~opts.use_speed_of_time_variables
-                                relax = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_nunerical_time');
-                                obj.g.sum_h = {sum_h_all-obj.w.T_final(), relax};
-                                if relax.is_relaxed
+                                relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                                obj.g.sum_h = {sum_h_all-obj.w.T_final(), relax_num_time_struct};
+                                if relax_num_time_struct.is_relaxed
                                     obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
                                 end
                             else
@@ -540,14 +541,14 @@ classdef Heaviside < vdx.problems.Mpcc
                                     end
                                 end
 
-                                relax_n = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_nunerical_time');
-                                relax_p = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
-                                obj.g.sum_h = {sum_h_all-obj.p.T(), relax_n};
-                                obj.g.integral_clock = {sum_h_all-obj.w.T_final(), relax_p};
-                                if relax_n.is_relaxed
+                                relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                                relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
+                                obj.g.sum_h = {sum_h_all-obj.p.T(), relax_num_time_struct};
+                                obj.g.integral_clock = {sum_h_all-obj.w.T_final(), relax_phys_time_struct};
+                                if relax_num_time_struct.is_relaxed
                                     obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
                                 end
-                                if relax_p.is_relaxed
+                                if relax_phys_time_struct.is_relaxed
                                     obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                                 end
                             end
@@ -561,10 +562,10 @@ classdef Heaviside < vdx.problems.Mpcc
                 error("nosnoc: Currently unsupported.")
             end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
-            relax = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
-            obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal, relax};
+            relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
+            obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal, relax_terminal_struct};
             obj.g.terminal.set_is_terminal(true);
-            if(relax.is_relaxed)
+            if relax_terminal_struct.is_relaxed
                 obj.p.rho_terminal().val = opts.rho_terminal;
                 obj.w.s_terminal.set_is_terminal(true);
             end
