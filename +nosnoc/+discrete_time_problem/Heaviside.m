@@ -35,10 +35,6 @@ classdef Heaviside < vdx.problems.Mpcc
             obj.w.v_global = {{'v_global',dims.n_v_global}, model.lbv_global, model.ubv_global, model.v0_global};
             if opts.use_speed_of_time_variables && ~opts.local_speed_of_time_variable
                 obj.w.sot = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
-                if opts.time_freezing
-                    obj.p.rho_sot = {{'rho_sot',1}, opts.rho_sot};
-                    obj.f = obj.f + obj.p.rho_sot()*(obj.w.sot()-1)^2;
-                end
             end
             if opts.time_optimal_problem
                 obj.w.T_final = {{'T_final', 1}, opts.T_final_min, opts.T_final_max, opts.T};
