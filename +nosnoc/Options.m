@@ -452,6 +452,10 @@ classdef Options < handle
                 obj.x_box_at_stg = 0;
             end
             obj.right_boundary_point_explicit = right_boundary_point_explicit;
+
+            if obj.N_stages = 1
+                obj.stagewise_clock_constraint = false;
+            end
         end
 
         function time_rescaling = get.time_rescaling(obj)
