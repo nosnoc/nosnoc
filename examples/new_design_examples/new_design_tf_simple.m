@@ -7,7 +7,7 @@ problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = nosnoc.model.Cls();
 %% Simulation settings
-problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 N_FE = 6;
 T_sim = 1.1;
 N_sim = 21;
@@ -47,7 +47,7 @@ vertical_force = 0;
 q = SX.sym('q',2); 
 v = SX.sym('v',2);
 model.x = [q;v]; 
-model.e = 1;
+model.e = 1*0;
 model.mu = 0.0;
 model.x0 = [0;1.0;1;0]; 
 model.f_v = [0;-g+vertical_force*g*q(1)];
@@ -62,10 +62,18 @@ integrator = nosnoc.Integrator(model, problem_options, solver_options);
 figure
 if problem_options.dcs_mode == DcsMode.Stewart
     theta = integrator.get_full('theta');
+    subplot(121)
     plot(t_grid_full, theta)
+    subplot(122)
+    theta = integrator.get('theta');
+    plot(t_grid, theta)
 else
     alpha= integrator.get_full('alpha');
+    subplot(121)
     plot(t_grid_full, alpha)
+    subplot(122)
+    alpha= integrator.get('alpha');
+    plot(t_grid, alpha)
 end
 
 %% Plot

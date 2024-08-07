@@ -54,8 +54,8 @@ problem_options.rho_terminal_physical_time = 1e5;
 problem_options.use_numerical_clock_state = false;
 problem_options.time_freezing_quadrature_state = true;
 
-problem_options.time_freezing_Heaviside_lifting = true; % (TODO@Anton this false and n_s = 1 breaks the plot)
-problem_options.dcs_mode = "Heaviside";
+problem_options.time_freezing_Heaviside_lifting = true; 
+problem_options.dcs_mode = "Stewart";
 
 %% Solver settings
 %solver_options.homotopy_update_rule = 'superlinear';

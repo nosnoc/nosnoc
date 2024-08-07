@@ -55,6 +55,7 @@ solver_options.complementarity_tol = 1e-6;
 solver_options.print_level = 5;
 problem_options.time_freezing = 1;
 
+
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 % solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 
@@ -93,7 +94,8 @@ ubu = [0*u_max; u_max; 0*u_max];
 
 
 %% Symbolic variables and bounds
-q = SX.sym('q',3); v = SX.sym('v',3); 
+q = SX.sym('q',3); 
+v = SX.sym('v',3); 
 u = SX.sym('u',3);
 x = [q;v];
 model = nosnoc.model.Cls();
@@ -105,12 +107,7 @@ model.u = u;
 model.e = 0;
 model.mu = 0.0;
 model.x0 = x0; 
-
-% model.f = [1/m1*(u(1)-c_damping*v(1)-k1*q(1));...
-%            1/m2*(u(2)-c_damping*v(2)+k2*(q(1)-q(2)));...
-%            1/m3*(u(3)-c_damping*v(3)+k3*q(2))];
 % dot{v} r.h.s.
-
 model.M = diag([m1;m2;m3]); % inertia/mass matrix;
 model.f_v = [(u(1)-c_damping*v(1)-k1*q(1));...
            (u(2)-c_damping*v(2)+k2*(q(1)-q(2)));...
@@ -120,7 +117,6 @@ model.f_v = [(u(1)-c_damping*v(1)-k1*q(1));...
 model.f_c = [q(2) - q(1) - 0.5*cart_width2 - 0.5*cart_width1;...
            q(3) - q(2) - 0.5*cart_width3 - 0.5*cart_width2];
 model.dims.n_dim_contact = 2;
-
 
 % box constraints on controls and states
 model.lbu = lbu;
@@ -150,7 +146,6 @@ t_opt = x_res(7,:);
 u1_opt = u_res(1,:);
 u2_opt = u_res(2,:);
 u3_opt = u_res(3,:);
-
 
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
@@ -214,7 +209,7 @@ for ii = 1:length(p1)
     im = frame2im(frame);
 
     [imind,cm] = rgb2ind(im,256);
-    if ii == 1;
+    if ii == 1
         imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',problem_options.h_k(1));
     else
         imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',problem_options.h_k(1));
