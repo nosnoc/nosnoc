@@ -250,7 +250,8 @@ classdef Heaviside < vdx.problems.Mpcc
                             lambda_p_ijk = obj.w.lambda_p(ii,jj,opts.n_s+1);
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_p_ijk, lambda_p_ijk, v_global, p)};
+
+                            obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p_ijk, v_global, p)};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, alpha_ijk, z_ijk, u_i, v_global, p)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
@@ -300,9 +301,9 @@ classdef Heaviside < vdx.problems.Mpcc
                         if ~opts.right_boundary_point_explicit
                             x_ijk = obj.w.x(ii,jj,opts.n_s+1);
                             z_ijk = obj.w.z(ii,jj,opts.n_s+1);
-                            alpha_ijk = obj.w.alpha(ii,jj,kk);
-                            lambda_n_ijk = obj.w.lambda_n(ii,jj,kk);
-                            lambda_p_ijk = obj.w.lambda_p(ii,jj,kk);
+                            alpha_ijk = obj.w.alpha(ii,jj,opts.n_s+1);
+                            lambda_n_ijk = obj.w.lambda_n(ii,jj,opts.n_s+1);
+                            lambda_p_ijk = obj.w.lambda_p(ii,jj,opts.n_s+1);
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p_ijk, v_global, p)};
@@ -357,11 +358,11 @@ classdef Heaviside < vdx.problems.Mpcc
                         if ~opts.right_boundary_point_explicit
                             x_ijk = obj.w.x(ii,jj,opts.n_s+1);
                             z_ijk = obj.w.z(ii,jj,opts.n_s+1);
-                            lambda_n_ijk = obj.w.lambda_n(ii,jj,kk);
-                            lambda_p_ijk = obj.w.lambda_p(ii,jj,kk);
+                            lambda_n_ijk = obj.w.lambda_n(ii,jj,opts.n_s+1);
+                            lambda_p_ijk = obj.w.lambda_p(ii,jj,opts.n_s+1);
 
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
-                            obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p.ijk, v_global, p)};
+                            obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p_ijk, v_global, p)};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, alpha_ijk, z_ijk, u_i, v_global, p)};
                         else
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
