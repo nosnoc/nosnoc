@@ -453,7 +453,7 @@ classdef Options < handle
             end
             obj.right_boundary_point_explicit = right_boundary_point_explicit;
 
-            if obj.N_stages = 1
+            if obj.N_stages == 1
                 obj.stagewise_clock_constraint = false;
             end
         end
