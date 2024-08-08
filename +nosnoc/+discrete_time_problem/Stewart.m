@@ -217,7 +217,7 @@ classdef Stewart < vdx.problems.Mpcc
                     switch opts.rk_representation
                       case RKRepresentation.integral
                         % In integral representation stage variables are states.
-                        x_ij_end = x_prev;
+                        x_ij_end = opts.D_rk(1)*x_prev;
                         for kk=1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk); % k-th RK stage variable, in j-th finite element, in i-th control stage
                             z_ijk = obj.w.z(ii,jj,kk);

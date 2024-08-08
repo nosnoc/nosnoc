@@ -119,8 +119,12 @@ classdef Heaviside < vdx.problems.Mpcc
                     opts.rk_representation == RKRepresentation.differential_lift_x)
                     obj.w.v(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'v', dims.n_x}};
                 end
-                
-                obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
+                if dcs.z_depends_on_alpha
+                    obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
+                else
+                    obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
+                end
+                    
                 obj.w.alpha(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'alpha', dims.n_alpha},0, 1, opts.initial_alpha};
                 obj.w.lambda_n(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_n', dims.n_lambda},0, inf, opts.initial_lambda_n};
                 obj.w.lambda_p(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda_p', dims.n_lambda},0, inf, opts.initial_lambda_p};
@@ -157,6 +161,8 @@ classdef Heaviside < vdx.problems.Mpcc
             lambda_p_0 = obj.w.lambda_p(0,0,opts.n_s);
 
             obj.g.algebraic(0,0,opts.n_s) = {dcs.g_alg_fun(x_0, z_0, alpha_0, lambda_n_0, lambda_p_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
+
+            obj.g.z(0,0,opts.n_s) = {dcs.g_z_fun(x_0, alpha_0, z_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
             
             x_prev = obj.w.x(0,0,opts.n_s); % last point of previous FE, needed for continuity conditions
             if opts.use_fesd && opts.use_numerical_clock_state
@@ -208,7 +214,7 @@ classdef Heaviside < vdx.problems.Mpcc
                     switch opts.rk_representation
                       case RKRepresentation.integral
                         % In integral representation stage variables are states.
-                        x_ij_end = x_prev;
+                        x_ij_end = opts.D_rk(1)*x_prev;
                         for kk=1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk);
                             z_ijk = obj.w.z(ii,jj,kk);
@@ -245,14 +251,16 @@ classdef Heaviside < vdx.problems.Mpcc
                         end
                         if ~opts.right_boundary_point_explicit
                             x_ijk = obj.w.x(ii,jj,opts.n_s+1);
-                            z_ijk = obj.w.z(ii,jj,opts.n_s+1);
                             lambda_n_ijk = obj.w.lambda_n(ii,jj,opts.n_s+1);
                             lambda_p_ijk = obj.w.lambda_p(ii,jj,opts.n_s+1);
-
+                            if ~dcs.z_depends_on_alpha
+                                z_ijk = obj.w.z(ii,jj,opts.n_s+1);
+                                obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, alpha_ijk, z_ijk, u_i, v_global, p)};
+                            end
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
 
-                            obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_n_ijk, lambda_p_ijk, v_global, p)};
-                            obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, alpha_ijk, z_ijk, u_i, v_global, p)};
+                            obj.g.algebraic(ii,jj,opts.n_s+1) = {dcs.g_alg_fun(x_ijk, z_ijk, alpha_ijk, lambda_n_ijk, lambda_p_ijk, u_i, v_global, p)};
+
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
@@ -450,7 +458,12 @@ classdef Heaviside < vdx.problems.Mpcc
             end
 
             x_end = obj.w.x(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp);
-            z_end = obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp);
+            if dcs.z_depends_on_alpha
+                z_end = obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s);
+            else
+                z_end = obj.w.z(opts.N_stages,opts.N_finite_elements(opts.N_stages),opts.n_s+rbp);
+            end
+            
             % Terminal cost
             obj.f = obj.f + dcs.f_q_T_fun(x_end, z_end, v_global, p_global);
             
@@ -472,6 +485,7 @@ classdef Heaviside < vdx.problems.Mpcc
                 if opts.time_optimal_problem
                     % in the case of time optimal time freezing problem, physical clock state must reach final time.
                     obj.g.terminal_physical_time = {x_end(end)-(obj.w.T_final()+t0), relax_phys_time_struct};
+                    obj.g.terminal_physical_time.set_is_terminal(true);
                     if relax_phys_time_struct.is_relaxed
                         obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
@@ -479,6 +493,7 @@ classdef Heaviside < vdx.problems.Mpcc
                     % in the case of a generic time freezing problem, physical clock state must reach final time if
                     % we are imposing terminal physical time and we did not do so by apply stagewise constraints.
                     obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax_phys_time_struct};
+                    obj.g.terminal_physical_time.set_is_terminal(true);
                     if relax_phys_time_struct.is_relaxed
                         obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
@@ -911,8 +926,10 @@ classdef Heaviside < vdx.problems.Mpcc
                     for jj=1:opts.N_finite_elements(ii)
                         % Recalculate ubh and lbh based on T_val
                         h0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
-                        ubh = (1 + opts.gamma_h) * h0;
-                        lbh = (1 - opts.gamma_h) * h0;
+                        %ubh = (1 + opts.gamma_h) * h0;
+                        %lbh = (1 - opts.gamma_h) * h0;
+                        ubh = T_val/(opts.N_stages);
+                        lbh = 0;
                         if opts.time_rescaling && ~opts.use_speed_of_time_variables
                             % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
                             ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;

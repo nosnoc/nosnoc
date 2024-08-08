@@ -23,6 +23,11 @@ classdef Heaviside < nosnoc.dcs.Base
         lambda00_fun
     end
 
+    properties(SetAccess=private)
+        z_depends_on_alpha = false;
+    end
+
+
     methods
         function obj = Heaviside(model)
             obj.model = model;
@@ -51,6 +56,9 @@ classdef Heaviside < nosnoc.dcs.Base
                 dims.n_alpha = sum(obj.dims.n_c_sys); % number of modes
               case "nosnoc.model.Heaviside"
                 obj.alpha = model.alpha;
+                if model.g_z.depends_on(obj.alpha)
+                    obj.z_depends_on_alpha = true;
+                end
             end
             dims.n_lambda = dims.n_alpha;
 
