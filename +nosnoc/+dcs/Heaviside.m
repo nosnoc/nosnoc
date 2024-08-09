@@ -23,6 +23,11 @@ classdef Heaviside < nosnoc.dcs.Base
         lambda00_fun
     end
 
+    properties(SetAccess=private)
+        z_depends_on_alpha = false;
+    end
+
+
     methods
         function obj = Heaviside(model)
             obj.model = model;
@@ -31,6 +36,9 @@ classdef Heaviside < nosnoc.dcs.Base
         
         function generate_variables(obj, opts)
             import casadi.*
+            if class(obj.model) == "nosnoc.model.Cls"
+                obj.time_freezing(opts);
+            end
             dims = obj.dims;
             model = obj.model;
 
@@ -48,6 +56,9 @@ classdef Heaviside < nosnoc.dcs.Base
                 dims.n_alpha = sum(obj.dims.n_c_sys); % number of modes
               case "nosnoc.model.Heaviside"
                 obj.alpha = model.alpha;
+                if model.g_z.depends_on(obj.alpha)
+                    obj.z_depends_on_alpha = true;
+                end
             end
             dims.n_lambda = dims.n_alpha;
 
@@ -129,7 +140,7 @@ classdef Heaviside < nosnoc.dcs.Base
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {model.f_q});
-            obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
+            obj.g_z_fun = Function('g_z', {model.x, obj.alpha, model.z, model.u, model.v_global, model.p}, {model.g_z}); % alpha taken from dcs rather than model as alpha only exists in Heaviside and not PSS models.
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {g_alg});
             obj.g_lp_stationarity_fun = Function('g_lp_stationarity', {model.x, model.z, obj.lambda_n, obj.lambda_p, model.v_global, model.p}, {g_lp_stationarity});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
@@ -155,5 +166,4 @@ classdef Heaviside < nosnoc.dcs.Base
             propgrp(2) = matlab.mixin.util.PropertyGroup(var_list, group_title);
         end
     end
-
 end

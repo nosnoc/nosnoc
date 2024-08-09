@@ -1,5 +1,5 @@
 classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
-% Base class for Dynamic Complementarity Systems of the (most generic) form
+% Base class for Dynamic Complementarity Systems of the (most generic) form.
 %
 % .. math::
 %     :nowrap:
@@ -13,7 +13,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
         f_x_fun % casadi.Function: Right hand side of the DCS.
         f_q_fun % casadi.Function: Lagrange cost term function.
-        g_z_fun % casadi.Function: User algebraic constraints cost function.
+        g_z_fun % casadi.Function: User algebraic constraints function.
         g_alg_fun % casadi.Function: Constraints for algorithmically defined algebraics. 
         g_path_fun % casadi.Function: Function for non-box path constraints. Only defined in an OCP.
         G_path_fun % casadi.Function: Function for one half of path complementarity. Only defined in an OCP.

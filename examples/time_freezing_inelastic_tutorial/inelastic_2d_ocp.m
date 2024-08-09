@@ -14,7 +14,7 @@ settings.time_freezing = 1;
 settings.s_sot_max = 10;
 settings.s_sot_min = 0.99;
 settings.homotopy_update_rule = 'superlinear';
-settings.nonsmooth_switching_fun = 0;
+settings.time_freezing_nonsmooth_switching_fun = 0;
 settings.pss_lift_step_functions = 0; 
 % settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 

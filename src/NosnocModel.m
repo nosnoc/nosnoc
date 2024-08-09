@@ -547,13 +547,13 @@ classdef NosnocModel < handle
                 %% time-freezing inelastic impacts (exploit structure with taiolored formulae)
                 if problem_options.time_freezing_inelastic
                     % theta_step are the lifting variables that enter the ODE r.h.s.
-                      if any(obj.mu_f > 0)
+                    if any(obj.mu_f > 0)
                         obj.friction_exists = 1;
                     else
                         obj.friction_exists = 0;
                       end
 
-                    if ~problem_options.nonsmooth_switching_fun
+                    if ~problem_options.time_freezing_nonsmooth_switching_fun
                         alpha_q = obj.alpha(1:dims.n_contacts);
                         alpha_v_normal = obj.alpha(dims.n_contacts+1:2*dims.n_contacts);
                         if obj.friction_exists
@@ -582,7 +582,7 @@ classdef NosnocModel < handle
 
                     if problem_options.pss_lift_step_functions
                         % lift bilinear terms in product terms for free flight ode % (alpha_q*alpha_v)
-                        if ~problem_options.nonsmooth_switching_fun
+                        if ~problem_options.time_freezing_nonsmooth_switching_fun
                             beta_bilinear_ode = define_casadi_symbolic(casadi_symbolic_mode,'beta_bilinear_ode',dims.n_contacts);
                             beta_bilinear_ode_expr = eval([casadi_symbolic_mode '.zeros(' num2str(dims.n_contacts) ',1);']);
                             if obj.friction_exists
@@ -605,7 +605,7 @@ classdef NosnocModel < handle
                     alpha_ode = 1; % initalized product for free flight multiplier
                     if ~problem_options.pss_lift_step_functions
                         for ii = 1:dims.n_contacts
-                            if problem_options.nonsmooth_switching_fun
+                            if problem_options.time_freezing_nonsmooth_switching_fun
                                 alpha_ode = alpha_ode*alpha_qv(ii);
                                 if obj.friction_exists
                                     theta_step_expr(ii+1) = (1-alpha_qv(ii))*(alpha_v_tangent(ii));
@@ -626,7 +626,7 @@ classdef NosnocModel < handle
                         theta_step_expr(1) = alpha_ode;
                     else
                         % lift and have bilinear terms
-                        if problem_options.nonsmooth_switching_fun
+                        if problem_options.time_freezing_nonsmooth_switching_fun
                             if dims.n_contacts <= 2
                                 for ii = 1:dims.n_contacts
                                     alpha_ode = alpha_ode*alpha_qv(ii);
@@ -1617,7 +1617,7 @@ classdef NosnocModel < handle
                     problem_options.time_freezing_inelastic = 1; % flag tha inealstic time-freezing is using (for hand crafted lifting)
                     problem_options.dcs_mode = 'Heaviside'; % time freezing inelastic works better step (very inefficient with stewart)
                     %% switching function
-                    if problem_options.nonsmooth_switching_fun
+                    if problem_options.time_freezing_nonsmooth_switching_fun
                         obj.c = [max_smooth_fun(obj.f_c,v_normal,0);v_tangent];
                     else
                         if dims.n_dim_contact == 2

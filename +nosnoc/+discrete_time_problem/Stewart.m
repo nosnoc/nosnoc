@@ -46,6 +46,10 @@ classdef Stewart < vdx.problems.Mpcc
             obj.w.u(1:opts.N_stages) = {{'u', dims.n_u}, model.lbu, model.ubu, model.u0};
             if opts.use_speed_of_time_variables && opts.local_speed_of_time_variable
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
+                if opts.time_freezing
+                    obj.p.rho_sot = {{'rho_sot',1}, opts.rho_sot};
+                    obj.f = obj.f + obj.p.rho_sot()*sum((obj.w.sot(:)-1).^2);
+                end
             end
             % Remark, VDX syntax for defining parameters
             % obj.p.parameter_name(indexing) = {{'parameter_name', length}, parameter_value};
@@ -57,6 +61,11 @@ classdef Stewart < vdx.problems.Mpcc
             %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
             %              on the whole queue which is _significantly_ faster.
             % 2d vars: Variables that are defined for each finite element (and each control stage)
+            if opts.use_fesd && opts.use_numerical_clock_state
+                obj.w.numerical_time(0,0) = {{'t0', 1}};
+                obj.w.numerical_time(0,0).lb = 0;
+                obj.w.numerical_time(0,0).ub = 0;
+            end
             for ii=1:opts.N_stages
                 % other derived values
                 h0 = opts.h_k(ii); % initial guess for length of current FE
@@ -65,12 +74,19 @@ classdef Stewart < vdx.problems.Mpcc
                     lbh = (1 - opts.gamma_h) * h0; % lower bound for FE length
                     if opts.time_rescaling && ~opts.use_speed_of_time_variables
                         % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
-                        ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
-                        lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                        ubh = ubh*opts.s_sot_max;
+                        lbh = lbh/opts.s_sot_min;
+                    elseif opts.time_optimal_problem
+                        ubh = ubh*(opts.T_final_max/opts.T);
+                        lbh = lbh/((opts.T_final_min+eps)/opts.T);
                     end
                     % define finte elements lengths as variables
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                 end
+                if opts.use_fesd && opts.use_numerical_clock_state
+                    obj.w.numerical_time(ii, 1:opts.N_finite_elements(ii)) = {{['t_' num2str(ii)], 1}};
+                end
+                
                 if obj.opts.step_equilibration == StepEquilibrationMode.linear_complementarity
                     % define auxiliary variables needed to write step equlibration constraints
                     % Remark: only this step equilibration mode needs auxliary variables.
@@ -94,7 +110,8 @@ classdef Stewart < vdx.problems.Mpcc
             obj.w.x(0,0,opts.n_s) = {{['x_0'], dims.n_x}, model.x0, model.x0, model.x0};
             obj.w.z(0,0,opts.n_s) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
             obj.w.lambda(0,0,opts.n_s) = {{['lambda'], dims.n_lambda},0,inf, 1};
-            obj.w.mu(0,0,opts.n_s) = {{'mu', dims.n_mu},0,inf};
+            obj.w.theta(0,0,opts.n_s) = {{['theta'], dims.n_theta},0, inf, 1/dims.n_theta};
+            obj.w.mu(0,0,opts.n_s) = {{'mu', dims.n_mu},-inf,inf};
             % others are defined across all levels
             for ii=1:opts.N_stages
                 if (opts.rk_representation == RKRepresentation.integral ||...
@@ -111,8 +128,8 @@ classdef Stewart < vdx.problems.Mpcc
                 % TODO @Anton, at some point we might provide initial guesse for lambda,mu, theta
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
                 obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf, 1};
-                obj.w.theta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'theta', dims.n_theta},0, 1, 1/dims.n_theta};
-                obj.w.mu(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},0,inf};
+                obj.w.theta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'theta', dims.n_theta},0, inf, 1/dims.n_theta};
+                obj.w.mu(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},-inf,inf};
 
                 % Handle x_box settings (i.e., manage at which points the box constraints are enforced)
                 if ~opts.x_box_at_stg && opts.rk_representation ~= RKRepresentation.differential
@@ -142,15 +159,19 @@ classdef Stewart < vdx.problems.Mpcc
             x_0 = obj.w.x(0,0,opts.n_s);
             z_0 = obj.w.z(0,0,opts.n_s);
             lambda_0 = obj.w.lambda(0,0,opts.n_s);
+            theta_0 = obj.w.theta(0,0,opts.n_s);
             mu_0 = obj.w.mu(0,0,opts.n_s);
             
             % Remark on VDX syntax, define symbolic expressions for
             % constraints g. the constraints are also grouped into, e.g. .z user algebraic functions), 
-            % .lp_stationarity (lp stationarity constraint from the Stewart DCS)
+            % .algebraic (KKT conditions from from the Stewart DCS)
             obj.g.z(0,0,opts.n_s) = {dcs.g_z_fun(x_0, z_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
-            obj.g.lp_stationarity(0,0,opts.n_s) = {dcs.g_lp_stationarity_fun(x_0, z_0, lambda_0, mu_0, v_global, [p_global;obj.p.p_time_var(1)])};
+            obj.g.algebraic(0,0,opts.n_s) = {dcs.g_alg_fun(x_0, z_0, lambda_0, theta_0, mu_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
             
             x_prev = obj.w.x(0,0,opts.n_s); % last point of previous FE, needed for continuity conditions
+            if opts.use_fesd && opts.use_numerical_clock_state
+                t_prev = obj.w.numerical_time(0,0);
+            end
             for ii=1:opts.N_stages
                 h0 = obj.p.T().val/(opts.N_stages*opts.N_finite_elements(ii)); % TODO@Anton, why not h0 = opts.h_k(ii), easier to read.
                 
@@ -183,11 +204,20 @@ classdef Stewart < vdx.problems.Mpcc
                     else
                         h = h0;
                     end
+                    if opts.use_fesd && opts.use_numerical_clock_state
+                        t_curr = obj.w.numerical_time(ii, jj);
+                        if ~opts.time_freezing
+                            obj.g.numerical_time_integrator(ii,jj) = {t_curr - (t_prev + s_sot*h)};
+                        else
+                            obj.g.numerical_time_integrator(ii,jj) = {t_curr - (t_prev + h)};
+                        end
+                        t_prev = t_curr;
+                    end
 
                     switch opts.rk_representation
                       case RKRepresentation.integral
                         % In integral representation stage variables are states.
-                        x_ij_end = x_prev;
+                        x_ij_end = opts.D_rk(1)*x_prev;
                         for kk=1:opts.n_s
                             x_ijk = obj.w.x(ii,jj,kk); % k-th RK stage variable, in j-th finite element, in i-th control stage
                             z_ijk = obj.w.z(ii,jj,kk);
@@ -376,28 +406,56 @@ classdef Stewart < vdx.problems.Mpcc
                     obj.f = obj.f + dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, theta_ijk, mu_ijk, u_i, v_global, p);
                 end
 
-                % Clock <Constraints
-                % TODO(@anton) HERE BE DRAGONS. This is by far the worst part of current nosnoc as it requires the discrete problem
-                %              to understand something about the
-                %              time-freezing reformulation which is ugly. (It is also just a quite complicated thing)
-                if obj.opts.use_fesd && opts.equidistant_control_grid
-                    if opts.time_optimal_problem
-                        if opts.use_speed_of_time_variables
-                            obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;s_sot*sum_h - obj.w.T_final()/opts.N_stages]};
-                        else
-                            obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages};
-                        end
+                % Clock Constraints
+                % handle numerical time
+                if opts.use_fesd && opts.equidistant_control_grid
+                    % Create a vdx relaxation struct which holds the information needed by vdx to automatically
+                    % relax a constraint vector. It takes the type of relaxation, the name of the vdx.Variable
+                    % to store the slacks, and the name of the vdx.Variable to store the relaxation parameter.
+                    % This struct can be passed as the last element of the rhs of a vdx variable assignment.
+                    % See vdx documentation on relaxation: TODO add when vdx docs updated.
+                    relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                    if opts.time_optimal_problem && ~opts.time_freezing
+                        % if time optimal and not time freezing we want T_final to be the rhs of the
+                        % equidistant control grid constraints.
+                        ecg_rhs = obj.w.T_final()/opts.N_stages;
                     else
-                        if opts.relax_terminal_numerical_time
-                            % Negative values sometimes help convergence.
-                            obj.w.s_numerical_time(ii) = {{'s_numerical', 1}, -2*opts.h, 2*opts.h, opts.h/2};
-                            g_eq_grid = [sum_h - t_stage - obj.w.s_numerical_time(ii);
-                                -(sum_h - t_stage) - obj.w.s_numerical_time(ii)];
-                            obj.g.equidistant_control_grid(ii) = {g_eq_grid, -inf, 0};
-                            obj.f = obj.f + opts.rho_terminal_numerical_time*obj.w.s_numerical_time(ii);
+                        % if time freezing or not time optimal we want T to be the rhs of the
+                        % equidistant control grid constraints.
+                        ecg_rhs = obj.p.T()/opts.N_stages;
+                    end
+
+                    if opts.use_numerical_clock_state
+                        curr_t = obj.w.numerical_time(ii,opts.N_finite_elements(ii));
+                        obj.g.equidistant_numerical_grid(ii) = {curr_t - ii*ecg_rhs, relax_num_time_struct};
+                    else
+                        if ~opts.time_freezing
+                            obj.g.equidistant_numerical_grid(ii) = {s_sot*sum_h - ecg_rhs, relax_num_time_struct};
                         else
-                            obj.g.equidistant_control_grid(ii) = {t_stage-sum_h};
+                            obj.g.equidistant_numerical_grid(ii) = {sum_h - ecg_rhs, relax_num_time_struct};
                         end
+                    end
+                    % vdx.RelaxationStruct.is_relaxed returns true if the relaxation is not `NONE`.
+                    if relax_num_time_struct.is_relaxed
+                        obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
+                    end
+                end
+
+                % Handle possible physical time
+                if opts.time_freezing && opts.stagewise_clock_constraint
+                    x0 = obj.w.x(0,0,opts.n_s);
+                    t0 = x0(end);
+                    x_stage_end = obj.w.x(ii, opts.N_finite_elements(ii), opts.n_s+rbp);
+                    t_stage_end = x_stage_end(end);
+
+                    relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
+                    if opts.time_optimal_problem
+                        obj.g.stagewise_clock_constraint(ii) = {t_stage_end - (ii*(obj.w.T_final()/opts.N_stages) + t0), relax_phys_time_struct};
+                    else
+                        obj.g.stagewise_clock_constraint(ii) = {t_stage_end - (ii*t_stage + t0), relax_phys_time_struct};
+                    end
+                    if relax_phys_time_struct.is_relaxed
+                        obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
                     end
                 end
             end
@@ -413,38 +471,119 @@ classdef Stewart < vdx.problems.Mpcc
                     model.x_ref_end_val,...
                     p_global);
             end
+
+            %  -- Constraint for the terminal numerical and physical time (if no equidistant grids are required) --
+            % If the control grid is not equidistant, the constraint on sum of h happen only at the end.
+            % The constraints are split to those which are related to numerical and physical time, to make it easier to read.
+            if opts.time_freezing
+                x0 = obj.w.x(0,0,opts.n_s);
+                t0 = x0(end);
+                relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
+                % Terminal Phyisical Time (Possible terminal constraint on the clock state if time freezing is active).
+                if opts.time_optimal_problem
+                    % in the case of time optimal time freezing problem, physical clock state must reach final time.
+                    obj.g.terminal_physical_time = {x_end(end)-(obj.w.T_final()+t0), relax_phys_time_struct};
+                    if relax_phys_time_struct.is_relaxed
+                        obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
+                    end
+                elseif opts.impose_terminal_phyisical_time && ~opts.stagewise_clock_constraint
+                    % in the case of a generic time freezing problem, physical clock state must reach final time if
+                    % we are imposing terminal physical time and we did not do so by apply stagewise constraints.
+                    obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax_phys_time_struct};
+                    if relax_phys_time_struct.is_relaxed
+                        obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
+                    end
+                end
+                
+            else
+                if ~opts.use_fesd
+                    if opts.time_optimal_problem
+                        if opts.use_speed_of_time_variables
+                            % without FESD we need speed of time variables and the sum of
+                            % h*sot must be equal to the final time.
+                            integral_clock_state = 0;
+                            for ii=1:opts.N_stages
+                                if opts.local_speed_of_time_variable
+                                    s_sot = obj.d.sot(ii);
+                                else
+                                    s_sot = obj.w.sot();
+                                end
+                                for jj=1:opts.N_finite_elements(ii)
+                                    h = obj.p.T()/(opts.N_stages*opts.N_finite_elements(ii));
+                                    integral_clock_state = integral_clock_state + h*s_sot;
+                                end
+                            end
+                            obj.g.integral_clock_state = {integral_clock_state-obj.w.T_final()};
+                        else
+                            % otherwise treated via variable h_ki, i.e.,  h_ki =  T_final/(N_stages*N_FE)
+                        end
+                    end
+                else
+                    % if equidistant_control_grid = true all time constraint are added in
+                    % the main control loop for every control stage k and the code
+                    % below is skipped
+                    if  ~opts.equidistant_control_grid
+                        % T_num = T_phy = T_final =  T.
+                        % all step sizes add up to prescribed time T.
+                        % if use_speed_of_time_variables = true, numerical time is decupled from the sot scaling (no mather if local or not):
+                        sum_h_all = sum2(obj.w.h(:,:));
+                        
+                        if ~opts.time_optimal_problem
+                            % not a time optimal problem so just sum of hs must be the terminal numerical time T.
+                            relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                            obj.g.sum_h = {sum_h_all-obj.p.T(), relax_num_time_struct};
+                            if relax_num_time_struct.is_relaxed
+                                obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
+                            end
+                        else
+                            if ~opts.use_speed_of_time_variables
+                                % a time optimal problem without sot so sum of hs must be the optimal terminal numerical time T_final.
+                                relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                                obj.g.sum_h = {sum_h_all-obj.w.T_final(), relax_num_time_struct};
+                                if relax_num_time_struct.is_relaxed
+                                    obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
+                                end
+                            else
+                                % a time optimal problem with sot so sum of h*sot must be the optimal terminal "physical" time T_final.
+                                % and the sum of h needs to be the terminal numerical time T
+                                integral_clock_state = 0;
+                                for ii=1:opts.N_stages
+                                    if opts.local_speed_of_time_variable
+                                        s_sot = obj.d.sot(ii);
+                                    else
+                                        s_sot = obj.w.sot();
+                                    end
+                                    for jj=1:opts.N_finite_elements(ii)
+                                        h = obj.w.h(ii,jj);
+                                        integral_clock_state = integral_clock_state + h*s_sot;
+                                    end
+                                end
+
+                                relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
+                                relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
+                                obj.g.sum_h = {sum_h_all-obj.p.T(), relax_num_time_struct};
+                                obj.g.integral_clock = {sum_h_all-obj.w.T_final(), relax_phys_time_struct};
+                                if relax_num_time_struct.is_relaxed
+                                    obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
+                                end
+                                if relax_phys_time_struct.is_relaxed
+                                    obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
+                                end
+                            end
+                        end
+                    end
+                end
+            end
             
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
-                % TODO: we should have an enum for treating terminal
-                % constraints (or relaxing constraints in general, cf. https://github.com/nurkanovic/nosnoc/issues/96
-                error("Currently unsupported.")
+                error("nosnoc: Currently unsupported.")
             end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
-            switch opts.relax_terminal_constraint
-              case ConstraintRelaxationMode.NONE % hard constraint
-                if opts.relax_terminal_constraint_from_above
-                    obj.g.terminal = {g_terminal, model.lbg_terminal, inf*ones(dims.n_g_terminal,1)};
-                else
-                    obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal};
-                end
-              case ConstraintRelaxationMode.ELL_1 % l_1
-                obj.w.s_terminal_ell_1 = {{'s_terminal_ell_1', dims.n_g_terminal}, 0, inf, 10};
-
-                g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_1();
-                    -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_1()];
-                obj.g.terminal = {g_terminal, -inf, 0};
-                obj.f = obj.f + obj.p.rho_terminal_p()*sum(obj.w.s_terminal_ell_1());
-              case ConstraintRelaxationMode.ELL_2 % l_2
-                     % TODO(@anton): this is as it was implemented before. should handle lb != ub?
-                obj.f = obj.f + obj.p.rho_terminal_p()*(g_terminal-model.lbg_terminal)'*(g_terminal-model.lbg_terminal);
-              case ConstraintRelaxationMode.ELL_INF % l_inf
-                obj.w.s_terminal_ell_inf = {{'s_terminal_ell_inf', 1}, 0, inf, 1e3};
-
-                g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_inf();
-                    -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_inf()];
-                obj.g.terminal = {g_terminal, -inf, 0};
-                obj.f = obj.f + obj.p.rho_terminal_p()*obj.w.s_terminal_ell_inf();
+            relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
+            obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal, relax_terminal_struct};
+            if relax_terminal_struct.is_relaxed && all(size(g_terminal) > 0)
+                obj.p.rho_terminal().val = opts.rho_terminal;
             end
         end
 
@@ -455,6 +594,13 @@ classdef Stewart < vdx.problems.Mpcc
             model = obj.model;
             % Define standard complementarity and cross-complementarity constraints
 
+            lambda_0 = obj.w.lambda(0,0,opts.n_s);
+            theta_0 = obj.w.theta(0,0,opts.n_s);
+
+            % inital_comp
+            obj.G.initial_comp = {lambda_0};
+            obj.H.initial_comp = {theta_0};
+            
             rbp = ~opts.right_boundary_point_explicit;
             
             if opts.use_fesd
@@ -646,7 +792,7 @@ classdef Stewart < vdx.problems.Mpcc
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.direct_homotopy
-                error("nosnoc:Currently not supported/implemented.")
+                error("nosnoc: Currently not supported/implemented.")
                 eta_vec = [];
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)
@@ -764,6 +910,9 @@ classdef Stewart < vdx.problems.Mpcc
                             % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
                             ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
                             lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
+                        elseif opts.time_optimal_problem
+                            ubh = ubh*(opts.T_final_max/opts.T);
+                            lbh = lbh/((opts.T_final_min+eps)/opts.T);
                         end
                         obj.w.h(ii,jj).lb = lbh;
                         obj.w.h(ii,jj).ub = ubh;

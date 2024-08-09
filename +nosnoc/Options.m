@@ -80,7 +80,9 @@ classdef Options < handle
 
         %--------------------- Initial Values ---------------------%
         
-        initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\alpha$ in the Heaviside step reformulation.
+        initial_alpha(1,1) double {mustBeReal, mustBeFinite} = 0.5 % double: Initial value for $\alpha$ in the Heaviside step reformulation.
+        initial_lambda_n(1,1) double {mustBeReal, mustBeFinite} = 0.5 % double: Initial value for $\lambda_n$ in the Heaviside step reformulation.
+        initial_lambda_p(1,1) double {mustBeReal, mustBeFinite} = 0.5 % double: Initial value for $\lambda_p$ in the Heaviside step reformulation.
         initial_beta_lift(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\beta$ when lifting is enabled in the Heaviside step reformulation.
         initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\theta$ when lifting is enabled in the Heaviside step reformulation.
         initial_lambda_gcs(1,1) double {mustBeReal, mustBeFinite} = 0 % double: Initial value for $\lambda$ in the Gradient Comlementarity System.
@@ -207,9 +209,16 @@ classdef Options < handle
         time_freezing_quadrature_state(1,1) logical = 0 % boolean: If true make a nonsmooth quadrature state to integrate only if physical time is running.
         time_freezing_lift_forces(1,1) logical = 0 % If true replace $\dot{v} = M(q)^{-1}f(q,v,u)$ by $dot{v} = z,  M(q)z - f(q,v,u) = 0$.
 
-        nonsmooth_switching_fun(1,1) logical = 0 % boolean: Experimental, use $c = \max(c1,c2)$ insetad of $c = c_1c_2$.
-        stabilizing_q_dynamics(1,1) logical = 0 % boolean: Experimental, stabilize auxiliary dynamics in \nabla f_c(q) direction.
-        kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5 % double: Constant used for stabilizing auxiliary dynamics in \nabla f_c(q) direction.
+        % boolean: Experimental, use $c = \max(c1,c2)$ insetad of $c = c_1c_2$.
+        % This is used to reduce the number of switching functions needed to generate the T shaped intersections
+        % in inelastic time freezing reformulation.
+        time_freezing_nonsmooth_switching_fun(1,1) logical = 0
+
+        % boolean: Stabilize auxiliary dynamics in \nabla f_c(q) direction in the style of Baumgartner stabilization.
+        stabilizing_q_dynamics(1,1) logical = 0
+
+        % double: Constant used for stabilizing auxiliary dynamics in \nabla f_c(q) direction.
+        kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5
 
         % int: Level of verbosity that the `nosnoc` reformulator uses.
         %
@@ -237,6 +246,12 @@ classdef Options < handle
         eps_cls double = 1e-3 % double: enforce $f_c$ at Euler step with h * eps_cls
         fixed_eps_cls logical = false % boolean: use fixed step eps_cls instead of a multiple of h.
 
+        % double: The constant radius of relaxation for the friction force which enforces a nonempty interior around zero velocity
+        %
+        % See Also:
+        %     More details can be found in :cite:p:`Nurkanovic2023a`
+        eps_t double = 1e-7
+        
         % ConstraintRelaxationMode: What (if any) relaxation to apply to the terminal constraints.
         %
         % See Also:
@@ -251,7 +266,11 @@ classdef Options < handle
         %     This option is currently unimplemented.
         relax_terminal_constraint_homotopy(1,1) logical = 0; 
 
-        relax_terminal_numerical_time(1,1) logical = 0; %boolean: If true instead of imposing $\sum h = T$, add it as $\ell_1$ penalty term.
+        % ConstraintRelaxationMode: What (if any) relaxation to apply to the terminal/or stage numerical time constraints.
+        %
+        % See Also:
+        %    `ConstraintRelaxationMode` for a detailed description of the available relaxation modes.
+        relax_terminal_numerical_time(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE;
         rho_terminal_numerical_time(1,1) double {mustBeNonnegative} = 1e2 % double: Weight used to penalize terminal numerical time violation.
         
         % boolean: If True the terminal numerical time constraint violation penalty is governed by homotopy parameter
@@ -259,7 +278,12 @@ classdef Options < handle
         % Warning:
         %     This option is currently unimplemented
         relax_terminal_numerical_time_homotopy (1,1) logical = 0; % us the homotopy parameter for the penalty.
-        relax_terminal_physical_time(1,1) logical = 0; % instead of imposing $t(T) = T$, add it as $\ell_1$ penalty term.
+
+        % ConstraintRelaxationMode: What (if any) relaxation to apply to the terminal/or stage phyical time constraints.
+        %
+        % See Also:
+        %    `ConstraintRelaxationMode` for a detailed description of the available relaxation modes.
+        relax_terminal_physical_time(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE; % instead of imposing $t(T) = T$, add it as $\ell_1$ penalty term.
         rho_terminal_physical_time(1,1) double {mustBeNonnegative} = 1e2 % double: Weight used to penalize terminal physical time violation.
 
         % boolean: If True the terminal physical time constraint violation penalty is governed by homotopy parameter.
@@ -278,9 +302,17 @@ classdef Options < handle
 
         use_previous_solution_as_initial_guess(1,1) logical = 0 % boolean: When simulating use the previous step as an initial guess for the current one.
 
+        has_clock_state(1,1) logical = 0
+        
         T_val(1,1) double {mustBePositive} = 1
         p_val
 
+        % Time Freezing constants
+        a_n(1,1) double {mustBePositive} = 100;
+        k_aux(1,1) double {mustBePositive} = 10;
+        time_freezing_Heaviside_lifting(1,1) logical = true; % boolean: Exploit the time-freezing PSS structure for tailored lifting in Heaviside reformulation, and drastically reduce the number of  algebraic variables.
+        
+        % Butcher Tableu
         A_rk double
         B_rk double
         b_rk double
@@ -289,7 +321,13 @@ classdef Options < handle
         c_rk double
 
         right_boundary_point_explicit(1,1) logical
-    end
+
+        % experimental:
+        %---------------------------------------------------------------------%
+
+        use_numerical_clock_state(1,1) logical = false % logical: instead of sum of $h$ being used for equidistant control steps use a simple integrated state.
+    end        
+
 
     properties(Dependent)
         time_rescaling
@@ -414,6 +452,10 @@ classdef Options < handle
                 obj.x_box_at_stg = 0;
             end
             obj.right_boundary_point_explicit = right_boundary_point_explicit;
+
+            if obj.N_stages == 1
+                obj.stagewise_clock_constraint = false;
+            end
         end
 
         function time_rescaling = get.time_rescaling(obj)

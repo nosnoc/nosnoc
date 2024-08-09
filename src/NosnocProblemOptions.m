@@ -110,7 +110,7 @@ classdef NosnocProblemOptions < handle
         time_freezing_lift_forces(1,1) logical = 0 % replace \dot{v} = M(q)^{-1}f(q,v,u) by dot{v} = z,  M(q)z - f(q,v,u) = 0
 
         % exerimental expert options
-        nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
+        time_freezing_nonsmooth_switching_fun(1,1) logical = 0 % experimental: use c = max(c1,c2) insetad of c = [c1c2]
         % expert mode: stabilize auxiliary dynamics in \nabla f_c(q) direction
         stabilizing_q_dynamics(1,1) logical = 0
         kappa_stabilizing_q_dynamics(1,1) double {mustBePositive} = 1e-5

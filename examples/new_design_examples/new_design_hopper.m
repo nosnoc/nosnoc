@@ -42,8 +42,9 @@ import casadi.*
 delete hopper_simple.gif
 
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
+%%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.use_fesd = 1;
@@ -58,15 +59,24 @@ problem_options.g_path_at_fe = 1; % evaluate path constraint on every integratio
 problem_options.g_path_at_stg = 1; % evaluate path constraint on every stage point
 problem_options.time_freezing_nonsmooth_switching_fun = 0;
 problem_options.lift_complementarities = 1;
+problem_options.a_n = 25;
+problem_options.a_n = 1e2;
+problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_2;
+problem_options.rho_terminal_physical_time = 1e4;
 
-solver_options.N_homotopy = 6;
+problem_options.relax_terminal_numerical_time = ConstraintRelaxationMode.ELL_2;
+problem_options.rho_terminal_numerical_time = 1e4;
+
+
+solver_options.N_homotopy = 9;
 solver_options.sigma_0 = 1;
-solver_options.opts_casadi_nlp.ipopt.tol = 1e-6;
-solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
-solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
-solver_options.complementarity_tol = 1e-9;
+%solver_options.opts_casadi_nlp.ipopt.tol = 1e-6;
+%solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
+%solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
+solver_options.complementarity_tol = 1e-7;
 solver_options.print_level = 5;
+solver_options.warm_start_duals = true;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
@@ -133,28 +143,27 @@ Q = diag([50; 50; 20; 50; 0.1; 0.1; 0.1; 0.1]);
 Q_terminal =diag([50; 50; 50; 50; 0.1; 0.1; 0.1; 0.1]);
 
 Q = diag([50; 50; 20; 50; 0.1; 0.1; 0.1; 0.1]);
-Q_terminal =diag([300; 300; 300; 300; 0.1; 0.1; 0.1; 0.1]);
+Q_terminal = diag([500; 500; 300; 300; 0.1; 0.1; 0.1; 0.1]);
 
 u_ref = [0; 0; 0];
 R = diag([0.01; 0.01; 1e-5]);
 
 % Avoid slipping motion
-g_comp_path = [v_tangent,u(3);f_c,u(3)];
+G_path = [v_tangent;f_c];
+H_path = [u(3);u(3)];
 
 %% interpolate refernece
 x_ref = interp1([0 0.5 1],[x0,x_mid,x_end]',linspace(0,1,N_stg),'spline')'; %spline
 
 %% Populate model
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = T;
 problem_options.N_stages = N_stg;
-problem_options.N_finite_elements  = N_FE;
+problem_options.N_finite_elements = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu_f = mu;
-model.a_n = 25;
-model.a_n = 1e2;
+model.mu = mu;
 model.x0 = x0;
 
 model.M = M;
@@ -170,31 +179,35 @@ model.ubu = ubu;
 model.lbx = lbx;
 model.ubx = ubx;
 % constraint on drift velocity
-model.g_comp_path = g_comp_path;
+%model.G_path = G_path;
+%model.H_path = H_path;
 % LSQ objective
 model.lsq_x = {x,x_ref,Q};
 model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
+
 %% read and plot results
-unfold_struct(results,'base');
-q_opt = results.x(1:4,:);
-v_opt = results.x(5:8,:);
-t_opt = results.x(9,:);
+x_res = ocp_solver.get('x');
+u_res = ocp_solver.get('u');
+q_opt = x_res(1:4,:);
+v_opt = x_res(5:8,:);
+t_opt = x_res(9,:);
 
 % Swtiching functions: Gap function, normal velocity, tangentail velocity
 c_eval = [];
-for ii = 1:length(results.x)
+c_fun = casadi.Function('c', {x}, {[f_c, v_normal, v_tangent]});
+for ii = 1:length(x_res)
     % Note: Empty parameter argument as there are no global/time_varying params.
-    c_eval = [c_eval,full(model.c_fun(results.x(:,ii),[]))];
+    c_eval = [c_eval;full(c_fun(x_res(1:end-1,ii)))];
 end
+c_eval = c_eval';
 %%  plots
 fig_num = 2;
-plotHopperStatesControls(results.x,results.u,fig_num);
+plotHopperStatesControls(x_res,u_res,fig_num);
 fig_num = 4;
 % tagnetinal and normal velocity
 plotHopperSwitchingFun(t_opt,c_eval,fig_num);
@@ -203,7 +216,7 @@ plotHopperSwitchingFun(t_opt,c_eval,fig_num);
 if 0 
 figure
 % slip complement
-u_normalized = [results.u(3,:),nan]./max(results.u(3,:));
+u_normalized = [u_res(3,:),nan]./max(u_res(3,:));
 slip_cc = u_normalized .*c_eval(1,1:N_FE:end);
 plot(c_eval(1,1:N_FE:end));
 hold on 
@@ -262,7 +275,4 @@ for ii = 1:length(x_head)
         clf;
     end
 end
-
-
-
 

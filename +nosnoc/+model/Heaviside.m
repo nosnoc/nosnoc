@@ -39,9 +39,8 @@ classdef Heaviside < nosnoc.model.Base
 
             if size(obj.alpha,1) ~= sum(dims.n_c_sys)
                 error('nosnoc: There needs to be a step function alpha for each switching function in c');
-            end
+            end            
             dims.n_alpha = size(obj.alpha, 1);
-
             obj.dims = dims;
         end
     end
