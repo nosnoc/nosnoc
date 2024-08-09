@@ -926,10 +926,8 @@ classdef Heaviside < vdx.problems.Mpcc
                     for jj=1:opts.N_finite_elements(ii)
                         % Recalculate ubh and lbh based on T_val
                         h0 = T_val/(opts.N_stages*opts.N_finite_elements(ii));
-                        %ubh = (1 + opts.gamma_h) * h0;
-                        %lbh = (1 - opts.gamma_h) * h0;
-                        ubh = T_val/(opts.N_stages);
-                        lbh = 0;
+                        ubh = (1 + opts.gamma_h) * h0;
+                        lbh = (1 - opts.gamma_h) * h0;
                         if opts.time_rescaling && ~opts.use_speed_of_time_variables
                             % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
                             ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
