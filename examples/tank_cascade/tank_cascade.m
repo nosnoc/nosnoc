@@ -1,6 +1,6 @@
 function [model] = tank_cascade()
 import casadi.*
-model = NosnocModel();
+model = nosnoc.model.Pss();
 %% Inital value
 model.x0 = [0.1;0.1;0.1];
 model.u0 = [0;0;0;0]; % guess for control variables
