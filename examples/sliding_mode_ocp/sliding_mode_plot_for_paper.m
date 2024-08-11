@@ -1,7 +1,4 @@
 %% sliding mode ocp  - plots for paper
-unfold_struct(results,'base');
-% unfold_struct(model,'base');
-unfold_struct(settings,'base');
 %% geometric trajectory and time trajectorz
 figure
 subplot(121)

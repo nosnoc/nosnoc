@@ -38,9 +38,9 @@ terminal_constraint = 1;
 linear_control = 1;
 
 %% NOSNOC settings and model
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
+model = nosnoc.model.Pss();
 %%
 problem_options.n_s = 3;
 N_finite_elements = 3;
@@ -137,18 +137,17 @@ else
 end
 
 %% Solve and plot
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 
-u_opt = results.u;
-f_opt = full(results.f);
+u_opt = ocp_solver.get("u");
+f_opt = ocp_solver.get_objective();
 
-t_grid_optimizer = [results.t_grid];
-x_res_optimizer = [results.x];
+t_grid_optimizer = ocp_solver.get_time_grid();
+x_res_optimizer = ocp_solver.get("x")
 %%
 figure
-stairs(results.t_grid,[results.h,nan])
+stairs(t_grid_optimizer,[ocp_solver.get("h"),nan])
 xlabel('$t$','Interpreter','latex');
 ylabel('$h_{ki}$','Interpreter','latex');
 %%
