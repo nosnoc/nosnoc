@@ -98,8 +98,8 @@
     1
   ],
   "nlp_lbw": [
-    -Infinity,
-    -Infinity
+    0,
+    0
   ],
   "nlp_ubw": [
     Infinity,
