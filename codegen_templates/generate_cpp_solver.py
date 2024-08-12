@@ -1,6 +1,9 @@
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
 import json
+import argparse
+import os
+import inspect
 
 def gen_cmake(env, solver_data, solver_path):
     template = env.get_template("CMakeLists.txt")
@@ -32,12 +35,17 @@ def gen_HS_hpp(env, solver_data, solver_path):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Generate a HomotopySolver class with the given options')
-    parser.add_argument('solver_path', metavar='N', type=Path,
-                    help='root of the solver_generation')
+    parser.add_argument('solver_path', type=Path,
+                    help='root of the solver')
+    parser.add_argument('nosnoc_root', type=Path,
+                    help='root of nosnoc')
+
+    args = parser.parse_args()
+
+    solver_path = args.solver_path
+    env = Environment(loader=FileSystemLoader(str(Path(args.nosnoc_root, 'codegen_templates'))))
     
-    env = Environment(loader=FileSystemLoader(str(Path('.'))))
-    
-    with open("solver.json") as f:
+    with open(str(Path(solver_path, "solver.json"))) as f:
         solver_data = json.load(f)
 
     if not isinstance(solver_data["nlp_lbw"], list):
@@ -53,8 +61,8 @@ if __name__=="__main__":
     if not isinstance(solver_data["nlp_x0"], list):
         solver_data["nlp_x0"] = [solver_data["nlp_x0"]];
 
-    gen_cmake(env, solver_data)
-    gen_HS_cpp(env, solver_data)
-    gen_HS_hpp(env, solver_data)
+    gen_cmake(env, solver_data, solver_path)
+    gen_HS_cpp(env, solver_data, solver_path)
+    gen_HS_hpp(env, solver_data, solver_path)
     
     
