@@ -39,4 +39,4 @@ mpccsol_opts.calculate_stationarity_type  = 1;
 
 %% create solver
 solver = mpccsol('nosnoc_solver', mpcc_method1, mpcc, mpccsol_opts);
-solver.generate_c_solver('');
+solver.generate_c_solver(fullfile(pwd));

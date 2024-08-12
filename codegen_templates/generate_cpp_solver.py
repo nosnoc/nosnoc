@@ -1,37 +1,41 @@
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
 import json
-# TODO portableize this
-nosnoc_root = Path("/home/anton/syscop/software/nosnoc")
 
-def gen_cmake(env, solver_data):
+def gen_cmake(env, solver_data, solver_path):
     template = env.get_template("CMakeLists.txt")
     content = template.render(solver_data)
 
-    with open("CMakeLists.txt", mode="w", encoding="utf-8") as cmakelists:
+    path = Path(solver_path, "CMakeLists.txt")
+    with open(str(path), mode="w", encoding="utf-8") as cmakelists:
         cmakelists.write(content)
         #print(f"{content}")
 
-def gen_HS_cpp(env, solver_data):
+def gen_HS_cpp(env, solver_data, solver_path):
     template = env.get_template("HomotopySolver.cpp")
     content = template.render(solver_data)
 
-    with open("HomotopySolver.cpp", mode="w", encoding="utf-8") as cmakelists:
+    path = Path(solver_path, "HomotopySolver.cpp")
+    with open(str(path), mode="w", encoding="utf-8") as cmakelists:
         cmakelists.write(content)
         #print(f"{content}")
 
-def gen_HS_hpp(env, solver_data):
+def gen_HS_hpp(env, solver_data, solver_path):
     template = env.get_template("HomotopySolver.hpp")
     content = template.render(solver_data)
 
+    path = Path(solver_path, "HomotopySolver.hpp")
     with open("HomotopySolver.hpp", mode="w", encoding="utf-8") as cmakelists:
         cmakelists.write(content)
         #print(f"{content}")
 
 
 if __name__=="__main__":
-    print(str(Path(nosnoc_root,'codegen_templates')))
-    env = Environment(loader=FileSystemLoader(str(Path(nosnoc_root,'codegen_templates'))))
+    parser = argparse.ArgumentParser(description='Generate a HomotopySolver class with the given options')
+    parser.add_argument('solver_path', metavar='N', type=Path,
+                    help='root of the solver_generation')
+    
+    env = Environment(loader=FileSystemLoader(str(Path('.'))))
     
     with open("solver.json") as f:
         solver_data = json.load(f)
