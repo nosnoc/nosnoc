@@ -1081,12 +1081,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         end
 
         function generate_c_solver(obj, solver_dir)
-            obj.nlp.solver.generate_dependencies([solver_dir obj.opts.solver_name '_nlp.c']);
-            obj.comp_res_fun.generate([solver_dir obj.opts.solver_name '_comp.c']);
+            oldwd = pwd;
+            cd(solver_dir);
+            obj.nlp.solver.generate_dependencies([obj.opts.solver_name '_nlp.c']);
+            obj.comp_res_fun.generate([obj.opts.solver_name '_comp.c']);
+            cd(oldwd);
             solver_json = jsonencode(obj, "PrettyPrint", true, "ConvertInfAndNaN", false);
-            fid = fopen([solver_dir, 'solver.json'], "w");
-            fprintf(fid, solver_json);
-            pyrunfile("generate.py")
+            fid = fopen([solver_dir '/solver.json'], "w");
+            nosnoc_found = {what("nosnoc").path};
+            nosnoc_root = nosnoc_found{1};
+            pyrunfile([nosnoc_root 'codegen_templates/generate.py ' solver_dir])
         end
 
         function json = jsonencode(obj, varargin)
