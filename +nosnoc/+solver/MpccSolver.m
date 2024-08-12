@@ -1088,9 +1088,10 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             cd(oldwd);
             solver_json = jsonencode(obj, "PrettyPrint", true, "ConvertInfAndNaN", false);
             fid = fopen([solver_dir '/solver.json'], "w");
+            fprintf(fid, solver_json);
             nosnoc_found = {what("nosnoc").path};
             nosnoc_root = nosnoc_found{1};
-            pyrunfile([nosnoc_root 'codegen_templates/generate.py ' solver_dir])
+            pyrunfile([nosnoc_root '/codegen_templates/generate_cpp_solver.py ' solver_dir ' ' nosnoc_root])
         end
 
         function json = jsonencode(obj, varargin)
