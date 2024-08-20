@@ -48,7 +48,7 @@ q = SX.sym('q',3); v = SX.sym('v',3);
 model = nosnoc.model.Cls();
 model.x = [q;v]; 
 model.e = 0;
-model.mu_f = 0;
+model.mu = 0;
 model.a_n = 100;
 model.x0 = x0; 
 % fixed control

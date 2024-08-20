@@ -27,7 +27,7 @@ problem_options.stagewise_clock_constraint = 0;
 %%
 
 model.e = 0;
-model.mu_f = 1;
+model.mu = 1;
 model.dims.n_dim_contact = 2;
 %% the dynamics
 

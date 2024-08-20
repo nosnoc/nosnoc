@@ -141,7 +141,7 @@ problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu_f = mu;
+model.mu = mu;
 model.a_n = 25;
 model.x0 = x0;
 

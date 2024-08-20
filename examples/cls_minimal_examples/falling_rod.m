@@ -28,7 +28,7 @@ solver_options.break_simulation_if_infeasible = 0;
 %%
 model = nosnoc.model.Cls();
 model.e = 0;
-model.mu_f = 0.2;
+model.mu = 0.2;
 %% the dynamics
 qx = SX.sym('qx',1);
 qy = SX.sym('qy',1);

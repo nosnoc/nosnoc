@@ -48,7 +48,7 @@ p_right = p_com+0.5*l*[cos(theta);sin(theta)];
 
 model.x = [q;v]; 
 model.e = 0;
-model.mu_f = 0.0;
+model.mu = 0.0;
 model.a_n = g;
 model.x0 = [q0;v0]; 
 

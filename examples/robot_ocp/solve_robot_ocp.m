@@ -5,7 +5,7 @@ unfold_struct(scenario,'caller');
 import casadi.*
 %% friction cone parameters
 model.e = 0;
-model.mu_f = mu;
+model.mu = mu;
 model.a_n = a_n;
 %% bounds
 lb_head_z = 0.2;

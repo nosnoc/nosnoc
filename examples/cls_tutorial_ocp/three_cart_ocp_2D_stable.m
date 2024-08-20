@@ -163,11 +163,11 @@ model.J_normal = J_normal;
 model.J_tangent = J_tangent;
 model.D_tangent = D_tangent;
 model.e =  [0.0 1.0 0.0 0.0 0.0];
-model.mu_f = [0.1 0.1 0.2 0.2 0.2];
+model.mu = [0.1 0.1 0.2 0.2 0.2];
 
 
 model.e =  [0.0 0.5 0.0 0.0 0.0];
-model.mu_f = [0.1 0.1 0.2 0.2 0.2];
+model.mu = [0.1 0.1 0.2 0.2 0.2];
 
 % box constraints on controls and states
 model.lbu = u_min;

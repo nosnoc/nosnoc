@@ -55,7 +55,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
 
     %% friction cone parameters
     model.e = 0;
-    model.mu_f = mu;
+    model.mu = mu;
     model.a_n = a_n;
     %% bounds
     lb_head_z = 0.2;

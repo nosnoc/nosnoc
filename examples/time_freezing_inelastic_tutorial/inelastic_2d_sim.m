@@ -31,7 +31,7 @@ v = SX.sym('v',2);
 
 model.x = [q;v]; 
 model.e = 0;
-model.mu_f = 0.0;
+model.mu = 0.0;
 model.a_n = 1;
 model.x0 = [0;0.06;3;0]; 
 model.f_v = [0;-g+vertical_force*g*q(1)];
@@ -53,4 +53,4 @@ solver_options.use_previous_solution_as_initial_guess = 0;
 integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
 [results,stats] = integrator.solve();
 %% read and plot results
-plot_particle(results, model.mu_f ~= 0)
+plot_particle(results, model.mu ~= 0)

@@ -59,7 +59,7 @@ problem_options.N_finite_elements = 3;
 
 %% friction cone parameters
 model.e = 0;
-model.mu_f = mu;
+model.mu = mu;
 model.a_n = a_n;
 %% bounds
 lb_head_z = 0.2;
