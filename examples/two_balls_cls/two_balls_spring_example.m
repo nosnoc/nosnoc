@@ -66,8 +66,8 @@ initial_guess.t_grid = t_grid_matlab;
 initial_guess.lambda_normal_traj = lambda_normal_guess;
 
 % [results,stats,solver] = integrator_fesd(model, settings, [], initial_guess);
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
 plot_two_ball_traj(results);
 

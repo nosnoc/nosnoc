@@ -50,7 +50,7 @@ problem_options.n_s = 2;
 solver_options.store_integrator_step_results = 1;
 solver_options.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% read and plot results
 plot_particle(results, model.mu ~= 0)

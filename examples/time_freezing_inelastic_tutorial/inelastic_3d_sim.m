@@ -44,8 +44,8 @@ problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_finite_elements;
 
 %% Call FESD Integrator
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);

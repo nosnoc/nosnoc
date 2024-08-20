@@ -65,7 +65,7 @@ for x1 = 3:3:12
         problem_options.T_sim = T_sim;
         problem_options.N_sim = N_sim;
 
-        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+        integrator = nosnoc.Integrator(model, problem_options, solver_options);
         [result,stats] = integrator.solve();
         results = [results,result];
     end

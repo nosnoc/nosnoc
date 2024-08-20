@@ -67,8 +67,8 @@ problem_options.N_finite_elements = N_FE;
 
 solver_options.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% read and plot results
 unfold_struct(results,'base');
 qx = results.x(1,:);

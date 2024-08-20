@@ -69,10 +69,10 @@ for rk_scheme = IRK_SCHEMES
                     if with_guess
                         % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
                         integrator = NosnocIntegrator(model, problem_options, solver_options, [], initial_guess);
-                        [results,stats] = integrator.solve();
+                        [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
                     else
-                        integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-                        [results,stats] = integrator.solve();
+                        integrator = nosnoc.Integrator(model, problem_options, solver_options);
+                        [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
                     end
 
                     results_filename = get_results_filename(n_s, N_sim, N_FE, problem_options.rk_scheme, with_guess);

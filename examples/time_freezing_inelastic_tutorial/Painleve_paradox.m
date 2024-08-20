@@ -69,8 +69,8 @@ solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 problem_options.use_speed_of_time_variables = 0;
 problem_options.local_speed_of_time_variable = 0;
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
 qx = results.x(1,:);
 qy = results.x(2,:);
