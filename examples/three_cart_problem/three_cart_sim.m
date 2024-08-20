@@ -24,7 +24,7 @@ lbx = [-15; -15; -10; -5; -5; -5];
 x0 = [-3; 0; 3; 0; 0; 0];
 
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;

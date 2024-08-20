@@ -2,7 +2,7 @@ clc; close all; clear all;
 import casadi.*
 %% settings
 % collocation settings
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.n_s = 2;
 % problem_options.time_freezing_time_rescaling = 1;

@@ -12,7 +12,7 @@ N_finite_elements = 3;
 run_animation = 1;
 video_speed_up = 0.25;
 %% nosnoc settings
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;

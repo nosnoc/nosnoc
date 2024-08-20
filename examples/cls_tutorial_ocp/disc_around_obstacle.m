@@ -37,7 +37,7 @@ import casadi.*
 
 filename = 'discs_switch_position_obstacle.gif';
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %%

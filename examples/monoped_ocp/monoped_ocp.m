@@ -24,7 +24,7 @@ q_target = [3;0.4;0;0];
 %q_target = [0.2;0.4;pi;0];
 
 %% Default settings NOSNOC
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %%

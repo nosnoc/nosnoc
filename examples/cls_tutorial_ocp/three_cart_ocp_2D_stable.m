@@ -34,7 +34,7 @@ import casadi.*
 %%
 play_animation = 1;
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %%

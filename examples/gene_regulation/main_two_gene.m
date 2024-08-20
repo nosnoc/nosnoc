@@ -43,7 +43,7 @@ T_sim = 1;
 N_sim = 20;
 
 %% Settings
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.use_fesd = 1;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;

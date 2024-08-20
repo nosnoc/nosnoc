@@ -3,7 +3,7 @@ clear all;
 import casadi.*
 close all
 %% init nosnoc settings and model
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = NosnocModel();
 %%

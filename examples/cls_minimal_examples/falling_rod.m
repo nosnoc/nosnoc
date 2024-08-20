@@ -8,7 +8,7 @@ J = 1; % no frictioinal impulse
 J = 1/32; % frictional impulse apperas
 above_ground = 0.1;
 %%)
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;

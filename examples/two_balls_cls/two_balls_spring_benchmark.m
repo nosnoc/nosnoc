@@ -34,7 +34,7 @@ for rk_scheme = IRK_SCHEMES
                     model.f_v = [-m*g+k*(q(2)-q(1)-l);-m*g-k*(q(2)-q(1)-l)];
                     model.f_c = q(1)-R;
                     % settings
-                    problem_options = NosnocProblemOptions();
+                    problem_options = nosnoc.Options();
                     solver_options = nosnoc.solver.Options();
                     problem_options.rk_scheme = rk_scheme;
                     % problem_options.rk_representation = 'differential';

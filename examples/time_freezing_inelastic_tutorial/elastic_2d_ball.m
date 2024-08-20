@@ -4,7 +4,7 @@ clc;
 import casadi.*
 close all
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.dcs_mode = DcsMode.Heaviside;

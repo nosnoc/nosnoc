@@ -41,7 +41,7 @@ filename = 'hopper_long.gif';
 delete hopper_long.gif
 
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
