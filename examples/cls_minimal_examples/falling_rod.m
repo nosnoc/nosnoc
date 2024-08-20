@@ -81,16 +81,16 @@ solver_options.use_previous_solution_as_initial_guess = 1;
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
-qx = results.x(1,:);
-qy = results.x(2,:);
-qtheta = results.x(3,:);
-vx = results.x(4,:);
-vy = results.x(5,:);
-omega = results.x(6,:);
+qx = x_res(1,:);
+qy = x_res(2,:);
+qtheta = x_res(3,:);
+vx = x_res(4,:);
+vy = x_res(5,:);
+omega = x_res(6,:);
 if problem_options.time_freezing
-    t = results.x(7,:);
+    t = x_res(7,:);
 else
-    t = results.t_grid;
+    t = t_grid;
 end
 
 xc_res  = [];
