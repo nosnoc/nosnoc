@@ -292,6 +292,13 @@ classdef Options < handle
         %     This option is currently unimplemented.
         relax_terminal_physical_time_homotopy (1,1) logical = 0;
 
+        % ConstraintRelaxationMode: What (if any) relaxation to apply to the impulse equations.
+        %
+        % See Also:
+        %    `ConstraintRelaxationMode` for a detailed description of the available relaxation modes.
+        relax_fesdj_impulse(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE;
+        rho_fesdj_impulse(1,1) double {mustBeNonnegative} = 1e2 % double: Weight used to penalize the impulse equation violation.
+        
         % boolean: If false then the Lagrange term is integrated correctly, otherwise we only evaluate it at the
         % ends of control stages. Setting this to true allows us to do parameter estimation with a nonlinear cost function.
         % This is useful to set to true when implementing a maximum liklihood estimator as in combination with
