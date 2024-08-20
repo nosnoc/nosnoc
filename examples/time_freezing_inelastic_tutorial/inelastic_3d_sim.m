@@ -5,7 +5,7 @@ import casadi.*
 %% init nosnoc
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();  
-model = NosnocModel();
+model = nosnoc.model.Cls();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;

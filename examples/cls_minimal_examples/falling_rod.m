@@ -26,7 +26,7 @@ solver_options.complementarity_tol = 1e-5;
 solver_options.print_details_if_infeasible = 0;
 solver_options.break_simulation_if_infeasible = 0;
 %%
-model = NosnocModel();
+model = nosnoc.model.Cls();
 model.e = 0;
 model.mu_f = 0.2;
 %% the dynamics

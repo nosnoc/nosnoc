@@ -5,7 +5,7 @@ close all
 %% init nosnoc settings and model
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
+model = nosnoc.model.Cls();
 %%
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.n_s = 1;

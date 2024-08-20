@@ -4,7 +4,7 @@ import casadi.*
 close all
 %% init nosnoc
 settings = NosnocOptions();
-model = NosnocModel();
+model = nosnoc.model.Cls();
 %% settings
 settings.rk_scheme = RKSchemes.RADAU_IIA;
 settings.n_s = 1;

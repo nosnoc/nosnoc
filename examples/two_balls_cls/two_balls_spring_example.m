@@ -36,7 +36,7 @@ m = 1;
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2);
-model = NosnocModel();
+model = nosnoc.model.Cls();
 model.M = eye(2);
 model.x = [q;v];
 model.e = 0.8;

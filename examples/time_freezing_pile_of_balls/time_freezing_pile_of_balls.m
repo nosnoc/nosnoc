@@ -25,7 +25,7 @@ problem_options.stagewise_clock_constraint = 0;
 problem_options.pss_lift_step_functions = 0;
 solver_options.break_simulation_if_infeasible = 0;
 %% integrator settings
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_finite_elements;

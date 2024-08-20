@@ -43,7 +43,7 @@ solver_options.homotopy_update_rule = 'superlinear';
 %problem_options.step_equilibration = 'direct_homotopy';
 q_target = [4;0.5];
 
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = 4; 
 problem_options.N_stages = 20; 
 problem_options.N_finite_elements = 3;

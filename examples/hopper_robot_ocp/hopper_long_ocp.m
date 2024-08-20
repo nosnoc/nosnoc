@@ -134,7 +134,7 @@ x_ref2 = interp1([0 0.5 1],[x_mid2,x_mid3,x_end]',linspace(0,1,ceil(N_stg/2)),'s
 x_ref = [x_ref1,x_ref2];
 
 %% Fill in model
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = T;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;

@@ -5,7 +5,7 @@ close all
 %% init nosnoc
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
+model = nosnoc.model.Cls();
 %%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 solver_options.print_level = 3;

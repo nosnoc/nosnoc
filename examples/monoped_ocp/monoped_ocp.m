@@ -26,7 +26,7 @@ q_target = [3;0.4;0;0];
 %% Default settings NOSNOC
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
+model = nosnoc.model.Cls();
 %%
 solver_options.print_level = 5;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;

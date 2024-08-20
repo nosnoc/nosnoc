@@ -45,7 +45,7 @@ problem_options.stagewise_clock_constraint = 0;
 %%
 % Symbolic variables and bounds
 q = SX.sym('q',3); v = SX.sym('v',3);
-model = NosnocModel();
+model = nosnoc.model.Cls();
 model.x = [q;v]; 
 model.e = 0;
 model.mu_f = 0;

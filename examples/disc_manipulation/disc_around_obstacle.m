@@ -97,7 +97,7 @@ v1 = v(1:2);
 v2 = v(3:4);
 
 x = [q;v];
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = T;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;

@@ -145,7 +145,7 @@ g_comp_path = [v_tangent,u(3);f_c,u(3)];
 x_ref = interp1([0 0.5 1],[x0,x_mid,x_end]',linspace(0,1,N_stg),'spline')'; %spline
 
 %% Populate model
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = T;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;

@@ -95,7 +95,7 @@ ubu = [0*u_max; u_max; 0*u_max];
 q = SX.sym('q',3); v = SX.sym('v',3); 
 u = SX.sym('u',3);
 x = [q;v];
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = 5;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;

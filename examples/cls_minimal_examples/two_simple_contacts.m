@@ -5,7 +5,7 @@ import casadi.*
 close all
 %%
 settings = NosnocOptions();
-model = NosnocModel();
+model = nosnoc.model.Cls();
 %%
 settings.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 settings.n_s = 2;

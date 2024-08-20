@@ -29,7 +29,7 @@ v = SX.sym('v',2);
 u = SX.sym('u');
 x = [q;v];
 
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = 2;
 settings.N_stages = N_stg;
 settings.N_finite_elements  = N_FE;
