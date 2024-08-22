@@ -582,8 +582,10 @@ classdef Stewart < vdx.problems.Mpcc
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
             obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal, relax_terminal_struct};
+            obj.g.terminal.set_is_terminal(true);
             if relax_terminal_struct.is_relaxed && all(size(g_terminal) > 0)
                 obj.p.rho_terminal().val = opts.rho_terminal;
+                obj.w.s_terminal.set_is_terminal(true);
             end
         end
 
@@ -895,6 +897,7 @@ classdef Stewart < vdx.problems.Mpcc
             solver_options.assume_lower_bounds = true;
 
             obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj.to_casadi_struct(), solver_options);
+            %obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
         end
 
         function stats = solve(obj)
