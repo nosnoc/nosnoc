@@ -804,6 +804,8 @@ classdef Gcs < vdx.problems.Mpcc
                 regenerate = false;
             end
 
+            obj.finalize_assignments();
+            
             % Sort by indices to recover almost block-band structure.
             % TODO: Maybe it would be useful to do a custom sorting for FESD to make the problem maximally block band.
             %       This is almost certainly necessary if we want to take advantage of e.g. FATROP. 

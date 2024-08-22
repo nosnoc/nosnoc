@@ -886,6 +886,8 @@ classdef Stewart < vdx.problems.Mpcc
                 plugin = 'scholtes_ineq';
             end
 
+            obj.finalize_assignments();
+
             % Sort by indices to recover almost block-band structure.
             obj.w.sort_by_index();
             obj.g.sort_by_index();
