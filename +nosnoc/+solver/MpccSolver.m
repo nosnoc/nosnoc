@@ -144,6 +144,22 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                             sigma = nlp.w.(s_elastic_name)();
                             sum_elastic = sum_elastic + sum1(sigma);
                         end
+
+                        if opts.lift_complementarities
+                            [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, mpcc.w.sym);
+                            [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, mpcc.w.sym);
+                            nlp.w.([name '_G_lift']) = {{'G', length(ind_nonscalar_G)}, 0, inf};
+                            G_lift = G_curr(ind_nonscalar_G);
+                            G_curr(ind_nonscalar_G) = nlp.w.([name '_G_lift'])();
+
+                            nlp.w.([name '_H_lift']) = {{'H', length(ind_nonscalar_H)}, 0, inf};
+                            H_lift = H_curr(ind_nonscalar_H);
+                            H_curr(ind_nonscalar_H) = nlp.w.([name '_H_lift'])();
+                            
+                            nlp.g.([name '_G_lift']) = {nlp.w.([name '_G_lift'])()-G_lift};
+                            nlp.g.([name '_H_lift']) = {nlp.w.([name '_H_lift'])()-H_lift};    
+                        end
+
                         g_comp_expr = psi_fun(G_curr, H_curr, sigma);
                         [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
                         nlp.g.(name) = {g_comp_expr,lb,ub};
@@ -184,6 +200,22 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                                 sigma = nlp.w.(s_elastic_name)(curr{:});
                                 sum_elastic = sum_elastic + sum1(sigma);
                             end
+
+                            if opts.lift_complementarities
+                                [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, mpcc.w.sym);
+                                [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, mpcc.w.sym);
+                                nlp.w.([name '_G_lift'])(curr{:}) = {{'G', length(ind_nonscalar_G)}, 0, inf};
+                                G_lift = G_curr(ind_nonscalar_G);
+                                G_curr(ind_nonscalar_G) = nlp.w.([name '_G_lift'])(curr{:});
+
+                                nlp.w.([name '_H_lift'])(curr{:}) = {{'H', length(ind_nonscalar_H)}, 0, inf};
+                                H_lift = H_curr(ind_nonscalar_H);
+                                H_curr(ind_nonscalar_H) = nlp.w.([name '_H_lift'])(curr{:});
+                                
+                                nlp.g.([name '_G_lift'])(curr{:}) = {nlp.w.([name '_G_lift'])(curr{:})-G_lift};
+                                nlp.g.([name '_H_lift'])(curr{:}) = {nlp.w.([name '_H_lift'])(curr{:})-H_lift};    
+                            end
+                            
                             g_comp_expr = psi_fun(G_curr, H_curr, sigma);
                             [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
                             nlp.g.(name)(curr{:}) = {g_comp_expr,lb,ub};
