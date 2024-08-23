@@ -896,8 +896,7 @@ classdef Stewart < vdx.problems.Mpcc
 
             solver_options.assume_lower_bounds = true;
 
-            obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj.to_casadi_struct(), solver_options);
-            %obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
+            obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
         end
 
         function stats = solve(obj)

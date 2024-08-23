@@ -816,7 +816,7 @@ classdef Gcs < vdx.problems.Mpcc
             solver_options.assume_lower_bounds = true;
 
             if regenerate || isempty(obj.solver) || (nosnoc.solver.MpccMethod(plugin) ~= obj.solver.relaxation_type)
-                obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj.to_casadi_struct(), solver_options);
+                obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
             end
         end
 
