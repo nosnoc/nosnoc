@@ -69,6 +69,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             
             if isa(mpcc, 'vdx.problems.Mpcc') % We can properly interleave complementarities if we get a vdx.Mpcc
                 use_vdx = true;
+                mpcc.finalize_assignments();
                 casadi_symbolic_mode = mpcc.w.casadi_type;
                 nlp = vdx.Problem('casadi_type', casadi_symbolic_mode);
 
@@ -145,9 +146,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                             sum_elastic = sum_elastic + sum1(sigma);
                         end
 
+                        [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, nlp.w.sym);
+                        [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, nlp.w.sym);
+
+                        obj.ind_map_G = [obj.ind_map_G, ind_map_G];
+                        obj.ind_map_H = [obj.ind_map_H, ind_map_H];
+                        
                         if opts.lift_complementarities
-                            [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, mpcc.w.sym);
-                            [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, mpcc.w.sym);
                             nlp.w.([name '_G_lift']) = {{'G', length(ind_nonscalar_G)}, 0, inf};
                             G_lift = G_curr(ind_nonscalar_G);
                             G_curr(ind_nonscalar_G) = nlp.w.([name '_G_lift'])();
@@ -158,6 +163,21 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                             
                             nlp.g.([name '_G_lift']) = {nlp.w.([name '_G_lift'])()-G_lift};
                             nlp.g.([name '_H_lift']) = {nlp.w.([name '_H_lift'])()-H_lift};    
+                        end
+
+                        if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
+                            if ~opts.lift_complementarities
+                                if ~isempty(ind_nonscalar_G)
+                                    nlp.g.([name '_G_lb']) = {G_curr(ind_nonscalar_G), 0, inf};
+                                end
+                                if ~isempty(ind_nonscalar_H)
+                                    nlp.g.([name '_H_lb']) = {H_curr(ind_nonscalar_H), 0, inf};
+                                end
+                            end
+                            lbw = nlp.w.lb;
+                            lbw(ind_map_H) = 0;
+                            lbw(ind_map_G) = 0;
+                            nlp.w.lb = lbw;
                         end
 
                         g_comp_expr = psi_fun(G_curr, H_curr, sigma);
@@ -200,10 +220,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                                 sigma = nlp.w.(s_elastic_name)(curr{:});
                                 sum_elastic = sum_elastic + sum1(sigma);
                             end
+                            [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, nlp.w.sym);
+                            [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, nlp.w.sym);
+
+                            obj.ind_map_G = [obj.ind_map_G, ind_map_G];
+                            obj.ind_map_H = [obj.ind_map_H, ind_map_H];
 
                             if opts.lift_complementarities
-                                [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, mpcc.w.sym);
-                                [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, mpcc.w.sym);
                                 nlp.w.([name '_G_lift'])(curr{:}) = {{'G', length(ind_nonscalar_G)}, 0, inf};
                                 G_lift = G_curr(ind_nonscalar_G);
                                 G_curr(ind_nonscalar_G) = nlp.w.([name '_G_lift'])(curr{:});
@@ -214,6 +237,21 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                                 
                                 nlp.g.([name '_G_lift'])(curr{:}) = {nlp.w.([name '_G_lift'])(curr{:})-G_lift};
                                 nlp.g.([name '_H_lift'])(curr{:}) = {nlp.w.([name '_H_lift'])(curr{:})-H_lift};    
+                            end
+
+                            if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
+                                if ~opts.lift_complementarities
+                                    if ~isempty(ind_nonscalar_G)
+                                        nlp.g.([name '_G_lb'])(curr{:}) = {G_curr(ind_nonscalar_G), 0, inf};
+                                    end
+                                    if ~isempty(ind_nonscalar_H)
+                                        nlp.g.([name '_H_lb'])(curr{:}) = {H_curr(ind_nonscalar_H), 0, inf};
+                                    end
+                                end
+                                lbw = nlp.w.lb;
+                                lbw(ind_map_H) = 0;
+                                lbw(ind_map_G) = 0;
+                                nlp.w.lb = lbw;
                             end
                             
                             g_comp_expr = psi_fun(G_curr, H_curr, sigma);
@@ -232,7 +270,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 % Build maps and functions
                 nlp.g.sort_by_index;
-                nlp.w.sort_by_index;
+                w_map = nlp.w.sort_by_index;
+                if ~isempty(obj.ind_map_G)
+                    [obj.ind_map_G,~] = find(w_map == obj.ind_map_G);
+                end
+                if ~isempty(obj.ind_map_H)
+                    [obj.ind_map_H,~] = find(w_map == obj.ind_map_H);
+                end
                 post_sort_g_ind = cellfun(@(x) [x.indices{:}], g_vars, "UniformOutput", false);
                 post_sort_g_ind = [post_sort_g_ind{:}];
                 obj.ind_map_g.mpcc = pre_sort_g_ind;
@@ -270,6 +314,11 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                   case 'uno'
                     obj.plugin = nosnoc.solver.plugins.Uno();
                 end
+
+                if ~isempty(opts.ipopt_callback)
+                    opts.opts_casadi_nlp.iteration_callback = NosnocIpoptCallback('ipopt_callback', [], nlp, opts, length(nlp.w.sym), length(nlp.g.sym), length(nlp.p.sym));
+                end
+                
                 % Construct solver
                 obj.plugin.construct_solver(nlp, opts);
                 obj.nlp = nlp;
@@ -394,13 +443,19 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
                 nlp.g.complementarities(0) = {g_comp_expr, lb, ub};
 
-                if ~opts.assume_lower_bounds && ~opts.lift_complementarities % Lower bounds on G, H, not already present in MPCC
-                    if ~isempty(obj.ind_nonscalar_G)
-                        nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
+                if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
+                    if ~opts.lift_complementarities
+                        if ~isempty(obj.ind_nonscalar_G)
+                            nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
+                        end
+                        if ~isempty(obj.ind_nonscalar_H)
+                            nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
+                        end
                     end
-                    if ~isempty(obj.ind_nonscalar_H)
-                        nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
-                    end
+                    lbw = nlp.w.lb;
+                    lbw(ind_map_H) = 0;
+                    lbw(ind_map_G) = 0;
+                    nlp.w.lb = lbw;
                 end
                 % Get nlpsol plugin
                 switch opts.solver
@@ -995,13 +1050,12 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             end
 
             if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
-                lb = nlp.w.mpcc_w().lb;
+                lb = nlp.w.lb;
                 lb(obj.ind_map_G) = 0;
                 lb(obj.ind_map_H) = 0;
-                nlp.w.mpcc_w().lb = lb;
+                nlp.w.lb = lb;
             end
  
-
             % Initial conditions
             sigma_k = opts.sigma_0;
 
