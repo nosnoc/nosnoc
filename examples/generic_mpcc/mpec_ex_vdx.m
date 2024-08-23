@@ -35,7 +35,7 @@ mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 % mpccsol_opts.homotopy_steering_strategy = "DIRECT"; 
 % the parameter relaxation/smoothing parameter sigma is steered outside the optimization , cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf
 
-mpccsol_opts.calculate_stationarity_type = 0;
+mpccsol_opts.calculate_stationarity_type = 1;
 
 solver = mpccsol('generic_mpcc', mpcc_method1, mpcc, mpccsol_opts);
 
