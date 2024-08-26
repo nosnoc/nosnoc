@@ -1,4 +1,4 @@
-function [model] = car_hystheresis_model_voronoi(varargin)
+function [model] = car_hysteresis_model_voronoi(varargin)
 import casadi.*
 if nargin == 1
     unfold_struct(varargin{1},'caller')
@@ -6,7 +6,7 @@ else
     fuel_cost_on = 0;
     fuel_cost_same = 0;
 end
-model = NosnocModel();
+model = nosnoc.model.Pss();
 %% Terminal constraint and bounds
 q_goal = 150;
 v_goal = 0;
@@ -39,6 +39,7 @@ model.lbx = -[inf;0;inf;inf;inf];
 model.ubx = [inf;v_max;inf;inf;inf];
 model.lbu = -u_max;
 model.ubu = u_max;
+model.u0 = 4;
 %% Inital Value
 model.x0 = zeros(5,1);
 % u0 = 10;

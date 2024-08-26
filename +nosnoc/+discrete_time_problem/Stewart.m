@@ -917,7 +917,7 @@ classdef Stewart < vdx.problems.Mpcc
                             % if only time_rescaling is true, speed of time and step size all lumped together, e.g., \hat{h}_{k,i} = s_n * h_{k,i}, hence the bounds need to be extended.
                             ubh = (1+opts.gamma_h)*h0*opts.s_sot_max;
                             lbh = (1-opts.gamma_h)*h0/opts.s_sot_min;
-                        elseif opts.time_optimal_problem
+                        elseif opts.time_optimal_problem && ~opts.use_speed_of_time_variables
                             ubh = ubh*(opts.T_final_max/opts.T);
                             lbh = lbh/((opts.T_final_min+eps)/opts.T);
                         end
