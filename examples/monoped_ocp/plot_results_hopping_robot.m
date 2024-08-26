@@ -7,15 +7,17 @@ plot_kinematics = 0;
 label_fontsize = 24;
 %% visualization
 h = 0.1;
-qx = results.x(1,:);
-qz = results.x(2,:);
-q_phi_hip = results.x(3,:);
-q_phi_knee = results.x(4,:);
-vx = results.x(5,:);
-vz = results.x(6,:);
-omega_hip = results.x(7,:);
-omega_knee = results.x(8,:);
-t_opt = results.x(9,:);
+x_res = ocp_solver.get('x');
+u_opt = ocp_solver.get('u');
+qx = x_res(1,:);
+qz = x_res(2,:);
+q_phi_hip = x_res(3,:);
+q_phi_knee = x_res(4,:);
+vx = x_res(5,:);
+vz = x_res(6,:);
+omega_hip = x_res(7,:);
+omega_knee = x_res(8,:);
+t_opt = x_res(9,:);
 if ~exist('hole_constraint','var')
     hole_constraint = 0;
 end
@@ -232,8 +234,7 @@ LineWidth = LineWidth+0.5;
 if model.dims.n_u > 0
     % refine control;
     figure('Renderer', 'painters')
-    t_grid_u = results.t_grid_u;
-    u_opt = results.u;
+    t_grid_u = ocp_solver.get_control_grid();
     stairs(t_grid_u,[u_opt(1,:),nan],"Color",'k','LineWidth',LineWidth);
     hold on
     stairs(t_grid_u,[u_opt(2,:),nan],"Color",0.5*ones(3,1),'LineWidth',LineWidth);
@@ -251,7 +252,7 @@ if model.dims.n_u > 0
 
     try
         figure
-        s_sot = results.w(model.ind_sot)';
+        s_sot = ocp_solver.get('sot');
         stairs(t_grid_u,[s_sot,nan],"Color",0.2*ones(3,1),'LineWidth',LineWidth);
         xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
         ylabel('$s(t)$','interpreter','latex', 'Fontsize', label_fontsize);
@@ -280,7 +281,7 @@ for ii = 1:length(q_res)
         full(tangent1_fun(q_res(:,ii)))'*v_res(:,ii)];
     constraint_drift = [constraint_drift, temp];
 end
-T = results.x(end,end);
+T = x_res(end,end);
 
 figure
 subplot(311)

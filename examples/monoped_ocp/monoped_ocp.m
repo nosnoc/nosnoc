@@ -51,6 +51,7 @@ problem_options.rho_sot = 0.00;
 problem_options.time_freezing = 1;
 problem_options.pss_lift_step_functions = 0;
 problem_options.stagewise_clock_constraint = 1;
+problem_options.a_n = a_n;
 
 %% Discretization
 problem_options.T = 3.0;
@@ -60,7 +61,6 @@ problem_options.N_finite_elements = 3;
 %% friction cone parameters
 model.e = 0;
 model.mu = mu;
-model.a_n = a_n;
 %% bounds
 lb_head_z = 0.2;
 ub_head_z = 0.55;
@@ -147,7 +147,7 @@ end
 model.f_c = f_c;
 model.J_tangent = J_tangent;
 model.J_normal= J_normal;
-model.dims.n_dim_contact = 2;
+model.dims.n_dim_contact = 1;
 %% OCP
 % Objective and constraints
 % box constraints
@@ -245,10 +245,8 @@ model.lsq_T = {x, x_target, Q_terminal};
 %model.g_terminal = q(1:length(q_target))-q_target;
 
 %% Solve OCP with NOSNOC
-
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %     x_guess = {};
 %     for ii = 1:settings.N_stages
 %         x_guess{ii} = x_ref(:,ii);
