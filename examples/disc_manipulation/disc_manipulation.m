@@ -25,40 +25,49 @@
 
 % This file is part of NOSNOC.
 
-%
-%
-
 %% Manipulation of two discs
-
-%%
-clear all;
-close all;
-clc;
+clear; close all; clc;
 import casadi.*
-
+import nosnoc.*
 %%
 filename = 'discs_manipulation.gif';
+%% discretizatioon
+N_stg = 15; % control intervals
+N_FE = 2;  % integration steps per control interval
+T = 2;
 %% init
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = nosnoc.model.Cls();
-% settings
+%% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.n_s = 2;  % number of stages in IRK methods
+problem_options.n_s = 2;  % number of stages in IRK methods (TODO@Anton, other variations, e.g. Stewart, with n_s>1 converge nicely, this setting very slow)
+problem_options.cross_comp_mode = "STAGE_STAGE";
+problem_options.T = T;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements = N_FE;
+
 problem_options.time_freezing = 1;
-problem_options.cross_comp_mode = 7;
+problem_options.a_n = 10;
+problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_1;
+problem_options.rho_terminal_physical_time = 1e5;
+problem_options.use_numerical_clock_state = false;
+problem_options.time_freezing_quadrature_state = true;
+
+problem_options.time_freezing_Heaviside_lifting = true; 
+problem_options.dcs_mode = "Stewart";
+
+%% Solver settings
 %solver_options.homotopy_update_rule = 'superlinear';
-solver_options.homotopy_update_slope = 0.5;
+solver_options.homotopy_update_slope = 0.1;
+solver_options.sigma_0 = 0.1;
 solver_options.N_homotopy = 100;
-solver_options.complementarity_tol = 1e-6;
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.complementarity_tol = 1e-8;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
 solver_options.print_level = 3;
+solver_options.warm_start_duals = true;
 % IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
-%% discretizatioon
-N_stg = 10; % control intervals
-N_FE = 5;  % integration steps per control interval
-T = 2;
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% model parameters
 m1 = 2;
@@ -95,20 +104,14 @@ q1 = q(1:2);
 q2 = q(3:4);
 
 x = [q;v];
-problem_options.T = T;
-problem_options.N_stages = N_stg;
-problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
 model.mu = 0.0;
-model.a_n = 10;
 model.x0 = x0;
 
-
 model.M = diag([m1;m1;m2;m2]); % inertia/mass matrix;
-model.f_v = [u;...
-    zeros(2,1)];
+model.f_v = [u;zeros(2,1)];
 
 % gap functions
 model.f_c = norm(q1-q2)^2-(r1+r2)^2;
@@ -125,64 +128,44 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 
 %% read and plot results
-unfold_struct(results,'base');
-p1 = results.x(1,:);
-p2 = results.x(2,:);
-p3 = results.x(3,:);
-p4 = results.x(4,:);
-v1 = results.x(5,:);
-v2 = results.x(6,:);
-v3 = results.x(7,:);
-v4 = results.x(8,:);
-t_opt = results.x(9,:);
+x_res = ocp_solver.get('x');
+h_res = ocp_solver.get('h');
+p_res = x_res(1:4,:);
+v_res = x_res(5:end,:);
+p1 = x_res(1,:);
+p2 = x_res(2,:);
+p3 = x_res(3,:);
+p4 = x_res(4,:);
+v1 = x_res(5,:);
+v2 = x_res(6,:);
+v3 = x_res(7,:);
+v4 = x_res(8,:);
+t_opt = x_res(end,:);
 
+frozen = logical([0, diff(t_opt) < 1e-3,]);
+p_unfrozen = p_res;
+v_unfrozen = v_res;
+p_unfrozen(:, frozen) = [];
+v_unfrozen(:, frozen) = [];
 %% animation
-figure('Renderer', 'painters', 'Position', [100 100 1000 800])
+t = linspace(0,2*pi,360).';t(end) = [];
+pgon1 = polyshape(r1*cos(t), r1*sin(t));
+pgon2 = polyshape(r2*cos(t), r2*sin(t));
+facecolor1 = [0 0.4470 0.7410];
+linecolor1 = facecolor1*0.7;
+facecolor2 = [0.8500 0.3250 0.0980];
+linecolor2 = facecolor2*0.7;
 
-x_min =min([p1,p2,p3,p4])-1;
-x_max = max([p1,p2,p3,p4])+1;
-
-tt = linspace(0,2*pi,100);
-x1 = r1*cos(tt);
-y1 = r1*sin(tt);
-
-x2 = r2*cos(tt);
-y2 = r2*sin(tt);
-
-for ii = 1:length(p1)
-    plot(x1+p1(ii),y1+p2(ii),'k-','LineWidth',2);
-    hold on
-    plot(x2+p3(ii),y2+p4(ii),'r-','LineWidth',2);
-
-    plot(x1+q_target1(1),y1+q_target1(2),'color',[0 0 0 0.6]);
-    plot(x2+q_target2(1),y2+q_target2(2),'color',[1 0 0 0.6]);
-
-    axis equal
-    xlim([x_min x_max])
-    ylim([x_min x_max])
-    xlabel('$x$ [m]','Interpreter','latex');
-    ylabel('$y$ [m]','Interpreter','latex');
-
-    % save gif
-    frame = getframe(1);
-    im = frame2im(frame);
-    [imind,cm] = rgb2ind(im,256);
-    if ii == 1;
-        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',problem_options.h_k(1));
-    else
-        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',problem_options.h_k(1));
-    end
-
-    if ii~=length(p1)
-        clf;
-    end
-
-end
+fig = figure('Position', [10 10 1600 1000]);
+hold on
+plot(translate(pgon1, [-1,1]), 'FaceColor', facecolor1, 'FaceAlpha', 0.5, 'LineStyle', '--', 'EdgeColor' , linecolor1);
+plot(translate(pgon2, [0,0]), 'FaceColor', facecolor2, 'FaceAlpha', 0.5, 'LineStyle', '--', 'EdgeColor' , linecolor2);
+hold off
+plot_balls(t_opt, p_res, {1:2, 3:4}, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2}, fig, 'tf_discs')
 
 %%
 if 1
@@ -194,6 +177,7 @@ if 1
     legend({'$v_1(t)$','$v_2(t)$'},'interpreter','latex');
     xlabel('$t$','interpreter','latex');
     ylabel('$v(t)$','interpreter','latex');
+    xlim([0,2])
     grid on
     % axis equal
     subplot(312)
@@ -204,10 +188,12 @@ if 1
     legend({'$v_3(t)$','$v_4(t)$'},'interpreter','latex');
     xlabel('$t$','interpreter','latex');
     ylabel('$v(t)$','interpreter','latex');
+    xlim([0,2])
     subplot(313)
-    stairs(t_opt(1:N_FE:end),[results.u,nan*ones(2,1)]','LineWidth',1.5);
+    stairs(t_opt(1:N_FE:end),[ocp_solver.get('u'),nan*ones(2,1)]','LineWidth',1.5);
     legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
     grid on
     xlabel('$t$','interpreter','latex');
     ylabel('$u$','interpreter','latex');
+    xlim([0,2])
 end
