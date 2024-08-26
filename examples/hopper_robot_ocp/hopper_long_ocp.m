@@ -40,6 +40,11 @@ import casadi.*
 filename = 'hopper_long.gif';
 delete hopper_long.gif
 
+%% discretizatioon
+T = 2; % prediction horizon
+N_stg = 30; % control intervals
+N_FE = 3;  % integration steps per control interval
+
 %%
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
@@ -53,20 +58,22 @@ problem_options.pss_lift_step_functions = 0;
 problem_options.stagewise_clock_constraint = 1;
 problem_options.g_path_at_fe = 1; % evaluate path constraint on every integration step
 problem_options.g_path_at_stg = 1; % evaluate path constraint on every stage point
-solver_options.N_homotopy = 5;
+problem_options.a_n = 25;
+problem_options.T = T;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
+
+solver_options.N_homotopy = 7;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.opts_casadi_nlp.ipopt.tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+solver_options.print_level = 5;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 % The methods and time-freezing refomulation are detailed in https://arxiv.org/abs/2111.06759
-%% discretizatioon
-T = 2; % prediction horizon
-N_stg = 30; % control intervals
-N_FE = 3;  % integration steps per control interval
 
 %% Hopper model
 q = SX.sym('q', 4);
@@ -135,14 +142,10 @@ x_ref = [x_ref1,x_ref2];
 
 %% Fill in model
 model = nosnoc.model.Cls();
-problem_options.T = T;
-problem_options.N_stages = N_stg;
-problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
 model.mu = mu;
-model.a_n = 25;
 model.x0 = x0;
 
 model.M = M;
@@ -150,7 +153,7 @@ model.f_v = f_v;
 model.f_c = f_c;
 model.J_tangent = J_tangent;
 model.J_normal = J_normal;
-model.dims.n_dim_contact = 2;
+model.dims.n_dim_contact = 1;
 
 % box constraints on controls and states
 model.lbu = lbu;
@@ -158,33 +161,33 @@ model.ubu = ubu;
 model.lbx = lbx;
 model.ubx = ubx;
 % constraint on drift velocity
-model.g_comp_path = g_comp_path;
+model.G_path = g_comp_path(:,1);
+model.H_path = g_comp_path(:,2);
 % Least squares objetive
 model.lsq_x = {x,x_ref,Q};
 model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
-
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %% read and plot results
-x_opt = results.x;
-u_opt = results.u;
-q_opt = results.x(1:4,:);
-v_opt = results.x(5:8,:);
-t_opt = results.x(9,:);
-% gap function, normal and tangential velocity
+x_res = ocp_solver.get('x');
+u_opt = ocp_solver.get('u');
+q_opt = x_res(1:4,:);
+v_opt = x_res(5:8,:);
+t_opt = x_res(9,:);
+
 c_eval = [];
-for ii = 1:length(q_opt)
+f_c_fun = casadi.Function('f_c', {ocp_solver.model.x}, {ocp_solver.model.c{1}});
+for ii = 1:length(x_res)
     % Note: Empty parameter argument as there are no global/time_varying params.
-    c_eval = [c_eval,full(model.c_fun(results.x(:,ii),[]))];
+    c_eval = [c_eval,full(f_c_fun(x_res(:,ii)))];
 end
 
 %%  plots
 fig_num = 2;
-plotHopperStatesControls(x_opt,u_opt,fig_num);
+plotHopperStatesControls(x_res,u_opt,fig_num);
 fig_num = 4;
 % tagnetinal and normal velocity
 plotHopperSwitchingFun(t_opt,c_eval,fig_num);

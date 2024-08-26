@@ -58,6 +58,8 @@ problem_options.g_path_at_fe = 1; % evaluate path constraint on every integratio
 problem_options.g_path_at_stg = 1; % evaluate path constraint on every stage point
 problem_options.time_freezing_nonsmooth_switching_fun = 0;
 problem_options.lift_complementarities = 1;
+problem_options.a_n = 1e2; % 25;
+
 
 solver_options.N_homotopy = 6;
 solver_options.sigma_0 = 1;
@@ -153,8 +155,6 @@ model.x = x;
 model.u = u;
 model.e = 0;
 model.mu = mu;
-model.a_n = 25;
-model.a_n = 1e2;
 model.x0 = x0;
 
 model.M = M;
@@ -162,7 +162,7 @@ model.f_v = f_v;
 % gap functions
 model.f_c = f_c;
 model.J_tangent = f_c_tangent;
-model.dims.n_dim_contact = 2;
+model.dims.n_dim_contact = 1;
 
 % box constraints on controls and states
 model.lbu = lbu;
@@ -170,31 +170,33 @@ model.ubu = ubu;
 model.lbx = lbx;
 model.ubx = ubx;
 % constraint on drift velocity
-model.g_comp_path = g_comp_path;
+model.G_path = g_comp_path(:,1);
+model.H_path = g_comp_path(:,2);
 % LSQ objective
 model.lsq_x = {x,x_ref,Q};
 model.lsq_u = {u,u_ref,R};
 model.lsq_T = {x,x_end,Q_terminal};
 
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %% read and plot results
-unfold_struct(results,'base');
-q_opt = results.x(1:4,:);
-v_opt = results.x(5:8,:);
-t_opt = results.x(9,:);
+x_res = ocp_solver.get('x');
+u_opt = ocp_solver.get('u');
+q_opt = x_res(1:4,:);
+v_opt = x_res(5:8,:);
+t_opt = x_res(9,:);
 
 % Swtiching functions: Gap function, normal velocity, tangentail velocity
 c_eval = [];
-for ii = 1:length(results.x)
+f_c_fun = casadi.Function('f_c', {ocp_solver.model.x}, {ocp_solver.model.c{1}});
+for ii = 1:length(x_res)
     % Note: Empty parameter argument as there are no global/time_varying params.
-    c_eval = [c_eval,full(model.c_fun(results.x(:,ii),[]))];
+    c_eval = [c_eval,full(f_c_fun(x_res(:,ii)))];
 end
 %%  plots
 fig_num = 2;
-plotHopperStatesControls(results.x,results.u,fig_num);
+plotHopperStatesControls(x_res,u_opt,fig_num);
 fig_num = 4;
 % tagnetinal and normal velocity
 plotHopperSwitchingFun(t_opt,c_eval,fig_num);
@@ -203,7 +205,7 @@ plotHopperSwitchingFun(t_opt,c_eval,fig_num);
 if 0 
 figure
 % slip complement
-u_normalized = [results.u(3,:),nan]./max(results.u(3,:));
+u_normalized = [u_opt(3,:),nan]./max(u_opt(3,:));
 slip_cc = u_normalized .*c_eval(1,1:N_FE:end);
 plot(c_eval(1,1:N_FE:end));
 hold on 
@@ -262,7 +264,3 @@ for ii = 1:length(x_head)
         clf;
     end
 end
-
-
-
-
