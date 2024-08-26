@@ -39,6 +39,8 @@ qt_temp*
 *.mat
 *~
 
+*.fig
+
 examples/*/*.pdf
 docs/build
 docs/venv

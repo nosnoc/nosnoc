@@ -8,11 +8,11 @@ red = [0.8500 0.3250 0.0980];
 organe = [0.9290 0.6940 0.1250];
 grey = [0.85 0.85 0.85];
 
-qx_opt = results.x(1,:);
-qy_opt = results.x(2,:);
-vx_opt = results.x(3,:);
-vy_opt = results.x(4,:);
-t_opt = results.x(5,:);
+qx_opt = x_res(1,:);
+qy_opt = x_res(2,:);
+vx_opt = x_res(3,:);
+vy_opt = x_res(4,:);
+t_opt = x_res(5,:);
 
 R = 1;
 alpha0 = pi/4;
@@ -34,9 +34,9 @@ hold on
 for ii= 1:problem_options.N_finite_elements(1):length(t_grid)
     xline(t_grid(ii),'k--')
 end
-s_sot_opt = results.s_sot;
+s_sot_opt = ocp_solver.get('sot');
 subplot(122)
-stairs(t_grid_u,[nan;s_sot_opt],'k','linewidth',1.5);
+stairs(t_grid_u,[nan,s_sot_opt],'k','linewidth',1.5);
 ylim([0.0 max(s_sot_opt)+1])
 xlabel('$\tau$','Interpreter','latex');
 ylabel('$s(\tau)$','Interpreter','latex');
@@ -47,10 +47,11 @@ screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
 eval(['print -dpdf -painters ' file_name1])
 
-%% 
+%%
+theta = ocp_solver.get('theta');
 linewidth = 1.5;
-ind_t = diff(t_opt)/h>0.2;
-ind_t = [1,results.theta(1,:)]>0.2;
+ind_t = diff(t_opt)/problem_options.h>0.2;
+ind_t = theta(1,:)>0.2;
 figure('Renderer', 'painters', 'Position', [100 100 700 850])
 subplot(321)
 plot(t_grid,qx_opt,'linewidth',linewidth)
@@ -78,10 +79,10 @@ xlim([0 t_opt(end)])
 ylim ([-11 11])
 
 subplot(325)
-stairs(t_grid_u,[nan,results.u(1,:)],'linewidth',linewidth)
+stairs(t_grid_u,[nan,u_opt(1,:)],'linewidth',linewidth)
 hold on
 grid on
-stairs(t_grid_u,[nan,results.u(2,:)],'linewidth',linewidth)
+stairs(t_grid_u,[nan,u_opt(2,:)],'linewidth',linewidth)
 xlabel('$\tau$','Interpreter','latex');
 ylabel('$u(\tau)$','Interpreter','latex');
 legend({'$u_1(\tau)$','$u_2(\tau)$'},'Interpreter','latex','location','north');
@@ -116,10 +117,10 @@ xlim([0 t_opt(end)])
 ylim ([-11 11])
 
 subplot(326)
-stairs(t_opt(1:problem_options.N_finite_elements(1):end),[nan,results.u(1,:)],'linewidth',linewidth)
+stairs(t_opt(1:problem_options.N_finite_elements(1):end),[nan,u_opt(1,:)],'linewidth',linewidth)
 hold on
 grid on
-stairs(t_opt(1:problem_options.N_finite_elements(1):end),[nan,results.u(2,:)],'linewidth',linewidth)
+stairs(t_opt(1:problem_options.N_finite_elements(1):end),[nan,u_opt(2,:)],'linewidth',linewidth)
 xlabel('$t$','Interpreter','latex');
 ylabel('$u(t)$','Interpreter','latex');
 legend({'$u_1(t)$','$u_2(t)$'},'Interpreter','latex','location','north');

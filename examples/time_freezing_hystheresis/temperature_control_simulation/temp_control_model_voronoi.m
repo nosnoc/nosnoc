@@ -28,7 +28,7 @@
 function [model] = temp_control_model_voronoi()
 import casadi.*
 
-model = NosnocModel();
+model = nosnoc.model.Pss();
 %% Model Parameters
 % inital value
 t0 = 0;
@@ -53,9 +53,9 @@ Z_voronoi = [z1 z2 z3 z4];
 %% Inital Value
 model.x0 = [y0;w0;t0];
 %% Variable defintion
-y = MX.sym('y');
-w = MX.sym('w');
-t = MX.sym('t');
+y = SX.sym('y');
+w = SX.sym('w');
+t = SX.sym('t');
 
 model.x = [y;w;t];
 n_x = length(model.x);

@@ -27,14 +27,10 @@
 
 close all
 %% read data
-unfold_struct(results,'base');
-unfold_struct(stats,'base');
-unfold_struct(model,'base');
 
-tgrid = results.t_grid;
-x1_opt = results.x(1,:);
-x2_opt = results.x(2,:);
-x3_opt = results.x(3,:);
+x1_opt = x_res(1,:);
+x2_opt = x_res(2,:);
+x3_opt = x_res(3,:);
 y1 = 18;
 y2 = 20;
 theta1 = 18;
@@ -43,7 +39,7 @@ theta2 = 20;
 
 %% in numerical time
 t_phy = [x3_opt,nan];
-dh = diff([tgrid;nan]');
+dh = diff([t_grid,nan]);
 dt_phy = diff(t_phy)./dh;
 fixer = nan;
 dt_phy(dt_phy==-inf) = fixer ;
@@ -56,14 +52,14 @@ ind_t = find(abs(dt_phy)>t_criterion);
 ind_t_complement = find(abs(dt_phy)<=t_criterion);
 ind_dt = find(abs(ddt_phy)>dt_criterion);
 
-time_frozen = tgrid*0;
+time_frozen = t_grid*0;
 time_frozen(ind_t_complement)=1;
-break_points = tgrid(ind_dt);
+break_points = t_grid(ind_dt);
 
 %% all toghether
 figure
 subplot(321)
-plot(tgrid,x1_opt,'linewidth',1.5)
+plot(t_grid,x1_opt,'linewidth',1.5)
 hold on
 for ii = 1:length(break_points)/2
     xx = [break_points(2*ii-1) break_points(2*ii) break_points(2*ii) break_points(2*ii-1)];
@@ -71,17 +67,17 @@ for ii = 1:length(break_points)/2
     patch(xx,yy,'red','facealpha',0.08)
 end
 hold on
-plot(tgrid,tgrid*0+theta1,'k--')
-plot(tgrid,tgrid*0+theta2,'k--')
+plot(t_grid,t_grid*0+theta1,'k--')
+plot(t_grid,t_grid*0+theta2,'k--')
 ylim([theta0-1,theta2+1])
-xlim([0 T_sim])
+xlim([0 problem_options.T_sim])
 % xlabel('$\tau$ [numerical time]','Interpreter','latex')
 ylabel('$x(\tau)$','Interpreter','latex')
 grid on 
 subplot(323)
-plot(tgrid,1-x2_opt,'linewidth',1.5)
+plot(t_grid,1-x2_opt,'linewidth',1.5)
 hold on
-% area(tgrid,time_frozen*(max(x2_opt)+3),FaceAlpha=0.1)
+% area(t_grid,time_frozen*(max(x2_opt)+3),FaceAlpha=0.1)
 for ii = 1:length(break_points)/2
     xx = [break_points(2*ii-1) break_points(2*ii) break_points(2*ii) break_points(2*ii-1)];
     yy = [0 0 max(x2_opt)+3 max(x2_opt)+3];
@@ -91,11 +87,11 @@ ylim([0 1.2])
 % xlabel('$\tau$ [numerical time]','Interpreter','latex')
 ylabel('$w(\tau)$','Interpreter','latex')
 grid on
-xlim([0 T_sim])
+xlim([0 problem_options.T_sim])
 subplot(325)
-plot(tgrid,x3_opt,'linewidth',1.5)
+plot(t_grid,x3_opt,'linewidth',1.5)
 hold on
-% area(tgrid,time_frozen*(max(x3_opt)+1),FaceAlpha=0.1)
+% area(t_grid,time_frozen*(max(x3_opt)+1),FaceAlpha=0.1)
 for ii = 1:length(break_points)/2
     xx = [break_points(2*ii-1) break_points(2*ii) break_points(2*ii) break_points(2*ii-1)];
     yy = [0 0 max(x3_opt)+3 max(x3_opt)+3];
@@ -105,7 +101,7 @@ ylim([0 max(x3_opt)])
 xlabel('$\tau$ [numerical time]','Interpreter','latex')
 ylabel('$t(\tau)$ ','Interpreter','latex')
 grid on
-xlim([0 T_sim])
+xlim([0 problem_options.T_sim])
 subplot(322)
 plot(x3_opt,x1_opt,'linewidth',1.5)
 hold on
@@ -133,6 +129,8 @@ saveas(gcf,'numerical_vs_physical_time')
 
 %% complementarity stats
 figure
+complementarity_stats = {integrator.stats.complementarity_stats};
+complementarity_stats = cellfun(@(x) x(end), complementarity_stats);
 semilogy(complementarity_stats+1e-16,'k',LineWidth=1.5)
 grid on
 xlabel('$\tau$ [numerical time]','Interpreter','latex')
