@@ -334,8 +334,8 @@ classdef Cls < vdx.problems.Mpcc
                             if size(model.G_path, 1) > 0
                                 G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
-                                obj.G.path(ii,jj,kk) = {G_path};
-                                obj.H.path(ii,jj,kk) = {H_path};
+                                obj.G.path_comp(ii,jj,kk) = {G_path};
+                                obj.H.path_comp(ii,jj,kk) = {H_path};
                             end
                             if ~opts.euler_cost_integration
                                 obj.f = obj.f + opts.B_rk(kk+1)*h*qj;
@@ -387,8 +387,8 @@ classdef Cls < vdx.problems.Mpcc
                             if size(model.G_path, 1) > 0
                                 G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
-                                obj.G.path(ii,jj,kk) = {G_path};
-                                obj.H.path(ii,jj,kk) = {H_path};
+                                obj.G.path_comp(ii,jj,kk) = {G_path};
+                                obj.H.path_comp(ii,jj,kk) = {H_path};
                             end
                             if ~opts.euler_cost_integration
                                 % also integrate the objective
@@ -444,8 +444,8 @@ classdef Cls < vdx.problems.Mpcc
                             if size(model.G_path, 1) > 0
                                 G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
-                                obj.G.path(ii,jj,kk) = {G_path};
-                                obj.H.path(ii,jj,kk) = {H_path};
+                                obj.G.path_comp(ii,jj,kk) = {G_path};
+                                obj.H.path_comp(ii,jj,kk) = {H_path};
                             end
                             if ~opts.euler_cost_integration
                                 % also integrate the objective

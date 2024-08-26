@@ -196,7 +196,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         % Build expression and add correct bounds.
                         g_comp_expr = psi_fun(G_curr, H_curr, sigma);
                         [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
-                        nlp.g.(name) = {g_comp_expr,lb,ub};
+                        nlp.g.([name '_relaxed']) = {g_comp_expr,lb,ub};
                     else % Do the same behavior as before excep this time for each var(i,j,k,...) index for each variable 'var'.
                         % Get indices that we will need to get all the casadi vars for the vdx.Variable
                         indices = {};

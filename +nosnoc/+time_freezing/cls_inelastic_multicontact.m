@@ -61,7 +61,6 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
         else
             v_tangent = cls_model.J_tangent'*cls_model.v;
             v_tangent = reshape(v_tangent,2,dims.n_contacts); % 2 x n_c , the columns are the tangential velocities of the contact points
-
         end
         v_tangent_norms = [];
         for ii = 1:dims.n_contacts
