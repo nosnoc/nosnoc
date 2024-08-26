@@ -45,5 +45,5 @@ function plot_irma(results)
     yline(theta{5}, '--');
 
     figure;
-    plot(results.t_grid(2:end), results.alpha);
+    plot(results.t_grid(1:end), results.alpha);
 end

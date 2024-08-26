@@ -39,7 +39,7 @@ switch_on = 1;
 lifting = true;
 
 %% Discretization
-N_finite_elements = 3;
+N_finite_elements = 4;
 T_sim = 1000;
 N_sim = 2000;
 
@@ -51,9 +51,11 @@ problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.print_level = 2;
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'Heaviside'; % General inclusions only possible in step mode.
-problem_options.cross_comp_mode = 3;
+problem_options.cross_comp_mode = 7;
 solver_options.homotopy_update_rule = 'superlinear';
 solver_options.complementarity_tol = 1e-5;
+solver_options.homotopy_steering_strategy = 'ELL_INF';
+solver_options.decreasing_s_elastic_upper_bound = true;
 
 % Generate model
 model = irma_model(switch_on, lifting);
@@ -66,4 +68,7 @@ problem_options.N_sim = N_sim;
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
+results.x = x_res;
+results.t_grid = t_grid;
+results.alpha = integrator.get('alpha');
 plot_irma(results);

@@ -36,9 +36,6 @@ classdef Heaviside < nosnoc.dcs.Base
         
         function generate_variables(obj, opts)
             import casadi.*
-            if class(obj.model) == "nosnoc.model.Cls"
-                obj.time_freezing(opts);
-            end
             dims = obj.dims;
             model = obj.model;
 
@@ -56,7 +53,7 @@ classdef Heaviside < nosnoc.dcs.Base
                 dims.n_alpha = sum(obj.dims.n_c_sys); % number of modes
               case "nosnoc.model.Heaviside"
                 obj.alpha = model.alpha;
-                if model.g_z.depends_on(obj.alpha)
+                if all(size(model.g_z) ~= 0) && model.g_z.depends_on(obj.alpha)
                     obj.z_depends_on_alpha = true;
                 end
             end

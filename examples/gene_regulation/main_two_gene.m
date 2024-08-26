@@ -38,7 +38,7 @@ import casadi.*
 lifting = false;
 
 %% Discretization
-N_finite_elements = 2;
+N_finite_elements = 3;
 T_sim = 1;
 N_sim = 20;
 
@@ -51,6 +51,8 @@ problem_options.n_s = 2;
 problem_options.dcs_mode = 'Heaviside'; % General inclusions only possible in step mode.
 solver_options.print_level = 3;
 solver_options.homotopy_update_rule = 'superlinear';
+solver_options.homotopy_steering_strategy = 'ELL_INF';
+solver_options.decreasing_s_elastic_upper_bound = true;
 
 %% Generate different trajectories
 results = [];
@@ -66,7 +68,9 @@ for x1 = 3:3:12
         problem_options.N_sim = N_sim;
 
         integrator = nosnoc.Integrator(model, problem_options, solver_options);
-        [result,stats] = integrator.solve();
+        [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
+        result.x_res = x_res;
+        result.t_grid = t_grid;
         results = [results,result];
     end
 end
