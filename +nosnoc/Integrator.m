@@ -107,11 +107,17 @@ classdef Integrator < handle
             obj.stats = []; % Clear simulation stats.
         end
 
-        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin)
-            if ~exist('plugin', 'var')
-                plugin = 'scholtes_ineq';
+        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin, extra_args)
+            arguments
+                obj nosnoc.Integrator
+                plugin nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
+                extra_args.u = []
             end
             opts = obj.opts;
+            % TODO(@anton) validators here.
+            if ~isempty(extra_args.u) && all(size(extra_args.u) ~= [obj.model.dims.n_u opts.N_sim])
+                error("nosnoc: wrong dimensions passed for controls to integrator.")
+            end
             x_res = obj.model.x0;
             x_res_full = obj.model.x0;
             t_grid = 0;
@@ -123,6 +129,12 @@ classdef Integrator < handle
             rbp = ~opts.right_boundary_point_explicit;
 
             for ii=1:opts.N_sim
+                if ~isempty(extra_args.u) % TODO(@anton) maybe pass as arg to solve
+                    obj.discrete_time_problem.w.u(1).lb = extra_args.u(:,ii);
+                    obj.discrete_time_problem.w.u(1).ub = extra_args.u(:,ii);
+                    obj.discrete_time_problem.w.u(1).init = extra_args.u(:,ii);
+                    % NOTE: we always have 1 control stage.
+                end
                 solver_stats = obj.solve(plugin);
                 t_current = t_current + opts.T;
                 if solver_stats.converged == 0
