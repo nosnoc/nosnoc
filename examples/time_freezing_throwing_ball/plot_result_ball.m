@@ -31,7 +31,6 @@ unfold_struct(model,'caller');
 d = 3;
 
 obj = full(results.f);
-w_opt = full(results.w);
 
 %  Colors
 blue = [0 0.4470 0.7410];
@@ -45,7 +44,7 @@ tgrid = linspace(0, problem_options.T, problem_options.N_stages+1);
 tgrid_z = linspace(0, problem_options.T, problem_options.N_stages);
 
 %%
-ind_t = find([1,results.theta(1,:)]>1e-2);
+ind_t = find([results.theta(1,:)]>1e-2);
 
 % TODO: fix this
 if 0
