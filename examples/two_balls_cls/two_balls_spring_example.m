@@ -5,28 +5,29 @@ close all
 %%
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 % problem_options.rk_representation = 'differential';
 problem_options.n_s = 3;
 solver_options.print_level = 3;
 % solver_options.N_homotopy = 8;
-problem_options.cross_comp_mode = 1;
+problem_options.cross_comp_mode = 'STAGE_STAGE';
 problem_options.dcs_mode = DcsMode.CLS;
-solver_options.multiple_solvers = 0;
-% solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF;
 problem_options.no_initial_impacts = 1;
+problem_options.relax_terminal_numerical_time = 'ELL_1';
+problem_options.rho_terminal_numerical_time = 1e5;
+
+solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF;
 solver_options.print_details_if_infeasible = 0;
 solver_options.pause_homotopy_solver_if_infeasible = 0;
-% solver_options.opts_ipopt.ipopt.linear_solver = 'ma97';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.real_time_plot = 0;
+solver_options.complementarity_tol = 1e-10;
+solver_options.sigma_N = 1e-11;
+solver_options.decreasing_s_elastic_upper_bound = 1;
 solver_options.sigma_0 = 5;
 solver_options.homotopy_update_slope = 0.1;
-solver_options.real_time_plot = 0;
-solver_options.complementarity_tol  = 1e-13;
-solver_options.sigma_N = 1e-13;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
 
-solver_options.decreasing_s_elastic_upper_bound = 1;
-solver_options.sigma_0 = 1e0;
-solver_options.homotopy_update_slope = 0.2;
 %%
 g = 9.81;
 R = 0.2;
@@ -55,7 +56,7 @@ problem_options.N_finite_elements = N_FE;
 problem_options.N_sim = N_sim;
 
 %% MATLAB solution
-solver_options.use_previous_solution_as_initial_guess = 1;
+solver_options.use_previous_solution_as_initial_guess = 0;
 [t_grid_matlab, x_traj_matlab, n_bounces, lambda_normal_guess] = two_balls_spring_matlab(T_sim,x0,model.e,1e-13);
 
 
