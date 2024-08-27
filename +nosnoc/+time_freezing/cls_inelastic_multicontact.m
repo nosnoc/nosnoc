@@ -93,6 +93,12 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad,dims.n_contacts)];
 
     if opts.time_freezing_nonsmooth_switching_fun
+        sigma = SX.sym('sigma',1);
+        a = SX.sym('a',1);
+        b = SX.sym('b',1);
+        f_natural_residual = 0.5*(b+a+sqrt((b-a+sigma)^2));
+        % f_natural_residual = max(a,b);
+        max_smooth_fun = Function('max_smooth_fun',{a,b,sigma},{f_natural_residual});
         heaviside_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    
     else
         if dims.n_dim_contact == 1

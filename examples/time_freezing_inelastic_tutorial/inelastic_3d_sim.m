@@ -1,34 +1,42 @@
 clear all;
-clear all;
+close all;
 clc;
 import casadi.*
+%%
+g = 10;
+N_finite_elements = 6;
+T_sim = 3;
+N_sim = 21;
+
 %% init nosnoc
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();  
 model = nosnoc.model.Cls();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.n_s = 1;
-solver_options.print_level = 3;
-solver_options.N_homotopy = 6;
+problem_options.n_s = 2;
 problem_options.use_fesd = 1;
 problem_options.time_freezing = 1;
-problem_options.pss_lift_step_functions= 1;
 problem_options.impose_terminal_phyisical_time  = 1;
 problem_options.stagewise_clock_constraint = 0;
-problem_options.time_freezing_nonsmooth_switching_fun = 1;
-problem_options.pss_lift_step_functions = 0;
+problem_options.time_freezing_nonsmooth_switching_fun = 0;
+problem_options.pss_lift_step_functions = 1;
+problem_options.a_n = g;
+
+solver_options.homotopy_steering_strategy = 'ELL_INF';
+solver_options.decreasing_s_elastic_upper_bound = true;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.print_level = 3;
+solver_options.N_homotopy = 6;
 solver_options.use_previous_solution_as_initial_guess = 0;
 %%
-g = 10;
 % Symbolic variables and bounds
 q = SX.sym('q',3); 
 v = SX.sym('v',3);
 model.e = 0;
 model.mu = 0.2;
-model.dims.n_dim_contact = 3;
+model.dims.n_dim_contact = 2;
 model.x = [q;v]; 
-model.a_n = g;
 model.x0 = [0;0;1;2;1;0]; 
 F_ext = [1;1]*0;
 % norm(F_ext)
@@ -36,9 +44,6 @@ model.f_v = [F_ext;-g];
 model.f_c = q(3);
 model.J_tangent = [1 0;0 1; 0 0];
 %% Simulation settings
-N_finite_elements = 3;
-T_sim = 3;
-N_sim = 20;
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_finite_elements;
@@ -47,13 +52,13 @@ problem_options.N_finite_elements = N_finite_elements;
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
-qx = results.x(1,:);
-qy = results.x(2,:);
-qz = results.x(3,:);
-vx = results.x(4,:);
-vy = results.x(5,:);
-vz = results.x(6,:);
-t_opt = results.x(7,:);
+qx = x_res(1,:);
+qy = x_res(2,:);
+qz = x_res(3,:);
+vx = x_res(4,:);
+vy = x_res(5,:);
+vz = x_res(6,:);
+t_opt = x_res(7,:);
 figure
 plot3(qx,qy,qz);
 axis equal
@@ -77,28 +82,26 @@ legend({'$t_1^\top v$','$t_2^\top v$','$n^\top v$'},'Interpreter','latex','Locat
 
 
 %%
-t_grid = results.t_grid;
-lambda0 = results.lambda_n;
-lambda1 = results.lambda_p;
-alpha = results.alpha;
+lambda0 = integrator.get('lambda_n');
+lambda1 = integrator.get('lambda_p');
+alpha = integrator.get('alpha');
 
 if problem_options.time_freezing_nonlinear_friction_cone
-theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
-theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:));
-theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:));
-theta = [theta1;theta2;theta3];
+    theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
+    theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:));
+    theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:));
+    theta = [theta1;theta2;theta3];
+    n_f = 3;
 else
-theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
-theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:)).*(1-alpha(4,:));
-theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:)).*(alpha(4,:));
-theta4  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(1-alpha(4,:));
-theta5  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(alpha(4,:));
-theta = [theta1;theta2;theta3;theta4;theta5];
+    theta1 = alpha(1,:)+(1-alpha(1,:)).*(alpha(2,:));
+    theta2 = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:)).*(1-alpha(4,:));
+    theta3  = (1-alpha(1,:)).*(1-alpha(2,:)).*(1-alpha(3,:)).*(alpha(4,:));
+    theta4  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(1-alpha(4,:));
+    theta5  = (1-alpha(1,:)).*(1-alpha(2,:)).*(alpha(3,:)).*(alpha(4,:));
+    theta = [theta1;theta2;theta3;theta4;theta5];
+    n_f = 5;
 end
 
-dims = model.dims
-n_f = dims.n_theta_step;
-t_grid(1) = [];
 figure
 for ii = 1:n_f 
     subplot(1,n_f,ii)
