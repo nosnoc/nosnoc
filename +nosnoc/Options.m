@@ -87,7 +87,7 @@ classdef Options < handle
         initial_theta_step(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\theta$ when lifting is enabled in the Heaviside step reformulation.
         initial_lambda_gcs(1,1) double {mustBeReal, mustBeFinite} = 0 % double: Initial value for $\lambda$ in the Gradient Comlementarity System.
         
-        initial_Lambda_normal(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for $\Lambda_n$ in FESD-J reformulation.
+        initial_Lambda_normal(1,1) double {mustBeReal, mustBeFinite} = 0 % double: Initial value for $\Lambda_n$ in FESD-J reformulation.
         initial_P_vn(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for positive normal velocity slack in FESD-J reformulation impulse calculation.
         initial_N_vn(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for negative normal velocity slack in FESD-J reformulation impulse calculation.
         initial_Y_gap(1,1) double {mustBeReal, mustBeFinite} = 1 % double: Initial value for gap function in FESD-J reformulation impulse calculation.

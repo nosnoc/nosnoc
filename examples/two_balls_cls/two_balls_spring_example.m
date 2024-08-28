@@ -10,11 +10,11 @@ problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 3;
 solver_options.print_level = 3;
 % solver_options.N_homotopy = 8;
-problem_options.cross_comp_mode = 'STAGE_STAGE';
+problem_options.cross_comp_mode = 'FE_FE';
 problem_options.dcs_mode = DcsMode.CLS;
 problem_options.no_initial_impacts = 1;
-problem_options.relax_terminal_numerical_time = 'ELL_1';
-problem_options.rho_terminal_numerical_time = 1e5;
+%problem_options.relax_terminal_numerical_time = 'ELL_1';
+%problem_options.rho_terminal_numerical_time = 1e5;
 
 solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF;
 solver_options.print_details_if_infeasible = 0;
