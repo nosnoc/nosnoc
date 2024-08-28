@@ -42,9 +42,6 @@ A1 = [1 omega;...
     -omega 1];
 A2 = [1 -omega;...
     omega 1];
-if smooth_model
-    A2 = A1;
-end
 %% Inital Value
 model.x0 = [exp(-1);0];
 % x0 = [2*exp(-1);0];
@@ -57,7 +54,8 @@ end
 % x2 = MX.sym('x2');
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
-model.x = [x1;x2];
+x = [x1;x2];
+model.x = x;
 % every constraint function corresponds to a simplex (note that the c_i might be vector valued)
 c = x1^2+x2^2-R_osc^2;
 % sign matrix for the modes
