@@ -1,4 +1,4 @@
-function [results] = sliding_mode_ocp_experiment(scenario,model,settings)
+function [results] = sliding_mode_ocp_experiment(scenario,model,problem_options)
 % BSD 2-Clause License
 
 % Copyright (c) 2022, Armin Nurkanović, Jonathan Frey, Anton Pozharskiy, Moritz Diehl
@@ -29,7 +29,14 @@ function [results] = sliding_mode_ocp_experiment(scenario,model,settings)
 import casadi.*
 
 unfold_struct(scenario,'caller');
+%% Solver settings
+solver_options = nosnoc.solver.Options();
+solver_options.print_level = 3;;
+solver_options.N_homotopy = 15;
+solver_options.complementarity_tol = 1e-12;
+
 %% model equations
+model = nosnoc.model.Pss();
 % x_target = [-pi/6;-pi/3];
 x_target = [-pi/6;-pi/4];
 
@@ -40,23 +47,23 @@ else
 end
 model.x0 = [2*pi/3;pi/3;v0];
 problem_options.T = 4;
-settings.N_stages = 6;
-settings.N_finite_elements = N_finite_elements;
+problem_options.N_stages = 6;
+problem_options.N_finite_elements = N_finite_elements;
 % Variable defintion
-x1 = MX.sym('x1');
-x2 = MX.sym('x2');
+x1 = SX.sym('x1');
+x2 = SX.sym('x2');
 
 if linear_control
-    v1 = MX.sym('v1');
-    v2 = MX.sym('v2');
+    v1 = SX.sym('v1');
+    v2 = SX.sym('v2');
     x = [x1;x2;v1;v2];
 else
     x = [x1;x2];
 end
 model.x = x;
 % Control
-u1 = MX.sym('u1');
-u2 = MX.sym('u2');
+u1 = SX.sym('u1');
+u2 = SX.sym('u2');
 model.u = [u1;u2];
 if linear_control
     u_max = 5;
@@ -124,9 +131,10 @@ t_grid_integrator = [];
 
 %% Solve and plot
 x0 = model.x0;
-solver = NosnocSolver(model, settings);
-[results,stats] = solver.solve();
-f_opt = results.f_opt;
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
+stats = ocp_solver.stats;
+f_opt = ocp_solver.get_objective();
 cpu_time = stats.cpu_time_total;
 
 if plot_results_sliding_mode
@@ -136,9 +144,11 @@ end
 % load results from optimal control problem
 use_matlab_integrator = 1;
 if estimate_terminal_error
-    u_opt = results.u_opt;
-    t_grid_optimizer = [results.t_grid];
-    x_res_optimizer = [results.x_opt];
+    u_opt = ocp_solver.get('u');
+    f_opt = ocp_solver.get_objective();
+
+    t_grid_optimizer = ocp_solver.get_time_grid();
+    x_res_optimizer = ocp_solver.get('x');
     x_target = [-pi/6;-pi/4];
 
     if ~use_matlab_integrator

@@ -25,7 +25,7 @@ for k = 1:length(N_experiments)
         loglog(N_finite_elements_vec*N_stages,error_obj_fesd(ii,:),list_of_markers{ii},'linewidth',1.5);
         %     %     loglog(N_finite_elements_vec,error_obj_fesd(ii,:),list_of_markers{ii},'linewidth',1.5);
         hold on
-        legend_str = [legend_str,[rk_schemes{k} '-' num2str(orders_vec{k}(ii))]];
+        legend_str = [legend_str,[char(rk_schemes{k}) '-' num2str(orders_vec{k}(ii))]];
         marker_counter  = marker_counter +1;
     end
     xlabel('$N_{\mathrm{FE}}$','interpreter','latex');
@@ -60,11 +60,11 @@ if 0
     for k = 1:length(N_experiments)
         for ii = 1:length(n_s_vec{k})
             loglog(N_finite_elements_vec*N_stages,error_temrinal_fesd{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5);
-            legend_str = [legend_str,[rk_schemes{k} '-' num2str(orders_vec{k}(ii)) '-FESD']];
+            legend_str = [legend_str,[char(rk_schemes{k}) '-' num2str(orders_vec{k}(ii)) '-FESD']];
             marker_counter  = marker_counter +1;
             hold on
             loglog(N_finite_elements_vec*N_stages,error_temrinal_std{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5);
-            legend_str = [legend_str,[rk_schemes{k} '-' num2str(orders_vec{k}(ii)) '-Std']];
+            legend_str = [legend_str,[char(rk_schemes{k}) '-' num2str(orders_vec{k}(ii)) '-Std']];
             grid on
             marker_counter  = marker_counter +1;
         end
@@ -83,13 +83,13 @@ for k = 1:length(N_experiments)
     for ii = 1:length(n_s_vec{k})
         subplot(121)
         loglog(N_finite_elements_vec*N_stages,error_temrinal_fesd{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5);
-        %         legend_str = [legend_str,[rk_schemes{k} '-' num2str(orders_vec(ii)) '-FESD']];
+        %         legend_str = [legend_str,[char(rk_schemes{k}) '-' num2str(orders_vec(ii)) '-FESD']];
         %         marker_counter  = marker_counter +1;
         hold on
         grid on
         subplot(122)
         loglog(N_finite_elements_vec*N_stages,error_temrinal_std{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5);
-        legend_str = [legend_str,[rk_schemes{k} ' ' num2str(orders_vec{k}(ii))]];
+        legend_str = [legend_str,[char(rk_schemes{k}) ' ' num2str(orders_vec{k}(ii))]];
         grid on
         hold on
         marker_counter  = marker_counter +1;
@@ -117,7 +117,7 @@ for k = 1:length(N_experiments)
         grid on
         subplot(122)
         loglog(N_finite_elements_vec*N_stages,error_temrinal_std{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5);
-        legend_str = [legend_str,[rk_schemes{k} ' ' num2str(orders_vec{k}(ii))]];
+        legend_str = [legend_str,[char(rk_schemes{k}) ' ' num2str(orders_vec{k}(ii))]];
         grid on
         hold on
         marker_counter  = marker_counter +1;
@@ -129,7 +129,7 @@ for k = 1:length(N_experiments)
     ylim([1e-16 1e1 ])
     xlabel('$N_{\mathrm{FE}}$','interpreter','latex');
     ylabel('Terminal Error','interpreter','latex');
-    saveas(gcf,['terminal_error_' rk_schemes{k}])
+    saveas(gcf,['terminal_error_' char(rk_schemes{k})])
 end
 
 
@@ -142,11 +142,11 @@ legend_str = {};
 for k = 1:length(N_experiments)
     for ii = 1:length(n_s_vec{k})
         semilogy(cpu_fesd{k}(ii,:),error_temrinal_fesd{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5,'Color',matlab_red);
-        legend_str = [legend_str,[rk_schemes{k} '-' num2str(orders_vec{k}(ii)) '-FESD']];
+        legend_str = [legend_str,[char(rk_schemes{k}) '-' num2str(orders_vec{k}(ii)) '-FESD']];
         %         marker_counter  = marker_counter +1;
         hold on
         semilogy(cpu_std{k}(ii,:),error_temrinal_std{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5,'Color',matlab_blue);
-        legend_str = [legend_str,[rk_schemes{k} '-' num2str(orders_vec{k}(ii)) '-Std']];
+        legend_str = [legend_str,[char(rk_schemes{k}) '-' num2str(orders_vec{k}(ii)) '-Std']];
         grid on
         marker_counter  = marker_counter+1;
     end
@@ -163,8 +163,8 @@ list_of_markers = {'o','d','s','x','v','^','<','>','*','+','|','p','h','.'};
 marker_counter = 1;
 legend_str = {};
 for k = 1:length(N_experiments)
-    legend_str = [legend_str,[rk_schemes{k} '-FESD']];
-    legend_str = [legend_str,[rk_schemes{k} '-Std']];
+    legend_str = [legend_str,[char(rk_schemes{k}) '-FESD']];
+    legend_str = [legend_str,[char(rk_schemes{k}) '-Std']];
     semilogy(cpu_fesd{k}(:),error_temrinal_fesd{k}(:),list_of_markers{marker_counter},'linewidth',1.5,'Color',matlab_red);
     hold on
     semilogy(cpu_std{k}(:),error_temrinal_std{k}(:),list_of_markers{marker_counter},'linewidth',1.5,'Color',matlab_blue);
@@ -191,7 +191,7 @@ for k = 1:length(N_experiments)
 
         plot_handles{line_counter} = semilogy(cpu_fesd{k}(ii,:),error_temrinal_fesd{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5,'Color',matlab_red,'MarkerSize',2+(ii*2));
         if ii == 1
-            legend_str = [legend_str,[rk_schemes{k} '-FESD']];
+            legend_str = [legend_str,[char(rk_schemes{k}) '-FESD']];
             include_lines_in_legend = [include_lines_in_legend,line_counter];
         else
             legend_str = [legend_str,'x'];
@@ -200,7 +200,7 @@ for k = 1:length(N_experiments)
         line_counter = line_counter+1;
         plot_handles{line_counter} =  semilogy(cpu_std{k}(ii,:),error_temrinal_std{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5,'Color',matlab_blue,'MarkerSize',2+(ii*2));
         if ii == 1
-            legend_str = [legend_str,[rk_schemes{k} '-Std']];
+            legend_str = [legend_str,[char(rk_schemes{k}) '-Std']];
             include_lines_in_legend = [include_lines_in_legend,line_counter];
         else
             legend_str = [legend_str,'x'];
@@ -237,7 +237,7 @@ for k = 1:length(N_experiments)
         line_counter = line_counter+1;
         plot_handles{line_counter} = semilogy(n_s_vec{k}(ii)*N_finite_elements_vec*N_stages,error_temrinal_fesd{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5,'Color',matlab_red,'MarkerSize',2+(ii*2));
         if ii == 1
-            legend_str = [legend_str,[rk_schemes{k} '-FESD']];
+            legend_str = [legend_str,[char(rk_schemes{k}) '-FESD']];
             include_lines_in_legend = [include_lines_in_legend,line_counter];
         else
             legend_str = [legend_str,'x'];
@@ -246,7 +246,7 @@ for k = 1:length(N_experiments)
         line_counter = line_counter+1;
         plot_handles{line_counter} =semilogy(n_s_vec{k}(ii)*N_finite_elements_vec*N_stages,error_temrinal_std{k}(ii,:),list_of_markers{marker_counter},'linewidth',1.5,'Color',matlab_blue,'MarkerSize',2+(ii*2));
         if ii == 1
-            legend_str = [legend_str,[rk_schemes{k} '-Std']];
+            legend_str = [legend_str,[char(rk_schemes{k}) '-Std']];
             include_lines_in_legend = [include_lines_in_legend,line_counter];
         else
             legend_str = [legend_str,'x'];

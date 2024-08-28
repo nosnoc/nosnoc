@@ -31,22 +31,17 @@ close all
 import casadi.*
 %%
 model = [];
-[settings] = NosnocOptions();  %% Optionally call this function to have an overview of all options.
-settings.print_level = 3;
-settings.mpcc_mode = 3;
-settings.N_homotopy = 15;
-settings.complementarity_tol = 1e-12;
-settings.rk_representation = 'differential';
+problem_options = nosnoc.Options();
+problem_options.rk_representation = 'differential';
 N_stages = 6;
-settings.rk_scheme = RKSchemes.RADAU_IIA;
-settings.n_s = 2;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.n_s = 2;
 scenario.N_finite_elements = 2;
 
-settings.use_fesd = 1;
+problem_options.use_fesd = 1;
 
 scenario.save_results = 1;
 scenario.estimate_terminal_error = 1;
-
 
 scenario.illustrate_regions  = 1;
 scenario.terminal_constraint = 1;
@@ -55,13 +50,8 @@ scenario.rho_v = 1;
 scenario.rho_u = 1;
 scenario.plot_results_sliding_mode = 0;
 
-settings.step_equilibration  = 1;
-settings.heuristic_step_equilibration = 0;
-
 
 %% Basic
-mpcc_mode_fesd = [5 5 5 3 3];
-mpcc_mode_std = [3 3 3 3 3];
 rk_schemes = {RKSchemes.RADAU_IIA,RKSchemes.LOBATTO_IIIA,RKSchemes.LOBATTO_IIIC,RKSchemes.GAUSS_LEGENDRE,RKSchemes.EXPLICIT_RK};
 n_s_vec = {[1:4],[2:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
@@ -69,8 +59,6 @@ N_finite_elements_vec = 2:2:12;
 N_experiments = 1:5;
 
 %%
-mpcc_mode_fesd = [5 5 3 3];
-mpcc_mode_std = [3 3 3 3];
 rk_schemes = {RKSchemes.RADAU_IIA,RKSchemes.LOBATTO_IIIC,RKSchemes.GAUSS_LEGENDRE,RKSchemes.EXPLICIT_RK};
 n_s_vec = {[1:4],[2:4],[1:4],[1 4]};
 orders_vec = {n_s_vec{1}*2-1,n_s_vec{2}*2-2,n_s_vec{3}*2,n_s_vec{4}};
@@ -90,30 +78,23 @@ error_temrinal_std = {};
 
 %% FESD
 for k = 1:length(N_experiments)
-    settings.rk_scheme = rk_schemes{k};
+    problem_options.rk_scheme = rk_schemes{k};
 
     f_obj_fesd_k  = [];
     cpu_fesd_k  = [];
     comp_resiudal_fesd_k = [];
     error_temrinal_fesd_k = [];
-    % std
-    f_obj_std_k  = [];
-    cpu_std_k  = [];
-    comp_resiudal_std_k = [];
-    error_temrinal_std_k = [];
-    settings.use_fesd = 1;
-    settings.mpcc_mode= mpcc_mode_fesd(k);
     for jj = n_s_vec{k}
         f_obj_temp = [];
         cpu_temp = [];
         comp_resiudal_temp = [];
         error_temrinal_temp = [];
         for ii = N_finite_elements_vec
-            settings.n_s = jj;
+            problem_options.n_s = jj;
             scenario.N_finite_elements = ii;
-            scenario.scenario_name = [settings.rk_scheme '_n_s_' num2str(settings.n_s) '_N_FE_' num2str(scenario.N_finite_elements) '_FESD_' num2str(settings.use_fesd)];
+            scenario.scenario_name = [char(problem_options.rk_scheme) '_n_s_' num2str(problem_options.n_s) '_N_FE_' num2str(scenario.N_finite_elements) '_FESD_' num2str(problem_options.use_fesd)];
 
-            [results] = sliding_mode_ocp_experiment(scenario,model,settings);
+            [results] = sliding_mode_ocp_experiment(scenario,model,problem_options);
             f_obj_temp  = [f_obj_temp,results.f_opt];
             cpu_temp  = [cpu_temp,results.cpu_time];
             comp_resiudal_temp = [comp_resiudal_temp, results.comp_residual];
@@ -126,18 +107,22 @@ for k = 1:length(N_experiments)
     end
 
     % std experiments
-    settings.use_fesd = 0;
-    settings.mpcc_mode= mpcc_mode_std(k);
+    f_obj_std_k  = [];
+    cpu_std_k  = [];
+    comp_resiudal_std_k = [];
+    error_temrinal_std_k = [];
+
+    problem_options.use_fesd = 0;
     for jj = n_s_vec{k}
         f_obj_temp = [];
         cpu_temp = [];
         comp_resiudal_temp = [];
         error_temrinal_temp = [];
         for ii = N_finite_elements_vec
-            settings.n_s = jj;
+            problem_options.n_s = jj;
             scenario.N_finite_elements = ii;
-            scenario.scenario_name = [settings.rk_scheme '_n_s_' num2str(settings.n_s) '_N_FE_' num2str(scenario.N_finite_elements) '_FESD_' num2str(settings.use_fesd)];
-            [results] = sliding_mode_ocp_experiment(scenario,model,settings);
+            scenario.scenario_name = [char(problem_options.rk_scheme) '_n_s_' num2str(problem_options.n_s) '_N_FE_' num2str(scenario.N_finite_elements) '_FESD_' num2str(problem_options.use_fesd)];
+            [results] = sliding_mode_ocp_experiment(scenario,model,problem_options);
             f_obj_temp  = [f_obj_temp,results.f_opt];
             cpu_temp  = [cpu_temp,results.cpu_time];
             comp_resiudal_temp = [comp_resiudal_temp,results.comp_residual];
@@ -160,7 +145,7 @@ for k = 1:length(N_experiments)
     error_temrinal_std = [error_temrinal_std;error_temrinal_std_k];
 end
 %% Plot results
-sliding_moode_ocp_eval_results
+sliding_mode_ocp_eval_results
 
 %% Save results
 % results std
