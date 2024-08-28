@@ -486,18 +486,21 @@ classdef Stewart < vdx.problems.Mpcc
                 if opts.time_optimal_problem
                     % in the case of time optimal time freezing problem, physical clock state must reach final time.
                     obj.g.terminal_physical_time = {x_end(end)-(obj.w.T_final()+t0), relax_phys_time_struct};
+                    obj.g.terminal_physical_time.set_is_terminal(true);
                     if relax_phys_time_struct.is_relaxed
                         obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
+                        obj.w.s_physical_time.set_is_terminal(true);
                     end
                 elseif opts.impose_terminal_phyisical_time && ~opts.stagewise_clock_constraint
                     % in the case of a generic time freezing problem, physical clock state must reach final time if
                     % we are imposing terminal physical time and we did not do so by apply stagewise constraints.
                     obj.g.terminal_physical_time = {x_end(end)-(obj.p.T()+t0), relax_phys_time_struct};
+                    obj.g.terminal_physical_time.set_is_terminal(true);
                     if relax_phys_time_struct.is_relaxed
                         obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
+                        obj.w.s_physical_time.set_is_terminal(true);
                     end
                 end
-                
             else
                 if ~opts.use_fesd
                     if opts.time_optimal_problem
@@ -517,6 +520,7 @@ classdef Stewart < vdx.problems.Mpcc
                                 end
                             end
                             obj.g.integral_clock_state = {integral_clock_state-obj.w.T_final()};
+                            obj.g.integral_clock_state.set_is_terminal(true);
                         else
                             % otherwise treated via variable h_ki, i.e.,  h_ki =  T_final/(N_stages*N_FE)
                         end
@@ -535,16 +539,20 @@ classdef Stewart < vdx.problems.Mpcc
                             % not a time optimal problem so just sum of hs must be the terminal numerical time T.
                             relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                             obj.g.sum_h = {sum_h_all-obj.p.T(), relax_num_time_struct};
+                            obj.g.sum_h.set_is_terminal(true);
                             if relax_num_time_struct.is_relaxed
                                 obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
+                                obj.w.s_numerical_time.set_is_terminal(true);
                             end
                         else
                             if ~opts.use_speed_of_time_variables
                                 % a time optimal problem without sot so sum of hs must be the optimal terminal numerical time T_final.
                                 relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                                 obj.g.sum_h = {sum_h_all-obj.w.T_final(), relax_num_time_struct};
+                                obj.g.sum_h.set_is_terminal(true);
                                 if relax_num_time_struct.is_relaxed
                                     obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
+                                    obj.w.s_numerical_time.set_is_terminal(true);
                                 end
                             else
                                 % a time optimal problem with sot so sum of h*sot must be the optimal terminal "physical" time T_final.
@@ -565,12 +573,16 @@ classdef Stewart < vdx.problems.Mpcc
                                 relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                                 relax_phys_time_struct = vdx.RelaxationStruct(opts.relax_terminal_physical_time.to_vdx, 's_physical_time', 'rho_physical_time');
                                 obj.g.sum_h = {sum_h_all-obj.p.T(), relax_num_time_struct};
+                                obj.g.sum_h.set_is_terminal(true);
                                 obj.g.integral_clock = {sum_h_all-obj.w.T_final(), relax_phys_time_struct};
+                                obj.g.integral_clock.set_is_terminal(true);
                                 if relax_num_time_struct.is_relaxed
                                     obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
+                                    obj.w.s_numerical_time.set_is_terminal(true);
                                 end
                                 if relax_phys_time_struct.is_relaxed
                                     obj.p.rho_physical_time().val = opts.rho_terminal_physical_time;
+                                    obj.w.s_physical_time.set_is_terminal(true);
                                 end
                             end
                         end
