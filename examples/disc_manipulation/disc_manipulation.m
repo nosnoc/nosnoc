@@ -42,7 +42,7 @@ model = nosnoc.model.Cls();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods (TODO@Anton, other variations, e.g. Stewart, with n_s>1 converge nicely, this setting very slow)
-problem_options.cross_comp_mode = "STAGE_STAGE";
+problem_options.cross_comp_mode = "FE_FE";
 problem_options.T = T;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements = N_FE;
@@ -54,8 +54,8 @@ problem_options.rho_terminal_physical_time = 1e5;
 problem_options.use_numerical_clock_state = false;
 problem_options.time_freezing_quadrature_state = true;
 
-problem_options.time_freezing_Heaviside_lifting = true; 
-problem_options.dcs_mode = "Stewart";
+problem_options.time_freezing_Heaviside_lifting = true;
+problem_options.dcs_mode = "Heaviside";
 
 %% Solver settings
 %solver_options.homotopy_update_rule = 'superlinear';
@@ -67,7 +67,7 @@ solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
 solver_options.print_level = 3;
 solver_options.warm_start_duals = true;
 % IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% model parameters
 m1 = 2;
