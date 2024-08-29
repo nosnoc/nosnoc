@@ -1,26 +1,27 @@
 clc
-N_stages_vec = [10:5:80];
+N_stages_vec = 10:5:80;
+N_stages_vec = 10:70:80;
 N_trails = 1;
 minlp_time_limit = 600;
 experiment_names = {'fesd','std','gurobi','bonmin'};
 legend_str = {'NOSNOC-FESD','NOSNOC-Std','Gurobi','Bonmin'};
 
-run_fesd = 0; run_std = 0;
-run_gurobi = 0; run_bonmin = 1;
+run_fesd = 1; run_std = 1;
+run_gurobi = 0; run_bonmin = 0;
 run_experiments = [run_fesd run_std run_gurobi run_bonmin];
 %% NOSNOC settings
-[settings] = NosnocOptions();  % Optionally call this function to have an overview of all options. Missing settings are anyway filled in latter with their respecitve values.
-settings.N_trails = N_trails;
-settings.sigma_0 = 10;
-% settings.N_homotopy = 20;
-settings.print_level = 0;
-settings.use_fesd = 1;
-settings.complementarity_tol = 1e-12;
-settings.time_optimal_problem = 1;
-settings.n_s = 2;
-% model data
-settings.N_finite_elements = 3;
+problem_options = nosnoc.Options();
+solver_options = nosnoc.solver.Options();
+problem_options.use_fesd = 1;
+problem_options.time_optimal_problem = 1;
+problem_options.n_s = 2;
 problem_options.T = 1;
+
+solver_options.sigma_0 = 10;
+solver_options.N_homotopy = 20;
+solver_options.print_level = 0;
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.complementarity_tol = 1e-12;
 
 %% results
 % time
@@ -41,8 +42,9 @@ T_opt_bonmin = [];
 %%  run nosnoc with fesd
 if run_fesd
     for ii = 1:length(N_stages_vec)
-        settings.N_stages = N_stages_vec(ii);
-        output = solve_car_turbo_with_nosnoc(model,settings);
+        problem_options.N_stages = N_stages_vec(ii);
+        problem_options.N_finite_elements = 3;
+        output = solve_car_turbo_with_nosnoc(problem_options, solver_options, N_trails);
         cpu_time_fesd  = [cpu_time_fesd, output.cpu_time];
         cpu_time_all_fesd  = [cpu_time_all_fesd , output.cpu_time_all'];
         T_opt_fesd  = [T_opt_fesd  , output.T_opt  ];
@@ -61,13 +63,14 @@ if run_fesd
 end
 %% run nosnoc with std
 if run_std
-    settings.use_fesd = 0;
-    settings.use_speed_of_time_variables = 1;
-    settings.local_speed_of_time_variable = 0;
+    problem_options.use_fesd = 0;
+    problem_options.use_speed_of_time_variables = 1;
+    problem_options.local_speed_of_time_variable = 0;
 
     for ii = 1:length(N_stages_vec)
-        settings.N_stages = N_stages_vec(ii);
-        output = solve_car_turbo_with_nosnoc(model,settings);
+        problem_options.N_stages = N_stages_vec(ii);
+        problem_options.N_finite_elements = 3;
+        output = solve_car_turbo_with_nosnoc(problem_options, solver_options, N_trails);
         cpu_time_std  = [cpu_time_std, output.cpu_time];
         cpu_time_all_std  = [cpu_time_all_std , output.cpu_time_all'];
         T_opt_std  = [T_opt_std  , output.T_opt  ];

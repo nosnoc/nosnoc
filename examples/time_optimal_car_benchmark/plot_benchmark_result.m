@@ -8,8 +8,8 @@ experiment_names = {'fesd','std','gurobi','bonmin'};
 legend_str = {'NOSNOC-FESD','NOSNOC-Std','Gurobi','Bonmin'};
 run_fesd = 1;
 run_std = 1;
-run_gurobi = 1;
-run_bonmin = 1;
+run_gurobi = 0;
+run_bonmin = 0;
 run_experiments = [run_fesd run_std run_gurobi run_bonmin];
 legend_str_temp = legend_str;
 %%
