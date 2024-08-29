@@ -11,9 +11,8 @@ save(ref_sol_filename, "t_grid_ref", "x_traj_ref", "n_bounces_ref");
 %% load reference solution
 % load(ref_sol_filename)
 
-
-% for rk_scheme = [RKSchemes.RADAU_IIA]
-for rk_scheme = [RKSchemes.GAUSS_LEGENDRE]
+%for rk_scheme = [RKSchemes.GAUSS_LEGENDRE]
+for rk_scheme = [RKSchemes.RADAU_IIA]
     %%
     x_ref = x_traj_ref(end, :)';
     

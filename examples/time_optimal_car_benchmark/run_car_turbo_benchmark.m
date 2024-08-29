@@ -1,6 +1,5 @@
 clc
 N_stages_vec = 10:5:80;
-N_stages_vec = 10:70:80;
 N_trails = 1;
 minlp_time_limit = 600;
 experiment_names = {'fesd','std','gurobi','bonmin'};

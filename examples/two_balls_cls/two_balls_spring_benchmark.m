@@ -47,9 +47,9 @@ for rk_scheme = IRK_SCHEMES
                     solver_options.print_details_if_infeasible = 0;
                     solver_options.pause_homotopy_solver_if_infeasible = 0;
                     % solver_options.opts_ipopt.ipopt.linear_solver = 'ma97';
-                    solver_options.complementarity_tol  = 1e-13;
-                    solver_options.sigma_N = 1e-13;
-                    solver_options.mpcc_mode = "elastic_ineq";
+                    solver_options.complementarity_tol  = 1e-10;
+                    solver_options.sigma_N = 1e-10;
+                    solver_options.homotopy_steering_strategy= "ELL_INF";
                     solver_options.decreasing_s_elastic_upper_bound = 1;
                     solver_options.sigma_0 = 1e0;
                     solver_options.homotopy_update_slope = 0.2;
@@ -68,13 +68,15 @@ for rk_scheme = IRK_SCHEMES
 
                     if with_guess
                         % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
-                        integrator = NosnocIntegrator(model, problem_options, solver_options, [], initial_guess);
-                        [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
+                        %integrator = nosnoc.Integrator(model, problem_options, solver_options);
+                        %[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
                     else
                         integrator = nosnoc.Integrator(model, problem_options, solver_options);
                         [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
                     end
 
+                    results.x = x_res;
+                    stats = integrator.stats;
                     results_filename = get_results_filename(n_s, N_sim, N_FE, problem_options.rk_scheme, with_guess);
                     save(results_filename, 'results', 'stats', 'problem_options', 'solver_options')
 
