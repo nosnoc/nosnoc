@@ -27,7 +27,7 @@
 
 %
 %
-function [results] = local_minima_experiment(scenario,settings,model)
+function [results] = local_minima_experiment(scenario, problem_options, solver_options, model)
 import casadi.*
 unfold_struct(scenario,'caller');
 
@@ -38,10 +38,7 @@ unfold_struct(scenario,'caller');
 L_numeric = [];
 complementarity_stats = [];
 
-[solver, solver_initialization, model, settings] = create_nlp_nosnoc(model,settings);
-unfold_struct(model,'caller');
-unfold_struct(settings,'caller');
-unfold_struct(solver_initialization,'caller');
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 
 x0_star = [];
 solver_initialization.lbw(1) =  -inf;
@@ -49,33 +46,33 @@ solver_initialization.ubw(1) =  inf;
 
 for jj = 1:N_samples
     x0 = x0_vec(jj);
-    solver_initialization.w0(ind_x) = x0;
-    solver_initialization.lbw(1) =  x0;
-    solver_initialization.ubw(1) =  x0;
-    % forward simulation for initialization
-    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
+    ocp_solver.set('x', 'init', {0,0,problem_options.n_s}, x0);
+    ocp_solver.set('x', 'lb', {0,0,problem_options.n_s}, x0);
+    ocp_solver.set('x', 'ub', {0,0,problem_options.n_s}, x0);
+    ocp_solver.solve();
 
     % solve NLP
-    solver_initialization.w0 = full(sol.x);
-    solver_initialization.lbw(1) =  -inf;
-    solver_initialization.ubw(1) =  inf;
-    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
-    w_opt = full(sol.x);
-    x1_opt = w_opt(ind_x);
+    ocp_solver.discrete_time_problem.w.init = ocp_solver.discrete_time_problem.w.res;
+    ocp_solver.set('x', 'init', {0,0,problem_options.n_s}, x0);
+    ocp_solver.set('x', 'lb', {0,0,problem_options.n_s}, -inf);
+    ocp_solver.set('x', 'ub', {0,0,problem_options.n_s}, inf);
+    ocp_solver.solve();
+    x1_opt = ocp_solver.get('x');
 
     x0_star = [x0_star;x1_opt(1)];
     try
-    f_opt = full(J_fun(w_opt));
+        f_opt = ocp_solver.get_objective();
     catch
         f_opt  = 0;
     end
     L_numeric = [L_numeric;f_opt];
-    complementarity_iter = full(comp_res(w_opt,[]));
+    complementarity_iter = ocp_solver.stats.complementarity_stats(end);
     complementarity_stats = [complementarity_stats;complementarity_iter];
-    ts = -x0/3;
-    L_analytic =(8/3*ts^3 +8/3*x0*ts^2 + 8/9*x0^2*ts +1/3*T^3+1/3*x0*T^2+x0^2*T/9) + (T+(x0-5)/3)^2;
 end
 x0_analytic = -1.427572232082767;
+ts = -x0_analytic/3;
+T = problem_options.T;
+L_analytic = (8/3*ts^3 +8/3*x0_analytic*ts^2 + 8/9*x0_analytic^2*ts +1/3*T^3+1/3*x0_analytic*T^2+x0_analytic^2*T/9) + (T+(x0_analytic-5)/3)^2;
 figure
 plot(x0_vec,x0_analytic*ones(1,N_samples),'LineWidth',1.0);
 hold on
@@ -83,7 +80,7 @@ plot(x0_vec,x0_star,'LineWidth',1.0);
 axis equal
 xlabel('$x_0$','interpreter','latex');
 ylabel('$x_0^*$','interpreter','latex');
-if settings.use_fesd
+if problem_options.use_fesd
     legend({'Analytic Solution','FESD Solution'},'interpreter','latex');
 else
     legend({'Analytic Solution','Standard Solution'},'interpreter','latex');

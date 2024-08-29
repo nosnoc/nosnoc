@@ -3,10 +3,11 @@ clc
 close all
 import casadi.*
 %% Init model and settings
-model = NosnocModel();
-settings = NosnocOptions();
+model = nosnoc.model.Pss();
+problem_options = nosnoc.Options();
+solver_options = nosnoc.solver.Options();
 %% settings
-settings.n_s = 1;     
+settings.n_s = 2;
 settings.N_finite_elements = 2;
 
 % Generate Model
@@ -26,16 +27,14 @@ model.F = [f_11 f_12];
 model.f_q = x^2;
 model.f_q_T = (x-5/3)^2;
 
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 %%
-t_grid = results.t_grid;
-x_res = results.x;
-lambda_res = results.lam;
-mu_res = results.mu;
-mu_res = min(x_res,-x_res);
-lambda_1 = x_res - mu_res;
-lambda_2 = -x_res - mu_res;
+lambda_res = integrator.get("lambda");
+mu_res = integrator.get("mu");
+lambda_1 = lambda_res(1,:);
+lambda_2 = lambda_res(2,:);
 
 figure
 subplot(121)
