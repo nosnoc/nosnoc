@@ -33,19 +33,19 @@ function plot_particle(results, friction)
         theta3 = alpha_aux.*(alpha3);
         figure;
         subplot(131)
-        plot(results.t_grid,[theta1,nan])
+        plot(results.t_grid,theta1)
         xlabel('$\tau$','interpreter','latex');
         ylabel(['$\theta_1$'],'interpreter','latex');
         grid on
         ylim([-0.1 1.1]);
         subplot(132)
-        plot(results.t_grid,[theta2,nan])
+        plot(results.t_grid,theta2)
         xlabel('$\tau$','interpreter','latex');
         ylabel(['$\theta_2$'],'interpreter','latex');
         grid on
         ylim([-0.1 1.1]);
         subplot(133)
-        plot(results.t_grid,[theta3,nan])
+        plot(results.t_grid,theta3)
         xlabel('$\tau$','interpreter','latex');
         ylabel(['$\theta_3$'],'interpreter','latex');
         grid on
@@ -57,13 +57,13 @@ function plot_particle(results, friction)
         theta2 = (1-alpha1).*(1-alpha2);
         figure;
         subplot(121)
-        plot(results.t_grid,[theta1,nan])
+        plot(results.t_grid,theta1)
         xlabel('$\tau$','interpreter','latex');
         ylabel(['$\theta_1$'],'interpreter','latex');
         grid on
         ylim([-0.1 1.1]);
         subplot(122)
-        plot(results.t_grid,[theta2,nan])
+        plot(results.t_grid,theta2)
         xlabel('$\tau$','interpreter','latex');
         ylabel(['$\theta_2$'],'interpreter','latex');
         grid on
