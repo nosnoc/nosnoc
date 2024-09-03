@@ -2,6 +2,9 @@
 clc;
 import casadi.*
 close all
+%%
+g = 10;
+vertical_force = 0;
 %% init nosnoc
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
@@ -19,12 +22,10 @@ solver_options.complementarity_tol = 1e-10;
 solver_options.sigma_N = 1e-10;
 solver_options.N_homotopy = 16;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
-problem_options.a_n = 1;
+problem_options.a_n = 10;
 
 problem_options.pss_lift_step_functions = 0;
 %%
-g = 10;
-vertical_force = 0;
 % Symbolic variables and bounds
 q = SX.sym('q',2); 
 v = SX.sym('v',2);
@@ -71,3 +72,15 @@ ylabel('$\lambda_p$');
 subplot(414)
 plot(1-integrator.get_full("alpha")')
 ylabel('$1-\alpha$');
+
+figure
+z = integrator.get_full("z");
+subplot(311)
+plot(z(1,:))
+ylabel("$\theta_1$")
+subplot(312)
+plot(z(2,:))
+ylabel("$\theta_2$")
+subplot(313)
+plot(z(3,:))
+ylabel("$\beta$")
