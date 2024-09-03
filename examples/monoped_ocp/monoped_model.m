@@ -21,13 +21,13 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     problem_options.rk_scheme = RKSchemes.RADAU_IIA;
     problem_options.n_s = 2;
     %% homotopy settings
-    problem_options.cross_comp_mode = 1;
+    problem_options.cross_comp_mode = 7;
     solver_options.opts_casadi_nlp.ipopt.max_iter = 10000;
     %solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
-    solver_options.N_homotopy = 3;
+    solver_options.N_homotopy = 5;
     solver_options.sigma_0 = 1;
     % solver_options.homotopy_update_rule = 'superlinear';
-    solver_options.homotopy_update_slope = 0.005;
+    solver_options.homotopy_update_slope = 0.1;
     solver_options.opts_casadi_nlp.ipopt.tol = 1e-5;
     solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
     solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
@@ -47,7 +47,8 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     problem_options.time_freezing = 1;
     problem_options.pss_lift_step_functions = 1;
     problem_options.stagewise_clock_constraint = 1;
-
+    problem_options.a_n = a_n;
+    
     %% Discretization
     problem_options.T = 3.0;
     problem_options.N_stages = N_stages;
@@ -56,7 +57,6 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     %% friction cone parameters
     model.e = 0;
     model.mu = mu;
-    model.a_n = a_n;
     %% bounds
     lb_head_z = 0.2;
     ub_head_z = 0.55;
@@ -100,7 +100,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     qz = SX.sym('qz',1);
     phi_hip = SX.sym('phi_hip',1);
     phi_knee = SX.sym('phi_knee',1);
-    vx = SX.sym('vz',1);
+    vx = SX.sym('vx',1);
     vz = SX.sym('vz',1);
     omega_hip = SX.sym('omega_hip',1);
     omega_knee = SX.sym('omega_knee',1);
@@ -143,7 +143,7 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     model.f_c = f_c;
     model.J_tangent = J_tangent;
     model.J_normal= J_normal;
-    model.dims.n_dim_contact = 2;
+    model.dims.n_dim_contact = 1;
     %% OCP
     % Objective and constraints
     % box constraints
@@ -210,30 +210,38 @@ function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_re
     R = 1e-1*eye(2);
 
     % Generate reference trajectory
-    x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0];
-    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/problem_options.T;0;0;0];
-    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0];
+    x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0;1/4*problem_options.T];
+    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/problem_options.T;0;0;0;2/4*problem_options.T];
+    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0;3/4*problem_options.T];
 
-    x_target = [q_target;zeros(4,1)];
-    x_ref = interp1([0 0.25 0.5 0.75 1],[model.x0,x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,problem_options.N_stages),'spline')'; %spline
+    x_target = [q_target;zeros(4,1);problem_options.T];
+    x_ref = interp1([0 0.25 0.5 0.75 1],[[model.x0;0],x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,problem_options.N_stages+1),'spline')'; %spline
 
-    model.lsq_x = {x, x_ref, Q}; % TODO also do trajectory
+    model.lsq_x = {x, x_ref(1:(end-1),2:end), Q}; % TODO also do trajectory
     model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
-    model.lsq_T = {x, x_target, Q_terminal};
+    model.lsq_T = {x, x_target(1:(end-1)), Q_terminal};
     %% terminal constraint and/or costs
     %model.g_terminal = q(1:length(q_target))-q_target;
 
     %% Solve OCP with NOSNOC
-    mpcc = NosnocMPCC(problem_options, model);
-    solver = NosnocSolver(mpcc, solver_options);
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
     if initialize_with_ref
         x_guess = {};
         for ii = 1:problem_options.N_stages
-            x_guess{ii} = x_ref(:,ii);
+            for jj = 1:problem_options.N_finite_elements(ii)
+                for kk = 1:problem_options.n_s
+                    ocp_solver.set('x', 'init', {ii,jj,kk}, x_ref(:,ii+1));
+                end
+            end
         end
-        solver.set('x', x_guess');
     end
-    [results,stats] = solver.solve();
+    ocp_solver.solve();
+
+    stats = ocp_solver.stats;
+
+    results.x = ocp_solver.get("x");
+    results.u = ocp_solver.get("u");
+    results.ocp_solver = ocp_solver;
 
     if plot_res
         plot_results_hopping_robot

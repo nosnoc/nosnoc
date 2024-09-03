@@ -43,7 +43,5 @@ function plot_n_stage_experiment(filename)
     ylabel('cpu time per NLP iteration [s]', 'interpreter', 'latex', 'FontSize', 20)
     legend(["Stewart","Heaviside"], 'Location', 'northwest', 'FontSize', 20)
     hold off;
-    saveas(fig,'cpu_time_per_iter_monoped.pdf')
-
-    
+    saveas(fig,'cpu_time_per_iter_monoped.pdf')    
 end

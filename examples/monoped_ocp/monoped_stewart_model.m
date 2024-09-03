@@ -25,7 +25,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     problem_options.cross_comp_mode = 1;
     solver_options.opts_casadi_nlp.ipopt.max_iter = 10000;
     %solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
-    solver_options.N_homotopy = 11;
+    solver_options.N_homotopy = 15;
     solver_options.sigma_0 = 1;
     % solver_options.homotopy_update_rule = 'superlinear';
     solver_options.homotopy_update_slope = 0.4;
@@ -42,9 +42,11 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     problem_options.s_sot_max = 100;
     problem_options.s_sot_min = 0.99;
     problem_options.rho_sot = 0.00;
-    problem_options.time_freezing = 0;
+    problem_options.time_freezing = 1;
     problem_options.pss_lift_step_functions = 0;
-    problem_options.stagewise_clock_constraint = 0;
+    problem_options.stagewise_clock_constraint = 1;
+    problem_options.time_freezing_Heaviside_lifting = false;
+    problem_options.a_n = a_n;
 
     %% Discretization
     T = 3.0;
@@ -53,9 +55,9 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     problem_options.N_finite_elements = 3;
 
     %% friction cone parameters
+    %% friction cone parameters
     model.e = 0;
     model.mu = mu;
-    model.a_n = a_n;
     %% bounds
     lb_head_z = 0.2;
     ub_head_z = 0.55;
@@ -107,10 +109,6 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     u_hip = SX.sym('u_hip',1);
     u_knee = SX.sym('u_knee',1);
 
-    sot = SX.sym('sot',1);
-    t = SX.sym('t',1);
-    t_ref = SX.sym('t_ref',1);
-
     u = [u_hip;u_knee];
     q = [qx;qz;phi_hip;phi_knee];
     v = [vx;vz;omega_hip;omega_knee];
@@ -118,14 +116,7 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     model.x = [q;v];
     model.q = q;
     model.v = v;
-    model.u = [u;sot];
-    model.p_time_var = t_ref;
-    t_stages = linspace(0, T, N_stages+1);
-    model.p_time_var_val = t_stages(2:end);
-    
-
-    n_q = length(q);
-    
+    model.u = u;
     %% inital values
     q0 = [0;0.4;0;0];
     v0 = [0;0;0;0];
@@ -137,8 +128,9 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
         q_lin = [0;0.4;pi/2;-pi/4];
         M = full(M_fun([q_lin;v0]));
     end
-    f_v = (h_forces+[0;0;u]);
-    invM = inv(M);
+    model.f_v = (h_forces+[0;0;u]);
+    model.invM = inv(M);
+    model.M = M;
     %% normal and tangents
     f_c =  p_foot(2);
     c_tan = p_foot(1);
@@ -152,13 +144,13 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     model.f_c = f_c;
     model.J_tangent = J_tangent;
     model.J_normal= J_normal;
-    model.dims.n_dim_contact = 2;
+    model.dims.n_dim_contact = 1;
     %% OCP
     % Objective and constraints
     % box constraints
     u_max = 100;
-    model.lbu = [-u_max*ones(2,1); problem_options.s_sot_min];
-    model.ubu = [u_max*ones(2,1); problem_options.s_sot_max];
+    model.lbu = -u_max*ones(2,1);
+    model.ubu = u_max*ones(2,1);
     % Sanity constraints
     model.lbx = [-0.5;0;-pi;-pi;-100*ones(4,1)];
     model.ubx = [q_target(1)+0.5; 10;pi;pi;100*ones(4,1)];
@@ -210,8 +202,8 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
 
     % least squares weight
 
-    Q = diag([10, 1, 10, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
-    Q_terminal = diag([1e5, 1e5, 1e5, 1e5, 10, 10, 10, 10]);
+    Q = diag([1, 1, 10, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
+    Q_terminal = diag([1e3, 1e3, 1e3, 1e3, 10, 10, 10, 10]);
 
 
     u_ref = [0;0];
@@ -219,69 +211,38 @@ function [results, stats] = monoped_stewart_model(N_stages, initialize_with_ref,
     R = 1e-1*eye(2);
 
     % Generate reference trajectory
-    x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/T;0;0;0;T/4];
-    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/T;0;0;0;2*T/4];
-    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/T;0;0;0;3*T/4];
+        x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0;1/4*problem_options.T];
+    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/problem_options.T;0;0;0;2/4*problem_options.T];
+    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0;3/4*problem_options.T];
 
-    % accorbatic refference
-    % x_mid = [q_target(1)/2; 0.5;pi;0;q_target(1)/problem_options.T;0;0;0];
-    x_target = [q_target;zeros(4,1)];
-    x_ref = interp1([0 0.25 0.5 0.75 1],[[model.x0;0],x_mid_1,x_mid_2,x_mid_3,[x_target;T]]',linspace(0,1,problem_options.N_stages),'spline')'; %spline
+    x_target = [q_target;zeros(4,1);problem_options.T];
+    x_ref = interp1([0 0.25 0.5 0.75 1],[[model.x0;0],x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,problem_options.N_stages+1),'spline')'; %spline
 
-    model.lsq_x = {x, x_ref(1:(end-1),:), Q}; % TODO also do trajectory
+    model.lsq_x = {x, x_ref(1:(end-1),2:end), Q}; % TODO also do trajectory
     model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
-    model.lsq_T = {x, x_target, Q_terminal};
+    model.lsq_T = {x, x_target(1:(end-1)), Q_terminal};
     %% terminal constraint and/or costs
     %model.g_terminal = q(1:length(q_target))-q_target;
 
-    %%hand crafted time freezing :)
-    f_ode = sot * vertcat(v, invM*f_v, 1);
-
-    v_normal = J_normal'*v;
-    v_tangent = J_tangent'*v;
-
-    inv_M_aux = invM;
-
-    f_aux_pos = vertcat(SX.zeros(n_q, 1), inv_M_aux*(J_normal-J_tangent*mu)*a_n, 0);
-    f_aux_neg = vertcat(SX.zeros(n_q, 1), inv_M_aux*(J_normal+J_tangent*mu)*a_n, 0);
-
-    model.F = horzcat(f_ode, f_ode, f_ode, f_ode, f_ode, f_ode, f_aux_pos, f_aux_neg);
-    model.S = [1, 1, 1;
-        1, 1, -1;
-        1, -1, 1;
-        1, -1, -1;
-        -1, 1, 1;
-        -1, 1, -1;
-        -1, -1, 1;
-        -1, -1, -1];
-    model.c = vertcat(f_c, v_normal, v_tangent);
-    model.x = [x;t];
-    model.lbx = [model.lbx;-inf];
-    model.ubx = [model.ubx;inf];
-    model.u0 = [0;0;1];
-    model.x0 = [model.x0;0];
-
-    %
-    model.g_terminal = [t - T];
-    model.g_path = [model.g_path; t - t_ref];
-    model.g_path_lb = [model.g_path_lb; 0];
-    model.g_path_ub = [model.g_path_ub; 0];
-
-    %
-    problem_options.initial_theta = 0.11;
-
     %% Solve OCP with NOSNOC
-    mpcc = NosnocMPCC(problem_options, model);
-    solver = NosnocSolver(mpcc, solver_options);
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
     if initialize_with_ref
         x_guess = {};
         for ii = 1:problem_options.N_stages
-            x_guess{ii} = x_ref(:,ii);
+            for jj = 1:problem_options.N_finite_elements(ii)
+                for kk = 1:problem_options.n_s
+                    ocp_solver.set('x', 'init', {ii,jj,kk}, x_ref(:,ii+1));
+                end
+            end
         end
-        solver.set('x', x_guess');
     end
-    [results,stats] = solver.solve();
+    ocp_solver.solve();
 
+    stats = ocp_solver.stats;
+
+    results.x = ocp_solver.get("x");
+    results.u = ocp_solver.get("u");
+    results.ocp_solver = ocp_solver;
     %% Save statistics
     % fid = fopen('log_robot.txt','a');
     % fprintf(fid,[ '---------------------------------------\n']);
