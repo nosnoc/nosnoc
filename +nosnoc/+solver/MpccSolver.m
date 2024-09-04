@@ -1133,13 +1133,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             mpcc = obj.mpcc;
             opts = obj.opts;
             plugin = obj.plugin;
-            G_fun = Function('G', {mpcc.x, mpcc.p}, {mpcc.G});
-            H_fun = Function('H', {mpcc.x, mpcc.p}, {mpcc.H});
-            obj.G_fun = G_fun;
-            obj.H_fun = H_fun;
-            f_mpcc_fun = Function('f_mpcc', {mpcc.x, mpcc.p}, {mpcc.f});
-            obj.f_mpcc_fun = f_mpcc_fun;
-            g_mpcc_fun = Function('g_mpcc', {mpcc.x, mpcc.p}, {mpcc.g});
             % Update nlp data
             if ~isempty(p.Results.x0)
                 w_init = nlp.w.init;
