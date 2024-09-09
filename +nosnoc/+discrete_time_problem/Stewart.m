@@ -582,7 +582,7 @@ classdef Stewart < vdx.problems.Mpcc
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
             obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal, relax_terminal_struct};
-            obj.g.terminal.set_is_terminal(true);
+            obj.g.terminal.set_is_terminal(true); % set_is_terminal(true) sets the "is terminal" ordering hint for vdx. This means that VDX will reorder this variable to the end.
             if relax_terminal_struct.is_relaxed && all(size(g_terminal) > 0)
                 obj.p.rho_terminal().val = opts.rho_terminal;
                 obj.w.s_terminal.set_is_terminal(true);
