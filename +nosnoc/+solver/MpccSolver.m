@@ -413,7 +413,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     end
                 end
 
-                nlp.finalize_assignments();
+                nlp.finalize_assignments(); % Make sure all nlp pending assignments are flushed.
                 [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(mpcc.G,nlp.w.sym);
                 [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(mpcc.H,nlp.w.sym);
                 obj.ind_nonscalar_G = ind_nonscalar_G;
