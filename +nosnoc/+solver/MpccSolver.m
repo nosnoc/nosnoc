@@ -682,7 +682,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
                 opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
                 opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
-                opts_casadi_nlp.ipopt.print_level = 5;%obj.opts.opts_casadi_nlp.ipopt.print_level;
+                opts_casadi_nlp.ipopt.print_level = obj.opts.opts_casadi_nlp.ipopt.print_level;
                 opts_casadi_nlp.print_time = obj.opts.opts_casadi_nlp.print_time;
                 opts_casadi_nlp.ipopt.sb = 'yes';
                 
@@ -809,7 +809,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 converged = false;
                 n_max_biactive = n_biactive;
                 n_biactive = n_biactive;
-                while ~converged && n_biactive >=  % Solve the TNLP with less biactive each time.
+                while ~converged && n_biactive >= 0 % Solve the TNLP with less biactive each time.
                     idx_00 = min_idx(1:n_biactive);
                     ind_00 = false(length(G),1);
                     ind_00(idx_00) = true;
@@ -860,6 +860,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     end
                 end
                 w_star = full(tnlp_results.x);
+                w_star = w_star(obj.ind_map_w.mpcc);
+                w_star_orig = x0;
+                w_star_orig(obj.ind_map_w.nlp) = w_star;
 
                 nu = -full(tnlp_results.lam_g(ind_G)); % here a - is put, as in casadi Lagrange multipliers for inequality constraints are nonpositive, but we use our defintions with nonnegative multipliers
                 xi = -full(tnlp_results.lam_g(ind_H));
@@ -945,8 +948,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % output tnlp results
             res_out = tnlp_results;
             w_polished = zeros(size(nlp.w));
-            w_polished = w_star_orig;
-            res_out.x = w_polished;
+            w_polished = w_star;
+            res_out.x = w_star_orig;
         end
 
         function [solution, improved_point, b_stat] = check_b_stationarity(obj, x0, exitfast)
@@ -954,11 +957,14 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             if ~exist('exitfast', 'var')
                 exitfast = true;
             end
+
+            x0_nlp = zeros(size(obj.nlp.w.sym));
+            x0_nlp(obj.ind_map_w.nlp) = x0(obj.ind_map_w.mpcc);
             
             mpcc = obj.mpcc;
             nlp = obj.nlp;
             f = mpcc.f;
-            x = obj.w_mpcc_fun(nlp.w.sym); lbx = obj.w_mpcc_fun(nlp.w.lb); ubx = obj.w_mpcc_fun(nlp.w.ub);
+            x = obj.w_mpcc_fun(nlp.w.sym); lbx = full(obj.w_mpcc_fun(nlp.w.lb)); ubx = full(obj.w_mpcc_fun(nlp.w.ub));
             nlp_g = nlp.g.sym; g = SX(zeros([length(obj.ind_map_g.nlp), 1]));
             nlp_lbg = nlp.g.lb; lbg = [];
             nlp_ubg = nlp.g.ub; ubg = [];
@@ -969,14 +975,14 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 ubg(obj.ind_map_g.nlp) = nlp_ubg(obj.ind_map_g.mpcc)';
                 ubg = ubg';
             end
-            p = nlp.p.sym;
-            p(obj.ind_map_p.nlp) = p(obj.ind_map_p.mpcc)';
+            nlp_p = nlp.p.sym; p = SX(zeros([length(obj.ind_map_p.nlp), 1]));
+            p(obj.ind_map_p.nlp) = nlp_p(obj.ind_map_p.mpcc)';
             nlp_p_val = nlp.p.val;p_val = [];
             p_val(obj.ind_map_p.nlp) = nlp_p_val(obj.ind_map_p.mpcc);
             G = obj.G_fun(nlp.w.sym, nlp.p.sym);
             H = obj.H_fun(nlp.w.sym, nlp.p.sym);
-            G_old = full(obj.G_fun(x0, nlp.p.val));
-            H_old = full(obj.H_fun(x0, nlp.p.val));
+            G_old = full(obj.G_fun(x0_nlp, nlp.p.val));
+            H_old = full(obj.H_fun(x0_nlp, nlp.p.val));
 
             % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
             % i.e. in the worst case G=sqrt(complementarity_tol) and H=sqrt(comp_tol).
@@ -1291,16 +1297,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     disp("Not checking stationarity due to failure of homotopy to converge.");
                 else                    
                     [w_polished, res_out, stat_type, n_biactive] = obj.check_multiplier_based_stationarity(nlp.w.res);
-                    [sol, w_polished, b_stat] = obj.check_b_stationarity(w_polished);
+                    [sol, ~, b_stat] = obj.check_b_stationarity(w_polished);
                     if stat_type ~= "?"
                         mpcc_results.x = w_polished;
-                        mpcc_results.f = full(obj.f_mpcc_fun(w_polished, nlp.p.val));
-                        mpcc_results.g = full(obj.g_mpcc_fun(w_polished, nlp.p.val));
-                        mpcc_results.G = full(obj.G_fun(w_polished, nlp.p.val));
-                        mpcc_results.H = full(obj.H_fun(w_polished, nlp.p.val));
+                        mpcc_results.f = full(obj.f_mpcc_fun(res_out.x, nlp.p.val));
+                        mpcc_results.g = full(obj.g_mpcc_fun(res_out.x, nlp.p.val));
+                        mpcc_results.G = full(obj.G_fun(res_out.x, nlp.p.val));
+                        mpcc_results.H = full(obj.H_fun(res_out.x, nlp.p.val));
                         % TODO (@anton) also recalculate multipliers and g?
                         mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
-                        complementarity_iter = full(obj.comp_res_fun(w_polished, nlp.p.val));
+                        complementarity_iter = full(obj.comp_res_fun(res_out.x, nlp.p.val));
                         stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                     end
                     stats.stat_type = stat_type;
