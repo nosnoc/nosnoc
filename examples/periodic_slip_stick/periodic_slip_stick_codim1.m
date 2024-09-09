@@ -34,9 +34,7 @@
 % SIAM Journal on Numerical Analysis 47.3 (2009): 2023-2051.
 
 %%
-clear all
-clc
-close all
+clear; clc; close all;
 import casadi.*
 %% discretization settings
 N_finite_elements = 2;
@@ -68,16 +66,14 @@ x2 = SX.sym('x2',1);
 x = [x1;x2];
 
 c = x2-0.2;
-
-f_11 = [x2;-x1+1/(1.2-x2)];
-f_12 = [x2;-x1-1/(0.8+x2)];
-
+f_1 = [x2;-x1+1/(1.2-x2)];
+f_2 = [x2;-x1-1/(0.8+x2)];
 
 model.x = x;
 model.c = c;
 model.S = [-1;1];
 
-F = [f_11 f_12];
+F = [f_1 f_2];
 model.F = F;
 %% Call integrator
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
@@ -112,6 +108,7 @@ grid on
 
 %%
 figure
+latexify_plot();
 if isequal(problem_options.dcs_mode,'Stewart')
     plot(t_grid,theta)
     xlabel('$t$','Interpreter','latex');

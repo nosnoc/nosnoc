@@ -6,25 +6,23 @@
 % Published in: 2008 47th IEEE Conference on Decision and Control
 % DOI: 10.1109/CDC.2008.4739025
 %% Clear
-clc;
-clear all; 
-close all;
+clc; clear; close all;
 %% Build problem
 import casadi.*
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = nosnoc.model.Pss();
-% Choosing the Runge - Kutta Method and number of stages
+
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.cross_comp_mode = 'FE_FE';
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
-% MPCC Method
-solver_options.N_homotopy = 10;
-% Discretization parameters
 problem_options.N_stages = 30; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 0.08;    % Time horizon
+
+% MPCC Method
+solver_options.N_homotopy = 10;
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+% Discretization parameters
 
 %% The Model
 % Parameters
@@ -47,16 +45,16 @@ x2 = SX.sym('x2');  % load mass position
 v2 = SX.sym('v2'); % load mass velocity
 I = SX.sym('I'); % electric current
 x = [x1;v1;x2;v2;I];
+
+model = nosnoc.model.Pss();
 model.x = x;
 model.x0 = x0;
 % control
-U = SX.sym('U'); % the motor voltage
-u = [U];
+u = SX.sym('u'); % the motor voltage
 n_u = 1;
 model.u = u;
 model.lbu = -U_max*ones(n_u,1);
 model.ubu = U_max*ones(n_u,1);
-
 
 %% Dynamics
 
@@ -89,9 +87,7 @@ x_target = [0.01;0;0.01;0;0];
 model.f_q = u^2;
 model.g_terminal = x-x_target;
 
-
 % Inequality constraints
-%
 % cv = 10; cx = 10;
 % model.g_path = [v1-v2;x1-x2];
 % model.g_path_ub = [cv;cx];

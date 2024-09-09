@@ -20,22 +20,18 @@ problem_options.N_stages = 30; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 0.09;    % Time horizon
 problem_options.cross_comp_mode = 'FE_FE';
-problem.options.dcs_mode = "Heaviside"; % or "Heaviside"
+problem.options.dcs_mode = "Heaviside"; % or "Stewart"
 problem_options.time_optimal_problem = true;
-problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
-problem_options.use_fesd = 1;
-
-% problem_options.gamma_h = 0;
-% problem_options.N_finite_elements = 1;
-% problem_options.use_fesd = 1;
-% problem_options.print_level  = 5;
-% problem_options.equidistant_control_grid = 0;
 
 % solver options
 solver_options.N_homotopy = 7;
 solver_options.homotopy_update_rule = 'superlinear';
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
-% solver_options.print_level =  5;
+
+% Settings for enforcing switches at grid boundary
+% problem_options.gamma_h = 0;
+% problem_options.N_finite_elements = 1;
+% problem_options.use_fesd = 1;
+% problem_options.equidistant_control_grid = 0;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 

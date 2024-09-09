@@ -32,9 +32,7 @@
 % Dieci, Luca, and Nicola Guglielmi. "Regularizing piecewise smooth differential systems: co-dimension $ $2 $$ discontinuity surface." Journal of Dynamics and Differential Equations 25.1 (2013): 71-94.
 
 %%
-clear all
-clc
-close all
+clear; clc; close all
 import casadi.*
 %% discretization settings
 N_finite_elements = 4;
@@ -47,13 +45,13 @@ solver_options = nosnoc.solver.Options();
 model = nosnoc.model.Pss();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %RKSchemes.GAUSS_LEGENDRE;
-solver_options.print_level = 2;
 problem_options.n_s = 3;
 problem_options.dcs_mode = 'Stewart'; % 'Step;
-solver_options.complementarity_tol = 1e-9;
 problem_options.cross_comp_mode = 3;
-%solver_options.homotopy_update_rule = 'superlinear';
 problem_options.pss_lift_step_functions = 0;
+
+solver_options.complementarity_tol = 1e-9;
+solver_options.print_level = 2;
 %% Time settings
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
@@ -68,16 +66,19 @@ x = [x1;x2;x3];
 
 c = [x2-0.2; x3-0.4];
 
-f_11 = [(x2+x3)/2;-x1+1/(1.2-x2);-x1+1/(1.4-x3)];
-f_12 = [(x2+x3)/2;-x1+1/(1.2-x2);-x1+1/(0.6+x3)];
-f_13 = [(x2+x3)/2;-x1-1/(0.8+x2);-x1+1/(1.4-x3)];
-f_14 = [(x2+x3)/2+x1*(x2+0.8)*(x3+0.6);-x1-1/(0.8+x2);-x1-1/(0.6+x3)];
+f_1 = [(x2+x3)/2;-x1+1/(1.2-x2);-x1+1/(1.4-x3)];
+f_2 = [(x2+x3)/2;-x1+1/(1.2-x2);-x1+1/(0.6+x3)];
+f_3 = [(x2+x3)/2;-x1-1/(0.8+x2);-x1+1/(1.4-x3)];
+f_4 = [(x2+x3)/2+x1*(x2+0.8)*(x3+0.6);-x1-1/(0.8+x2);-x1-1/(0.6+x3)];
 
 model.x = x;
 model.c = c;
-model.S = [-1 -1;-1 1;1 -1; 1 1];
+model.S = [-1 -1;...
+           -1 1;...
+           1 -1;...
+           1 1];
 
-F = [f_11 f_12 f_13 f_14];
+F = [f_1 f_2 f_3 f_4];
 model.F = F;
 %% Call integrator
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
@@ -118,6 +119,7 @@ grid on
 
 %%
 figure
+latexify_plot();
 if isequal(problem_options.dcs_mode,'Stewart')
     plot(t_grid,theta)
     xlabel('$t$','Interpreter','latex');

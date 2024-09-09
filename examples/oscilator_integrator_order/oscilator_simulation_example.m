@@ -46,7 +46,7 @@ problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = nosnoc.model.Pss();
 %% settings
-problem_options.use_fesd = 0;       % switch detection method on/off
+problem_options.use_fesd = 1;       % switch detection method on/off
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
 solver_options.print_level = 2;
 problem_options.n_s = 4;
@@ -54,7 +54,7 @@ problem_options.dcs_mode = 'Heaviside'; % 'Step;
 
 % Penalty/Relaxation paraemetr
 solver_options.complementarity_tol = 1e-9;
-problem_options.cross_comp_mode = 1;
+% problem_options.cross_comp_mode = 1;
 
 %% Time settings
 x_star = [exp(1);0];

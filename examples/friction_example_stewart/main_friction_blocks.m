@@ -41,11 +41,11 @@ import casadi.*
 % collocation settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
+
+
 problem_options.n_s = 2;                            
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;     
-% problem_options.rk_representation = RKRepresentation.differential_lift_x;
-problem_options.use_fesd = 1;
-problem_options.cross_comp_mode = 3;
+
 solver_options.print_level = 2;
 solver_options.s_elastic_max = 1e1;                    
 solver_options.sigma_0 = 1;
@@ -67,7 +67,6 @@ problem_options.dcs_mode = 'Stewart';
 problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;
 problem_options.N_sim = N_sim;
-
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
