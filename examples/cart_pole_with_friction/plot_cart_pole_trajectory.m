@@ -34,7 +34,7 @@ function plot_cart_pole_trajectory(ocp_solver, time_step, x_ref)
     q2_opt = x_opt(2,:);
     v1_opt = x_opt(3,:);
     v2_opt = x_opt(4,:);
-    t_grid = ocp_solver.get_time_grid()
+    t_grid = ocp_solver.get_time_grid();
     t_grid_u = ocp_solver.get_control_grid();
     u_opt = ocp_solver.get("u");
 

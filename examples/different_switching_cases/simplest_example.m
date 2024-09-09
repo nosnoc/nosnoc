@@ -25,18 +25,15 @@
 
 % This file is part of NOSNOC.
 
-clear all
-clc
-close all
+clear; clc; close all;
 import casadi.*
-%% NOSNOC settings
+import nosnoc.*
+%% nosnoc settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.n_s = 1;
 settings.homotopy_update_slope = 0.1;
-%problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
-problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-%problem_options.rk_representation= 'differential';
+problem_options.rk_scheme = RKSchemes.RADAU_IIA; %RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_representation= 'integral';
 problem_options.dcs_mode = 'Heaviside';
 
@@ -54,7 +51,8 @@ x = SX.sym('x',1);
 model.x = x;
 model.c = x;
 model.S = [-1; 1];
-f_1 = [1]; f_2 = [-1];
+f_1 = 1; 
+f_2 = -1;
 model.F = [f_1 f_2];
 
 integrator = nosnoc.Integrator(model, problem_options, solver_options);

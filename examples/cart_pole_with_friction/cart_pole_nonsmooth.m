@@ -24,9 +24,17 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-
-% Fixed friction force
-F_friction = 2;
+%% Description
+% In this example a swing up of a pendulum on a cart subject to friction is
+% treated. 
+% The script allows to solve the problem with a smoothed friction model and
+% standard direct collocation, to compare to a nonsmooth friction model and
+% nosnoc please run cart_pole_nonsmooth 
+% This allows to explore the drawbacks of naive smoothing, e.g., if started
+% with a very low smoothing parameter.
+% For more details see: https://www.syscop.de/files/2023ss/nonsmooth_school/ex1_sol.pdf
+%% Model
+F_friction = 2; % Friction force amplitude
 
 % model
 model = get_cart_pole_with_friction_model(true, F_friction);
@@ -40,7 +48,6 @@ problem_options.n_s = 3;
 problem_options.dcs_mode = 'Stewart';
 problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval
-problem_options.cross_comp_mode = 7;
 
 % solver options
 solver_options = nosnoc.solver.Options();

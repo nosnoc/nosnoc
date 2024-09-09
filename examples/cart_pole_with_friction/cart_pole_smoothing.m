@@ -25,28 +25,38 @@
 
 % This file is part of NOSNOC.
 clear all;
-
 import casadi.*
+import nosnoc.*
+%% Description
+% In this example a swing up of a pendulum on a cart subject to friction is
+% treated. 
+% The script allows to solve the problem with a smoothed friction model and
+% standard direct collocation, to compare to a nonsmooth friction model and
+% nosnoc please run cart_pole_nonsmooth 
+% This allows to explore the drawbacks of naive smoothing, e.g., if started
+% with a very low smoothing parameter.
+% For more details see: https://www.syscop.de/files/2023ss/nonsmooth_school/ex1_sol.pdf
 
-F_friction = 2;
-
-%% model stuff
+%% Settings
+objective_experiment = 1; % If true solve OCP for several values of the smoothing parameter to observe breakdown.
+%% Generate model
+F_friction = 2; % Amplitude of the friction froce
+sigma0 = 1e-1; % smoothing parameter in the smoothed friction problem, i.e., sign(x) ~= tanh(x/sigma) 
 model = get_cart_pole_with_friction_model(0, F_friction);
 
-%%
-n_s = 1;
-N = 30; % number of control intervals
-T = 5; % time horizon
-N_FE = 2; % number of integration steps = Finite elements, without switch detections
+% Discretization settings
+n_s = 1; % Number of stage points of the RK/Collocation method
+N = 30; % Bumber of control intervals
+T = 5; % Time horizon
+N_FE = 2; % number of integration steps (finite elements) - without switch detections
 x_ref = [0; 180/180*pi; 0; 0]; % target position
 
-%% NLP formulation & solver creation
+%% NLP formulation via direct collocation and solver creation
 nlp = setup_collocation_nlp(model, T, N, n_s, N_FE);
 casadi_nlp = struct('f', nlp.f, 'x', nlp.w, 'p', nlp.p, 'g', nlp.g);
 solver = nlpsol('solver', 'ipopt', casadi_nlp);
 
 %% solve nlp
-sigma0 = 1e-0;
 % Solve the NLP
 sol = solver('x0', nlp.w0, 'lbx', nlp.lbw, 'ubx', nlp.ubw,...
     'lbg', nlp.lbg, 'ubg', nlp.ubg, 'p', sigma0);
@@ -85,10 +95,9 @@ xlabel('$t$', 'Interpreter', 'latex')
 legend('smoothed friction forces', 'controls')
 
 %% objective experiment
-if 0
+if objective_experiment
 warm_starting = 0;
-
-n_sigmas = 15;
+n_sigmas = 15; % number of samples of the smoothing parameter between 1e-8 and 1e1
 sigma_values = logspace(1, -8, n_sigmas);
 f_opt = [];
 w0 = nlp.w0;
@@ -113,7 +122,7 @@ function nlp = setup_collocation_nlp(model, T, N, n_s, N_FE)
     import casadi.*
     [B, C, D] = generate_collocation_coefficients(n_s);
 
-    %% Extract from model
+    % Extract from model
     L = model.f_q;
     n_x = length(model.x);
     n_u = length(model.u);
@@ -126,7 +135,7 @@ function nlp = setup_collocation_nlp(model, T, N, n_s, N_FE)
     h = T/(N*N_FE);
     x0 = model.x0;
 
-    %% Casadi NLP formulation
+    % CasADi NLP formulation
     w = {};
     w0 = [];
     lbw = [];
@@ -217,16 +226,13 @@ end
 
 function [B, C, D] = generate_collocation_coefficients(n_s)
     import casadi.*
-    %% collocation using casadi
+    % direct collocation using CasADi
     % Get collocation points
-    tau_root = [0 collocation_points(n_s, 'radau')];
-
+    tau_root = [0 collocation_points(n_s, 'radau')];  
     % Coefficients of the collocation equation
     C = zeros(n_s+1,n_s+1);
-
     % Coefficients of the continuity equation
     D = zeros(n_s+1, 1);
-
     % Coefficients of the quadrature function
     B = zeros(n_s+1, 1);
 
