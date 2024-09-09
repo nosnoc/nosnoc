@@ -11,10 +11,10 @@ solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation = RKRepresentation.integral;
 problem_options.n_s = 2;
-problem_options.N_stages = 5; % number of control intervals
+problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 15;    % Time horizon
-problem_options.dcs_mode = "Heaviside"; % or "Heaviside"
+problem_options.dcs_mode = "Stewart"; % or "Heaviside"
 problem_options.use_numerical_clock_state = true;
 
 problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
@@ -23,6 +23,11 @@ problem_options.step_equilibration = StepEquilibrationMode.heuristic_mean;
 %problem_options.x_box_at_fe = 0;
 problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_2;
 %problem_options.relax_terminal_numerical_time = false;
+
+solver_options.homotopy_steering_strategy = "ELL_1";
+solver_options.decreasing_s_elastic_upper_bound = true;
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.print_level=5;
 %% Create model
 % model = nosnoc.model.stewart();
 model = nosnoc.model.Pss(); 

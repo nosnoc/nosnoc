@@ -44,10 +44,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         ind_map_G % Map from lifted indices to original indices in G.
         ind_map_H % Map from lifted indices to original indices in H.
 
-        G_fun
-        H_fun
-        comp_res_fun
-        f_mpcc_fun
+        G_fun % Function (nlp.w, nlp.p)|-> mpcc.G
+        H_fun % Function (nlp.w, nlp.p)|-> mpcc.G
+        comp_res_fun % Function (nlp.w, nlp.p)|-> mmax(mpcc.G,mpcc.H)
+        f_mpcc_fun % Function (nlp.w, nlp.p)|-> mpcc.f
+        w_mpcc_fun % Function (nlp.w)|-> mpcc.w
+        g_mpcc_fun % Function (nlp.w, nlp.p)|-> mpcc.g
+
+        ind_map_g % Map for general constraints containing the corresponding indices in the original MPCC passed in and indices in the NLP
+        ind_map_w % Map for primal variables containing the corresponding indices in the original MPCC passed in and indices in the NLP
+        ind_map_p % Map for parameters containing the corresponding indices in the original MPCC passed in and indices in the NLP
     end
 
     methods (Access=public)
@@ -55,15 +61,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         function obj=MpccSolver(relaxation_type, mpcc, opts)
             import casadi.*
             import nosnoc.solver.*
-            casadi_symbolic_mode = split(class(mpcc.x), '.');
-            casadi_symbolic_mode = casadi_symbolic_mode{end};
-            % preprocess empty fields
-            if ~isfield(mpcc, 'g') || isempty(mpcc.g)
-                mpcc.g = casadi.(casadi_symbolic_mode)([]); 
-            end
-            if ~isfield(mpcc, 'p') || isempty(mpcc.p)
-                mpcc.p = casadi.(casadi_symbolic_mode)([]); 
-            end
             obj.relaxation_type = relaxation_type;
             obj.mpcc = mpcc;
             obj.opts = opts;
@@ -72,9 +69,288 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             
             if isa(mpcc, 'vdx.problems.Mpcc') % We can properly interleave complementarities if we get a vdx.Mpcc
                 use_vdx = true;
-                % TODO(@anton) implement this
+                mpcc.finalize_assignments(); % Make sure all mpcc pending assignments are flushed.
+                casadi_symbolic_mode = mpcc.w.casadi_type;
+                nlp = vdx.Problem('casadi_type', casadi_symbolic_mode);
+
+                % Copy over w, g, p, and f.
+                nlp.w = copy(mpcc.w);
+                nlp.w.problem = nlp;
+                nlp.g = copy(mpcc.g);
+                nlp.g.problem = nlp;
+                nlp.p = copy(mpcc.p);
+                nlp.p.problem = nlp;
+                nlp.f = mpcc.f;
+
+                % get indices of variables before re-sorting so we can map back to the original order.
+                % `pre_sort` is _before_ the re-sort happens, i.e the original results.
+                g_vars = nlp.g.get_vars();
+                pre_sort_g_ind = cellfun(@(x) [x.indices{:}], g_vars, "UniformOutput", false);
+                pre_sort_g_ind = [pre_sort_g_ind{:}];
+                w_vars = nlp.w.get_vars();
+                pre_sort_w_ind = cellfun(@(x) [x.indices{:}], w_vars, "UniformOutput", false);
+                pre_sort_w_ind = [pre_sort_w_ind{:}];
+                p_vars = nlp.p.get_vars();
+                pre_sort_p_ind = cellfun(@(x) [x.indices{:}], p_vars, "UniformOutput", false);
+                pre_sort_p_ind = [pre_sort_p_ind{:}];
+
+                % add homotopy parameter
+                nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0};
+
+                % Create relaxation slacks/parameters
+                switch opts.homotopy_steering_strategy
+                  case HomotopySteeringStrategy.DIRECT
+                    % Nothing to be done here.
+                  case HomotopySteeringStrategy.ELL_INF
+                    % adding a scalar elastic variable to nlp.w which augments the original mpcc.w
+                    nlp.w.s_elastic = {{'s_elastic', 1}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
+                    if opts.decreasing_s_elastic_upper_bound
+                        nlp.g.s_ub = {nlp.w.s_elastic() - nlp.p.sigma_p(), -inf, 0};
+                    end
+                    if opts.objective_scaling_direct
+                        nlp.f = nlp.f + (1/nlp.p.sigma_p())*nlp.w.s_elastic(); % penalize the elastic more and more with decreasing sigma_p
+                    else
+                        nlp.f = nlp.p.sigma_p()*nlp.f + nlp.w.s_elastic(); % reduce the weight of the initial objective with decreasing sigma_p
+                    end
+                  case HomotopySteeringStrategy.ELL_1
+                    % Ell 1 steering strategy slacks are added during creation of constraints
+                end
+
+                % Generate relaxation function
+                psi_fun = get_psi_fun(MpccMethod(obj.relaxation_type), opts.normalize_homotopy_update);
+
+                % Get all the vdx.Variable for the complementarities
+                comp_var_names = mpcc.G.get_var_names();
+                sum_elastic = 0;
+                for ii=1:numel(comp_var_names)
+                    name = comp_var_names{ii};
+                    depth = mpcc.G.(name).depth; % how many indices does this variable need?
+                    s_elastic_name = ['s_elastic_' char(name)];
+
+                    % If a 0 dimensional variable handle it specially.
+                    if depth == 0
+                        % Get the corresponding G and H expressions
+                        G_curr = mpcc.G.(name)();
+                        H_curr = mpcc.H.(name)();
+                        % select relaxation slacks/parameters
+                        switch opts.homotopy_steering_strategy
+                          case HomotopySteeringStrategy.DIRECT
+                            % nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
+                            sigma = nlp.p.sigma_p(); 
+                          case HomotopySteeringStrategy.ELL_INF
+                            sigma = nlp.w.s_elastic(); % Here s_elastic takes the role of sigma in direct, and sigma_p is used to define a penalty parameter for the elastic variable s_elastic
+                          case HomotopySteeringStrategy.ELL_1
+                            % adding elastic variables to nlp.w which augments the original mpcc.w
+                            % Remark: ELL_1 with s_elastic is equivalent to usually Ell_1 penality approach, but this indirect way helps
+                            % to add some constraint on s_elastic (which  avoids unbounded problems somtimes, and it can also improve convergence)
+                            nlp.w.(s_elastic_name) = {{s_elastic_name, size(G_curr, 1)}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
+                            if opts.decreasing_s_elastic_upper_bound
+                                % TODO(@anton) this creates a performance bottleneck
+                                nlp.g.([s_elastic_name '_ub']) = {nlp.w.(s_elastic_name)() - nlp.p.sigma_p(), -inf, 0};
+                            end
+
+                            % TODO(@anton) this creates a performance bottleneck
+                            sigma = nlp.w.(s_elastic_name)();
+                            sum_elastic = sum_elastic + sum1(sigma);
+                        end
+
+                        % Find non-scalar entries.
+                        [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, nlp.w.sym);
+                        [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, nlp.w.sym);
+
+                        % Add indices to the map in order to later back calculate results.
+                        obj.ind_map_G = [obj.ind_map_G, ind_map_G];
+                        obj.ind_map_H = [obj.ind_map_H, ind_map_H];
+
+                        % If necessary lift the nonscalar entries.
+                        if opts.lift_complementarities
+                            nlp.w.([name '_G_lift']) = {{'G', length(ind_nonscalar_G)}, 0, inf};
+                            G_lift = G_curr(ind_nonscalar_G);
+                            G_curr(ind_nonscalar_G) = nlp.w.([name '_G_lift'])();
+
+                            nlp.w.([name '_H_lift']) = {{'H', length(ind_nonscalar_H)}, 0, inf};
+                            H_lift = H_curr(ind_nonscalar_H);
+                            H_curr(ind_nonscalar_H) = nlp.w.([name '_H_lift'])();
+                            
+                            nlp.g.([name '_G_lift']) = {nlp.w.([name '_G_lift'])()-G_lift};
+                            nlp.g.([name '_H_lift']) = {nlp.w.([name '_H_lift'])()-H_lift};    
+                        end
+
+                        % If the variables are not already lower bounded we add lower bounds to the nonscalar entries
+                        % in the generic constraints and as box constraints to the scalar entries.
+                        if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
+                            if ~opts.lift_complementarities
+                                if ~isempty(ind_nonscalar_G)
+                                    nlp.g.([name '_G_lb']) = {G_curr(ind_nonscalar_G), 0, inf};
+                                end
+                                if ~isempty(ind_nonscalar_H)
+                                    nlp.g.([name '_H_lb']) = {H_curr(ind_nonscalar_H), 0, inf};
+                                end
+                            end
+                            lbw = nlp.w.lb;
+                            lbw(ind_map_H) = 0;
+                            lbw(ind_map_G) = 0;
+                            nlp.w.lb = lbw;
+                        end
+
+                        % Build expression and add correct bounds.
+                        g_comp_expr = psi_fun(G_curr, H_curr, sigma);
+                        [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
+                        nlp.g.(name) = {g_comp_expr,lb,ub};
+                    else % Do the same behavior as before excep this time for each var(i,j,k,...) index for each variable 'var'.
+                        % Get indices that we will need to get all the casadi vars for the vdx.Variable
+                        indices = {};
+                        for len=size(mpcc.G.(name).indices)
+                            indices = horzcat(indices, {1:len});
+                        end
+                        indices = indices(1:depth);
+                        % We subtract 1 to get the 0 indexing correct :)
+                        inorderlst = all_combinations(indices{:})-1;
+
+                        % Transfer each element of the vdx.Variable individually.
+                        for ii=1:size(inorderlst,1)
+                            curr = num2cell(inorderlst(ii,:));
+                            G_curr = mpcc.G.(name)(curr{:});
+                            H_curr = mpcc.H.(name)(curr{:});
+                            if any(size(G_curr) == 0)
+                                continue
+                            end
+                            % select relaxation slacks/parameters
+                            switch opts.homotopy_steering_strategy
+                              case HomotopySteeringStrategy.DIRECT
+                                % nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
+                                sigma = nlp.p.sigma_p(); 
+                              case HomotopySteeringStrategy.ELL_INF
+                                sigma = nlp.w.s_elastic(); % Here s_elastic takes the role of sigma in direct, and sigma_p is used to define a penalty parameter for the elastic variable s_elastic
+                              case HomotopySteeringStrategy.ELL_1
+                                % adding elastic variables to nlp.w which augments the original mpcc.w
+                                % Remark: ELL_1 with s_elastic is equivalent to usually Ell_1 penality approach, but this indirect way helps
+                                % to add some constraint on s_elastic (which  avoids unbounded problems somtimes, and it can also improve convergence)
+                                nlp.w.(s_elastic_name)(curr{:}) = {{s_elastic_name, size(G_curr, 1)}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
+                                if opts.decreasing_s_elastic_upper_bound
+                                    % TODO(@anton) this creates a performance bottleneck
+                                    nlp.g.([s_elastic_name '_ub'])(curr{:}) = {nlp.w.(s_elastic_name)(curr{:}) - nlp.p.sigma_p(), -inf, 0};
+                                end
+
+                                % TODO(@anton) this creates a performance bottleneck
+                                sigma = nlp.w.(s_elastic_name)(curr{:});
+                                sum_elastic = sum_elastic + sum1(sigma);
+                            end
+                            [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, nlp.w.sym);
+                            [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, nlp.w.sym);
+
+                            obj.ind_map_G = [obj.ind_map_G, ind_map_G];
+                            obj.ind_map_H = [obj.ind_map_H, ind_map_H];
+
+                            if opts.lift_complementarities
+                                nlp.w.([name '_G_lift'])(curr{:}) = {{'G', length(ind_nonscalar_G)}, 0, inf};
+                                G_lift = G_curr(ind_nonscalar_G);
+                                G_curr(ind_nonscalar_G) = nlp.w.([name '_G_lift'])(curr{:});
+
+                                nlp.w.([name '_H_lift'])(curr{:}) = {{'H', length(ind_nonscalar_H)}, 0, inf};
+                                H_lift = H_curr(ind_nonscalar_H);
+                                H_curr(ind_nonscalar_H) = nlp.w.([name '_H_lift'])(curr{:});
+                                
+                                nlp.g.([name '_G_lift'])(curr{:}) = {nlp.w.([name '_G_lift'])(curr{:})-G_lift};
+                                nlp.g.([name '_H_lift'])(curr{:}) = {nlp.w.([name '_H_lift'])(curr{:})-H_lift};    
+                            end
+
+                            if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
+                                if ~opts.lift_complementarities
+                                    if ~isempty(ind_nonscalar_G)
+                                        nlp.g.([name '_G_lb'])(curr{:}) = {G_curr(ind_nonscalar_G), 0, inf};
+                                    end
+                                    if ~isempty(ind_nonscalar_H)
+                                        nlp.g.([name '_H_lb'])(curr{:}) = {H_curr(ind_nonscalar_H), 0, inf};
+                                    end
+                                end
+                                lbw = nlp.w.lb;
+                                lbw(ind_map_H) = 0;
+                                lbw(ind_map_G) = 0;
+                                nlp.w.lb = lbw;
+                            end
+                            
+                            g_comp_expr = psi_fun(G_curr, H_curr, sigma);
+                            [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
+                            nlp.g.(name)(curr{:}) = {g_comp_expr,lb,ub};
+                        end
+                    end
+                end
+
+                % add ell_1 cost if necessary
+                if opts.objective_scaling_direct
+                    nlp.f = nlp.f + (1/nlp.p.sigma_p())*sum_elastic;
+                else
+                    nlp.f = nlp.p.sigma_p()*nlp.f + sum_elastic;
+                end
+
+                % Build maps to recover original order from the nlp.
+                nlp.g.sort_by_index;
+                w_map = nlp.w.sort_by_index;
+                if ~isempty(obj.ind_map_G)
+                    [obj.ind_map_G,~] = find(w_map == obj.ind_map_G);
+                end
+                if ~isempty(obj.ind_map_H)
+                    [obj.ind_map_H,~] = find(w_map == obj.ind_map_H);
+                end
+                post_sort_g_ind = cellfun(@(x) [x.indices{:}], g_vars, "UniformOutput", false);
+                post_sort_g_ind = [post_sort_g_ind{:}];
+                obj.ind_map_g.mpcc = pre_sort_g_ind;
+                obj.ind_map_g.nlp = post_sort_g_ind;
+                post_sort_w_ind = cellfun(@(x) [x.indices{:}], w_vars, "UniformOutput", false);
+                post_sort_w_ind = [post_sort_w_ind{:}];
+                obj.ind_map_w.mpcc = pre_sort_w_ind;
+                obj.ind_map_w.nlp = post_sort_w_ind;
+                post_sort_p_ind = cellfun(@(x) [x.indices{:}], p_vars, "UniformOutput", false);
+                post_sort_p_ind = [post_sort_p_ind{:}];
+                obj.ind_map_p.mpcc = pre_sort_p_ind;
+                obj.ind_map_p.nlp = post_sort_p_ind;
+
+                % Build required casadi functions for recovering mpcc data from the nlp.
+                G_fun = Function('G', {nlp.w.sym, nlp.p.sym}, {mpcc.G.sym});
+                H_fun = Function('H', {nlp.w.sym, nlp.p.sym}, {mpcc.H.sym});
+                obj.G_fun = G_fun;
+                obj.H_fun = H_fun;
+                comp_res_fun = Function('comp_res', {nlp.w.sym, nlp.p.sym}, {mmax(mpcc.G.sym.*mpcc.H.sym)});
+                obj.comp_res_fun = comp_res_fun;
+                f_mpcc_fun = Function('f_mpcc', {nlp.w.sym, nlp.p.sym}, {mpcc.f});
+                obj.f_mpcc_fun = f_mpcc_fun;
+                w_mpcc_fun = Function('w_mpcc', {nlp.w.sym}, {mpcc.w.sym});
+                obj.w_mpcc_fun = w_mpcc_fun;
+                g_mpcc_fun = Function('g_mpcc', {nlp.w.sym, nlp.p.sym}, {mpcc.g.sym});
+                obj.g_mpcc_fun = g_mpcc_fun;
+
+                 % Get nlpsol plugin
+                switch opts.solver
+                  case 'ipopt'
+                    obj.plugin = nosnoc.solver.plugins.Ipopt();
+                  case 'snopt'
+                    obj.plugin = nosnoc.solver.plugins.Snopt();
+                  case 'worhp'
+                    obj.plugin = nosnoc.solver.plugins.Worhp();
+                  case 'uno'
+                    obj.plugin = nosnoc.solver.plugins.Uno();
+                end
+
+                if ~isempty(opts.ipopt_callback)
+                    opts.opts_casadi_nlp.iteration_callback = NosnocIpoptCallback('ipopt_callback', [], nlp, opts, length(nlp.w.sym), length(nlp.g.sym), length(nlp.p.sym));
+                end
+                
+                % Construct solver
+                obj.plugin.construct_solver(nlp, opts);
+                obj.nlp = nlp;
             else % Otherwise use vdx internally anyway but be sad about interleaving
                 use_vdx = false;
+
+                casadi_symbolic_mode = split(class(mpcc.x), '.');
+                casadi_symbolic_mode = casadi_symbolic_mode{end};
+                % preprocess empty fields
+                if ~isfield(mpcc, 'g') || isempty(mpcc.g)
+                    mpcc.g = casadi.(casadi_symbolic_mode)([]); 
+                end
+                if ~isfield(mpcc, 'p') || isempty(mpcc.p)
+                    mpcc.p = casadi.(casadi_symbolic_mode)([]); 
+                end
 
                 % create an nlp (in the form of a vdx.Problem) from the mpcc data (f,x,p,g).
                 % We track the indices of this data in vdx.Variables: mpcc_w, mpcc_p, mpcc_g.
@@ -82,6 +358,21 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nlp.w.mpcc_w = {mpcc.x}; % nlp.w.mpcc_w is a vdx.Variable (depth 0) which stores mpcc optimization variables
                 nlp.p.mpcc_p = {mpcc.p}; % nlp.p.mpcc_p is a vdx.Variable (depth 0) which stores mpcc parameters
                 nlp.g.mpcc_g = {mpcc.g}; % nlp.g.mpcc_g is a vdx.Variable (depth 0) which stores mpcc general constraints
+
+                pre_sort_g_ind = 1:length(mpcc.g);
+                post_sort_g_ind = 1:length(mpcc.g);
+                pre_sort_w_ind = 1:length(mpcc.x);
+                post_sort_w_ind = 1:length(mpcc.x);
+                pre_sort_p_ind = 1:length(mpcc.p);
+                post_sort_p_ind = 1:length(mpcc.p);
+                obj.ind_map_g.mpcc = pre_sort_g_ind;
+                obj.ind_map_g.nlp = post_sort_g_ind;
+                obj.ind_map_w.mpcc = pre_sort_w_ind;
+                obj.ind_map_w.nlp = post_sort_w_ind;
+                obj.ind_map_p.mpcc = pre_sort_p_ind;
+                obj.ind_map_p.nlp = post_sort_p_ind;
+
+                
                 nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0}; % sigma_p is the homotopy parameter (a scalar), with the value sigma_0 from the options.
                 nlp.f = mpcc.f;
                 n_c = length(mpcc.G); % number of complementarity constraints
@@ -122,8 +413,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     end
                 end
 
-                [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(mpcc.G,mpcc.x);
-                [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(mpcc.H,mpcc.x);
+                nlp.finalize_assignments(); % Make sure all nlp pending assignments are flushed.
+                [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(mpcc.G,nlp.w.sym);
+                [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(mpcc.H,nlp.w.sym);
                 obj.ind_nonscalar_G = ind_nonscalar_G;
                 obj.ind_nonscalar_H = ind_nonscalar_H;
                 obj.ind_scalar_G = ind_scalar_G;
@@ -156,7 +448,11 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 g_comp_expr = [];
                 n_comp_pairs = size(G, 1);
                 for ii=1:n_comp_pairs
-                    g_comp_expr_i = psi_fun(G(ii), H(ii), sigma);
+                    if opts.homotopy_steering_strategy == HomotopySteeringStrategy.ELL_1
+                        g_comp_expr_i = psi_fun(G(ii), H(ii), sigma(ii));
+                    else
+                        g_comp_expr_i = psi_fun(G(ii), H(ii), sigma);
+                    end
                     [lb_i, ub_i, g_comp_expr_i] = generate_mpcc_relaxation_bounds(g_comp_expr_i, obj.relaxation_type);
                     lb = [lb;lb_i];
                     ub = [ub;ub_i];
@@ -164,13 +460,19 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
                 nlp.g.complementarities(0) = {g_comp_expr, lb, ub};
 
-                if ~opts.assume_lower_bounds && ~opts.lift_complementarities % Lower bounds on G, H, not already present in MPCC
-                    if ~isempty(obj.ind_nonscalar_G)
-                        nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
+                if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
+                    if ~opts.lift_complementarities
+                        if ~isempty(obj.ind_nonscalar_G)
+                            nlp.g.G_lower_bounds = {mpcc.G(obj.ind_nonscalar_G), 0, inf};
+                        end
+                        if ~isempty(obj.ind_nonscalar_H)
+                            nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
+                        end
                     end
-                    if ~isempty(obj.ind_nonscalar_H)
-                        nlp.g.H_lower_bounds = {mpcc.H(obj.ind_nonscalar_H), 0, inf};
-                    end
+                    lbw = nlp.w.lb;
+                    lbw(ind_map_H) = 0;
+                    lbw(ind_map_G) = 0;
+                    nlp.w.lb = lbw;
                 end
                 % Get nlpsol plugin
                 switch opts.solver
@@ -192,6 +494,19 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % Construct solver
                 obj.plugin.construct_solver(nlp, opts);
                 obj.nlp = nlp;
+
+                G_fun = Function('G', {nlp.w.sym, nlp.p.sym}, {mpcc.G});
+                H_fun = Function('H', {nlp.w.sym, nlp.p.sym}, {mpcc.H});
+                obj.G_fun = G_fun;
+                obj.H_fun = H_fun;
+                comp_res_fun = Function('comp_res', {nlp.w.sym, nlp.p.sym}, {mmax(mpcc.G.*mpcc.H)});
+                obj.comp_res_fun = comp_res_fun;
+                f_mpcc_fun = Function('f_mpcc', {nlp.w.sym, nlp.p.sym}, {mpcc.f});
+                obj.f_mpcc_fun = f_mpcc_fun;
+                w_mpcc_fun = Function('w_mpcc', {nlp.w.sym}, {mpcc.x});
+                obj.w_mpcc_fun = w_mpcc_fun;
+                g_mpcc_fun = Function('g_mpcc', {nlp.w.sym, nlp.p.sym}, {mpcc.g});
+                obj.g_mpcc_fun = g_mpcc_fun;
             end
         end
 
@@ -208,7 +523,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % We get the maximum violation of g: (max(max(lbg - g(w,p), 0), max(g(w,p) - ubg, 0))),
             % and w: (max(max(lbw - w, 0), max(w - ubw, 0)))
             % bounds from the last solve of the relaxed nlp.
-            violation = max([nlp.g.mpcc_g().violation; nlp.w.mpcc_w().violation]);
+            violation = max([nlp.g.violation; nlp.w.violation]);
         end
 
         function out = cat(dim,varargin)
@@ -254,15 +569,29 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % For a more in depth explanation see the PhD theses of Armin Nurkanovic (Section 2.3, https://publications.syscop.de/Nurkanovic2023f.pdf)
             % or Alexandra Schwartz (Section 5.2, https://opus.bibliothek.uni-wuerzburg.de/opus4-wuerzburg/frontdoor/index/index/docId/4977).
             % A concise overview can also be found in https://arxiv.org/abs/2312.11022.
-            
-            w_orig = x0;
-            lam_x = nlp.w.mpcc_w().mult;
-            lam_g = nlp.g.mpcc_g().mult;
 
-            G = mpcc.G;
-            H = mpcc.H;
-            G_old = full(obj.G_fun(w_orig, nlp.p.mpcc_p().val));
-            H_old = full(obj.H_fun(w_orig, nlp.p.mpcc_p().val));
+            if length(x0) == length(obj.ind_map_w.mpcc)
+                w_orig = x0;
+                x0 = nlp.w.res;
+                x0(obj.ind_map_w.mpcc) = w_orig(obj.ind_map_w.nlp);
+            else
+                w_orig = [];
+                w_orig(obj.ind_map_w.mpcc) = x0(obj.ind_map_w.nlp);
+                w_orig = w_orig';
+            end
+            lam_x = [];
+            nlp_lam_x = nlp.w.mult;
+            lam_x(obj.ind_map_w.mpcc) = nlp_lam_x(obj.ind_map_w.nlp);
+            lam_x = lam_x';
+            lam_g = [];
+            nlp_lam_g = nlp.g.mult;
+            lam_g(obj.ind_map_g.mpcc) = nlp_lam_g(obj.ind_map_g.nlp);
+            lam_g = lam_g';
+
+            G = obj.G_fun(nlp.w.sym, nlp.p.sym);
+            H = obj.H_fun(nlp.w.sym, nlp.p.sym);
+            G_old = full(obj.G_fun(x0, nlp.p.val));
+            H_old = full(obj.H_fun(x0, nlp.p.val));
 
             % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
             % i.e. in the worst case G=sqrt(complementarity_tol) and H=sqrt(comp_tol).
@@ -270,9 +599,19 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
                 a_tol = sqrt(obj.opts.complementarity_tol) + 1e-14;
             else
-                a_tol = sqrt(max(nlp.w.s_elastic().res)) + 1e-14;
+                all_names = nlp.w.get_var_names;
+                all_indices = [];
+                for ii=1:numel(all_names)
+                    name = all_names{ii};
+                    if startsWith(name, "s_elastic")
+                        all_indices = [all_indices, obj.nlp.w.(name).indices{:}];
+                    end
+                end
+                w_res = nlp.w.res;
+                a_tol = sqrt(max(w_res(all_indices))) + 1e-14;
             end
-            
+
+            % get biactive complementarities
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00);
             if exitfast && n_biactive == 0
@@ -285,33 +624,72 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             min_dists = max(G_old, H_old);
             [~, min_idx] = sort(min_dists);
 
+            % If lifting we need to do some specific remapping
             if complementarity_constraints_lifted
-                w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
-                g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
-                p = nlp.p.mpcc_p();
+                % Generate TNLP data
+                w = obj.w_mpcc_fun(nlp.w.sym); lbw_orig = obj.w_mpcc_fun(nlp.w.lb); ubw_orig = obj.w_mpcc_fun(nlp.w.ub);
+                nlp_g = nlp.g.sym; g = SX(zeros([length(obj.ind_map_g.nlp), 1]));
+                nlp_lbg = nlp.g.lb; lbg = [];
+                nlp_ubg = nlp.g.ub; ubg = [];
+                if ~isempty(nlp_lbg)
+                    g(obj.ind_map_g.nlp) = nlp_g(obj.ind_map_g.mpcc)';
+                    lbg(obj.ind_map_g.nlp) = nlp_lbg(obj.ind_map_g.mpcc)';
+                    lbg = lbg';
+                    ubg(obj.ind_map_g.nlp) = nlp_ubg(obj.ind_map_g.mpcc)';
+                    ubg = ubg';
+                end
+                p = nlp.p.sym;
+                p(obj.ind_map_p.nlp) = p(obj.ind_map_p.mpcc)';
+                nlp_p_val = nlp.p.val;p_val = [];
+                p_val(obj.ind_map_p.nlp) = nlp_p_val(obj.ind_map_p.mpcc);
                 f = mpcc.f;
-                
+
+                % Generate lifting variables
                 lift_G = SX.sym('lift_G', length(G));
                 lift_H = SX.sym('lift_H', length(H));
                 g_lift = vertcat(lift_G - G, lift_H - H);
-                
                 w = vertcat(w, lift_G, lift_H);
-
                 lam_x_aug = vertcat(lam_x, zeros(size(G)), zeros(size(H)));
-                
+
+                % Add lifting constraints.
                 g = vertcat(g,g_lift);
                 lbg = vertcat(lbg,zeros(size(g_lift)));
                 ubg = vertcat(ubg,zeros(size(g_lift)));
                 lam_g_aug = vertcat(lam_g, zeros(size(g_lift)));
-
                 ind_mpcc = 1:length(lbw_orig);
                 ind_G = (1:length(lift_G))+length(lbw_orig);
                 ind_H = (1:length(lift_H))+length(lbw_orig)+length(lift_G);
 
+                % create nlp options.
+                opts_casadi_nlp.ipopt.max_iter = 5000;
+                opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.tol = obj.opts.complementarity_tol;
+                opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.complementarity_tol);
+                opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.complementarity_tol);
+                opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
+                opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
+                opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+                opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+                opts_casadi_nlp.ipopt.nlp_scaling_method = 'none';
+                default_tol = 1e-7;
+                opts_casadi_nlp.ipopt.tol = default_tol;
+                opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
+                opts_casadi_nlp.ipopt.print_level = obj.opts.opts_casadi_nlp.ipopt.print_level;
+                opts_casadi_nlp.print_time = obj.opts.opts_casadi_nlp.print_time;
+                opts_casadi_nlp.ipopt.sb = 'yes';
+                
                 converged = false;
                 n_max_biactive = n_biactive;
                 n_biactive = n_biactive;
-                while ~converged && n_biactive >= 0
+                while ~converged && n_biactive >= 0 % Solve the TNLP with less biactive each time.
                     idx_00 = min_idx(1:n_biactive);
                     ind_00 = false(length(G),1);
                     ind_00(idx_00) = true;
@@ -319,6 +697,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     ind_0p = G_old<a_tol & ~ind_00;
                     ind_p0 = H_old<a_tol & ~ind_00;
 
+                    % Generate correct bounds
                     lblift_G = -inf*ones(size(lift_G));
                     ublift_G = inf*ones(size(lift_G));
                     lblift_H = -inf*ones(size(lift_G));
@@ -334,36 +713,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     lbw = vertcat(lbw_orig, lblift_G, lblift_H);
                     ubw = vertcat(ubw_orig, ublift_G, ublift_H);
                     w_init = vertcat(w_orig, G_init, H_init);
-
                     
                     casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
-                    opts_casadi_nlp.ipopt.max_iter = 5000;
-                    opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                    opts_casadi_nlp.ipopt.warm_start_entire_iterate = 'yes';
-                    opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
-                    opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.tol = obj.opts.complementarity_tol;
-                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.complementarity_tol);
-                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.complementarity_tol);
-                    opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
-                    opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-                    opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
-                    opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
-                    opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
-                    opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-                    opts_casadi_nlp.ipopt.nlp_scaling_method = 'none';
-                    default_tol = 1e-7;
-                    opts_casadi_nlp.ipopt.tol = default_tol;
-                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.resto_failure_feasibility_threshold = 0;
-                    opts_casadi_nlp.ipopt.print_level = obj.opts.opts_casadi_nlp.ipopt.print_level;
-                    opts_casadi_nlp.print_time = obj.opts.opts_casadi_nlp.print_time;
-                    opts_casadi_nlp.ipopt.sb = 'yes';
-                    
-                    
+                   
                     tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
                     tnlp_results = tnlp_solver('x0', w_init,...
                         'lbx', lbw,...
@@ -372,7 +724,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         'ubg', ubg,...
                         'lam_g0', lam_g_aug,...
                         'lam_x0', lam_x_aug,...
-                        'p', nlp.p.mpcc_p().val);
+                        'p', p_val);
                     res_out = tnlp_results;
                     if tnlp_solver.stats.success
                         converged = true;
@@ -382,7 +734,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     %converged = true;
                 end
                 w_star = full(tnlp_results.x);
-                w_star_orig = w_star(ind_mpcc);
+                w_star = w_star(obj.ind_map_w.mpcc);
+                w_star_orig = x0;
+                w_star_orig(obj.ind_map_w.nlp) = w_star;
 
                 nu = -full(tnlp_results.lam_x(ind_G));
                 xi = -full(tnlp_results.lam_x(ind_H));
@@ -391,8 +745,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 I_G = find(ind_0p+ind_00);
                 I_H = find(ind_p0+ind_00);
 
-                G_new = full(obj.G_fun(w_star_orig, nlp.p.mpcc_p().val));
-                H_new = full(obj.H_fun(w_star_orig, nlp.p.mpcc_p().val));
+                G_new = full(obj.G_fun(w_star_orig, p_val));
+                H_new = full(obj.H_fun(w_star_orig, p_val));
 
                 g_tnlp = full(tnlp_results.g);
                 % multipliers (nu, xi already calculated above)
@@ -402,15 +756,22 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 lam_g_star = tnlp_results.lam_g;
                 type_tol = a_tol^2;
             else
-                w = nlp.w.mpcc_w(); lbw_orig = nlp.w.mpcc_w().lb; ubw_orig = nlp.w.mpcc_w().ub;
-                g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
-                p = nlp.p.mpcc_p();
+                w = obj.w_mpcc_fun(nlp.w.sym); lbw_orig = obj.w_mpcc_fun(nlp.w.lb); ubw_orig = obj.w_mpcc_fun(nlp.w.ub);
+                g = nlp.g.sym;
+                g(obj.ind_map_g.nlp) = g(obj.ind_map_g.mpcc);
+                lbg = nlp.g.lb;
+                lbg(obj.ind_map_g.nlp) = lbg(obj.ind_map_g.mpcc);
+                ubg = nlp.g.ub;
+                ubg(obj.ind_map_g.nlp) = ubg(obj.ind_map_g.mpcc);
+                p = nlp.p.sym;
+                p(obj.ind_map_p.nlp) = p(obj.ind_map_p.mpcc);
                 f = mpcc.f;
 
                 lam_x_aug = lam_x;
                 
                 g = vertcat(g,10000*G,10000*H); % in case of unlifted complementarity functions scaling the functions by a large value, greatly improves the convergence of the TNLP
-                                                % This does not affect the signs of the MPCC multipliers and therefore does not affect the stationarity type verification. 
+                                                % This does not affect the signs of the MPCC multipliers and therefore does not affect the stationarity type verification.
+                % Generate correct bounds
                 lbg = vertcat(lbg,zeros(size(G)),zeros(size(H)));
                 ubg = vertcat(ubg,zeros(size(G)),zeros(size(H)));
                 lam_g_aug = vertcat(lam_g, zeros(size(G)), zeros(size(H)));
@@ -421,10 +782,34 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 ind_G = (1:length(G))+length(lam_g);
                 ind_H = (1:length(H))+length(lam_g)+length(G);
 
+                % create nlp options.
+                opts_casadi_nlp.ipopt.max_iter = 5000;
+                opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
+                opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
+                opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
+                opts_casadi_nlp.ipopt.tol = obj.opts.complementarity_tol;
+                opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.complementarity_tol);
+                opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.complementarity_tol);
+                opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
+                opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
+                opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
+                opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
+                opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+                opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+                default_tol = 1e-4;
+                opts_casadi_nlp.ipopt.tol = default_tol;
+                opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
+                opts_casadi_nlp.ipopt.print_level = obj.opts.opts_casadi_nlp.ipopt.print_level;
+                opts_casadi_nlp.print_time = obj.opts.opts_casadi_nlp.print_time;
+                opts_casadi_nlp.ipopt.sb = 'yes';
+
                 converged = false;
                 n_max_biactive = n_biactive;
                 n_biactive = n_biactive;
-                while ~converged && n_biactive >= 0
+                while ~converged && n_biactive >= 0 % Solve the TNLP with less biactive each time.
                     idx_00 = min_idx(1:n_biactive);
                     ind_00 = false(length(G),1);
                     ind_00(idx_00) = true;
@@ -449,30 +834,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     ubw = ubw_orig;
                     w_init = w_orig;
 
-                    
                     casadi_nlp = struct('f', f , 'x', w, 'g', g, 'p', p);
-                    opts_casadi_nlp.ipopt.max_iter = 5000;
-                    opts_casadi_nlp.ipopt.warm_start_init_point = 'yes';
-                    opts_casadi_nlp.ipopt.warm_start_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.warm_start_bound_frac = 1e-5;
-                    opts_casadi_nlp.ipopt.warm_start_mult_bound_push = 1e-5;
-                    opts_casadi_nlp.ipopt.tol = obj.opts.complementarity_tol;
-                    opts_casadi_nlp.ipopt.acceptable_tol = sqrt(obj.opts.complementarity_tol);
-                    opts_casadi_nlp.ipopt.acceptable_dual_inf_tol = sqrt(obj.opts.complementarity_tol);
-                    opts_casadi_nlp.ipopt.fixed_variable_treatment = 'relax_bounds';
-                    opts_casadi_nlp.ipopt.honor_original_bounds = 'yes';
-                    opts_casadi_nlp.ipopt.bound_relax_factor = 1e-12;
-                    opts_casadi_nlp.ipopt.linear_solver = obj.opts.opts_casadi_nlp.ipopt.linear_solver;
-                    opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
-                    opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-                    default_tol = 1e-4;
-                    opts_casadi_nlp.ipopt.tol = default_tol;
-                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-                    opts_casadi_nlp.ipopt.print_level = obj.opts.opts_casadi_nlp.ipopt.print_level;
-                    opts_casadi_nlp.print_time = obj.opts.opts_casadi_nlp.print_time;
-                    opts_casadi_nlp.ipopt.sb = 'yes';
                     
                     tnlp_solver = nlpsol('tnlp', 'ipopt', casadi_nlp, opts_casadi_nlp);
                     tnlp_results = tnlp_solver('x0', w_init,...
@@ -498,6 +860,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     end
                 end
                 w_star = full(tnlp_results.x);
+                w_star = w_star(obj.ind_map_w.mpcc);
+                w_star_orig = x0;
+                w_star_orig(obj.ind_map_w.nlp) = w_star;
 
                 nu = -full(tnlp_results.lam_g(ind_G)); % here a - is put, as in casadi Lagrange multipliers for inequality constraints are nonpositive, but we use our defintions with nonnegative multipliers
                 xi = -full(tnlp_results.lam_g(ind_H));
@@ -583,8 +948,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % output tnlp results
             res_out = tnlp_results;
             w_polished = zeros(size(nlp.w));
-            w_polished = w_star_orig;
-            res_out.x = w_polished;
+            w_polished = w_star;
+            res_out.x = w_star_orig;
         end
 
         function [solution, improved_point, b_stat] = check_b_stationarity(obj, x0, exitfast)
@@ -592,16 +957,32 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             if ~exist('exitfast', 'var')
                 exitfast = true;
             end
+
+            x0_nlp = zeros(size(obj.nlp.w.sym));
+            x0_nlp(obj.ind_map_w.nlp) = x0(obj.ind_map_w.mpcc);
             
             mpcc = obj.mpcc;
             nlp = obj.nlp;
             f = mpcc.f;
-            x = nlp.w.mpcc_w(); lbx = nlp.w.mpcc_w().lb; ubx = nlp.w.mpcc_w().ub;
-            g = nlp.g.mpcc_g(); lbg = nlp.g.mpcc_g().lb; ubg = nlp.g.mpcc_g().ub;
-            G = mpcc.G;
-            H = mpcc.H;
-            G_old = full(obj.G_fun(x0, nlp.p.mpcc_p().val));
-            H_old = full(obj.H_fun(x0, nlp.p.mpcc_p().val));
+            x = obj.w_mpcc_fun(nlp.w.sym); lbx = full(obj.w_mpcc_fun(nlp.w.lb)); ubx = full(obj.w_mpcc_fun(nlp.w.ub));
+            nlp_g = nlp.g.sym; g = SX(zeros([length(obj.ind_map_g.nlp), 1]));
+            nlp_lbg = nlp.g.lb; lbg = [];
+            nlp_ubg = nlp.g.ub; ubg = [];
+            if ~isempty(nlp_lbg)
+                g(obj.ind_map_g.nlp) = nlp_g(obj.ind_map_g.mpcc)';
+                lbg(obj.ind_map_g.nlp) = nlp_lbg(obj.ind_map_g.mpcc)';
+                lbg = lbg';
+                ubg(obj.ind_map_g.nlp) = nlp_ubg(obj.ind_map_g.mpcc)';
+                ubg = ubg';
+            end
+            nlp_p = nlp.p.sym; p = SX(zeros([length(obj.ind_map_p.nlp), 1]));
+            p(obj.ind_map_p.nlp) = nlp_p(obj.ind_map_p.mpcc)';
+            nlp_p_val = nlp.p.val;p_val = [];
+            p_val(obj.ind_map_p.nlp) = nlp_p_val(obj.ind_map_p.mpcc);
+            G = obj.G_fun(nlp.w.sym, nlp.p.sym);
+            H = obj.H_fun(nlp.w.sym, nlp.p.sym);
+            G_old = full(obj.G_fun(x0_nlp, nlp.p.val));
+            H_old = full(obj.H_fun(x0_nlp, nlp.p.val));
 
             % We take the square root of the complementarity tolerance for the activity tolerance as it is the upper bound for G, H, for any of the smoothing approaches.
             % i.e. in the worst case G=sqrt(complementarity_tol) and H=sqrt(comp_tol).
@@ -609,7 +990,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             if obj.opts.homotopy_steering_strategy == HomotopySteeringStrategy.DIRECT
                 a_tol = sqrt(obj.opts.complementarity_tol) + 1e-14;
             else
-                a_tol = sqrt(max(nlp.w.s_elastic().res)) + 1e-14;
+                all_names = nlp.w.get_var_names;
+                all_indices = [];
+                for ii=1:numel(all_names)
+                    name = all_names{ii};
+                    if startsWith(name, "s_elastic")
+                        all_indices = [all_indices, obj.nlp.w.(name).indices{:}];
+                    end
+                end
+                w_res = nlp.w.res;
+                a_tol = sqrt(max(w_res(all_indices))) + 1e-14;
             end
             ind_00 = G_old<a_tol & H_old<a_tol;
             n_biactive = sum(ind_00);
@@ -649,9 +1039,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             g = vertcat(g,g_lift);
             lbg = vertcat(lbg,zeros(size(g_lift)));
             ubg = vertcat(ubg,zeros(size(g_lift)));
-            
-            p = mpcc.p;
-            p0 = nlp.p.mpcc_p().val;
 
             solver_settings.max_iter = 20;
             solver_settings.tol = 1e-6;
@@ -670,7 +1057,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             end
             %% The problem
             lpec_data = struct('x', x, 'f', f, 'g', g, 'comp1', lift_G, 'comp2', lift_H, 'p', p);
-            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p0, 'y_lpcc', y_lpcc);
+            solver_initalization = struct('x0', x0, 'lbx', lbx, 'ubx', ubx,'lbg', lbg, 'ubg', ubg, 'p', p_val, 'y_lpcc', y_lpcc);
             solution = b_stationarity_oracle(lpec_data,solver_initalization,solver_settings);
             
             improved_point = solution.x(ind_mpcc);
@@ -708,49 +1095,56 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             mpcc = obj.mpcc;
             opts = obj.opts;
             plugin = obj.plugin;
-            G_fun = Function('G', {mpcc.x, mpcc.p}, {mpcc.G});
-            H_fun = Function('H', {mpcc.x, mpcc.p}, {mpcc.H});
-            obj.G_fun = G_fun;
-            obj.H_fun = H_fun;
-            comp_res_fun = Function('comp_res', {mpcc.x, mpcc.p}, {mmax(mpcc.G.*mpcc.H)});
-            obj.comp_res_fun = comp_res_fun;
-            f_mpcc_fun = Function('f_mpcc', {mpcc.x, mpcc.p}, {mpcc.f});
-            obj.f_mpcc_fun = f_mpcc_fun;
-            g_mpcc_fun = Function('g_mpcc', {mpcc.x, mpcc.p}, {mpcc.g});
+            
             % Update nlp data
             if ~isempty(p.Results.x0)
-                nlp.w.mpcc_w().init = p.Results.x0;
+                w_init = nlp.w.init;
+                w_init(obj.ind_map_w.nlp) = p.Results.x0(obj.ind_map_w.mpcc);
+                nlp.w.init = w_init;
             end
             if ~isempty(p.Results.lbx)
-                nlp.w.mpcc_w().lb = p.Results.lbx;
+                w_lb = nlp.w.lb;
+                w_lb(obj.ind_map_w.nlp) = p.Results.lbx(obj.ind_map_w.mpcc);
+                nlp.w.lb = w_lb;
             end
             if ~isempty(p.Results.ubx)
-                nlp.w.mpcc_w().ub = p.Results.ubx;
+                w_ub = nlp.w.ub;
+                w_ub(obj.ind_map_w.nlp) = p.Results.ubx(obj.ind_map_w.mpcc);
+                nlp.w.ub = w_ub;
             end
             if ~isempty(p.Results.lbg)
-                nlp.g.mpcc_g().lb = p.Results.lbg;
+                g_lb = nlp.g.lb;
+                g_lb(obj.ind_map_g.nlp) = p.Results.lbg(obj.ind_map_g.mpcc);
+                nlp.g.lb = g_lb;
             end
             if ~isempty(p.Results.ubg)
-                nlp.g.mpcc_g().ub = p.Results.ubg;
+                g_ub = nlp.g.ub;
+                g_ub(obj.ind_map_g.nlp) = p.Results.ubg(obj.ind_map_g.mpcc);
+                nlp.g.ub = g_ub;
             end
             if ~isempty(p.Results.p)
-                nlp.p.mpcc_p().val = p.Results.p;
+                p_val = nlp.p.val;
+                p_val(obj.ind_map_p.nlp) = p.Results.p(obj.ind_map_p.mpcc);
+                nlp.p.val = p_val;
             end
             if ~isempty(p.Results.lam_g0)
-                nlp.g.mpcc_g().init_mult = p.Results.lam_g0;
+                g_init_mult = nlp.g.init_mult;
+                g_init_mult(obj.ind_map_g.nlp) = p.Results.lam_g0(obj.ind_map_g.mpcc);
+                nlp.g.init_mult = g_init_mult;
             end
             if ~isempty(p.Results.lam_x0)
-                nlp.w.mpcc_w().init_mult = p.Results.lam_x0;
+                w_init_mult = nlp.w.init_mult;
+                w_init_mult(obj.ind_map_w.nlp) = p.Results.lam_x0(obj.ind_map_w.mpcc);
+                nlp.w.init_mult = w_init_mult;
             end
 
             if ~opts.assume_lower_bounds % Lower bounds on G, H, not already present in MPCC
-                lb = nlp.w.mpcc_w().lb;
+                lb = nlp.w.lb;
                 lb(obj.ind_map_G) = 0;
                 lb(obj.ind_map_H) = 0;
-                nlp.w.mpcc_w().lb = lb;
+                nlp.w.lb = lb;
             end
  
-
             % Initial conditions
             sigma_k = opts.sigma_0;
 
@@ -765,28 +1159,37 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             stats.solver_stats = [];
             % TODO(@anton) calculate objective and complementarity residual
             stats.objective = [];
-            stats.complementarity_stats = [full(comp_res_fun(nlp.w.mpcc_w().init, nlp.p.mpcc_p().val))];
+            stats.complementarity_stats = [full(obj.comp_res_fun(nlp.w.init, nlp.p.val))];
 
             % Initialize Results struct
             mpcc_results = struct;
-            mpcc_results.W = nlp.w.mpcc_w().init;
+            mpcc_results.W = obj.w_mpcc_fun(nlp.w.init);
             mpcc_results.nlp_results = [];
-
-            % homotopy loop
-            complementarity_iter = 1;
-            ii = 0;
-            last_iter_failed = 0;
-            timeout = 0;
 
             % reset s_elastic
             if opts.homotopy_steering_strategy ~= 'DIRECT'
-                obj.nlp.w.s_elastic().init = opts.s_elastic_0;
+                all_names = nlp.w.get_var_names;
+                all_indices = [];
+                for ii=1:numel(all_names)
+                    name = all_names{ii};
+                    if startsWith(name, "s_elastic")
+                        all_indices = [all_indices, obj.nlp.w.(name).indices{:}];
+                    end
+                end
+                init = nlp.w.init;
+                init(all_indices) = opts.s_elastic_0;
+                nlp.w.init = init;
             end
 
             if opts.print_level >= 3
                 plugin.print_nlp_iter_header();
             end
 
+            % homotopy loop
+            complementarity_iter = 1;
+            ii = 0;
+            last_iter_failed = 0;
+            timeout = 0;
             while (abs(complementarity_iter) > opts.complementarity_tol || last_iter_failed) &&...
                     ii < opts.N_homotopy &&...
                     (sigma_k > opts.sigma_N || ii == 0) &&...
@@ -856,12 +1259,12 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     last_iter_failed = 1;
                 end
                 % update results output.
-                mpcc_results.W = [mpcc_results.W,nlp.w.mpcc_w().res]; % all homotopy iterations
+                mpcc_results.W = [mpcc_results.W, obj.w_mpcc_fun(nlp.w.res)]; % all homotopy iterations
 
                 % update complementarity and objective stats
-                complementarity_iter = full(comp_res_fun(nlp.w.mpcc_w().res, nlp.p.mpcc_p().val));
+                complementarity_iter = full(obj.comp_res_fun(nlp.w.res, nlp.p.val));
                 stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
-                objective = full(f_mpcc_fun(nlp.w.mpcc_w().res, nlp.p.mpcc_p().val));
+                objective = full(obj.f_mpcc_fun(nlp.w.res, nlp.p.val));
                 stats.objective = [stats.objective, objective];
 
                 % update counter
@@ -872,17 +1275,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
             end
             
-            mpcc_results.f = full(f_mpcc_fun(nlp.w.mpcc_w().res, nlp.p.mpcc_p().val));
-            mpcc_results.x = nlp.w.mpcc_w().res;
-            mpcc_results.p = nlp.p.mpcc_p().val;
-            mpcc_results.lam_x = nlp.w.mpcc_w().mult;
-            mpcc_results.g = nlp.g.mpcc_g().eval;
-            mpcc_results.lam_g = nlp.g.mpcc_g().mult;
+            mpcc_results.f = full(obj.f_mpcc_fun(nlp.w.res, nlp.p.val));
+            mpcc_results.x = full(obj.w_mpcc_fun(nlp.w.res));
+            mpcc_results.lam_x = full(obj.w_mpcc_fun(nlp.w.mult)); % This works because its is symbolic -> symbolic
+            mpcc_results.g = full(obj.g_mpcc_fun(nlp.w.res, nlp.p.val));
+            mpcc_results.lam_g = nlp.g.mult(obj.ind_map_g.nlp);
             % TODO(@anton) it may not always be possible to calculate lam_G and lam_H
             %              figure out when this is possible.
-            mpcc_results.G = full(G_fun(mpcc_results.x, mpcc_results.p));
+            mpcc_results.G = full(obj.G_fun(nlp.w.res, nlp.p.val));
             % mpcc_results.lam_G = ;
-            mpcc_results.H = full(H_fun(mpcc_results.x, mpcc_results.p));
+            mpcc_results.H = full(obj.H_fun(nlp.w.res, nlp.p.val));
             % mpcc_results.lam_H = ;
             
             stats.converged = obj.complementarity_tol_met(stats) && ~last_iter_failed && ~timeout;
@@ -894,17 +1296,17 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     stat_type = "?";
                     disp("Not checking stationarity due to failure of homotopy to converge.");
                 else                    
-                    [w_polished, res_out, stat_type, n_biactive] = obj.check_multiplier_based_stationarity(nlp.w.mpcc_w().res);
-                    [sol, w_polished, b_stat] = obj.check_b_stationarity(w_polished);
+                    [w_polished, res_out, stat_type, n_biactive] = obj.check_multiplier_based_stationarity(nlp.w.res);
+                    [sol, ~, b_stat] = obj.check_b_stationarity(w_polished);
                     if stat_type ~= "?"
                         mpcc_results.x = w_polished;
-                        mpcc_results.f = full(f_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
-                        mpcc_results.g = full(g_mpcc_fun(w_polished, nlp.p.mpcc_p().val));
-                        mpcc_results.G = full(G_fun(w_polished, nlp.p.mpcc_p().val));
-                        mpcc_results.H = full(H_fun(w_polished, nlp.p.mpcc_p().val));
+                        mpcc_results.f = full(obj.f_mpcc_fun(res_out.x, nlp.p.val));
+                        mpcc_results.g = full(obj.g_mpcc_fun(res_out.x, nlp.p.val));
+                        mpcc_results.G = full(obj.G_fun(res_out.x, nlp.p.val));
+                        mpcc_results.H = full(obj.H_fun(res_out.x, nlp.p.val));
                         % TODO (@anton) also recalculate multipliers and g?
                         mpcc_results.nlp_results = [mpcc_results.nlp_results, res_out];
-                        complementarity_iter = full(obj.comp_res_fun(w_polished, nlp.p.mpcc_p().val));
+                        complementarity_iter = full(obj.comp_res_fun(res_out.x, nlp.p.val));
                         stats.complementarity_stats = [stats.complementarity_stats;complementarity_iter];
                     end
                     stats.stat_type = stat_type;
@@ -935,5 +1337,32 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 keyboard
             end
         end
+    end
+end
+
+
+function X = all_combinations(varargin)
+    numSets = length(varargin);
+    for i=1:numSets,
+        thisSet = sort(varargin{i});
+        if ~isequal(prod(size(thisSet)),length(thisSet)),
+            error('All inputs must be vectors.')
+        end
+        if ~isnumeric(thisSet),
+            error('All inputs must be numeric.')
+        end
+        sizeThisSet(i) = length(thisSet);
+        varargin{i} = thisSet;
+    end
+    X = zeros(prod(sizeThisSet),numSets);
+    for i=1:size(X,1)
+        ixVect = cell(length(sizeThisSet),1);
+        [ixVect{:}] = ind2sub(flip(sizeThisSet),i);
+        ixVect = flip([ixVect{:}]);
+        vect = zeros(1, numSets);
+        for jj=1:numSets
+            vect(jj) = varargin{jj}(ixVect(jj));
+        end
+        X(i,:) = vect;
     end
 end

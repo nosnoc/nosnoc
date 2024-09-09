@@ -74,7 +74,7 @@ if isfield(nlp,'p')
     p = nlp.p;
     if isfield(problem_data,'p')
         p_val = problem_data.p;
-        if length(p_val)~=length(p)
+        if size(p_val,1)~=size(p,1)
             error('Length of p and its value must be the same.')
         end
     end
