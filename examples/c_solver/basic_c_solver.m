@@ -22,8 +22,8 @@ ubx = [inf;inf];
 mpcc = vdx.problems.Mpcc();
 mpcc.w.x = {x, lbx, ubx, x0};
 mpcc.p.p = {p, p0};
-mpcc.G.G = {x1};
-mpcc.H.H = {x2};
+mpcc.G.C = {x1};
+mpcc.H.C = {x2};
 mpcc.f = f;
 
 mpcc_method1 = 'scholtes_ineq';
