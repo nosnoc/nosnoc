@@ -25,88 +25,74 @@
 
 % This file is part of NOSNOC.
 
-%
-%
-clear all
-clc
-close all
+clear; clc; close all
 import casadi.*
 
-% example settings
 illustrate_regions  = 1;
 terminal_constraint = 1;
 linear_control = 1;
 
-%% NOSNOC settings and model
-problem_options = NosnocProblemOptions();
+%% nosnoc settings and model
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
+model = nosnoc.model.Pss();
 %%
-problem_options.n_s = 3;
 N_finite_elements = 3;
-
+problem_options.use_fesd = 1;
+problem_options.equidistant_control_grid = 1;
+problem_options.n_s = 3;
 problem_options.rk_representation = 'integral';
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.cross_comp_mode = 7;
+problem_options.step_equilibration = 'heuristic_mean';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
+problem_options.rho_h = 1e2;
+problem_options.T = 4;
+problem_options.N_stages = 6;
+problem_options.N_finite_elements = N_finite_elements;
 %problem_options.lift_complementarities = 1;
 
 solver_options.print_level = 3;
-problem_options.use_fesd = 1;
 solver_options.complementarity_tol = 1e-9;
 solver_options.sigma_N = 1e-9;
 solver_options.N_homotopy = 15;
-problem_options.equidistant_control_grid = 1;
-
-problem_options.step_equilibration = 'heuristic_mean';  % heuristic_diff, heuristic_mean, l2_relaxed, l2_relaxed_scaled, direct, direct_homotopy, off
-problem_options.rho_h = 1e2;
 
 %% model equations
-
 % Variable defintion
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
-
 v1 = SX.sym('v1');
 v2 = SX.sym('v2');
-
-% Control
+% Controls
 u1 = SX.sym('u1');
 u2 = SX.sym('u2');
-model.u = [u1;u2];
 
+model.u = [u1;u2];
 if linear_control
     v0  = [0;0];
     x = [x1;x2;v1;v2];
     u_max = 10;
-
     % dynamics
     f_11 = [-1+v1;0;u1;u2];
     f_12 = [1+v1;0;u1;u2];
     f_21 = [0;-1+v2;u1;u2];
     f_22 = [0;1+v2;u1;u2];
-
     % Objective
     model.f_q = 1*(v1^2+v2^2)+0*(u1^2+u2^2);
 else
     u_max = 2;
     v0 = [];
     x = [x1;x2];
-
     % dynamics
     f_11 = [-1+u1;0];
     f_12 = [1+u1;0];
     f_21 = [0;-1+u2];
     f_22 = [0;1+u2];
-
     % Objective
     model.f_q = u1^2+u2^2;
 end
 model.x0 = [2*pi/3;pi/3;v0];
 model.x = x;
-problem_options.T = 4;
 
-problem_options.N_stages = 6;
-problem_options.N_finite_elements = N_finite_elements;
 
 % Switching Functions
 p = 2; a = 0.15; a1 = 0;
@@ -114,55 +100,51 @@ b = -0.05; q = 3;
 
 c1 = x1+a*(x2-a1)^p;
 c2 = x2+b*x1^q;
-model.c = {c1,c2};
-
 S1 = [1;-1];
 S2 = [1;-1];
+
+model.c = {c1,c2};
 model.S = {S1,S2};
 
 %% Modes of the ODEs layers (for all  i = 1,...,n_sys);
 F1 = [f_11 f_12];
 F2 = [f_21 f_22];
 model.F = {F1,F2};
-
 % constraints
 model.lbu  = -u_max*ones(2,1);
 model.ubu  = u_max*ones(2,1);
-
 x_target = [-pi/6;-pi/4];
+
 if terminal_constraint
-    model.g_terminal = [x(1:2)-x_target(1:2)];
+    model.g_terminal = x(1:2)-x_target(1:2);
 else
     model.f_q_T = 100*(x(1:2)-x_target(1:2))'*(x(1:2)-x_target(1:2));
 end
 
 %% Solve and plot
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 
-u_opt = results.u;
-f_opt = full(results.f);
+u_opt = ocp_solver.get("u");
+f_opt = ocp_solver.get_objective();
 
-t_grid_optimizer = [results.t_grid];
-x_res_optimizer = [results.x];
+t_grid_optimizer = ocp_solver.get_time_grid();
+x_res_optimizer = ocp_solver.get("x");
 %%
 figure
-stairs(results.t_grid,[results.h,nan])
+stairs(t_grid_optimizer,[ocp_solver.get("h"),nan])
 xlabel('$t$','Interpreter','latex');
 ylabel('$h_{ki}$','Interpreter','latex');
-%%
+%
 fprintf('Objective value %2.4f \n',f_opt);
 f_star = 6.616653254750982;
 fprintf('Error %2.4e \n',norm(f_opt - f_star));
 
-
 x_res_integrator = [];
 t_grid_integrator = [];
 t_end = 0;
-
-
 tspan = [0 4/6];
+
 y0 = [2*pi/3;pi/3;0;0];
 sigma_int = solver_options.complementarity_tol;
 tol = sigma_int/10;
@@ -248,5 +230,5 @@ if 1
         ylim([-1.5 1.5])
     end
 end
-%%
-sliding_mode_plot_for_paper
+%% Further plots
+% sliding_mode_plot_for_paper

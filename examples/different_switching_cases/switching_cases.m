@@ -25,76 +25,76 @@
 
 % This file is part of NOSNOC.
 
-clear all
+clear; clc; close all
 import casadi.*
-
-%% Info
+import nosnoc.*
+%% Description
 % The goal of this example is to illustrate the 4 different cases of switching that can occur in a PSS, on some simple examples.
 % by chosing example_num from 1 to 4 below one can see a case of
 % 1) crossing a disconituity
 % 2) sliding mode
 % 3) sliding on a surfce of disconinuity where a spontaneous switch can happen (nonuqnie solutions)
 % 4) unique leaving of a sliding mode
-switching_case = 'leave_sliding_mode';
+
 %  Options: 'crossing' 'sliding_mode', 'spontaneous_switch' , 'leave_sliding_mode', 
-%% NOSNOC settings
-problem_options = NosnocProblemOptions();
+switching_case = 'leave_sliding_mode';
+%% nosnoc options 
+problem_options = nosnoc.Options();
+model = nosnoc.model.Pss();
 
-model = NosnocModel();
-
-% discretization parameters
-% TODO: these should be problem_options
+% discretization parameters for the simulation
 problem_options.N_sim = 10;
 problem_options.T_sim = 1.5;
-
+problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.N_finite_elements = 2;
 problem_options.n_s = 2;
-problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_representation= 'differential';
-problem_options.cross_comp_mode = 7;
 
 switch switching_case
     case 'crossing'
-        %% Crossing a discontinuity
+        % Crossing a discontinuity
         model.x0 = -1;
         x = SX.sym('x',1);
         model.x = x;
         model.c = x;
         model.S = [-1; 1];
-        f_1 = [2]; f_2 = [0.2];
+        f_1 = 2;
+        f_2 = 0.2;
         model.F = [f_1 f_2];
     case 'sliding_mode'
-        %% Sliding mode
+        % Sliding mode
         model.x0 = -0.5;
         x = SX.sym('x',1);
         model.x = x;
         model.c = x;
         model.S = [-1; 1];
-        f_1 = [1]; f_2 = [-1];
+        f_1 = 1; 
+        f_2 = -1;
         model.F = [f_1 f_2];
     case 'spontaneous_switch'
-        %% spontaneous switch
+        % spontaneous switch
         model.x0 = 0;
         x = SX.sym('x',1);
         model.x = x;
         model.c = x;
         model.S = [-1; 1];
-        f_1 = [-1]; f_2 = [1];
+        f_1 = -1;
+        f_2 = 1;
         model.F = [f_1 f_2];
-        % implicit methods more accurate, explicit Euler enables "random"
-        % leaving
-        problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+        % implicit methods more accurate, explicit Euler enables "random" leaving
+        problem_options.rk_scheme = RKSchemes.EXPLICIT_RK;
         problem_options.n_s = 1;
         problem_options.N_finite_elements = 3; % set 4, 5 for different outcomes
     case 'leave_sliding_mode'
-        %% leaving sliding mode in a unique way
+        % leaving sliding mode in a unique way
         model.x0 = [0;0];
         x = SX.sym('x',1);
         t = SX.sym('t',1);
         model.x = [x;t];
         model.c = x;
         model.S = [-1; 1];
-        f_1 = [1+t;1]; f_2 = [-1+t;1];
+        f_1 = [1+t;1]; 
+        f_2 = [-1+t;1];
         model.F = [f_1 f_2];
     otherwise
         error('pick a value for example_num between 1 and 4.')
@@ -103,20 +103,18 @@ end
 solver_options = nosnoc.solver.Options();
 solver_options.print_level = 3;
 solver_options.store_integrator_step_results = 1;
-
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
 
 if strcmp('spontaneous_switch', switching_case)
     % initialize solver
-    theta_init = {[1, 0]};
-    integrator.solver.set('theta', theta_init);
+    theta_init = [1; 0];
+    integrator.set('theta', 'init', {1,1:2,1:problem_options.n_s}, theta_init);
 end
-[results,stats] = integrator.solve();
-
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 figure
 latexify_plot()
-plot(results.t_grid,results.x(1,:))
+plot(t_grid,x_res(1,:))
 grid on
 xlabel('$t$')
 ylabel('$x(t)$')

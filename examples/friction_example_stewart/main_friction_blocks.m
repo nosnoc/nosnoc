@@ -39,13 +39,13 @@ import casadi.*
 % generalization of the FESD scheme presented in the NOSNOC software parep
 %% settings
 % collocation settings
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
+
+
 problem_options.n_s = 2;                            
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;     
-% problem_options.rk_representation = RKRepresentation.differential_lift_x;
-problem_options.use_fesd = 1;
-problem_options.cross_comp_mode = 3;
+
 solver_options.print_level = 2;
 solver_options.s_elastic_max = 1e1;                    
 solver_options.sigma_0 = 1;
@@ -67,14 +67,20 @@ problem_options.dcs_mode = 'Stewart';
 problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;
 problem_options.N_sim = N_sim;
-
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% Get variables into main workspace
-unfold_struct(model,'base');
-unfold_struct(problem_options,'base');
-unfold_struct(results,'base');
+if problem_options.dcs_mode == 'Stewart'
+    theta_res = integrator.get("theta");
+    lambda_res = integrator.get("lambda");
+    mu_res = integrator.get("mu");
+else
+    alpha_res = integrator.get("alpha");
+    lambda_n_res = integrator.get("lambda_n");
+    lambda_p_res = integrator.get("lambda_p");
+end
+h_res = integrator.get("h");
 plot_results_friction_blocks
 

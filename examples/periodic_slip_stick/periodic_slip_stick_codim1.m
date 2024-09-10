@@ -34,18 +34,16 @@
 % SIAM Journal on Numerical Analysis 47.3 (2009): 2023-2051.
 
 %%
-clear all
-clc
-close all
+clear; clc; close all;
 import casadi.*
 %% discretization settings
 N_finite_elements = 2;
 T_sim = 40;
 N_sim  = 100;
 %% init
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
+model = nosnoc.model.Pss();
 %% settings
 problem_options.use_fesd = 1;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %RKSchemes.GAUSS_LEGENDRE;
@@ -68,30 +66,27 @@ x2 = SX.sym('x2',1);
 x = [x1;x2];
 
 c = x2-0.2;
-
-f_11 = [x2;-x1+1/(1.2-x2)];
-f_12 = [x2;-x1-1/(0.8+x2)];
-
+f_1 = [x2;-x1+1/(1.2-x2)];
+f_2 = [x2;-x1-1/(0.8+x2)];
 
 model.x = x;
 model.c = c;
 model.S = [-1;1];
 
-F = [f_11 f_12];
+F = [f_1 f_2];
 model.F = F;
 %% Call integrator
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% Plot results
-x1 = results.x(1,:);
-x2 = results.x(2,:);
+x1 = x_res(1,:);
+x2 = x_res(2,:);
 
 if isequal(problem_options.dcs_mode,'Stewart')
-    theta = results.theta;
+    theta = integrator.get("theta");
 else
-    alpha = results.alpha;
+    alpha = integrator.get("alpha");
 end
-t_grid = results.t_grid;
 
 figure
 subplot(121)
@@ -113,14 +108,15 @@ grid on
 
 %%
 figure
+latexify_plot();
 if isequal(problem_options.dcs_mode,'Stewart')
-    plot(t_grid,[[nan;nan],theta])
+    plot(t_grid,theta)
     xlabel('$t$','Interpreter','latex');
     ylabel('$\theta(t)$','Interpreter','latex');
     grid on    
     legend({'$\theta_1(t)$','$\theta_2(t)$'},'Interpreter','latex');
 else
-    plot(t_grid,[nan,alpha])
+    plot(t_grid,alpha)
     xlabel('$t$','Interpreter','latex');
     ylabel('$\alpha(t)$','Interpreter','latex');
     grid on       

@@ -34,35 +34,36 @@
 % Piiroinen, Petri T., and Yuri A. Kuznetsov. "An event-driven method to simulate Filippov systems with 
 % accurate computing of sliding motions." ACM Transactions on Mathematical Software (TOMS) 34.3 (2008): 1-24.
 %%
-clear all
-clc
-close all
+clear; clc; close all
 import casadi.*
 %% discretization settings
-N_finite_elements = 2;
+N_finite_elements = 3;
 T_sim = 10;
-N_sim  = 200;
+N_sim = 400;
 
 %% init nosnoc 
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
+
 %% settings
-problem_options.use_fesd = 1;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %RKSchemes.GAUSS_LEGENDRE;
-solver_options.print_level = 2;
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'Stewart'; % 'Step;
-solver_options.complementarity_tol = 1e-9;
-solver_options.homotopy_update_rule = 'superlinear';
-%% Time settings
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_finite_elements;
+
+solver_options.print_level = 2;
+solver_options.complementarity_tol = 1e-9;
+solver_options.homotopy_steering_strategy = 'ELL_INF';
+solver_options.decreasing_s_elastic_upper_bound = true;
+%solver_options.homotopy_update_rule = 'superlinear';
+solver_options.print_level = 3;
 %% Model
+model = nosnoc.model.Pss();
 model.x0 = [0;-0.001;-0.02];
-% Variable defintion
 x = SX.sym('x',3);
+
 omega = 25;
 xi = 0.05;
 sigma = 1;
@@ -75,30 +76,29 @@ A = [-(2*xi*omega+1)        1 0;...
      -omega^2               0 0];
 B = [1; -2*sigma;1];
 c = x(1);
-f_11 = A*x+B;
-f_12 = A*x-B;
+f_1 = A*x+B;
+f_2 = A*x-B;
+F = [f_1 f_2];
 
+% Populate model
 model.x = x;
 model.c = c;
 model.S = [-1;1];
-
-F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 %% Plot results
-x1 = results.x(1,:);
-x2 = results.x(2,:);
-x3 = results.x(3,:);
+x1 = x_res(1,:);
+x2 = x_res(2,:);
+x3 = x_res(3,:);
 
 if isequal(problem_options.dcs_mode,'Stewart')
-    theta = results.theta;
+    theta = integrator.get("theta");
 else
-    alpha = results.alpha;
+    alpha = integrator.get("alpha");
 end
-t_grid = results.t_grid;
 
 figure
 plot3(x2,x3,x1,'k-','LineWidth',1.5);
@@ -129,13 +129,13 @@ legend({'$x_1(t)$','$x_2(t)$','$x_3(t)$'},'Interpreter','latex');
 %%
 figure
 if isequal(problem_options.dcs_mode,'Stewart')
-    plot(t_grid,[[nan;nan],theta])
+    plot(t_grid,theta)
     xlabel('$t$','Interpreter','latex');
     ylabel('$\theta(t)$','Interpreter','latex');
     grid on    
     legend({'$\theta_1(t)$','$\theta_2(t)$'},'Interpreter','latex');
 else
-    plot(t_grid,[nan,alpha])
+    plot(t_grid,alpha)
     xlabel('$t$','Interpreter','latex');
     ylabel('$\alpha(t)$','Interpreter','latex');
     grid on       

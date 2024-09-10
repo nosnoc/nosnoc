@@ -25,31 +25,30 @@
 
 % This file is part of NOSNOC.
 
-function model = get_cart_pole_with_friction_model(nosnoc, F_friction)
+function model = get_cart_pole_with_friction_model(use_nosnoc, F_friction)
     import casadi.*
-    if nosnoc
-        model = NosnocModel();
+    if use_nosnoc
+        model = nosnoc.model.Pss();
     else
         model = struct();
     end
 
-    % fixed values
+    % model parameters 
     m1 = 1; % cart
     m2 = 0.1; % link
     g = 9.81;
     link_length = 1;
 
-    % symbolics
+    % CasAD symbolic variables
     px = SX.sym('px');
     theta = SX.sym('theta');
     q = vertcat(px, theta);
-
+    % Velocities
     v = SX.sym('v');
     theta_dot = SX.sym('theta_dot');
     q_dot = vertcat(v, theta_dot);
 
-    x = vertcat(q, q_dot);
-
+    x = vertcat(q, q_dot); % state vector 
     u = SX.sym('u'); % control
 
     % Inertia matrix
@@ -58,16 +57,12 @@ function model = get_cart_pole_with_friction_model(nosnoc, F_friction)
     % Coriolis force
     C = [0, -m2 * link_length*theta_dot*sin(theta);...
         0,   0];
-
     % all forces = Gravity + Control + Coriolis (+Friction)
     f_all = [0; -m2*g*link_length*sin(theta)] + [u; 0] - C*q_dot;
 
-    if nosnoc
-        % switching function c: cart velocity
-        model.c = v;
-        % Sign matrix % f_1 for c>0, f_2 for c<0
-        model.S = [1; -1];
-
+    if use_nosnoc
+        model.c = v;         % switching function c: cart velocity
+        model.S = [1; -1];   % sign matrix S % f_1 for c>0, f_2 for c<0
         % Dynamics for v > 0
         f_1 = [q_dot;...
                 inv(M)*(f_all-[F_friction; 0])];
@@ -91,14 +86,16 @@ function model = get_cart_pole_with_friction_model(nosnoc, F_friction)
     u_max = 30;
 
     % cost
-    Q = diag([0.01;0;0;0]);%diag([10; 100; 1; 1]);
+    Q = diag([0.01;0;0;0]); %diag([10; 100; 1; 1]);
     R = 1;
-    model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
-
-    % terminal cost could be added
+    f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u; % running/stage costs
+    
+    % Terminal cost could be added
     Q_terminal = diag([500; 5000; 200; 200]);
-    model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
+    f_q_T  = (x-x_ref)'*Q_terminal*(x-x_ref); % Terminal costs 
 
+    model.f_q = f_q;
+    model.f_q_T = f_q_T;
     model.lbx = lbx;
     model.ubx = ubx;
     model.x = x;

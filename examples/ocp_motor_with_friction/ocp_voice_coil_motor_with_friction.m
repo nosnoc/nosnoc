@@ -6,25 +6,23 @@
 % Published in: 2008 47th IEEE Conference on Decision and Control
 % DOI: 10.1109/CDC.2008.4739025
 %% Clear
-clc;
-clear all; 
-close all;
+clc; clear; close all;
 %% Build problem
 import casadi.*
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
-% Choosing the Runge - Kutta Method and number of stages
+
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
-problem_options.cross_comp_mode = 7;
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
-% MPCC Method
-solver_options.N_homotopy = 10;
-% Discretization parameters
+problem_options.cross_comp_mode = 'FE_FE';
 problem_options.N_stages = 30; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 0.08;    % Time horizon
+
+% MPCC Method
+solver_options.N_homotopy = 10;
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+% Discretization parameters
 
 %% The Model
 % Parameters
@@ -47,16 +45,16 @@ x2 = SX.sym('x2');  % load mass position
 v2 = SX.sym('v2'); % load mass velocity
 I = SX.sym('I'); % electric current
 x = [x1;v1;x2;v2;I];
+
+model = nosnoc.model.Pss();
 model.x = x;
 model.x0 = x0;
 % control
-U = SX.sym('U'); % the motor voltage
-u = [U];
+u = SX.sym('u'); % the motor voltage
 n_u = 1;
 model.u = u;
 model.lbu = -U_max*ones(n_u,1);
 model.ubu = U_max*ones(n_u,1);
-
 
 %% Dynamics
 
@@ -89,56 +87,55 @@ x_target = [0.01;0;0.01;0;0];
 model.f_q = u^2;
 model.g_terminal = x-x_target;
 
-
 % Inequality constraints
-%
 % cv = 10; cx = 10;
 % model.g_path = [v1-v2;x1-x2];
 % model.g_path_ub = [cv;cx];
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
-
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %% plots
 % unfold structure to workspace of this script
-x1_opt = results.x(1,:);
-v1_opt= results.x(2,:);
-x2_opt= results.x(3,:);
-v2_opt= results.x(4,:);
-I_opt= results.x(5,:);
+x = ocp_solver.get('x');
+u = ocp_solver.get("u");
+t_grid = ocp_solver.get_time_grid();
+t_grid_u = ocp_solver.get_control_grid();
+
+x1_opt = x(1,:);
+v1_opt= x(2,:);
+x2_opt= x(3,:);
+v2_opt= x(4,:);
+I_opt= x(5,:);
 
 figure
 subplot(411)
-plot(results.t_grid,x1_opt)
+plot(t_grid,x1_opt)
 hold on
-plot(results.t_grid,x2_opt)
+plot(t_grid,x2_opt)
 ylabel('$x(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
 legend({'$x_1(t)$','$x_2(t)$'},'Interpreter','latex','Location','best')
 subplot(412)
-plot(results.t_grid,v1_opt)
+plot(t_grid,v1_opt)
 hold on
-plot(results.t_grid,v2_opt)
-yline(0,'k--')
+plot(t_grid,v2_opt)
+yline(0,'k:');
 ylabel('$v(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
 legend({'$v_1(t)$','$v_2(t)$'},'Interpreter','latex','Location','best')
 subplot(413)
-plot(results.t_grid,I_opt)
+plot(t_grid,I_opt)
 ylabel('$I(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
-% results.t_grid_u = results.t_grid_u';
+% t_grid_u = t_grid_u';
 subplot(414)
-results.u = [results.u,nan];
-stairs(results.t_grid_u,results.u);
+stairs(t_grid_u,[u,nan]);
 ylabel('$u(t)$','Interpreter','latex')
 xlabel('$t$','Interpreter','latex')
 grid on
-% ylim([-1.1 1.1])
-xlim([0 problem_options.T])
+ylim([-6.1 6.1])
