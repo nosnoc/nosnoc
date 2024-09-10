@@ -1098,12 +1098,14 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             solver_struct = struct();
 
             solver_struct.opts = obj.opts;
-            solver_struct.mpcc = obj.vdx_mpcc;
+            solver_struct.mpcc = obj.mpcc;
             solver_struct.ind_mpcc = sort(obj.ind_map_w.nlp-1);
             solver_struct.nlp_lbw = obj.nlp.w.lb;
             solver_struct.nlp_ubw = obj.nlp.w.ub;
+            solver_struct.nlp_init_lam_w = obj.nlp.w.init_mult;
             solver_struct.nlp_lbg = obj.nlp.g.lb;
             solver_struct.nlp_ubg = obj.nlp.g.ub;
+            solver_struct.nlp_init_lam_g = obj.nlp.g.init_mult;
             solver_struct.nlp_p0 = obj.nlp.p.val;
             solver_struct.nlp_x0 = obj.nlp.w.init;
             

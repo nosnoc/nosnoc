@@ -20,7 +20,6 @@ set_target_properties({{opts.solver_name}}_comp PROPERTIES SUFFIX ".casadi")
 
 set(CASADI_DEPENDENCIES ${CMAKE_DL_LIBS})
 
-message("${CASADI_LIBARARIES}")
 add_executable(homotopy_solver main.cpp HomotopySolver.cpp)
 target_link_libraries(homotopy_solver ${CASADI_LIBRARIES} ${CASADI_DEPENDENCIES} ${IPOPT_LIBRARIES})
 target_include_directories(homotopy_solver PRIVATE .)

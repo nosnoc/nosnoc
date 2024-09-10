@@ -209,8 +209,14 @@ classdef Solver < handle
             if ~exist('plugin', 'var')
                 plugin = 'scholtes_ineq';
             end
+            % add problem_options
+            oldwd = pwd;
+            solver_json = jsonencode(obj.opts, "PrettyPrint", true, "ConvertInfAndNaN", false);
+            fid = fopen([solver_dir '/problem_options.json'], "w");
+            fprintf(fid, solver_json);
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
             obj.discrete_time_problem.solver.generate_c_solver(solver_dir);
         end
     end
 end
+ 
