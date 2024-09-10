@@ -67,32 +67,7 @@
     "norm_function": [],
     "calculate_stationarity_type": true
   },
-  "mpcc": {
-    "w": {
-      "x": [
-        [
-          1,
-          2
-        ]
-      ]
-    },
-    "g": {},
-    "p": {
-      "p": [
-        1
-      ]
-    },
-    "G": {
-      "G": [
-        1
-      ]
-    },
-    "H": {
-      "H": [
-        1
-      ]
-    }
-  },
+  "mpcc": [],
   "ind_mpcc": [
     0,
     1

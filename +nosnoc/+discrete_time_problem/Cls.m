@@ -813,7 +813,7 @@ classdef Cls < vdx.problems.Mpcc
                         G_ij = {};
                         H_ij = {};
                         sum_y_gap = obj.w.Y_gap(ii,jj) + sum2(obj.w.y_gap(ii,jj,:));
-                        for kk=1:(opts.n_s + rbp)
+                        for kk=1:opts.n_s
                             lambda_normal_ijk = obj.w.lambda_normal(ii,jj,kk);
                             G_ij = vertcat(G_ij, {lambda_normal_ijk});
                             H_ij = vertcat(H_ij, {sum_y_gap});
@@ -1280,12 +1280,16 @@ classdef Cls < vdx.problems.Mpcc
                         sigma_lambda_B = 0;
                         for kk=1:(opts.n_s + rbp)
                             sigma_c_B = sigma_c_B + obj.w.y_gap(ii,jj-1,kk);
+                        end
+                        for kk=1:(opts.n_s)
                             sigma_lambda_B = sigma_lambda_B + obj.w.lambda_normal(ii,jj-1,kk);
                         end
                         sigma_c_F = obj.w.Y_gap(ii,jj,kk);
                         sigma_lambda_F = 0;
                         for kk=1:(opts.n_s + rbp)
                             sigma_c_F = sigma_c_F + obj.w.y_gap(ii,jj,kk);
+                        end
+                        for kk=1:(opts.n_s)
                             sigma_lambda_F = sigma_lambda_F + obj.w.lambda_normal(ii,jj,kk);
                         end
 

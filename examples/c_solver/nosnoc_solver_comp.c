@@ -51,7 +51,7 @@ extern "C" {
 static const casadi_int casadi_s0[6] = {2, 1, 0, 2, 0, 1};
 static const casadi_int casadi_s1[5] = {1, 1, 0, 1, 0};
 
-/* comp_res:(i0[2],i1)->(o0) */
+/* comp_res:(i0[2],i1[2])->(o0) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
   casadi_real a0, a1;
   a0=arg[0]? arg[0][0] : 0;
@@ -117,7 +117,7 @@ CASADI_SYMBOL_EXPORT const char* comp_res_name_out(casadi_int i) {
 CASADI_SYMBOL_EXPORT const casadi_int* comp_res_sparsity_in(casadi_int i) {
   switch (i) {
     case 0: return casadi_s0;
-    case 1: return casadi_s1;
+    case 1: return casadi_s0;
     default: return 0;
   }
 }
