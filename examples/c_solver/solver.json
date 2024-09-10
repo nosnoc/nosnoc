@@ -56,38 +56,215 @@
     "break_simulation_if_infeasible": false,
     "multiple_solvers": false,
     "p_val": 1,
-    "homotopy_steering_strategy": "DIRECT",
+    "homotopy_steering_strategy": "ELL_1",
     "lower_bound_relaxation": false,
     "store_integrator_step_results": false,
     "ipopt_callback": [],
     "timeout_cpu": 0,
     "timeout_wall": 0,
-    "warm_start_duals": false,
+    "warm_start_duals": true,
     "normalize_homotopy_update": true,
     "norm_function": [],
-    "calculate_stationarity_type": true
+    "calculate_stationarity_type": false
   },
-  "mpcc": [],
+  "mpcc": {
+    "w": {
+      "variables": {
+        "x": {
+          "name": "x",
+          "indices": [
+            [
+              1,
+              2
+            ]
+          ],
+          "ind_shape": [
+            1,
+            1
+          ],
+          "depth": 0,
+          "reorder_to_end": false
+        }
+      },
+      "sym": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaacaaaaaaaihbdegpcaaaaaaaaaaaaaacaaaaaaaihcd",
+      "casadi_type": "SX",
+      "len": 2,
+      "numerical_defaults": {
+        "lb": -Infinity,
+        "ub": Infinity,
+        "init": 0,
+        "init_mult": 0
+      },
+      "numerical_vectors": {
+        "lb": [
+          0,
+          0
+        ],
+        "ub": [
+          Infinity,
+          Infinity
+        ],
+        "init": [
+          0,
+          0
+        ],
+        "init_mult": [
+          0,
+          0
+        ],
+        "res": [
+          0,
+          0
+        ],
+        "violation": [
+          0,
+          0
+        ],
+        "mult": [
+          0,
+          0
+        ]
+      }
+    },
+    "g": {
+      "sym": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaaakaaaaaaadfifgefhogdgehjgpgogcaaaaaaadaaaaaaaggpgpgaaaaaaaabagaaaaaaacaaaaaaaaaaaaaaabababaaaaaaaaaaaaaaabacaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegfaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaacaaaaaaajgadcaaaaaaajgbdbaaaaaaaaaaaaaaacaaaaaaapgadaabagaaaaaaadhpgfhchdgfgbahaaaaaaakgjgehpfehngahaaaaaaaaaaaaaaaafaaaaaaadhigfgmgmgaaaaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaaebababaaabababaaapbfilobfilobfnpdmfpicmfpicmfpnpdaaaaaeaaaaaaaaaaaaaabakdmiadcooijhfeodaaaaaaaaaaaaabhcaaaaaaaaaaaaaaaabaaaaaaaocdaaaaaaangehihaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaacaaaaaaaaaaaaaaachaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaacaaaaaaaihbdegpcaaaaaaaaaaaaaacaaaaaaaihcdchbaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaahbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaababaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "casadi_type": "SX",
+      "len": 0,
+      "numerical_defaults": {
+        "lb": 0,
+        "ub": 0,
+        "init_mult": 0
+      },
+      "numerical_vectors": {
+        "lb": [],
+        "ub": [],
+        "init_mult": [],
+        "eval": [],
+        "violation": [],
+        "mult": []
+      }
+    },
+    "p": {
+      "variables": {
+        "p": {
+          "name": "p",
+          "indices": [
+            1
+          ],
+          "ind_shape": [
+            1,
+            1
+          ],
+          "depth": 0,
+          "reorder_to_end": false
+        }
+      },
+      "sym": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegfaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaah",
+      "casadi_type": "SX",
+      "len": 1,
+      "numerical_defaults": {
+        "val": 0
+      },
+      "numerical_vectors": {
+        "val": 0,
+        "mult": 0
+      }
+    },
+    "G": {
+      "variables": {
+        "C": {
+          "name": "C",
+          "indices": [
+            1
+          ],
+          "ind_shape": [
+            1,
+            1
+          ],
+          "depth": 0,
+          "reorder_to_end": false
+        }
+      },
+      "sym": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaaakaaaaaaadfifgefhogdgehjgpgogcaaaaaaadaaaaaaaggpgpgaaaaaaaabagaaaaaaacaaaaaaaaaaaaaaabababaaaaaaaaaaaaaaabacaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegfaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaacaaaaaaaaaaaaaaacaaaaaaajgadcaaaaaaajgbdbaaaaaaaaaaaaaaacaaaaaaapgadaabagaaaaaaadhpgfhchdgfgbahaaaaaaakgjgehpfehngahaaaaaaaaaaaaaaaafaaaaaaadhigfgmgmgaaaaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaaebababaaabababaaapbfilobfilobfnpdmfpicmfpicmfpnpdaaaaaeaaaaaaaaaaaaaabakdmiadcooijhfeodaaaaaaaaaaaaabhcaaaaaaaaaaaaaaaabaaaaaaaocdaaaaaaangehihaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaacaaaaaaaaaaaaaaachaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaacaaaaaaaihbdegpcaaaaaaaaaaaaaacaaaaaaaihcdchbaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaahbaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaancaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaocaaaaaaaaaaaaaaaaaaaaaaaaaaaaaababaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaabaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaa",
+      "casadi_type": "SX",
+      "len": 1,
+      "numerical_defaults": {
+        "lb": 0,
+        "ub": 0,
+        "init_mult": 0
+      },
+      "numerical_vectors": {
+        "lb": 0,
+        "ub": 0,
+        "init_mult": 0,
+        "eval": 0,
+        "violation": 0,
+        "mult": 0
+      }
+    },
+    "H": {
+      "variables": {
+        "C": {
+          "name": "C",
+          "indices": [
+            1
+          ],
+          "ind_shape": [
+            1,
+            1
+          ],
+          "depth": 0,
+          "reorder_to_end": false
+        }
+      },
+      "sym": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaaakaaaaaaadfifgefhogdgehjgpgogcaaaaaaadaaaaaaaggpgpgaaaaaaaabagaaaaaaacaaaaaaaaaaaaaaabababaaaaaaaaaaaaaaabacaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegfaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaacaaaaaaaaaaaaaaacaaaaaaajgadcaaaaaaajgbdbaaaaaaaaaaaaaaacaaaaaaapgadaabagaaaaaaadhpgfhchdgfgbahaaaaaaakgjgehpfehngahaaaaaaaaaaaaaaaafaaaaaaadhigfgmgmgaaaaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaaebababaaabababaaapbfilobfilobfnpdmfpicmfpicmfpnpdaaaaaeaaaaaaaaaaaaaabakdmiadcooijhfeodaaaaaaaaaaaaabhcaaaaaaaaaaaaaaaabaaaaaaaocdaaaaaaangehihaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaacaaaaaaaaaaaaaaachaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaacaaaaaaaihbdegpcaaaaaaaaaaaaaacaaaaaaaihcdchbaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaahbaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaancaaaaaaaaaaaaaaaaaaaaaabaaaaaaaocaaaaaaaaaaaaaaaaaaaaaaaaaaaaaababaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaa",
+      "casadi_type": "SX",
+      "len": 1,
+      "numerical_defaults": {
+        "lb": 0,
+        "ub": 0,
+        "init_mult": 0
+      },
+      "numerical_vectors": {
+        "lb": 0,
+        "ub": 0,
+        "init_mult": 0,
+        "eval": 0,
+        "violation": 0,
+        "mult": 0
+      }
+    },
+    "f": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaaakaaaaaaadfifgefhogdgehjgpgogcaaaaaaabaaaaaaaggaaaaaaaabagaaaaaaacaaaaaaaaaaaaaaabababaaaaaaaaaaaaaaabacaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegfaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaacaaaaaaaaaaaaaaacaaaaaaajgadcaaaaaaajgbdbaaaaaaaaaaaaaaacaaaaaaapgadaabagaaaaaaadhpgfhchdgfgbahaaaaaaakgjgehpfehngahaaaaaaaaaaaaaaaafaaaaaaadhigfgmgmgaaaaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaaebababaaabababaaapbfilobfilobfnpdmfpicmfpicmfpnpdaaaaaeaaaaaaaaaaaaaabakdmiadcooijhfeodaaaaaaaaaaaaabhcaaaaaaaaaaaaaaaabaaaaaaaocdaaaaaaangehihaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaacaaaaaaaaaaaaaaachaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaacaaaaaaaihbdegpcaaaaaaaaaaaaaacaaaaaaaihcdchbaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaahbaaaaaaanaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaiaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaabdeglaaaaaaaaaaaaaaachhaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaachjaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachiaaaaaaaaaaaaaaachkaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachlaaaaaaaaaaaaaaachmaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachnaaaaaaaaaaaaaaachfaaaaaaaaaaaaaaabaaaaaaaaaaaaaaachgaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaancaaaaaaaaaaaaaaaaaaaaaaaaaaaaaamcaaaaaabaaaaaaaaaaaaaaaaaaaappdcaaaaaaaaaaaaaaaaaaaaaaabaaaaaaalaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaancaaaaaabaaaaaaaaaaaaaaabaaaaaaalaaaaaaacaaaaaaabaaaaaaabaaaaaaadaaaaaaacaaaaaaabaaaaaaacaaaaaaabaaaaaaaaaaaaaaaaaaaaaaacaaaaaaalaaaaaaabaaaaaaabaaaaaaabaaaaaaabaaaaaaaaaaaaaaaaaaaaaaabaaaaaaancaaaaaabaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaocaaaaaaaaaaaaaaaaaaaaaaaaaaaaaababaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaabaaaaaaaaaaaaaaachoaaaaaaaaaaaaaaa"
+  },
   "ind_mpcc": [
     0,
     1
   ],
   "nlp_lbw": [
     0,
+    0,
     0
   ],
   "nlp_ubw": [
     Infinity,
-    Infinity
+    Infinity,
+    10
+  ],
+  "nlp_init_lam_w": [
+    0,
+    0,
+    0
   ],
   "nlp_lbg": -Infinity,
   "nlp_ubg": 0,
+  "nlp_init_lam_g": 0,
   "nlp_p0": [
     0,
     1
   ],
   "nlp_x0": [
     0,
-    0
+    0,
+    1
   ]
 }

@@ -4,12 +4,64 @@
 HomotopySolver::HomotopySolver()
 {
   casadi::Dict nlpopts;
-  // TODO: populate all of these 
-  nlpopts["ipopt.print_level"] = 0;
-  nlpopts["print_time"] = 0;
-  nlpopts["ipopt.sb"] = "yes";
-  nlpopts["ipopt.bound_relax_factor"] = 0;
-  nlpopts["ipopt.tol"] = 1e-12;
+
+  
+    nlpopts["ipopt.print_level"] = 0;
+  
+
+  
+    nlpopts["ipopt.sb"] = "yes";
+  
+
+  
+    nlpopts["ipopt.max_iter"] = 500;
+  
+
+  
+    nlpopts["ipopt.bound_relax_factor"] = 0;
+  
+
+  
+    nlpopts["ipopt.tol"] = 1e-12;
+  
+
+  
+    nlpopts["ipopt.dual_inf_tol"] = 1e-12;
+  
+
+  
+    nlpopts["ipopt.compl_inf_tol"] = 1e-12;
+  
+
+  
+    nlpopts["ipopt.acceptable_tol"] = 1e-06;
+  
+
+  
+    nlpopts["ipopt.mu_strategy"] = "adaptive";
+  
+
+  
+    nlpopts["ipopt.mu_oracle"] = "quality-function";
+  
+
+  
+    nlpopts["ipopt.warm_start_init_point"] = "yes";
+  
+
+  
+    nlpopts["ipopt.linear_solver"] = "mumps";
+  
+
+
+  
+    nlpopts["print_time"] = 0;
+  
+
+  
+    nlpopts["verbose"] = false;
+  
+
   m_nlp_solver = casadi::nlpsol("solver", "ipopt", "nosnoc_solver_nlp.casadi", nlpopts);
   m_complementarity_function = casadi::external("comp_res", "nosnoc_solver_comp.casadi");
 }
@@ -32,18 +84,21 @@ uint32_t HomotopySolver::solve(std::map<std::string, casadi::DM> arg)
     
     std::map<std::string, casadi::DM> nlp_arg = {{"lbx", m_lbw},
                                                {"ubx", m_ubw},
+                                               {"lam_x0", m_init_lam_w},
                                                {"lbg", m_lbg},
                                                {"ubg", m_ubg},
+                                               {"lam_g0", m_init_lam_g},
                                                {"x0", w_nlp_k},
                                                {"p", m_p0}};
     
     auto res = m_nlp_solver(nlp_arg);
     w_nlp_k = res.at("x");
+    
+    m_init_lam_w = res.at("lam_x").get_elements();
+    m_init_lam_g = res.at("lam_g").get_elements();
+    
     w_nlp_k.get(w_mpcc_res, false, m_ind_mpcc);
-    auto p_mpcc_vec = std::vector<double>(m_p0); // TODO don't copy here for no reason
-    p_mpcc_vec.pop_back();
-    auto p_mpcc_dm = casadi::DM(p_mpcc_vec);
-    auto comp_args = {w_mpcc_res, p_mpcc_dm};
+    auto comp_args = {w_nlp_k, casadi::DM(m_p0)};
     auto comp_fun_ret = m_complementarity_function(comp_args);
     complementarity_iter = comp_fun_ret[0];
     auto ret_status = m_nlp_solver.stats().at("return_status");
