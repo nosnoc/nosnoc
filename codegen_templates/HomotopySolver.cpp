@@ -1,7 +1,10 @@
-#include<HomotopySolver.hpp>
-#include<iostream>
-#include<stdexcept>
-#include<algorithm>
+#include "HomotopySolver.hpp"
+
+#include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <stdexcept>
+#include <string>
 
 namespace nosnoc
 {
@@ -40,6 +43,11 @@ uint32_t HomotopySolver::solve()
   double sigma_k = {{opts.sigma_0}};
   bool last_iter_failed = false;
   uint32_t ii = 0;
+
+  {% if opts.print_level >= 3 %}
+  print_header();
+  {% endif %}
+  
   do
   {
     m_p0.back() = sigma_k;
@@ -55,6 +63,7 @@ uint32_t HomotopySolver::solve()
     {% endraw %}
     auto res = m_nlp_solver(nlp_arg);
     w_nlp_k = res.at("x");
+    auto stats = m_nlp_solver.stats();
     {% if opts.warm_start_duals %}
     m_init_lam_w = res.at("lam_x").get_elements();
     m_init_lam_g = res.at("lam_g").get_elements();
@@ -74,6 +83,15 @@ uint32_t HomotopySolver::solve()
     {
       last_iter_failed = true;
     }
+
+    {% if opts.print_level >= 3 %}
+    print_nlp_iter(ii, sigma_k, complementarity_iter.get_elements().back(),
+                   stats.at("iterations").as_dict().at("inf_pr").as_double_vector().back(),
+                   stats.at("iterations").as_dict().at("inf_pr").as_double_vector().back(),
+                   stats.at("iterations").as_dict().at("obj").as_double_vector().back(),
+                   0.,stats.at("iter_count"), stats.at("return_status"));
+    {% endif %}
+    
     ii++;
     sigma_k *= {{opts.homotopy_update_slope}};
   } while((complementarity_iter.get_elements()[0] > {{opts.complementarity_tol}} || last_iter_failed) &&
@@ -187,6 +205,17 @@ void HomotopySolver::set(std::string var, std::string field, std::vector<int> in
   {
     throw std::invalid_argument("Wrong number of indices given to HomotopySolver::get");
   }
+}
 
+void HomotopySolver::print_header()
+{
+  printf("\n|%-5s|%-10s|%-10s|%-10s|%-10s|%-10s|%-10s|%-10s|%-30s\n", "iter", "sigma", "compl_res", "inf_pr", "inf_du", "objective", "CPU time", "NLP iter", "status");
+}
+
+void HomotopySolver::print_nlp_iter(int ii, double sigma_k, double complementarity, double inf_pr, double inf_du, double objective, double cpu_time, int iter_count, std::string return_status)
+{
+  printf("|%-5d|%-10.2e|%-10.2e|%-10.2e|%-10.2e|%-10.2e|%-10.3f|%-10d|%-30s\n",
+         ii, sigma_k, complementarity, inf_pr,inf_du,
+         objective, cpu_time, iter_count, return_status.c_str());
 }
 }

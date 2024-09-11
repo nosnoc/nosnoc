@@ -15,6 +15,8 @@ problem_options.N_stages = 10; % Number of control intervals over the time horiz
 problem_options.N_finite_elements = 3; % Number of finite element (integration steps) on every control interval (optionally a vector might be passed).
 problem_options.T = 1;    % Time horizon (for a time-optimal problem, the actual horizon length is obtained by solving the problem).
 
+solver_options.print_level = 3;
+
 % settings.nlpsol = 'snopt';  % Note: requires installing.
 
 model = nosnoc.model.Pss(); % Initialize a nosnoc model, (depending on the underlying nonsmooth model, several options exist)
@@ -56,10 +58,11 @@ ocp_solver.generate_c_solver(fullfile(pwd));
 % Now the focus switches to the c++ code, see main.cpp for details on how to use the generated solver.
 % In order to build the c++ solver:
 %
-% in matlab shell:
+% 1. in matlab shell:
 % > cpp_solver_tutorial
 %
-% in system shell:
+% 2. in system shell:
+% > export CASADI_CMAKE_PATH=<path/to/casadi>/cmake 
 % > mkdir build; cd build
 % > cmake ..
 % > make

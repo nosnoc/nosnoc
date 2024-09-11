@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.10.2)
 project({{opts.solver_name}}-nlp-sol)
 
-# TODO this should be generalized
-list(APPEND CMAKE_MODULE_PATH ~/tools/casadi/cmake)
+list(APPEND CMAKE_MODULE_PATH $ENV{CASADI_CMAKE_PATH})
 find_package(CASADI REQUIRED)
-include_directories(~/tools/casadi/build/install/include)
+include_directories(${CASADI_INCLUDE_DIR})
 find_package(IPOPT REQUIRED)
 link_directories(${IPOPT_LIBRARY_DIRS})
 
