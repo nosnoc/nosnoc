@@ -8,7 +8,7 @@ namespace nosnoc
 class HomotopySolver{
  public:
   HomotopySolver();
-  uint32_t solve(std::map<std::string, DM> arg);
+  uint32_t solve();
   std::vector<double> get(std::string var, std::vector<int> indices);
   void set(std::string var, std::string field, std::vector<int> indices, std::vector<double> value);
  private:
