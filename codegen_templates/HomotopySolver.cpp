@@ -28,7 +28,7 @@ HomotopySolver::HomotopySolver()
   m_complementarity_function = casadi::external("comp_res", "{{opts.solver_name}}_comp.casadi");
 }
 
-uint32_t HomotopySolver::solve(std::map<std::string, casadi::DM> arg)
+uint32_t HomotopySolver::solve()
 {
   m_p0.back() = 1;
 

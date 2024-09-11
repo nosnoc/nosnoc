@@ -46,6 +46,22 @@ model.g_terminal = [q-200;v-0]; % Add terminal constraint
 
 % Create a nosnoc solver. 
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-% Solve the problem by internally calling the nosnoc MPEC solver
+% Generate the relevant c++ files as well as a CMakeLists.txt which expects a main.cpp provided by the user.
+% The argument here generates the files in the current working directory, though this can be re-directed to any directory.
+%
+% Note: this relies on Matlab-Python interop. If that fails you will need to call the python script in `codegen_templates`
+%       manually to generate the c++ files from the json information.
 ocp_solver.generate_c_solver(fullfile(pwd));
+
+% Now the focus switches to the c++ code, see main.cpp for details on how to use the generated solver.
+% In order to build the c++ solver:
+%
+% in matlab shell:
+% > cpp_solver_tutorial
+%
+% in system shell:
+% > mkdir build; cd build
+% > cmake ..
+% > make
+
 
