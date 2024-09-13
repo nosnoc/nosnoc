@@ -123,6 +123,12 @@ classdef Solver < handle
             warning on vdx:indexing:dot_reference_returns_vdx_var
         end
 
+        function set_x0(obj, x0)
+            obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).init = x0;
+            obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).lb = x0;
+            obj.discrete_time_problem.w.x(0,0,obj.opts.n_s).ub = x0;
+        end
+
         function ret = get_full(obj, field)
             opts = obj.opts;
             try
@@ -216,6 +222,37 @@ classdef Solver < handle
             fprintf(fid, solver_json);
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
             obj.discrete_time_problem.solver.generate_c_solver(solver_dir);
+        end
+
+        function do_shift_initialization(obj)
+        % This method does a shift initialization by moving each control interval to the left by one.
+        %
+        % Warning:
+        %    This is currently experimental and not guaranteed to work for all discretization settings.
+            rbp = ~obj.opts.right_boundary_point_explicit;
+            vars = obj.discrete_time_problem.w.get_vars();
+            for var_idx=1:numel(vars)
+                var = vars{var_idx};
+                if var.depth == 0
+                    continue
+                end
+                for ii=1:obj.opts.N_stages
+                    next_ii = min(obj.opts.N_stages, ii+1);
+                    if var.depth == 1
+                        var(ii).init = var(next_ii).res;
+                        continue
+                    end
+                    for jj=1:obj.opts.N_finite_elements(ii)
+                        if var.depth == 2
+                            var(ii,jj).init = var(next_ii,jj).res;
+                            continue
+                        end
+                        for kk=1:(size(var.indices,3) - 1)
+                            var(ii,jj,kk).init = var(next_ii,jj,kk).res;
+                        end
+                    end
+                end
+            end
         end
     end
 end
