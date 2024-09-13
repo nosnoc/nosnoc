@@ -54,8 +54,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         ind_map_g % Map for general constraints containing the corresponding indices in the original MPCC passed in and indices in the NLP
         ind_map_w % Map for primal variables containing the corresponding indices in the original MPCC passed in and indices in the NLP
         ind_map_p % Map for parameters containing the corresponding indices in the original MPCC passed in and indices in the NLP
-        
-        vdx_mpcc
     end
 
     methods (Access=public)
