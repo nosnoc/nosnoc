@@ -28,30 +28,28 @@
 %
 %
 
-%% Three cart manipulation example
-clear all;
-close all;
-clc;
+%% Two cart manipulation example
+clear; close all; clc;
 import casadi.*
 
 %%
 play_animation = 1;
 no_friction = 0;
 
-%%
+%% load nosnoc default options
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
+
+%% 
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;  % number of stages in IRK methods
 problem_options.dcs_mode = 'CLS';
 problem_options.cross_comp_mode = 7;
 problem_options.friction_model = "Polyhedral";
-% problem_options.conic_model_switch_handling = "Abs";
 problem_options.gamma_h = 1;
 
 solver_options.sigma_0 = 1e0;
 solver_options.homotopy_steering_strategy = 'DIRECT';
-% solver_options.decreasing_s_elastic_upper_bound = 1;
 solver_options.homotopy_update_slope = 0.5;
 %solver_options.homotopy_update_rule = 'superlinear';
 solver_options.N_homotopy = 15;
@@ -109,7 +107,6 @@ model = nosnoc.model.Cls();
 model.x = x;
 model.u = u;
 model.x0 = x0;
-
 model.M = M;
 model.f_v = [ 0;...
     -m1*g;
@@ -126,14 +123,11 @@ J_tangent =  [0  1 0;...
              -1  0 0;...
               0  0 1;...
               1  0 0];
-
 J_tangent  = J_tangent./vecnorm(J_tangent);
-
 J_normal = full(f_c.jacobian(q));
 J_normal_fun = Function('J_normal_fun',{q},{J_normal});
 J_normal = full(J_normal_fun(x0(1:4)))';
 J_normal  = J_normal ./vecnorm(J_normal);
-
 
 model.f_c = f_c;
 model.J_normal = J_normal;
@@ -161,8 +155,11 @@ model.ubx = ubx;
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 % model.g_terminal = [x-x_ref];
+
 %% Call nosnoc solver
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+
+% add inital guess
 lambda_guess = {};
 y_gap_guess = {};
 x_guess = {};
@@ -263,7 +260,7 @@ if play_animation
         im = frame2im(frame);
 
         [imind,cm] = rgb2ind(im,256);
-        if ii == 1;
+        if ii == 1
             imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',problem_options.h_k(1));
         else
             imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',problem_options.h_k(1));
@@ -326,12 +323,7 @@ for jj= 1:N_shots
     xlim([x_min x_max])
     ylim([-0.5 3.5])
 end
-set(gcf,'Units','inches');
-screenposition = get(gcf,'Position');
-set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
 
-%%
 %%
 figure('Renderer', 'painters', 'Position', [100 100 1100 260])
 % figure
@@ -369,11 +361,6 @@ xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
 xlim([0 T])
 
-
-set(gcf,'Units','inches');
-screenposition = get(gcf,'Position');
-set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['carts_states'] ])
 %%
 lambda_tangent = [-results.lambda_tangent(1,:)+results.lambda_tangent(2,:);
                   -results.lambda_tangent(3,:)+results.lambda_tangent(4,:);

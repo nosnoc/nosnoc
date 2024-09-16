@@ -9,21 +9,19 @@ model = nosnoc.model.Cls();
 %% Simulation setings
 N_FE = 2;
 T_sim = 3;
-N_sim = 10;
+N_sim = 20;
 
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_FE;
-
-%%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.cross_comp_mode = 1;
 problem_options.dcs_mode = DcsMode.CLS;
 problem_options.no_initial_impacts = 1;
 
-% Initialization that seems to work best
-problem_options.initial_Lambda_normal = 10;
+% Initialization 
+problem_options.initial_Lambda_normal = 0;
 problem_options.initial_lambda_normal = 0;
 problem_options.initial_Y_gap = 0;
 problem_options.initial_y_gap = 0;
@@ -35,13 +33,9 @@ problem_options.initial_y_gap = 0;
 %problem_options.rho_fesdj_impulse = 1e6;
 %problem_options.gamma_h = 0.99;
 
-% elasic mode with decreasing bounds for the elstaic slacks
-%solver_options.mpcc_mode = "elastic_ineq";
-solver_options.decreasing_s_elastic_upper_bound = 1;
+solver_options.decreasing_s_elastic_upper_bound = 1; % elasic mode with decreasing bounds for the elstaic slacks
+solver_options.print_level = 2;
 
-solver_options.print_level = 3;
-solver_options.sigma_0 = 1e0;
-solver_options.homotopy_update_slope = 0.1;
 
 %% model defintion
 g = 9.81;
@@ -84,7 +78,7 @@ else
 
 end
 
-%% Call nosnoc Integrator
+%% Call nosnoc integrator
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
@@ -92,7 +86,6 @@ integrator = nosnoc.Integrator(model, problem_options, solver_options);
 qx = x_res(1,:);
 vx = x_res(2,:);
 Lambda_normal = integrator.get("Lambda_normal");
-
 
 figure
 subplot(311)

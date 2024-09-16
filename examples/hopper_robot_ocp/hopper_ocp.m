@@ -33,9 +33,7 @@
 
 % The methods and time-freezing refomulation are detailed in https://arxiv.org/abs/2111.06759
 %%
-clear all;
-close all;
-clc;
+clear;close all; clc;
 import casadi.*
 
 % delete old gif
@@ -46,7 +44,6 @@ problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
-problem_options.use_fesd = 1;
 problem_options.cross_comp_mode = 7;
 problem_options.time_freezing = 1;
 % problem_options.s_sot_max = 2;

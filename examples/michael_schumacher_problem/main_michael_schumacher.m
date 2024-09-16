@@ -24,7 +24,7 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.%
-clear all; clc; close all
+clear; clc; close all
 import casadi.*
 %%
 % An optimal control problem from: 
@@ -56,7 +56,6 @@ problem_options.g_path_at_stg = 1;
 problem_options.time_optimal_problem = 1;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
 solver_options.print_level = 5;
-
 
 %% model equations
 model = nosnoc.model.Pss();
@@ -96,6 +95,7 @@ f_2 = [v;a*tangent-Friction_max*normal;s*(tangent'*v)];
 model.c = normal'*v;
 model.S = [1;-1];
 model.F = [f_1 f_2];
+
 %%  general nonlinear constraints
 switch path_constraint 
     case 'none'
@@ -133,8 +133,8 @@ switch path_constraint
         yy = (chicane_width)+chicane_width*tanh(chicane_tightness*(xx-q_target(1)/2));
 end
 if ~isequal(path_constraint,'none')
-    model.lbg_path = [-track_width];
-    model.ubg_path = [+track_width];
+    model.lbg_path = -track_width;
+    model.ubg_path = +track_width;
 end
 %% objective
 if ~problem_options.time_optimal_problem 
@@ -145,7 +145,7 @@ else
 end
 
 % Terminal Constraint
-model.g_terminal = [q-q_target];
+model.g_terminal = q-q_target;
 
 % intitial guess for fun
 alpha = [atan2(diff(yy),diff(xx)),0];

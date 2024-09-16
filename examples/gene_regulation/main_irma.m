@@ -30,9 +30,7 @@
 % Numerical simulation of piecewise-linear models of gene regulatory networks using complementarity systems
 % V. Acary, H. De Jong, B. Brogliato
 %%
-clear all
-clc
-close all
+clear; clc; close all
 import casadi.*
 %% Model parameters
 switch_on = 1;
@@ -43,15 +41,16 @@ N_finite_elements = 4;
 T_sim = 1000;
 N_sim = 2000;
 
+
+T_sim = 1000/8;
+N_sim = 2000/8;
+
 %% Settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.use_fesd = 1;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.print_level = 2;
 problem_options.n_s = 2;
-problem_options.dcs_mode = 'Heaviside'; % General inclusions only possible in step mode.
-problem_options.cross_comp_mode = 7;
 solver_options.homotopy_update_rule = 'superlinear';
 solver_options.complementarity_tol = 1e-5;
 solver_options.homotopy_steering_strategy = 'ELL_INF';
@@ -59,11 +58,11 @@ solver_options.decreasing_s_elastic_upper_bound = true;
 
 % Generate model
 model = irma_model(switch_on, lifting);
-% Time
+
+% Discretization settings
 problem_options.N_finite_elements = N_finite_elements;
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
-
 
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();

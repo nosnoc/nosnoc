@@ -130,16 +130,16 @@ f_opt = ocp_solver.get_objective();
 
 t_grid_optimizer = ocp_solver.get_time_grid();
 x_res_optimizer = ocp_solver.get('x');
-h_res = ocp_solver.get('h')
+h_res = ocp_solver.get('h');
 %%
 figure
 stairs(t_grid_optimizer,[h_res,nan])
 xlabel('$t$','Interpreter','latex');
 ylabel('$h_{ki}$','Interpreter','latex');
 %
-fprintf('Objective value %2.4f \n',f_opt);
-f_star = 6.616653254750982;
-fprintf('Error %2.4e \n',norm(f_opt - f_star));
+% fprintf('Objective value %2.4f \n',f_opt);
+% f_star = 6.616653254750982;
+% fprintf('Error %2.4e \n',norm(f_opt - f_star));
 
 x_res_integrator = [];
 t_grid_integrator = [];

@@ -26,18 +26,15 @@
 % This file is part of NOSNOC.
 
 %% Three cart manipulation example
-clear all;
-close all;
-clc;
+clear; close all; clc;
 import casadi.*
 
 %%
 play_animation = 1;
 
-%%
+%% load nosnoc default options
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = nosnoc.model.Cls();
 %%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
@@ -50,13 +47,11 @@ problem_options.print_level = 3;
 problem_options.gamma_h = 0;
 %problem_options.eps_cls = 0;
 
-
 solver_options.sigma_0 = 1e0;
 solver_options.homotopy_update_slope = 0.5;
 solver_options.homotopy_update_rule = 'superlinear';
 solver_options.N_homotopy = 100;
 solver_options.print_level = 5;
-
 % NLP solver settings;
 default_tol = 1e-8;
 solver_options.complementarity_tol = 1e-8;
@@ -88,12 +83,13 @@ cart_width3 = 2;
 
 M = diag([m1, m1, m2, m2, m3, m3]);
 
+% Bounds on states and controls
 ubx = ones(12,1)*10;
 lbx = -ones(12,1)*10;
 ubu = 30;
 lbu = -30;
 
-x0 = [ -3; 1; 0; 1;  3; 1; ...
+x0 = [-3; 1; 0; 1;  3; 1; ...
     0; 0; 0; 0; 0; 0];
 u_ref = 0;
 
@@ -116,6 +112,7 @@ q1 = q(1:2);
 q2 = q(3:4);
 q3 = q(5:6);
 
+model = nosnoc.model.Cls();
 model.x = x;
 model.u = u;
 model.x0 = x0;
@@ -144,7 +141,6 @@ J_tangent = [0  0 1 0 0 ;...
             0  1 0 0 0];
 
 J_tangent =   J_tangent./vecnorm(J_tangent);
-
 J_normal = full(f_c.jacobian(q));
 J_normal_fun = Function('J_normal_fun',{q},{J_normal});
 J_normal = full(J_normal_fun(x0(1:6)))';
@@ -191,21 +187,18 @@ v3x = x(11,:);
 v1y = x(8,:);
 v2y = x(10,:);
 v3y = x(12,:);
-t_grid = ocp_solver.get_time_grid()
-t_grid_u = ocp_solver.get_control_grid()
+t_grid = ocp_solver.get_time_grid();
+t_grid_u = ocp_solver.get_control_grid();
 
 %% animation
-% figure('Renderer', 'painters', 'Position', [100 100 1000 400])
 filename = 'three_carts_with_friction.gif';
-carts_appart = 2;
 x_min = min(x_ref)-2.5;
 x_max = max(x_ref)+2.5;
 cart_height = 2;
+carts_appart = 1.5;
 
-carts_appart = 1.5*1;
 if play_animation
     figure(1)
-
     for ii = 1:length(p1x)
         % cart 1
         xp = [p1x(ii)-cart_width1/2 p1x(ii)+cart_height/2 p1x(ii)+cart_height/2 p1x(ii)-cart_width1/2];
@@ -221,7 +214,6 @@ if play_animation
         xp = [p3x(ii)-cart_width3/2 p3x(ii)+cart_height/2 p3x(ii)+cart_height/2 p3x(ii)-cart_width3/2];
         yp = [0 0 cart_height  cart_height];
         patch('XData',xp,'YData',yp,'FaceColor',[0.9290 0.6940 0.1250], 'FaceAlpha',0.9)
-
         %         % the refereneces
         % cart 1
         xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
@@ -252,7 +244,7 @@ if play_animation
         im = frame2im(frame);
 
         [imind,cm] = rgb2ind(im,256);
-        if ii == 1;
+        if ii == 1
             imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',problem_options.h_k(1));
         else
             imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',problem_options.h_k(1));
@@ -324,13 +316,9 @@ for jj= 1:N_shots
     xlim([x_min x_max])
     ylim([-0.5 3.5])
 end
-set(gcf,'Units','inches');
-screenposition = get(gcf,'Position');
-set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['cart_frames'] ])
+
 %%
 lambda_tangent = ocp_solver.get("lambda_tangent");
-
 lambda_tangent = [-lambda_tangent(5,:)+lambda_tangent(6,:);...
                     -lambda_tangent(7,:)+lambda_tangent(8,:);...
                   -lambda_tangent(9,:)+lambda_tangent(10,:);...
@@ -401,7 +389,3 @@ ylabel(['$\lambda_{\mathrm{t}}' ...
 ylim([-2.5 2.5])
 xlim([0 T])
 
-set(gcf,'Units','inches');
-screenposition = get(gcf,'Position');
-set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['carts_states'] ])

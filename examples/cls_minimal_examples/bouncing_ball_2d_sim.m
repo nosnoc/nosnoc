@@ -16,7 +16,7 @@ problem_options.friction_model = "Polyhedral";
 %problem_options.friction_model = "Conic"; % "Conic"
 %problem_options.conic_model_switch_handling = "Lp";
 
-% Initialization that seems to work best
+% Initialization
 % problem_options.initial_Lambda_normal = 10;
 % problem_options.initial_lambda_normal = 0;
 % problem_options.initial_Y_gap = 0;

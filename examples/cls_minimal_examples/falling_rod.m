@@ -5,31 +5,35 @@ import casadi.*
 
 %% 
 J = 1; % no frictioinal impulse
-J = 1/32; % frictional impulse apperas
-above_ground = 0.1;
-%%)
+% J = 1/32; % frictional impulse apperas
+above_ground = 0.2;
+
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'CLS';
 problem_options.friction_model = "Polyhedral";
-problem_options.friction_model = "Conic";
-problem_options.conic_model_switch_handling = "Abs";
-problem_options.pss_lift_step_functions= 0;
+% problem_options.friction_model = "Conic";
+% problem_options.conic_model_switch_handling = "Abs";
+problem_options.pss_lift_step_functions = 1;
+
+
 solver_options.opts_casadi_nlp.ipopt.max_iter = 3e3;
 solver_options.print_level = 3;
 solver_options.N_homotopy = 10;
-problem_options.cross_comp_mode = 1;
-solver_options.sigma_0 = 1e0;
+solver_options.sigma_0 = 1e2;
 solver_options.complementarity_tol = 1e-5;
+solver_options.homotopy_steering_strategy = "ELL_INF";
+% Some debug options
 solver_options.print_details_if_infeasible = 0;
 solver_options.break_simulation_if_infeasible = 0;
 %%
 model = nosnoc.model.Cls();
 model.e = 0;
 model.mu = 0.2;
-%% the dynamics
+
+%% The CLS model
 qx = SX.sym('qx',1);
 qy = SX.sym('qy',1);
 qtheta = SX.sym('qtheta',1);
@@ -59,12 +63,9 @@ model.J_tangent = [xc_left.jacobian(q)',xc_right.jacobian(q)'];
 model.D_tangent = [xc_left.jacobian(q)',-xc_left.jacobian(q)'];
 
 % tangent
-model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
-           -10;0;0];
-
-above_ground = 0.18*1;
-theta0 = 0.75*pi/2*0;
-theta0 = pi/2;
+% model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
+%            -10;0;0];
+theta0 = pi/4;
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0;...
            2;0;0];
 
@@ -80,7 +81,8 @@ solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
-%%
+
+%% Plot results
 qx = x_res(1,:);
 qy = x_res(2,:);
 qtheta = x_res(3,:);

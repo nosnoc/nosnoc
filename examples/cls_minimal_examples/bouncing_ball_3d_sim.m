@@ -10,10 +10,11 @@ model = nosnoc.model.Cls();
 N_finite_elements = 4;
 T_sim = 2;
 N_sim = 21;
+
+% Problem options
 problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;
 problem_options.N_sim = N_sim;
-%%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.use_fesd = 1;
@@ -24,12 +25,13 @@ problem_options.cross_comp_mode = 1;
 problem_options.gamma_h = 1;
 problem_options.fixed_eps_cls = 1;
 
+% nosnoc mpec solver options
 solver_options.print_level = 3;
 solver_options.N_homotopy = 10;
 solver_options.homotopy_steering_strategy = 'ELL_INF';
 solver_options.decreasing_s_elastic_upper_bound = true;
 solver_options.use_previous_solution_as_initial_guess = 1;
-%%
+%% CLS Model
 g = 10;
 % Symbolic variables and bounds
 q = SX.sym('q',3); 
@@ -49,13 +51,16 @@ model.D_tangent = [1,-1,0,0;
 %% Call FESD Integrator
 integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
-%%
+
+%% Plot results
 qx = x_res(1,:);
 qy = x_res(2,:);
 qz = x_res(3,:);
 vx = x_res(4,:);
 vy = x_res(5,:);
 vz = x_res(6,:);
+
+% positions in 3d
 figure
 plot3(qx,qy,qz);
 axis equal
@@ -66,7 +71,8 @@ grid on
 xlabel('$q_x$','Interpreter','latex');
 ylabel('$q_y$','Interpreter','latex');
 zlabel('$q_z$','Interpreter','latex');
-%
+
+% velocities
 figure
 plot(t_grid,vx);
 grid on

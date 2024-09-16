@@ -33,18 +33,15 @@ clc;
 import casadi.*
 
 filename = 'discs_switch_position_obstacle.gif';
-%%
+%% Load nosnoc defaul options
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = nosnoc.model.Cls();
+
 %%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in RK methods
-
-problem_options.use_fesd = 1;
-problem_options.dcs_mode = 'CLS';
 problem_options.g_path_at_fe = 1;
-problem_options.cross_comp_mode = 7;
+% problem_options.cross_comp_mode = 7;
 problem_options.gamma_h = 0;
 %problem_options.relax_terminal_numerical_time = 'ELL_2';
 %problem_options.rho_terminal_numerical_time = 1e3;
@@ -52,7 +49,6 @@ problem_options.gamma_h = 0;
 %problem_options.use_speed_of_time_variables = true;
 %problem_options.lift_velocity_state = true;
 
-% 
 solver_options.homotopy_update_slope = 0.1;
 solver_options.N_homotopy = 100;
 solver_options.sigma_0 = 1e1;
@@ -60,13 +56,15 @@ solver_options.complementarity_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 2e3;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
 N_stg = 50; % control intervals
 N_FE = 1;  % integration steps per control interval
 T = 4;
-
+problem_options.T = T;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
 %% model parameters
 m1 = 2;
 m2 = 1;
@@ -97,6 +95,7 @@ lbu = -ubu;
 %% Symbolic variables and bounds
 q = SX.sym('q',4);
 v = SX.sym('v',4);
+x = [q;v];
 u = SX.sym('u',2);
 
 q1 = q(1:2);
@@ -104,10 +103,7 @@ q2 = q(3:4);
 v1 = v(1:2);
 v2 = v(3:4);
 
-x = [q;v];
-problem_options.T = T;
-problem_options.N_stages = N_stg;
-problem_options.N_finite_elements  = N_FE;
+model = nosnoc.model.Cls();
 model.x = x;
 model.u = u;
 model.e = 1*0;
@@ -118,7 +114,6 @@ model.dims.n_dim_contact = 2;
 cv = 2;
 eps = 1e-1;
 f_drag = cv*[v1/norm(v1+eps);v2/norm(v2+eps)];
-
 model.M = diag([m1;m1;m2;m2]); % inertia/mass matrix;
 model.f_v = [u;...
              zeros(2,1)]-f_drag;
@@ -155,8 +150,8 @@ v1 = x(5,:);
 v2 = x(6,:);
 v3 = x(7,:);
 v4 = x(8,:);
-t_grid = ocp_solver.get_time_grid()
-t_grid_u = ocp_solver.get_control_grid()
+t_grid = ocp_solver.get_time_grid();
+t_grid_u = ocp_solver.get_control_grid();
 
 %% animation
 figure('Renderer', 'painters', 'Position', [100 100 1000 800])

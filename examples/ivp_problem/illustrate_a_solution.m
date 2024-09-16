@@ -3,16 +3,17 @@ clc
 close all
 import casadi.*
 %% Init model and settings
-model = nosnoc.model.Pss();
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-%% settings
-settings.n_s = 2;
-settings.N_finite_elements = 2;
-
-% Generate Model
+%% Modify seetings
+problem_options.n_s = 2;
+problem_options.N_finite_elements = 2;
+% Integrator/simulation settings
 problem_options.N_sim = 30;
 problem_options.T_sim = 0.2;
+
+model = nosnoc.model.Pss();
+
 model.x0 = -0.1;
 % Variable defintion
 x = SX.sym('x');
@@ -20,9 +21,9 @@ model.x = x;
 model.c = x;
 model.S = [1;-1];
 % modes of the ODE
-f_11 = 1;
-f_12 = 3;
-model.F = [f_11 f_12];
+f_1 = 1;
+f_2 = 3;
+model.F = [f_1 f_2];
 % objective
 model.f_q = x^2;
 model.f_q_T = (x-5/3)^2;

@@ -23,10 +23,10 @@ q_target = [3;0.4;0;0];
 % acorobatic move
 %q_target = [0.2;0.4;pi;0];
 
-%% Default settings NOSNOC
+%% Default settings nosnoc
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = nosnoc.model.Cls();
+
 %%
 solver_options.print_level = 5;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
@@ -59,6 +59,7 @@ problem_options.N_stages = 50;
 problem_options.N_finite_elements = 3;
 
 %% friction cone parameters
+model = nosnoc.model.Cls();
 model.e = 0;
 model.mu = mu;
 %% bounds
@@ -244,7 +245,7 @@ model.lsq_T = {x, x_target, Q_terminal};
 %% terminal constraint and/or costs
 %model.g_terminal = q(1:length(q_target))-q_target;
 
-%% Solve OCP with NOSNOC
+%% Solve OCP with nosnoc
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 %     x_guess = {};

@@ -140,10 +140,7 @@ if plot_kinematics
     plot_robot_kinematics
 end
 if save_figure
-    set(gcf,'Units','inches');
-    screenposition = get(gcf,'Position');
-    set(gcf,'PaperPosition',[0 0 screenposition(3:4)*2],'PaperSize',[screenposition(3:4)*2]);
-    exportgraphics(gca,[filename '_key_frames.pdf'],'BackgroundColor','none')
+    exportgraphics(gca, [filename, '_key_frames.pdf'], 'ContentType', 'vector', 'BackgroundColor', 'none');
 end
 
 %% states
@@ -185,6 +182,7 @@ xlabel('$t$','interpreter','latex', 'Fontsize', label_fontsize);
 ylabel('$\omega$','interpreter','latex', 'Fontsize', label_fontsize);
 legend({'$\omega_{\textrm{hip}}$','$\omega_{\textrm{knee}}$'},'interpreter','latex','Location','best');
 grid on
+
 %% knee and foot
 figure
 subplot(221);
@@ -224,10 +222,7 @@ legend({'$v^y_{\mathrm{knee}}$','$v^y_{\mathrm{foot}}$'},'interpreter','latex','
 grid on
 
 if save_figure
-    set(gcf,'Units','inches');
-    screenposition = get(gcf,'Position');
-    set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-    exportgraphics(gcf,[filename '_kinematics.pdf'],'BackgroundColor','none')
+    exportgraphics(gca, [filename, '_kinematics.pdf'], 'ContentType', 'vector', 'BackgroundColor', 'none');
 end
 LineWidth = LineWidth+0.5;
 %% Plot controls
@@ -244,10 +239,7 @@ if model.dims.n_u > 0
     legend({'$u_{\mathrm{hip}}(t)$','$u_{\mathrm{knee}}(t)$'},'interpreter','latex','location','best');
     xlim([0 t_grid_u(end)+1e-6]);
     if save_figure
-        set(gcf,'Units','inches');
-        screenposition = get(gcf,'Position');
-        set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-        exportgraphics(gcf,[filename '_controls.pdf'],'BackgroundColor','none')
+        exportgraphics(gca, [filename, '_controls.pdf'], 'ContentType', 'vector', 'BackgroundColor', 'none');
     end
 
     try
@@ -258,10 +250,10 @@ if model.dims.n_u > 0
         ylabel('$s(t)$','interpreter','latex', 'Fontsize', label_fontsize);
         xlim([0 t_grid_u(end)]);
         grid on
-        set(gcf,'Units','inches');
-        screenposition = get(gcf,'Position');
-        set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-        exportgraphics(gcf,[filename '_sot.pdf'],'BackgroundColor','none')
+        if save_figure
+            exportgraphics(gca, [filename, '_sot.pdf'], 'ContentType', 'vector', 'BackgroundColor', 'none');
+        end
+
     catch
     end
 end
@@ -307,9 +299,6 @@ ylabel('$t_1(q)^\top v$','interpreter','latex', 'Fontsize', label_fontsize);
 ylim([min(constraint_drift(3,:))-0.1 max(constraint_drift(3,:))+0.1]);
 xlim([0 T]);
 if save_figure
-    set(gcf,'Units','inches');
-    screenposition = get(gcf,'Position');
-    set(gcf,'PaperPosition',[0 0 screenposition(3:4)*2],'PaperSize',[screenposition(3:4)*2]);
-    exportgraphics(gcf,[filename '_drifts.pdf'],'BackgroundColor','none')
+    exportgraphics(gca, [filename, '_drifts.pdf'], 'ContentType', 'vector', 'BackgroundColor', 'none');
 end
 
