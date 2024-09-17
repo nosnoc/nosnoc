@@ -43,6 +43,7 @@ solver_options = nosnoc.solver.Options();
 problem_options.n_s = 2;
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.equidistant_control_grid = 0;
+problem_options.step_equilibration = StepEquilibrationMode.direct;
 problem_options.T = 2;
 problem_options.N_stages = 1;
 problem_options.N_finite_elements = 25;
