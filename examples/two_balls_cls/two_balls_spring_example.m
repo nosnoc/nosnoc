@@ -3,30 +3,31 @@ clc;
 import casadi.*
 close all
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 % problem_options.rk_representation = 'differential';
 problem_options.n_s = 3;
 solver_options.print_level = 3;
 % solver_options.N_homotopy = 8;
-problem_options.cross_comp_mode = 1;
+problem_options.cross_comp_mode = 'FE_FE';
 problem_options.dcs_mode = DcsMode.CLS;
-solver_options.multiple_solvers = 0;
-% solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF;
 problem_options.no_initial_impacts = 1;
+%problem_options.relax_terminal_numerical_time = 'ELL_1';
+%problem_options.rho_terminal_numerical_time = 1e5;
+
+solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF;
 solver_options.print_details_if_infeasible = 0;
 solver_options.pause_homotopy_solver_if_infeasible = 0;
-% solver_options.opts_ipopt.ipopt.linear_solver = 'ma97';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.real_time_plot = 0;
+solver_options.complementarity_tol = 1e-10;
+solver_options.sigma_N = 1e-11;
+solver_options.decreasing_s_elastic_upper_bound = 1;
 solver_options.sigma_0 = 5;
 solver_options.homotopy_update_slope = 0.1;
-solver_options.real_time_plot = 0;
-solver_options.complementarity_tol  = 1e-13;
-solver_options.sigma_N = 1e-13;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
 
-solver_options.decreasing_s_elastic_upper_bound = 1;
-solver_options.sigma_0 = 1e0;
-solver_options.homotopy_update_slope = 0.2;
 %%
 g = 9.81;
 R = 0.2;
@@ -36,11 +37,11 @@ m = 1;
 % Symbolic variables and bounds
 q = SX.sym('q',2);
 v = SX.sym('v',2);
-model = NosnocModel();
+model = nosnoc.model.Cls();
 model.M = eye(2);
 model.x = [q;v];
 model.e = 0.8;
-model.mu_f = 0;
+model.mu = 0;
 x0 = [1;2;0;0];
 model.x0 = x0;
 model.f_v = [-m*g+k*(q(2)-q(1)-l);-m*g-k*(q(2)-q(1)-l)];
@@ -55,7 +56,7 @@ problem_options.N_finite_elements = N_FE;
 problem_options.N_sim = N_sim;
 
 %% MATLAB solution
-solver_options.use_previous_solution_as_initial_guess = 1;
+solver_options.use_previous_solution_as_initial_guess = 0;
 [t_grid_matlab, x_traj_matlab, n_bounces, lambda_normal_guess] = two_balls_spring_matlab(T_sim,x0,model.e,1e-13);
 
 
@@ -66,8 +67,8 @@ initial_guess.t_grid = t_grid_matlab;
 initial_guess.lambda_normal_traj = lambda_normal_guess;
 
 % [results,stats,solver] = integrator_fesd(model, settings, [], initial_guess);
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
 plot_two_ball_traj(results);
 

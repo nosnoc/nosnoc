@@ -41,17 +41,22 @@ import casadi.*
 delete three_carts2.gif
 
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.n_s = 1;  % number of stages in IRK methods
-
-solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
-solver_options.N_homotopy = 6;
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+problem_options.n_s = 2;  % number of stages in IRK methods
+problem_options.a_n = 10;
 problem_options.time_freezing = 1;
+
+solver_options.homotopy_steering_strategy = 'ELL_1';
+solver_options.decreasing_s_elastic_upper_bound = true;
+solver_options.N_homotopy = 9;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.s_elastic_min = 1e-9;
+solver_options.print_level = 5;
+
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
 N_stg = 30; % control intervals
@@ -86,15 +91,14 @@ q = SX.sym('q',3);
 v = SX.sym('v',3); 
 u = SX.sym('u',1);
 x = [q;v];
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = T;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu_f = 0.0;
-model.a_n = 10;
+model.mu = 0.0;
 model.x0 = x0; 
 
 model.M = diag([m1;m2;m3]); % inertia/mass matrix;
@@ -118,19 +122,18 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 % model.g_terminal = [x-x_ref];
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
-% [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k); % (experimental, projects and fixes active set at solution and solves NLP)
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %% read and plot results
-unfold_struct(results,'base');
-p1 = results.x(1,:);
-p2 = results.x(2,:);
-p3 = results.x(3,:);
-v1 = results.x(4,:);
-v2 = results.x(5,:);
-v3 = results.x(6,:);
-t_opt = results.x(7,:);
+x_res = ocp_solver.get('x');
+u_opt = ocp_solver.get('u');
+p1 = x_res(1,:);
+p2 = x_res(2,:);
+p3 = x_res(3,:);
+v1 = x_res(4,:);
+v2 = x_res(5,:);
+v3 = x_res(6,:);
+t_opt = x_res(7,:);
 
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
@@ -229,7 +232,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v$','interpreter','latex');
 
 subplot(133)
-stairs(t_opt(1:N_FE:end),[results.u,nan],'LineWidth',1.5);
+stairs(t_opt(1:N_FE:end),[u_opt,nan],'LineWidth',1.5);
 
 % legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
 grid on

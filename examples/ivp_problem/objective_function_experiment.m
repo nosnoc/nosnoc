@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-function [results] = objective_function_experiment(scenario,settings,model)
+function [results] = objective_function_experiment(scenario, problem_options, solver_options, model)
 import casadi.*
 unfold_struct(scenario,'caller');
 %% objective experimetn
@@ -35,27 +35,25 @@ complementarity_stats = [];
 error_state = [];
 error_objective = [];
 
-[solver,solver_initialization, model,settings] = create_nlp_nosnoc(model,settings);
-unfold_struct(model,'caller');
-unfold_struct(settings,'caller');
-unfold_struct(solver_initialization,'caller');
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 
 for jj = 1:N_samples
     x0 = x0_vec(jj);
-    solver_initialization.lbw(1) =  x0;
-    solver_initialization.ubw(1) =  x0;
-    % solve NLP
-    [sol,stats,solver_initialization] = homotopy_solver(solver,model,settings,solver_initialization);
-    w_opt = full(sol.x);
-    x1_opt = w_opt(ind_x);
-    solver_initialization.w0 = w_opt;
-    f_opt = full(J_fun(w_opt));
+    ocp_solver.set('x', 'init', {0,0,problem_options.n_s}, x0);
+    ocp_solver.set('x', 'lb', {0,0,problem_options.n_s}, x0);
+    ocp_solver.set('x', 'ub', {0,0,problem_options.n_s}, x0);
+    ocp_solver.solve();
+    
+    x1_opt = ocp_solver.get('x');
+    
+    f_opt = ocp_solver.get_objective();
     L_numeric = [L_numeric;f_opt];
-    complementarity_iter = full(comp_res(w_opt));
-    complementarity_stats = [complementarity_stats;complementarity_iter ];
+    complementarity_iter = ocp_solver.stats.complementarity_stats(end);
+    complementarity_stats = [complementarity_stats;complementarity_iter];
+    T = problem_options.T;
     ts = -x0/3;
     L_analytic =(8/3*ts^3 +8/3*x0*ts^2 + 8/9*x0^2*ts +1/3*T^3+1/3*x0*T^2+x0^2*T/9) + (T+(x0-5)/3)^2;
-    error_state = [error_state;abs(x1_opt(end)-(T-ts)) ];
+    error_state = [error_state;abs(x1_opt(end)-(T-ts))];
     error_objective = [error_objective;abs(f_opt-L_analytic)];
 end
 
@@ -78,7 +76,7 @@ hold on
 plot(x0_vec,L_analytic,'k--','LineWidth',2.5);
 xlabel('$x_0$','interpreter','latex');
 ylabel('Objective','interpreter','latex');
-if settings.use_fesd
+if problem_options.use_fesd
     legend({'$V_{\mathrm{FESD}}(x_0)$','$V^{*}(x_0)$'},'interpreter','latex');
 else
     legend({'$V_{\mathrm{Num}}(x_0)$','$V^{*}(x_0)$'},'interpreter','latex');

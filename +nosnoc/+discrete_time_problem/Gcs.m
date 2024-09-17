@@ -200,8 +200,8 @@ classdef Gcs < vdx.problems.Mpcc
                             if size(model.G_path, 1) > 0
                                 G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
-                                obj.G.path(ii,jj,kk) = {G_path};
-                                obj.H.path(ii,jj,kk) = {H_path};
+                                obj.G.path_comp(ii,jj,kk) = {G_path};
+                                obj.H.path_comp(ii,jj,kk) = {H_path};
                             end
                             if ~opts.euler_cost_integration
                                 % also integrate the objective
@@ -251,8 +251,8 @@ classdef Gcs < vdx.problems.Mpcc
                             if size(model.G_path, 1) > 0
                                 G_path = dcs.G_path_fun(x_ijk, z_ijk, u_i, v_global, p);
                                 H_path = dcs.H_path_fun(x_ijk, z_ijk, u_i, v_global, p);
-                                obj.G.path(ii,jj,kk) = {G_path};
-                                obj.H.path(ii,jj,kk) = {H_path};
+                                obj.G.path_comp(ii,jj,kk) = {G_path};
+                                obj.H.path_comp(ii,jj,kk) = {H_path};
                             end
                             if ~opts.euler_cost_integration
                                 % also integrate the objective
@@ -289,23 +289,18 @@ classdef Gcs < vdx.problems.Mpcc
 
                 % Clock Constraints
                 if obj.opts.use_fesd && opts.equidistant_control_grid
+                    relax_num_time_struct = vdx.RelaxationStruct(opts.relax_terminal_numerical_time.to_vdx, 's_numerical_time', 'rho_numerical_time');
                     if opts.time_optimal_problem
                         if opts.use_speed_of_time_variables
-                            obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;sot*sum_h - obj.w.T_final()/opts.N_stages]};
+                            obj.g.equidistant_control_grid(ii) = {[sum_h - opts.h;sot*sum_h - obj.w.T_final()/opts.N_stages], relax_num_time_struct};
                         else
-                            obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages};
+                            obj.g.equidistant_control_grid(ii) = {sum_h - obj.w.T_final()/opts.N_stages, relax_num_time_struct};
                         end
                     else
-                        if opts.relax_terminal_numerical_time
-                            % TODO(@armin) why is this allowed to be negative?
-                            obj.w.s_numerical_time(ii) = {{'s_numerical', 1}, -2*opts.h, 2*opts.h, opts.h/2};
-                            g_eq_grid = [sum_h - t_stage - obj.w.s_numerical_time(ii);
-                                -(sum_h - t_stage) - obj.w.s_numerical_time(ii)];
-                            obj.g.equidistant_control_grid(ii) = {g_eq_grid, -inf, 0};
-                            obj.f = obj.f + opts.rho_terminal_numerical_time*obj.w.s_numerical_time(ii);
-                        else
-                            obj.g.equidistant_control_grid(ii) = {t_stage-sum_h};
-                        end
+                        obj.g.equidistant_control_grid(ii) = {t_stage-sum_h, relax_num_time_struct};
+                    end
+                    if relax_num_time_struct.is_relaxed
+                        obj.p.rho_numerical_time().val = opts.rho_terminal_numerical_time;
                     end
                 end
             end
@@ -327,30 +322,12 @@ classdef Gcs < vdx.problems.Mpcc
                 error("Currently unsupported")
             end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
-            switch opts.relax_terminal_constraint
-              case ConstraintRelaxationMode.NONE % hard constraint
-                if opts.relax_terminal_constraint_from_above
-                    obj.g.terminal = {g_terminal, model.lbg_terminal, inf*ones(dims.n_g_terminal,1)};
-                else
-                    obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal};
-                end
-              case ConstraintRelaxationMode.ELL_1 % l_1
-                obj.w.s_terminal_ell_1 = {{'s_terminal_ell_1', dims.n_g_terminal}, 0, inf, 10};
-
-                g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_1();
-                    -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_1()];
-                obj.g.terminal = {g_terminal, -inf, 0};
-                obj.f = obj.f + obj.p.rho_terminal_p()*sum(obj.w.s_terminal_ell_1());
-              case ConstraintRelaxationMode.ELL_2 % l_2
-                     % TODO(@anton): this is as it was implemented before. should handle lb != ub?
-                obj.f = obj.f + obj.p.rho_terminal_p()*(g_terminal-model.lbg_terminal)'*(g_terminal-model.lbg_terminal);
-              case ConstraintRelaxationMode.ELL_INF % l_inf
-                obj.w.s_terminal_ell_inf = {{'s_terminal_ell_inf', 1}, 0, inf, 1e3};
-
-                g_terminal = [g_terminal-model.lbg_terminal-obj.w.s_terminal_ell_inf();
-                    -(g_terminal-model.ubg_terminal)-obj.w.s_terminal_ell_inf()];
-                obj.g.terminal = {g_terminal, -inf, 0};
-                obj.f = obj.f + obj.p.rho_terminal_p()*obj.w.s_terminal_ell_inf();
+            relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
+            obj.g.terminal = {g_terminal, model.lbg_terminal, model.ubg_terminal, relax_terminal_struct};
+            obj.g.terminal.set_is_terminal(true);
+            if relax_terminal_struct.is_relaxed && all(size(g_terminal) > 0)
+                obj.p.rho_terminal().val = opts.rho_terminal;
+                obj.w.s_terminal.set_is_terminal(true);
             end
         end
 

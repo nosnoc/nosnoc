@@ -28,8 +28,7 @@
 function [model] = irma_model(switch_on, lifting)
 % Generate model for two gene regulatory network with given initial conditions
     import casadi.*
-    model = NosnocModel();
-    model.general_inclusion = 1;
+    model = nosnoc.model.Heaviside();
     % Initial Value
     model.x0 = [0.011;0.09;0.04;0.05;0.015];
     % Variables
@@ -84,7 +83,7 @@ function [model] = irma_model(switch_on, lifting)
     end
     % set model parameters
     model.x = x;
-    model.alpha = {alpha};
+    model.alpha = alpha;
     model.f_x = f_x;
     model.c = c;
 end

@@ -26,48 +26,47 @@
 % This file is part of NOSNOC.
 
 %% Three cart manipulation example
-clear all;
-close all;
-clc;
+clear; close all; clc;
 import casadi.*
 
 %%
 play_animation = 1;
 
-%%
-problem_options = NosnocProblemOptions();
+%% load nosnoc default options
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
 %%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.dcs_mode = 'CLS';
-problem_options.cross_comp_mode = 1;
+problem_options.cross_comp_mode = 7;
 problem_options.friction_model = "Polyhedral";
-solver_options.print_level = 3;
+problem_options.relax_terminal_numerical_time = 'ELL_2';
+problem_options.rho_terminal_numerical_time = 1e3;
+problem_options.print_level = 3;
+problem_options.gamma_h = 0;
+%problem_options.eps_cls = 0;
 
-problem_options.gamma_h = 0.8;
 solver_options.sigma_0 = 1e0;
-solver_options.homotopy_update_slope = 0.2;
+solver_options.homotopy_update_slope = 0.5;
 solver_options.homotopy_update_rule = 'superlinear';
-solver_options.N_homotopy = 7;
-
+solver_options.N_homotopy = 100;
+solver_options.print_level = 5;
 % NLP solver settings;
 default_tol = 1e-8;
 solver_options.complementarity_tol = 1e-8;
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 2e3;
 solver_options.opts_casadi_nlp.ipopt.tol = default_tol;
 solver_options.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
 solver_options.opts_casadi_nlp.ipopt.dual_inf_tol = default_tol;
 solver_options.opts_casadi_nlp.ipopt.compl_inf_tol = default_tol;
-problem_options.eps_cls = 0;
 
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
-N_stg = 15; % control intervals
-N_FE = 2;  % integration steps per control interval
+N_stg = 40; % control intervals
+N_FE = 1;  % integration steps per control interval
 T = 6;
 
 problem_options.N_stages = N_stg;
@@ -84,12 +83,13 @@ cart_width3 = 2;
 
 M = diag([m1, m1, m2, m2, m3, m3]);
 
+% Bounds on states and controls
 ubx = ones(12,1)*10;
 lbx = -ones(12,1)*10;
 ubu = 30;
 lbu = -30;
 
-x0 = [ -3; 1; 0; 1;  3; 1; ...
+x0 = [-3; 1; 0; 1;  3; 1; ...
     0; 0; 0; 0; 0; 0];
 u_ref = 0;
 
@@ -112,6 +112,7 @@ q1 = q(1:2);
 q2 = q(3:4);
 q3 = q(5:6);
 
+model = nosnoc.model.Cls();
 model.x = x;
 model.u = u;
 model.x0 = x0;
@@ -140,7 +141,6 @@ J_tangent = [0  0 1 0 0 ;...
             0  1 0 0 0];
 
 J_tangent =   J_tangent./vecnorm(J_tangent);
-
 J_normal = full(f_c.jacobian(q));
 J_normal_fun = Function('J_normal_fun',{q},{J_normal});
 J_normal = full(J_normal_fun(x0(1:6)))';
@@ -156,7 +156,7 @@ model.J_normal = J_normal;
 model.J_tangent = J_tangent;
 model.D_tangent = D_tangent;
 model.e =  [0.0 0.5 0.0 0.0 0.0];
-model.mu_f = [0.1 0.1 0.2 0.2 0.2];
+model.mu = [0.1 0.1 0.2 0.2 0.2];
 % box constraints on controls and states
 model.lbu = lbu;
 model.ubu = ubu;
@@ -167,18 +167,14 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 lambda_normal_guess = {};
-for ii = 1:N_stg
-    lambda_normal_guess{ii} = [0;0;g;g;g];
-end
-solver.set('lambda_normal',lambda_normal_guess');
+ocp_solver.set('lambda_normal', 'init', {1:N_stg, 1:N_FE, 1:problem_options.n_s}, [0;0;g;g;g]);
+ocp_solver.solve();
 
-
-[results,stats] = solver.solve();
 %% read and plot results
-unfold_struct(results,'base');
+x = ocp_solver.get('x');
+u_opt = ocp_solver.get('u');
 p1x = x(1,:);
 p2x = x(3,:);
 p3x = x(5,:);
@@ -191,19 +187,18 @@ v3x = x(11,:);
 v1y = x(8,:);
 v2y = x(10,:);
 v3y = x(12,:);
+t_grid = ocp_solver.get_time_grid();
+t_grid_u = ocp_solver.get_control_grid();
 
 %% animation
-% figure('Renderer', 'painters', 'Position', [100 100 1000 400])
 filename = 'three_carts_with_friction.gif';
-carts_appart = 2;
 x_min = min(x_ref)-2.5;
 x_max = max(x_ref)+2.5;
 cart_height = 2;
+carts_appart = 1.5;
 
-carts_appart = 1.5*1;
 if play_animation
     figure(1)
-
     for ii = 1:length(p1x)
         % cart 1
         xp = [p1x(ii)-cart_width1/2 p1x(ii)+cart_height/2 p1x(ii)+cart_height/2 p1x(ii)-cart_width1/2];
@@ -219,7 +214,6 @@ if play_animation
         xp = [p3x(ii)-cart_width3/2 p3x(ii)+cart_height/2 p3x(ii)+cart_height/2 p3x(ii)-cart_width3/2];
         yp = [0 0 cart_height  cart_height];
         patch('XData',xp,'YData',yp,'FaceColor',[0.9290 0.6940 0.1250], 'FaceAlpha',0.9)
-
         %         % the refereneces
         % cart 1
         xp = [x_ref(1)-cart_width1/2 x_ref(1)+cart_height/2 x_ref(1)+cart_height/2 x_ref(1)-cart_width1/2];
@@ -250,7 +244,7 @@ if play_animation
         im = frame2im(frame);
 
         [imind,cm] = rgb2ind(im,256);
-        if ii == 1;
+        if ii == 1
             imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',problem_options.h_k(1));
         else
             imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',problem_options.h_k(1));
@@ -322,19 +316,17 @@ for jj= 1:N_shots
     xlim([x_min x_max])
     ylim([-0.5 3.5])
 end
-set(gcf,'Units','inches');
-screenposition = get(gcf,'Position');
-set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['cart_frames'] ])
-%%
 
-lambda_tangent = [-results.lambda_tangent(5,:)+results.lambda_tangent(6,:);...
-                    -results.lambda_tangent(7,:)+results.lambda_tangent(8,:);...
-                  -results.lambda_tangent(9,:)+results.lambda_tangent(10,:);...
-                   -results.lambda_tangent(1,:)+results.lambda_tangent(2,:);
-                  -results.lambda_tangent(3,:)+results.lambda_tangent(4,:);
-                  ];
-lambda_normal = [results.lambda_normal(3:5,:);results.lambda_normal(1:2,:)];
+%%
+lambda_tangent = ocp_solver.get("lambda_tangent");
+lambda_tangent = [-lambda_tangent(5,:)+lambda_tangent(6,:);...
+                    -lambda_tangent(7,:)+lambda_tangent(8,:);...
+                  -lambda_tangent(9,:)+lambda_tangent(10,:);...
+                   -lambda_tangent(1,:)+lambda_tangent(2,:);
+                  -lambda_tangent(3,:)+lambda_tangent(4,:);
+                 ];
+lambda_normal = ocp_solver.get("lambda_normal");
+lambda_normal = [lambda_normal(3:5,:);lambda_normal(1:2,:)];
 
 figure('Renderer', 'painters', 'Position', [100 100 900 400])
 % figure
@@ -361,7 +353,7 @@ xlabel('$t$','interpreter','latex');
 ylabel('$v(t)$','interpreter','latex');
 xlim([0 T])
 subplot(233)
-stairs(t_grid(1:N_FE:end),[results.u,nan],'LineWidth',1.5);
+stairs(t_grid_u,[u_opt,nan],'LineWidth',1.5);
 % legend({'$u_1(t)$','$u_2(t)$','$u_3(t)$'},'interpreter','latex');
 grid on
 xlabel('$t$','interpreter','latex');
@@ -369,6 +361,7 @@ ylabel('$u(t)$','interpreter','latex');
 xlim([0 T])
 
 subplot(234)
+Lambda_normal = ocp_solver.get("Lambda_normal");
 stem(t_grid,[ones(2,1)*nan,Lambda_normal(1:2,:)]','LineWidth',1.5);
 legend({'$\Lambda_{\mathrm{n}}^1(t)$','$\Lambda_{\mathrm{n}}^2(t)$'},'interpreter','latex','Location','northeast');
 grid on
@@ -396,7 +389,3 @@ ylabel(['$\lambda_{\mathrm{t}}' ...
 ylim([-2.5 2.5])
 xlim([0 T])
 
-set(gcf,'Units','inches');
-screenposition = get(gcf,'Position');
-set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['carts_states'] ])

@@ -25,82 +25,88 @@
 
 % This file is part of NOSNOC.
 %
-clear all
-clc
-close all
+clear; clc; close all;
 import casadi.*
 %% Experiments for derivatives of objective and local minima
-run_objective_function_experiment = 0;
-run_local_minima_experiment = 1;
+run_objective_function_experiment = 1;
+run_local_minima_experiment = 0;
 
-
-N_samples = 150;
+N_samples = 50;
 scenario.N_samples = N_samples;
 scenario.x0_vec = linspace(-2,-0.8,N_samples);
-scenario.save_results = 1;
-%% settings
-settings = NosnocOptions();
-settings.n_s = 2;
-settings.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
-settings.equidistant_control_grid = 0;
-%% Generate Model
+scenario.save_results = 0;
+%% load default nosnoc options
+problem_options = nosnoc.Options();
+solver_options = nosnoc.solver.Options();
+
+% modify options
+problem_options.n_s = 2;
+problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
+problem_options.equidistant_control_grid = 0;
+problem_options.step_equilibration = StepEquilibrationMode.direct;
 problem_options.T = 2;
-settings.N_stages = 1;
-settings.N_finite_elements = 25;
+problem_options.N_stages = 1;
+problem_options.N_finite_elements = 25;
+
+%% nosnoc model
+model = nosnoc.model.Pss();
 model.x0 = -1;
 % Variable defintion
-x = MX.sym('x');
+x = SX.sym('x');
 model.x = x;
 model.c = x;
 model.S = [1;-1];
 % modes of the ODE
-f_11 = [1];
-f_12 = [3];
-model.F = [f_11 f_12];
+f_1 = 1;
+f_2 = 3;
+model.F = [f_1 f_2];
 % objective
 model.f_q = x^2;
 model.f_q_T = (x-5/3)^2;
 if run_local_minima_experiment
     % Scenario-1  : use FESD with fixed parameters
-%     scenario.scenario_name = 'local_min_GL4_fesd_fixed';
-%     settings.use_fesd = 1;
-%     settings.mpcc_mode = 'scholtes_ineq';
-%     settings.sigma_0 = 1e-15;
-%     settings.sigma_N = 1e-15;
-%     settings.N_homotopy = 1;
-%     [results] = local_minima_experiment(scenario,settings,model);
-%     % Scenario-2  : use Standard with fixed parameters
-%     scenario.scenario_name = 'local_min_GL4_std_fixed';
-%     settings.use_fesd = 0;
-    [results] = local_minima_experiment(scenario,settings,model);
+    problem_options.use_fesd = 1;
+    solver_options.sigma_0 = 1e-15;
+    solver_options.sigma_N = 1e-15;
+    solver_options.N_homotopy = 1;
+    scenario.scenario_name = ['local_min_fesd_fixed'];
+    [results] = local_minima_experiment(scenario, problem_options, solver_options, model);
+
+    % Scenario-2  : use Standard with fixed parameters
+    problem_options.use_fesd = 0;
+    scenario.scenario_name = ['local_min_std_fixed'];
+    [results] = local_minima_experiment(scenario, problem_options, solver_options, model);
+
     % Scenario-3  : use FESD with homotopy
-    scenario.scenario_name = 'local_min_GL4_fesd_homotopy';
-    settings.use_fesd = 1;
-    settings.sigma_0 = 1e0;
-    settings.sigma_N = 1e-15;
-    settings.N_homotopy = 15;
-    [results] = local_minima_experiment(scenario,settings,model);
+    scenario.scenario_name = ['local_min_fesd_homotopy'];
+    problem_options.use_fesd = 1;
+    solver_options.sigma_0 = 1e0;
+    solver_options.sigma_N = 1e-15;
+    solver_options.N_homotopy = 15;
+    [results] = local_minima_experiment(scenario, problem_options, solver_options, model);
+
     % Scenario-4  : use Standard with homotopy
-    scenario.scenario_name = 'local_min_GL4_std_homotopy';
-    settings.use_fesd = 0;
-    [results] = local_minima_experiment(scenario,settings,model);
+    scenario.scenario_name = ['local_min_std_homotopy'];
+    problem_options.use_fesd = 0;
+    [results] = local_minima_experiment(scenario, problem_options, solver_options, model);
 end
 %% Objective function experimets
 if run_objective_function_experiment
     % Scenario 1 : FESD
-    scenario.scenario_name = 'objective_GL4_fesd_fixed';
-    settings.use_fesd = 1;
+    scenario.scenario_name = 'objective_fesd_fixed';
+    problem_options.use_fesd = 1;
     settings.mpcc_mode = 'direct';
     settings.sigma_0 = 1e-15;
     settings.sigma_N = 1e-15;
     settings.N_homotopy = 3;
-    [results] = objective_function_experiment(scenario,settings,model);
+    results = objective_function_experiment(scenario, problem_options, solver_options, model);
+
     % Scenario 2 : Standard
-    scenario.scenario_name = 'objective_GL4_std_fixed';
-    settings.use_fesd = 0;
+    scenario.scenario_name = 'objective_std_fixed';
+    problem_options.use_fesd = 0;
     settings.mpcc_mode = 'scholtes_ineq';
     settings.sigma_0 = 1e-15;
     settings.sigma_N = 1e-15;
     settings.N_homotopy = 1;
-    [results] = objective_function_experiment(scenario,settings,model);
+    results = objective_function_experiment(scenario, problem_options, solver_options, model);
 end

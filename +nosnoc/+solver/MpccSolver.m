@@ -154,15 +154,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                             sum_elastic = sum_elastic + sum1(sigma);
                         end
 
-                        % Find non-scalar entries.
-                        [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, nlp.w.sym);
-                        [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, nlp.w.sym);
-
-                        % Add indices to the map in order to later back calculate results.
-                        obj.ind_map_G = [obj.ind_map_G, ind_map_G];
-                        obj.ind_map_H = [obj.ind_map_H, ind_map_H];
-
-                        % If necessary lift the nonscalar entries.
+                        if opts.lift_complementarities || ~opts.assume_lower_bounds
+                            % TODO(@anton) this is in an if for performance reasons not to call find_nonscalar many times
+                            %              however it is likely that this can be done in 1 shot?
+                            [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, nlp.w.sym);
+                            [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, nlp.w.sym);
+                            
+                            obj.ind_map_G = [obj.ind_map_G, ind_map_G];
+                            obj.ind_map_H = [obj.ind_map_H, ind_map_H];
+                        end
+                        
                         if opts.lift_complementarities
                             nlp.w.([name '_G_lift']) = {{'G', length(ind_nonscalar_G)}, 0, inf};
                             G_lift = G_curr(ind_nonscalar_G);
@@ -196,7 +197,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         % Build expression and add correct bounds.
                         g_comp_expr = psi_fun(G_curr, H_curr, sigma);
                         [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
-                        nlp.g.(name) = {g_comp_expr,lb,ub};
+                        nlp.g.([name '_relaxed']) = {g_comp_expr,lb,ub};
                     else % Do the same behavior as before excep this time for each var(i,j,k,...) index for each variable 'var'.
                         % Get indices that we will need to get all the casadi vars for the vdx.Variable
                         indices = {};
@@ -236,12 +237,17 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                                 sigma = nlp.w.(s_elastic_name)(curr{:});
                                 sum_elastic = sum_elastic + sum1(sigma);
                             end
-                            [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, nlp.w.sym);
-                            [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, nlp.w.sym);
 
-                            obj.ind_map_G = [obj.ind_map_G, ind_map_G];
-                            obj.ind_map_H = [obj.ind_map_H, ind_map_H];
+                            if opts.lift_complementarities || ~opts.assume_lower_bounds
+                                % TODO(@anton) this is in an if for performance reasons not to call find_nonscalar many times
+                                %              however it is likely that this can be done in 1 shot?
+                                [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(G_curr, nlp.w.sym);
+                                [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(H_curr, nlp.w.sym);
 
+                                obj.ind_map_G = [obj.ind_map_G, ind_map_G];
+                                obj.ind_map_H = [obj.ind_map_H, ind_map_H];
+                            end
+                            
                             if opts.lift_complementarities
                                 nlp.w.([name '_G_lift'])(curr{:}) = {{'G', length(ind_nonscalar_G)}, 0, inf};
                                 G_lift = G_curr(ind_nonscalar_G);

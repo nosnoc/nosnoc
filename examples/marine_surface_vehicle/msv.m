@@ -1,17 +1,18 @@
-clear all
-close all
+% An example of time invariant state dependent sweeping processes from:
+%
+% T. H. Cao, N. T. Khalil, B. S. Mordukhovich, D. Nguyen, T. Nguyen and F. L. Pereira,
+% "Optimization of Controlled Free-Time Sweeping Processes With Applications to Marine Surface Vehicle Modeling,"
+% in IEEE Control Systems Letters, vol. 6, pp. 782-787, 2022, doi: 10.1109/LCSYS.2021.3085900. 
+
+clear; close all; clc;
 import casadi.*
-import vdx.*
 
 R = 3.5;
 %% Define projected system
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-% problem_options.rk_scheme = RKSchemes.RADAU_I;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-% problem_options.rk_representation= RKRepresentation.differential_lift_x; 
 problem_options.rk_representation = RKRepresentation.integral;
-problem_options.cross_comp_mode = CrossCompMode.STAGE_STAGE;
 problem_options.cross_comp_mode = CrossCompMode.FE_FE;
 problem_options.N_finite_elements = 2;
 problem_options.n_s = 2;
@@ -30,18 +31,18 @@ x1 = SX.sym('x1', 2);
 x2 = SX.sym('x2', 2);
 x = [x1;x2];
 x_target = [0;0;0;0];
-model.x = [x];
+model.x = x;
 model.lbx = [-inf;-inf;-inf;-inf];
 model.ubx = [inf;inf;inf;inf];
 x0 =[-25;-25;-15;-15];
-model.x0 = [x0];
+model.x0 = x0;
 u1 = SX.sym('u1', 2);
 u2 = SX.sym('u2', 2);
 model.u = [u1;u2];
 model.lbu = [-100/sqrt(2);-100/sqrt(2);-60/sqrt(2);-60/sqrt(2)];
 model.ubu = [100/sqrt(2);100/sqrt(2);60/sqrt(2);60/sqrt(2)];
 model.u0 = model.ubu;
-model.c = [norm_2(x2-x1)-2*R];
+model.c = norm_2(x2-x1)-2*R;
 model.f_x_unconstrained = [u1;u2];
 
 % costs
@@ -71,7 +72,7 @@ v_res = u_rep + repmat(lambda_res(2:end),4,1).*nabla_c_res(:, 2:end);
 
 figure
 ax = subplot(3,1,1);
-plot(t_res(1:end-1), v_res([1,3],:), "LineWidth", 2)
+plot(t_res(1:end-1), v_res([1,3],:), "LineWidth", 1.5)
 xlabel("$t$",'Interpreter','latex')
 ylabel("$v_x$",'Interpreter','latex')
 ylim([40, 75])
@@ -80,7 +81,7 @@ grid on
 ax.FontSize = fontsize;
 ax.FontSize = fontsize;
 ax = subplot(3,1,2);
-plot(t_res(1:end-1), v_res([2,4],:), "LineWidth", 2)
+plot(t_res(1:end-1), v_res([2,4],:), "LineWidth", 1.5)
 xlabel("$t$",'Interpreter','latex')
 ylabel("$v_y$",'Interpreter','latex')
 ax.FontSize = fontsize;
@@ -89,7 +90,7 @@ ylim([40, 75])
 xlim([0, T_final])
 grid on
 ax = subplot(3,1,3);
-plot(t_res, c_res, "LineWidth", 2)
+plot(t_res, c_res, "LineWidth", 1.5)
 xlabel("$t$",'Interpreter','latex')
 ylabel("$c(x)$",'Interpreter','latex')
 ax.FontSize = fontsize;

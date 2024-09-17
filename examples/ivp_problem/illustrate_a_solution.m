@@ -3,15 +3,17 @@ clc
 close all
 import casadi.*
 %% Init model and settings
-model = NosnocModel();
-settings = NosnocOptions();
-%% settings
-settings.n_s = 1;     
-settings.N_finite_elements = 2;
-
-% Generate Model
+problem_options = nosnoc.Options();
+solver_options = nosnoc.solver.Options();
+%% Modify seetings
+problem_options.n_s = 2;
+problem_options.N_finite_elements = 2;
+% Integrator/simulation settings
 problem_options.N_sim = 30;
 problem_options.T_sim = 0.2;
+
+model = nosnoc.model.Pss();
+
 model.x0 = -0.1;
 % Variable defintion
 x = SX.sym('x');
@@ -19,23 +21,21 @@ model.x = x;
 model.c = x;
 model.S = [1;-1];
 % modes of the ODE
-f_11 = 1;
-f_12 = 3;
-model.F = [f_11 f_12];
+f_1 = 1;
+f_2 = 3;
+model.F = [f_1 f_2];
 % objective
 model.f_q = x^2;
 model.f_q_T = (x-5/3)^2;
 
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 %%
-t_grid = results.t_grid;
-x_res = results.x;
-lambda_res = results.lam;
-mu_res = results.mu;
-mu_res = min(x_res,-x_res);
-lambda_1 = x_res - mu_res;
-lambda_2 = -x_res - mu_res;
+lambda_res = integrator.get("lambda");
+mu_res = integrator.get("mu");
+lambda_1 = lambda_res(1,:);
+lambda_2 = lambda_res(2,:);
 
 figure
 subplot(121)

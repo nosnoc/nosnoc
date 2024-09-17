@@ -37,25 +37,36 @@ import casadi.*
 
 filename = 'discs_switch_position_obstacle.gif';
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.n_s = 1;  % number of stages in IRK methods
+problem_options.n_s = 2;  % number of stages in IRK methods
 
 problem_options.use_fesd = 1;
 problem_options.time_freezing = 1;
 problem_options.stabilizing_q_dynamics = 1;
+problem_options.a_n = 10;
 % enforce inequality at finite elements.
 problem_options.g_path_at_fe = 1;
-solver_options.mpcc_mode = 'elastic_ineq'; % \ell_inifnity penalization of the complementariy constraints
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+problem_options.g_path_at_stg = 1;
+problem_options.cross_comp_mode = "FE_FE";
+problem_options.relax_terminal_physical_time = ConstraintRelaxationMode.ELL_1;
+problem_options.rho_terminal_physical_time = 1e5;
+problem_options.use_numerical_clock_state = false;
+problem_options.time_freezing_quadrature_state = true;
+problem_options.time_freezing_Heaviside_lifting = true;
+%problem_options.dcs_mode = "Stewart";
+
+solver_options.homotopy_steering_strategy = 'DIRECT';
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
 solver_options.N_homotopy = 7;
+solver_options.print_level = 5;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-%settings.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
-N_stg = 25; % control intervals
+N_stg = 15; % control intervals
 N_FE = 3;  % integration steps per control interval
 T = 5;
 
@@ -97,15 +108,14 @@ v1 = v(1:2);
 v2 = v(3:4);
 
 x = [q;v];
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = T;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu_f = 0.0;
-model.a_n = 10;
+model.mu = 0.0;
 model.x0 = x0;
 model.dims.n_dim_contact = 2;
 
@@ -136,20 +146,20 @@ model.ubx = ubx;
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %% read and plot results
-unfold_struct(results,'base');
-p1 = results.x(1,:);
-p2 = results.x(2,:);
-p3 = results.x(3,:);
-p4 = results.x(4,:);
-v1 = results.x(5,:);
-v2 = results.x(6,:);
-v3 = results.x(7,:);
-v4 = results.x(8,:);
-t_opt = results.x(9,:);
+x_res = ocp_solver.get('x');
+u_opt = ocp_solver.get('u');
+p1 = x_res(1,:);
+p2 = x_res(2,:);
+p3 = x_res(3,:);
+p4 = x_res(4,:);
+v1 = x_res(5,:);
+v2 = x_res(6,:);
+v3 = x_res(7,:);
+v4 = x_res(8,:);
+t_opt = x_res(10,:);
 
 %% animation
 figure('Renderer', 'painters', 'Position', [100 100 1000 800])
@@ -168,7 +178,7 @@ for ii = 1:length(p1)
     plot(r2*x_t+q_target2(1),r2*y_t+q_target2(2),'color',[1 0 0 0.6]);
     % obstacle
     plot(r_ob*x_t+q_ob(1),r_ob*y_t+q_ob(2),'k-','LineWidth',1.5);
-    plot(q_ob(1),q_ob(2),'Color',0.5*ones(3,1),'Marker','.','MarkerSize',500)
+    plot(q_ob(1),q_ob(2),'Color',0.5*ones(3,1),'Marker','.','MarkerSize',400)
     axis equal
     xlim([x_min x_max])
     ylim([x_min x_max])
@@ -209,7 +219,7 @@ if 1
     xlabel('$t$','interpreter','latex');
     ylabel('$v(t)$','interpreter','latex');
     subplot(313)
-    stairs(t_opt(1:N_FE:end),[results.u,nan*ones(2,1)]','LineWidth',1.5);
+    stairs(t_opt(1:N_FE:end),[u_opt,nan*ones(2,1)]','LineWidth',1.5);
     legend({'$u_1(t)$','$u_2(t)$'},'interpreter','latex');
     grid on
     xlabel('$t$','interpreter','latex');

@@ -4,21 +4,33 @@ clc;
 import casadi.*
 
 %% init nosnoc
-settings = NosnocOptions();  
-model = NosnocModel();
-%% settings
-settings.rk_scheme = RKSchemes.RADAU_IIA;
-settings.n_s = 1;
-settings.mpcc_mode = 'elastic_ineq';
-settings.opts_casadi_nlp.ipopt.max_iter = 1e3;
-settings.print_level = 2;
-settings.N_homotopy = 6;
-settings.time_freezing = 1;
-settings.pss_lift_step_functions = 1;
-settings.stagewise_clock_constraint = 0;
-
+problem_options = nosnoc.Options();
+solver_options = nosnoc.solver.Options();
+model = nosnoc.model.Cls();
 %%
 g = 10;
+N_FE = 3;
+T_sim = 1.5;
+N_sim = 40;
+%% settings
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.n_s = 1;
+problem_options.T_sim = T_sim;
+problem_options.N_finite_elements = N_FE;
+problem_options.N_sim = N_sim;
+problem_options.time_freezing = 1;
+problem_options.pss_lift_step_functions = 1;
+problem_options.stagewise_clock_constraint = 0;
+problem_options.a_n = g;
+
+
+solver_options.homotopy_steering_strategy = 'ELL_INF';
+solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
+solver_options.print_level = 2;
+solver_options.N_homotopy = 6;
+solver_options.use_previous_solution_as_initial_guess = 0;
+
+%%
 vertical_force = 0;
 % Symbolic variables and bounds
 q = SX.sym('q',2); 
@@ -26,27 +38,18 @@ v = SX.sym('v',2);
 
 model.x = [q;v]; 
 model.e = 0;
-model.mu_f = 0;
+model.mu = 0;
 model.dims.n_dim_contact = 2;
-model.a_n = g;
 model.x0 = [0.8;0.5;-1.5;-1]; 
 model.f_v = [0;-g];
 model.f_c = [q(1);q(2)];
-%% Simulation settings
-N_FE = 3;
-T_sim = 1.5;
-N_sim = 40;
-problem_options.T_sim = T_sim;
-settings.N_finite_elements = N_FE;
-problem_options.N_sim = N_sim;
-settings.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-[results,stats,solver] = integrator_fesd(model,settings);
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% read and plot results
-unfold_struct(results,'base');
-qx = results.x(1,:); qy = results.x(2,:);
-vx = results.x(3,:); vy = results.x(4,:);
-t_opt = results.x(5,:);
+qx = x_res(1,:); qy = x_res(2,:);
+vx = x_res(3,:); vy = x_res(4,:);
+t_opt = x_res(5,:);
 figure
 subplot(121)
 plot(qx,qy,'LineWidth',2.5);

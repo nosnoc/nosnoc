@@ -25,9 +25,6 @@
 
 % This file is part of NOSNOC.
 
-%
-%
-
 %% Manipulation of two discs 
 
 clear all;
@@ -36,37 +33,38 @@ clc;
 import casadi.*
 
 filename = 'discs_switch_position_obstacle.gif';
-%%
-problem_options = NosnocProblemOptions();
+%% Load nosnoc defaul options
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-model = NosnocModel();
+
 %%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.n_s = 2;  % number of stages in IRK methods
+problem_options.n_s = 2;  % number of stages in RK methods
+problem_options.g_path_at_fe = 1;
+% problem_options.cross_comp_mode = 7;
+problem_options.gamma_h = 0;
+%problem_options.relax_terminal_numerical_time = 'ELL_2';
+%problem_options.rho_terminal_numerical_time = 1e3;
+%problem_options.time_optimal_problem = true;
+%problem_options.use_speed_of_time_variables = true;
+%problem_options.lift_velocity_state = true;
 
-problem_options.use_fesd = 1;
-solver_options.N_homotopy = 7;
-problem_options.dcs_mode = 'CLS';
-solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
-problem_options.g_path_at_fe = 1;
-% 
-solver_options.homotopy_update_slope = 0.5;
-%solver_options.homotopy_update_rule = 'superlinear';
+solver_options.homotopy_update_slope = 0.1;
 solver_options.N_homotopy = 100;
-problem_options.g_path_at_fe = 1;
-problem_options.cross_comp_mode = 7;
 solver_options.sigma_0 = 1e1;
 solver_options.complementarity_tol = 1e-6;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 2e3;
-problem_options.gamma_h = 0.995;
+
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
-N_stg = 25; % control intervals
-N_FE = 2;  % integration steps per control interval
+N_stg = 50; % control intervals
+N_FE = 1;  % integration steps per control interval
 T = 4;
-
+problem_options.T = T;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements  = N_FE;
 %% model parameters
 m1 = 2;
 m2 = 1;
@@ -97,6 +95,7 @@ lbu = -ubu;
 %% Symbolic variables and bounds
 q = SX.sym('q',4);
 v = SX.sym('v',4);
+x = [q;v];
 u = SX.sym('u',2);
 
 q1 = q(1:2);
@@ -104,28 +103,23 @@ q2 = q(3:4);
 v1 = v(1:2);
 v2 = v(3:4);
 
-x = [q;v];
-problem_options.T = T;
-problem_options.N_stages = N_stg;
-problem_options.N_finite_elements  = N_FE;
+model = nosnoc.model.Cls();
 model.x = x;
 model.u = u;
 model.e = 1*0;
-model.mu_f = 0.0;
-model.a_n = 10;
+model.mu = 0.0;
 model.x0 = x0;
 model.dims.n_dim_contact = 2;
 
 cv = 2;
 eps = 1e-1;
 f_drag = cv*[v1/norm(v1+eps);v2/norm(v2+eps)];
-
 model.M = diag([m1;m1;m2;m2]); % inertia/mass matrix;
 model.f_v = [u;...
              zeros(2,1)]-f_drag;
 
 %% gap functions
-model.f_c = [norm(q1-q2)^2-(r1+r2)^2];
+model.f_c = norm(q1-q2)^2-(r1+r2)^2;
 
 %% obstacle
 r_ob = 1;
@@ -143,11 +137,11 @@ model.ubx = ubx;
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %% read and plot results
-unfold_struct(results,'base');
+x = ocp_solver.get('x');
+u_opt = ocp_solver.get('u');
 p1 = x(1,:);
 p2 = x(2,:);
 p3 = x(3,:);
@@ -156,18 +150,8 @@ v1 = x(5,:);
 v2 = x(6,:);
 v3 = x(7,:);
 v4 = x(8,:);
-u_opt = u;
-
-p1 = x_with_impulse(1,:);
-p2 = x_with_impulse(2,:);
-p3 = x_with_impulse(3,:);
-p4 = x_with_impulse(4,:);
-v1 = x_with_impulse(5,:);
-v2 = x_with_impulse(6,:);
-v3 = x_with_impulse(7,:);
-v4 = x_with_impulse(8,:);
-t_grid = results.t_with_impulse;
-
+t_grid = ocp_solver.get_time_grid();
+t_grid_u = ocp_solver.get_control_grid();
 
 %% animation
 figure('Renderer', 'painters', 'Position', [100 100 1000 800])
@@ -295,10 +279,10 @@ set(gcf,'Units','inches');
 
 
 subplot(3,2,6)
-stem(results.t_grid(1:problem_options.n_s-1:end),[nan,Lambda_normal]','LineWidth',1.5);
+stem(t_grid(1:problem_options.n_s-1:end),[nan,ocp_solver.get("Lambda_normal")]','LineWidth',1.5);
 grid on
 hold on
-% plot(results.t_grid(1:problem_options.n_s-1:end),[nan,lambda_normal]','LineWidth',1.5);
+% plot(t_grid(1:problem_options.n_s-1:end),[nan,lambda_normal]','LineWidth',1.5);
 xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
 xlim([0 T]);

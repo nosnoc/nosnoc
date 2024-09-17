@@ -34,25 +34,28 @@ import casadi.*
 %% model parameters
 e = 0.9; u_max = 9; beta = 0.0; 
 %% NOSNOC settings
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.time_freezing = 1; 
-problem_options.n_s = 3; 
+problem_options.time_freezing = 1;
+problem_options.n_s = 4;
 solver_options.homotopy_update_rule = 'superlinear';
-%solver_options.print_level=1;
-%problem_options.step_equilibration = 'direct_homotopy';
+problem_options.cross_comp_mode = "FE_FE";
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e3;
+solver_options.print_level = 3;
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 q_target = [4;0.5];
 
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = 4; 
 problem_options.N_stages = 20; 
-problem_options.N_finite_elements = 3;
+problem_options.N_finite_elements = 5;
+problem_options.gamma_h = 0.95;
 % model equations
 q = SX.sym('q',2);
 v = SX.sym('v',2); 
 u = SX.sym('u',2);
 model.x0 = [0;0.5;0;0];
-model.x = [q;v]; model.u = u; model.e = e ;
+model.x = [q;v]; model.u = u; model.e = e;
 model.f_c = q(2);
 model.f_v = [u-[0;9.81]-beta*v*sqrt(v(1)^2^2+v(2)^2+1e-3)]; 
 % Objective and constraints
@@ -60,14 +63,15 @@ model.f_q = u'*u; model.f_q_T = 100*v'*v;
 model.g_path = u'*u-u_max^2;
 model.g_terminal = q-[q_target];
 
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %%
+results.x = ocp_solver.get('x');
+results.u = ocp_solver.get('u');
+results.f = ocp_solver.stats.objective(end);
+results.theta = ocp_solver.get('theta');
+stats = ocp_solver.stats;
 plot_result_ball(model,problem_options,solver_options,results,stats)
 fprintf('Objective values is: %2.4f \n',full(results.f));
-fprintf('Final time is: %2.4f \n',full(results.T));
-if isempty(results.T)
-    results.T_opt = results.t_grid(end);
-end
-[tout,yout,error] = bouncing_ball_sim(results.u,results.T,problem_options.N_stages,model.x0(1:4),beta,0.9,q_target);
+fprintf('Final time is: %2.4f \n',ocp_solver.get('T_final'));
+[tout,yout,error] = bouncing_ball_sim(results.u,ocp_solver.get('T_final'),problem_options.N_stages,model.x0(1:4),beta,0.9,q_target);

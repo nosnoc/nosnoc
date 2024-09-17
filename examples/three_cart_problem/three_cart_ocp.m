@@ -41,21 +41,22 @@ import casadi.*
 delete three_carts.gif
 
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.cross_comp_mode = 7;
+model.a_n = 100;
+problem_options.time_freezing = 1;
 
 solver_options.homotopy_update_slope = 0.5;
 solver_options.N_homotopy = 100;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.complementarity_tol = 1e-6;
 solver_options.print_level = 5;
-problem_options.time_freezing = 1;
 
 %% IF HLS solvers for Ipopt installed (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) use the settings below for better perfmonace:
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretizatioon
 N_stg = 20; % control intervals
@@ -95,15 +96,14 @@ ubu = [0*u_max; u_max; 0*u_max];
 q = SX.sym('q',3); v = SX.sym('v',3); 
 u = SX.sym('u',3);
 x = [q;v];
-model = NosnocModel();
+model = nosnoc.model.Cls();
 problem_options.T = 5;
 problem_options.N_stages = N_stg;
 problem_options.N_finite_elements  = N_FE;
 model.x = x;
 model.u = u;
 model.e = 0;
-model.mu_f = 0.0;
-model.a_n = 100;
+model.mu = 0.0;
 model.x0 = x0; 
 
 % model.f = [1/m1*(u(1)-c_damping*v(1)-k1*q(1));...
@@ -133,23 +133,22 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 % model.g_terminal = [x-x_ref];
 %% Call nosnoc solver
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
-% [results] = polish_homotopy_solution(model,settings,results,stats.sigma_k); % (experimental, projects and fixes active set at solution and solves NLP)
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
 %% read and plot results
-unfold_struct(results,'base');
-p1 = results.x(1,:);
-p2 = results.x(2,:);
-p3 = results.x(3,:);
-v1 = results.x(4,:);
-v2 = results.x(5,:);
-v3 = results.x(6,:);
-t_opt = results.x(7,:);
+x_res = ocp_solver.get('x');
+u_opt = ocp_solver.get('u');
+p1 = x_res(1,:);
+p2 = x_res(2,:);
+p3 = x_res(3,:);
+v1 = x_res(4,:);
+v2 = x_res(5,:);
+v3 = x_res(6,:);
+t_opt = x_res(7,:);
 
-u1_opt = results.u(1,:);
-u2_opt = results.u(2,:);
-u3_opt = results.u(3,:);
+u1_opt = u_opt(1,:);
+u2_opt = u_opt(2,:);
+u3_opt = u_opt(3,:);
 
 
 %% animation
@@ -157,7 +156,7 @@ u3_opt = results.u(3,:);
 figure(1)
 filename = 'three_carts.gif';
 carts_appart = 2;
-x_min =min([p1,p2,p3])-2.5;
+x_min = min([p1,p2,p3])-2.5;
 x_max = max([p1,p2,p3])+2.5;
 cart_height = 2;
 

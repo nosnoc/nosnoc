@@ -24,32 +24,33 @@ lbx = [-15; -15; -10; -5; -5; -5];
 x0 = [-3; 0; 3; 0; 0; 0];
 
 %%
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 1;
-solver_options.mpcc_mode = 'elastic_ineq';
-solver_options.opts_casadi_nlp.ipopt.max_iter = 5e2;
-solver_options.print_level = 2;
-solver_options.N_homotopy = 12;
 problem_options.cross_comp_mode = 7;
 problem_options.time_freezing = 1;
 problem_options.pss_lift_step_functions = 1;
+problem_options.a_n = 100;
+
 
 problem_options.impose_terminal_phyisical_time = 1;
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 0;
 
 % solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.homotopy_steering_strategy = 'ELL_INF';
+solver_options.opts_casadi_nlp.ipopt.max_iter = 5e2;
+solver_options.print_level = 2;
+solver_options.N_homotopy = 12;
 
 %%
 % Symbolic variables and bounds
 q = SX.sym('q',3); v = SX.sym('v',3);
-model = NosnocModel();
+model = nosnoc.model.Cls();
 model.x = [q;v]; 
 model.e = 0;
-model.mu_f = 0;
-model.a_n = 100;
+model.mu = 0;
 model.x0 = x0; 
 % fixed control
 u = [-1;10;0];
@@ -70,17 +71,16 @@ problem_options.N_finite_elements = N_FE;
 problem_options.N_sim = N_sim;
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
-integrator = NosnocIntegrator(model, problem_options, solver_options, [], []);
-[results,stats] = integrator.solve();
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
+[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% read and plot results
-unfold_struct(results,'base');
-p1 = results.x(1,:);
-p2 = results.x(2,:);
-p3 = results.x(3,:);
-v1 = results.x(4,:);
-v2 = results.x(5,:);
-v3 = results.x(6,:);
-t_opt = results.x(7,:);
+p1 = x_res(1,:);
+p2 = x_res(2,:);
+p3 = x_res(3,:);
+v1 = x_res(4,:);
+v2 = x_res(5,:);
+v3 = x_res(6,:);
+t_opt = x_res(7,:);
 %%
 figure
 subplot(121)

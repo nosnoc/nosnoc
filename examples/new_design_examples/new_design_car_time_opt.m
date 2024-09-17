@@ -4,7 +4,7 @@ import nosnoc.*
 
 
 %% populate options
-problem_options = nosnoc.Options(); % problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options(); % problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 
 %% set some options
@@ -63,4 +63,4 @@ if problem_options.use_fesd
 end
 % how to create an integrator?
 % integrator = nosnoc.Integrator(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.
-% [results,stats] = integrator.solve();
+% [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();

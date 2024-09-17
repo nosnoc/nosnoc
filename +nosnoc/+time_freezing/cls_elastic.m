@@ -44,17 +44,13 @@ function [pss_model] = cls_elastic(cls_model, opts)
     
     % normal and tangential velocities
     v_normal = cls_model.J_normal'*cls_model.v;
-
-    % parameter for auxiliary dynamics
-    % TODO add to options
-    a_n = opts.a_n;
     %% Time-freezing reformulation
     % elastic
     % TODO: add to options
     k_aux = opts.k_aux;
     temp1 = 2*abs(log(cls_model.e));
     temp2 = k_aux/(pi^2+log(cls_model.e)^2);
-    c_aux = temp1/sqrt(temp2);
+    c_aux = temp1*sqrt(temp2);
     K = [0 1;-k_aux -c_aux];
     N  = [cls_model.J_normal zeros(dims.n_q,1);...
         zeros(dims.n_q,1) cls_model.invM*cls_model.J_normal];

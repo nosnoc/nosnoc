@@ -28,41 +28,43 @@
 %
 %
 
-%% Three cart manipulation example
-clear all;
-close all;
-clc;
+%% Two cart manipulation example
+clear; close all; clc;
 import casadi.*
 
 %%
 play_animation = 1;
 no_friction = 0;
 
-%%
-[settings] = NosnocOptions();
-settings.rk_scheme = RKSchemes.RADAU_IIA;
-settings.n_s = 2;  % number of stages in IRK methods
-settings.dcs_mode = 'CLS';
-settings.cross_comp_mode = 1;
-settings.friction_model = "Polyhedral";
-% settings.conic_model_switch_handling = "Abs";
-settings.print_level = 3;
+%% load nosnoc default options
+problem_options = nosnoc.Options();
+solver_options = nosnoc.solver.Options();
 
-settings.gamma_h = 0.8;
-settings.sigma_0 = 1e0;
-settings.mpcc_mode = "Scholtes_ineq";
-% settings.decreasing_s_elastic_upper_bound = 1;
-settings.homotopy_update_slope = 0.2;
-settings.homotopy_update_rule = 'superlinear';
-settings.N_homotopy = 7;
-settings.opts_casadi_nlp.ipopt.max_iter = 2e3;
+%% 
+problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.n_s = 1;  % number of stages in IRK methods
+problem_options.dcs_mode = 'CLS';
+problem_options.cross_comp_mode = 7;
+problem_options.friction_model = "Polyhedral";
+problem_options.gamma_h = 1;
+
+solver_options.sigma_0 = 1e0;
+solver_options.homotopy_steering_strategy = 'DIRECT';
+solver_options.homotopy_update_slope = 0.5;
+%solver_options.homotopy_update_rule = 'superlinear';
+solver_options.N_homotopy = 15;
+solver_options.opts_casadi_nlp.ipopt.max_iter = 2e3;
+solver_options.print_level = 3;
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
-settings.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
-%% discretizatioon
+%% discretization
 N_stg = 10; % control intervals
 N_FE = 2;  % integration steps per control interval
 T = 3;
+problem_options.T = T;
+problem_options.N_stages = N_stg;
+problem_options.N_finite_elements = N_FE;
 
 %% model parameters
 m1 = 1;
@@ -101,14 +103,10 @@ x = [q;v];
 q1 = q(1:2);
 q2 = q(3:4);
 
-model = NosnocModel();
-problem_options.T = T;
-model.N_stages = N_stg;
-model.N_finite_elements  = N_FE;
+model = nosnoc.model.Cls();
 model.x = x;
 model.u = u;
 model.x0 = x0;
-
 model.M = M;
 model.f_v = [ 0;...
     -m1*g;
@@ -125,14 +123,11 @@ J_tangent =  [0  1 0;...
              -1  0 0;...
               0  0 1;...
               1  0 0];
-
 J_tangent  = J_tangent./vecnorm(J_tangent);
-
 J_normal = full(f_c.jacobian(q));
 J_normal_fun = Function('J_normal_fun',{q},{J_normal});
 J_normal = full(J_normal_fun(x0(1:4)))';
 J_normal  = J_normal ./vecnorm(J_normal);
-
 
 model.f_c = f_c;
 model.J_normal = J_normal;
@@ -147,9 +142,9 @@ model.D_tangent = D_tangent;
 
 model.e =  [0.5 0.0 0.0];
 if no_friction
-    model.mu_f = 0.0;
+    model.mu = 0.0;
 else
-    model.mu_f = [0.1 0.3 0.3];
+    model.mu = [0.0 0.3 0.3];
 end
 % box constraints on controls and states
 model.lbu = u_min;
@@ -160,8 +155,11 @@ model.ubx = ubx;
 model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 % model.g_terminal = [x-x_ref];
+
 %% Call nosnoc solver
-solver = NosnocSolver(model, settings);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+
+% add inital guess
 lambda_guess = {};
 y_gap_guess = {};
 x_guess = {};
@@ -170,7 +168,9 @@ for ii = 1:N_stg
     y_gap_guess{ii} =  [1;0];
     x_guess{ii} = x_ref;
 end
-solver.set('lambda_normal',lambda_guess');
+ocp_solver.set('lambda_normal', 'init', {1:N_stg, 1:N_FE, 1:problem_options.n_s}, [0;g;g]);
+ocp_solver.set('y_gap', 'init', {1:N_stg, 1:N_FE, 1:problem_options.n_s}, [1;0;0]);
+ocp_solver.set('x', 'init', {1:N_stg, 1:N_FE, 1:problem_options.n_s}, x_ref);
 
 % % use a previous solution to initialize
 % if isfile('results.mat')
@@ -192,17 +192,22 @@ solver.set('lambda_normal',lambda_guess');
 %solver.set('Y_gap',y_gap_guess');
 %solver.set('x', x_guess');
 %solver.set('x_left_bp', x_guess');
-[results,stats] = solver.solve();
+ocp_solver.solve();
 %% read and plot results
-unfold_struct(results,'base');
-p1x = x(1,:);
-p2x = x(3,:);
-p1y = x(2,:);
-p2y = x(4,:);
-v1x = x(5,:);
-v2x = x(7,:);
-v1y = x(6,:);
-v2y = x(8,:);
+x_res = ocp_solver.get('x');
+t_grid = ocp_solver.get_time_grid();
+results.u = ocp_solver.get('u');
+results.lambda_tangent = ocp_solver.get('lambda_tangent');
+Lambda_normal = ocp_solver.get('Lambda_normal');
+lambda_normal = ocp_solver.get('lambda_normal');
+p1x = x_res(1,:);
+p2x = x_res(3,:);
+p1y = x_res(2,:);
+p2y = x_res(4,:);
+v1x = x_res(5,:);
+v2x = x_res(7,:);
+v1y = x_res(6,:);
+v2y = x_res(8,:);
 
 %% animation
 % figure('Renderer', 'painters', 'Position', [100 100 1000 400])
@@ -249,16 +254,16 @@ if play_animation
         axis equal
         xlim([x_min x_max])
         ylim([-0.75 3.5])
-        pause(solver.problem_options.h_k);
+        pause(problem_options.h_k);
 
         frame = getframe(1);
         im = frame2im(frame);
 
         [imind,cm] = rgb2ind(im,256);
-        if ii == 1;
-            imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',solver.problem_options.h_k(1));
+        if ii == 1
+            imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',problem_options.h_k(1));
         else
-            imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',solver.problem_options.h_k(1));
+            imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',problem_options.h_k(1));
         end
 
         if ii~=length(p1x)
@@ -318,12 +323,7 @@ for jj= 1:N_shots
     xlim([x_min x_max])
     ylim([-0.5 3.5])
 end
-set(gcf,'Units','inches');
-screenposition = get(gcf,'Position');
-set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['manipulation_frames2'] ])
 
-%%
 %%
 figure('Renderer', 'painters', 'Position', [100 100 1100 260])
 % figure
@@ -361,11 +361,6 @@ xlabel('$t$','interpreter','latex');
 ylabel('$\Lambda_{\mathrm{n}}(t)$','interpreter','latex');
 xlim([0 T])
 
-
-set(gcf,'Units','inches');
-screenposition = get(gcf,'Position');
-set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',[screenposition(3:4)]);
-eval(['print -dpdf -painters ' ['carts_states'] ])
 %%
 lambda_tangent = [-results.lambda_tangent(1,:)+results.lambda_tangent(2,:);
                   -results.lambda_tangent(3,:)+results.lambda_tangent(4,:);

@@ -61,7 +61,6 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
         else
             v_tangent = cls_model.J_tangent'*cls_model.v;
             v_tangent = reshape(v_tangent,2,dims.n_contacts); % 2 x n_c , the columns are the tangential velocities of the contact points
-
         end
         v_tangent_norms = [];
         for ii = 1:dims.n_contacts
@@ -94,6 +93,12 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
     f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad,dims.n_contacts)];
 
     if opts.time_freezing_nonsmooth_switching_fun
+        sigma = SX.sym('sigma',1);
+        a = SX.sym('a',1);
+        b = SX.sym('b',1);
+        f_natural_residual = 0.5*(b+a+sqrt((b-a+sigma)^2));
+        % f_natural_residual = max(a,b);
+        max_smooth_fun = Function('max_smooth_fun',{a,b,sigma},{f_natural_residual});
         heaviside_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    
     else
         if dims.n_dim_contact == 1
@@ -202,7 +207,7 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
             end
         else
             % here lifting of product terms
-            g_z_tf_beta_prod  = [beta_prod(1) - (alpha_q(1)+alpha_v_normal(1)-beta_bilinear_ode(1))*(alpha_q(2)+alpha_v_normal(2)-beta_bilinear_ode(2))]; % first lifting terms
+            beta_prod_expr(1) = [(alpha_q(1)+alpha_v_normal(1)-beta_bilinear_ode(1))*(alpha_q(2)+alpha_v_normal(2)-beta_bilinear_ode(2))]; % first lifting terms
                                                                                                                                                           % lifting terms in between
             for ii = 3:dims.n_contacts-1
                 beta_prod_expr(ii-1) = beta_prod(ii-2)*(alpha_q(ii)+alpha_v_normal(ii)-beta_bilinear_ode(ii));
@@ -226,12 +231,28 @@ function heaviside_model = cls_inelastic_multicontact(cls_model, opts)
         beta_bilinear_aux;
         beta_prod];
 
-    beta0_fun = Function('beta0', {alpha}, {[beta_bilinear_ode_expr; beta_bilinear_aux_expr; beta_prod_expr]});
-    theta0_fun = Function('beta0', {alpha,beta}, {[alpha_ode;alpha_aux]});
-    
-    beta0 = full(beta0_fun(opts.initial_alpha*ones(size(alpha,1),1)));
-    theta0 = full(theta0_fun(opts.initial_alpha*ones(size(alpha,1),1),beta0));
+    try
+        beta0_fun = Function('beta0', {alpha}, {[beta_bilinear_ode_expr; beta_bilinear_aux_expr; beta_prod_expr]});
+        theta0_fun = Function('theta0', {alpha,beta}, {[alpha_ode;alpha_aux]});
+        
+        beta0 = full(beta0_fun(opts.initial_alpha*ones(size(alpha,1),1)));
+        theta0 = full(theta0_fun(opts.initial_alpha*ones(size(alpha,1),1),beta0));
+    catch e
+        % TODO(@anton) Mild hack, improve later.
+        w_init = [beta;theta];
+        p_init = [alpha];
+        g_init = [beta - [beta_bilinear_ode_expr; beta_bilinear_aux_expr; beta_prod_expr]; theta - [alpha_ode;alpha_aux]];
+        nlp_init = struct('x', w_init, 'f', 0, 'g', g_init, 'p', p_init);
 
+        opts_init.ipopt.sb = 'no';
+        opts_init.ipopt.print_level = 0;
+        init = nlpsol('init', 'ipopt', nlp_init, opts_init);
+        
+        init_res = init('p', opts.initial_alpha*ones(size(alpha,1),1), 'lbg', zeros(size(g_init)), 'ubg', zeros(size(g_init)));
+        
+        beta0 = full(init_res.x(1:size(beta, 1)));
+        theta0 = full(init_res.x((size(beta, 1)+1):end));
+    end
     heaviside_model.z = [theta;beta];
     heaviside_model.z0 = [theta0;beta0];
     heaviside_model.g_z = [theta-[alpha_ode;alpha_aux];
