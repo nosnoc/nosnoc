@@ -1,3 +1,9 @@
+% An example of time invariant state dependent sweeping processes from:
+%
+% T. H. Cao, N. T. Khalil, B. S. Mordukhovich, D. Nguyen, T. Nguyen and F. L. Pereira,
+% "Optimization of Controlled Free-Time Sweeping Processes With Applications to Marine Surface Vehicle Modeling,"
+% in IEEE Control Systems Letters, vol. 6, pp. 782-787, 2022, doi: 10.1109/LCSYS.2021.3085900. 
+
 clear; close all; clc;
 import casadi.*
 
@@ -5,11 +11,8 @@ R = 3.5;
 %% Define projected system
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-% problem_options.rk_scheme = RKSchemes.RADAU_I;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-% problem_options.rk_representation= RKRepresentation.differential_lift_x; 
 problem_options.rk_representation = RKRepresentation.integral;
-problem_options.cross_comp_mode = CrossCompMode.STAGE_STAGE;
 problem_options.cross_comp_mode = CrossCompMode.FE_FE;
 problem_options.N_finite_elements = 2;
 problem_options.n_s = 2;

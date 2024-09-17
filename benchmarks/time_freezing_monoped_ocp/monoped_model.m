@@ -1,12 +1,62 @@
-function [varargout] = solve_robot_ocp(model,settings,scenario)
-    clc;
-    close all;
-    unfold_struct(scenario,'caller');
+function [results, stats] = monoped_model(N_stages, initialize_with_ref, plot_res)
     import casadi.*
+    %% robot scene description
+    constant_inertia_matrix = 0;
+    general_inequality_constraints = 0;
+    save_figure = 0;
+    filename = 'monoped_ocp';
+
+    %% auxiliary dynamics and friction
+    a_n = 200;
+    mu = 0.80;
+    %% obstacles
+    q_target = [3;0.4;0;0];
+
+    %% Default settings NOSNOC
+    problem_options = nosnoc.Options();
+    solver_options = nosnoc.solver.Options();
+    model = nosnoc.model.Cls();
+    %%
+    solver_options.print_level = 5;
+    problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+    problem_options.n_s = 2;
+    %% homotopy settings
+    problem_options.cross_comp_mode = 7;
+    solver_options.opts_casadi_nlp.ipopt.max_iter = 10000;
+    %solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
+    solver_options.N_homotopy = 5;
+    solver_options.sigma_0 = 1;
+    % solver_options.homotopy_update_rule = 'superlinear';
+    solver_options.homotopy_update_slope = 0.1;
+    solver_options.opts_casadi_nlp.ipopt.tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
+    solver_options.complementarity_tol = 1e-5;
+    solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+    % solver_options.nlpsol = 'snopt';
+    % solver_options.opts_casadi_nlp.snopt.Major_iterations_limit = 100000;
+    % solver_options.opts_casadi_nlp.snopt.Minor_iterations_limit = 10000;
+    problem_options.initial_alpha = 0.5;
+    %solver_options.opts_casadi_nlp.ipopt.ma57_pre_alloc = 2.0;
+    %solver_options.opts_casadi_nlp.ipopt.ma57_automatic_scaling = 'yes';
+
+    %% time-freezing
+    problem_options.s_sot_max = 100;
+    problem_options.s_sot_min = 0.99;
+    problem_options.rho_sot = 0.00;
+    problem_options.time_freezing = 1;
+    problem_options.pss_lift_step_functions = 1;
+    problem_options.stagewise_clock_constraint = 1;
+    problem_options.a_n = a_n;
+    
+    %% Discretization
+    problem_options.T = 3.0;
+    problem_options.N_stages = N_stages;
+    problem_options.N_finite_elements = 3;
+
     %% friction cone parameters
     model.e = 0;
     model.mu = mu;
-    model.a_n = a_n;
     %% bounds
     lb_head_z = 0.2;
     ub_head_z = 0.55;
@@ -22,7 +72,6 @@ function [varargout] = solve_robot_ocp(model,settings,scenario)
     ub_foot_x = inf;
     lb_foot_z = -0.005;
     ub_foot_z = 0.2;
-
 
     psi_hip_ub = 3*pi/8*1.05;
     psi_hip_lb = -3*pi/8*1.05;
@@ -51,7 +100,7 @@ function [varargout] = solve_robot_ocp(model,settings,scenario)
     qz = SX.sym('qz',1);
     phi_hip = SX.sym('phi_hip',1);
     phi_knee = SX.sym('phi_knee',1);
-    vx = SX.sym('vz',1);
+    vx = SX.sym('vx',1);
     vz = SX.sym('vz',1);
     omega_hip = SX.sym('omega_hip',1);
     omega_knee = SX.sym('omega_knee',1);
@@ -71,7 +120,6 @@ function [varargout] = solve_robot_ocp(model,settings,scenario)
     q0 = [0;0.4;0;0];
     v0 = [0;0;0;0];
     model.x0 = [q0;v0];
-    model.u0 = u0;
     %% Dynamics and Kinematics
     robot_model_kinematics
     % total forces unconstrained
@@ -87,7 +135,7 @@ function [varargout] = solve_robot_ocp(model,settings,scenario)
     c_tan = p_foot(1);
     J_normal = f_c.jacobian(q)';
     J_tangent = c_tan.jacobian(q)';
-    use_unit_vectors = 1;
+    use_unit_vectors = 0;
     if use_unit_vectors
         J_tangent = J_tangent/norm(J_tangent);
         J_normal = J_normal/norm(J_normal);
@@ -95,18 +143,16 @@ function [varargout] = solve_robot_ocp(model,settings,scenario)
     model.f_c = f_c;
     model.J_tangent = J_tangent;
     model.J_normal= J_normal;
-    model.dims.n_dim_contact = 2;
+    model.dims.n_dim_contact = 1;
     %% OCP
     % Objective and constraints
-    model.f_q = u'*u;
     % box constraints
-    u_max = 200;
+    u_max = 100;
     model.lbu = -u_max*ones(2,1);
     model.ubu = u_max*ones(2,1);
-
     % Sanity constraints
-    model.lbx = [-0.5;0;-pi;-pi;-inf;-inf;-inf;-inf];
-    model.ubx = [q_target(1)+0.5; 2.0;pi;pi;inf;inf;inf;inf];
+    model.lbx = [-0.5;0;-pi;-pi;-100*ones(4,1)];
+    model.ubx = [q_target(1)+0.5; 10;pi;pi;100*ones(4,1)];
     %% path constraints
     % lower bound on knee
     p_knee_x = p_knee(1);
@@ -145,20 +191,6 @@ function [varargout] = solve_robot_ocp(model,settings,scenario)
         g_path_ub = [g_path_ub;ub_foot_z];
     end
 
-    % obstacle constraints
-    if hole_constraint
-        temp = p_foot;
-        p_foot_x = temp(1);
-        p_foot_z = temp(2);
-        a_vec = width_vec/2;
-        b_vec = height_vec;
-        for ii = 1:n_holes
-            g_path = [g_path; ((p_foot_x-xc_vec(ii))/a_vec(ii))^2+((p_foot_z-zc_vec(ii))/b_vec(ii))^2-1];
-        end
-        g_path_lb = [g_path_lb;0*ones(n_holes ,1)];
-        g_path_ub = [g_path_ub;inf*ones(n_holes ,1)];
-    end
-
     if general_inequality_constraints
         if ~isempty(g_path)
             model.g_path = g_path;
@@ -168,63 +200,50 @@ function [varargout] = solve_robot_ocp(model,settings,scenario)
     end
 
     % least squares weight
-    Q = diag([1.0, 1.0, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8]);
-    Q_terminal = 100*diag([1.0, 1.0, 1e-8, 1e-8, 1.0, 1.0, 1.0, 1.0]);
+
+    Q = diag([1, 1, 10, 1, 1e-6, 1e-6, 1e-6, 1e-6]);
+    Q_terminal = diag([1e3, 1e3, 1e3, 1e3, 10, 10, 10, 10]);
+
+
+    u_ref = [0;0];
+
+    R = 1e-1*eye(2);
 
     % Generate reference trajectory
-    x_mid = [q_target(1)/2; 0.4;0;0;q_target(1)/problem_options.T;0;0;0];
-    x_target = [q_target;zeros(4,1)];
-    x_ref = interp1([0 0.5 1],[model.x0,x_mid,x_target]',linspace(0,1,settings.N_stages),'spline')' %spline
+    x_mid_1 = [q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0;1/4*problem_options.T];
+    x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/problem_options.T;0;0;0;2/4*problem_options.T];
+    x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0;3/4*problem_options.T];
 
-    model.lsq_x = {x, x_ref, Q}; % TODO also do trajectory
-    model.lsq_T = {x, x_target, Q_terminal};
+    x_target = [q_target;zeros(4,1);problem_options.T];
+    x_ref = interp1([0 0.25 0.5 0.75 1],[[model.x0;0],x_mid_1,x_mid_2,x_mid_3,x_target]',linspace(0,1,problem_options.N_stages+1),'spline')'; %spline
+
+    model.lsq_x = {x, x_ref(1:(end-1),2:end), Q}; % TODO also do trajectory
+    model.lsq_u = {u, u_ref, R}; % TODO also do trajectory
+    model.lsq_T = {x, x_target(1:(end-1)), Q_terminal};
     %% terminal constraint and/or costs
     %model.g_terminal = q(1:length(q_target))-q_target;
 
     %% Solve OCP with NOSNOC
-    if polishing_penalty_iteration
-        solver = NosnocSolver(model, settings);
-        [results,stats] = solver.solve();
-        %     w0 = [results.w_opt;stats.complementarity_stats(end)*10];
-        w0 = [results.w_opt;1e-2];
-        settings.s_elastic_max = 0.1;
-        %     settings.s_elastic_0 = 0.01;
-        settings.mpcc_mode = 5;
-        settings.N_homotopy = 1;
-        settings.sigma_0 = 1e-6;
-        solver = NosnocSolver(model, settings);
-        [results,stats] = solver.solve();
-    else
-        solver = NosnocSolver(model, settings);
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+    if initialize_with_ref
         x_guess = {};
-        for ii = 1:settings.N_stages
-            x_guess{ii} = x_ref(:,ii);
+        for ii = 1:problem_options.N_stages
+            for jj = 1:problem_options.N_finite_elements(ii)
+                for kk = 1:problem_options.n_s
+                    ocp_solver.set('x', 'init', {ii,jj,kk}, x_ref(:,ii+1));
+                end
+            end
         end
-        solver.set('x', x_guess');
-        [results,stats] = solver.solve();
     end
+    ocp_solver.solve();
 
+    stats = ocp_solver.stats;
 
-    %% Save statistics
-    fid = fopen('log_robot.txt','a');
-    fprintf(fid,[ '---------------------------------------\n']);
-    fprintf(fid,[ 'Scenario:' scenario.filename  '.\n']);
-    fprintf(fid,'Complementarity residual %2.2e \n',stats.complementarity_stats(end));
-    fprintf(fid,'CPU time %2.3f min. \n',stats.cpu_time_total/60);
-    fprintf(fid,[ '---------------------------------------\n']);
-    fclose(fid);
-    %%
-    results.stats = stats;
-    save(scenario.filename,'results')
+    results.x = ocp_solver.get("x");
+    results.u = ocp_solver.get("u");
+    results.ocp_solver = ocp_solver;
 
-    %% plots and animation
-    plot_results_hopping_robot
-    %%
-    varargout{1} = results;
-    varargout{2} = stats;
-    varargout{3} = model;
-    varargout{4} = settings;
-
+    if plot_res
+        plot_results_hopping_robot
+    end
 end
-
-
