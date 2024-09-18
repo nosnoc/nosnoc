@@ -7,7 +7,7 @@ mpc_options = nosnoc.mpc.Options(); % Initialize all options related to the MPC 
 
 % Choosing the Runge - Kutta Method and number of stages
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; % Type of scheme
-problem_options.n_s = 3; % Number of stage points in the RK method (determines accuracy)
+problem_options.n_s = 2; % Number of stage points in the RK method (determines accuracy)
 
 % Time-settings  - Solve a 
 problem_options.N_stages = 4; % Number of control intervals over the time horizon.
@@ -32,15 +32,18 @@ model.lbu = -u_max;
 model.ubu = u_max;
 % Dynamics of the piecewise smooth systems
 f_1 = [v;u]; % mode 1 - nominal
-f_2 = [v;3*u]; % mode 2 - turbo
+f_2 = [v;3.2*u]; % mode 2 - turbo
 % Define the regions of the PSS
 v_threshold = 10;
 model.c = v-v_threshold; % single switching functions (implies two regions)
 model.S = [-1;1]; % Region R_1 is defined by c<0 (hence the -1), region R_2 by c>0 (hence the +1) in the sign matrix S.
 model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of every region.
 
-model.f_q = (q-200)^2 + u^2; % Add stage cost
-model.f_q_T = (q-200)^2 + (v)^2; % Add terminal quadratic cost
+q_goal = 200;
+v_goal = 0;
+
+model.f_q = (q-q_goal)^2 + u^2; % Add stage cost
+model.f_q_T = (q-q_goal)^2 + (v-v_goal)^2; % Add terminal quadratic cost
 
 % Setup solver an mpc options
 solver_options.homotopy_update_rule = 'superlinear'; % Use superlinear update rule for relaxation parameter sigma.
@@ -49,9 +52,10 @@ solver_options.homotopy_update_exponent = 2; % Rate which the relaxation sigma i
 solver_options.complementarity_tol = 1e-7; % Value to drive the complementarity residual to.
 solver_options.N_homotopy = 10; % Maximum number of homotopy iterations.
                                 %solver_options.print_level = 0;
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
 % Set the fast sigma for followup solves to the complementarity tol to only do 1 nlp solve. 
 mpc_options.fullmpcc_fast_sigma_0 = 1e-7;
+N_steps = 25; % number of closed loop mpc steps
 
 % create mpc object
 mpc = nosnoc.mpc.FullMpcc(model, mpc_options, problem_options, solver_options);
@@ -102,16 +106,16 @@ sim_problem_options.print_level = 0;
 sim_solver_options.print_level = 0;
 sim_solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF; % Use the $\ell_{\infty}$ steering strategy
 sim_solver_options.complementarity_tol = 1e-10; % Value to drive the complementarity residual to.
-sim_solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
+% sim_solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
 integrator = nosnoc.Integrator(sim_model, sim_problem_options, sim_solver_options);
 %% Do MPC with accurate model
 x = model.x0; u = []; t = 0; tf = [];
 x0 = x;
-for step=1:25
+for step=1:N_steps
     [u_i, stats] = mpc.get_feedback(x0);
     tf_i = stats.feedback_time;
     tf = [tf, tf_i];
-    fprintf("Step: %d, Feedback time: %d\n", step, tf_i);
+    fprintf("MPC step: %d, Feedback time: %d\n", step, tf_i);
     mpc.do_preparation();
     integrator.set_x0(x0);
     [t_grid, x_sim] = integrator.simulate("u", repmat(u_i, [1,5]), "x0", x0);
@@ -121,13 +125,14 @@ for step=1:25
     t = [t, t(end) + problem_options.h];
 end
 
-% Plot
+%% Plot
 figure
+latexify_plot()
 subplot(311)
 plot(t,x(1,:))
 xlabel("$t$")
 ylabel("$q$")
-ylim([-5 205])
+ylim([-5 q_goal+5])
 subplot(312)
 plot(t,x(2,:))
 xlabel("$t$")
@@ -137,7 +142,7 @@ subplot(313)
 stairs(t,[u,u(end)])
 xlabel("$t$")
 ylabel("$u$")
-ylim([-5.5 5.5])
+ylim([-1.1*u_max 1.1*u_max])
 
 figure
 bar(tf)
