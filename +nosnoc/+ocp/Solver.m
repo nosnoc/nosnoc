@@ -254,6 +254,11 @@ classdef Solver < handle
                 end
             end
         end
+
+        function do_warmstart(obj)
+        % This method warmstarts the next solve with the results of the previous solve.
+            obj.discrete_time_problem.w.init = obj.discrete_time_problem.w.res;
+        end
     end
 end
  
