@@ -39,4 +39,4 @@ mpccsol_opts.warm_start_duals = true;
 
 %% create solver
 solver = mpccsol('nosnoc_solver', mpcc_method1, mpcc, mpccsol_opts);
-solver.generate_c_solver(fullfile(pwd));
+solver.generate_cpp_solver(fullfile(pwd));

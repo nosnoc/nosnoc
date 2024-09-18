@@ -1078,7 +1078,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             end
         end
 
-        function generate_c_solver(obj, solver_dir)
+        function generate_cpp_solver(obj, solver_dir)
             oldwd = pwd;
             cd(solver_dir);
             obj.nlp.solver.generate_dependencies([obj.opts.solver_name '_nlp.c']);

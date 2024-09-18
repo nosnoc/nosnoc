@@ -205,7 +205,7 @@ classdef Solver < handle
             var(indices{:}).(field) = value;
         end
         
-        function generate_c_solver(obj, solver_dir, plugin)
+        function generate_cpp_solver(obj, solver_dir, plugin)
             if ~exist('plugin', 'var')
                 plugin = 'scholtes_ineq';
             end
@@ -215,7 +215,7 @@ classdef Solver < handle
             fid = fopen([solver_dir '/problem_options.json'], "w");
             fprintf(fid, solver_json);
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
-            obj.discrete_time_problem.solver.generate_c_solver(solver_dir);
+            obj.discrete_time_problem.solver.generate_cpp_solver(solver_dir);
         end
     end
 end

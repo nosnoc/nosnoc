@@ -53,7 +53,7 @@ ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 %
 % Note: this relies on Matlab-Python interop. If that fails you will need to call the python script in `codegen_templates`
 %       manually to generate the c++ files from the json information.
-ocp_solver.generate_c_solver(fullfile(pwd));
+ocp_solver.generate_cpp_solver(fullfile(pwd));
 
 % Now the focus switches to the c++ code, see main.cpp for details on how to use the generated solver.
 % In order to build the c++ solver:
