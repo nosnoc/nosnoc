@@ -112,17 +112,26 @@ classdef Integrator < handle
                 obj nosnoc.Integrator
                 plugin nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
                 extra_args.u = []
+                extra_args.x0 = [];
             end
             opts = obj.opts;
             % TODO(@anton) validators here.
-            if ~isempty(extra_args.u) && all(size(extra_args.u) ~= [obj.model.dims.n_u opts.N_sim])
+            if ~isempty(extra_args.u) && any(size(extra_args.u) ~= [obj.model.dims.n_u opts.N_sim])
                 error("nosnoc: wrong dimensions passed for controls to integrator.")
             end
-            x_res = obj.model.x0;
-            x_res_full = obj.model.x0;
+            if ~isempty(extra_args.x0)
+                if  any(size(extra_args.x0) ~= size(obj.model.x0))
+                    error("nosnoc: wrong dimensions passed for controls to integrator.")
+                end
+                x0 = extra_args.x0;
+            else
+                x0 = obj.model.x0;
+            end
+            x_res = x0;
+            x_res_full = x0;
             t_grid = 0;
             t_grid_full = 0;
-            obj.set_x0(obj.model.x0);
+            obj.set_x0(x0);
             obj.clear_history();
             t_current = 0;
             w0 = obj.discrete_time_problem.w.init;

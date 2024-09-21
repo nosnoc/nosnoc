@@ -178,5 +178,12 @@ classdef Options < handle
                 end
             end
         end
+
+        function json = jsonencode(obj,varargin)
+            import casadi.*
+            opts_struct = struct(obj);
+
+            json = jsonencode(opts_struct, varargin{:});
+        end
     end
 end

@@ -44,3 +44,9 @@ qt_temp*
 examples/*/*.pdf
 docs/build
 docs/venv
+examples/*/build
+examples/*/HomotopySolver.*
+examples/*/ProblemOptions.*
+examples/*/*.c
+examples/*/*.json
+examples/*/CMakeLists.txt

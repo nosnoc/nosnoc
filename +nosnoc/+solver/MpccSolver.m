@@ -326,7 +326,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 g_mpcc_fun = Function('g_mpcc', {nlp.w.sym, nlp.p.sym}, {mpcc.g.sym});
                 obj.g_mpcc_fun = g_mpcc_fun;
 
-                 % Get nlpsol plugin
+                % Get nlpsol plugin
                 switch opts.solver
                   case 'ipopt'
                     obj.plugin = nosnoc.solver.plugins.Ipopt();
@@ -1077,6 +1077,38 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
             end
         end
+
+        function generate_cpp_solver(obj, solver_dir)
+            oldwd = pwd;
+            cd(solver_dir);
+            obj.nlp.solver.generate_dependencies([obj.opts.solver_name '_nlp.c']);
+            obj.comp_res_fun.generate([obj.opts.solver_name '_comp.c']);
+            cd(oldwd);
+            solver_json = jsonencode(obj, "PrettyPrint", true, "ConvertInfAndNaN", false);
+            fid = fopen([solver_dir '/solver.json'], "w");
+            fprintf(fid, solver_json);
+            nosnoc_found = {what("nosnoc").path};
+            nosnoc_root = nosnoc_found{1};
+            pyrunfile([nosnoc_root '/codegen_templates/generate_cpp_solver.py ' solver_dir ' ' nosnoc_root])
+        end
+
+        function json = jsonencode(obj, varargin)
+            solver_struct = struct();
+
+            solver_struct.opts = obj.opts;
+            solver_struct.mpcc = obj.mpcc;
+            solver_struct.ind_mpcc = sort(obj.ind_map_w.nlp-1);
+            solver_struct.nlp_lbw = obj.nlp.w.lb;
+            solver_struct.nlp_ubw = obj.nlp.w.ub;
+            solver_struct.nlp_init_lam_w = obj.nlp.w.init_mult;
+            solver_struct.nlp_lbg = obj.nlp.g.lb;
+            solver_struct.nlp_ubg = obj.nlp.g.ub;
+            solver_struct.nlp_init_lam_g = obj.nlp.g.init_mult;
+            solver_struct.nlp_p0 = obj.nlp.p.val;
+            solver_struct.nlp_x0 = obj.nlp.w.init;
+            
+            json = jsonencode(solver_struct, varargin{:});
+        end
     end
 
     methods (Access=protected)
@@ -1101,7 +1133,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             mpcc = obj.mpcc;
             opts = obj.opts;
             plugin = obj.plugin;
-            
             % Update nlp data
             if ~isempty(p.Results.x0)
                 w_init = nlp.w.init;

@@ -312,7 +312,6 @@ classdef Heaviside < vdx.problems.Mpcc
                         if ~opts.right_boundary_point_explicit
                             x_ijk = obj.w.x(ii,jj,opts.n_s+1);
                             z_ijk = obj.w.z(ii,jj,opts.n_s+1);
-                            alpha_ijk = obj.w.alpha(ii,jj,opts.n_s+1);
                             lambda_n_ijk = obj.w.lambda_n(ii,jj,opts.n_s+1);
                             lambda_p_ijk = obj.w.lambda_p(ii,jj,opts.n_s+1);
 
