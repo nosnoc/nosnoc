@@ -16,7 +16,7 @@ Installation for MATLAB
 
 2. Clone this repository::
 
-     git clone --recursive https://github.com/nurkanovic/nosnoc.git
+     git clone --recursive https://github.com/nosnoc/nosnoc.git
 
 3. Open the `nosnoc` folder in Matlab and run the `install_nosnoc` script::
 
@@ -27,4 +27,4 @@ Note that ``IPOPT`` is shipped with ``CasADi``. More information including detai
 Installation for python
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Go to the `nosnoc_py <https://github.com/FreyJo/nosnoc_py>`_ repository for more info.
+Go to the `nosnoc_py <https://github.com/nosnoc/nosnoc_py>`_ repository for more info.
