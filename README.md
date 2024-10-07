@@ -51,7 +51,7 @@ For `CasADi` installation instructions follow visit: https://web.casadi.org/get/
 
 2.   Clone this repository
 ```
-git clone --recursive https://github.com/nurkanovic/nosnoc.git
+git clone --recursive https://github.com/nosnoc/nosnoc.git
 ```
 
 3. Open the `nosnoc` folder in Matlab and run the `install_nosnoc` script
@@ -63,15 +63,15 @@ Note that `IPOPT` is shipped with `CasADi`. More information including detailed 
 
 ### Installation for python
 
-Go to the [nosnoc_py](https://github.com/FreyJo/nosnoc_py) repository for more info.
+Go to the [nosnoc_py](https://github.com/nosnoc/nosnoc_py) repository for more info.
 
 ## Using nosnoc
 
 The interface of **nosnoc** is based on the symbolic modeling framework [CasADi](https://web.casadi.org/). User inputs should be provided as `CasADi` expressions.
 
 To get started, we recommend you look into our example libraries for:
-- [MATLAB](https://github.com/nurkanovic/nosnoc/tree/main/examples/matlab)
-- [Python](https://github.com/FreyJo/nosnoc_py/tree/main/examples)
+- [MATLAB](https://github.com/nosnoc/nosnoc/tree/main/examples/matlab)
+- [Python](https://github.com/nosnoc/nosnoc_py/tree/main/examples)
 
 
 
