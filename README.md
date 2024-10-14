@@ -3,7 +3,7 @@
 The `Python` package `nosnoc_py` with similar functionality is available as well.
 
 
-- Documnetation is [avilable here](https://nosnoc.readthedocs.io/en/latest/index.html). 
+- Documentation is [avilable here](https://nosnoc.readthedocs.io/en/latest/index.html). 
 
 - A detailed overview of the theory and methods behind nosnoc can be found in the course material of the
 [Summer School on Direct Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/teaching/ss2023/summer-school-direct-methods-optimal-control-nonsmooth-systems).
