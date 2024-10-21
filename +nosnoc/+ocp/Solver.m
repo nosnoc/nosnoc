@@ -92,7 +92,8 @@ classdef Solver < handle
                 warning on vdx:indexing:dot_reference_returns_vdx_var
             catch
                 if strcmp(field, 'T_final')
-                    warning("You are trying to get the final time from a non-time-optimal problem. Instead returning the fixed time.")
+                    warning("nosnoc:ocp:Solver:terminal_time_for_non_time_optimal_ocp",...
+                        "You are trying to get the final time from a non-time-optimal problem. Instead returning the fixed time.")
                     ret = obj.discrete_time_problem.p.T.val;
                     return
                 else
