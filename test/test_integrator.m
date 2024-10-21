@@ -1,4 +1,4 @@
-function [results,stats,model,problem_options] = test_integrator(use_fesd, rk_representation, rk_scheme, dcs_mode)
+function [model,problem_options] = test_integrator(use_fesd, rk_representation, rk_scheme, dcs_mode)
 import casadi.*
 % discretization settings
 N_finite_elements = 2;
