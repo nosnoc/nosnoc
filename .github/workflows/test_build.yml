@@ -6,6 +6,9 @@ on:
 jobs:
   # Main job that runs all the tests for NOSNOC in matlab.
   test_nosnoc:
+    strategy:
+      matrix:
+        matlab_version: ["R2021b", "R2022a", "R2022b", "R2023a", "R2023b", "R2024a"]
     runs-on: ubuntu-22.04
 
     steps:
@@ -19,7 +22,7 @@ jobs:
       uses: matlab-actions/setup-matlab@v2.1
       with:
         # NOTE: no longer earliest version to support more property validation functions
-        release: R2021b
+        release: ${{ matrix.matlab_version }}
 
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
