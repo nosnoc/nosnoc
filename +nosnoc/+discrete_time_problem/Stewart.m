@@ -631,8 +631,8 @@ classdef Stewart < vdx.problems.Mpcc
                             for rr=1:opts.n_s
                                 theta_ijr = obj.w.theta(ii,jj,rr);
 
-                                Gi = vertcat(Gij, {lambda_prev});
-                                Hi = vertcat(Hij, {theta_ijr});
+                                Gij = vertcat(Gij, {lambda_prev});
+                                Hij = vertcat(Hij, {theta_ijr});
                             end    
                             for kk=1:(opts.n_s + rbp)
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
