@@ -1,4 +1,4 @@
-function [x_res,t_grid,model,problem_options, solver_options] = test_sliding_mode(rk_representation, rk_scheme, dcs_mode, cross_comp_mode)
+function [x_res,t_grid,integrator,model,problem_options, solver_options] = test_sliding_mode(rk_representation, rk_scheme, dcs_mode, cross_comp_mode)
     import casadi.*
     problem_options = nosnoc.Options();
     solver_options = nosnoc.solver.Options();
