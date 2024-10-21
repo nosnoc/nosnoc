@@ -1,4 +1,4 @@
-function [results,stats,model,problem_options, solver_options] = test_fesd_and_time_options(use_fesd, time_optimal_problem,...
+function [model,problem_options, solver_options] = test_fesd_and_time_options(use_fesd, time_optimal_problem,...
     equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable)
 %TEST_SIMPLE_CAR_MODEL Test the simple car model accross cross
 %complementarity and mpcc modes
@@ -54,10 +54,11 @@ else
 end
 % Solve OCP
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-T = ocp_solver.get('T');
-if ~isempty(results.T) && results.T < 1e-2
+ocp_solver.solve();
+T = ocp_solver.get('T_final');
+if ~isempty(T) && T < 1e-2
     warning('Something went wrong.')
-    disp(results.T)
+    disp(T)
 end
 % disp(results.f_opt)
 end
