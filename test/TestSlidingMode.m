@@ -14,9 +14,9 @@ classdef TestSlidingMode < matlab.unittest.TestCase
             issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 5);
             testCase.verifyThat(@() test_sliding_mode(rk_representation, rk_scheme, dcs_mode, cross_comp_mode), issuesNoWarningsConstraint);
 
-            [results,stats,model,problem_options, solver_options] = issuesNoWarningsConstraint.FunctionOutputs{:};
+            [x_res,t_grid,model,problem_options, solver_options] = issuesNoWarningsConstraint.FunctionOutputs{:};
 
-            vec = [results.x; results.t_grid'];
+            vec = [x_res; t_grid];
             testCase.assertLessThan(min(vecnorm(vec-[0;sqrt(2)], 2)), 1e-5);
         end
     end 

@@ -14,7 +14,6 @@ classdef TestGenericMpcc < matlab.unittest.TestCase
 
             [results,stats] = issuesNoWarningsConstraint.FunctionOutputs{:};
 
-            results.x
             testCase.assertLessThan(vecnorm(results.x-[1;0]), 1e-3);
         end
     end 
