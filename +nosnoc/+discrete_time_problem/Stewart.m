@@ -510,7 +510,7 @@ classdef Stewart < vdx.problems.Mpcc
                             integral_clock_state = 0;
                             for ii=1:opts.N_stages
                                 if opts.local_speed_of_time_variable
-                                    s_sot = obj.d.sot(ii);
+                                    s_sot = obj.w.sot(ii);
                                 else
                                     s_sot = obj.w.sot();
                                 end
@@ -560,7 +560,7 @@ classdef Stewart < vdx.problems.Mpcc
                                 integral_clock_state = 0;
                                 for ii=1:opts.N_stages
                                     if opts.local_speed_of_time_variable
-                                        s_sot = obj.d.sot(ii);
+                                        s_sot = obj.w.sot(ii);
                                     else
                                         s_sot = obj.w.sot();
                                     end
@@ -631,8 +631,8 @@ classdef Stewart < vdx.problems.Mpcc
                             for rr=1:opts.n_s
                                 theta_ijr = obj.w.theta(ii,jj,rr);
 
-                                Gi = vertcat(Gij, {lambda_prev});
-                                Hi = vertcat(Hij, {theta_ijr});
+                                Gij = vertcat(Gij, {lambda_prev});
+                                Hij = vertcat(Hij, {theta_ijr});
                             end    
                             for kk=1:(opts.n_s + rbp)
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);

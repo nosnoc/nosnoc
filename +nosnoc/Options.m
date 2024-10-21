@@ -40,7 +40,7 @@ classdef Options < handle
 
         h % double: Control stage Step size.
         h_k % double: Finite element step size.
-        T % double: Terminal time.
+        T = 1 % double: Terminal time.
 
         N_stages(1,1) {mustBeInteger, mustBePositive} = 1; % int: Number of control stages.
 

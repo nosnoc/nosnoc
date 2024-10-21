@@ -13,7 +13,7 @@ classdef TestIntegrator < matlab.unittest.TestCase
     methods (Test, ParameterCombination = 'exhaustive')
         function test_fesd_integrator(testCase,use_fesd, rk_representation, rk_scheme, dcs_mode)
             import matlab.unittest.constraints.IssuesNoWarnings;
-            issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 4);
+            issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 2);
             testCase.verifyThat(@() test_integrator(use_fesd, rk_representation, rk_scheme, dcs_mode), issuesNoWarningsConstraint);
         end
     end 

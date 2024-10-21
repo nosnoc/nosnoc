@@ -6,16 +6,12 @@ classdef Heaviside < nosnoc.dcs.Base
         lambda_n_sys % cell
         lambda_p % CasADi symbolic variable 
         lambda_p_sys % cell
-        % These are relevant only for lifting. For now wait to implement until re-implementing time-freezing
-        % beta 
-        % gamma
-        % theta
-        % theta_sys
         theta_expr_sys 
 
         z_all
 
         f_x
+        g_alg
         
         dims
 
@@ -134,6 +130,7 @@ classdef Heaviside < nosnoc.dcs.Base
                 lambda00_expr = [lambda00_expr; -min(model.c{ii}, 0); max(model.c{ii},0)];
             end
             g_alg = [g_lp_stationarity];
+            obj.g_alg = g_alg;
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {model.f_q});

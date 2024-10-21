@@ -11,12 +11,13 @@ classdef Stewart < nosnoc.dcs.Base
         z_all % CasADi symbolic variable - all algebraic variables (user provided and Stewart DCS specific)
 
         f_x  % CasADi symbolic expression -  r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems
-        g_Stewart % CasADi symbolic expression - TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
+        g_ind % CasADi symbolic expression - TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
+        g_alg % CasADi symbolic expression - expression for algebraic part of DCS
 
         dims
         % functions specific to the stewart DCS
         g_lp_stationarity_fun % CasADi function - related to DCS
-        g_Stewart_fun % CasADi function - related to DCS
+        g_ind_fun % CasADi function - related to DCS
         lambda00_fun % CasADi function - related to DCS
     end
 
@@ -64,6 +65,7 @@ classdef Stewart < nosnoc.dcs.Base
             for ii = 1:dims.n_sys
                 obj.f_x = obj.f_x + model.F{ii}*obj.theta_sys{ii};
             end
+            obj.g_ind = model.g_ind;
 
             g_lp_stationarity = []; % collects lp_stationarity function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i
             g_convex = []; % equation for the convex multiplers 1 = e' \theta
@@ -83,13 +85,14 @@ classdef Stewart < nosnoc.dcs.Base
                 lambda00_expr = [lambda00_expr; model.g_ind{ii} - min(model.g_ind{ii})];
             end
             g_alg = [g_lp_stationarity;g_convex];
+            obj.g_alg = g_alg;
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {g_alg});
             obj.g_lp_stationarity_fun = Function('g_lp_stationarity', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_lp_stationarity});
-            obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {model.g_ind{:}});
+            obj.g_ind_fun = Function('g_ind', {model.x, model.z, model.v_global, model.p}, {model.g_ind{:}});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.G_path_fun  = Function('G_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.G_path});
