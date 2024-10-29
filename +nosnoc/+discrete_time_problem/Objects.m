@@ -204,9 +204,18 @@ classdef Objects < vdx.problems.Mpcc
                             z_ijk = obj.w.z(ii,jj,kk);
                             lambda_ijk = obj.w.lambda(ii,jj,kk);
                             c_lift_ijk = obj.w.c_lift(ii,jj,kk);
+                            mu_ijk = obj.w.mu(ii,jj,kk);
+                            p_d_ijk = obj.w.p_d(ii,jj,kk);
+                            y1_d_ijk = obj.w.y1_d(ii,jj,kk);
+                            y2_d_ijk = obj.w.y2_d(ii,jj,kk);
+                            alpha_ijk = obj.w.alpha(ii,jj,kk);
+                            tangent_ijk = obj.w.tangent(ii,jj,kk);
+                            normal_ijk = obj.w.normal(ii,jj,kk);
+                            v_t_ijk = obj.w.v_t(ii,jj,kk);
+                            lambda_t_ijk = obj.w.lambda_t(ii,jj,kk);
 
-                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
-                            q_ijk = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
+                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, ui, lambda_ijk, lambda_t_ijk, tangent_ijk, mu_ijk, p_d_ijk, v_global, p);
+                            q_ijk = s_sot*dcs.f_q_fun(x_ijk, z_ijk, u_i, v_global, p);
                             xk = opts.C_rk(1, kk+1) * x_prev;
                             for rr=1:opts.n_s
                                 x_ijr = obj.w.x(ii,jj,rr);
@@ -216,6 +225,10 @@ classdef Objects < vdx.problems.Mpcc
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p), 0, inf};
                             obj.g.c_lift(ii,jj,kk) = {dcs.g_c_lift_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p)};
+                            % also add non-negativity constraint on g_d
+                            obj.g.g_d_nonnegative(ii,jj,kk) = {-model.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk), 0, inf};
+                            % Calculate necessary values for friction
+                            obj.g.friction(ii,jj,kk) = {model.g_friction_fun(x_ijk, ui, lambda_ijk, lambda_t_ijk, mu_ijk, p_d_ijk, normal_ijk, tangent_ijk, v_t_ijk, p)};
 
                             x_ij_end = x_ij_end + opts.D_rk(kk+1)*x_ijk;
                             
@@ -260,8 +273,17 @@ classdef Objects < vdx.problems.Mpcc
                             z_ijk = obj.w.z(ii,jj,kk);
                             lambda_ijk = obj.w.lambda(ii,jj,kk);
                             c_lift_ijk = obj.w.c_lift(ii,jj,kk);
-                           
-                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
+                            mu_ijk = obj.w.mu(ii,jj,kk);
+                            p_d_ijk = obj.w.p_d(ii,jj,kk);
+                            y1_d_ijk = obj.w.y1_d(ii,jj,kk);
+                            y2_d_ijk = obj.w.y2_d(ii,jj,kk);
+                            alpha_ijk = obj.w.alpha(ii,jj,kk);
+                            tangent_ijk = obj.w.tangent(ii,jj,kk);
+                            normal_ijk = obj.w.normal(ii,jj,kk);
+                            v_t_ijk = obj.w.v_t(ii,jj,kk);
+                            lambda_t_ijk = obj.w.lambda_t(ii,jj,kk);
+
+                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, ui, lambda_ijk, lambda_t_ijk, tangent_ijk, mu_ijk, p_d_ijk, v_global, p);
                             q_ijk = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
 
                             x_ij_end = x_ij_end + h*opts.b_rk(kk)*v_ijk;
@@ -269,6 +291,10 @@ classdef Objects < vdx.problems.Mpcc
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p), 0, inf};
                             obj.g.c_lift(ii,jj,kk) = {dcs.g_c_lift_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p)};
+                            % also add non-negativity constraint on g_d
+                            obj.g.g_d_nonnegative(ii,jj,kk) = {-model.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk), 0, inf};
+                            % Calculate necessary values for friction
+                            obj.g.friction(ii,jj,kk) = {model.g_friction_fun(x_ijk, ui, lambda_ijk, lambda_t_ijk, mu_ijk, p_d_ijk, normal_ijk, tangent_ijk, v_t_ijk, p)};
                             
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
@@ -518,6 +544,79 @@ classdef Objects < vdx.problems.Mpcc
                             obj.G.standard_comp(ii,jj, kk) = {lambda_ijk};
                             obj.H.standard_comp(ii,jj, kk) = {c_ijk};
                         end
+                    end
+                end
+            end
+
+            % do (non-cross) complementarity for initial values
+            % get initial distances:
+            x_0 = obj.w.x(0,0,opts.n_s);
+            alpha_0 = obj.w.alpha(0,0,opts.n_s);
+            p_d_0 = obj.w.p_d(0,0,opts.n_s);
+            y1_d_0 = obj.w.y1_d(0,0,opts.n_s);
+            y2_d_0 = obj.w.y2_d(0,0,opts.n_s);
+            mu_0 = obj.w.mu(0,0,opts.n_s);
+
+            obj.G.initial_comp = {-model.g_d_fun(x_0, alpha_0, p_d_0, y1_d_0, y2_d_0)};
+            obj.H.initial_comp = {mu_0};
+
+            % do cross comps for mu with -g_d
+            if 0
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(ii)
+                        Gij = 0;
+                        Hij = mu_prev;
+                        for kk=1:opts.n_s
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            alpha_ijk = obj.w.alpha(ii,jj,kk);
+                            p_d_ijk = obj.w.p_d(ii,jj,kk);
+                            y1_d_ijk = obj.w.y1_d(ii,jj,kk);
+                            y2_d_ijk = obj.w.y2_d(ii,jj,kk);
+                            mu_ijk = obj.w.mu(ii,jj,kk);
+                            Gij = Gij + -model.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk);
+                            Hij = Hij + mu_ijk; 
+                        end
+                        obj.G.cross_comp_mu_g_d(ii,jj) = {10*Gij};
+                        obj.H.cross_comp_mu_g_d(ii,jj) = {10*Hij};
+                        mu_prev = obj.w.mu(ii,jj,opts.n_s);
+                    end
+                end
+            else
+                for ii=1:opts.N_stages
+                    for jj=1:opts.N_finite_elements(ii)
+                        Gij = [];
+                        Hij = [];
+                        for kk=1:opts.n_s
+                            x_ijk = obj.w.x(ii,jj,kk);
+                            alpha_ijk = obj.w.alpha(ii,jj,kk);
+                            p_d_ijk = obj.w.p_d(ii,jj,kk);
+                            y1_d_ijk = obj.w.y1_d(ii,jj,kk);
+                            y2_d_ijk = obj.w.y2_d(ii,jj,kk);
+                            mu_ijk = obj.w.mu(ii,jj,kk);
+                            Gij = [Gij;-model.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk)];
+                            Hij = [Hij;mu_ijk]; 
+                        end
+                        obj.G.cross_comp_mu_g_d(ii,jj) = {10*Gij};
+                        obj.H.cross_comp_mu_g_d(ii,jj) = {10*Hij};
+                        mu_prev = obj.w.mu(ii,jj,opts.n_s);
+                    end
+                end
+            end
+
+            % Frictional contacts
+            for ii=1:opts.N_stages
+                for jj=1:opts.N_finite_elements(ii)
+                    for kk=1:opts.n_s
+                        v_t_ijk = obj.w.v_t(ii,jj,kk);
+                        lambda_ijk = obj.w.lambda(ii,jj,kk);
+                        lambda_t_ijk = obj.w.lambda_t(ii,jj,kk);
+                        gamma_f_ijk = obj.w.gamma_f(ii,jj,kk);
+                        tangent_ijk = obj.w.tangent(ii,jj,kk);
+
+                        obj.g.nonnegative_G_friction(ii,jj,kk) = {model.G_friction_fun(lambda_ijk, lambda_t_ijk, v_t_ijk, gamma_f_ijk), 0, inf};
+                        
+                        obj.G.friction_comp(ii,jj,kk) = {model.G_friction_fun(lambda_ijk, lambda_t_ijk, v_t_ijk, gamma_f_ijk)};
+                        obj.H.friction_comp(ii,jj,kk) = {model.H_friction_fun(lambda_t_ijk, gamma_f_ijk)};
                     end
                 end
             end
