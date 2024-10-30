@@ -20,7 +20,7 @@ ball1.x_dot = [1;1];
 ellipse2.x0 = [0;0;0];
 ellipse2.x_dot = [0;0;0];
 
-model.addContact(ball1, ellipse2);
+model.addContact(ball1, ellipse2, 0.1);
 
 model.r = 0.01;
 
