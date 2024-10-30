@@ -1,5 +1,5 @@
 classdef Ball < nosnoc.objects.Object
-% A shape defined by possibly a union of half-space convex polygons.
+% A shape defined by ball in 2 or 3 dimensions.
     properties(GetAccess=public, SetAccess=private)
         c
 
