@@ -55,6 +55,7 @@ classdef Objects < nosnoc.dcs.Base
             obj.lambda = model.lambda;
             % All variables created at model stage for ease of use
             % TODO: Perhaps this should be moved but for now it is OK
+            obj.dims = dims;
         end
 
         function generate_equations(obj, opts)

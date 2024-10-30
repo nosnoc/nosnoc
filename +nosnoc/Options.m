@@ -150,7 +150,10 @@ classdef Options < handle
         ub_alpha_vt(1,1) double {mustBeReal, mustBePositive} = inf % double: Max value fo tangential velocity step function in FESD-J reformulation.
 
         %--------------------- End Max Values ---------------------%
-       
+
+        lb_sdf_pts(1,1) double = -inf;
+        ub_sdf_pts(1,1) double = inf;
+        
         % boolean: If true then the convex multiplier expressions are lifted in the Heaviside step reformulation.
         %
         % Warning:
