@@ -9,7 +9,7 @@ classdef Objects < vdx.problems.Mpcc
     end
 
     methods
-        function obj = Gcs(dcs, opts)
+        function obj = Objects(dcs, opts)
             obj = obj@vdx.problems.Mpcc();
             obj.model = dcs.model;
             obj.dcs = dcs;

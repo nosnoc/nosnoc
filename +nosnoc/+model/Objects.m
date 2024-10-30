@@ -74,7 +74,10 @@ classdef Objects < nosnoc.model.Base
             import casadi.*
             verify_and_backfill@nosnoc.model.Base(obj,opts);
 
+            dims = obj.dims;
+            
             dims.n_c = size(obj.c, 1);
+            dims.n_lambda = dims.n_c;
             dims.n_y1d = size(obj.y1_d, 1);
             dims.n_y2d = size(obj.y2_d, 1);
             dims.n_mu = size(obj.mu, 1);

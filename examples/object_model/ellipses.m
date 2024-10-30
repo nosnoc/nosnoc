@@ -56,8 +56,14 @@ solver_opts.complementarity_tol = 1e-5;
 solver_opts.polishing_step = 1;
 solver_opts.print_level = 5;
 
+opts.preprocess();
 model.verify_and_backfill(opts);
 
 dcs = nosnoc.dcs.Objects(model);
 dcs.generate_variables(opts);
 dcs.generate_equations(opts);
+
+dtp = nosnoc.discrete_time_problem.Objects(dcs, opts);
+
+dtp.create_variables()
+
