@@ -1,4 +1,7 @@
 classdef Object < handle & matlab.mixin.Heterogeneous
+% Base class for nosnoc objects:
+% - Ball (2 or 3 dimensions)
+% - (union of) Ellipsoid (2 or 3 dimensions)
     properties(GetAccess=public, SetAccess=protected)
         n_dim
         name

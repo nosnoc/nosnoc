@@ -1,5 +1,5 @@
 classdef Ellipse < nosnoc.objects.Object
-% A shape defined by possibly a union of half-space convex polygons.
+% A shape defined by possibly a union of ellipses (or in 3 dimensions ellipsoids).
     properties(GetAccess=public, SetAccess=private)
         N
 
