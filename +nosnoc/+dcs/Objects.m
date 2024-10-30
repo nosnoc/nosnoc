@@ -86,6 +86,9 @@ classdef Objects < nosnoc.dcs.Base
                 obj.g_friction = g_friction_sub_fun(obj.f_x);
             end
 
+            dims.n_g_d = size(model.g_d, 1);
+            obj.dims = dims;
+
             obj.g_kkt_fun = Function('g_kkt', {model.x, model.mu, model.p_d, model.y1_d, model.y2_d}, {model.g_kkt});
             obj.g_d_fun = Function('g_d', {model.x, model.alpha, model.p_d, model.y1_d, model.y2_d}, {model.g_d});
             obj.normal_fun = Function('normal', {model.x, model.mu, model.p_d, model.p}, {model.normal});
@@ -93,10 +96,10 @@ classdef Objects < nosnoc.dcs.Base
             obj.G_friction_fun = Function('G_friction', {model.lambda, model.lambda_t, model.v_t, model.gamma_f}, {model.G_friction});
             obj.H_friction_fun = Function('H_friction', {model.lambda_t, model.gamma_f}, {model.H_friction});
             obj.f_x_fun = Function('f_x', {model.x, model.z, model.u, model.lambda, model.lambda_t, model.tangent, model.mu, model.p_d, model.v_global, model.p}, {obj.f_x});
-            obj.c_fun = Function('c_fun', {model.x, obj.c_lift, model.z, model.v_global, model.p}, {c});
+            obj.c_fun = Function('c_fun', {model.x, obj.c_lift, model.alpha, model.z, model.v_global, model.p}, {c});
             obj.g_c_lift_fun = Function('c_fun', {model.x, obj.c_lift, model.alpha, model.z, model.v_global, model.p}, {g_c_lift});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
-            obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p_global, model.p_time_var}, {model.g_path});
+            obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path});
             obj.g_terminal_fun = Function('g_terminal', {model.x, model.z, model.v_global, model.p_global}, {model.g_terminal});
             obj.f_q_fun = Function('f_q', {model.x, model.z, model.u, model.v_global, model.p}, {model.f_q});
             obj.f_q_T_fun = Function('f_q_T', {model.x, model.z, model.v_global, model.p}, {model.f_q_T});

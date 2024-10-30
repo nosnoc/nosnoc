@@ -99,6 +99,7 @@ classdef Objects < vdx.problems.Mpcc
             obj.w.p_d(0,0,opts.n_s) = {{'p_d_0', dims.n_pd},opts.lb_sdf_pts,opts.ub_sdf_pts};
             obj.w.alpha(0,0,opts.n_s) = {{'alpha_0', dims.n_alpha},-inf,inf,2};
             obj.w.mu(0,0,opts.n_s) = {{'mu_0', dims.n_mu},0,inf, 1};
+            obj.w.d_lift(0,0,opts.n_s) = {{'d_lift', dims.n_g_d}, 0, inf, 0};
 
             for ii=1:opts.N_stages
                 obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
@@ -131,6 +132,8 @@ classdef Objects < vdx.problems.Mpcc
                 obj.w.v_t(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'v_t', dims.n_v_t}, -inf, inf, 0};
                 obj.w.lambda_t(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'lambda_t', dims.n_lambda_t}, 0, inf, 0};
                 obj.w.gamma_f(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'gamma_f', dims.n_gamma_f}, 0, inf, 0};
+
+                obj.w.d_lift(ii,1:opts.N_finite_elements(ii),1:opts.n_s) = {{'d_lift', dims.n_g_d}, 0, inf, 0};
             end
         end
 
@@ -156,12 +159,14 @@ classdef Objects < vdx.problems.Mpcc
             y1_d_0 = obj.w.y1_d(0,0,opts.n_s);
             y2_d_0 = obj.w.y2_d(0,0,opts.n_s);
             alpha_0 = obj.w.alpha(0,0,opts.n_s);
+            d_lift_0 = obj.w.d_lift(0,0,opts.n_s);
             
             obj.g.z(0,0,opts.n_s) = {dcs.g_z_fun(x_0, z_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
-            obj.g.c_lb(0,0,opts.n_s) = {dcs.c_fun(x_0, c_lift_0, z_0, v_global, [p_global;obj.p.p_time_var(1)]), 0, inf};
-            obj.g.c_lift(0,0,opts.n_s) = {dcs.g_c_lift_fun(x_0, c_lift_0, z_0, v_global, [p_global;obj.p.p_time_var(1)])};
-            obj.g.distance_kkt(0,0,opts.n_s) = {model.g_kkt_fun(x_0, mu_0, p_d_0, y1_d_0, y2_d_0)};
-            obj.g.g_d_nonnegative(0,0,opts.n_s) = {-model.g_d_fun(x_0, alpha_0, p_d_0, y1_d_0, y2_d_0), 0, inf};
+            obj.g.c_lb(0,0,opts.n_s) = {dcs.c_fun(x_0, c_lift_0, alpha_0, z_0, v_global, [p_global;obj.p.p_time_var(1)]), 0, inf};
+            obj.g.c_lift(0,0,opts.n_s) = {dcs.g_c_lift_fun(x_0, c_lift_0, alpha_0, z_0, v_global, [p_global;obj.p.p_time_var(1)])};
+            obj.g.distance_kkt(0,0,opts.n_s) = {dcs.g_kkt_fun(x_0, mu_0, p_d_0, y1_d_0, y2_d_0)};
+            %obj.g.g_d_nonnegative(0,0,opts.n_s) = {-dcs.g_d_fun(x_0, alpha_0, p_d_0, y1_d_0, y2_d_0), 0, inf};
+            obj.g.d_lift(0,0,opts.n_s) = {d_lift_0+dcs.g_d_fun(x_0, alpha_0, p_d_0, y1_d_0, y2_d_0)};
             
             x_prev = obj.w.x(0,0,opts.n_s);
             for ii=1:opts.N_stages
@@ -213,8 +218,9 @@ classdef Objects < vdx.problems.Mpcc
                             normal_ijk = obj.w.normal(ii,jj,kk);
                             v_t_ijk = obj.w.v_t(ii,jj,kk);
                             lambda_t_ijk = obj.w.lambda_t(ii,jj,kk);
+                            d_lift_ijk = obj.w.d_lift(ii,jj,kk);
 
-                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, ui, lambda_ijk, lambda_t_ijk, tangent_ijk, mu_ijk, p_d_ijk, v_global, p);
+                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, u_i, lambda_ijk, lambda_t_ijk, tangent_ijk, mu_ijk, p_d_ijk, v_global, p);
                             q_ijk = s_sot*dcs.f_q_fun(x_ijk, z_ijk, u_i, v_global, p);
                             xk = opts.C_rk(1, kk+1) * x_prev;
                             for rr=1:opts.n_s
@@ -223,12 +229,14 @@ classdef Objects < vdx.problems.Mpcc
                             end
                             obj.g.dynamics(ii,jj,kk) = {h * f_ijk - xk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
-                            obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p), 0, inf};
-                            obj.g.c_lift(ii,jj,kk) = {dcs.g_c_lift_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p)};
+                            obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, c_lift_ijk, alpha_ijk, z_ijk, v_global, p), 0, inf};
+                            obj.g.c_lift(ii,jj,kk) = {dcs.g_c_lift_fun(x_ijk, c_lift_ijk, alpha_ijk, z_ijk, v_global, p)};
+                            obj.g.distance_kkt(ii,jj,kk) = {dcs.g_kkt_fun(x_ijk, mu_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk)};
                             % also add non-negativity constraint on g_d
-                            obj.g.g_d_nonnegative(ii,jj,kk) = {-model.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk), 0, inf};
+                            %obj.g.g_d_nonnegative(ii,jj,kk) = {-dcs.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk), 0, inf};
+                            obj.g.d_lift(ii,jj,kk) = {d_lift_ijk+dcs.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk)};
                             % Calculate necessary values for friction
-                            obj.g.friction(ii,jj,kk) = {model.g_friction_fun(x_ijk, ui, lambda_ijk, lambda_t_ijk, mu_ijk, p_d_ijk, normal_ijk, tangent_ijk, v_t_ijk, p)};
+                            obj.g.friction(ii,jj,kk) = {dcs.g_friction_fun(x_ijk, u_i, lambda_ijk, lambda_t_ijk, mu_ijk, p_d_ijk, normal_ijk, tangent_ijk, v_t_ijk, p)};
 
                             x_ij_end = x_ij_end + opts.D_rk(kk+1)*x_ijk;
                             
@@ -283,18 +291,19 @@ classdef Objects < vdx.problems.Mpcc
                             v_t_ijk = obj.w.v_t(ii,jj,kk);
                             lambda_t_ijk = obj.w.lambda_t(ii,jj,kk);
 
-                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, ui, lambda_ijk, lambda_t_ijk, tangent_ijk, mu_ijk, p_d_ijk, v_global, p);
+                            f_ijk = s_sot*dcs.f_x_fun(x_ijk, z_ijk, u_i, lambda_ijk, lambda_t_ijk, tangent_ijk, mu_ijk, p_d_ijk, v_global, p);
                             q_ijk = s_sot*dcs.f_q_fun(x_ijk, z_ijk, lambda_ijk, u_i, v_global, p);
 
                             x_ij_end = x_ij_end + h*opts.b_rk(kk)*v_ijk;
                             obj.g.v(ii,jj,kk) = {f_ijk - v_ijk};
                             obj.g.z(ii,jj,kk) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
-                            obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p), 0, inf};
-                            obj.g.c_lift(ii,jj,kk) = {dcs.g_c_lift_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p)};
+                            obj.g.c_lb(ii,jj,kk) = {dcs.c_fun(x_ijk, c_lift_ijk, alpha_ijk, z_ijk, v_global, p), 0, inf};
+                            obj.g.c_lift(ii,jj,kk) = {dcs.g_c_lift_fun(x_ijk, c_lift_ijk, alpha_ijk, z_ijk, v_global, p)};
+                            obj.g.distance_kkt(ii,jj,kk) = {dcs.g_kkt_fun(x_ijk, mu_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk)};
                             % also add non-negativity constraint on g_d
-                            obj.g.g_d_nonnegative(ii,jj,kk) = {-model.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk), 0, inf};
+                            obj.g.g_d_nonnegative(ii,jj,kk) = {-dcs.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk), 0, inf};
                             % Calculate necessary values for friction
-                            obj.g.friction(ii,jj,kk) = {model.g_friction_fun(x_ijk, ui, lambda_ijk, lambda_t_ijk, mu_ijk, p_d_ijk, normal_ijk, tangent_ijk, v_t_ijk, p)};
+                            obj.g.friction(ii,jj,kk) = {dcs.g_friction_fun(x_ijk, u_i, lambda_ijk, lambda_t_ijk, mu_ijk, p_d_ijk, normal_ijk, tangent_ijk, v_t_ijk, p)};
                             
                             if opts.g_path_at_stg
                                 obj.g.path(ii,jj,kk) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
@@ -398,7 +407,8 @@ classdef Objects < vdx.problems.Mpcc
             z_prev = obj.w.z(0,0,opts.n_s);
             lambda_prev = obj.w.lambda(0,0,opts.n_s);
             c_lift_prev = obj.w.c_lift(0,0,opts.n_s);
-            c_prev = dcs.c_fun(x_prev, c_lift_prev, z_prev, v_global, [p_global;obj.p.p_time_var(1)]);
+            alpha_prev = obj.w.alpha(0,0,opts.n_s);
+            c_prev = dcs.c_fun(x_prev, c_lift_prev, alpha_prev, z_prev, v_global, [p_global;obj.p.p_time_var(1)]);
 
             if opts.use_fesd
                 switch opts.cross_comp_mode
@@ -413,7 +423,8 @@ classdef Objects < vdx.problems.Mpcc
                                 x_ijr = obj.w.x(ii,jj,rr);
                                 z_ijr = obj.w.z(ii,jj,rr);
                                 c_lift_ijr = obj.w.c_lift(ii,jj,rr);
-                                c_ijr = dcs.c_fun(x_ijr, c_lift_ijr, z_ijr, v_global, p);
+                                alpha_ijr = obj.w.alpha(ii,jj,rr);
+                                c_ijr = dcs.c_fun(x_ijr, c_lift_ijr, alpha_ijr, z_ijr, v_global, p);
 
                                 Gij = vertcat(Gij, {lambda_prev});
                                 Hij = vertcat(Hij, {c_ijr});
@@ -430,7 +441,8 @@ classdef Objects < vdx.problems.Mpcc
                                     x_ijr = obj.w.x(ii,jj,rr);
                                     z_ijr = obj.w.z(ii,jj,rr);
                                     c_lift_ijr = obj.w.c_lift(ii,jj,rr);
-                                    c_ijr = dcs.c_fun(x_ijr, c_lift_ijr, z_ijr, v_global, p);
+                                    alpha_ijr = obj.w.alpha(ii,jj,rr);
+                                    c_ijr = dcs.c_fun(x_ijr, c_lift_ijr, alpha_ijr, z_ijr, v_global, p);
                                     
                                     Gij = vertcat(Gij, {lambda_ijk});
                                     Hij = vertcat(Hij, {c_ijr});
@@ -442,7 +454,8 @@ classdef Objects < vdx.problems.Mpcc
                             x_prev = obj.w.x(ii,jj,opts.n_s + rbp);
                             z_prev = obj.w.z(ii,jj,opts.n_s + rbp);
                             c_lift_prev = obj.w.c_lift(ii,jj,opts.n_s + rbp);
-                            c_prev = dcs.c_fun(x_prev, c_lift_prev, z_prev, v_global, p);
+                            alpha_prev = obj.w.alpha(ii,jj,opts.n_s + rbp);
+                            c_prev = dcs.c_fun(x_prev, c_lift_prev, alpha_prev, z_prev, v_global, p);
                         end
                     end
                   case CrossCompMode.FE_STAGE
@@ -457,7 +470,8 @@ classdef Objects < vdx.problems.Mpcc
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
                                 c_lift_ijk = obj.w.c_lift(ii,jj,kk);
-                                c_ijk = dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p);
+                                alpha_ijk = obj.w.alpha(ii,jj,kk);
+                                c_ijk = dcs.c_fun(x_ijk, c_lift_ijk, alpha_ijk, z_ijk, v_global, p);
 
                                 Gij = vertcat(Gij, {sum_lambda});
                                 Hij = vertcat(Hij, {c_ijk});
@@ -468,7 +482,8 @@ classdef Objects < vdx.problems.Mpcc
                             x_prev = obj.w.x(ii,jj,opts.n_s + rbp);
                             z_prev = obj.w.z(ii,jj,opts.n_s + rbp);
                             c_lift_prev = obj.w.c_lift(ii,jj,opts.n_s + rbp);
-                            c_prev = dcs.c_fun(x_prev, c_lift_prev, z_prev, v_global, p);
+                            alpha_prev = obj.w.alpha(ii,jj,opts.n_s + rbp);
+                            c_prev = dcs.c_fun(x_prev, c_lift_prev, alpha_prev, z_prev, v_global, p);
                         end
                     end
                   case CrossCompMode.STAGE_FE
@@ -481,7 +496,8 @@ classdef Objects < vdx.problems.Mpcc
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
                                 c_lift_ijk = obj.w.c_lift(ii,jj,kk);
-                                c_ijk = dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p);
+                                alpha_ijk = obj.w.c_lift(ii,jj,kk);
+                                c_ijk = dcs.c_fun(x_ijk, c_lift_ijk, alpha_ijk, z_ijk, v_global, p);
                                 sum_c = sum_c + c_ijk;
                             end
                             Gij = {lambda_prev};
@@ -498,7 +514,8 @@ classdef Objects < vdx.problems.Mpcc
                             x_prev = obj.w.x(ii,jj,opts.n_s + rbp);
                             z_prev = obj.w.z(ii,jj,opts.n_s + rbp);
                             c_lift_prev = obj.w.c_lift(ii,jj,opts.n_s + rbp);
-                            c_prev = dcs.c_fun(x_prev, c_lift_prev, z_prev, v_global, p);
+                            alpha_prev = obj.w.alpha(ii,jj,opts.n_s + rbp);
+                            c_prev = dcs.c_fun(x_prev, c_lift_prev, alpha_prev, z_prev, v_global, p);
                         end
                     end
                   case CrossCompMode.FE_FE
@@ -512,7 +529,8 @@ classdef Objects < vdx.problems.Mpcc
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
                                 c_lift_ijk = obj.w.c_lift(ii,jj,kk);
-                                c_ijk = dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p);
+                                alpha_ijk = obj.w.c_lift(ii,jj,kk);
+                                c_ijk = dcs.c_fun(x_ijk, c_lift_ijk, alpha_ijk, z_ijk, v_global, p);
                                 sum_c = sum_c + c_ijk;
                             end
                             obj.G.cross_comp(ii,jj) = {sum_lambda};
@@ -521,7 +539,8 @@ classdef Objects < vdx.problems.Mpcc
                             x_prev = obj.w.x(ii,jj,opts.n_s + rbp);
                             z_prev = obj.w.z(ii,jj,opts.n_s + rbp);
                             c_lift_prev = obj.w.c_lift(ii,jj,opts.n_s + rbp);
-                            c_prev = dcs.c_fun(x_prev, c_lift_prev, z_prev, v_global, p);
+                            alpha_prev = obj.w.alpha(ii,jj,opts.n_s + rbp);
+                            c_prev = dcs.c_fun(x_prev, c_lift_prev, alpha_prev, z_prev, v_global, p);
                         end
                     end
                 end
@@ -556,8 +575,10 @@ classdef Objects < vdx.problems.Mpcc
             y1_d_0 = obj.w.y1_d(0,0,opts.n_s);
             y2_d_0 = obj.w.y2_d(0,0,opts.n_s);
             mu_0 = obj.w.mu(0,0,opts.n_s);
+            d_lift_0 = obj.w.d_lift(0,0,opts.n_s);
 
-            obj.G.initial_comp = {-model.g_d_fun(x_0, alpha_0, p_d_0, y1_d_0, y2_d_0)};
+            %obj.G.initial_comp = {-dcs.g_d_fun(x_0, alpha_0, p_d_0, y1_d_0, y2_d_0)};
+            obj.G.initial_comp = {d_lift_0};
             obj.H.initial_comp = {mu_0};
 
             % do cross comps for mu with -g_d
@@ -573,7 +594,7 @@ classdef Objects < vdx.problems.Mpcc
                             y1_d_ijk = obj.w.y1_d(ii,jj,kk);
                             y2_d_ijk = obj.w.y2_d(ii,jj,kk);
                             mu_ijk = obj.w.mu(ii,jj,kk);
-                            Gij = Gij + -model.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk);
+                            Gij = Gij + -dcs.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk);
                             Hij = Hij + mu_ijk; 
                         end
                         obj.G.cross_comp_mu_g_d(ii,jj) = {10*Gij};
@@ -593,7 +614,9 @@ classdef Objects < vdx.problems.Mpcc
                             y1_d_ijk = obj.w.y1_d(ii,jj,kk);
                             y2_d_ijk = obj.w.y2_d(ii,jj,kk);
                             mu_ijk = obj.w.mu(ii,jj,kk);
-                            Gij = [Gij;-model.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk)];
+                            d_lift_ijk = obj.w.d_lift(ii,jj,kk);
+                            %Gij = [Gij;-dcs.g_d_fun(x_ijk, alpha_ijk, p_d_ijk, y1_d_ijk, y2_d_ijk)];
+                            Gij = [Gij;d_lift_ijk];
                             Hij = [Hij;mu_ijk]; 
                         end
                         obj.G.cross_comp_mu_g_d(ii,jj) = {10*Gij};
@@ -613,10 +636,10 @@ classdef Objects < vdx.problems.Mpcc
                         gamma_f_ijk = obj.w.gamma_f(ii,jj,kk);
                         tangent_ijk = obj.w.tangent(ii,jj,kk);
 
-                        obj.g.nonnegative_G_friction(ii,jj,kk) = {model.G_friction_fun(lambda_ijk, lambda_t_ijk, v_t_ijk, gamma_f_ijk), 0, inf};
+                        obj.g.nonnegative_G_friction(ii,jj,kk) = {dcs.G_friction_fun(lambda_ijk, lambda_t_ijk, v_t_ijk, gamma_f_ijk), 0, inf};
                         
-                        obj.G.friction_comp(ii,jj,kk) = {model.G_friction_fun(lambda_ijk, lambda_t_ijk, v_t_ijk, gamma_f_ijk)};
-                        obj.H.friction_comp(ii,jj,kk) = {model.H_friction_fun(lambda_t_ijk, gamma_f_ijk)};
+                        obj.G.friction_comp(ii,jj,kk) = {dcs.G_friction_fun(lambda_ijk, lambda_t_ijk, v_t_ijk, gamma_f_ijk)};
+                        obj.H.friction_comp(ii,jj,kk) = {dcs.H_friction_fun(lambda_t_ijk, gamma_f_ijk)};
                     end
                 end
             end
