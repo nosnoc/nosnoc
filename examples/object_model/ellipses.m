@@ -3,7 +3,7 @@ close all
 import casadi.*
 
 T = 20.0;
-N_stages = 30;
+N_stages = 40;
 N_finite_elements = 4;
 %% Define (uncontrolled for now) projected system
 model = nosnoc.model.Objects;
@@ -31,14 +31,14 @@ model.r = 0.01;
 opts.T = T;
 opts.N_stages = N_stages;
 opts.N_finite_elements = N_finite_elements;
-opts.n_s = 4;
+opts.n_s = 2;
 opts.cross_comp_mode = CrossCompMode.FE_FE;
 %opts.step_equilibration = 'mlcp';
 opts.gamma_h = 0.9;
 
 model.f_q = u'*diag([1e-1,1e-1])*u;
 ball1_target = [-3;-3];
-ellipse_target = [0;0;2*pi];
+ellipse_target = [1;1;2*pi];
 x_target = vertcat(ball1_target, ellipse_target);
 model.f_q_T = (model.x-x_target)'*diag([1e-1,1e-1,1e2,1e2,1e3])*(model.x-x_target);
 
@@ -52,8 +52,8 @@ solver_opts.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 solver_opts.opts_casadi_nlp.ipopt.acceptable_iter = 1;
 solver_opts.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
 solver_opts.warm_start_duals = true;
-solver_opts.complementarity_tol = 1e-5;
-solver_opts.polishing_step = 1;
+solver_opts.complementarity_tol = 1e-9;
+%solver_opts.polishing_step = 1;
 solver_opts.print_level = 5;
 
 opts.preprocess();
@@ -65,5 +65,26 @@ dcs.generate_equations(opts);
 
 dtp = nosnoc.discrete_time_problem.Objects(dcs, opts);
 
-dtp.create_variables()
+dtp.create_solver(solver_opts);
+
+dtp.solve();
+
+x_res = dtp.w.x(0:opts.N_stages,0:N_finite_elements,opts.n_s).res;
+u_res = dtp.w.u(1:opts.N_stages).res;
+pd_res = dtp.w.p_d(0:opts.N_stages,0:N_finite_elements,opts.n_s).res;
+h_res = dtp.w.h.res;
+
+pgon1 = ball1.to_polygon();
+pgon2 = ellipse2.to_polygon(model.r);
+
+facecolor1 = [0 0.4470 0.7410];
+linecolor1 = facecolor1*0.7;
+facecolor2 = [0.8500 0.3250 0.0980];
+linecolor2 = facecolor2*0.7;
+
+fig = figure('Position', [10 10 1600 800]);
+
+indices = {1:2, 3:5};
+
+plot_pds_sdf_example(h_res, x_res, pd_res, indices, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2,}, fig, 'ellipse_spinning_friction');
 
