@@ -286,8 +286,9 @@ classdef Objects < nosnoc.model.Base
                         ball.x_dot = ball.x_dot - lambda_t(1)*tangent + lambda_t(2)*tangent;
                         
                         g_friction = [normal_lift - [normal_ball;normal_ellipse(1:2)]; % Lift normal (helps with convergence) TODO(@anton) allow for not lifting
+
                             tangent - [-normal_lift(2);normal_lift(1)]; % get tangent (lifted again) TODO(@anton) allow for not lifting
-                            v_t(1) - (dot(ellipse.x_dot_lift(1:2), tangent)/dot(tangent,tangent) + ellipse.x_dot_lift(3)*norm(p_d - ellipse.c)); % Tangent velocities of both objects 
+                            v_t(1) - (dot(ellipse.x_dot_lift(1:2), tangent)/dot(tangent,tangent) + ellipse.x_dot_lift(3)*sqrt(max(sum((p_d - ellipse.c).^2),1e-9))); % Tangent velocities of both objects 
                             v_t(2) - (dot(ball.x_dot_lift, tangent)/dot(tangent,tangent))];
                         obj.g_friction = [obj.g_friction; g_friction];
                         

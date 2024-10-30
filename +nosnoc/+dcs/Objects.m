@@ -92,7 +92,7 @@ classdef Objects < nosnoc.dcs.Base
             obj.g_kkt_fun = Function('g_kkt', {model.x, model.mu, model.p_d, model.y1_d, model.y2_d}, {model.g_kkt});
             obj.g_d_fun = Function('g_d', {model.x, model.alpha, model.p_d, model.y1_d, model.y2_d}, {model.g_d});
             obj.normal_fun = Function('normal', {model.x, model.mu, model.p_d, model.p}, {model.normal});
-            obj.g_friction_fun = Function('g_friction', {model.x, model.u, model.lambda, model.lambda_t, model.mu, model.p_d, model.normal_lift, model.tangent, model.v_t, model.p}, {model.g_friction});
+            obj.g_friction_fun = Function('g_friction', {model.x, model.u, model.lambda, model.lambda_t, model.mu, model.p_d, model.normal_lift, model.tangent, model.v_t, model.p}, {obj.g_friction});
             obj.G_friction_fun = Function('G_friction', {model.lambda, model.lambda_t, model.v_t, model.gamma_f}, {model.G_friction});
             obj.H_friction_fun = Function('H_friction', {model.lambda_t, model.gamma_f}, {model.H_friction});
             obj.f_x_fun = Function('f_x', {model.x, model.z, model.u, model.lambda, model.lambda_t, model.tangent, model.mu, model.p_d, model.v_global, model.p}, {obj.f_x});
