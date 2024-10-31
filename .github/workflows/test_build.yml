@@ -9,7 +9,13 @@ jobs:
     strategy:
       matrix:
         matlab_version: ["R2021b", "R2022a", "R2022b", "R2023a", "R2023b", "R2024a"]
-        casadi_version: ["3.5.5", "3.6.7"]
+        casadi:
+          - version: "3.5.5"
+            file: "casadi-linux-matlabR2014b-v3.5.5.tar.gz"
+            extract: "tar -zxvf"
+          - version: "3.6.7"
+            file: "casadi-3.6.7-linux64-matlab2018b.zip"
+            extract: "unzip"
     runs-on: ubuntu-22.04
 
     steps:
@@ -31,8 +37,8 @@ jobs:
       uses: robinraju/release-downloader@v1.6
       with:
         repository: "casadi/casadi"
-        tag: ${{ matrix.casadi_version }}
-        fileName: "casadi-linux-matlabR2014b-v${{ matrix.casadi_version }}.tar.gz"
+        tag: ${{ matrix.casadi.version }}
+        fileName: ${{ matrix.casadi.file }}
 
     # untar the casadi 3.5.5 release and then add it to the matlab path.
     - name: Install CasADi
@@ -40,7 +46,7 @@ jobs:
       run: |
         mkdir casadi
         cd casadi
-        tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v${{ matrix.casadi_version }}.tar.gz .
+        ${{ matrix.casadi.extract}} $GITHUB_WORKSPACE/${{ matrix.casadi.file }}
         echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/casadi" >> $GITHUB_ENV
 
     # Run matlab tests from the test directory and dump the results in junit format.
