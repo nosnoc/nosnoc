@@ -3,7 +3,7 @@
 The `Python` package `nosnoc_py` with similar functionality is available as well.
 
 
-- Documnetation is [avilable here](https://nosnoc.readthedocs.io/en/latest/index.html). 
+- Documentation is [available here](https://nosnoc.readthedocs.io/en/latest/index.html). 
 
 - A detailed overview of the theory and methods behind nosnoc can be found in the course material of the
 [Summer School on Direct Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/teaching/ss2023/summer-school-direct-methods-optimal-control-nonsmooth-systems).
@@ -42,7 +42,7 @@ Users may directly provide a DCS or the problem in a standard form which is auto
 
 ## Installation
 
-**nosnoc** requires `CasADi` version 3.5.5 and Matlab version R2021b or later.
+**nosnoc** requires `CasADi` version >=3.5.5 and Matlab version >=R2021b, <=R2024b.
 
 ### Installation for MATLAB
 
@@ -159,7 +159,7 @@ Mathematical programming, 2006
 
 ## Contact
 
-If you have questions, remarks, or comments, you are strongly encouraged to report them by creating a new issue on this Github page.
+If you have questions, remarks, or comments, you are strongly encouraged to report them by creating a new issue on this GitHub page.
 
 Feel free to contact one of the main developers directly: 
 Armin Nurkanović ([armin.nurkanovic@imtek.uni-freiburg.de](mailto:armin.nurkanovic@imtek.uni-freiburg.de)),
