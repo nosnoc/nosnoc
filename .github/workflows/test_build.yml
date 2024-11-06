@@ -86,6 +86,7 @@ jobs:
       if: ${{ matrix.matlab_version == 'R2024a' && matrix.casadi.version == '3.6.7' }}
       uses: thollander/actions-comment-pull-request@v3
       with:
+        github-token: ${{ secrets.GH_TOKEN }}
         file-path: "test-results/SummaryGithub.md"
         comment-tag: coverage
         
