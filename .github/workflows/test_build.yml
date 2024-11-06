@@ -26,7 +26,7 @@ jobs:
         submodules: 'recursive'
     # Install matlab to run tests.
     - name: Install MATLAB
-      uses: matlab-actions/setup-matlab@v2.1
+      uses: matlab-actions/setup-matlab@v2.3
       with:
         # NOTE: no longer earliest version to support more property validation functions
         release: ${{ matrix.matlab_version }}
@@ -59,13 +59,14 @@ jobs:
     - name: Run NOSNOC tests
       uses: matlab-actions/run-tests@v2.1
       with:
-        source-folder: src; .
+        source-folder: +nosnoc
         select-by-folder: test
         test-results-junit: test-results/matlab-results.xml
+        code-coverage-cobertura: test-results/coverage.xml
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results
         path: test-results/
