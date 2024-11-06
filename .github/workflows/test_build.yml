@@ -64,6 +64,7 @@ jobs:
         select-by-folder: test
         test-results-junit: "test-results/matlab-results-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
         code-coverage-cobertura: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
+        strict: true # Non-explicitly suppressed warnings should fail.
 
     - name: Upload test results
       if: always()

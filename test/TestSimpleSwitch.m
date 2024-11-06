@@ -10,14 +10,11 @@ classdef TestSimpleSwitch < matlab.unittest.TestCase
     end
     methods (Test, ParameterCombination = 'exhaustive')
         function test_fesd_integrator(testCase,rk_representation, rk_scheme, dcs_mode, cross_comp_mode)
-            import matlab.unittest.constraints.IssuesNoWarnings;
-            issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 5);
-            testCase.verifyThat(@() test_simple_switch(rk_representation, rk_scheme, dcs_mode, cross_comp_mode), issuesNoWarningsConstraint);
-
-            [x_res,t_grid,model,problem_options, solver_options] = issuesNoWarningsConstraint.FunctionOutputs{:};
+            
+            [x_res,t_grid,model,problem_options, solver_options] = test_simple_switch(rk_representation, rk_scheme, dcs_mode, cross_comp_mode);
 
             vec = [x_res; t_grid];
-            testCase.assertLessThan(min(vecnorm(vec-[0;0.5], 2)), 1e-5);
+            testCase.verifyLessThan(min(vecnorm(vec-[0;0.5], 2)), 1e-5);
         end
     end 
 end
