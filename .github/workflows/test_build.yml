@@ -35,7 +35,7 @@ jobs:
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
-      uses: robinraju/release-downloader@v1.6
+      uses: robinraju/release-downloader@v1.11
       with:
         repository: "casadi/casadi"
         tag: ${{ matrix.casadi.version }}
