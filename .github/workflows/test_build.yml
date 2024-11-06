@@ -66,6 +66,24 @@ jobs:
         code-coverage-cobertura: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
         strict: true # Non-explicitly suppressed warnings should fail.
 
+    # Run ReportGenerator to generage human readable coverage (only for latest versions of matlab and casadi for now)
+    - name: Setup .NET Core # Required to execute ReportGenerator
+      if: ${{ matrix.matlab_version == 'R2024a' && matrix.casadi.version == '3.6.7' }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.x
+        dotnet-quality: 'ga'
+    - name: ReportGenerator
+      if: ${{ matrix.matlab_version == 'R2024a' && matrix.casadi.version == '3.6.7' }}
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.3.11
+      with:
+        reports: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
+        targetdir: 'test-results'
+        reporttypes: 'Html;MarkdownSummary'
+        verbosity: 'Info' # The verbosity level of the log messages. Values: Verbose, Info, Warning, Error, Off
+        title: 'nosnoc coverage'
+        
+    # Upload raw coverage and test results.
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
