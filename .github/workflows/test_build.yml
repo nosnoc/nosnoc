@@ -79,9 +79,15 @@ jobs:
       with:
         reports: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
         targetdir: 'test-results'
-        reporttypes: 'Html;MarkdownSummary'
+        reporttypes: 'HtmlInline;MarkdownSummaryGithub'
         verbosity: 'Info' # The verbosity level of the log messages. Values: Verbose, Info, Warning, Error, Off
         title: 'nosnoc coverage'
+    - name: Comment PR with coverage
+      if: ${{ matrix.matlab_version == 'R2024a' && matrix.casadi.version == '3.6.7' }}
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        file-path: "test-results/SummaryGithub.md"
+        comment-tag: coverage
         
     # Upload raw coverage and test results.
     - name: Upload test results
