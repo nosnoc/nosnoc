@@ -7,6 +7,7 @@ jobs:
   # Main job that runs all the tests for NOSNOC in matlab.
   test_nosnoc:
     strategy:
+      fail-fast: false # We always want to see where the failures are.
       matrix:
         matlab_version: ["R2021b", "R2022a", "R2022b", "R2023a", "R2023b", "R2024a"]
         casadi:
@@ -61,8 +62,8 @@ jobs:
       with:
         source-folder: +nosnoc
         select-by-folder: test
-        test-results-junit: test-results/matlab-results.xml
-        code-coverage-cobertura: test-results/coverage.xml
+        test-results-junit: "test-results/matlab-results-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
+        code-coverage-cobertura: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
 
     - name: Upload test results
       if: always()
