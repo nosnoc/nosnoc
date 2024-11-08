@@ -425,7 +425,7 @@ classdef Gcs < vdx.problems.Mpcc
                         p_stage = obj.p.p_time_var(ii);
                         p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_c = dcs.c_fun(x_prev);
+                            sum_c = c_prev;
                             for kk=1:(opts.n_s + rbp)
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
