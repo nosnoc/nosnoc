@@ -193,6 +193,9 @@ classdef Cls < vdx.problems.Mpcc
             % z_alg: algorithmic algebraic arguments to g_alg_fun.
             % z_impulse: algorithmic algebraic variables used to calculate the impulse laws.
             % z_alg_f_x: algorithmic algebraic variables required for the state derivative f_x.
+            %
+            % Disable warnings.
+            warning off vdx:indexing:dot_reference_returns_vdx_var
             z_alg = {obj.w.lambda_normal, obj.w.y_gap};
             z_impulse = {obj.w.Lambda_normal, obj.w.Y_gap, obj.w.P_vn, obj.w.N_vn};
             z_alg_f_x = {obj.w.lambda_normal};
@@ -225,6 +228,7 @@ classdef Cls < vdx.problems.Mpcc
             obj.z_alg = vdx.VariableGroup(z_alg);
             obj.z_impulse = vdx.VariableGroup(z_impulse);
             obj.z_alg_f_x = vdx.VariableGroup(z_alg_f_x);
+            warning on vdx:indexing:dot_reference_returns_vdx_var
         end
 
         function generate_direct_transcription_constraints(obj)
