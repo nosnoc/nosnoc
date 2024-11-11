@@ -8,7 +8,7 @@ classdef TestSimplePds < matlab.unittest.TestCase
     methods (Test)
     end
     methods (Test, ParameterCombination = 'exhaustive')
-        function test_fesd_integrator(testCase,rk_representation, cross_comp_mode)
+        function test_pds_integrator(testCase,rk_representation, cross_comp_mode)
             
             [x_res,t_grid,model,problem_options, solver_options] = test_simple_pds(rk_representation, cross_comp_mode);
 
