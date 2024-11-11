@@ -54,11 +54,6 @@ classdef Cls < vdx.problems.Mpcc
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
 
-            % TODO(@anton) This _severely_ hurts performance over the vectorized assignment by doing N_stages vertcats of
-            %              casadi symbolics vs just a vectorized assignment which does one. As such there needs to be backend
-            %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
-            %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
-            %              on the whole queue which is _significantly_ faster.
             % 2d vars: Variables that are defined for each finite element.
             for ii=1:opts.N_stages
                 % other derived values
@@ -460,8 +455,6 @@ classdef Cls < vdx.problems.Mpcc
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.y_gap_rbp(ii,jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
-                        else
-                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
@@ -812,7 +805,12 @@ classdef Cls < vdx.problems.Mpcc
                     for jj=1:opts.N_finite_elements(ii);
                         G_ij = {};
                         H_ij = {};
-                        sum_y_gap = obj.w.Y_gap(ii,jj) + sum2(obj.w.y_gap(ii,jj,:));
+                        if jj ~= 1 || ~opts.no_initial_impacts
+                            y_gap_lb = obj.w.Y_gap(ii,jj);
+                        else
+                            y_gap_lb = 0;
+                        end
+                        sum_y_gap = y_gap_lb + sum2(obj.w.y_gap(ii,jj,:));
                         for kk=1:opts.n_s
                             lambda_normal_ijk = obj.w.lambda_normal(ii,jj,kk);
                             G_ij = vertcat(G_ij, {lambda_normal_ijk});
