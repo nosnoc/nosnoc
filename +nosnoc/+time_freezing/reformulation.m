@@ -4,7 +4,7 @@ function model = reformulation(cls_model, opts)
     else
         if opts.time_freezing_Heaviside_lifting
             if opts.dcs_mode == DcsMode.Stewart
-                warning('nosnoc: time_freezing:reformulation:wrong_dcs_mode',...
+                warning('nosnoc:time_freezing:reformulation:wrong_dcs_mode',...
                     'Dcs mode is set to Stewart but using multicontact timefreezing, setting it to Heaviside.')
                 opts.dcs_mode = DcsMode.Heaviside;
             end
