@@ -44,6 +44,7 @@ model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of eve
 
 model.g_terminal = [q-200;v-0]; % Add terminal constraint
 
+solver_options.progressive_relaxation_factor = 10;
 % Create a nosnoc solver. 
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 % Solve the problem by internally calling the nosnoc MPEC solver (see generic_mpecs example for its standalone use)

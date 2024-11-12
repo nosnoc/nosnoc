@@ -34,6 +34,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         nlp_solver
         plugin % NLP solver: Ipopt, Snopt, Worhop or Uno.
         relaxation_type
+
+        sigma_names = {}
+        sigma_update_rules
     end
 
     properties (Access=private)
@@ -54,6 +57,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         ind_map_g % Map for general constraints containing the corresponding indices in the original MPCC passed in and indices in the NLP
         ind_map_w % Map for primal variables containing the corresponding indices in the original MPCC passed in and indices in the NLP
         ind_map_p % Map for parameters containing the corresponding indices in the original MPCC passed in and indices in the NLP
+
     end
 
     methods (Access=public)
@@ -66,6 +70,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             obj.opts = opts;
             opts.preprocess();
             stats = struct;
+            obj.sigma_update_rules = dictionary; % TODO: Only from 2022b, otherwise need to use container.Map
+            obj.sigma_update_rules('sigma_p') = @update_sigma;
+            obj.sigma_update_rules('sigma_cross_comp') = @update_sigma_progressive;
             
             if isa(mpcc, 'vdx.problems.Mpcc') % We can properly interleave complementarities if we get a vdx.Mpcc
                 use_vdx = true;
@@ -96,7 +103,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                 % add homotopy parameter
                 nlp.p.sigma_p = {{'sigma_p', 1}, opts.sigma_0};
-
+                
                 % Create relaxation slacks/parameters
                 switch opts.homotopy_steering_strategy
                   case HomotopySteeringStrategy.DIRECT
@@ -126,17 +133,23 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     name = comp_var_names{ii};
                     depth = mpcc.G.(name).depth; % how many indices does this variable need?
                     s_elastic_name = ['s_elastic_' char(name)];
+                    sigma_name = ['sigma_' char(name)];
+                    obj.sigma_names = [obj.sigma_names, sigma_name];
 
                     % If a 0 dimensional variable handle it specially.
                     if depth == 0
                         % Get the corresponding G and H expressions
                         G_curr = mpcc.G.(name)();
                         H_curr = mpcc.H.(name)();
+
+                        % generate corresponding sigma parameter
+                        nlp.p.(sigma_name) = {{sigma_name, 1}, opts.sigma_0};
+                        
                         % select relaxation slacks/parameters
                         switch opts.homotopy_steering_strategy
                           case HomotopySteeringStrategy.DIRECT
                             % nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
-                            sigma = nlp.p.sigma_p(); 
+                            sigma = nlp.p.(sigma_name)(); 
                           case HomotopySteeringStrategy.ELL_INF
                             sigma = nlp.w.s_elastic(); % Here s_elastic takes the role of sigma in direct, and sigma_p is used to define a penalty parameter for the elastic variable s_elastic
                           case HomotopySteeringStrategy.ELL_1
@@ -146,7 +159,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                             nlp.w.(s_elastic_name) = {{s_elastic_name, size(G_curr, 1)}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                             if opts.decreasing_s_elastic_upper_bound
                                 % TODO(@anton) this creates a performance bottleneck
-                                nlp.g.([s_elastic_name '_ub']) = {nlp.w.(s_elastic_name)() - nlp.p.sigma_p(), -inf, 0};
+                                nlp.g.([s_elastic_name '_ub']) = {nlp.w.(s_elastic_name)() - nlp.p.(sigma_name)(), -inf, 0};
                             end
 
                             % TODO(@anton) this creates a performance bottleneck
@@ -198,7 +211,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         g_comp_expr = psi_fun(G_curr, H_curr, sigma);
                         [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
                         nlp.g.([name '_relaxed']) = {g_comp_expr,lb,ub};
-                    else % Do the same behavior as before excep this time for each var(i,j,k,...) index for each variable 'var'.
+                    else % Do the same behavior as before except this time for each var(i,j,k,...) index for each variable 'var'.
                         % Get indices that we will need to get all the casadi vars for the vdx.Variable
                         indices = {};
                         for len=size(mpcc.G.(name).indices)
@@ -216,11 +229,14 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                             if any(size(G_curr) == 0)
                                 continue
                             end
+
+                            % generate corresponding sigma parameter
+                            nlp.p.(sigma_name)(curr{:}) = {{sigma_name, 1}, opts.sigma_0};
                             % select relaxation slacks/parameters
                             switch opts.homotopy_steering_strategy
                               case HomotopySteeringStrategy.DIRECT
                                 % nlp.p.sigma_p(): sigma is a parameter/variable that has no indices
-                                sigma = nlp.p.sigma_p(); 
+                                sigma = nlp.p.(sigma_name)(curr{:}); 
                               case HomotopySteeringStrategy.ELL_INF
                                 sigma = nlp.w.s_elastic(); % Here s_elastic takes the role of sigma in direct, and sigma_p is used to define a penalty parameter for the elastic variable s_elastic
                               case HomotopySteeringStrategy.ELL_1
@@ -230,7 +246,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                                 nlp.w.(s_elastic_name)(curr{:}) = {{s_elastic_name, size(G_curr, 1)}, opts.s_elastic_min, opts.s_elastic_max, opts.s_elastic_0};
                                 if opts.decreasing_s_elastic_upper_bound
                                     % TODO(@anton) this creates a performance bottleneck
-                                    nlp.g.([s_elastic_name '_ub'])(curr{:}) = {nlp.w.(s_elastic_name)(curr{:}) - nlp.p.sigma_p(), -inf, 0};
+                                    nlp.g.([s_elastic_name '_ub'])(curr{:}) = {nlp.w.(s_elastic_name)(curr{:}) - nlp.p.(sigma_name)(curr{:}), -inf, 0};
                                 end
 
                                 % TODO(@anton) this creates a performance bottleneck
@@ -1235,14 +1251,63 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 last_iter_failed = 0;
                 if ii == 0
                     sigma_k = opts.sigma_0;
+                    for jj=1:length(obj.sigma_names)
+                        name = obj.sigma_names{jj};
+                        depth = nlp.p.(name).depth;
+                        
+                        if depth == 0
+                            nlp.p.(name)().val = opts.sigma_0;
+                        else
+                            indices = {};
+                            for len=size(nlp.p.(name).indices)
+                                indices = horzcat(indices, {1:len});
+                            end
+                            indices = indices(1:depth);
+                            % We subtract 1 to get the 0 indexing correct :)
+                            inorderlst = all_combinations(indices{:})-1;
+
+                            % update based on given rule.
+                            for kk=1:size(inorderlst,1)
+                                curr = num2cell(inorderlst(kk,:));
+                                if any(size(nlp.p.(name)(curr{:}).val) == 0)
+                                    continue
+                                end
+                                nlp.p.(name)(curr{:}).val = opts.sigma_0;
+                            end
+                        end
+                    end
                 else
-                    if isequal(opts.homotopy_update_rule,'linear')
-                        sigma_k = opts.homotopy_update_slope*sigma_k;
-                    elseif isequal(opts.homotopy_update_rule,'superlinear')
-                        sigma_k = max(opts.sigma_N,min(opts.homotopy_update_slope*sigma_k,sigma_k^opts.homotopy_update_exponent));
-                    else
-                        % TODO(@anton) make this not necessary
-                        error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+                    sigma_k = update_sigma(sigma_k, opts, {});
+                    % update all sigmas :)
+                    for jj=1:length(obj.sigma_names)
+                        name = obj.sigma_names{jj};
+                        depth = nlp.p.(name).depth;
+                        if obj.sigma_update_rules.isKey(name)
+                            update_func = obj.sigma_update_rules(name);
+                        else
+                            update_func = @update_sigma;
+                        end
+                        
+                        if depth == 0
+                            nlp.p.(name)().val = update_func(nlp.p.(name).val, opts, {});
+                        else
+                            indices = {};
+                            for len=size(nlp.p.(name).indices)
+                                indices = horzcat(indices, {1:len});
+                            end
+                            indices = indices(1:depth);
+                            % We subtract 1 to get the 0 indexing correct :)
+                            inorderlst = all_combinations(indices{:})-1;
+
+                            % Update based on the given rule
+                            for kk=1:size(inorderlst,1)
+                                curr = num2cell(inorderlst(kk,:));
+                                if any(size(nlp.p.(name)(curr{:}).val) == 0)
+                                    continue
+                                end
+                                nlp.p.(name)(curr{:}).val = update_func(nlp.p.(name)(curr{:}).val, opts, curr);
+                            end
+                        end
                     end
                 end
                 stats.sigma_k = [stats.sigma_k, sigma_k];
@@ -1402,4 +1467,28 @@ function X = all_combinations(varargin)
         end
         X(i,:) = vect;
     end
+end
+
+function sigma_k = update_sigma(sigma_k, opts, index)
+    if isequal(opts.homotopy_update_rule,'linear')
+        sigma_k = opts.homotopy_update_slope*sigma_k;
+    elseif isequal(opts.homotopy_update_rule,'superlinear')
+        sigma_k = max(opts.sigma_N,min(opts.homotopy_update_slope*sigma_k,sigma_k^opts.homotopy_update_exponent));
+    else
+        % TODO(@anton) make this not necessary
+        error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+    end 
+end
+
+function sigma_k = update_sigma_progressive(sigma_k, opts, index)
+    if isequal(opts.homotopy_update_rule,'linear')
+        sigma_k = opts.homotopy_update_slope*sigma_k;
+    elseif isequal(opts.homotopy_update_rule,'superlinear')
+        sigma_k = max(opts.sigma_N,min(opts.homotopy_update_slope*sigma_k,sigma_k^opts.homotopy_update_exponent));
+    else
+        % TODO(@anton) make this not necessary
+        error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+    end
+
+    sigma_k = max(opts.sigma_N*opts.progressive_relaxation_factor.^(max(0,index{1}-1)), sigma_k);
 end

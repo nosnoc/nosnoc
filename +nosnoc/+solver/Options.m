@@ -92,6 +92,14 @@ classdef Options < handle
         normalize_homotopy_update(1,1) logical = 1
         norm_function
         calculate_stationarity_type(1,1) logical = 0;
+
+        % VDX passed problem only:
+
+        % Factor by which to scale the progressive relaxation from 1 to n_sigma_progressive
+        progressive_relaxation_factor = 0;
+
+        % How many progressive stages to have for relaxation. Currently this _must_ be the number of control stages.
+        n_sigma_progressive = 0;
     end
 
     properties(Dependent)
