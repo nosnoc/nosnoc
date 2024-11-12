@@ -61,5 +61,15 @@ classdef FullMpcc < nosnoc.mpc.Base
             x_res = obj.ocp_solver.get("x");
             x = x_res(:,obj.problem_options.N_finite_elements(1)+1);
         end
+
+        function ret = get(obj,field)
+        % Generic get wrapper for the ocp_solver underneath
+            ret = ocp_solver.get(field);
+        end
+
+        function ret = get_full(obj,field)
+        % Generic get_full wrapper for the ocp_solver underneath
+            ret = ocp_solver.get_full(field);
+        end
     end
 end
