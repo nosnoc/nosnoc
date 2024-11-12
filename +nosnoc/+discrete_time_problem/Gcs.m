@@ -49,11 +49,6 @@ classdef Gcs < vdx.problems.Mpcc
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
 
-            % TODO(@anton) This _severely_ hurts performance over the vectorized assignment by doing N_stages vertcats of
-            %              casadi symbolics vs just a vectorized assignment which does one. As such there needs to be backend
-            %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
-            %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
-            %              on the whole queue which is _significantly_ faster.
             % 2d vars: Variables that are defined for each finite element.
             for ii=1:opts.N_stages
                 % other derived values
