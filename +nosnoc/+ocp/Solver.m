@@ -79,7 +79,12 @@ classdef Solver < handle
             if ~exist('plugin', 'var')
                 plugin = 'scholtes_ineq';
             end
-            obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
+            if isempty(obj.discrete_time_problem.solver)
+                obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
+                if obj.solver_opts.progressive_relaxation_factor ~= 0
+                    obj.discrete_time_problem.solver.sigma_update_rules('sigma_cross_comp') = @update_sigma_progressive;
+                end
+            end
 
             obj.stats = obj.discrete_time_problem.solve();
         end
@@ -262,3 +267,20 @@ classdef Solver < handle
     end
 end
  
+
+function sigma_k = update_sigma_progressive(sigma_k, opts, index)
+    if isempty(sigma_k)
+        sigma_k = opts.sigma_0;
+    else
+        if isequal(opts.homotopy_update_rule,'linear')
+            sigma_k = opts.homotopy_update_slope*sigma_k;
+        elseif isequal(opts.homotopy_update_rule,'superlinear')
+            sigma_k = max(opts.sigma_N,min(opts.homotopy_update_slope*sigma_k,sigma_k^opts.homotopy_update_exponent));
+        else
+            % TODO(@anton) make this not necessary
+            error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+        end
+    end
+
+    sigma_k = max(opts.sigma_N*opts.progressive_relaxation_factor.^(max(0,index{1}-1)), sigma_k);
+end

@@ -72,7 +72,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             stats = struct;
             obj.sigma_update_rules = dictionary; % TODO: Only from 2022b, otherwise need to use container.Map
             obj.sigma_update_rules('sigma_p') = @update_sigma;
-            obj.sigma_update_rules('sigma_cross_comp') = @update_sigma_progressive;
             
             if isa(mpcc, 'vdx.problems.Mpcc') % We can properly interleave complementarities if we get a vdx.Mpcc
                 use_vdx = true;
@@ -1250,13 +1249,18 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % homotopy parameter update
                 last_iter_failed = 0;
                 if ii == 0
-                    sigma_k = opts.sigma_0;
+                    sigma_k = update_sigma([], opts, {});
                     for jj=1:length(obj.sigma_names)
                         name = obj.sigma_names{jj};
                         depth = nlp.p.(name).depth;
+                        if obj.sigma_update_rules.isKey(name)
+                            update_func = obj.sigma_update_rules(name);
+                        else
+                            update_func = @update_sigma;
+                        end
                         
                         if depth == 0
-                            nlp.p.(name)().val = opts.sigma_0;
+                            nlp.p.(name)().val = update_func([], opts, {});
                         else
                             indices = {};
                             for len=size(nlp.p.(name).indices)
@@ -1272,7 +1276,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                                 if any(size(nlp.p.(name)(curr{:}).val) == 0)
                                     continue
                                 end
-                                nlp.p.(name)(curr{:}).val = opts.sigma_0;
+                                nlp.p.(name)(curr{:}).val = update_func([], opts, curr);
                             end
                         end
                     end
@@ -1470,25 +1474,16 @@ function X = all_combinations(varargin)
 end
 
 function sigma_k = update_sigma(sigma_k, opts, index)
-    if isequal(opts.homotopy_update_rule,'linear')
-        sigma_k = opts.homotopy_update_slope*sigma_k;
-    elseif isequal(opts.homotopy_update_rule,'superlinear')
-        sigma_k = max(opts.sigma_N,min(opts.homotopy_update_slope*sigma_k,sigma_k^opts.homotopy_update_exponent));
+    if isempty(sigma_k)
+        sigma_k = opts.sigma_0;
     else
-        % TODO(@anton) make this not necessary
-        error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
-    end 
-end
-
-function sigma_k = update_sigma_progressive(sigma_k, opts, index)
-    if isequal(opts.homotopy_update_rule,'linear')
-        sigma_k = opts.homotopy_update_slope*sigma_k;
-    elseif isequal(opts.homotopy_update_rule,'superlinear')
-        sigma_k = max(opts.sigma_N,min(opts.homotopy_update_slope*sigma_k,sigma_k^opts.homotopy_update_exponent));
-    else
-        % TODO(@anton) make this not necessary
-        error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+        if isequal(opts.homotopy_update_rule,'linear')
+            sigma_k = opts.homotopy_update_slope*sigma_k;
+        elseif isequal(opts.homotopy_update_rule,'superlinear')
+            sigma_k = max(opts.sigma_N,min(opts.homotopy_update_slope*sigma_k,sigma_k^opts.homotopy_update_exponent));
+        else
+            % TODO(@anton) make this not necessary
+            error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+        end
     end
-
-    sigma_k = max(opts.sigma_N*opts.progressive_relaxation_factor.^(max(0,index{1}-1)), sigma_k);
 end

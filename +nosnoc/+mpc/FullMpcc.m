@@ -20,6 +20,10 @@ classdef FullMpcc < nosnoc.mpc.Base
             obj.solver_options = solver_options;
             obj.cold_sigma_0 = solver_options.sigma_0;
             obj.ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+
+            if mpc_options.fullmpcc_progressive_relaxation ~= 0
+                obj.solver_options.progressive_relaxation_factor = mpc_options.fullmpcc_progressive_relaxation;
+            end
         end
         
         function [u, stats] = get_feedback(obj, x0)
@@ -29,6 +33,7 @@ classdef FullMpcc < nosnoc.mpc.Base
             % Update sigma_0 to the fast one if we have 
             if obj.last_solve_successful
                 obj.solver_options.sigma_0 = obj.mpc_options.fullmpcc_fast_sigma_0;
+                obj.solver_options.N_homotopy = obj.mpc_options.fullmpcc_fast_N_homotopy;
             end
             obj.ocp_solver.set_x0(x0);
             obj.ocp_solver.solve();
@@ -43,7 +48,7 @@ classdef FullMpcc < nosnoc.mpc.Base
             % setting up the warm starting, it does nothing if the previous solve
             % did not converge.
             preparation_timer = tic;
-            if isfield(obj.ocp_solver.stats, "converged") && obj.ocp_solver.stats.converged
+            if true%isfield(obj.ocp_solver.stats, "converged") && obj.ocp_solver.stats.converged
                 if obj.mpc_options.fullmpcc_do_shift_initialization
                     obj.ocp_solver.do_shift_initialization();
                 else
@@ -85,3 +90,4 @@ classdef FullMpcc < nosnoc.mpc.Base
         end
     end
 end
+
