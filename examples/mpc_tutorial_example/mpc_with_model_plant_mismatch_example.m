@@ -39,7 +39,7 @@ model.c = v-v_threshold; % single switching functions (implies two regions)
 model.S = [-1;1]; % Region R_1 is defined by c<0 (hence the -1), region R_2 by c>0 (hence the +1) in the sign matrix S.
 model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of every region.
 
-q_goal = 200;
+q_goal = 400;
 v_goal = 0;
 
 model.f_q = (q-q_goal)^2 + u^2; % Add stage cost
@@ -55,6 +55,7 @@ solver_options.N_homotopy = 10; % Maximum number of homotopy iterations.
 % solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
 % Set the fast sigma for followup solves to the complementarity tol to only do 1 nlp solve. 
 mpc_options.fullmpcc_fast_sigma_0 = 1e-7;
+mpc_options.fullmpcc_progressive_relaxation = 1000;
 N_steps = 25; % number of closed loop mpc steps
 
 % create mpc object
