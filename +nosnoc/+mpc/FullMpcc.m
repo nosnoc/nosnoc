@@ -79,5 +79,9 @@ classdef FullMpcc < nosnoc.mpc.Base
         function t_grid_full = get_time_grid_full(obj)
             t_grid_full = obj.ocp_solver.get_time_grid_full();
         end
+
+        function t_grid = get_control_grid(obj)
+            t_grid = obj.ocp_solver.get_control_grid();
+        end
     end
 end
