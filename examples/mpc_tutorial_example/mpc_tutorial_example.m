@@ -52,8 +52,8 @@ solver_options.homotopy_update_slope = 0.05; % Rate which the relaxation sigma i
 solver_options.homotopy_update_exponent = 2; % Rate which the relaxation sigma is reduced at: sigma_i+1 = sigma_i^kappa
 solver_options.complementarity_tol = 1e-7; % Value to drive the complementarity residual to.
 solver_options.N_homotopy = 10; % Maximum number of homotopy iterations.
-solver_options.print_level = 2;
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
+solver_options.print_level = 3;
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
 % Set the fast sigma for followup solves to the complementarity tol to only do 1 nlp solve. 
 mpc_options.fullmpcc_fast_sigma_0 = 1e-7;
 mpc_options.fullmpcc_progressive_relaxation = 10;
@@ -61,8 +61,8 @@ mpc_options.fullmpcc_progressive_relaxation = 10;
 % create mpc object
 mpc = nosnoc.mpc.FullMpcc(model, mpc_options, problem_options, solver_options);
 
-x_live = subplot(211)
-u_live = subplot(212)
+x_live = subplot(211);
+u_live = subplot(212);
 % Do MPC assuming the predicted state is accurate, in practice this may not be true.
 x = model.x0; u = []; t = 0; tf = [];
 x0 = x;
@@ -72,8 +72,10 @@ for step=1:N_steps
     tf = [tf, tf_i];
     fprintf("MPC step: %d, Feedback time: %d\n", step, tf_i);
     mpc.do_preparation();
-    mpc.get('x');
-    mpc.get('u');
+    x_k = mpc.get('x');
+    u_k = mpc.get('u');
+    t_k = mpc.get_time_grid();
+    t_u_k = mpc.get_control_grid();
     x0 = mpc.get_predicted_state();
     % x0_distrubance = (-2+4*rand(size(x0)));
     % x0 =  x0+x0_distrubance;
