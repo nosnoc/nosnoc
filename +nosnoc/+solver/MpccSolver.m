@@ -653,16 +653,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 nlp_lbg = nlp.g.lb; lbg = [];
                 nlp_ubg = nlp.g.ub; ubg = [];
                 if ~isempty(nlp_lbg)
-                    g(obj.ind_map_g.nlp) = nlp_g(obj.ind_map_g.mpcc)';
-                    lbg(obj.ind_map_g.nlp) = nlp_lbg(obj.ind_map_g.mpcc)';
+                    g(obj.ind_map_g.mpcc) = nlp_g(obj.ind_map_g.nlp)';
+                    lbg(obj.ind_map_g.mpcc) = nlp_lbg(obj.ind_map_g.nlp)';
                     lbg = lbg';
-                    ubg(obj.ind_map_g.nlp) = nlp_ubg(obj.ind_map_g.mpcc)';
+                    ubg(obj.ind_map_g.mpcc) = nlp_ubg(obj.ind_map_g.nlp)';
                     ubg = ubg';
                 end
-                p = nlp.p.sym;
-                p(obj.ind_map_p.nlp) = p(obj.ind_map_p.mpcc)';
+                p = SX(zeros([length(obj.ind_map_p.nlp), 1]));nlp_p = nlp.p.sym;
+                p(obj.ind_map_p.mpcc) = nlp_p(obj.ind_map_p.nlp)';
                 nlp_p_val = nlp.p.val;p_val = [];
-                p_val(obj.ind_map_p.nlp) = nlp_p_val(obj.ind_map_p.mpcc);
+                p_val(obj.ind_map_p.mpcc) = nlp_p_val(obj.ind_map_p.nlp);
                 f = mpcc.f;
 
                 % Generate lifting variables
@@ -755,7 +755,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     %converged = true;
                 end
                 w_star = full(tnlp_results.x);
-                w_star = w_star(obj.ind_map_w.mpcc);
+                w_star = w_star(ind_mpcc);
                 w_star_orig = x0;
                 w_star_orig(obj.ind_map_w.nlp) = w_star;
 
@@ -766,8 +766,8 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 I_G = find(ind_0p+ind_00);
                 I_H = find(ind_p0+ind_00);
 
-                G_new = full(obj.G_fun(w_star_orig, p_val));
-                H_new = full(obj.H_fun(w_star_orig, p_val));
+                G_new = full(obj.G_fun(w_star_orig, nlp_p_val));
+                H_new = full(obj.H_fun(w_star_orig, nlp_p_val));
 
                 g_tnlp = full(tnlp_results.g);
                 % multipliers (nu, xi already calculated above)
@@ -990,16 +990,16 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             nlp_lbg = nlp.g.lb; lbg = [];
             nlp_ubg = nlp.g.ub; ubg = [];
             if ~isempty(nlp_lbg)
-                g(obj.ind_map_g.nlp) = nlp_g(obj.ind_map_g.mpcc)';
-                lbg(obj.ind_map_g.nlp) = nlp_lbg(obj.ind_map_g.mpcc)';
+                g(obj.ind_map_g.mpcc) = nlp_g(obj.ind_map_g.nlp)';
+                lbg(obj.ind_map_g.mpcc) = nlp_lbg(obj.ind_map_g.nlp)';
                 lbg = lbg';
-                ubg(obj.ind_map_g.nlp) = nlp_ubg(obj.ind_map_g.mpcc)';
+                ubg(obj.ind_map_g.mpcc) = nlp_ubg(obj.ind_map_g.nlp)';
                 ubg = ubg';
             end
             nlp_p = nlp.p.sym; p = SX(zeros([length(obj.ind_map_p.nlp), 1]));
             p(obj.ind_map_p.nlp) = nlp_p(obj.ind_map_p.mpcc)';
             nlp_p_val = nlp.p.val;p_val = [];
-            p_val(obj.ind_map_p.nlp) = nlp_p_val(obj.ind_map_p.mpcc);
+            p_val(obj.ind_map_p.nlp) = nlp_p_val(obj.ind_map_p.mpcc);p_val = p_val';
             G = obj.G_fun(nlp.w.sym, nlp.p.sym);
             H = obj.H_fun(nlp.w.sym, nlp.p.sym);
             G_old = full(obj.G_fun(x0_nlp, nlp.p.val));
