@@ -333,6 +333,8 @@ classdef Options < handle
         %---------------------------------------------------------------------%
 
         use_numerical_clock_state(1,1) logical = false % logical: instead of sum of $h$ being used for equidistant control steps use a simple integrated state.
+
+        sigma_smoothing(1,1) double {mustBePositive} = 1e-7
     end        
 
 
