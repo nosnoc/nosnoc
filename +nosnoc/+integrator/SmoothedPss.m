@@ -80,10 +80,12 @@ classdef SmoothedPss < handle
                     u_i = [];
                 end
                 [t_current, x_sim] = ode23s(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr); % todo add options
-                
-                obj.x_all = [obj.x_all, x_sim];
+
+                t_grid = [t_grid t_current(2:end)'];
+                obj.x_all = [obj.x_all, x_sim'];
                 obj.set_x0(x_sim);
             end
+            x_res = obj.x_all;
         end
 
         function set_x0(obj, x0)
