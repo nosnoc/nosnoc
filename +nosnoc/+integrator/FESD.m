@@ -1,4 +1,4 @@
-classdef Integrator < handle
+classdef FESD < handle
     properties % TODO separate these by Get/Set access
         model
         opts
@@ -16,7 +16,7 @@ classdef Integrator < handle
     end
 
     methods
-        function obj = Integrator(model, opts, solver_opts)
+        function obj = FESD(model, opts, solver_opts)
             obj.model = model;
             obj.opts = opts;
             obj.solver_opts = solver_opts;
@@ -112,7 +112,7 @@ classdef Integrator < handle
 
         function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin, extra_args)
             arguments
-                obj nosnoc.Integrator
+                obj nosnoc.integrator.FESD
                 plugin nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
                 extra_args.u = []
                 extra_args.x0 = [];
