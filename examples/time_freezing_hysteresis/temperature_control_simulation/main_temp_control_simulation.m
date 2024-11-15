@@ -51,7 +51,7 @@ solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% Read and plot result
 plot_results_for_paper

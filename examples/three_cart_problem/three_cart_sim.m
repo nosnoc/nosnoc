@@ -71,7 +71,7 @@ problem_options.N_finite_elements = N_FE;
 problem_options.N_sim = N_sim;
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call nosnoc Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% read and plot results
 p1 = x_res(1,:);

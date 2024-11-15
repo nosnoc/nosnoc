@@ -62,5 +62,5 @@ grid on
 figure
 stairs(t_grid_u, [u,u(end)])
 % how to create an integrator?
-% integrator = nosnoc.Integrator(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.
+% integrator = nosnoc.integrator.FESD(model, problem_options, solver_options, [], []); % What could be further optional argumetns, i would prefer a varargin instead of passing empty stuff.
 % [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();

@@ -30,7 +30,7 @@ model.c = x(2)+0.2;
 model.f_x_unconstrained = [x(2);-x(1)];
 model.x0 = [0;pi-2];
 
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 [t_grid, x_res] = integrator.simulate();
 
 %% Plot results

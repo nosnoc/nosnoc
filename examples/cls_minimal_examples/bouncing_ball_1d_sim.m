@@ -79,7 +79,7 @@ else
 end
 
 %% Call nosnoc integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 %% read and plot results

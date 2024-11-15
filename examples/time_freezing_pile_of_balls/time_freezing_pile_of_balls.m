@@ -113,7 +113,7 @@ model.f_v = f_v;
 model.x0 = x0;
 model.f_c = f_c;
 %% Call nosnoc Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% velocity plot
 q = x_res(1:n_q,:);

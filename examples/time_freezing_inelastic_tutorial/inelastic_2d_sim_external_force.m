@@ -50,7 +50,7 @@ model.f_c = q(2);
 model.J_tangent = [1; 0];
 
 %% Call nosnoc Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate("u", u_sim);
 
 %% read and plot results

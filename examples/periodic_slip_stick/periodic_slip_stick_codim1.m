@@ -76,7 +76,7 @@ model.S = [-1;1];
 F = [f_1 f_2];
 model.F = F;
 %% Call integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% Plot results
 x1 = x_res(1,:);

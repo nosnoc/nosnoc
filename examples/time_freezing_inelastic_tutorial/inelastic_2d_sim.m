@@ -50,7 +50,7 @@ problem_options.n_s = 2;
 solver_options.store_integrator_step_results = 1;
 solver_options.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 results.x = x_res;
 results.alpha = integrator.get("alpha");
