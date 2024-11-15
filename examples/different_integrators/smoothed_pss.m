@@ -41,20 +41,14 @@ N_finite_elements = 2;
 R_osc  = 1;
 
 %% Init
-% collocation settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 model = nosnoc.model.Pss();
 %% settings
-problem_options.use_fesd = 1;       % switch detection method on/off
-problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
-solver_options.print_level = 2;
-problem_options.n_s = 4;
-problem_options.dcs_mode = 'Heaviside'; % 'Step;
 
-% Penalty/Relaxation paraemetr
-solver_options.complementarity_tol = 1e-9;
-% problem_options.cross_comp_mode = 1;
+% Select matlab ode solver
+solver_options.matlab_ode_solver = 'ode23s';
+
 
 %% Time settings
 x_star = [exp(1);0];
@@ -87,9 +81,6 @@ f_11 = A1*x;
 f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
-
-% Select matlab ode solver
-solver_options.matlab_ode_solver = 'ode23s';
 
 %% Call integrator
 integrator = nosnoc.integrator.SmoothedPss(model, problem_options, solver_options);
