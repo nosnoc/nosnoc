@@ -11,7 +11,10 @@ classdef SmoothedPss < handle
     properties(Access=private)
         x_curr
 
-        x_all
+        t_grid
+        t_grid_full
+        x_res
+        x_res_full
     end
 
     methods
@@ -39,7 +42,7 @@ classdef SmoothedPss < handle
 
                 sigma = SX.sym('sigma');
                 f_x_alpha = Function('f_x_alpha', {obj.dcs.alpha}, {obj.dcs.f_x});
-                f_x_smoothed = f_x_alpha(tanh(sigma*[obj.model.c{:}]));
+                f_x_smoothed = f_x_alpha(0.5*(1+tanh([obj.model.c{:}]/sigma)));
 
                 rhs_fun = Function('rhs_fun', {model.x, model.u, sigma}, {f_x_smoothed});
                 obj.ode_func = @(t, x , u ,sigma) full(rhs_fun(x, u, sigma));
@@ -48,7 +51,7 @@ classdef SmoothedPss < handle
             end
         end
         
-        function [t_grid,x_res] = simulate(obj, plugin, extra_args)
+        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin, extra_args)
             arguments
                 obj nosnoc.integrator.SmoothedPss
                 plugin nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
@@ -68,8 +71,10 @@ classdef SmoothedPss < handle
             else
                 x0 = obj.model.x0;
             end
-            x_res = x0;
-            t_grid = 0;
+            obj.x_res = x0;
+            obj.x_res_full = x0;
+            obj.t_grid = 0;
+            obj.t_grid_full = 0;
             obj.set_x0(x0);
             t_current = 0;
 
@@ -79,13 +84,18 @@ classdef SmoothedPss < handle
                 else
                     u_i = [];
                 end
-                [t_current, x_sim] = ode23s(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr); % todo add options
-
-                t_grid = [t_grid t_current(2:end)'];
-                obj.x_all = [obj.x_all, x_sim'];
-                obj.set_x0(x_sim);
+                [t_sim, x_sim] = ode23s(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr); % todo add options
+                t_current = t_sim(end);
+                obj.t_grid = [obj.t_grid, t_sim(end)];
+                obj.t_grid_full = [obj.t_grid_full t_sim(2:end)'];
+                obj.x_res_full = [obj.x_res_full, x_sim(2:end,:)'];
+                obj.x_res = [obj.x_res, x_sim(end,:)'];
+                obj.set_x0(x_sim(end,:)');
             end
-            x_res = obj.x_all;
+            x_res = obj.x_res;
+            x_res_full = obj.x_res_full;
+            t_grid = obj.t_grid;
+            t_grid_full = obj.t_grid_full;
         end
 
         function set_x0(obj, x0)
@@ -93,7 +103,10 @@ classdef SmoothedPss < handle
         end
         
         function clear_history(obj)
-            obj.x_all = []; % Clear simulation data.
+            obj.x_res = []; % Clear simulation data.
+            obj.x_res_full = []; % Clear simulation data.
+            obj.t_grid = []; % Clear simulation data.
+            obj.t_grid_full = []; % Clear simulation data.
         end
     end
 end
