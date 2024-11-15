@@ -41,7 +41,8 @@ classdef SmoothedPss < handle
                 obj.dcs.generate_equations(opts);
 
                 sigma = SX.sym('sigma');
-                f_x_alpha = Function('f_x_alpha', {obj.dcs.alpha}, {obj.dcs.f_x});
+                fun_opts.allow_free = true;
+                f_x_alpha = Function('f_x_alpha', {obj.dcs.alpha}, {obj.dcs.f_x}, fun_opts);
                 f_x_smoothed = f_x_alpha(0.5*(1+tanh([obj.model.c{:}]/sigma)));
 
                 rhs_fun = Function('rhs_fun', {model.x, model.u, sigma}, {f_x_smoothed});
@@ -95,6 +96,28 @@ classdef SmoothedPss < handle
             x_res = obj.x_res;
             x_res_full = obj.x_res_full;
             t_grid = obj.t_grid;
+            t_grid_full = obj.t_grid_full;
+        end
+
+        function ret = get(obj, field)
+            if ~strcmp(field, 'x')
+                error(['nosnoc:' char(field) ' is not a valid field for this integrator.']);
+            end
+            ret = obj.x_res;
+        end
+
+        function ret = get_full(obj, field)
+            if ~strcmp(field, 'x')
+                error(['nosnoc:' char(field) ' is not a valid field for this integrator.']);
+            end
+            ret = obj.x_res_full;
+        end
+
+        function t_grid = get_time_grid(obj)
+            t_grid = obj.t_grid;
+        end
+
+        function t_grid_full = get_time_grid_full(obj)
             t_grid_full = obj.t_grid_full;
         end
 
