@@ -83,5 +83,9 @@ classdef FullMpcc < nosnoc.mpc.Base
         function t_grid = get_control_grid(obj)
             t_grid = obj.ocp_solver.get_control_grid();
         end
+
+        function set_param(obj, param, index, value)
+            obj.ocp_solver.set_param(param, index, value);
+        end
     end
 end

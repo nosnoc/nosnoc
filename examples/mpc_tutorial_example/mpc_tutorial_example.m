@@ -19,6 +19,7 @@ model = nosnoc.model.Pss(); % Initialize a nosnoc model, (depending on the under
 % define differential states and populate the model.
 q = SX.sym('q'); 
 v = SX.sym('v'); % CasADi symbolic variables for states
+v_target = SX.sym('v_target');
 model.x = [q;v]; % populate model state vectors
 model.x0 = [0;0]; % initial value
 v_max = 20;
@@ -30,6 +31,10 @@ model.u = u;
 u_max = 5;
 model.lbu = -u_max; 
 model.ubu = u_max;
+
+model.p_global = v_target;
+model.p_global_val = 15;
+
 % Dynamics of the piecewise smooth systems
 f_1 = [v;u]; % mode 1 - nominal
 f_2 = [v;3*u]; % mode 2 - turbo
@@ -41,7 +46,7 @@ model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of eve
 
 q_goal = 400;
 v_goal = 0;
-model.f_q = (q-q_goal)^2 + u^2 +(v-15)^2; % Add stage cost
+model.f_q = (q-q_goal)^2 + u^2 +(v-v_target)^2; % Add stage cost
 model.f_q_T = 10*((q-q_goal)^2 + (v-v_goal)^2); % Add terminal quadratic cost
 
 N_steps = 30; % number of MPC steps;
@@ -64,6 +69,7 @@ mpc = nosnoc.mpc.FullMpcc(model, mpc_options, problem_options, solver_options);
 x = model.x0; u = []; t = 0; tf = [];
 x0 = x;
 for step=1:N_steps
+    mpc.set_param('p_global', {}, x0(2));
     [u_i, stats] = mpc.get_feedback(x0);
     tf_i = stats.feedback_time;
     tf = [tf, tf_i];
