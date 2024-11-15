@@ -87,6 +87,10 @@ f_11 = A1*x;
 f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
+
+% Select matlab ode solver
+solver_options.matlab_ode_solver = 'ode23s';
+
 %% Call integrator
 integrator = nosnoc.integrator.SmoothedPss(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
