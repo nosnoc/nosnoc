@@ -11,7 +11,7 @@ function x_res = integrate_system(N_stages, T_sim, u_vals)
     problem_options.N_sim = N_stages;
     problem_options.N_finite_elements = 4;
     
-    integrator = nosnoc.Integrator(model, problem_options, solver_options);
+    integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
 
     integrator.set_x0(model.x0);
     for ii=1:N_stages

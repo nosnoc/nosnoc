@@ -107,7 +107,7 @@ sim_solver_options.print_level = 0;
 sim_solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF; % Use the $\ell_{\infty}$ steering strategy
 sim_solver_options.complementarity_tol = 1e-10; % Value to drive the complementarity residual to.
 % sim_solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
-integrator = nosnoc.Integrator(sim_model, sim_problem_options, sim_solver_options);
+integrator = nosnoc.integrator.FESD(sim_model, sim_problem_options, sim_solver_options);
 %% Do MPC with accurate model
 x = model.x0; u = []; t = 0; tf = [];
 x0 = x;
