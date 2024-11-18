@@ -31,7 +31,7 @@ classdef TestPssToStewart < matlab.unittest.TestCase
             % In future it would be nice to be able to check equality
             % via a walk down the expression graph but that is future work.
             tc.verifyEqual(str(dcs.f_x), '[(((theta_1_0-theta_1_1)+theta_1_2)-theta_1_3), (((theta_1_0+theta_1_1)-theta_1_2)-theta_1_3)]');
-            tc.verifyEqual(str(dcs.g_ind{1}), '[(-(x_0+x_1)), (x_0-x_1), (x_1-x_0), (x_0+x_1)]');
+            tc.verifyEqual(str(dcs.g_indicator{1}), '[(-(x_0+x_1)), (x_0-x_1), (x_1-x_0), (x_0+x_1)]');
             tc.verifyEqual(str(dcs.g_alg), '[(mu_1-((x_0+x_1)+lambda_1_0)), (((x_0-x_1)-lambda_1_1)+mu_1), (((x_1-x_0)-lambda_1_2)+mu_1), (((x_0+x_1)-lambda_1_3)+mu_1), ((((theta_1_0+theta_1_1)+theta_1_2)+theta_1_3)-1)]');
         end
         
@@ -79,7 +79,7 @@ classdef TestPssToStewart < matlab.unittest.TestCase
             % In future it would be nice to be able to check equality
             % via a walk down the expression graph but that is future work.
             tc.verifyEqual(str(dcs.f_x), '((3*theta_1_0)+theta_1_1)');
-            tc.verifyEqual(str(dcs.g_ind{1}), '[x1, (-x1)]');
+            tc.verifyEqual(str(dcs.g_indicator{1}), '[x1, (-x1)]');
             tc.verifyEqual(str(dcs.g_alg), '[((x1-lambda_1_0)+mu_1), (mu_1-(x1+lambda_1_1)), ((theta_1_0+theta_1_1)-1)]');
         end
 
@@ -117,9 +117,9 @@ classdef TestPssToStewart < matlab.unittest.TestCase
             % In future it would be nice to be able to check equality
             % via a walk down the expression graph but that is future work.
             tc.verifyEqual(str(dcs.f_x), '@1=(((q2-q1)-q1)-v1), @2=-0.3, @3=0.3, @4=(((q1-q2)+(q3-q2))-v2), @5=(((q2-q3)-v3)+(10*cos((3.14159*t)))), [((v1*theta_1_0)+(v1*theta_1_1)), ((v2*theta_1_0)+(v2*theta_1_1)), ((v3*theta_1_0)+(v3*theta_1_1)), (((@1+@2)*theta_1_0)+((@1+@3)*theta_1_1)), (((@4*theta_1_0)+(@4*theta_1_1))+((@2*theta_2_0)+(@3*theta_2_1))), (((@5*theta_1_0)+(@5*theta_1_1))+((@2*theta_3_0)+(@3*theta_3_1))), (theta_1_0+theta_1_1)]');
-            tc.verifyEqual(str(dcs.g_ind{1}), '[(-v1), v1]');
-            tc.verifyEqual(str(dcs.g_ind{2}), '[(-v2), v2]');
-            tc.verifyEqual(str(dcs.g_ind{3}), '[(-v3), v3]');
+            tc.verifyEqual(str(dcs.g_indicator{1}), '[(-v1), v1]');
+            tc.verifyEqual(str(dcs.g_indicator{2}), '[(-v2), v2]');
+            tc.verifyEqual(str(dcs.g_indicator{3}), '[(-v3), v3]');
             tc.verifyEqual(str(dcs.g_alg), '@1=1, [(mu_1-(v1+lambda_1_0)), ((v1-lambda_1_1)+mu_1), (mu_2-(v2+lambda_2_0)), ((v2-lambda_2_1)+mu_2), (mu_3-(v3+lambda_3_0)), ((v3-lambda_3_1)+mu_3), ((theta_1_0+theta_1_1)-@1), ((theta_2_0+theta_2_1)-@1), ((theta_3_0+theta_3_1)-@1)]');
         end
     end
