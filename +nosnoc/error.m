@@ -32,6 +32,5 @@ end
 
 function [part] = normalize_part_for_id(part)
     part = strip(part, 'left', '+'); % remove leading + if it exists.
-    part = lower(part); % lowercase the part.
     part = char(part); % return char for concatenation.
 end
