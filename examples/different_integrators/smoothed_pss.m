@@ -48,6 +48,7 @@ model = nosnoc.model.Pss();
 
 % Select matlab ode solver
 solver_options.matlab_ode_solver = 'ode23s';
+problem_options.sigma_smoothing = 1e-4;
 
 
 %% Time settings
@@ -85,6 +86,9 @@ model.F = F;
 %% Call integrator
 integrator = nosnoc.integrator.SmoothedPss(model, problem_options, solver_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
+
+error_x = norm(x_res(:,end)-x_star);
+fprintf(['Numerical error with ' char(solver_options.matlab_ode_solver) ' and smoothing parameter sigma = %2.2e is: %5.2e: \n'],problem_options.sigma_smoothing,error_x);
 
 %% Plot integrator
 t_star = R_osc; % eact switching time
