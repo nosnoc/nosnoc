@@ -14,7 +14,6 @@ solver_options = nosnoc.solver.Options();
 problem_options.use_fesd = use_fesd;
 problem_options.rk_representation = rk_representation;
 problem_options.rk_scheme = rk_scheme;
-solver_options.real_time_plot = 0;
 solver_options.print_level = 2;
 problem_options.n_s = 4;
 problem_options.dcs_mode = dcs_mode;
