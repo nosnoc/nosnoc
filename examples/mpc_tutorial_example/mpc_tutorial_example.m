@@ -19,12 +19,14 @@ model = nosnoc.model.Pss(); % Initialize a nosnoc model, (depending on the under
 % define differential states and populate the model.
 q = SX.sym('q'); 
 v = SX.sym('v'); % CasADi symbolic variables for states
-v_target = SX.sym('v_target');
 model.x = [q;v]; % populate model state vectors
 model.x0 = [0;0]; % initial value
 v_max = 20;
 model.lbx = [-inf;-v_max]; % lower bounds on states
 model.ubx = [inf;v_max]; % upper bounds on states
+v_target = SX.sym('v_target'); % CasADi symbolic variables for target v in running cost.
+model.p_global = v_target;
+model.p_global_val = 0;
 % define control vectors
 u = SX.sym('u');  % CasADi symbolic variables for controls
 model.u = u;
@@ -65,17 +67,47 @@ mpc_options.fullmpcc_fast_sigma_0 = 1e-7;
 % create mpc object
 mpc = nosnoc.mpc.FullMpcc(model, mpc_options, problem_options, solver_options);
 
+% Flag for plotting intermediate solutions
+plot_intermediate_solutions = true;
+if plot_intermediate_solutions
+    q_plot = subplot(311);
+    v_plot = subplot(312);
+    u_plot = subplot(313);
+end
+
 % Do MPC assuming the predicted state is accurate, in practice this may not be true.
 x = model.x0; u = []; t = 0; tf = [];
 x0 = x;
+
+% Calculate target v
+v_target_val = (x0(1) - q_goal)/problem_options.T;
+mpc.set_param('p_global', {}, v_target_val) % for p_global the index parameter should be empty, otherwise it should be the control stage for p_time_var.
 for step=1:N_steps
-    mpc.set_param('p_global', {}, x0(2));
     [u_i, stats] = mpc.get_feedback(x0);
     tf_i = stats.feedback_time;
     tf = [tf, tf_i];
     fprintf("MPC step: %d, Feedback time: %d\n", step, tf_i);
     mpc.do_preparation();
     x0 = mpc.get_predicted_state();
+
+    % Plot intermediate solution by getting x, t, and u from mpc object
+    if plot_intermediate_solutions
+        x_res = mpc.get('x');
+        q_res = x_res(1,:);
+        v_res = x_res(2,:);
+        t_grid = mpc.get_time_grid();
+        u_res = mpc.get('u');
+        t_grid_u = mpc.get_control_grid();
+
+        plot(q_plot, t_grid, q_res)
+        plot(v_plot, t_grid, v_res)
+        stairs(u_plot, t_grid_u, [u_res, u_res(end)])
+    end 
+
+    % Calculate target v
+    v_target_val = (x0(1) - q_goal)/problem_options.T;
+    mpc.set_param('p_global', {}, v_target_val) % for p_global the index parameter should be empty, otherwise it should be the control stage for p_time_var.
+    
     % x0_distrubance = (-2+4*rand(size(x0)));
     % x0 =  x0+x0_distrubance;
     x = [x, x0];
