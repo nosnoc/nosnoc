@@ -36,14 +36,14 @@ classdef Heaviside < nosnoc.dcs.Base
             model = obj.model;
 
             if ~ismember(class(obj.model), {'nosnoc.model.Pss', 'nosnoc.model.Heaviside'})
-                error('A heaviside DCS can only be created from a PSS or Heaviside step model.')
+                nosnoc.error('wrong_model_type', 'A heaviside DCS can only be created from a PSS or Heaviside step model.')
             end
 
             switch class(obj.model)
               case "nosnoc.model.Pss"
                 % Check pss popluated S and c;
                 if isempty(model.S)
-                    error("The PSS model must containt the lp_stationarity matrix S and lp_stationarity function c.");
+                    nosnoc.error('missing_S', "The PSS model must containt the lp_stationarity matrix S and lp_stationarity function c.");
                 end
 
                 dims.n_alpha = sum(obj.dims.n_c_sys); % number of modes

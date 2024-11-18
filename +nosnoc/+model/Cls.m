@@ -73,29 +73,29 @@ classdef Cls < nosnoc.model.Base
             dims.n_v = dims.n_x/2;
             
             if size(obj.f_v,1) ~= dims.n_v
-                error("nosnoc: f_v has incorrect dimension. It must have the same dimension as v.")
+                nosnoc.error('size_f_v', "f_v has incorrect dimension. It must have the same dimension as v.")
             end
 
             dims.n_c = size(obj.f_c,1);
 
             if isempty(obj.e)
-                error("nosnoc: Please provide a coefficient of restitution via model.e")
+                nosnoc.error('missing_restitution', "Please provide a coefficient of restitution via model.e")
             else
                 if length(obj.e) ~= 1 && length(obj.e) ~= dims.n_c
-                    error('The length of model.e has to be one or match the length of model.f_c')
+                    nosnoc.error('size_restitution', 'The length of model.e has to be one or match the length of model.f_c')
                 end
                 if length(obj.e) == 1
                     obj.e = obj.e*ones(dims.n_c,1);
                 end
             end
             if any(abs(1-obj.e)>1) || any(obj.e<0)
-                error('nosnoc: the coefficient of restitution e should be in [0,1].')
+                nosnoc.error('','the coefficient of restitution e should be in [0,1].')
             end
 
             % coefficient of friction checks
             if size(obj.mu, 1) ~= 0
                 if length(obj.mu) ~= 1 && length(obj.mu) ~= dims.n_c
-                    error('The length of model.mu has to be one or match the length of model.f_c.')
+                    nosnoc.error('size_mu', 'The length of model.mu has to be one or match the length of model.f_c.')
                 end
                 if length(obj.mu) == 1
                     obj.mu = obj.mu*ones(dims.n_c,1);
@@ -112,7 +112,7 @@ classdef Cls < nosnoc.model.Base
                 fprintf('nosnoc: Coefficients of friction mu not provided, setting it to zero for all contacts. \n')
             end
             if any(obj.mu<0)
-                error('nosnoc: The coefficients of friction mu should be nonnegative.')
+                nosnoc.error('negative_mu', 'The coefficients of friction mu should be nonnegative.')
             end
 
             if isempty(obj.M)
@@ -120,7 +120,7 @@ classdef Cls < nosnoc.model.Base
                 obj.M = eye(dims.n_q);
                 obj.invM = inv(obj.M);
             elseif any(size(obj.M) ~= dims.n_q)
-                error('nosnoc: Inertia matrix has incorrect dimensions.')
+                error('size_M', 'Inertia matrix has incorrect dimensions.')
             else
                 obj.invM = inv(obj.M);
             end
@@ -134,7 +134,7 @@ classdef Cls < nosnoc.model.Base
             if J_normal_exists
                 if size(obj.J_normal,1)~=dims.n_q && size(obj.J_normal,2)~=dims.n_c
                     fprintf('nosnoc: J_normal should be %d x %d matrix.\n',dims.n_q,dims.n_c);
-                    error('nosnoc: J_normal has the wrong size.')
+                    nosnoc.error('size_J_normal','J_normal has the wrong size.')
                 end
                 J_normal_exists = 1;
             else
@@ -148,16 +148,16 @@ classdef Cls < nosnoc.model.Base
                 if isequal(opts.friction_model,'Conic')
                     if size(obj.J_tangent, 1) ~= 0
                         if size(obj.J_tangent,1)~=dims.n_q
-                            error('nosnoc: J_tangent has the wrong size.')
+                            nosnoc.error('size_J_tangent','J_tangent has the wrong size.')
                         end
                     else
-                        error('nosnoc: Please provide the tangent Jacobian in model.J_tangent.')
+                        nosnoc.error('missing_J_tangent','Please provide the tangent Jacobian in model.J_tangent.')
                     end
                 end
 
                 if isequal(opts.friction_model,'Polyhedral')
                     if isempty(obj.D_tangent)
-                        error('nosnoc: Please provide the polyhedral tangent Jacobian in model.D_tangent, e.g., using the conic tangent Jacobian model.J_tangent: D_tangent = [J_tangent(q_0),-J_tangent(q_0)].')
+                        nosnoc.error('missing_D_tangent','Please provide the polyhedral tangent Jacobian in model.D_tangent, e.g., using the conic tangent Jacobian model.J_tangent: D_tangent = [J_tangent(q_0),-J_tangent(q_0)].')
                     end
                 end
             end

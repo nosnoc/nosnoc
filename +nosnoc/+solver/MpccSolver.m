@@ -533,7 +533,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         end
 
         function out = cat(dim,varargin)
-            error('Concatenation not supported.')
+            nosnoc.error('invalid', 'Invalid Operation')
         end
 
         function varargout = size(obj,varargin)
@@ -1242,7 +1242,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                         sigma_k = max(opts.sigma_N,min(opts.homotopy_update_slope*sigma_k,sigma_k^opts.homotopy_update_exponent));
                     else
                         % TODO(@anton) make this not necessary
-                        error('For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
+                        nosnoc.error('wrong_homotopy_update_rule','For the homotopy_update_rule please select ''linear'' or ''superlinear''.')
                     end
                 end
                 stats.sigma_k = [stats.sigma_k, sigma_k];
@@ -1355,11 +1355,11 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         end
         
         function obj = parenAssign(obj,index_op,varargin)
-            error('Invalid operation');
+            nosnoc.error('invalid', 'Invalid operation');
         end
         
         function obj = parenDelete(obj,index_op)
-            error('Invalid operation')
+            nosnoc.error('invalid', 'Invalid operation')
         end
 
         function n = parenListLength(obj,index_op,ctx)
@@ -1383,10 +1383,10 @@ function X = all_combinations(varargin)
     for i=1:numSets,
         thisSet = sort(varargin{i});
         if ~isequal(prod(size(thisSet)),length(thisSet)),
-            error('All inputs must be vectors.')
+            nosnoc.error('combinations_not_vectors', 'All inputs must be vectors.')
         end
         if ~isnumeric(thisSet),
-            error('All inputs must be numeric.')
+            nosnoc.error('cominations_not_numeric','All inputs must be numeric.')
         end
         sizeThisSet(i) = length(thisSet);
         varargin{i} = thisSet;

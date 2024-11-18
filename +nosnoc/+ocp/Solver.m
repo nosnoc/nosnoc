@@ -41,7 +41,7 @@ classdef Solver < handle
                     obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
                 else
-                    error("nosnoc: PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
+                    nosnoc.error('wrong_dcs_mode', "PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
                 end
               case "nosnoc.model.Heaviside"
                 obj.dcs = nosnoc.dcs.Heaviside(model);
@@ -51,7 +51,7 @@ classdef Solver < handle
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Cls"
                 if ~opts.use_fesd
-                    error("nosnoc: The FESD-J reformulation only makes sense with use_fesd=true.")
+                    nosnoc.error('fesd_j_without_fesd',"The FESD-J reformulation only makes sense with use_fesd=true.")
                 end
                 obj.dcs = nosnoc.dcs.Cls(model);
                 obj.dcs.generate_variables(opts);
@@ -60,10 +60,10 @@ classdef Solver < handle
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Pds"
                 if ~opts.right_boundary_point_explicit
-                    error("nosnoc: You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA.")
+                    nosnoc.error('pds_rbp_not_one', "You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA.")
                 end
                 if opts.rk_representation == RKRepresentation.differential
-                    error("nosnoc: Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation.")
+                    nosnoc.error('pds_differential',"Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation.")
                 end
                 obj.dcs = nosnoc.dcs.Gcs(model);
                 obj.dcs.generate_variables(opts);
@@ -71,7 +71,7 @@ classdef Solver < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Gcs(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               otherwise
-                error("nosnoc: Unknown model type.")
+                nosnoc.error('unknown_model', "Unknown model type.")
             end
         end
 
@@ -92,12 +92,12 @@ classdef Solver < handle
                 warning on vdx:indexing:dot_reference_returns_vdx_var
             catch
                 if strcmp(field, 'T_final')
-                    warning("nosnoc:ocp:Solver:terminal_time_for_non_time_optimal_ocp",...
+                    nosnoc.warning("terminal_time_for_non_time_optimal_ocp",...
                         "You are trying to get the final time from a non-time-optimal problem. Instead returning the fixed time.")
                     ret = obj.discrete_time_problem.p.T.val;
                     return
                 else
-                    error(['nosnoc:' char(field) ' is not a valid field for this OCP.']);
+                    nosnoc.error('nonexistant_field', [char(field) ' is not a valid field for this OCP.']);
                 end
                 % TODO@anton print list of valid fields.
             end
@@ -117,7 +117,7 @@ classdef Solver < handle
         function set_param(obj, param, value)
         % TODO (@anton) figure out how to do a set with indexing
             if ~obj.discrete_time_problem.p.has_var(param);
-                error(['nosnoc:' char(param) ' does not exist as a parameter for this OCP.']);
+                nosnoc.error('nonexistant_param', [char(param) ' does not exist as a parameter for this OCP.']);
             end
             warning off vdx:indexing:dot_reference_returns_vdx_var
             obj.discrete_time_problem.p.(param)().val = value;
@@ -137,7 +137,7 @@ classdef Solver < handle
                 var = obj.discrete_time_problem.w.(field);
                 warning on vdx:indexing:dot_reference_returns_vdx_var
             catch
-                error(['nosnoc:' char(field) ' is not a valid field for this OCP.']);
+                nosnoc.error('nonexistant_field',[char(field) ' is not a valid field for this OCP.']);
                 % TODO @anton print list of valid fields.
             end
             indexing(1:var.depth) = {':'};
@@ -206,7 +206,7 @@ classdef Solver < handle
 
         function set(obj, varname, field, indices, value)
             if ~obj.discrete_time_problem.w.has_var(varname)
-                error(['nosnoc:' char(varname) ' is not a valid field for this integrator.']);
+                nosnoc.error('nonexistant_field', [char(varname) ' is not a valid field for this ocp.']);
             end
             var = obj.discrete_time_problem.w.(varname);
             var(indices{:}).(field) = value;

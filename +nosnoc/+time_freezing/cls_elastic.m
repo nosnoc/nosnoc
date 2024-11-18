@@ -12,7 +12,7 @@ function [pss_model] = cls_elastic(cls_model, opts)
     
     dims.n_contacts = length(cls_model.f_c);
     if dims.n_c > 1
-        error("nosnoc:time_freezing:cls_elastic:too_many_contacts", "nosnoc: time freezing for elastic contacts currently only supports a single contact.")
+        nosnoc.error("too_many_contacts", "time freezing for elastic contacts currently only supports a single contact.")
     end
     
     % quadrature state

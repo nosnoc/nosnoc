@@ -78,11 +78,10 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
             if size(obj.x, 1) ~= 0
                 dims.n_x = length(obj.x);
-                % check  lbx
+                % check lbx
                 if size(obj.lbx, 1) ~= 0
                     if length(obj.lbx) ~= dims.n_x
-                        error('nosnoc:model:Base:lbx_size',...
-                            'nosnoc: The vector lbx, for the lower bounds of x has the wrong size.')
+                        nosnoc.error('lbx_size', 'The vector lbx, for the lower bounds of x has the wrong size.')
                     end
                 else
                     obj.lbx = -inf*ones(dims.n_x,1);
@@ -90,8 +89,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 % check ubx
                 if size(obj.ubx, 1) ~= 0
                     if length(obj.ubx) ~= dims.n_x
-                        error('nosnoc:model:Base:ubx_size',...
-                            'nosnoc: The vector ubx, for the upper bounds of x has the wrong size.')
+                        nosnoc.error('ubx_size', 'The vector ubx, for the upper bounds of x has the wrong size.')
                     end
                 else
                     obj.ubx = inf*ones(dims.n_x,1);
@@ -100,15 +98,14 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 % check x0
                 if size(obj.x0, 1) ~= 0
                     if length(obj.x0) ~= dims.n_x
-                        error('nosnoc:model:Base:x0_size',...
-                            'nosnoc: The vector x0, for the initial guess of x has the wrong size.')
+                        nosnoc.error('x0_size', 'The vector x0, for the initial guess of x has the wrong size.')
                     end
                 else
                     obj.x0 = 0*ones(dims.n_x,1);
                 end
             else
-                error('nosnoc:model:Base:x_missing',...
-                    'nosnoc: Please provide the state vector x, a CasADi symbolic variable.');
+                nosnoc.error('x_missing',...
+                    'Please provide the state vector x, a CasADi symbolic variable.');
             end
             opts.casadi_symbolic_mode = ['casadi.' obj.x(1).type_name()]; % TODO(@anton) this shoud probably live in opts class
 
@@ -118,8 +115,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 % check  lbu
                 if size(obj.lbu, 1) ~= 0
                     if length(obj.lbu) ~= dims.n_u
-                        error('nosnoc:model:Base:lbu_size',...
-                            'nosnoc: The vector lbu, for the lower bounds of u has the wrong size.')
+                        nosnoc.error('lbu_size',...
+                            'The vector lbu, for the lower bounds of u has the wrong size.')
                     end
                 else
                     obj.lbu = -inf*ones(dims.n_u,1);
@@ -127,8 +124,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 % check ubu
                 if size(obj.ubu, 1) ~= 0
                     if length(obj.ubu) ~= dims.n_u
-                        error('nosnoc:model:Base:ubu_size',...
-                            'nosnoc: The vector ubu, for the upper bounds of u has the wrong size.')
+                        nosnoc.error('ubu_size',...
+                            'The vector ubu, for the upper bounds of u has the wrong size.')
                     end
                 else
                     obj.ubu = inf*ones(dims.n_u,1);
@@ -136,8 +133,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 % check u0
                 if size(obj.u0, 1) ~= 0
                     if length(obj.u0) ~= dims.n_u
-                        error('nosnoc:model:Base:u0_size',...
-                            'nosnoc: The vector u0, for the initial guess of u has the wrong size.')
+                        nosnoc.error('u0_size',...
+                            'The vector u0, for the initial guess of u has the wrong size.')
                     end
                 else
                     obj.u0 = 0*ones(dims.n_u,1);
@@ -155,8 +152,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 dims.n_z = length(obj.z);
                 if size(obj.z0, 1) ~= 0
                     if length(obj.z0) ~= dims.n_z
-                        error('nosnoc:model:Base:z0_size',...
-                            'nosnoc: The vector z0, for the initial guess of z has the wrong size.')
+                        nosnoc.error('z0_size',...
+                            'The vector z0, for the initial guess of z has the wrong size.')
                     end
                 else
                     obj.z0 = zeros(dims.n_z, 1);
@@ -164,8 +161,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
                 if size(obj.lbz, 1) ~= 0
                     if length(obj.lbz) ~= dims.n_z
-                        error('nosnoc:model:Base:lbz_size',...
-                            'nosnoc: The vector lbz, for the lower bound of z has the wrong size.')
+                        nosnoc.error('lbz_size',...
+                            'The vector lbz, for the lower bound of z has the wrong size.')
                     end
                 else
                     obj.lbz = -inf*ones(dims.n_z, 1);
@@ -173,8 +170,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
                 if size(obj.ubz, 1) ~= 0
                     if length(obj.ubz) ~= dims.n_z
-                        error('nosnoc:model:Base:ubz_size',...
-                            'nosnoc: The vector ubz, for the lower bound of z has the wrong size.')
+                        nosnoc.error('ubz_size',...
+                            'The vector ubz, for the lower bound of z has the wrong size.')
                     end
                 else
                     obj.ubz = inf*ones(dims.n_z, 1);
@@ -192,8 +189,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 dims.n_v_global = length(obj.v_global);
                 if size(obj.v0_global, 1) ~= 0
                     if length(obj.v0_global) ~= dims.n_v_global
-                        error('nosnoc:model:Base:v0_global_size',...
-                            'nosnoc: The vector v0_global, for the initial guess of v_global has the wrong size.')
+                        nosnoc.error('v0_global_size',...
+                            'The vector v0_global, for the initial guess of v_global has the wrong size.')
                     end
                 else
                     obj.v0_global = zeros(dims.n_v_global, 1);
@@ -201,8 +198,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
                 if size(obj.lbv_global, 1) ~= 0
                     if length(obj.lbv_global) ~= dims.n_v_global
-                        error('nosnoc:model:Base:lbv_global_size',...
-                            'nosnoc: The vector lbv_global, for the lower bound of v_global has the wrong size.')
+                        nosnoc.error('lbv_global_size',...
+                            'The vector lbv_global, for the lower bound of v_global has the wrong size.')
                     end
                 else
                     obj.lbv_global = -inf*ones(dims.n_v_global, 1);
@@ -210,8 +207,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
                 if size(obj.ubv_global, 1) ~= 0
                     if length(obj.ubv_global) ~= dims.n_v_global
-                        error('nosnoc:model:Base:ubv_global_size',...
-                            'nosnoc: The vector ubv_global, for the upper bound of v_global has the wrong size.')
+                        nosnoc.error('ubv_global_size',...
+                            'The vector ubv_global, for the upper bound of v_global has the wrong size.')
                     end
                 else
                     obj.ubv_global = inf*ones(dims.n_v_global, 1);
@@ -229,8 +226,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 dims.n_p_global = size(obj.p_global,1);
                 if size(obj.p_global_val, 1) ~= 0
                     if size(obj.p_global_val,1) ~= dims.n_p_global
-                        error('nosnoc:model:Base:p_global_val_size',...
-                            'nosnoc: User provided p_global_val has the wrong size.')
+                        nosnoc.error('p_global_val_size',...
+                            'User provided p_global_val has the wrong size.')
                     end
                 else
                     p_global_val = zeros(dims.n_p_global,1);
@@ -245,8 +242,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 dims.n_p_time_var = size(obj.p_time_var, 1);
                 if size(obj.p_time_var_val, 1) ~= 0
                     if size(obj.p_time_var_val) ~= [dims.n_p_time_var, opts.N_stages]
-                        error('nosnoc:model:Base:p_time_var_val_size',...
-                            'nosnoc: User provided p_time_var_val has the wrong size.')
+                        nosnoc.error('p_time_var_val_size',...
+                            'User provided p_time_var_val has the wrong size.')
                     end
                 else
                     obj.p_time_var_val = zeros(dims.n_p_time_var, opts.N_stages);
@@ -270,30 +267,30 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
             %% Least squares objective terms with variables references
             if size(obj.lsq_x, 1) ~= 0
                 if length(obj.lsq_x)<3
-                    error('nosnoc:model:Base:lsq_x_missing_component',...
-                        'nosnoc: In lsq_x either the least squares function, the reference of the weight matrix are missing.')
+                    nosnoc.error('lsq_x_missing_component',...
+                        'In lsq_x either the least squares function, the reference of the weight matrix are missing.')
                 end
                 if size(obj.lsq_x{2},1)~=size(obj.lsq_x{1})
-                    error('nosnoc:model:Base:lsq_x_dim_mismatch',...
-                        'nosnoc: The dimensions of the least squares error term and weighting matrix for the differential states do not match.')
+                    nosnoc.error('lsq_x_dim_mismatch',...
+                        'The dimensions of the least squares error term and weighting matrix for the differential states do not match.')
                 end
                 if size(obj.lsq_x{1},1)~=size(obj.lsq_x{3})
-                    error('nosnoc:model:Base:lsq_x_dim_mismatch',...
-                        'nosnoc: The dimensions of the least squares error term and reference for the differential states do not match.')
+                    nosnoc.error('lsq_x_dim_mismatch',...
+                        'The dimensions of the least squares error term and reference for the differential states do not match.')
                 end
 
                 n_x_ref_rows = size(obj.lsq_x{2},1);
                 n_x_ref_cols = size(obj.lsq_x{2},2);
                 if n_x_ref_cols == opts.N_stages
-                    fprintf('nosnoc: the provided reference for the differential states is time variable. \n');
+                    fprintf('the provided reference for the differential states is time variable. \n');
                 elseif n_x_ref_cols == 1
                     % replaciate
-                    fprintf('nosnoc: the provided reference for the differential states is constant over time. \n');
+                    fprintf('the provided reference for the differential states is constant over time. \n');
                     obj.lsq_x{2} = repmat(obj.lsq_x{2},1,opts.N_stages);
                 else
-                    fprintf('nosnoc: The reference in lsq_x has to have a length of %d (if constant) or %d if time variables. \n',1,opts.N_stages)
-                    error('nosnoc:model:Base:lsq_x_dim_mismatch',...
-                        'nosnoc: Please provide x_ref in lsq_x{1} with an appropriate size.')
+                    fprintf('The reference in lsq_x has to have a length of %d (if constant) or %d if time variables. \n',1,opts.N_stages)
+                    nosnoc.error('lsq_x_dim_mismatch',...
+                        'Please provide x_ref in lsq_x{1} with an appropriate size.')
                 end
                 obj.x_ref_val = obj.lsq_x{2};
                 obj.x_ref = define_casadi_symbolic(opts.casadi_symbolic_mode,'x_ref',n_x_ref_rows);
@@ -307,29 +304,29 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
             % least square terms for control inputs
             if size(obj.lsq_u, 1) ~= 0
                 if length(obj.lsq_u)<3
-                    error('nosnoc:model:Base:lsq_u_missing_component',...
-                        'nosnoc: In lsq_u either the least squares function, the reference of the weight matrix are missing.')
+                    nosnoc.error('lsq_u_missing_component',...
+                        'In lsq_u either the least squares function, the reference of the weight matrix are missing.')
                 end
                 if size(obj.lsq_u{2},1)~=size(obj.lsq_u{1})
-                    error('nosnoc:model:Base:lsq_u_dim_mismatch',...
-                        'nosnoc: The dimensions of the least squares error term and weighting matrix for the control input do not match.')
+                    nosnoc.error('lsq_u_dim_mismatch',...
+                        'The dimensions of the least squares error term and weighting matrix for the control input do not match.')
                 end
                 if size(obj.lsq_u{1},1)~=size(obj.lsq_u{3})
-                    error('nosnoc:model:Base:lsq_u_dim_mismatch',...
-                        'nosnoc: The dimensions of the least squares error term and reference for the control input do not match.')
+                    nosnoc.error('lsq_u_dim_mismatch',...
+                        'The dimensions of the least squares error term and reference for the control input do not match.')
                 end
                 n_u_ref_rows = size(obj.lsq_u{2},1);
                 n_u_ref_cols = size(obj.lsq_u{2},2);
                 if n_u_ref_cols == opts.N_stages
-                    fprintf('nosnoc: the provided reference for the control inputs is time variable. \n');
+                    fprintf('the provided reference for the control inputs is time variable. \n');
                 elseif n_u_ref_cols == 1
                     % replaciate
-                    fprintf('nosnoc: the provided reference for the control inputs is constant over time. \n');
+                    fprintf('the provided reference for the control inputs is constant over time. \n');
                     obj.lsq_u{2} = repmat(obj.lsq_u{2},1,opts.N_stages);
                 else
-                    fprintf('nosnoc: The reference in lsq_u has to have a length of %d (if constant) or %d if time variables. \n',1,opts.N_stages)
-                    error('nosnoc:model:Base:lsq_u_dim_mismatch',...
-                        'nosnoc: Please provide u_ref in lsq_u{2} with an appropriate size.')
+                    fprintf('The reference in lsq_u has to have a length of %d (if constant) or %d if time variables. \n',1,opts.N_stages)
+                    nosnoc.error('lsq_u_dim_mismatch',...
+                        'Please provide u_ref in lsq_u{2} with an appropriate size.')
                 end
                 obj.u_ref_val = obj.lsq_u{2};
                 obj.u_ref = define_casadi_symbolic(opts.casadi_symbolic_mode,'u_ref',n_u_ref_rows);
@@ -344,26 +341,26 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
             if size(obj.lsq_T, 1) ~= 0
                 % sanity chkecs on the input
                 if length(obj.lsq_T)<3
-                    error('nosnoc:model:Base:lsq_T_missing_component',...
-                        'nosnoc: In lsq_T either the least squares function, the reference or the weight matrix are missing.')
+                    nosnoc.error('lsq_T_missing_component',...
+                        'In lsq_T either the least squares function, the reference or the weight matrix are missing.')
                 end
                 if size(obj.lsq_T{2},1)~=size(obj.lsq_T{1})
-                    error('nosnoc:model:Base:lsq_T_dim_mismatch',...
-                        'nosnoc: The dimensions of the least squares error term and weighting matrix for the terminal cost do not match.')
+                    nosnoc.error('lsq_T_dim_mismatch',...
+                        'The dimensions of the least squares error term and weighting matrix for the terminal cost do not match.')
                 end
                 if size(obj.lsq_T{1},1)~=size(obj.lsq_T{3})
-                    error('nosnoc:model:Base:lsq_T_dim_mismatch',...
-                        'nosnoc: The dimensions of the least squares error term and reference for the terminal cost do not match.')
+                    nosnoc.error('lsq_T_dim_mismatch',...
+                        'The dimensions of the least squares error term and reference for the terminal cost do not match.')
                 end
 
                 n_x_T_rows = size(obj.lsq_T{2},1);
                 n_x_T_cols = size(obj.lsq_T{2},2);
                 if n_x_T_cols == 1
-                    fprintf('nosnoc: The provided reference for the terminal cost is ok. \n');
+                    fprintf('The provided reference for the terminal cost is ok. \n');
                 else
-                    fprintf('nosnoc: The reference in lsq_T has to be a vector of length %d. \n',length(obj.lsq_T{1}));
-                    error('nosnoc:model:Base:lsq_T_dim_mismatch',...
-                        'nosnoc: Please provide a reference vector in lsq_T{2} with an appropriate size.')
+                    fprintf('The reference in lsq_T has to be a vector of length %d. \n',length(obj.lsq_T{1}));
+                    nosnoc.error('lsq_T_dim_mismatch',...
+                        'Please provide a reference vector in lsq_T{2} with an appropriate size.')
                 end
                 obj.x_ref_end_val = obj.lsq_T{2};
                 obj.x_ref_end = define_casadi_symbolic(opts.casadi_symbolic_mode,'x_ref_end',n_x_T_rows);
@@ -380,7 +377,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 dims.n_g_path = length(obj.g_path);
                 if size(obj.lbg_path, 1) ~= 0
                     if length(obj.lbg_path)~=dims.n_g_path;
-                        error('nosnoc:model:Base:lbg_path_size',...
+                        nosnoc.error('lbg_path_size',...
                             'The user provided vector lbg_path has the wrong size.')
                     end
                 else
@@ -389,7 +386,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
                 if size(obj.ubg_path, 1) ~= 0
                     if length(obj.ubg_path)~=dims.n_g_path;
-                        error('nosnoc:model:Base:ubg_path_size',...
+                        nosnoc.error('ubg_path_size',...
                             'The user provided vector ubg_path has the wrong size.')
                     end
                 else
@@ -404,7 +401,7 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
             if size(obj.G_path, 1) ~= 0
                 dims.n_g_comp = size(obj.G_path, 1);
                 if size(obj.G_path, 1) ~= size(obj.H_path, 1)
-                    error('nosnoc:model:Base:path_complementarity_mismatch',...
+                    nosnoc.error('path_complementarity_mismatch',...
                         'G_path and H_path must be the same size.')
                 end
             else
@@ -415,8 +412,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
                 dims.n_g_terminal = length(obj.g_terminal);
                 if size(obj.lbg_terminal, 1) ~= 0
                     if length(obj.lbg_terminal)~=dims.n_g_terminal
-                        error('nosnoc:model:Base:lbg_terminal_size',...
-                            'nosnoc: The provided vector lbg_terminal has the wrong size.')
+                        nosnoc.error('lbg_terminal_size',...
+                            'The provided vector lbg_terminal has the wrong size.')
                     end
                 else
                     obj.lbg_terminal = 0*ones(dims.n_g_terminal,1);
@@ -424,8 +421,8 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
 
                 if size(obj.ubg_terminal, 1) ~= 0
                     if length(obj.ubg_terminal)~=dims.n_g_terminal
-                        error('nosnoc:model:Base:ubg_terminal_size',...
-                            'nosnoc: The provided vector ubg_terminal has the wrong size.')
+                        nosnoc.error('ubg_terminal_size',...
+                            'The provided vector ubg_terminal has the wrong size.')
                     end
                 else
                     obj.ubg_terminal =  0*ones(dims.n_g_terminal,1);

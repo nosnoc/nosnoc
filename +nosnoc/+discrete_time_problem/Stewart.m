@@ -585,7 +585,7 @@ classdef Stewart < vdx.problems.Mpcc
             
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
-                error("nosnoc: Currently unsupported.")
+                nosnoc.error('g_T_homotopy_unsuported', "terminal constraint homotopy Currently unsupported")
             end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
@@ -802,31 +802,8 @@ classdef Stewart < vdx.problems.Mpcc
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.direct_homotopy
-                error("nosnoc: Currently not supported/implemented.")
-                eta_vec = [];
-                for ii=1:opts.N_stages
-                    for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
-                        
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
-
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
-                        eta = 1;
-                        for jjj=1:length(nu)
-                            eta = eta*nu(jjj);
-                        end
-                        eta_vec = [eta_vec;eta];
-                        obj.eta_vec = eta_vec;
-                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        homotopy_eq = [eta*delta_h - sigma;eta*delta_h + sigma];
-                        obj.g.step_equilibration(ii,jj) = {homotopy_eq, [-inf;0], [0;inf]};
-                    end
-                end
-                %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
+                nosnoc.error('direct_homotopy_unsupported', "Direct homotopy step-eq mode not currently implemented")
+                
               case StepEquilibrationMode.linear_complementarity
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)

@@ -27,17 +27,17 @@ classdef Pds < nosnoc.model.Base
             dims = obj.dims;
 
             if size(obj.f_x_unconstrained,1) ~= dims.n_x
-                error("nosnoc: f_x_unconstrained has incorrect dimension. It must have the same dimension as x.")
+                nosnoc.error('size_f_x_unconstrained', "f_x_unconstrained has incorrect dimension. It must have the same dimension as x.")
             end
 
             dims.n_c = size(obj.c,1);
 
             if ~isempty(obj.E)
                 if size(obj.E, 1) ~= dims.n_x
-                    error("nosnoc: Projection matrix E must be an n_x by n_x matrix where n_x is the number of functions defining the set C.")
+                    nosnoc.error('size_E_1', "Projection matrix E must be an n_x by n_x matrix where n_x is the number of functions defining the set C.")
                 end
                 if size(obj.E, 2) ~= dims.n_x
-                    error("nosnoc: Projection matrix E must be an n_x by n_x matrix where n_x is the number of functions defining the set C.")
+                    nosnoc.error('size_E_1', "Projection matrix E must be an n_x by n_x matrix where n_x is the number of functions defining the set C.")
                 end
             else
                 obj.E = eye(dims.n_x);
