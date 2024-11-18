@@ -83,7 +83,7 @@ classdef Stewart < nosnoc.dcs.Base
                 % Gradient of Lagrange Function of indicator LP
                 g_lp_stationarity = [g_lp_stationarity; model.g_indicator{ii} - obj.lambda_sys{ii}+obj.mu_sys{ii}*ones(dims.n_f_sys(ii),1)];
                 g_convex = [g_convex;ones(dims.n_f_sys(ii),1)'*obj.theta_sys{ii} - 1];
-                lambda00_expr = [lambda00_expr; model.g_indicator{ii} - min(model.g_ind{ii})];
+                lambda00_expr = [lambda00_expr; model.g_indicator{ii} - min(model.g_indicator{ii})];
             end
             g_alg = [g_lp_stationarity;g_convex];
             obj.g_alg = g_alg;
