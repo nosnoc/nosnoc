@@ -18,11 +18,12 @@ classdef Options < handle
 
     methods
         function obj = Options()
-
         end
 
         function [] = preprocess(obj)
-
+            if ~ismember(obj.matlab_ode_solver, {'ode23s', 'ode15s'})
+                warning('nosnoc:likely_bad_ode_solver', 'You have selected an ode solver that is unlikely to be efficient for PSS due to stiffness. Choosing ode23s or ode15s are likely to work better.')
+            end
         end
 
         function json = jsonencode(obj,varargin)
