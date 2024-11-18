@@ -93,7 +93,7 @@ classdef Stewart < nosnoc.dcs.Base
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {g_alg});
             obj.g_lp_stationarity_fun = Function('g_lp_stationarity', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_lp_stationarity});
-            obj.g_indicator_fun = Function('g_ind', {model.x, model.z, model.v_global, model.p}, {model.g_ind{:}});
+            obj.g_indicator_fun = Function('g_indicator', {model.x, model.z, model.v_global, model.p}, {model.g_indicator{:}});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.G_path_fun  = Function('G_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.G_path});
