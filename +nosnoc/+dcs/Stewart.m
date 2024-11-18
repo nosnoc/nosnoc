@@ -1,24 +1,25 @@
 classdef Stewart < nosnoc.dcs.Base
     properties
 
-        theta % CasADi symbolic variable
-        theta_sys % cell containing the theta variables of every subsystem, wheras theta stores the concatenation of all these vectors;
-        lambda % CasADi symbolic variable
-        lambda_sys  % same as theta_sys
-        mu % CasADi symbolic variable
-        mu_sys % same as theta_sys
+        theta % casadi.SX|casadi.MX: Convex multipliers for the Stewart LP.
+        theta_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing theta for linearly independent subsystem.
+        lambda % casadi.SX|casadi.MX: Inequality lagrange multiplier in Stewart LP.
+        lambda_sys  % cell(casadi.SX|casadi.MX): Cell array with each cell containing lambda for linearly independent subsystem.
+        mu % casadi.SX|casadi.MX: Equality lagrange multiplier in Stewart LP.
+        mu_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing mu for linearly independent subsystem.
 
-        z_all % CasADi symbolic variable - all algebraic variables (user provided and Stewart DCS specific)
+        z_all % casadi.SX|casadi.MX: Vector of all algorithmic algebraic variables.
 
-        f_x  % CasADi symbolic expression -  r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems
-        g_ind % CasADi symbolic expression - TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
-        g_alg % CasADi symbolic expression - expression for algebraic part of DCS
+        f_x  % casadi.SX|casadi.MX: r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems.
+        g_ind % casadi.SX|casadi.MX: 
+        g_alg % casadi.SX|casadi.MX: Expression for algebraic part of DCS.
 
-        dims
-        % functions specific to the stewart DCS
-        g_lp_stationarity_fun % CasADi function - related to DCS
-        g_ind_fun % CasADi function - related to DCS
-        lambda00_fun % CasADi function - related to DCS
+        dims % struct: Contains relevant dimensions.
+        
+        
+        g_lp_stationarity_fun % casadi.Function: Stewart LP stationarity function.
+        g_ind_fun % casadi.Function: 
+        lambda00_fun % casadi.Function: Function mapping initial lambda from initial x.
     end
 
     methods

@@ -1,26 +1,26 @@
 classdef Heaviside < nosnoc.dcs.Base
     properties
-        alpha % CasADi symbolic variable for selection of the Heaviside step function
-        alpha_sys % cell containing the alpha variables of every subsystem, wheras alpha stores the concatenation of all these vectors;
-        lambda_n % CasADi symbolic variable 
-        lambda_n_sys % cell
-        lambda_p % CasADi symbolic variable 
-        lambda_p_sys % cell
-        theta_expr_sys 
+        alpha % casadi.SX|casadi.MX: Heaviside step variables
+        alpha_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing alpha for linearly independent subsystem.
+        lambda_n % casadi.SX|casadi.MX: Variables representing the negative part of the switching function.
+        lambda_n_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing lambda_n for linearly independent subsystem.
+        lambda_p % casadi.SX|casadi.MX: Variables representing the positive part of the switching function.
+        lambda_p_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing lambda_p for linearly independent subsystem.
+        theta_expr_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing the expression in terms of alpha of the convex multiplier theta
 
-        z_all
+        z_all % casadi.SX|casadi.MX: Vector of all algorithmic algebraic variables.
 
-        f_x
-        g_alg
+        f_x % casadi.SX|casadi.MX: Expression for differential part of the DCS r.h.s: $\theta^\top F(x,u)%.
+        g_alg % casadi.SX|casadi.MX: Expression for the algebraic part of the DCS. 
         
-        dims
+        dims % struct: Contains relevant dimensions.
 
-        g_lp_stationarity_fun
-        lambda00_fun
+        g_lp_stationarity_fun % casadi.Function: Function for the Heaviside LP stationarity for all switching functions.
+        lambda00_fun % casadi.Function: Function mapping initial lambda_n and lambda_p from initial x.
     end
 
     properties(SetAccess=private)
-        z_depends_on_alpha = false;
+        z_depends_on_alpha(1,1) logical = false; % boolean: defines whether the user algebraics z depend on alpha, as this requires some special handling. 
     end
 
 
