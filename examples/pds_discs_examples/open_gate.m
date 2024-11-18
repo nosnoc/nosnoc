@@ -1,30 +1,38 @@
+% Optimal control example from 
+% Finite Elements with Switch Detection for Numerical Optimal Control of
+% Projected Dynamical Systems, Proceedings of the IEEE Conference on Decision and Control (CDC) 2024
+% Anton Pozharskiy, Armin Nurkanovic, Moritz Diehl
+%%
 clear all
 close all
 import casadi.*
 
-%%
+%% create nosnoc model and options objects
 model = nosnoc.model.Pds();
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 
-%%
+%% parameter
 T = 5;
-R = 1;
-R_obj = 1;
-R_obstacle = 5;
+R = 1; % radius of manipulators
+R_obj = 1; % radius of manipulated object
+R_obstacle = 5; % radius of obstacle
 %% Define projected system
-x1 = SX.sym('x1', 2);
-x2 = SX.sym('x2', 2);
-x3 = SX.sym('x3', 2);
-gate = SX.sym('gate', 1);
+x1 = SX.sym('x1', 2); % center of manipulator 1
+x2 = SX.sym('x2', 2); % center of manipulator 2
+x3 = SX.sym('x3', 2); % center of manipulated object
+gate = SX.sym('gate', 1); % vertical position of gate, horizontal fix
 x = [x1;x2;x3;gate];
 x_target = [-10;3;-10;0;-7;3;0];
+x0 = [-10;2;10;4;7;3.5;0.9];
+u1 = SX.sym('u1', 2);
+u2 = SX.sym('u2', 2);
+
+% populate nosnoc PDS model
 model.x = x;
 model.lbx = [-inf;-inf;-inf;-inf;-inf;-inf;-inf];
 model.ubx = [inf;5;inf;5;inf;5;inf];
-model.x0 = [-10;2;10;4;7;3.5;0.9];
-u1 = SX.sym('u1', 2);
-u2 = SX.sym('u2', 2);
+model.x0 = x0;
 model.u = [u1;u2];
 model.lbu = [-10;-10;-10;-10];
 model.ubu = [10;10;10;10];
@@ -32,26 +40,29 @@ model.u0 = [0;0;0;0];
 model.c = [norm_2(x3-x1)-(R+R_obj);
     norm_2(x3-x2)-(R+R_obj);
     norm_2(x2-x1)-(R+R);
-    x1(2)-gate-R];
+    x1(2)-gate-R]; % these are the distance functions between manipualtors and objects
 model.g_path = [x2(2)-gate-R;
     x3(2)-gate-R_obj;
     norm_2(x1-[0;5]) - R-R_obstacle;
     norm_2(x2-[0;5]) - R-R_obstacle;
-    norm_2(x3-[0;5]) - R_obj-R_obstacle];
+    norm_2(x3-[0;5]) - R_obj-R_obstacle]; % path constraints for obstacle avoidance and not touching the gate
 model.lbg_path = [0;0;0;0;0];
 model.ubg_path = [inf;inf;inf;inf;inf];
-model.f_x_unconstrained = [u1;u2;0;0;0];
+model.f_x_unconstrained = [u1;u2;0;0;0]; % dynamics of the PDS when no constraints are active
 
 % costs
 model.f_q = 1e-4*norm_2(model.u)^2;
 model.f_q_T = (x-x_target)'*diag([1,1,1,1,1e3,1e3,0])*(x-x_target);
 %model.g_T = x3 - [-7;0];
 
+% Time discertization settings
+
 problem_options.T = T;
 problem_options.N_stages = 30;
 problem_options.N_finite_elements = 3;
 problem_options.n_s = 2;
 
+% Homotopy solver settings 
 solver_options.complementarity_tol = 1e-10;
 solver_options.print_level = 3;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 500;
