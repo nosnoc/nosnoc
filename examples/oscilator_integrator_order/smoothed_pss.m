@@ -85,7 +85,9 @@ model.F = F;
 
 %% Call integrator
 integrator = nosnoc.integrator.SmoothedPss(model, problem_options, integrator_options);
+tic
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
+toc
 error_x = norm(x_res(:,end)-x_star);
 fprintf(['Numerical error with ' char(integrator_options.matlab_ode_solver) ' and smoothing parameter sigma = %2.2e is: %5.2e: \n'],integrator_options.sigma_smoothing,error_x);
 

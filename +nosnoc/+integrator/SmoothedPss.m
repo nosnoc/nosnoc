@@ -2,7 +2,7 @@ classdef SmoothedPss < handle
     properties
         model
         opts
-        solver_opts
+        integrator_opts
 
         dcs
         ode_func
@@ -18,13 +18,14 @@ classdef SmoothedPss < handle
     end
 
     methods
-        function obj = SmoothedPss(model, opts, solver_opts)
+        function obj = SmoothedPss(model, opts, integrator_opts)
             import casadi.*
             obj.model = model;
             obj.opts = opts;
-            obj.solver_opts = solver_opts;
+            obj.integrator_opts = integrator_opts;
 
             opts.preprocess();
+            integrator_opts.preprocess();
             model.verify_and_backfill(opts);
 
             if class(model) == "nosnoc.model.Cls" && opts.time_freezing
@@ -60,7 +61,7 @@ classdef SmoothedPss < handle
                 extra_args.x0 = [];
             end
             opts = obj.opts;
-            solver_opts = obj.solver_opts;
+            integrator_opts = obj.integrator_opts;
             % TODO(@anton) validators here.
             if ~isempty(extra_args.u) && any(size(extra_args.u) ~= [obj.model.dims.n_u opts.N_sim])
                 error("nosnoc: wrong dimensions passed for controls to integrator.")
@@ -86,27 +87,27 @@ classdef SmoothedPss < handle
                 else
                     u_i = [];
                 end
-                switch(obj.solver_opts.matlab_ode_solver)
+                switch(obj.integrator_opts.matlab_ode_solver)
                   case 'ode45'
-                    [t_sim, x_sim] = ode45(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode45(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode23'
-                    [t_sim, x_sim] = ode23(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode23(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode113'
-                    [t_sim, x_sim] = ode113(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode113(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode78'
-                    [t_sim, x_sim] = ode78(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode78(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode89'
-                    [t_sim, x_sim] = ode89(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode89(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode15s'
-                    [t_sim, x_sim] = ode15s(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode15s(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode23s'
-                    [t_sim, x_sim] = ode23s(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);         
+                    [t_sim, x_sim] = ode23s(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);         
                   case 'ode23t'
-                    [t_sim, x_sim] = ode23t(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode23t(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode23tb'
-                    [t_sim, x_sim] = ode23tb(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode23tb(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode15i'
-                    [t_sim, x_sim] = ode15i(@(t, x)  obj.ode_func(t,x,u_i,opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, solver_opts.matlab_ode_opts);
+                    [t_sim, x_sim] = ode15i(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                 end
                 t_current = t_sim(end);
                 obj.t_grid = [obj.t_grid, t_sim(end)];

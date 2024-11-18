@@ -86,16 +86,6 @@ classdef Options < handle
         norm_function
         calculate_stationarity_type(1,1) logical = 0;
 
-        %--------- Integrator Specific -----------%
-        % TODO: Maybe a 3rd options set specifically for integrators :)
-        use_previous_solution_as_initial_guess(1,1) logical = 0
-        simulation_problem(1,1) logical = 0
-        real_time_plot(1,1) logical = 0
-        break_simulation_if_infeasible(1,1) logical = 0
-
-        %--------- Smoothed PSS Integrator Specific -----------%
-        matlab_ode_solver = 'ode23s';
-        matlab_ode_opts = odeset;
     end
 
     properties(Dependent)
