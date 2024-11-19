@@ -28,40 +28,38 @@ classdef Objects < nosnoc.model.Base
     properties (Access=public)
         
         % Algebraics
-        lambda
-        mu
-        alpha
-        p_d
-        y1_d
-        y2_d
-        lambda_t
-        v_t
-        normal_lift
-        gamma_f
+        lambda % casadi.SX|casadi.MX: Standard PDS lagrange multipliers.
+        mu % casadi.SX|casadi.MX: Lagrange multipliers for SDF KKT conditions.
+        alpha % casadi.SX|casadi.MX: SDF objectives.
+        p_d % casadi.SX|casadi.MX: Contact point coordinates.
+        y1_d % casadi.SX|casadi.MX: Auxiliary points for padded polytopes.
+        y2_d % casadi.SX|casadi.MX: Auxiliary points for padded polytopes.
+        lambda_t % casadi.SX|casadi.MX: Multiplier for stick slip friction.
+        v_t % casadi.SX|casadi.MX: Lifted tangential velocity.
+        normal_lift % casadi.SX|casadi.MX: Lifted normal.
+        gamma_f % casadi.SX|casadi.MX: Friction slack variable
 
-        % x_dot lift
-        x_dot_lift
+        x_dot_lift % casadi.SX|casadi.MX: Lifted x_dot
 
-        % friction expressions
-        G_friction
-        H_friction
-        g_friction
+        G_friction % casadi.SX|casadi.MX: Expression for complementarity values G for friction. 
+        H_friction % casadi.SX|casadi.MX: Expression for complementarity values H for friction.
+        g_friction % casadi.SX|casadi.MX: Expression for equality constraints for friction
 
-        % Feasible set
-        r = 0.01
-        g_d
-        g_kkt
-        normal
-        normal0
-        tangent
-        tangent0
+        % r = 0.01 % Padding constant
+        
+        g_d % casadi.SX|casadi.MX: Constraint expressions for SDF
+        g_kkt % casadi.SX|casadi.MX: KKT expression for SDF
+        normal % casadi.SX|casadi.MX: expression for normal vector to contact.
+        normal0 % double: initial values of normal vector
+        tangent % casadi.SX|casadi.MX: expression for tangent vector to contact
+        tangent0 % double: initial values of tangent vector
 
         % Distance functions
-        c
+        c % casadi.SX|casadi.MX: Standard PDS distance functions.
 
         % objects
-        objects
-        contacts
+        objects % nosnoc.objects.Object: List of objects.
+        contacts % cell: List of contact pairs.
 
     end
 
@@ -151,25 +149,32 @@ classdef Objects < nosnoc.model.Base
             nabla_c_x1 = c.jacobian(ball1.x)';
             nabla_c_x2 = c.jacobian(ball2.x)';
 
-            % Update dynamics of both balls
+            % Update dynamics of both balls with normal times lagrange multiplier
             ball1.x_dot = ball1.x_dot + nabla_c_x1*lambda;
             ball2.x_dot = ball2.x_dot + nabla_c_x2*lambda;
 
+            % Normal expression is just nabla_c as c is explicit in this case.
             normal = [nabla_c_x1;nabla_c_x2];
             obj.normal = [obj.normal;normal];
             obj.normal0 = [obj.normal0;0;1;0;-1];
 
+            % Handle friction if necessary.
             if mu_f
                 if ball1.n_dim == 2
+                    % Create tangent variables
                     tangent = SX.sym('tangent', 2);
                     obj.tangent = [obj.tangent; tangent];
                     obj.tangent0 = [obj.tangent0;1;0];
+                    % Create tangential velocity variables.
                     v_t = SX.sym('v_t', 2);
                     obj.v_t = [obj.v_t; v_t];
+                    % Friction values
                     lambda_t = SX.sym('lambda_t', 2);
                     obj.lambda_t = [obj.lambda_t; lambda_t];
+                    % Friction slacks
                     gamma_f = SX.sym('gamma_f', 1);
                     obj.gamma_f = [obj.gamma_f; gamma_f];
+                    % lifted normal variables.
                     normal_lift = SX.sym('normal_lift', 4);
                     obj.normal_lift = [obj.normal_lift; normal_lift];
 
@@ -181,7 +186,9 @@ classdef Objects < nosnoc.model.Base
                         v_t(1) - (dot(ball1.x_dot_lift, tangent)/dot(tangent,tangent)); % Tangent velocities of both objects 
                         v_t(2) - (dot(ball2.x_dot_lift, tangent)/dot(tangent,tangent))];
                     obj.g_friction = [obj.g_friction; g_friction];
-                    
+
+                    % Complementarity constraints for friction in the positive or negative tangent direction must be zero
+                    % also slack that relates the normal and tangential "forces"
                     G_friction = [v_t(1) - v_t(2) + gamma_f;
                         v_t(2) - v_t(1) + gamma_f;
                         mu_f*lambda - lambda_t(1) - lambda_t(2);
@@ -206,29 +213,34 @@ classdef Objects < nosnoc.model.Base
 
             % Helper Functions
             if n_dim == 2
+                % Generate 2d rotation matrix function.
                 theta = SX.sym('theta');
-                R_matrix = [cos(theta) -sin(theta);...
+                Rot = [cos(theta) -sin(theta);...
                     sin(theta) cos(theta)];
-                R = Function('R', {theta}, {R_matrix});
+                R = Function('R', {theta}, {Rot});
+                % Generate vector cross product function
                 a = SX.sym('a',2);
                 b = SX.sym('b',2);
                 cross_fun = Function('cross', {a,b}, {a(1)*b(2) - a(2)*b(1)});
             else
+                % Generate 3d rotation matrix function.
                 rx = SX.sym('rx',1);
                 ry = SX.sym('ry',1);
                 rz = SX.sym('rz',1);
-
                 Rot = [cos(ry)*cos(rz), sin(rx)*sin(ry)*cos(rz) - cos(rx)*sin(rz),  cos(rx)*sin(ry)*cos(rz) + sin(rx)*sin(rz);
                     cos(ry)*sin(rz), sin(rx)*sin(ry)*sin(rz) + cos(rx)*cos(rz),  cos(rx)*sin(ry)*sin(rz) - sin(rx)*cos(rz);
                     -sin(ry), sin(rx)*cos(ry),  cos(rx)*cos(ry)];
                 R = Function('R', {[rx;ry;rz]}, {Rot});
+
+                % Generate vector cross product function
                 a = SX.sym('a',3);
                 b = SX.sym('b',3);
                 cross_fun = Function('cross', {a,b}, {cross(a,b)});
             end
 
-            % Define contacts
+            % Define contacts for each subellipse in the ellipse object
             for ii=1:ellipse.N
+                % Generate required variables.
                 lambda = SX.sym(['lambda_' ellipse.name '_' ball.name]);
                 obj.lambda = vertcat(obj.lambda, lambda);
                 alpha = SX.sym(['alpha_' ellipse.name '_' ball.name]);
@@ -238,24 +250,29 @@ classdef Objects < nosnoc.model.Base
                 mu = SX.sym(['mu_' ellipse.name '_' ball.name], 2);
                 obj.mu = vertcat(obj.mu, mu);
 
+                % Get ellipse matrix and ball radius
                 A = ellipse.A{ii};
                 r = ball.r;
 
+                % Get KKT multipliers for each object
                 mu_1c = mu(end-1);
                 mu_2c = mu(end);
-                
+
+                % expanding constraints for ellipse and ball.
                 g_d = [(p_d-ellipse.c)'*R(ellipse.xi)*A*R(ellipse.xi)'*(p_d-ellipse.c) - alpha;
                       (1/r^2)*(p_d-ball.c)'*(p_d-ball.c) - alpha];
                 obj.g_d = vertcat(obj.g_d, g_d);
 
+                % Lagrangian for the implicit SDF
                 L = alpha - 1 + mu'*g_d;
-                
+
+                % KKT stationarity functions for SDF
                 % g_kkt = [1 - mu_1c - mu_2c;
                 %     mu_1c*(R(ellipse.xi)*(A + A')*R(ellipse.xi)')*(p_d-ellipse.c) + mu_2c*(2/r^2)*(p_d-ball.c)];
                 g_kkt = L.jacobian([alpha;p_d])';
                 obj.g_kkt = vertcat(obj.g_kkt, g_kkt);
 
-                
+                % normal expression (nabla g_d with respect to positions)
                 ntr = 2/ball.r^2*(p_d - ball.c)*mu_2c;
                 normal_ball = [-ntr];
                 normal_ellipse =[ntr;
@@ -268,8 +285,9 @@ classdef Objects < nosnoc.model.Base
                 ellipse.x_dot = ellipse.x_dot + normal_ellipse*lambda;
                 ball.x_dot = ball.x_dot + normal_ball*lambda;
 
+                % Do friction. See above for explanation.
                 if mu_f
-                    if ball.n_dim == 2 %TODO does this need changes?
+                    if ball.n_dim == 2 
                         tangent = SX.sym('tangent', 2);
                         obj.tangent = [obj.tangent; tangent];
                         obj.tangent0 = [obj.tangent0;1;0];
