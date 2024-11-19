@@ -49,7 +49,8 @@ function [results] = integrator_order_experiment(settings,legend_str)
 
     %% settings
     problem_options = nosnoc.Options();
-    solver_options = nosnoc.solver.Options();
+    integrator_options = nosnoc.integrator.Options();
+    solver_options = integrator_options.fesd_solver_opts;
     problem_options.rk_representation = rk_representation;
     problem_options.rk_scheme = rk_scheme;
     problem_options.use_fesd = use_fesd;
@@ -100,7 +101,7 @@ function [results] = integrator_order_experiment(settings,legend_str)
             problem_options.N_sim = N_sim;
             % generate new model with updated settings;
             model = oscilator(struct);
-            integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+            integrator = nosnoc.Integrator(model, problem_options, integrator_options);
             [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
             stats = integrator.stats;
             % numerical error

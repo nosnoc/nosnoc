@@ -100,10 +100,11 @@ switch switching_case
         error('pick a value for example_num between 1 and 4.')
 end
 
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 solver_options.print_level = 3;
 solver_options.store_integrator_step_results = 1;
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 
 if strcmp('spontaneous_switch', switching_case)
     % initialize solver

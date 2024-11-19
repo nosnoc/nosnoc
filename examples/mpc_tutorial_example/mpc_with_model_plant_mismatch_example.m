@@ -90,7 +90,8 @@ sim_model.S = [-1;1]; % Region R_1 is defined by c<0 (hence the -1), region R_2 
 sim_model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of every region.
 
 sim_problem_options = nosnoc.Options(); % Initialize all options related to the optimal control or simulation problem.
-sim_solver_options = nosnoc.solver.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
+integrator_options = nosnoc.integrator.Options();
+sim_solver_options = integrator_options.fesd_solver_opts; % Initialize all options related to the MPEC solver used for solving nosonc problems.
 
 % Choosing the Runge - Kutta Method and number of stages
 sim_problem_options.rk_scheme = RKSchemes.RADAU_IIA; % Type of scheme
@@ -107,7 +108,7 @@ sim_solver_options.print_level = 0;
 sim_solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF; % Use the $\ell_{\infty}$ steering strategy
 sim_solver_options.complementarity_tol = 1e-10; % Value to drive the complementarity residual to.
 % sim_solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
-integrator = nosnoc.integrator.FESD(sim_model, sim_problem_options, sim_solver_options);
+integrator = nosnoc.Integrator(sim_model, sim_problem_options, integrator_options);
 %% Do MPC with accurate model
 x = model.x0; u = []; t = 0; tf = [];
 x0 = x;

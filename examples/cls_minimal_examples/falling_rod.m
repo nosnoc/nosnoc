@@ -9,7 +9,8 @@ J = 1; % no frictioinal impulse
 above_ground = 0.2;
 
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'CLS';
@@ -79,7 +80,7 @@ problem_options.N_finite_elements = N_finite_elements;
 problem_options.N_sim = N_sim;
 solver_options.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 %% Plot results
