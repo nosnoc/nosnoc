@@ -5,7 +5,8 @@ import casadi.*
 
 %% init nosnoc
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 model = nosnoc.model.Cls();
 %%
 g = 10;
@@ -44,7 +45,7 @@ model.x0 = [0.8;0.5;-1.5;-1];
 model.f_v = [0;-g];
 model.f_c = [q(1);q(2)];
 %% Call nosnoc Integrator
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% read and plot results
 qx = x_res(1,:); qy = x_res(2,:);

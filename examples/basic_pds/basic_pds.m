@@ -8,7 +8,8 @@ T_sim = 10;
 N_finite_elements = 2;
 %% nosnoc settings
 solver_options = nosnoc.solver.Options();
-problem_options = nosnoc.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 
 problem_options.n_s = 3;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
@@ -30,7 +31,7 @@ model.c = x(2)+0.2;
 model.f_x_unconstrained = [x(2);-x(1)];
 model.x0 = [0;pi-2];
 
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res] = integrator.simulate();
 
 %% Plot results

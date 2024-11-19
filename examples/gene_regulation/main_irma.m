@@ -47,7 +47,8 @@ N_sim = 2000/8;
 
 %% Settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.print_level = 2;
 problem_options.n_s = 2;
@@ -64,7 +65,7 @@ problem_options.N_finite_elements = N_finite_elements;
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
 
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 results.x = x_res;

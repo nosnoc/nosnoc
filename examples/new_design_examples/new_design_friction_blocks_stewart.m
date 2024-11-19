@@ -89,7 +89,7 @@ F3 = [f_31 f_32];
 
 model.F = {F1 F2 F3};
 
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, solver_options);
 [t_grid, x_res] = integrator.simulate();
 
 % integrator.dcs

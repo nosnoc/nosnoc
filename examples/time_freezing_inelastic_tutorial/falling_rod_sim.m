@@ -18,7 +18,8 @@ J = m*l^2/12;
 
 %%
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 model = nosnoc.model.Cls();
 %%
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
@@ -70,7 +71,7 @@ model.f_v = [0;-g;0];
 model.f_c = [p_left(2);p_right(2)];
 model.dims.n_dim_contact = n_dim_contact ;
 %% Call nosnoc Integrator
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% read and plot results
 qx = x_res(1,:);

@@ -4,7 +4,8 @@ clc;
 import casadi.*
 %% init model and settings)
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 model = nosnoc.model.Cls();
 %% Simulation settings
 N_finite_elements = 4;
@@ -49,7 +50,7 @@ model.D_tangent = [1,-1,0,0;
                    0,0,1,-1;
                    0,0,0,0];
 %% Call FESD Integrator
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 %% Plot results

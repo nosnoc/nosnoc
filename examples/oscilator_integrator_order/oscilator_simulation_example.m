@@ -43,16 +43,18 @@ R_osc  = 1;
 %% Init
 % collocation settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 model = nosnoc.model.Pss();
 %% settings
 problem_options.use_fesd = 1;       % switch detection method on/off
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
 solver_options.print_level = 2;
 problem_options.n_s = 4;
-problem_options.dcs_mode = 'Heaviside'; % 'Step;
+problem_options.dcs_mode = 'Stewart'; % 'Step;
+solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF;
 
-% Penalty/Relaxation paraemetr
+% Penalty/Relaxation parameter
 solver_options.complementarity_tol = 1e-9;
 % problem_options.cross_comp_mode = 1;
 
@@ -88,7 +90,7 @@ f_12 = A2*x;
 F = [f_11 f_12];
 model.F = F;
 %% Call integrator
-integrator = nosnoc.integrator.FESD(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% numerical error
 x_fesd = x_res(:,end);
