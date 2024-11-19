@@ -2,6 +2,7 @@ classdef FESD < handle
     properties % TODO separate these by Get/Set access
         model
         opts
+        integrator_opts
         solver_opts
 
         dcs
@@ -16,9 +17,11 @@ classdef FESD < handle
     end
 
     methods
-        function obj = FESD(model, opts, solver_opts)
+        function obj = FESD(model, opts, integrator_opts)
             obj.model = model;
             obj.opts = opts;
+            obj.integrator_opts = integrator_opts;
+            solver_opts = integrator_opts.fesd_solver_opts;
             obj.solver_opts = solver_opts;
 
             % Always process model and options
@@ -383,6 +386,5 @@ classdef FESD < handle
             end
             obj.discrete_time_problem.p.(param)().val = value;
         end
-
     end
 end
