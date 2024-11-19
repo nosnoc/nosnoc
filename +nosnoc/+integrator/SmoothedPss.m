@@ -108,6 +108,22 @@ classdef SmoothedPss < handle
                     [t_sim, x_sim] = ode23tb(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode15i'
                     [t_sim, x_sim] = ode15i(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
+                  case {'cvodesnonstiff','cvodesstiff','idas'} % Handle with new OO ode method.\
+                                                               % Note: these are only available >=2024a
+                                                               % TODO(@anton) maybe instead of looping use Refine=N.
+                    if ~exist('F', 'var')
+                        F = ode;
+                        F.ODEFcn = @(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing);
+                        F.Solver = obj.integrator_opts.matlab_ode_solver;
+                        F.AbsoluteTolerance = odeget(integrator_opts.matlab_ode_opts, 'AbsTol');
+                        F.RelativeTolerance = odeget(integrator_opts.matlab_ode_opts, 'RelTol');
+                    end
+                    F.InitialTime = t_current;
+                    F.InitialValue = obj.x_curr';
+                    
+                    sol = F.solve(t_current, t_current+opts.T);
+                    t_sim = sol.Time';
+                    x_sim = sol.Solution';
                 end
                 t_current = t_sim(end);
                 obj.t_grid = [obj.t_grid, t_sim(end)];

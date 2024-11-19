@@ -47,8 +47,8 @@ model = nosnoc.model.Pss();
 %% settings
 
 % Select matlab ode solver
-intgerator_options.matlab_ode_solver = 'ode23s';
-integrator_options.sigma_smoothing = 1e-4;
+integrator_options.matlab_ode_solver = 'idas';
+integrator_options.sigma_smoothing = 1e-10;
 integrator_options.matlab_ode_opts = odeset('RelTol', 1e-10, 'AbsTol', 1e-10);
 
 %% Time settings
