@@ -1,9 +1,11 @@
 classdef Options < handle
 
     properties
+        integrator_plugin IntegratorType = IntegratorType.FESD; % Type of integrator to use.
+        
         %-------- FESD Integrator Specific -----------%
         
-        fesd_solver_opts nosnoc.solver.Options % nosnoc FESD solver opts used for FESD solver. 
+        fesd_solver_opts nosnoc.solver.Options = nosnoc.solver.Options() % nosnoc FESD solver opts used for FESD solver. 
         use_previous_solution_as_initial_guess(1,1) logical = 0
         real_time_plot(1,1) logical = 0
         break_simulation_if_infeasible(1,1) logical = 0
