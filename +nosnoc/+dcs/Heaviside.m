@@ -1,30 +1,26 @@
 classdef Heaviside < nosnoc.dcs.Base
     properties
-        alpha % CasADi symbolic variable for selection of the Heaviside step function
-        alpha_sys % cell containing the alpha variables of every subsystem, wheras alpha stores the concatenation of all these vectors;
-        lambda_n % CasADi symbolic variable 
-        lambda_n_sys % cell
-        lambda_p % CasADi symbolic variable 
-        lambda_p_sys % cell
-        % These are relevant only for lifting. For now wait to implement until re-implementing time-freezing
-        % beta 
-        % gamma
-        % theta
-        % theta_sys
-        theta_expr_sys 
+        alpha % casadi.SX|casadi.MX: Heaviside step variables
+        alpha_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing alpha for linearly independent subsystem.
+        lambda_n % casadi.SX|casadi.MX: Variables representing the negative part of the switching function.
+        lambda_n_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing lambda_n for linearly independent subsystem.
+        lambda_p % casadi.SX|casadi.MX: Variables representing the positive part of the switching function.
+        lambda_p_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing lambda_p for linearly independent subsystem.
+        theta_expr_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing the expression in terms of alpha of the convex multiplier theta
 
-        z_all
+        z_all % casadi.SX|casadi.MX: Vector of all algorithmic algebraic variables.
 
-        f_x
+        f_x % casadi.SX|casadi.MX: Expression for differential part of the DCS r.h.s: $\theta^\top F(x,u)%.
+        g_alg % casadi.SX|casadi.MX: Expression for the algebraic part of the DCS. 
         
-        dims
+        dims % struct: Contains relevant dimensions.
 
-        g_lp_stationarity_fun
-        lambda00_fun
+        g_lp_stationarity_fun % casadi.Function: Function for the Heaviside LP stationarity for all switching functions.
+        lambda00_fun % casadi.Function: Function mapping initial lambda_n and lambda_p from initial x.
     end
 
     properties(SetAccess=private)
-        z_depends_on_alpha = false;
+        z_depends_on_alpha(1,1) logical = false; % boolean: defines whether the user algebraics z depend on alpha, as this requires some special handling. 
     end
 
 
@@ -40,14 +36,14 @@ classdef Heaviside < nosnoc.dcs.Base
             model = obj.model;
 
             if ~ismember(class(obj.model), {'nosnoc.model.Pss', 'nosnoc.model.Heaviside'})
-                error('A heaviside DCS can only be created from a PSS or Heaviside step model.')
+                nosnoc.error('wrong_model_type', 'A heaviside DCS can only be created from a PSS or Heaviside step model.')
             end
 
             switch class(obj.model)
               case "nosnoc.model.Pss"
                 % Check pss popluated S and c;
                 if isempty(model.S)
-                    error("The PSS model must containt the lp_stationarity matrix S and lp_stationarity function c.");
+                    nosnoc.error('missing_S', "The PSS model must containt the lp_stationarity matrix S and lp_stationarity function c.");
                 end
 
                 dims.n_alpha = sum(obj.dims.n_c_sys); % number of modes
@@ -134,6 +130,7 @@ classdef Heaviside < nosnoc.dcs.Base
                 lambda00_expr = [lambda00_expr; -min(model.c{ii}, 0); max(model.c{ii},0)];
             end
             g_alg = [g_lp_stationarity];
+            obj.g_alg = g_alg;
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.alpha, obj.lambda_n, obj.lambda_p, model.u, model.v_global, model.p}, {model.f_q});

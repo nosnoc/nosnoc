@@ -13,7 +13,7 @@ if isfield(nlp,'x')
         x_k = ones(n_primal,1);
     end
 else
-    error('Please provide the vector of degrees of freedom x.')
+    nosnoc.error('missing_x', 'Please provide the vector of degrees of freedom x.')
 end
 
 %% check nlp input
@@ -21,7 +21,7 @@ if isfield(nlp,'f')
     f = nlp.f;
 else
     f = 0;
-    warning('No objective was provided.');
+    nosnoc.warning('missing_objective','No objective was provided.');
 end
 
 if isfield(nlp,'g')
@@ -36,7 +36,7 @@ if isfield(nlp,'comp1') && isfield(nlp,'comp2')
     x2 = nlp.comp2;
     n_comp = size(x1,1);
     if length(x1)~= length(x2)
-        error('The vector comp1 and comp2 must have the same size.')
+        nosnoc.error('comp_mismatch','The vector comp1 and comp2 must have the same size.')
     end
     % find index set
     if n_comp > 0
@@ -75,7 +75,7 @@ if isfield(nlp,'p')
     if isfield(problem_data,'p')
         p_val = problem_data.p;
         if size(p_val,1)~=size(p,1)
-            error('Length of p and its value must be the same.')
+            nosnoc.error('p_val_mismatch','Length of p and its value must be the same.')
         end
     end
 else
@@ -85,24 +85,24 @@ end
 
 %% check problem data input and read
 if any(problem_data.lbg > problem_data.ubg)
-    error('For some component it holds that lbg > ubg.');
+    nosnoc.error('inconsistent_g_bounds', 'For some component it holds that lbg > ubg.');
 else
     lbg = problem_data.lbg;
     ubg = problem_data.ubg;
 end
 if any(problem_data.lbx > problem_data.ubx)
-    error('For some component it holds that lbx > ubx.');
+    nosnoc.error('inconsistent_x_bounds', 'For some component it holds that lbx > ubx.');
 else
     lbx = problem_data.lbx;
     ubx = problem_data.ubx;
 end
 
 if length(lbx)~= length(x) || length(ubx) ~= length(x)
-    error('lbx, ubx and x must be vectors of the same length.')
+    nosnoc.error('size_x','lbx, ubx and x must be vectors of the same length.')
 end
 
 if length(lbg)~= length(g) || length(ubg) ~= length(g)
-    error('lbg, ubg and g must be vectors of the same length.')
+    nosnoc.error('size_g','lbg, ubg and g must be vectors of the same length.')
 end
 
 % update complementarity lowerbounds if the do not exist

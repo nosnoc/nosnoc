@@ -3,7 +3,7 @@ classdef Pss < nosnoc.model.Base
         F % n_x times n_f matrix whose columns define the vector fields in the correspoding PSS regions
         S % sign matrix
         c % switching functions defining region boundaries
-        g_ind % Vector of length n_f containing all Stewart indicator functions
+        g_indicator % Vector of length n_f containing all Stewart indicator functions
     end
 
     methods
@@ -34,34 +34,34 @@ classdef Pss < nosnoc.model.Base
                 obj.S = {obj.S};
             end
 
-            if isempty(obj.g_ind)
+            if isempty(obj.g_indicator)
                 if length(obj.S) ~= dims.n_sys
-                    error('nosnoc: Number of matrices S does not match number of subsystems. Note that the number of subsystems is taken to be number of matrices F_i which collect the modes of every subsystem.')
+                    nosnoc.error('size_S', 'Number of matrices S does not match number of subsystems. Note that the number of subsystems is taken to be number of matrices F_i which collect the modes of every subsystem.')
                 end
                 % Check constraint function c
                 if isempty(obj.c)
-                    error('nosnoc: Expresion for c, the constraint function for regions R_i is not provided.');
+                    nosnoc.error('missing_c', 'Expresion for c, the constraint function for regions R_i is not provided.');
                 else
                     if ~iscell(obj.c)
                         obj.c = {obj.c};
                     end
                     if length(obj.c) ~= dims.n_sys
-                        error('nosnoc: Number of different expressions for c does not match number of subsystems (taken to be number of matrices F_i which collect the modes of every subsystem).')
+                        nosnoc.error('size_c', 'Number of different expressions for c does not match number of subsystems (taken to be number of matrices F_i which collect the modes of every subsystem).')
                     end
                 end
 
                 dims.n_c_sys = [];
                 for ii = 1:dims.n_sys
                     if size(obj.S{ii},2) ~= length(obj.c{ii})
-                        error('nosnoc: The matrix S and vector c do not have compatible dimension.');
+                        nosnoc.error('c_S_mismatch', 'The matrix S and vector c do not have compatible dimension.');
                     end
-                    obj.g_ind{ii} = -obj.S{ii}*obj.c{ii};
+                    obj.g_indicator{ii} = -obj.S{ii}*obj.c{ii};
                     % dimensions of c
                     dims.n_c_sys  = [dims.n_c_sys;length(obj.c{ii})];
                 end
             else
-                if ~iscell(obj.g_ind)
-                    obj.g_ind = {obj.g_ind};
+                if ~iscell(obj.g_indicator)
+                    obj.g_indicator = {obj.g_indicator};
                 end
             end
 

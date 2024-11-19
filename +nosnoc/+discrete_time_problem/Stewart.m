@@ -58,11 +58,6 @@ classdef Stewart < vdx.problems.Mpcc
                 obj.p.p_time_var(ii).val = model.p_time_var_val(:,ii);
             end
 
-            % TODO(@anton) This _severely_ hurts performance over the vectorized assignment by doing N_stages vertcats of
-            %              casadi symbolics vs just a vectorized assignment which does one. As such there needs to be backend
-            %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
-            %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
-            %              on the whole queue which is _significantly_ faster.
             % 2d vars: Variables that are defined for each finite element (and each control stage)
             if opts.use_fesd && opts.use_numerical_clock_state
                 obj.w.numerical_time(0,0) = {{'t0', 1}};
@@ -376,8 +371,6 @@ classdef Stewart < vdx.problems.Mpcc
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.lp_stationarity(ii,jj,opts.n_s+1) = {dcs.g_lp_stationarity_fun(x_ijk, z_ijk, lambda_ijk, mu_ijk, v_global, p)};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
-                        else
-                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             % if path constraints are evaluated at control and FE grid points
@@ -510,7 +503,7 @@ classdef Stewart < vdx.problems.Mpcc
                             integral_clock_state = 0;
                             for ii=1:opts.N_stages
                                 if opts.local_speed_of_time_variable
-                                    s_sot = obj.d.sot(ii);
+                                    s_sot = obj.w.sot(ii);
                                 else
                                     s_sot = obj.w.sot();
                                 end
@@ -560,7 +553,7 @@ classdef Stewart < vdx.problems.Mpcc
                                 integral_clock_state = 0;
                                 for ii=1:opts.N_stages
                                     if opts.local_speed_of_time_variable
-                                        s_sot = obj.d.sot(ii);
+                                        s_sot = obj.w.sot(ii);
                                     else
                                         s_sot = obj.w.sot();
                                     end
@@ -592,7 +585,7 @@ classdef Stewart < vdx.problems.Mpcc
             
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
-                error("nosnoc: Currently unsupported.")
+                nosnoc.error('g_T_homotopy_unsuported', "terminal constraint homotopy Currently unsupported")
             end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
@@ -631,8 +624,8 @@ classdef Stewart < vdx.problems.Mpcc
                             for rr=1:opts.n_s
                                 theta_ijr = obj.w.theta(ii,jj,rr);
 
-                                Gi = vertcat(Gij, {lambda_prev});
-                                Hi = vertcat(Hij, {theta_ijr});
+                                Gij = vertcat(Gij, {lambda_prev});
+                                Hij = vertcat(Hij, {theta_ijr});
                             end    
                             for kk=1:(opts.n_s + rbp)
                                 lambda_ijk = obj.w.lambda(ii,jj,kk);
@@ -809,31 +802,8 @@ classdef Stewart < vdx.problems.Mpcc
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.direct_homotopy
-                error("nosnoc: Currently not supported/implemented.")
-                eta_vec = [];
-                for ii=1:opts.N_stages
-                    for jj=2:opts.N_finite_elements(ii)
-                        sigma_lambda_B = sum2(obj.w.lambda(ii,jj-1,:));
-                        sigma_theta_B = sum2(obj.w.theta(ii,jj-1,:));
-                        
-                        sigma_lambda_F = obj.w.lambda(ii,jj-1,opts.n_s + rbp) + sum2(obj.w.lambda(ii,jj,:));
-                        sigma_theta_F = sum2(obj.w.theta(ii,jj,:));
-
-                        pi_lambda = sigma_lambda_B .* sigma_lambda_F;
-                        pi_theta = sigma_theta_B .* sigma_theta_F;
-                        nu = pi_lambda + pi_theta;
-                        eta = 1;
-                        for jjj=1:length(nu)
-                            eta = eta*nu(jjj);
-                        end
-                        eta_vec = [eta_vec;eta];
-                        obj.eta_vec = eta_vec;
-                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        homotopy_eq = [eta*delta_h - sigma;eta*delta_h + sigma];
-                        obj.g.step_equilibration(ii,jj) = {homotopy_eq, [-inf;0], [0;inf]};
-                    end
-                end
-                %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
+                nosnoc.error('direct_homotopy_unsupported', "Direct homotopy step-eq mode not currently implemented")
+                
               case StepEquilibrationMode.linear_complementarity
                 for ii=1:opts.N_stages
                     for jj=2:opts.N_finite_elements(ii)

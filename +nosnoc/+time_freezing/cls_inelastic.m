@@ -86,7 +86,7 @@ function pss_model = cls_inelastic(cls_model, opts)
     else
         f_q_dynamics = zeros(dims.n_q,dims.n_contacts);
     end
-    f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad, 1)];
+    f_aux_normal = [f_q_dynamics;inv_M_aux*cls_model.J_normal*a_n;zeros(1+dims.n_quad, dims.n_contacts)];
 
     if opts.time_freezing_nonsmooth_switching_fun
         pss_model.c = [max_smooth_fun(cls_model.f_c,v_normal,0);v_tangent];    

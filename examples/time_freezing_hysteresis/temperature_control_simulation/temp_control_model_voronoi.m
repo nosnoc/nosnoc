@@ -69,7 +69,7 @@ g_12 = norm([psi;w]-z2)^2;
 g_13 = norm([psi;w]-z3)^2;
 g_14 = norm([psi;w]-z4)^2;
 
-model.g_ind = [g_11;g_12;g_13;g_14];
+model.g_indicator = [g_11;g_12;g_13;g_14];
 
 %% Modes of hystersis model
 

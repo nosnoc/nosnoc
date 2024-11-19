@@ -25,7 +25,7 @@ classdef Integrator < handle
             % for integrator also take the extra step of re-calculating N_stages/N_finite_elements
             opts.preprocess();
             if opts.N_stages > 1
-                warning("Integrator created with more than 1 control stage. Converting this to finite elements.")
+                nosnoc.warning('multiple_control_stages',"Integrator created with more than 1 control stage. Converting this to finite elements.")
                 N_fe = sum(opts.N_finite_elements);
                 opts.N_finite_elements = N_fe;
                 opts.N_stages = 1;
@@ -54,7 +54,7 @@ classdef Integrator < handle
                     obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                     obj.discrete_time_problem.populate_problem();
                 else
-                    error("PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
+                    nosnoc.error('wrong_dcs_mode', "PSS models can only be reformulated using the Stewart or Heaviside Step reformulations.")
                 end
               case "nosnoc.model.Heaviside"
                 obj.dcs = nosnoc.dcs.Heaviside(model);
@@ -63,6 +63,9 @@ classdef Integrator < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Cls"
+                if ~opts.use_fesd
+                    nosnoc.error('fesd_j_without_fesd',"The FESD-J reformulation only makes sense with use_fesd=true.")
+                end
                 obj.dcs = nosnoc.dcs.Cls(model);
                 obj.dcs.generate_variables(opts);
                 obj.dcs.generate_equations(opts);
@@ -70,10 +73,10 @@ classdef Integrator < handle
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Pds"
                 if ~opts.right_boundary_point_explicit
-                    error("You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA")
+                    nosnoc.error('pds_rbp_not_one', "You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA.")
                 end
                 if opts.rk_representation == RKRepresentation.differential
-                    error("Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation")
+                    nosnoc.error('pds_differential',"Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation.")
                 end
                 obj.dcs = nosnoc.dcs.Gcs(model);
                 obj.dcs.generate_variables(opts);
@@ -81,7 +84,7 @@ classdef Integrator < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Gcs(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               otherwise
-                error("nosnoc: Unknown model type.")
+                nosnoc.error('unknown_model', "Unknown model type.")
             end
         end
 
@@ -117,11 +120,11 @@ classdef Integrator < handle
             opts = obj.opts;
             % TODO(@anton) validators here.
             if ~isempty(extra_args.u) && any(size(extra_args.u) ~= [obj.model.dims.n_u opts.N_sim])
-                error("nosnoc: wrong dimensions passed for controls to integrator.")
+                nosnoc.error('wrong_u_dims', "wrong dimensions passed for controls to integrator.")
             end
             if ~isempty(extra_args.x0)
                 if  any(size(extra_args.x0) ~= size(obj.model.x0))
-                    error("nosnoc: wrong dimensions passed for controls to integrator.")
+                    nosnoc.error('wrong_u_dims', "wrong dimensions passed for controls to integrator.")
                 end
                 x0 = extra_args.x0;
             else
@@ -253,7 +256,7 @@ classdef Integrator < handle
                 var = obj.discrete_time_problem.w.(field);
                 warning on vdx:indexing:dot_reference_returns_vdx_var
             catch
-                error(['nosnoc:' char(field) ' is not a valid field for this integrator.']);
+                nosnoc.error('nonexistant_field',[char(field) ' is not a valid field for this integrator.']);
             end
 
             obj.discrete_time_problem.w.res = obj.w_all(:,1);
@@ -300,7 +303,7 @@ classdef Integrator < handle
                 var = obj.discrete_time_problem.w.(field);
                 warning on vdx:indexing:dot_reference_returns_vdx_var
             catch
-                error(['nosnoc:' char(field) ' is not a valid field for this integrator.']);
+                nosnoc.error('nonexistant_field', [char(field) ' is not a valid field for this integrator.']);
             end
 
             obj.discrete_time_problem.w.res = obj.w_all(:,1);
@@ -359,7 +362,7 @@ classdef Integrator < handle
 
         function set(obj, varname, field, indices, value)
             if ~obj.discrete_time_problem.w.has_var(varname)
-                error(['nosnoc:' char(varname) ' is not a valid field for this integrator.']);
+                nosnoc.error('nonexistant_field',[char(varname) ' is not a valid field for this integrator.']);
             end
             warning off vdx:indexing:dot_reference_returns_vdx_var
             var = obj.discrete_time_problem.w.(varname);
@@ -376,7 +379,7 @@ classdef Integrator < handle
         function set_param(obj, param, value)
         % TODO (@anton) figure out how to do a set with indexing
             if ~obj.discrete_time_problem.p.has_var(param);
-                error(['nosnoc:' char(param) ' does not exist as a parameter for this OCP']);
+                error('nonexistant_param',[char(param) ' does not exist as a parameter for this OCP']);
             end
             obj.discrete_time_problem.p.(param)().val = value;
         end

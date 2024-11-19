@@ -30,7 +30,9 @@ classdef Cls < nosnoc.dcs.Base
         Alpha_vt % casadi.SX|casadi.MX: Step function which is zero when tangential velocity at impacts is negative and 1 when positive.
 
         g_lift_v % casadi.SX|casadi.MX: Lifting function.
-
+        g_impulse % casadi.SX|casadi.MX: Impulse constraint function.
+        g_alg % casadi.SX|casadi.MX: Lifting function.
+        
         z_alg % casadi.SX|casadi.MX: Non-impulsive algebraics.
         z_impulse % casadi.SX|casadi.MX: Impulsive algebraics.
 
@@ -188,6 +190,9 @@ classdef Cls < nosnoc.dcs.Base
                 end
             end
             g_alg = g_alg_cls;
+
+            obj.g_alg = g_alg;
+            obj.g_impulse = g_impulse;
 
             z_alg = [obj.lambda_normal; obj.y_gap; obj.lambda_tangent; obj.gamma_d; obj.beta_d; obj.delta_d; obj.gamma; obj.beta; obj.p_vt; obj.n_vt; obj.alpha_vt];
             z_impulse = [obj.Lambda_normal; obj.Y_gap; obj.P_vn; obj.N_vn; obj.Lambda_tangent; obj.Gamma_d; obj.Beta_d; obj.Delta_d; obj.Gamma; obj.Beta; obj.P_vt; obj.N_vt; obj.Alpha_vt];

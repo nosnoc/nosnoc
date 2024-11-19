@@ -49,11 +49,6 @@ classdef Gcs < vdx.problems.Mpcc
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
 
-            % TODO(@anton) This _severely_ hurts performance over the vectorized assignment by doing N_stages vertcats of
-            %              casadi symbolics vs just a vectorized assignment which does one. As such there needs to be backend
-            %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
-            %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
-            %              on the whole queue which is _significantly_ faster.
             % 2d vars: Variables that are defined for each finite element.
             for ii=1:opts.N_stages
                 % other derived values
@@ -209,13 +204,13 @@ classdef Gcs < vdx.problems.Mpcc
                             end
                         end
                         if ~opts.right_boundary_point_explicit
-                            error("not implemented")
+                            nosnoc.error('rbp_not_explicit', "for Gcs c_n must be 1 for the given RK scheme")
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                         end
                       case RKRepresentation.differential
-                        error("Differential representation without lifting is unsupported for gradient complementarity systems")
+                        nosnoc.error('differential_unsupported', "Differential representation without lifting is unsupported for gradient complementarity systems")
                         
                       case RKRepresentation.differential_lift_x
                         % In differential representation with lifted state stage variables are the state derivatives and we
@@ -319,7 +314,7 @@ classdef Gcs < vdx.problems.Mpcc
 
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
-                error("Currently unsupported")
+                nosnoc.error('g_T_homotopy_unsuported', "terminal constraint homotopy Currently unsupported")
             end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
@@ -425,7 +420,7 @@ classdef Gcs < vdx.problems.Mpcc
                         p_stage = obj.p.p_time_var(ii);
                         p = [p_global;p_stage];
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_c = dcs.c_fun(x_prev);
+                            sum_c = c_prev;
                             for kk=1:(opts.n_s + rbp)
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
@@ -650,49 +645,8 @@ classdef Gcs < vdx.problems.Mpcc
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.direct_homotopy
-                error("not currently implemented")
-                eta_vec = [];
-                for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
-                    for jj=2:opts.N_finite_elements(ii)
-                        sigma_c_B = 0;
-                        sigma_lambda_B = 0;
-                        for kk=1:(opts.n_s + rbp)
-                            x_ijk = obj.w.x(ii,jj-1,kk);
-                            z_ijk = obj.w.z(ii,jj-1,kk);
-                            c_lift_ijk = obj.w.c_lift(ii,jj-1,kk);
-                            c_ijk = dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p);
-                            sigma_c_B = sigma_c_B + c_ijk;
-                            sigma_lambda_B = sigma_lambda_B + obj.w.lambda(ii,jj-1,kk);
-                        end
-                        sigma_c_F = 0;
-                        sigma_lambda_F = 0;
-                        for kk=1:(opts.n_s + rbp)
-                            x_ijk = obj.w.x(ii,jj,kk);
-                            z_ijk = obj.w.z(ii,jj,kk);
-                            c_lift_ijk = obj.w.c_lift(ii,jj,kk);
-                            c_ijk = dcs.c_fun(x_ijk, c_lift_ijk, z_ijk, v_global, p);
-
-                            sigma_c_F = sigma_c_F + c_ijk;
-                            sigma_lambda_F = sigma_lambda_F + obj.w.lambda(ii,jj,kk);
-                        end
-
-                        pi_c = sigma_c_B .* sigma_c_F;
-                        pi_lam = sigma_lambda_B .* sigma_lambda_F;
-                        nu = pi_c + pi_lam;
-                        eta = 1;
-                        for jjj=1:length(nu)
-                            eta = eta*nu(jjj);
-                        end
-                        eta_vec = [eta_vec;eta];
-                        obj.eta_vec = eta_vec;
-                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        homotopy_eq = [eta*delta_h - sigma;eta*delta_h + sigma];
-                        obj.g.step_equilibration(ii,jj) = {homotopy_eq, [-inf;0], [0;inf]};
-                    end
-                end
-                %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
+                nosnoc.error('direct_homotopy_unsupported', "Direct homotopy step-eq mode not currently implemented")
+                
               case StepEquilibrationMode.linear_complementarity
                 for ii=1:opts.N_stages
                     p_stage = obj.p.p_time_var(ii);

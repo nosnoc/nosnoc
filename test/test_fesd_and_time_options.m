@@ -1,9 +1,9 @@
-function [results,stats,model,problem_options, solver_options] = test_fesd_and_time_options(use_fesd, time_optimal_problem,...
+function [model,problem_options,solver_options,ocp_solver] = test_fesd_and_time_options(use_fesd, time_optimal_problem,...
     equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable)
 %TEST_SIMPLE_CAR_MODEL Test the simple car model accross cross
 %complementarity and mpcc modes
 import casadi.*
-problem_options = NosnocProblemOptions();
+problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
 solver_options.print_level = 3;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
@@ -25,7 +25,7 @@ problem_options.local_speed_of_time_variable = local_speed_of_time_variable;
 
 % Model - define all problem functions and
 % Discretization parameters
-model = NosnocModel();
+model = nosnoc.model.Pss();
 problem_options.N_stages = 10; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
 % Symbolic variables and bounds
@@ -53,12 +53,12 @@ else
     model.f_q = u^2;
 end
 % Solve OCP
-mpcc = NosnocMPCC(problem_options, model);
-solver = NosnocSolver(mpcc, solver_options);
-[results,stats] = solver.solve();
-if ~isempty(results.T) && results.T < 1e-2
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.solve();
+T = ocp_solver.get('T_final');
+if ~isempty(T) && T < 1e-2
     warning('Something went wrong.')
-    disp(results.T)
+    disp(T)
 end
 % disp(results.f_opt)
 end

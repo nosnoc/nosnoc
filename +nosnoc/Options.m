@@ -40,7 +40,7 @@ classdef Options < handle
 
         h % double: Control stage Step size.
         h_k % double: Finite element step size.
-        T % double: Terminal time.
+        T = 1 % double: Terminal time.
 
         N_stages(1,1) {mustBeInteger, mustBePositive} = 1; % int: Number of control stages.
 
@@ -358,32 +358,32 @@ classdef Options < handle
                     fprintf('Info: N_sim is given, so the h_sim provided by the user is overwritten.\n')
                 end
             elseif ~isempty(obj.N_sim) || ~isempty(obj.T_sim)
-                error('Provide both N_sim and T_sim for the integration.')
+                nosnoc.error('missing_sim_param','Provide both N_sim and T_sim for the integration.')
             end
 
             if numel(obj.T) ~= 1 && ~obj.time_optimal_problem
-                error('terminal numerical time T must be provided if time_optimal_problem is False.');
+                nosnoc.error('missing_T','terminal numerical time T must be provided if time_optimal_problem is False.');
             elseif numel(obj.T) == 0 && ~obj.time_optimal_problem
                 obj.T = 1;
             elseif numel(obj.T) ~= 1
-                error('terminal time T must be a positive scalar.');
+                nosnoc.error('invalid_T','terminal time T must be a positive scalar.');
             end
             obj.h = obj.T/obj.N_stages;
 
             % check irk scheme compatibility
             if ismember(obj.rk_scheme, RKSchemes.differential_only)
                 if obj.print_level >=1
-                    fprintf(['Info: The user provided RK scheme: ' char(obj.rk_scheme) ' is only available in the differential representation.\n']);
+                    fprintf(['nosnoc: The user provided RK scheme: ' char(obj.rk_scheme) ' is only available in the differential representation.\n']);
                 end
                 obj.rk_representation = RKRepresentation.differential;
             end
             if obj.n_s < 1 || obj.n_s > 9
-                error("n_s must be in [1, 9]");
+                nosnoc.error('invalid_n_s',"n_s must be in [1, 9]");
             end
 
 
             if obj.gamma_h < 0 || obj.gamma_h > 1
-                error("gamma_h must be in [0, 1]");
+                nosnoc.error('invalid_gamma_h', "gamma_h must be in [0, 1]");
             end
 
             % check impacts mode
@@ -407,7 +407,7 @@ classdef Options < handle
                 if length(obj.N_finite_elements) == obj.N_stages
                     obj.N_finite_elements = obj.N_finite_elements;
                 else
-                    error('settings.N_finite_elements must be length 1 or N_stages');
+                    nosnoc.error('size_N_fe', 'settings.N_finite_elements must be length 1 or N_stages');
                 end
             end
 
@@ -415,14 +415,14 @@ classdef Options < handle
 
             if ~obj.time_rescaling
                 if obj.print_level >= 1 && obj.use_speed_of_time_variables
-                    warning('nosnoc:NosnocOptions:erroneous_use_speed_of_time_variables', "use_speed_of_time_variables erroneously set to true even though we are not rescaling time, this likely means your settings are somehow faulty. Using use_speed_of_time_variables = false")
+                    nosnoc.warning('erroneous_use_speed_of_time_variables', "use_speed_of_time_variables erroneously set to true even though we are not rescaling time, this likely means your settings are somehow faulty. Using use_speed_of_time_variables = false")
                 end
                 obj.use_speed_of_time_variables = 0;
             end
 
             if ~obj.use_speed_of_time_variables
                 if obj.print_level >= 1 && obj.local_speed_of_time_variable
-                    warning('nosnoc:NosnocOptions:erroneous_local_speed_of_time_variable',"local_speed_of_time_variable erroneously set to true even though we are not using speed of time variales, this likely means your settings are somehow faulty. Using local_speed_of_time_variable = false")
+                    nosnoc.warning('erroneous_local_speed_of_time_variable',"local_speed_of_time_variable erroneously set to true even though we are not using speed of time variales, this likely means your settings are somehow faulty. Using local_speed_of_time_variable = false")
                 end
                 obj.local_speed_of_time_variable = 0;
             end

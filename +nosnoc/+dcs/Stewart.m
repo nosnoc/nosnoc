@@ -1,23 +1,25 @@
 classdef Stewart < nosnoc.dcs.Base
     properties
 
-        theta % CasADi symbolic variable
-        theta_sys % cell containing the theta variables of every subsystem, wheras theta stores the concatenation of all these vectors;
-        lambda % CasADi symbolic variable
-        lambda_sys  % same as theta_sys
-        mu % CasADi symbolic variable
-        mu_sys % same as theta_sys
+        theta % casadi.SX|casadi.MX: Convex multipliers for the Stewart LP.
+        theta_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing theta for linearly independent subsystem.
+        lambda % casadi.SX|casadi.MX: Inequality lagrange multiplier in Stewart LP.
+        lambda_sys  % cell(casadi.SX|casadi.MX): Cell array with each cell containing lambda for linearly independent subsystem.
+        mu % casadi.SX|casadi.MX: Equality lagrange multiplier in Stewart LP.
+        mu_sys % cell(casadi.SX|casadi.MX): Cell array with each cell containing mu for linearly independent subsystem.
 
-        z_all % CasADi symbolic variable - all algebraic variables (user provided and Stewart DCS specific)
+        z_all % casadi.SX|casadi.MX: Vector of all algorithmic algebraic variables.
 
-        f_x  % CasADi symbolic expression -  r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems
-        g_Stewart % CasADi symbolic expression - TODO: this is same as g_ind? maybe have consistent names g_ind and g_ind_sys?
+        f_x  % casadi.SX|casadi.MX: r.h.s. of the ODE, f_x = sum_i F_i*theta_i , i is the index of the subystems.
+        g_indicator % casadi.SX|casadi.MX: Expression for Stewart indicator functions g(x).
+        g_alg % casadi.SX|casadi.MX: Expression for algebraic part of DCS.
 
-        dims
-        % functions specific to the stewart DCS
-        g_lp_stationarity_fun % CasADi function - related to DCS
-        g_Stewart_fun % CasADi function - related to DCS
-        lambda00_fun % CasADi function - related to DCS
+        dims % struct: Contains relevant dimensions.
+        
+        
+        g_lp_stationarity_fun % casadi.Function: Stewart LP stationarity function.
+        g_indicator_fun % casadi.Function: Function for Stewart indicator functions.
+        lambda00_fun % casadi.Function: Function mapping initial lambda from initial x.
     end
 
     methods
@@ -64,6 +66,7 @@ classdef Stewart < nosnoc.dcs.Base
             for ii = 1:dims.n_sys
                 obj.f_x = obj.f_x + model.F{ii}*obj.theta_sys{ii};
             end
+            obj.g_indicator = model.g_indicator;
 
             g_lp_stationarity = []; % collects lp_stationarity function algebraic equations, 0 = g_i(x) - \lambda_i - e \mu_i
             g_convex = []; % equation for the convex multiplers 1 = e' \theta
@@ -73,23 +76,24 @@ classdef Stewart < nosnoc.dcs.Base
                 % algebraic equations and complementarity condtions of the DCS
                 % (Note that the cross complementarities are later defined when the discrete
                 % time variables for every IRK stage in the create_nlp_nosnoc function are defined.)
-                % g_ind_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_sys
+                % g_indicator_i - lambda_i + mu_i e_i = 0; for all i = 1,..., n_sys
                 % lambda_i'*theta_i = 0; for all i = 1,..., n_sys
                 % lambda_i >= 0;    for all i = 1,..., n_sys
                 % theta_i >= 0;     for all i = 1,..., n_sys
                 % Gradient of Lagrange Function of indicator LP
-                g_lp_stationarity = [g_lp_stationarity; model.g_ind{ii} - obj.lambda_sys{ii}+obj.mu_sys{ii}*ones(dims.n_f_sys(ii),1)];
+                g_lp_stationarity = [g_lp_stationarity; model.g_indicator{ii} - obj.lambda_sys{ii}+obj.mu_sys{ii}*ones(dims.n_f_sys(ii),1)];
                 g_convex = [g_convex;ones(dims.n_f_sys(ii),1)'*obj.theta_sys{ii} - 1];
-                lambda00_expr = [lambda00_expr; model.g_ind{ii} - min(model.g_ind{ii})];
+                lambda00_expr = [lambda00_expr; model.g_indicator{ii} - min(model.g_indicator{ii})];
             end
             g_alg = [g_lp_stationarity;g_convex];
+            obj.g_alg = g_alg;
 
             obj.f_x_fun = Function('f_x', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {obj.f_x, model.f_q});
             obj.f_q_fun = Function('f_q', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {model.f_q});
             obj.g_z_fun = Function('g_z', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_z});
             obj.g_alg_fun = Function('g_alg', {model.x, model.z, obj.lambda, obj.theta, obj.mu, model.u, model.v_global, model.p}, {g_alg});
             obj.g_lp_stationarity_fun = Function('g_lp_stationarity', {model.x, model.z, obj.lambda, obj.mu, model.v_global, model.p}, {g_lp_stationarity});
-            obj.g_Stewart_fun = Function('g_Stewart', {model.x, model.z, model.v_global, model.p}, {model.g_ind{:}});
+            obj.g_indicator_fun = Function('g_indicator', {model.x, model.z, model.v_global, model.p}, {model.g_indicator{:}});
             obj.lambda00_fun = Function('lambda00', {model.x, model.z, model.v_global, model.p_global}, {lambda00_expr});
             obj.g_path_fun = Function('g_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.g_path}); % TODO(@anton) do dependence checking for spliting the path constriants
             obj.G_path_fun  = Function('G_path', {model.x, model.z, model.u, model.v_global, model.p}, {model.G_path});

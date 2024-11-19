@@ -167,14 +167,14 @@ classdef Options < handle
             end
 
             if any([obj.homotopy_update_slope >= 1, obj.homotopy_update_rule <= 0.0])
-                error('homotopy_update_slope must be in (0, 1)');
+                nosnoc.error('invalid_homotopy_update_slope', 'homotopy_update_slope must be in (0, 1)');
             end
 
             obj.sigma_N = min(0.1*obj.complementarity_tol, obj.sigma_N); 
             if obj.N_homotopy == 0
                 obj.N_homotopy = ceil(abs(log(obj.sigma_N / obj.sigma_0) / log(obj.homotopy_update_slope)));
                 if ~strcmp(obj.homotopy_update_rule, 'linear')
-                    warning('computing N_homotopy automatically only supported for linear homotopy_update_rule');
+                    nosnoc.warning('autocompute_N_homotopy','computing N_homotopy automatically only supported for linear homotopy_update_rule');
                 end
             end
         end

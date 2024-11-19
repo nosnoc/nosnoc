@@ -54,11 +54,6 @@ classdef Cls < vdx.problems.Mpcc
                 obj.w.sot(1:opts.N_stages) = {{'sot', 1}, opts.s_sot_min, opts.s_sot_max, opts.s_sot0};
             end
 
-            % TODO(@anton) This _severely_ hurts performance over the vectorized assignment by doing N_stages vertcats of
-            %              casadi symbolics vs just a vectorized assignment which does one. As such there needs to be backend
-            %              work done for vdx to cache vertcats of SX somehow. Current theory is one can simply keep a queue of
-            %              symbolics to be added in a cell array until a read is done, at which point we call a single vertcat
-            %              on the whole queue which is _significantly_ faster.
             % 2d vars: Variables that are defined for each finite element.
             for ii=1:opts.N_stages
                 % other derived values
@@ -74,7 +69,7 @@ classdef Cls < vdx.problems.Mpcc
                 
                 if obj.opts.step_equilibration == StepEquilibrationMode.linear_complementarity
                     % TODO(@anton) implement this though we already have such pain w.r.t solving it may not be super useful
-                    error("nosnoc: MLCP formulation of step equilibration not yet supported for FESD-J")
+                    nosnoc.error('mlcp_unsupported', "MLCP formulation of step equilibration not yet supported for FESD-J")
                 end
                 
                 if opts.no_initial_impacts
@@ -198,6 +193,9 @@ classdef Cls < vdx.problems.Mpcc
             % z_alg: algorithmic algebraic arguments to g_alg_fun.
             % z_impulse: algorithmic algebraic variables used to calculate the impulse laws.
             % z_alg_f_x: algorithmic algebraic variables required for the state derivative f_x.
+            %
+            % Disable warnings.
+            warning off vdx:indexing:dot_reference_returns_vdx_var
             z_alg = {obj.w.lambda_normal, obj.w.y_gap};
             z_impulse = {obj.w.Lambda_normal, obj.w.Y_gap, obj.w.P_vn, obj.w.N_vn};
             z_alg_f_x = {obj.w.lambda_normal};
@@ -230,6 +228,7 @@ classdef Cls < vdx.problems.Mpcc
             obj.z_alg = vdx.VariableGroup(z_alg);
             obj.z_impulse = vdx.VariableGroup(z_impulse);
             obj.z_alg_f_x = vdx.VariableGroup(z_alg_f_x);
+            warning on vdx:indexing:dot_reference_returns_vdx_var
         end
 
         function generate_direct_transcription_constraints(obj)
@@ -460,8 +459,6 @@ classdef Cls < vdx.problems.Mpcc
                             obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ijk - x_ij_end};
                             obj.g.z(ii,jj,opts.n_s+1) = {dcs.g_z_fun(x_ijk, z_ijk, u_i, v_global, p)};
                             obj.g.y_gap_rbp(ii,jj) = {y_gap_ijk - dcs.f_c_fun(x_ijk)};
-                        else
-                            obj.g.dynamics(ii,jj,opts.n_s+1) = {x_ij_end - obj.w.x(ii,jj,opts.n_s)};
                         end
                         if ~opts.g_path_at_stg && opts.g_path_at_fe
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
@@ -523,7 +520,7 @@ classdef Cls < vdx.problems.Mpcc
 
             % Terminal constraint
             if opts.relax_terminal_constraint_homotopy
-                error("Currently unsupported")
+                nosnoc.error('g_T_homotopy_unsuported', "terminal constraint homotopy Currently unsupported")
             end
             g_terminal = dcs.g_terminal_fun(x_end, z_end, v_global, p_global);
             relax_terminal_struct = vdx.RelaxationStruct(opts.relax_terminal_constraint.to_vdx, 's_terminal', 'rho_terminal');
@@ -812,7 +809,12 @@ classdef Cls < vdx.problems.Mpcc
                     for jj=1:opts.N_finite_elements(ii);
                         G_ij = {};
                         H_ij = {};
-                        sum_y_gap = obj.w.Y_gap(ii,jj) + sum2(obj.w.y_gap(ii,jj,:));
+                        if jj ~= 1 || ~opts.no_initial_impacts
+                            y_gap_lb = obj.w.Y_gap(ii,jj);
+                        else
+                            y_gap_lb = 0;
+                        end
+                        sum_y_gap = y_gap_lb + sum2(obj.w.y_gap(ii,jj,:));
                         for kk=1:opts.n_s
                             lambda_normal_ijk = obj.w.lambda_normal(ii,jj,kk);
                             G_ij = vertcat(G_ij, {lambda_normal_ijk});
@@ -1266,95 +1268,10 @@ classdef Cls < vdx.problems.Mpcc
                 end
                 %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
               case StepEquilibrationMode.direct_homotopy
-                error("not currently implemented")
-                eta_vec = [];
-                for ii=1:opts.N_stages
-                    p_stage = obj.p.p_time_var(ii);
-                    p =[p_global;p_stage];
-                    for jj=2:opts.N_finite_elements(ii)
-                        if jj ~= 2 || ~opts.no_initial_impacts
-                            sigma_c_B = obj.w.Y_gap(ii,jj-1,kk);
-                        else
-                            sigma_c_B = 0;
-                        end
-                        sigma_lambda_B = 0;
-                        for kk=1:(opts.n_s + rbp)
-                            sigma_c_B = sigma_c_B + obj.w.y_gap(ii,jj-1,kk);
-                        end
-                        for kk=1:(opts.n_s)
-                            sigma_lambda_B = sigma_lambda_B + obj.w.lambda_normal(ii,jj-1,kk);
-                        end
-                        sigma_c_F = obj.w.Y_gap(ii,jj,kk);
-                        sigma_lambda_F = 0;
-                        for kk=1:(opts.n_s + rbp)
-                            sigma_c_F = sigma_c_F + obj.w.y_gap(ii,jj,kk);
-                        end
-                        for kk=1:(opts.n_s)
-                            sigma_lambda_F = sigma_lambda_F + obj.w.lambda_normal(ii,jj,kk);
-                        end
-
-                        pi_c = sigma_c_B .* sigma_c_F;
-                        pi_lam = sigma_lambda_B .* sigma_lambda_F;
-                        kappa = pi_c + pi_lam;
-                        if model.friction_exists
-                            switch opts.friction_model
-                              case 'Polyhedral'
-                              case 'Conic'
-                                if jj ~= 2 || ~opts.no_initial_impacts
-                                    sigma_p_vt_B = obj.w.P_vt(ii,jj-1,kk);
-                                else
-                                    sigma_p_vt_B = 0;
-                                end
-                                if jj ~= 2 || ~opts.no_initial_impacts
-                                    sigma_n_vt_B = obj.w.N_vt(ii,jj-1,kk);
-                                else
-                                    sigma_n_vt_B = 0;
-                                end
-                                sigma_beta_B = 0;
-                                for kk=1:(opts.n_s + rbp)
-                                    sigma_p_vt_B = sigma_p_vt_B + obj.w.p_vt(ii,jj-1,kk);
-                                    sigma_n_vt_B = sigma_n_vt_B + obj.w.n_vt(ii,jj-1,kk);
-                                    sigma_beta_B = sigma_beta_B + obj.w.beta_normal(ii,jj-1,kk);
-                                end
-                                sigma_p_vt_F = obj.w.P_vt(ii,jj,kk);
-                                sigma_n_vt_F = obj.w.N_vt(ii,jj,kk);
-                                sigma_beta_F = 0;
-                                for kk=1:(opts.n_s + rbp)
-                                    sigma_p_vt_B = sigma_p_vt_B + obj.w.p_vt(ii,jj,kk);
-                                    sigma_n_vt_B = sigma_n_vt_B + obj.w.n_vt(ii,jj,kk);
-                                    sigma_beta_F = sigma_beta_F + obj.w.beta_normal(ii,jj,kk);
-                                end
-                                pi_p_vt = sigma_p_vt_B.*sigma_p_vt_F;
-                                pi_n_vt = sigma_n_vt_B.*sigma_n_vt_F;
-                                pi_beta = sigma_beta_B.*sigma_beta_F;
-                                s_pi_p_vt = [];
-                                s_pi_n_vt = [];
-                                for rr=1:dims.n_c
-                                    ind_temp = dims.n_t*ii-(dims.n_t-1):dims.n_t*ii;
-                                    s_pi_p_vt = [s_pi_p_vt; sum(pi_p_vt(ind_temp))];
-                                    s_pi_n_vt = [s_pi_n_vt; sum(pi_n_vt(ind_temp))];
-                                end
-                                xi = sigma_c_B + sigma_c_F + pi_beta + s_pi_p_vt + s_pi_n_vt;
-                                nu = kappa.*xi;
-                            end
-                        else
-                            nu = kappa;
-                        end
-                        
-                        eta = 1;
-                        for jjj=1:length(nu)
-                            eta = eta*nu(jjj);
-                        end
-                        eta_vec = [eta_vec;eta];
-                        obj.eta_vec = eta_vec;
-                        delta_h = obj.w.h(ii,jj) - obj.w.h(ii,jj-1);
-                        homotopy_eq = [eta*delta_h - sigma;eta*delta_h + sigma];
-                        obj.g.step_equilibration(ii,jj) = {homotopy_eq, [-inf;0], [0;inf]};
-                    end
-                end
-                %obj.eta_fun = Function('eta_fun', {obj.w.sym}, {eta_vec});
+                nosnoc.error('direct_homotopy_unsupported', "Direct homotopy step-eq mode not currently implemented")
+                
               case StepEquilibrationMode.linear_complementarity % TODO(@anton) implement this though we already have such pain w.r.t solving it may not be super useful
-                error("MLCP formulation of step equilibration not yet supported for FESD-J")
+                nosnoc.error('mlcp_unsupported', "MLCP formulation of step equilibration not yet supported for FESD-J")
             end
         end
 

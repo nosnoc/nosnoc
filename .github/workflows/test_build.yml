@@ -6,6 +6,17 @@ on:
 jobs:
   # Main job that runs all the tests for NOSNOC in matlab.
   test_nosnoc:
+    strategy:
+      fail-fast: false # We always want to see where the failures are.
+      matrix:
+        matlab_version: ["R2021b", "R2022a", "R2022b", "R2023a", "R2023b", "R2024a"]
+        casadi:
+          - version: "3.5.5"
+            file: "casadi-linux-matlabR2014b-v3.5.5.tar.gz"
+            extract: "tar -zxvf"
+          - version: "3.6.7"
+            file: "casadi-3.6.7-linux64-matlab2018b.zip"
+            extract: "unzip"
     runs-on: ubuntu-22.04
 
     steps:
@@ -16,19 +27,19 @@ jobs:
         submodules: 'recursive'
     # Install matlab to run tests.
     - name: Install MATLAB
-      uses: matlab-actions/setup-matlab@v2.1
+      uses: matlab-actions/setup-matlab@v2.3
       with:
         # NOTE: no longer earliest version to support more property validation functions
-        release: R2021b
+        release: ${{ matrix.matlab_version }}
 
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
-      uses: robinraju/release-downloader@v1.6
+      uses: robinraju/release-downloader@v1.11
       with:
         repository: "casadi/casadi"
-        tag: "3.5.5"
-        fileName: "casadi-linux-matlabR2014b-v3.5.5.tar.gz"
+        tag: ${{ matrix.casadi.version }}
+        fileName: ${{ matrix.casadi.file }}
 
     # untar the casadi 3.5.5 release and then add it to the matlab path.
     - name: Install CasADi
@@ -36,7 +47,7 @@ jobs:
       run: |
         mkdir casadi
         cd casadi
-        tar -zxvf $GITHUB_WORKSPACE/casadi-linux-matlabR2014b-v3.5.5.tar.gz .
+        ${{ matrix.casadi.extract}} $GITHUB_WORKSPACE/${{ matrix.casadi.file }}
         echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/casadi" >> $GITHUB_ENV
 
     # Run matlab tests from the test directory and dump the results in junit format.
@@ -49,13 +60,40 @@ jobs:
     - name: Run NOSNOC tests
       uses: matlab-actions/run-tests@v2.1
       with:
-        source-folder: src; .
+        source-folder: +nosnoc
         select-by-folder: test
-        test-results-junit: test-results/matlab-results.xml
+        test-results-junit: "test-results/matlab-results-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
+        code-coverage-cobertura: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
+        strict: true # Non-explicitly suppressed warnings should fail.
 
+    # Run ReportGenerator to generage human readable coverage (only for latest versions of matlab and casadi for now)
+    - name: Setup .NET Core # Required to execute ReportGenerator
+      if: ${{ matrix.matlab_version == 'R2024a' && matrix.casadi.version == '3.6.7' }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.x
+        dotnet-quality: 'ga'
+    - name: ReportGenerator
+      if: ${{ matrix.matlab_version == 'R2024a' && matrix.casadi.version == '3.6.7' }}
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.3.11
+      with:
+        reports: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
+        targetdir: 'test-results'
+        reporttypes: 'HtmlInline;MarkdownSummaryGithub'
+        verbosity: 'Info' # The verbosity level of the log messages. Values: Verbose, Info, Warning, Error, Off
+        title: 'nosnoc coverage'
+    - name: Comment PR with coverage
+      if: ${{ matrix.matlab_version == 'R2024a' && matrix.casadi.version == '3.6.7' }}
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        github-token: ${{ secrets.GH_TOKEN }}
+        file-path: "test-results/SummaryGithub.md"
+        comment-tag: coverage
+        
+    # Upload raw coverage and test results.
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: test-results
+        name: "test-results-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}"
         path: test-results/

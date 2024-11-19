@@ -14,6 +14,8 @@ classdef Gcs < nosnoc.dcs.Base
         c_lift % casadi.SX|casadi.MX: Lift variables for the gap functions in :class:`nosnoc.model.Pds`.
         
         f_x % casadi.SX or casadi.MX: Right hand side of the gradient complementarity system
+        c % casadi.SX or casadi.MX: CasADi expression for gap functions, in case of lifting c=c_lift.
+        g_c_lift % casadi.SX or casadi.MX: Lifting constraint expression for c_lift. Empty if lifting is not used.
 
         dims % struct: dimensions struct TODO document members
 
@@ -58,6 +60,8 @@ classdef Gcs < nosnoc.dcs.Base
                 g_c_lift = [];
                 c = model.c;
             end
+            obj.c = c;
+            obj.g_c_lift = g_c_lift;
             
             obj.f_x = model.f_x_unconstrained + model.E*nabla_c*obj.lambda;
 

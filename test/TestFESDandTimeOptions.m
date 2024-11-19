@@ -1,6 +1,4 @@
 classdef TestFESDandTimeOptions < matlab.unittest.TestCase
-    %TESTSETTINGS Summary of this class goes here
-    %   Detailed explanation goes here
     properties (TestParameter)
         use_fesd = {0,1};
         time_optimal_problem = {0,1};
@@ -10,14 +8,16 @@ classdef TestFESDandTimeOptions < matlab.unittest.TestCase
     end
     
     methods (Test, ParameterCombination='exhaustive')
-        function test_cross_comp_modes(testCase,use_fesd,time_optimal_problem,equidistant_control_grid, use_speed_of_time_variables,local_speed_of_time_variable)
+        function test_cross_comp_modes(tc,use_fesd,time_optimal_problem,equidistant_control_grid, use_speed_of_time_variables,local_speed_of_time_variable)
             import matlab.unittest.constraints.IssuesNoWarnings;
-            warning('off', 'nosnoc:homotopy_solver:NLP_infeasible')
-            % Expected warning due to nonsensical settings being handled
-            warning('off', 'nosnoc:NosnocOptions:erroneous_use_speed_of_time_variables')
-            warning('off', 'nosnoc:NosnocOptions:erroneous_local_speed_of_time_variable')
-            issuesNoWarningsConstraint = IssuesNoWarnings('WhenNargoutIs', 5);
-            testCase.verifyThat(@() test_fesd_and_time_options(use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable), issuesNoWarningsConstraint);
+            import matlab.unittest.fixtures.SuppressedWarningsFixture
+            tc.applyFixture(SuppressedWarningsFixture({'nosnoc:homotopy_solver:NLP_infeasible',...
+                                                        'nosnoc:Options:erroneous_use_speed_of_time_variables',...
+                                                        'nosnoc:Options:erroneous_local_speed_of_time_variable',...
+                                                        'nosnoc:ocp:Solver:terminal_time_for_non_time_optimal_ocp'}));
+            [model,problem_options,solver_options,ocp_solver] = test_fesd_and_time_options(use_fesd, time_optimal_problem, equidistant_control_grid, use_speed_of_time_variables, local_speed_of_time_variable);
+
+            % TODO: this should have some better testing.
         end
     end 
 end
