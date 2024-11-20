@@ -27,6 +27,8 @@ classdef FESD < handle
             % Always process model and options
             % for integrator also take the extra step of re-calculating N_stages/N_finite_elements
             opts.preprocess();
+            solver_opts.preprocess();
+            integrator_opts.preprocess();
             if opts.N_stages > 1
                 nosnoc.warning('multiple_control_stages',"Integrator created with more than 1 control stage. Converting this to finite elements.")
                 N_fe = sum(opts.N_finite_elements);
@@ -240,7 +242,7 @@ classdef FESD < handle
                         end
                     end
                 end
-                if opts.use_previous_solution_as_initial_guess
+                if integrator_opts.use_previous_solution_as_initial_guess
                     obj.discrete_time_problem.w.init = obj.discrete_time_problem.w.res;
                 end
                 obj.set_x0(x_step(:,end));
