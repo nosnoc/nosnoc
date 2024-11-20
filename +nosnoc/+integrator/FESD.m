@@ -123,6 +123,7 @@ classdef FESD < handle
                 extra_args.x0 = [];
             end
             opts = obj.opts;
+            integrator_opts = obj.integrator_opts;
             % TODO(@anton) validators here.
             if ~isempty(extra_args.u) && any(size(extra_args.u) ~= [obj.model.dims.n_u opts.N_sim])
                 nosnoc.error('wrong_u_dims', "wrong dimensions passed for controls to integrator.")
