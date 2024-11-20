@@ -1,7 +1,8 @@
 function [x_res,t_grid,model,problem_options, solver_options] = test_simple_switch(rk_representation, rk_scheme, dcs_mode, cross_comp_mode)
     import casadi.*
     problem_options = nosnoc.Options();
-    solver_options = nosnoc.solver.Options();
+    integrator_options = nosnoc.integrator.Options();
+    solver_options = integrator_options.fesd_solver_opts;
     model = nosnoc.model.Pss();
 
     problem_options.n_s = 2;
@@ -29,7 +30,7 @@ function [x_res,t_grid,model,problem_options, solver_options] = test_simple_swit
     model.S = [-1; 1];
     f_1 = [2]; f_2 = [0.2];
     model.F = [f_1 f_2];
-    solver_options.use_previous_solution_as_initial_guess = 1;
-    integrator = nosnoc.Integrator(model, problem_options, solver_options);
+    integrator_options.use_previous_solution_as_initial_guess = 1;
+    integrator = nosnoc.Integrator(model, problem_options, integrator_options);
     [t_grid, x_res] = integrator.simulate();
 end
