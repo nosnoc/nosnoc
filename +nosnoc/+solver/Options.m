@@ -62,13 +62,6 @@ classdef Options < handle
         % IPOPT Settings
         opts_casadi_nlp
 
-        % Integrator Specific
-        % TODO: Maybe a 3rd options set specifically for integrators :)
-        use_previous_solution_as_initial_guess(1,1) logical = 0
-        simulation_problem(1,1) logical = 0
-        real_time_plot(1,1) logical = 0
-        break_simulation_if_infeasible(1,1) logical = 0
-
         % TODO: make proper multiple solver class.
         multiple_solvers(1,1) logical = 0
 
@@ -92,6 +85,10 @@ classdef Options < handle
         normalize_homotopy_update(1,1) logical = 1
         norm_function
         calculate_stationarity_type(1,1) logical = 0;
+
+        use_previous_solution_as_initial_guess(1,1) logical = 0
+        real_time_plot(1,1) logical = 0
+        break_simulation_if_infeasible(1,1) logical = 0
     end
 
     properties(Dependent)
