@@ -13,7 +13,6 @@ function [x_res,t_grid,model,problem_options, solver_options] = test_simple_swit
     problem_options.rk_representation= rk_representation;
     problem_options.dcs_mode = dcs_mode;
     solver_options.print_level = 3;
-    solver_options.store_integrator_step_results = 1;
     % discretization parameters
     N_sim = 16;
     T_sim = 1.5;
