@@ -86,6 +86,9 @@ classdef Options < handle
         norm_function
         calculate_stationarity_type(1,1) logical = 0;
 
+        use_previous_solution_as_initial_guess(1,1) logical = 0
+        real_time_plot(1,1) logical = 0
+        break_simulation_if_infeasible(1,1) logical = 0
     end
 
     properties(Dependent)
