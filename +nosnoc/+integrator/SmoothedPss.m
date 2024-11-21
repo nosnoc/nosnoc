@@ -38,9 +38,14 @@ classdef SmoothedPss < handle
                 obj.dcs.generate_equations(opts);
 
                 sigma = SX.sym('sigma');
-                fun_opts.allow_free = true;
-                f_x_alpha = Function('f_x_alpha', {obj.dcs.alpha}, {obj.dcs.f_x}, fun_opts);
-                f_x_smoothed = f_x_alpha(0.5*(1+tanh([obj.model.c{:}]/sigma)));
+                if string(CasadiMeta.version) >= "3.6.3"
+                    fun_opts.allow_free = true;
+                    f_x_alpha = Function('f_x_alpha', {obj.dcs.alpha}, {obj.dcs.f_x}, fun_opts);
+                    f_x_smoothed = f_x_alpha(0.5*(1+tanh([obj.model.c{:}]/sigma)));
+                else
+                    f_x_alpha = Function('f_x_alpha', {obj.dcs.alpha}, {obj.dcs.f_x});
+                    f_x_smoothed = f_x_alpha(0.5*(1+tanh([obj.model.c{:}]/sigma)));
+                end
 
                 rhs_fun = Function('rhs_fun', {model.x, model.u, sigma}, {f_x_smoothed});
                 obj.ode_func = @(t, x , u ,sigma) full(rhs_fun(x, u, sigma));
