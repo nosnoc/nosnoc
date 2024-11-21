@@ -12,6 +12,10 @@ classdef Integrator < handle
             obj.model = model;
             obj.opts = opts;
             obj.integrator_opts = integrator_opts;
+            integrator_opts.preprocess();
+            opts.preprocess();
+            model.verify_and_backfill(opts);
+
             switch integrator_opts.integrator_plugin
               case IntegratorType.FESD
                 obj.plugin = nosnoc.integrator.FESD(model, opts, integrator_opts);

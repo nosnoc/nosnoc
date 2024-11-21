@@ -24,10 +24,6 @@ classdef SmoothedPss < handle
             obj.opts = opts;
             obj.integrator_opts = integrator_opts;
 
-            opts.preprocess();
-            integrator_opts.preprocess();
-            model.verify_and_backfill(opts);
-
             if class(model) == "nosnoc.model.Cls" && opts.time_freezing
                 model = nosnoc.time_freezing.reformulation(model, opts);
                 model.verify_and_backfill(opts);
@@ -106,8 +102,6 @@ classdef SmoothedPss < handle
                     [t_sim, x_sim] = ode23t(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case 'ode23tb'
                     [t_sim, x_sim] = ode23tb(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
-                  case 'ode15i'
-                    [t_sim, x_sim] = ode15i(@(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing), [t_current, t_current+opts.T], obj.x_curr, integrator_opts.matlab_ode_opts);
                   case {'cvodesnonstiff','cvodesstiff','idas'} % Handle with new OO ode method.\
                                                                % Note: these are only available >=2024a
                                                                % TODO(@anton) maybe instead of looping use Refine=N.
@@ -115,8 +109,8 @@ classdef SmoothedPss < handle
                         F = ode;
                         F.ODEFcn = @(t, x)  obj.ode_func(t,x,u_i,integrator_opts.sigma_smoothing);
                         F.Solver = obj.integrator_opts.matlab_ode_solver;
-                        F.AbsoluteTolerance = odeget(integrator_opts.matlab_ode_opts, 'AbsTol');
-                        F.RelativeTolerance = odeget(integrator_opts.matlab_ode_opts, 'RelTol');
+                        F.AbsoluteTolerance = odeget(integrator_opts.matlab_ode_opts, 'AbsTol', 1e-6);
+                        F.RelativeTolerance = odeget(integrator_opts.matlab_ode_opts, 'RelTol', 1e-3);
                     end
                     F.InitialTime = t_current;
                     F.InitialValue = obj.x_curr';
