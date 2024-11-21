@@ -97,3 +97,44 @@ jobs:
       with:
         name: "test-results-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}"
         path: test-results/
+
+  run_examples:
+    continue-on-faiure: true
+    runs-on: ubuntu-22.04
+
+    steps:
+    # Checkout repo
+    - name: Checkout NOSNOC
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    # Install matlab to run tests.
+    - name: Install MATLAB
+      uses: matlab-actions/setup-matlab@v2.3
+      with:
+        # NOTE: no longer earliest version to support more property validation functions
+        release: ${{ matrix.matlab_version }}
+
+    # Download relevant matlab release artifacts for the casadi release we are using.
+    # TODO: Definitely cache this.
+    - name: Download CasADi release
+      uses: robinraju/release-downloader@v1.11
+      with:
+        repository: "casadi/casadi"
+        tag: ${{ matrix.casadi.version }}
+        fileName: ${{ matrix.casadi.file }}
+
+    # untar the casadi 3.5.5 release and then add it to the matlab path.
+    - name: Install CasADi
+      shell: bash
+      run: |
+        mkdir casadi
+        cd casadi
+        ${{ matrix.casadi.extract}} $GITHUB_WORKSPACE/${{ matrix.casadi.file }}
+        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/casadi" >> $GITHUB_ENV
+
+    # Run matlab tests from the test directory and dump the results in junit format.
+    - name: Install NOSNOC
+      uses: matlab-actions/run-command@v2.1
+      with:
+        command: install_nosnoc
