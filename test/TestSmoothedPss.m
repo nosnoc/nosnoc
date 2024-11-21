@@ -12,6 +12,8 @@ classdef TestSmoothedPss < matlab.unittest.TestCase
             import matlab.unittest.fixtures.SuppressedWarningsFixture
             tc.applyFixture(SuppressedWarningsFixture({'nosnoc:integrator:Options:likely_bad_ode_solver'}));
             tc.assumeFalse(ismember(odesolver, {'ode45', 'ode23', 'ode113', 'ode78', 'ode89', 'cvodesstiff', 'idas'}) && strcmp(model, 'sliding')); % Filter bad performing solvers
+            tc.assumeFalse((string(version('-release')) < "2024a") && ismember(odesolver, {'cvodesstiff', 'cvodesstiff', 'idas'}))
+            
             
             fprintf(['using ' odesolver ' to solve the ' model ' model\n'])
             [x_res,x_star] = test_smoothed_pss(odesolver,model);
