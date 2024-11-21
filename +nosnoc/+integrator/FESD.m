@@ -24,11 +24,8 @@ classdef FESD < handle
             solver_opts = integrator_opts.fesd_solver_opts;
             obj.solver_opts = solver_opts;
 
-            % Always process model and options
             % for integrator also take the extra step of re-calculating N_stages/N_finite_elements
-            opts.preprocess();
             solver_opts.preprocess();
-            integrator_opts.preprocess();
             if opts.N_stages > 1
                 nosnoc.warning('multiple_control_stages',"Integrator created with more than 1 control stage. Converting this to finite elements.")
                 N_fe = sum(opts.N_finite_elements);
