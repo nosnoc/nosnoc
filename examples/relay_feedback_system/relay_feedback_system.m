@@ -43,7 +43,8 @@ N_sim = 400;
 
 %% init nosnoc 
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %RKSchemes.GAUSS_LEGENDRE;
@@ -86,7 +87,7 @@ model.c = c;
 model.S = [-1;1];
 model.F = F;
 %% Call integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 %% Plot results
