@@ -48,8 +48,8 @@ problem_options.gamma_h = 0.9; % Limit on finite element step variation which ca
 %% Define solver options.
 solver_options.opts_casadi_nlp.ipopt.max_iter = 5000; % set max number of nlp iterations
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Use ma27 linear solver for performance (requires installadion)
-solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 1; % Only require one acceptable iter
-solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8; % Acceptable tolerance for nlp solver
+solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 5; % Only require three acceptable iter
+solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-9; % Acceptable tolerance for nlp solver
 solver_options.warm_start_duals = true; % Warm start nlp dual variables
 solver_options.complementarity_tol = 1e-9; % Tolerance to solve complementarities to
 %solver_options.polishing_step = 1;
