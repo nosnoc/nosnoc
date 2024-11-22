@@ -92,11 +92,12 @@ classdef Objects < nosnoc.model.Base
         end
 
         function addContact(obj, shape1, shape2, mu)
+        % Add contact between two shapes of compatible dimension possibly with "friction" model.
             arguments
-                obj
-                shape1 nosnoc.objects.Object
-                shape2 nosnoc.objects.Object
-                mu = 0
+                obj nosnoc.model.Objects
+                shape1 nosnoc.objects.Object % First shape
+                shape2 nosnoc.objects.Object % Second shape
+                mu = 0 % Friction coef
             end
             if shape1.n_dim ~= shape2.n_dim
                 error('Dimensions mismatch');
@@ -139,6 +140,9 @@ classdef Objects < nosnoc.model.Base
 
     methods (Access=private)
         function addBallBall(obj, ball1, ball2, mu_f)
+        % Function adds a contact between two balls in 2 or 3 dimensions.
+        % This can be done without an implcit distance function and so we do it directly 
+        % as an explicit function in $x$.
             import casadi.*
 
             % Lambda and gap functions
@@ -208,6 +212,10 @@ classdef Objects < nosnoc.model.Base
         end
 
         function addEllipseBall(obj, ellipse, ball, mu_f)
+        % Function adds a contact between a circle and an ellipse in 2d or a ball and
+        % an ellipsoid in 3 dimensions.
+        % This is done through implicit signed distance functions. See :cite:`Tracy2023`
+        % and :cite:`Dietz2024` for more details.
             import casadi.*
             n_dim = ball.n_dim;
 
@@ -326,35 +334,44 @@ classdef Objects < nosnoc.model.Base
         end
         
         function addEllipseEllipse(obj, ellipse1, ellipse2, mu_f)
+        % Function adds a contact between two ellipses in 2d or two ellipsoids in 3d.
+        % This is done through implicit signed distance functions. See :cite:`Tracy2023`
+        % and :cite:`Dietz2024` for more details.
             import casadi.*
             n_dim = ellipse2.n_dim;
 
             % Helper Functions
             if n_dim == 2
+                % Generate 2d rotation matrix function.
                 theta = SX.sym('theta');
-                R_matrix = [cos(theta) -sin(theta);...
+                Rot = [cos(theta) -sin(theta);...
                     sin(theta) cos(theta)];
-                R = Function('R', {theta}, {R_matrix});
+                R = Function('R', {theta}, {Rot});
+                
+                % Generate vector cross product function
                 a = SX.sym('a',2);
                 b = SX.sym('b',2);
                 cross_fun = Function('cross', {a,b}, {a(1)*b(2) - a(2)*b(1)});
             else
+                % Generate 3d rotation matrix function.
                 rx = SX.sym('rx',1);
                 ry = SX.sym('ry',1);
                 rz = SX.sym('rz',1);
-
                 Rot = [cos(ry)*cos(rz), sin(rx)*sin(ry)*cos(rz) - cos(rx)*sin(rz),  cos(rx)*sin(ry)*cos(rz) + sin(rx)*sin(rz);
                     cos(ry)*sin(rz), sin(rx)*sin(ry)*sin(rz) + cos(rx)*cos(rz),  cos(rx)*sin(ry)*sin(rz) - sin(rx)*cos(rz);
                     -sin(ry), sin(rx)*cos(ry),  cos(rx)*cos(ry)];
                 R = Function('R', {[rx;ry;rz]}, {Rot});
+                
+                % Generate vector cross product function
                 a = SX.sym('a',3);
                 b = SX.sym('b',3);
                 cross_fun = Function('cross', {a,b}, {cross(a,b)});
             end
 
-            % Define contacts
+            % Define contacts for each pair of subellipses
             for ii=1:ellipse1.N
                 for jj=1:ellipse2.N
+                    % Generate required variables for 
                     lambda = SX.sym(['lambda_' ellipse1.name '_' ellipse2.name]);
                     obj.lambda = vertcat(obj.lambda, lambda);
                     alpha = SX.sym(['alpha_' ellipse1.name '_' ellipse2.name]);
@@ -364,24 +381,29 @@ classdef Objects < nosnoc.model.Base
                     mu = SX.sym(['mu_' ellipse1.name '_' ellipse2.name], 2);
                     obj.mu = vertcat(obj.mu, mu);
 
+                    % Get corresponding ellipse matrices
                     A1 = ellipse1.A{ii};
                     A2 = ellipse2.A{jj};
 
+                    % Get KKT multipliers for each object
                     mu_1c = mu(end-1);
                     mu_2c = mu(end);
-                    
+
+                    % expanding constraints for ellipses defining $\mathcal{S}(x)$.
                     g_d = [(p_d-ellipse1.c)'*R(ellipse1.xi)*A1*R(ellipse1.xi)'*(p_d-ellipse1.c) - alpha;
                         (p_d-ellipse2.c)'*R(ellipse2.xi)*A2*R(ellipse2.xi)'*(p_d-ellipse2.c) - alpha];
                     obj.g_d = vertcat(obj.g_d, g_d);
 
+                    % Lagrangian for the implicit SDF
                     L = alpha - 1 + mu'*g_d;
-                    
+
+                    % KKT stationarity functions for SDF
                     % g_kkt = [1 - mu_1c - mu_2c;
                     %     mu_1c*(R(ellipse1.xi)*(A + A')*R(ellipse1.xi)')*(p_d-ellipse1.c) + mu_2c*(2/r^2)*(p_d-ellipse2.c)];
                     g_kkt = L.jacobian([alpha;p_d])';
                     obj.g_kkt = vertcat(obj.g_kkt, g_kkt);
 
-                    
+                    % normal expression (nabla g_d with respect to positions)
                     ntr = -2*R(ellipse1.xi)*A1*R(ellipse1.xi)'*(p_d - ellipse1.c)*mu_1c;
                     normal_ellipse1 =[ntr;
                         cross_fun(p_d-ellipse1.c, ntr)];
@@ -395,6 +417,7 @@ classdef Objects < nosnoc.model.Base
                     ellipse1.x_dot = ellipse1.x_dot + normal_ellipse1*lambda;
                     ellipse2.x_dot = ellipse2.x_dot + normal_ellipse2*lambda;
 
+                    % Do friction. See above for explanation.
                     if mu_f
                         if ellipse2.n_dim == 2 %TODO does this need changes?
                             tangent = SX.sym('tangent', 2);

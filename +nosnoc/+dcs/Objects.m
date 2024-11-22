@@ -1,5 +1,7 @@
 classdef Objects < nosnoc.dcs.Base
-% A particular class of dynamic complementarity system called a gradient complementarity system.
+% This is a class that represents a Gradient complementarity system where the gap functions are
+% defined implicitly via a convex optimization problem. :cite:`Tracy2023`.
+%   
 % It is defined by the dynamics:
 %
 % .. math::
@@ -8,6 +10,18 @@ classdef Objects < nosnoc.dcs.Base
 %     \begin{align*}
 %        \dot{x} &= f(x) + \nabla c(x)\lambda \\
 %        0 &\le c(x) \perp \lambda \ge 0
+%     \end{align*}
+%
+% Where $c(x)$ is defined by:
+%
+% % .. math::
+%     :nowrap:
+%
+%     \begin{align*}
+%       c(x) = &\min_\alpha \alpha - 1\\
+%              & \textrm{s.t}\\
+%              & \quad x\in \mathcal{S}_1(\alpha)
+%              & \quad x\in \mathcal{S}_2(\alpha)
 %     \end{align*}
     properties
         lambda % casadi.SX|casadi.MX: Lagrange multipliers for the gradient complementarity system.
