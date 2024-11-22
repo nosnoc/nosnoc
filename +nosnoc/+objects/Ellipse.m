@@ -1,21 +1,21 @@
 classdef Ellipse < nosnoc.objects.Object
 % A shape defined by possibly a union of ellipses (or in 3 dimensions ellipsoids).
     properties(GetAccess=public, SetAccess=private)
-        N
+        N(1,1) double % double: number of ellipses unioned together.
 
-        x
-        x_dot_lift
+        x % casadi.SX|casadi.MX: Expression for center of ellipse
+        x_dot_lift % casadi.SX|casadi.MX: lifting variables for derivative.
 
-        c
-        xi
+        c % casadi.SX|casadi.MX: Expression for center of ellipse.
+        xi % casadi.SX|casadi.MX: Expression for angle of rotation of ellipse.
     end
 
     properties
-        A
-        x0
-        lbx
-        ubx
-        x_dot
+        A(:,:) double % double: Matrix that defines the ellipse as x'Ax <= 1
+        x0(:,1) double % double: Initial state of the ellipse.
+        lbx(:,1) double % double: Lower bound of ellipse state.
+        ubx(:,1) double % double: Upper bound of ellipse state.
+        x_dot % casadi.SX|casadi.MX: Expression for time derivative of state.
     end
 
     methods
