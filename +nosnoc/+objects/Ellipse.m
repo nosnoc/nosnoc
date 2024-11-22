@@ -60,7 +60,7 @@ classdef Ellipse < nosnoc.objects.Object
             obj.ubx = inf*ones(n_x,1);
         end
 
-        function poly = to_polygon(obj,r)
+        function poly = to_polygon(obj)
             if obj.n_dim == 2
                 for ii=1:length(obj.A)
                     A = obj.A{ii};

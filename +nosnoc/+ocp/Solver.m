@@ -70,6 +70,12 @@ classdef Solver < handle
                 obj.dcs.generate_equations(opts);
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Gcs(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
+              case "nosnoc.model.Objects"
+                obj.dcs = nosnoc.dcs.Objects(model);
+                obj.dcs.generate_variables(opts);
+                obj.dcs.generate_equations(opts);
+                obj.discrete_time_problem = nosnoc.discrete_time_problem.Objects(obj.dcs, opts);
+                obj.discrete_time_problem.populate_problem();
               otherwise
                 nosnoc.error('unknown_model', "Unknown model type.")
             end
