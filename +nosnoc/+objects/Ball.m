@@ -1,18 +1,18 @@
 classdef Ball < nosnoc.objects.Object
 % A shape defined by ball in 2 or 3 dimensions.
     properties(GetAccess=public, SetAccess=private)
-        c
+        c % casadi.SX|casadi.MX: Expression for center of ball
 
-        x
+        x % casadi.SX|casadi.MX: Expression for state of ball
     end
 
     properties
-        r
-        x0
-        lbx
-        ubx
-        x_dot
-        x_dot_lift
+        r(1,1) double {mustBePositive} % double: Radius of ball.
+        x0(:,1) double % double: Initial state of the ball.
+        lbx(:,1) double % double: Lower bound of ball state.
+        ubx(:,1) double % double: Upper bound of ball state.
+        x_dot % casadi.SX|casadi.MX: Expression for time derivative of state.
+        x_dot_lift % casadi.SX|casadi.MX: lifting variables for derivative.
     end
 
     methods
