@@ -53,7 +53,7 @@ solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-9; % Acceptable toleran
 solver_options.warm_start_duals = true; % Warm start nlp dual variables
 solver_options.complementarity_tol = 1e-9; % Tolerance to solve complementarities to
 %solver_options.polishing_step = 1;
-solver_options.print_level = 5;
+solver_options.print_level = 3;
 
 % Create a nosnoc solver. 
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
