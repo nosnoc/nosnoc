@@ -24,7 +24,7 @@
 % OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 % This file is part of NOSNOC.
-classdef Objects < nosnoc.model.Base
+classdef PDSObjects < nosnoc.model.Base
     properties (Access=public)
         
         % Algebraics
@@ -64,7 +64,7 @@ classdef Objects < nosnoc.model.Base
     end
 
     methods (Access=public)
-        function obj = Objects()
+        function obj = PDSObjects()
             dims = struct;
         end
 
@@ -94,7 +94,7 @@ classdef Objects < nosnoc.model.Base
         function addContact(obj, shape1, shape2, mu)
         % Add contact between two shapes of compatible dimension possibly with "friction" model.
             arguments
-                obj nosnoc.model.Objects
+                obj nosnoc.model.PDSObjects
                 shape1 nosnoc.objects.Object % First shape
                 shape2 nosnoc.objects.Object % Second shape
                 mu = 0 % Friction coef

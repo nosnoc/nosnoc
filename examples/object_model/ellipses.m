@@ -6,7 +6,7 @@ T = 20.0;
 N_stages = 40;
 N_finite_elements = 4;
 %% Init nosnoc objects
-model = nosnoc.model.Objects; % Initialize model which is a container for the objects.
+model = nosnoc.model.PDSObjects; % Initialize model which is a container for the objects.
 problem_options = nosnoc.Options; % Initialize all options related to the optimal control.
 solver_options = nosnoc.solver.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
 %% DefinTe model

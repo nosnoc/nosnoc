@@ -1,4 +1,4 @@
-classdef Objects < nosnoc.dcs.Base
+classdef PDSObjects < nosnoc.dcs.Base
 % This is a class that represents a Gradient complementarity system where the gap functions are
 % defined implicitly via a convex optimization problem. :cite:`Tracy2023`.
 %   
@@ -50,7 +50,7 @@ classdef Objects < nosnoc.dcs.Base
     end
 
     methods
-        function obj = Objects(model)
+        function obj = PDSObjects(model)
             obj.model = model;
             obj.dims = model.dims;
         end
