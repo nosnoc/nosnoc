@@ -1,4 +1,4 @@
-classdef Objects < vdx.problems.Mpcc
+classdef PDSObjects < vdx.problems.Mpcc
     properties
         model
         dcs
@@ -9,7 +9,7 @@ classdef Objects < vdx.problems.Mpcc
     end
 
     methods
-        function obj = Objects(dcs, opts)
+        function obj = PDSObjects(dcs, opts)
             obj = obj@vdx.problems.Mpcc();
             obj.model = dcs.model;
             obj.dcs = dcs;

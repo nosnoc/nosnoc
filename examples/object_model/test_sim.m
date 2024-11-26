@@ -6,7 +6,7 @@ T_sim = 5.0;
 N_sim = 5;
 N_finite_elements = 2;
 %% Define (uncontrolled for now) projected system
-model = nosnoc.model.Objects;
+model = nosnoc.model.PDSObjects;
 problem_options = nosnoc.Options;
 integrator_options = nosnoc.integrator.Options();
 solver_options = integrator_options.fesd_solver_opts;
