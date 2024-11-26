@@ -7,7 +7,7 @@ classdef Ball < nosnoc.objects.Object
     end
 
     properties
-        r(1,1) double {mustBePositive} % double: Radius of ball.
+        r(1,1) double {mustBePositive} = 1 % double: Radius of ball.
         x0(:,1) double % double: Initial state of the ball.
         lbx(:,1) double % double: Lower bound of ball state.
         ubx(:,1) double % double: Upper bound of ball state.

@@ -11,7 +11,7 @@ classdef Ellipse < nosnoc.objects.Object
     end
 
     properties
-        A(:,:) double % double: Matrix that defines the ellipse as x'Ax <= 1
+        A  % double|cell(double): Matrix that defines the ellipse as x'Ax <= 1
         x0(:,1) double % double: Initial state of the ellipse.
         lbx(:,1) double % double: Lower bound of ellipse state.
         ubx(:,1) double % double: Upper bound of ellipse state.
