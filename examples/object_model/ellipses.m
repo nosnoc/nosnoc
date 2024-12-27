@@ -60,10 +60,10 @@ ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 % Solve the problem by internally calling the nosnoc MPEC solver (see generic_mpecs example for its standalone use)
 ocp_solver.solve();
 
-x_res = ocp_solver.get('x');
-u_res = ocp_solver.get('u');
-pd_res = ocp_solver.get('p_d');
-h_res = ocp_solver.get('h');
+x_res = ocp_solver.get('x'); % states
+u_res = ocp_solver.get('u'); % controls 
+pd_res = ocp_solver.get('p_d'); % contact point coordinates 
+h_res = ocp_solver.get('h'); % step sizes
 
 % Get matlab polygon objects from the nosnoc.objects types for plotting
 pgon1 = ball1.to_polygon();
