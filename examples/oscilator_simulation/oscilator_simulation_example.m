@@ -25,7 +25,6 @@
 
 % This file is part of NOSNOC.
 
-%
 %%
 clear all; clc; close all;
 import casadi.*
@@ -44,7 +43,12 @@ integrator_options = nosnoc.integrator.Options();
 solver_options = integrator_options.fesd_solver_opts; % the fesd integrator uses an mpec solver, call and modify its options
 model = nosnoc.model.Pss();
 
-% FESD integraotr options
+
+% select integrator
+integrator_options.integrator_plugin = "FESD";
+% integrator_options.integrator_plugin = "SMOOTHED_PSS";
+
+% integraotr options
 problem_options.use_fesd = 1;       % switch detection method on/off
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
 problem_options.n_s = 4;
