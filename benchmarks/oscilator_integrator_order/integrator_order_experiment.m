@@ -65,7 +65,7 @@ function [results] = integrator_order_experiment(settings,legend_str)
     solver_options.complementarity_tol = complementarity_tol;
     solver_options.N_homotopy = 40; % number of steps
     solver_options.homotopy_update_slope = 0.05; % decrease rate
-    solver_options.use_previous_solution_as_initial_guess = 1; % warm start integrator
+    % solver_options.use_previous_solution_as_initial_guess = 1; % warm start integrator
     solver_options.print_level = 0;
     %% Time settings
     % T = 2;                            
