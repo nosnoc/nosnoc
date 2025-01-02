@@ -55,7 +55,7 @@ for rk_scheme = IRK_SCHEMES
                     solver_options.sigma_0 = 1e0;
                     solver_options.homotopy_update_slope = 0.2;
                     solver_options.opts_casadi_nlp.ipopt.max_iter = 1500;
-                    solver_options.use_previous_solution_as_initial_guess  = 1;
+                    integrator_opts.use_previous_solution_as_initial_guess  = 1;
                     %% Simulation settings
                     problem_options.T_sim = T_sim;
                     problem_options.N_finite_elements = N_FE;

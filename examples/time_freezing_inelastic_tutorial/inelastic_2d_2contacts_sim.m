@@ -29,7 +29,7 @@ solver_options.homotopy_steering_strategy = 'ELL_INF';
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.print_level = 2;
 solver_options.N_homotopy = 6;
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 
 %%
 vertical_force = 0;

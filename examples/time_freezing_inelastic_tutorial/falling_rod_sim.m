@@ -40,7 +40,7 @@ solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.complementarity_tol = 1e-5;
 solver_options.print_level = 3;
 solver_options.N_homotopy = 15;
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 
 %% Symbolic variables and model functions
 qx = SX.sym('qx',1); 

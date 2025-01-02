@@ -57,7 +57,7 @@ problem_options.N_finite_elements = N_FE;
 problem_options.N_sim = N_sim;
 
 %% MATLAB solution
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 [t_grid_matlab, x_traj_matlab, n_bounces, lambda_normal_guess] = two_balls_spring_matlab(T_sim,x0,model.e,1e-13);
 
 

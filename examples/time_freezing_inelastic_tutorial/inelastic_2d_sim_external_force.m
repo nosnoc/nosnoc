@@ -34,7 +34,7 @@ solver_options.decreasing_s_elastic_upper_bound = true;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.print_level = 3;
 solver_options.N_homotopy = 6;
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 %%
 % Symbolic variables and bounds
 q = SX.sym('q',2); v = SX.sym('v',2); 
