@@ -45,8 +45,8 @@ model = nosnoc.model.Pss();
 
 
 % select integrator
-integrator_options.integrator_plugin = "FESD";
-% integrator_options.integrator_plugin = "SMOOTHED_PSS";
+%integrator_options.integrator_plugin = "FESD";
+integrator_options.integrator_plugin = "SMOOTHED_PSS";
 
 % integraotr options
 problem_options.use_fesd = 1;       % switch detection method on/off
