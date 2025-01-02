@@ -31,7 +31,7 @@ solver_options.print_level = 3;
 solver_options.N_homotopy = 10;
 solver_options.homotopy_steering_strategy = 'ELL_INF';
 solver_options.decreasing_s_elastic_upper_bound = true;
-solver_options.use_previous_solution_as_initial_guess = 1;
+integrator_opts.use_previous_solution_as_initial_guess = 1;
 %% CLS Model
 g = 10;
 % Symbolic variables and bounds

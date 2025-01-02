@@ -31,7 +31,7 @@ problem_options.fixed_eps_cls = 1;
 problem_options.gamma_h = 1;
 
 solver_options.complementarity_tol = 1e-6;
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 solver_options.print_level = 3;
 solver_options.N_homotopy = 10;
 solver_options.sigma_0 = 10;

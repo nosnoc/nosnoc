@@ -31,7 +31,7 @@ solver_options.sigma_N = 1e-10;
 solver_options.N_homotopy = 16;
 solver_options.print_level = 3;
 solver_options.store_integrator_step_results = 1;
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 %solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %%

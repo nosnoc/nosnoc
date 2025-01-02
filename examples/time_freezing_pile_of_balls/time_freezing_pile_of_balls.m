@@ -44,7 +44,7 @@ model = nosnoc.model.Cls();
 problem_options.T_sim = T_sim;
 problem_options.N_sim = N_sim;
 problem_options.N_finite_elements = N_finite_elements;
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 
 %% model
 % dimensoon
