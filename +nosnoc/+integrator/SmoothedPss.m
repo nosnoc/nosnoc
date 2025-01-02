@@ -138,17 +138,25 @@ classdef SmoothedPss < handle
         end
 
         function ret = get(obj, field)
-            if ~strcmp(field, 'x')
+            if strcmp(field, 'x')
+                ret = obj.x_res;
+            elseif strcmp(field, 'h')
+                ret = diff(obj.t_grid);
+            else
                 error(['nosnoc:' char(field) ' is not a valid field for this integrator.']);
             end
-            ret = obj.x_res;
+            
         end
 
         function ret = get_full(obj, field)
-            if ~strcmp(field, 'x')
+            if strcmp(field, 'x')
+                ret = obj.x_res_full;
+            elseif strcmp(field, 'h')
+                ret = diff(obj.t_grid_full);
+            else
                 error(['nosnoc:' char(field) ' is not a valid field for this integrator.']);
             end
-            ret = obj.x_res_full;
+            
         end
 
         function t_grid = get_time_grid(obj)
