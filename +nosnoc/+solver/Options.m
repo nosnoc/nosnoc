@@ -73,7 +73,6 @@ classdef Options < handle
         lower_bound_relaxation(1,1) logical = 0
 
         % Output options
-        store_integrator_step_results(1,1) logical = 0
         ipopt_callback = [] % This should be a function handle that takes (model,problem,settings,ipopt_solver,results)
 
         timeout_cpu(1,1) {mustBeReal, mustBeNonnegative} = 0;
@@ -86,9 +85,6 @@ classdef Options < handle
         norm_function
         calculate_stationarity_type(1,1) logical = 0;
 
-        use_previous_solution_as_initial_guess(1,1) logical = 0
-        real_time_plot(1,1) logical = 0
-        break_simulation_if_infeasible(1,1) logical = 0
     end
 
     properties(Dependent)

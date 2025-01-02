@@ -2,7 +2,8 @@ function [x_res,t_grid,model,problem_options, solver_options] = test_simple_cls(
     import casadi.*
     %% init nosnoc settings and model
     problem_options = nosnoc.Options();
-    solver_options = nosnoc.solver.Options();
+    integrator_options = nosnoc.integrator.Options();
+    solver_options = integrator_options.fesd_solver_opts;
     model = nosnoc.model.Cls();
     %% Simulation setings
     N_FE = 2;
@@ -52,7 +53,7 @@ function [x_res,t_grid,model,problem_options, solver_options] = test_simple_cls(
 
 
     %% Call nosnoc integrator
-    integrator = nosnoc.Integrator(model, problem_options, solver_options);
+    integrator = nosnoc.Integrator(model, problem_options, integrator_options);
     [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 end

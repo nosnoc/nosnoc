@@ -25,47 +25,50 @@
 
 % This file is part of NOSNOC.
 
-%
 %%
-clear all
-clc
-close all
+clear all; clc; close all;
 import casadi.*
-%%
+%% basic settings
 plot_integrator_output = 1;
 plot_continious_time_sol = 1;
+smooth_model = 0; % if 1, use model without switch for a sanity check
 %% discretization settings
 T_sim = pi/2;
 N_sim  = 29;
-N_finite_elements = 2;
-R_osc  = 1;
+N_FE = 2;
 
 %% Init
-% collocation settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts; % the fesd integrator uses an mpec solver, call and modify its options
 model = nosnoc.model.Pss();
-%% settings
+
+
+% select integrator
+%integrator_options.integrator_plugin = "FESD";
+integrator_options.integrator_plugin = "SMOOTHED_PSS";
+
+% integraotr options
 problem_options.use_fesd = 1;       % switch detection method on/off
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';
-solver_options.print_level = 2;
 problem_options.n_s = 4;
-problem_options.dcs_mode = 'Heaviside'; % 'Step;
+problem_options.dcs_mode = 'Stewart'; % 'Step;
+problem_options.N_finite_elements = N_FE; % number of finite elements
+problem_options.T_sim = T_sim; % total simulation times 
+problem_options.N_sim = N_sim; % number of simulations step during T_sim
 
-% Penalty/Relaxation paraemetr
-solver_options.complementarity_tol = 1e-9;
-% problem_options.cross_comp_mode = 1;
+% MPEC solver options
+solver_options.print_level = 2;
+solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF;
+solver_options.complementarity_tol = 1e-9; % Penalty/Relaxation parameter
 
-%% Time settings
-x_star = [exp(1);0];
-T = T_sim;
-x_star = [exp(T-1)*cos(2*pi*(T-1));-exp((T-1))*sin(2*pi*(T-1))];
-
-problem_options.N_finite_elements = N_finite_elements;
-problem_options.T_sim = T_sim;
-problem_options.N_sim = N_sim;
-smooth_model = 0; % if 1, use model without switch for a sanity check
+%% Set up model;
+x0 = [exp(-1);0]; % inital value
+x_star = [exp(T_sim-1)*cos(2*pi*(T_sim-1));-exp((T_sim-1))*sin(2*pi*(T_sim-1))]; % Analytic solution, if T > 1;
+% model parameters
 omega = -2*pi;
+R_osc  = 1;
+
 A1 = [1 omega;...
     -omega 1];
 A2 = [1 -omega;...
@@ -73,23 +76,25 @@ A2 = [1 -omega;...
 if smooth_model
     A2 = A1;
 end
-% Inital Value
-model.x0 = [exp(-1);0];
+
 % Variable defintion
-x1 = SX.sym('x1');
-x2 = SX.sym('x2');
-x = [x1;x2];
-c = x1^2+x2^2-1;
+x = SX.sym('x',2);
+c = x'*x-1; % the switching surface is the unit circle
+f_1 = A1*x;
+f_2 = A2*x;
+F = [f_1 f_2];
+
+% Populate model
+model.F = F;
 model.x = x;
 model.c = c;
 model.S = [-1;1];
-f_11 = A1*x;
-f_12 = A2*x;
-F = [f_11 f_12];
-model.F = F;
+model.x0 = x0;
+
 %% Call integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
+
 %% numerical error
 x_fesd = x_res(:,end);
 error_x = norm(x_fesd-x_star,"inf");

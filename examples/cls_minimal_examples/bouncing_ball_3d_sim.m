@@ -4,7 +4,8 @@ clc;
 import casadi.*
 %% init model and settings)
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 model = nosnoc.model.Cls();
 %% Simulation settings
 N_finite_elements = 4;
@@ -30,7 +31,7 @@ solver_options.print_level = 3;
 solver_options.N_homotopy = 10;
 solver_options.homotopy_steering_strategy = 'ELL_INF';
 solver_options.decreasing_s_elastic_upper_bound = true;
-solver_options.use_previous_solution_as_initial_guess = 1;
+integrator_opts.use_previous_solution_as_initial_guess = 1;
 %% CLS Model
 g = 10;
 % Symbolic variables and bounds
@@ -49,7 +50,7 @@ model.D_tangent = [1,-1,0,0;
                    0,0,1,-1;
                    0,0,0,0];
 %% Call FESD Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 
 %% Plot results
