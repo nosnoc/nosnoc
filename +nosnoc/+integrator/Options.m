@@ -16,6 +16,8 @@ classdef Options < handle
         matlab_ode_opts = odeset;
 
         sigma_smoothing(1,1) double {mustBePositive} = 1e-7;
+
+        %--------- Stewart's PSS Integrator Specific -----------%
     end
 
     methods
