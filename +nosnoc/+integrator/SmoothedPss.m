@@ -17,7 +17,7 @@ classdef SmoothedPss < handle
         x_res_full
     end
 
-    methods
+    methods(Access={?nosnoc.Integrator})
         function obj = SmoothedPss(model, opts, integrator_opts)
             import casadi.*
             obj.model = model;

@@ -16,7 +16,7 @@ classdef FESD < handle
         w_all
     end
 
-    methods
+    methods(Access={?nosnoc.Integrator})
         function obj = FESD(model, opts, integrator_opts)
             obj.model = model;
             obj.opts = opts;
