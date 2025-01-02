@@ -54,10 +54,9 @@ classdef SmoothedPss < handle
             end
         end
         
-        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin, extra_args)
+        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, extra_args)
             arguments
                 obj nosnoc.integrator.SmoothedPss
-                plugin nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
                 extra_args.u = []
                 extra_args.x0 = [];
             end

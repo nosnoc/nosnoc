@@ -31,7 +31,13 @@ classdef Integrator < handle
                 extra_args.u = []
                 extra_args.x0 = [];
             end
-            [t_grid,x_res,t_grid_full,x_res_full] = obj.plugin.simulate(plugin, u=extra_args.u, x0=extra_args.x0);
+            switch obj.integrator_opts.integrator_plugin
+              case IntegratorType.FESD
+                [t_grid,x_res,t_grid_full,x_res_full] = obj.plugin.simulate(plugin, u=extra_args.u, x0=extra_args.x0);
+              case IntegratorType.SMOOTHED_PSS
+                [t_grid,x_res,t_grid_full,x_res_full] = obj.plugin.simulate(u=extra_args.u, x0=extra_args.x0);
+            end
+            
         end
 
         function ret = get(obj, field)
