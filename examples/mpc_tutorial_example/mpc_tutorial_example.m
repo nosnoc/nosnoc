@@ -91,6 +91,7 @@ for step=1:N_steps
     x0 = mpc.get_predicted_state();
 
     % Plot intermediate solution by getting x, t, and u from mpc object
+    % Using `.get`
     if plot_intermediate_solutions
         x_res = mpc.get('x');
         q_res = x_res(1,:);
@@ -106,6 +107,7 @@ for step=1:N_steps
 
     % Calculate target v
     v_target_val = (x0(1) - q_goal)/problem_options.T;
+    % Set target velacity global parmeter.
     mpc.set_param('p_global', {}, v_target_val) % for p_global the index parameter should be empty, otherwise it should be the control stage for p_time_var.
     
     % x0_distrubance = (-2+4*rand(size(x0)));
