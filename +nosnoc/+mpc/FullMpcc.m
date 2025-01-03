@@ -61,5 +61,31 @@ classdef FullMpcc < nosnoc.mpc.Base
             x_res = obj.ocp_solver.get("x");
             x = x_res(:,obj.problem_options.N_finite_elements(1)+1);
         end
+
+        function ret = get(obj,field)
+        % Generic get wrapper for the ocp_solver underneath
+            ret = obj.ocp_solver.get(field);
+        end
+
+        function ret = get_full(obj,field)
+        % Generic get_full wrapper for the ocp_solver underneath
+            ret = obj.ocp_solver.get_full(field);
+        end
+
+        function t_grid = get_time_grid(obj)
+            t_grid = obj.ocp_solver.get_time_grid();
+        end
+
+        function t_grid_full = get_time_grid_full(obj)
+            t_grid_full = obj.ocp_solver.get_time_grid_full();
+        end
+
+        function t_grid = get_control_grid(obj)
+            t_grid = obj.ocp_solver.get_control_grid();
+        end
+
+        function set_param(obj, param, index, value)
+            obj.ocp_solver.set_param(param, index, value);
+        end
     end
 end

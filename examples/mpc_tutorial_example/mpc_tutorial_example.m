@@ -24,12 +24,19 @@ model.x0 = [0;0]; % initial value
 v_max = 20;
 model.lbx = [-inf;-v_max]; % lower bounds on states
 model.ubx = [inf;v_max]; % upper bounds on states
+v_target = SX.sym('v_target'); % CasADi symbolic variables for target v in running cost.
+model.p_global = v_target;
+model.p_global_val = 0;
 % define control vectors
 u = SX.sym('u');  % CasADi symbolic variables for controls
 model.u = u;
 u_max = 5;
 model.lbu = -u_max; 
 model.ubu = u_max;
+
+model.p_global = v_target;
+model.p_global_val = 15;
+
 % Dynamics of the piecewise smooth systems
 f_1 = [v;u]; % mode 1 - nominal
 f_2 = [v;3*u]; % mode 2 - turbo
@@ -41,7 +48,7 @@ model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of eve
 
 q_goal = 400;
 v_goal = 0;
-model.f_q = (q-q_goal)^2 + u^2 +(v-15)^2; % Add stage cost
+model.f_q = (q-q_goal)^2 + u^2 +(v-v_target)^2; % Add stage cost
 model.f_q_T = 10*((q-q_goal)^2 + (v-v_goal)^2); % Add terminal quadratic cost
 
 N_steps = 30; % number of MPC steps;
@@ -60,9 +67,21 @@ mpc_options.fullmpcc_fast_sigma_0 = 1e-7;
 % create mpc object
 mpc = nosnoc.mpc.FullMpcc(model, mpc_options, problem_options, solver_options);
 
+% Flag for plotting intermediate solutions
+plot_intermediate_solutions = true;
+if plot_intermediate_solutions
+    q_plot = subplot(311);
+    v_plot = subplot(312);
+    u_plot = subplot(313);
+end
+
 % Do MPC assuming the predicted state is accurate, in practice this may not be true.
 x = model.x0; u = []; t = 0; tf = [];
 x0 = x;
+
+% Calculate target v
+v_target_val = (x0(1) - q_goal)/problem_options.T;
+mpc.set_param('p_global', {}, v_target_val) % for p_global the index parameter should be empty, otherwise it should be the control stage for p_time_var.
 for step=1:N_steps
     [u_i, stats] = mpc.get_feedback(x0);
     tf_i = stats.feedback_time;
@@ -70,6 +89,27 @@ for step=1:N_steps
     fprintf("MPC step: %d, Feedback time: %d\n", step, tf_i);
     mpc.do_preparation();
     x0 = mpc.get_predicted_state();
+
+    % Plot intermediate solution by getting x, t, and u from mpc object
+    % Using `.get`
+    if plot_intermediate_solutions
+        x_res = mpc.get('x');
+        q_res = x_res(1,:);
+        v_res = x_res(2,:);
+        t_grid = mpc.get_time_grid();
+        u_res = mpc.get('u');
+        t_grid_u = mpc.get_control_grid();
+
+        plot(q_plot, t_grid, q_res)
+        plot(v_plot, t_grid, v_res)
+        stairs(u_plot, t_grid_u, [u_res, u_res(end)])
+    end 
+
+    % Calculate target v
+    v_target_val = (x0(1) - q_goal)/problem_options.T;
+    % Set target velacity global parmeter.
+    mpc.set_param('p_global', {}, v_target_val) % for p_global the index parameter should be empty, otherwise it should be the control stage for p_time_var.
+    
     % x0_distrubance = (-2+4*rand(size(x0)));
     % x0 =  x0+x0_distrubance;
     x = [x, x0];

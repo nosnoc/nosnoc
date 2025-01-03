@@ -114,13 +114,18 @@ classdef Solver < handle
             end
         end
 
-        function set_param(obj, param, value)
-        % TODO (@anton) figure out how to do a set with indexing
+        function set_param(obj, param, index, value)
+            arguments
+                obj
+                param
+                index cell = {}
+                value double = 0;
+            end
             if ~obj.discrete_time_problem.p.has_var(param);
                 nosnoc.error('nonexistant_param', [char(param) ' does not exist as a parameter for this OCP.']);
             end
             warning off vdx:indexing:dot_reference_returns_vdx_var
-            obj.discrete_time_problem.p.(param)().val = value;
+            obj.discrete_time_problem.p.(param)(index{:}).val = value;
             warning on vdx:indexing:dot_reference_returns_vdx_var
         end
 
