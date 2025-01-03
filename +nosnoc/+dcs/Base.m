@@ -37,19 +37,19 @@ classdef Base < matlab.mixin.Scalar & handle & matlab.mixin.CustomDisplay
             names = properties(obj);
             for ii=1:length(names)
                 name = names{ii};
-                if ~endsWith(name, '_fun')
+                if ~endsWith(name, '_fun') || isa(obj.(name), 'double')
                     continue
                 end
                 if any(obj.(name).size_out(0) == 0)
                     continue
                 end
                 % some custom handling for objective functions:
-                if strcmp(name, 'f_q_fun')
+                if strcmp(name, 'f_q_fun') && isa(obj.(name), 'double')
                     if obj.model.f_q == 0
                         continue
                     end
                 end
-                if strcmp(name, 'f_q_T_fun')
+                if strcmp(name, 'f_q_T_fun') && isa(obj.(name), 'double')
                     if obj.model.f_q_T == 0
                         continue
                     end
