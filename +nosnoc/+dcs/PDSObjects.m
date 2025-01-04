@@ -27,7 +27,7 @@ classdef PDSObjects < nosnoc.dcs.Base
         lambda % casadi.SX|casadi.MX: Lagrange multipliers for the gradient complementarity system.
         c_lift % casadi.SX|casadi.MX: Lift variables for the gap functions in :class:`nosnoc.model.Pds`.
 
-        x_dot_lift
+        f_rhs_lift
         g_friction
         
         f_x % casadi.SX or casadi.MX: Right hand side of the gradient complementarity system
@@ -82,8 +82,8 @@ classdef PDSObjects < nosnoc.dcs.Base
             obj.f_x = [];
 
             for ii=1:length(model.objects)
-                obj.x_dot_lift = vertcat(obj.x_dot_lift, model.objects(ii).x_dot_lift);
-                obj.f_x = vertcat(obj.f_x, model.objects(ii).x_dot);
+                obj.f_rhs_lift = vertcat(obj.f_rhs_lift, model.objects(ii).f_rhs_lift);
+                obj.f_x = vertcat(obj.f_x, model.objects(ii).f_rhs);
             end
             
             if opts.gcs_lift_gap_functions
@@ -94,9 +94,9 @@ classdef PDSObjects < nosnoc.dcs.Base
                 c = model.c;
             end
 
-            if 1 % TODO(@anton) add option for lifting x_dot
+            if 1 % TODO(@anton) add option for lifting f_rhs
                 fun_opts.allow_free = true;
-                g_friction_sub_fun = Function('g_friction_sub', {obj.x_dot_lift}, {model.g_friction}, fun_opts);
+                g_friction_sub_fun = Function('g_friction_sub', {obj.f_rhs_lift}, {model.g_friction}, fun_opts);
                 obj.g_friction = g_friction_sub_fun(obj.f_x);
             end
 

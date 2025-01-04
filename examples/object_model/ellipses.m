@@ -23,10 +23,10 @@ A2 = inv(diag([0.1, 4])); % and major axes of length 10.
 ellipse2 = nosnoc.objects.Ellipse({A1,A2});
 
 ball1.x0 = [-3;-3]; % Initial position of ball
-ball1.x_dot = u; % Ball is actuated directly with the controls.
+ball1.f_rhs = u; % Ball is actuated directly with the controls.
 
 ellipse2.x0 = [0;0;0]; % Initial position of the union of ellipses.
-ellipse2.x_dot = [0;0;0]; % Union of ellipses is unactuated.
+ellipse2.f_rhs = [0;0;0]; % Union of ellipses is unactuated.
 
 model.addContact(ball1, ellipse2); % Add contact between ball and union of ellipses.
 

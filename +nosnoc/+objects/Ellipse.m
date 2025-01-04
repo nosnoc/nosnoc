@@ -4,7 +4,7 @@ classdef Ellipse < nosnoc.objects.Object
         N(1,1) double % double: number of ellipses unioned together.
 
         x % casadi.SX|casadi.MX: Expression for center of ellipse
-        x_dot_lift % casadi.SX|casadi.MX: lifting variables for derivative.
+        f_rhs_lift % casadi.SX|casadi.MX: lifting variables for derivative.
 
         c % casadi.SX|casadi.MX: Expression for center of ellipse.
         xi % casadi.SX|casadi.MX: Expression for angle of rotation of ellipse.
@@ -15,7 +15,7 @@ classdef Ellipse < nosnoc.objects.Object
         x0(:,1) double % double: Initial state of the ellipse.
         lbx(:,1) double % double: Lower bound of ellipse state.
         ubx(:,1) double % double: Upper bound of ellipse state.
-        x_dot % casadi.SX|casadi.MX: Expression for time derivative of state.
+        f_rhs % casadi.SX|casadi.MX: Expression for time derivative of state.
     end
 
     methods
@@ -54,9 +54,9 @@ classdef Ellipse < nosnoc.objects.Object
                 obj.c = obj.x(1:3);
                 obj.xi = obj.x(4:6);
             end
-            obj.x_dot = SX(n_x, 1);
+            obj.f_rhs = SX(n_x, 1);
             obj.x0 = zeros(n_x,1);
-            obj.x_dot_lift = SX.sym(['x_dot_' obj.name], n_x);
+            obj.f_rhs_lift = SX.sym(['f_rhs_' obj.name], n_x);
             obj.lbx = -inf*ones(n_x,1);
             obj.ubx = inf*ones(n_x,1);
         end

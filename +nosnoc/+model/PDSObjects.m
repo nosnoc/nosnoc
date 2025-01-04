@@ -39,7 +39,7 @@ classdef PDSObjects < nosnoc.model.Base
         normal_lift % casadi.SX|casadi.MX: Lifted normal.
         gamma_f % casadi.SX|casadi.MX: Friction slack variable
 
-        x_dot_lift % casadi.SX|casadi.MX: Lifted x_dot
+        f_rhs_lift % casadi.SX|casadi.MX: Lifted f_rhs
 
         G_friction % casadi.SX|casadi.MX: Expression for complementarity values G for friction. 
         H_friction % casadi.SX|casadi.MX: Expression for complementarity values H for friction.
@@ -157,8 +157,8 @@ classdef PDSObjects < nosnoc.model.Base
             nabla_c_x2 = c.jacobian(ball2.x)';
 
             % Update dynamics of both balls with normal times lagrange multiplier
-            ball1.x_dot = ball1.x_dot + nabla_c_x1*lambda;
-            ball2.x_dot = ball2.x_dot + nabla_c_x2*lambda;
+            ball1.f_rhs = ball1.f_rhs + nabla_c_x1*lambda;
+            ball2.f_rhs = ball2.f_rhs + nabla_c_x2*lambda;
 
             % Normal expression is just nabla_c as c is explicit in this case.
             normal = [nabla_c_x1;nabla_c_x2];
@@ -185,13 +185,13 @@ classdef PDSObjects < nosnoc.model.Base
                     normal_lift = SX.sym('normal_lift', 4);
                     obj.normal_lift = [obj.normal_lift; normal_lift];
 
-                    ball1.x_dot = ball1.x_dot + lambda_t(1)*tangent - lambda_t(2)*tangent;
-                    ball2.x_dot = ball2.x_dot - lambda_t(1)*tangent + lambda_t(2)*tangent;
+                    ball1.f_rhs = ball1.f_rhs + lambda_t(1)*tangent - lambda_t(2)*tangent;
+                    ball2.f_rhs = ball2.f_rhs - lambda_t(1)*tangent + lambda_t(2)*tangent;
                     
                     g_friction = [normal_lift - normal; % Lift normal (helps with convergence) TODO(@anton) allow for not lifting
                         tangent - [-normal_lift(2);normal_lift(1)]; % get tangent (lifted again) TODO(@anton) allow for not lifting
-                        v_t(1) - (dot(ball1.x_dot_lift, tangent)/dot(tangent,tangent)); % Tangent velocities of both objects 
-                        v_t(2) - (dot(ball2.x_dot_lift, tangent)/dot(tangent,tangent))];
+                        v_t(1) - (dot(ball1.f_rhs_lift, tangent)/dot(tangent,tangent)); % Tangent velocities of both objects 
+                        v_t(2) - (dot(ball2.f_rhs_lift, tangent)/dot(tangent,tangent))];
                     obj.g_friction = [obj.g_friction; g_friction];
 
                     % Complementarity constraints for friction in the positive or negative tangent direction must be zero
@@ -293,8 +293,8 @@ classdef PDSObjects < nosnoc.model.Base
                 obj.normal0 = [obj.normal0;0;1;0;-1;0];
 
                 % Update dynamics of both objects
-                ellipse.x_dot = ellipse.x_dot + normal_ellipse*lambda;
-                ball.x_dot = ball.x_dot + normal_ball*lambda;
+                ellipse.f_rhs = ellipse.f_rhs + normal_ellipse*lambda;
+                ball.f_rhs = ball.f_rhs + normal_ball*lambda;
 
                 % Do friction. See above for explanation.
                 if mu_f
@@ -311,14 +311,14 @@ classdef PDSObjects < nosnoc.model.Base
                         normal_lift = SX.sym('normal_lift', 4);
                         obj.normal_lift = [obj.normal_lift; normal_lift];
                         
-                        ellipse.x_dot = ellipse.x_dot + lambda_t(1)*[tangent;cross_fun(p_d-ellipse.c, tangent)] - lambda_t(2)*[tangent;cross_fun(p_d-ellipse.c, tangent)];
-                        ball.x_dot = ball.x_dot - lambda_t(1)*tangent + lambda_t(2)*tangent;
+                        ellipse.f_rhs = ellipse.f_rhs + lambda_t(1)*[tangent;cross_fun(p_d-ellipse.c, tangent)] - lambda_t(2)*[tangent;cross_fun(p_d-ellipse.c, tangent)];
+                        ball.f_rhs = ball.f_rhs - lambda_t(1)*tangent + lambda_t(2)*tangent;
                         
                         g_friction = [normal_lift - [normal_ball;normal_ellipse(1:2)]; % Lift normal (helps with convergence) TODO(@anton) allow for not lifting
 
                             tangent - [-normal_lift(2);normal_lift(1)]; % get tangent (lifted again) TODO(@anton) allow for not lifting
-                            v_t(1) - (dot(ellipse.x_dot_lift(1:2), tangent)/dot(tangent,tangent) + ellipse.x_dot_lift(3)*sqrt(max(sum((p_d - ellipse.c).^2),1e-9))); % Tangent velocities of both objects 
-                            v_t(2) - (dot(ball.x_dot_lift, tangent)/dot(tangent,tangent))];
+                            v_t(1) - (dot(ellipse.f_rhs_lift(1:2), tangent)/dot(tangent,tangent) + ellipse.f_rhs_lift(3)*sqrt(max(sum((p_d - ellipse.c).^2),1e-9))); % Tangent velocities of both objects 
+                            v_t(2) - (dot(ball.f_rhs_lift, tangent)/dot(tangent,tangent))];
                         obj.g_friction = [obj.g_friction; g_friction];
                         
                         G_friction = [v_t(1) - v_t(2) + gamma_f;
@@ -417,8 +417,8 @@ classdef PDSObjects < nosnoc.model.Base
                     obj.normal0 = [obj.normal0;0;1;0;-1;0];
 
                     % Update dynamics of both objects
-                    ellipse1.x_dot = ellipse1.x_dot + normal_ellipse1*lambda;
-                    ellipse2.x_dot = ellipse2.x_dot + normal_ellipse2*lambda;
+                    ellipse1.f_rhs = ellipse1.f_rhs + normal_ellipse1*lambda;
+                    ellipse2.f_rhs = ellipse2.f_rhs + normal_ellipse2*lambda;
 
                     % Do friction. See above for explanation.
                     if mu_f
@@ -435,13 +435,13 @@ classdef PDSObjects < nosnoc.model.Base
                             normal_lift = SX.sym('normal_lift', 4);
                             obj.normal_lift = [obj.normal_lift; normal_lift];
                             
-                            ellipse1.x_dot = ellipse1.x_dot + lambda_t(1)*[tangent;cross_fun(p_d-ellipse1.c, tangent)] - lambda_t(2)*[tangent;cross_fun(p_d-ellipse1.c, tangent)];
-                            ellipse2.x_dot = ellipse2.x_dot - lambda_t(1)*tangent + lambda_t(2)*tangent;
+                            ellipse1.f_rhs = ellipse1.f_rhs + lambda_t(1)*[tangent;cross_fun(p_d-ellipse1.c, tangent)] - lambda_t(2)*[tangent;cross_fun(p_d-ellipse1.c, tangent)];
+                            ellipse2.f_rhs = ellipse2.f_rhs - lambda_t(1)*tangent + lambda_t(2)*tangent;
                             
                             g_friction = [normal_lift - [normal_ellipse2;normal_ellipse1(1:2)]; % Lift normal (helps with convergence) TODO(@anton) allow for not lifting
                                 tangent - [-normal_lift(2);normal_lift(1)]; % get tangent (lifted again) TODO(@anton) allow for not lifting
-                                v_t(1) - (dot(ellipse1.x_dot_lift(1:2), tangent)/dot(tangent,tangent) + ellipse1.x_dot_lift(3)*norm(p_d - ellipse1.c)); % Tangent velocities of both objects 
-                                v_t(2) - (dot(ellipse2.x_dot_lift, tangent)/dot(tangent,tangent))];
+                                v_t(1) - (dot(ellipse1.f_rhs_lift(1:2), tangent)/dot(tangent,tangent) + ellipse1.f_rhs_lift(3)*norm(p_d - ellipse1.c)); % Tangent velocities of both objects 
+                                v_t(2) - (dot(ellipse2.f_rhs_lift, tangent)/dot(tangent,tangent))];
                             obj.g_friction = [obj.g_friction; g_friction];
                             
                             G_friction = [v_t(1) - v_t(2) + gamma_f;

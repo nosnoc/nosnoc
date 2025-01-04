@@ -40,19 +40,19 @@ ball3 = nosnoc.objects.Ball(R_obj,n_d); % Manipulated object
 
 % Define their initial state, bounds and dynamics
 ball1.x0 = [-10;10]; % Initial position of ball
-ball1.x_dot = u1; % Ball is actuated directly with the controls.
+ball1.f_rhs = u1; % Ball is actuated directly with the controls.
 ball1.lbx = [-inf;-inf];
 ball1.ubx = [-2.5;inf];
 ball1_target = [-10;0];
 
 ball2.x0 = [5;-3]; % Initial position of ball
-ball2.x_dot = u2; % Ball is actuated directly with the controls.
+ball2.f_rhs = u2; % Ball is actuated directly with the controls.
 ball2.lbx = [2.5;-inf];
 ball2.ubx = [inf;inf];
 ball2_target = [10;0];
 
 ball3.x0 = [0;0]; % Initial position of ball
-ball3.x_dot = [0;0]; % Ball is not directly actuated
+ball3.f_rhs = [0;0]; % Ball is not directly actuated
 ball3.lbx = [-inf;-inf];
 ball3.ubx = [inf;inf];
 ball3_target = [0;10];

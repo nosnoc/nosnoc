@@ -11,8 +11,8 @@ classdef Ball < nosnoc.objects.Object
         x0(:,1) double % double: Initial state of the ball.
         lbx(:,1) double % double: Lower bound of ball state.
         ubx(:,1) double % double: Upper bound of ball state.
-        x_dot % casadi.SX|casadi.MX: Expression for time derivative of state.
-        x_dot_lift % casadi.SX|casadi.MX: lifting variables for derivative.
+        f_rhs % casadi.SX|casadi.MX: Expression for time derivative of state.
+        f_rhs_lift % casadi.SX|casadi.MX: lifting variables for derivative.
     end
 
     methods
@@ -29,8 +29,8 @@ classdef Ball < nosnoc.objects.Object
             obj.n_dim = n_dim;
 
             obj.x = SX.sym(['x_' obj.name], n_dim);
-            obj.x_dot_lift = SX.sym(['x_dot_' obj.name], n_dim);
-            obj.x_dot = SX(n_dim,1);
+            obj.f_rhs_lift = SX.sym(['f_rhs_' obj.name], n_dim);
+            obj.f_rhs = SX(n_dim,1);
             obj.c = obj.x;
             obj.x0 = zeros(n_dim,1);
             obj.lbx = -inf*ones(n_dim,1);
