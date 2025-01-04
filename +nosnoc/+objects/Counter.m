@@ -3,4 +3,14 @@ classdef Counter < handle
     properties
         count = 0;
     end
+
+    properties(Constant)
+        counter = nosnoc.objects.Counter();
+    end
+    
+    methods(Access=private)
+        function obj = Counter()
+
+        end
+    end
 end 

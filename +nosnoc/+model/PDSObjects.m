@@ -123,6 +123,9 @@ classdef PDSObjects < nosnoc.model.Base
                 obj.objects = [obj.objects, shape2];
             end
 
+            [~,ind] = sort([obj.objects.timestamp]);
+            obj.objects = obj.objects(ind);
+
             obj.contacts{end+1} = {shape1, shape2, mu};
 
             obj.x = [];

@@ -19,6 +19,8 @@ classdef Ball < nosnoc.objects.Object
         function obj = Ball(r, n_dim, name)
             import casadi.*;
             obj.num_objects.count = obj.num_objects.count + 1;
+            obj.timestamp = obj.num_objects.count;
+            
             if ~exist('name')
                 obj.name = ['Ball' num2str(nosnoc.objects.Ball.num_objects.count)]; 
             end

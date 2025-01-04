@@ -22,8 +22,9 @@ classdef Ellipse < nosnoc.objects.Object
         function obj = Ellipse(A)
             import casadi.*
             obj.num_objects.count = obj.num_objects.count + 1;
+            obj.timestamp = obj.num_objects.count;
             if ~exist('name')
-                obj.name = ['Ellipse' num2str(nosnoc.objects.Ball.num_objects.count)]; 
+                obj.name = ['Ellipse' num2str(obj.num_objects.count)]; 
             end
             obj.A = A;
             

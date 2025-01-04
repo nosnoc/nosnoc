@@ -8,7 +8,11 @@ classdef Object < handle & matlab.mixin.Heterogeneous
     end
 
     properties(Constant)
-        num_objects = nosnoc.objects.Counter(); % Class static counter for number of objects of a given type.
+        num_objects = nosnoc.objects.Counter.counter; % Class static counter for number of objects of a given type.
+    end
+
+    properties(Access=public)
+        timestamp
     end
 
     methods (Sealed=true)
