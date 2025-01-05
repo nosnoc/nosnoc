@@ -24,6 +24,10 @@ classdef Stewart < handle
             obj.opts = opts;
             obj.integrator_opts = integrator_opts;
 
+            if opts.dcs_mode ~= DcsMode.Stewart
+                nosnoc.error('wrong_dcs_mode', "PSS models can only be reformulated using the Stewart reformulations, In nosnoc.Options() object set dcs_mode to Stewart.")
+            end
+
             if class(model) == "nosnoc.model.Cls" && opts.time_freezing
                 % TODO: allow only for Stewart's reformulation of time-freezing systems
                 model = nosnoc.time_freezing.reformulation(model, opts);

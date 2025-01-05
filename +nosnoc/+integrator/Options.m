@@ -18,6 +18,8 @@ classdef Options < handle
         sigma_smoothing(1,1) double {mustBePositive} = 1e-7;
 
         %--------- Stewart's PSS Integrator Specific -----------%
+        alpha_stewart (1,1) double {mustBePositive} = 1e1; % positive constant for ensuring that the matrix M is copositive.
+        epsilon_stewart (1,1) double {mustBePositive} = 1e-8; % epsilon for determining the epsilon active set in Stewart's method.
     end
 
     methods
