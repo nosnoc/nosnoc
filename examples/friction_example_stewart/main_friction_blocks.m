@@ -40,7 +40,8 @@ import casadi.*
 %% settings
 % collocation settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 
 
 problem_options.n_s = 2;                            
@@ -67,9 +68,9 @@ problem_options.dcs_mode = 'Stewart';
 problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;
 problem_options.N_sim = N_sim;
-solver_options.use_previous_solution_as_initial_guess = 1;
+integrator_opts.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% Get variables into main workspace
 if problem_options.dcs_mode == 'Stewart'

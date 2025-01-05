@@ -4,7 +4,8 @@ import casadi.*
 close all
 %%
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 % problem_options.rk_representation = 'differential';
 problem_options.n_s = 3;
@@ -56,7 +57,7 @@ problem_options.N_finite_elements = N_FE;
 problem_options.N_sim = N_sim;
 
 %% MATLAB solution
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 [t_grid_matlab, x_traj_matlab, n_bounces, lambda_normal_guess] = two_balls_spring_matlab(T_sim,x0,model.e,1e-13);
 
 
@@ -67,7 +68,7 @@ initial_guess.t_grid = t_grid_matlab;
 initial_guess.lambda_normal_traj = lambda_normal_guess;
 
 % [results,stats,solver] = integrator_fesd(model, settings, [], initial_guess);
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
 plot_two_ball_traj(results);

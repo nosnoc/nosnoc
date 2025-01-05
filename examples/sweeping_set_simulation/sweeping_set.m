@@ -8,7 +8,8 @@ T_sim = 10;
 
 %% NOSNOC settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 problem_options.n_s = 2;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 %problem_options.rk_representation= 'differential_lift_x'; 
@@ -30,7 +31,7 @@ model.c = [-norm(x - [sin(t);cos(t)])^2+(1-0.5)^2];
 model.f_x_unconstrained = [0; 0; 1];
 model.E = diag([1,1,0]);
 
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res] = integrator.simulate('natural_residual_ineq');
 %
 figure

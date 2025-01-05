@@ -4,8 +4,9 @@ function [x_res,t_grid,model,problem_options, solver_options] = test_simple_pds(
     T_sim = 11*pi/12 + sqrt(3);
     N_finite_elements = 2;
     %% nosnoc settings
-    solver_options = nosnoc.solver.Options();
     problem_options = nosnoc.Options();
+    integrator_options = nosnoc.integrator.Options();
+    solver_options = integrator_options.fesd_solver_opts;
 
     problem_options.n_s = 3;
     problem_options.rk_scheme = RKSchemes.RADAU_IIA;
@@ -26,6 +27,6 @@ function [x_res,t_grid,model,problem_options, solver_options] = test_simple_pds(
     model.c = x(2)+1;
     model.f_x_unconstrained = [x(2);-x(1)];
 
-    integrator = nosnoc.Integrator(model, problem_options, solver_options);
+    integrator = nosnoc.Integrator(model, problem_options, integrator_options);
     [t_grid, x_res] = integrator.simulate();
 end

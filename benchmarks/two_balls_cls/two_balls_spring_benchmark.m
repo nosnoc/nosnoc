@@ -35,7 +35,8 @@ for rk_scheme = IRK_SCHEMES
                     model.f_c = q(1)-R;
                     % settings
                     problem_options = nosnoc.Options();
-                    solver_options = nosnoc.solver.Options();
+                    integrator_options = nosnoc.integrator.Options();
+                    solver_options = integrator_options.fesd_solver_opts;
                     problem_options.rk_scheme = rk_scheme;
                     % problem_options.rk_representation = 'differential';
                     problem_options.n_s = n_s;
@@ -54,7 +55,7 @@ for rk_scheme = IRK_SCHEMES
                     solver_options.sigma_0 = 1e0;
                     solver_options.homotopy_update_slope = 0.2;
                     solver_options.opts_casadi_nlp.ipopt.max_iter = 1500;
-                    solver_options.use_previous_solution_as_initial_guess  = 1;
+                    integrator_opts.use_previous_solution_as_initial_guess  = 1;
                     %% Simulation settings
                     problem_options.T_sim = T_sim;
                     problem_options.N_finite_elements = N_FE;
@@ -68,10 +69,10 @@ for rk_scheme = IRK_SCHEMES
 
                     if with_guess
                         % settings.opts_casadi_nlp.ipopt.least_square_init_duals = 'yes';
-                        %integrator = nosnoc.Integrator(model, problem_options, solver_options);
+                        %integrator = nosnoc.Integrator(model, problem_options, integrator_options);
                         %[t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
                     else
-                        integrator = nosnoc.Integrator(model, problem_options, solver_options);
+                        integrator = nosnoc.Integrator(model, problem_options, integrator_options);
                         [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
                     end
 

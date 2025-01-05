@@ -42,16 +42,17 @@ problem_options.N_finite_elements = 2;
 %% Generate Model
 model = temp_control_model_voronoi();
 %% - solver_options settings
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 solver_options.homotopy_steering_strategy = 'ELL_INF';
 solver_options.decreasing_s_elastic_upper_bound = true;
 solver_options.N_homotopy = 6;
 solver_options.print_level = 3;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
-solver_options.use_previous_solution_as_initial_guess = 1;
+integrator_opts.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %% Read and plot result
 plot_results_for_paper

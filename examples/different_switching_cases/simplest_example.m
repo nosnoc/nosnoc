@@ -30,7 +30,8 @@ import casadi.*
 import nosnoc.*
 %% nosnoc settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 problem_options.n_s = 1;
 settings.homotopy_update_slope = 0.1;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %RKSchemes.GAUSS_LEGENDRE;
@@ -55,7 +56,7 @@ f_1 = 1;
 f_2 = -1;
 model.F = [f_1 f_2];
 
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %
 figure

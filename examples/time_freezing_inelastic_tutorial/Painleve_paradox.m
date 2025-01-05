@@ -12,7 +12,8 @@ T_sim = 0.4;
 N_sim = 41;
 %% init nosnoc
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+integrator_options = nosnoc.integrator.Options();
+solver_options = integrator_options.fesd_solver_opts;
 model = nosnoc.model.Cls();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
@@ -39,7 +40,7 @@ solver_options.decreasing_s_elastic_upper_bound = true;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.print_level = 3;
 solver_options.N_homotopy = 10;
-solver_options.use_previous_solution_as_initial_guess = 0;
+integrator_opts.use_previous_solution_as_initial_guess = 0;
 
 %%
 
@@ -75,7 +76,7 @@ model.J_tangent = xc.jacobian(q)';
 model.x0 = [0;l/2*cos(theta0)+above_ground;theta0 ;...
            -10;0;0];
 %% Call FESD Integrator
-integrator = nosnoc.Integrator(model, problem_options, solver_options);
+integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
 qx = x_res(1,:);

@@ -49,7 +49,8 @@ function [results] = integrator_order_experiment(settings,legend_str)
 
     %% settings
     problem_options = nosnoc.Options();
-    solver_options = nosnoc.solver.Options();
+    integrator_options = nosnoc.integrator.Options();
+    solver_options = integrator_options.fesd_solver_opts;
     problem_options.rk_representation = rk_representation;
     problem_options.rk_scheme = rk_scheme;
     problem_options.use_fesd = use_fesd;
@@ -64,7 +65,7 @@ function [results] = integrator_order_experiment(settings,legend_str)
     solver_options.complementarity_tol = complementarity_tol;
     solver_options.N_homotopy = 40; % number of steps
     solver_options.homotopy_update_slope = 0.05; % decrease rate
-    solver_options.use_previous_solution_as_initial_guess = 1; % warm start integrator
+    integrator_opts.use_previous_solution_as_initial_guess = 1; % warm start integrator
     solver_options.print_level = 0;
     %% Time settings
     % T = 2;                            
@@ -100,9 +101,9 @@ function [results] = integrator_order_experiment(settings,legend_str)
             problem_options.N_sim = N_sim;
             % generate new model with updated settings;
             model = oscilator(struct);
-            integrator = nosnoc.Integrator(model, problem_options, solver_options);
+            integrator = nosnoc.Integrator(model, problem_options, integrator_options);
             [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
-            stats = integrator.stats;
+            stats = integrator.plugin.stats;
             % numerical error
             x_fesd = x_res(:,end);
             error_x = norm(x_fesd-x_star,"inf");
