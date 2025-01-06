@@ -85,6 +85,18 @@ classdef FESD < handle
                 obj.dcs.generate_equations(opts);
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Gcs(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
+              case "nosnoc.model.PDSObjects"
+                if ~opts.right_boundary_point_explicit
+                    nosnoc.error('pds_rbp_not_one', "You are using an rk scheme with its right boundary point (c_n) not equal to one. Please choose another scheme e.g. RADAU_IIA.")
+                end
+                if opts.rk_representation == RKRepresentation.differential
+                    nosnoc.error('pds_differential',"Differential representation without lifting is unsupported for gradient complementarity systems. Use integral or lifted differential representation.")
+                end
+                obj.dcs = nosnoc.dcs.PDSObjects(model);
+                obj.dcs.generate_variables(opts);
+                obj.dcs.generate_equations(opts);
+                obj.discrete_time_problem = nosnoc.discrete_time_problem.PDSObjects(obj.dcs, opts);
+                obj.discrete_time_problem.populate_problem();
               otherwise
                 nosnoc.error('unknown_model', "Unknown model type.")
             end
