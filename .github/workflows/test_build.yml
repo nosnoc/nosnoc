@@ -102,7 +102,7 @@ jobs:
         path: test-results/
 
   run_examples:
-    continue-on-failure: true
+    continue-on-error: true
     runs-on: ubuntu-22.04
 
     steps:
