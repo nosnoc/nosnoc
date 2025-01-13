@@ -31,9 +31,8 @@ jobs:
       with:
         # NOTE: no longer earliest version to support more property validation functions
         release: ${{ matrix.matlab_version }}
-        products: >         
+        products: >
           Parallel_Computing_Toolbox
-
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
@@ -115,19 +114,18 @@ jobs:
     - name: Install MATLAB
       uses: matlab-actions/setup-matlab@v2.3
       with:
-        # NOTE: no longer earliest version to support more property validation functions
-        release: ${{ matrix.matlab_version }}
-        products: >         
+        # Only test on latest
+        release: "R2024a"
+        products: >
           Parallel_Computing_Toolbox
-
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
       uses: robinraju/release-downloader@v1.11
       with:
         repository: "casadi/casadi"
-        tag: ${{ matrix.casadi.version }}
-        fileName: ${{ matrix.casadi.file }}
+        tag: "3.6.7"
+        fileName: "casadi-3.6.7-linux64-matlab2018b.zip"
 
     # untar the casadi 3.5.5 release and then add it to the matlab path.
     - name: Install CasADi
@@ -135,7 +133,7 @@ jobs:
       run: |
         mkdir casadi
         cd casadi
-        ${{ matrix.casadi.extract}} $GITHUB_WORKSPACE/${{ matrix.casadi.file }}
+        unzip $GITHUB_WORKSPACE/casadi-3.6.7-linux64-matlab2018b.zip
         echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/casadi" >> $GITHUB_ENV
 
     # Run matlab tests from the test directory and dump the results in junit format.
