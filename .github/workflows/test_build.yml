@@ -31,6 +31,8 @@ jobs:
       with:
         # NOTE: no longer earliest version to support more property validation functions
         release: ${{ matrix.matlab_version }}
+        products: >         
+          Parallel_Computing_Toolbox
 
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
@@ -65,6 +67,7 @@ jobs:
         test-results-junit: "test-results/matlab-results-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
         code-coverage-cobertura: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
         strict: true # Non-explicitly suppressed warnings should fail.
+        use-parallel: true
 
     # Run ReportGenerator to generage human readable coverage (only for latest versions of matlab and casadi for now)
     - name: Setup .NET Core # Required to execute ReportGenerator
@@ -99,7 +102,7 @@ jobs:
         path: test-results/
 
   run_examples:
-    continue-on-faiure: true
+    continue-on-failure: true
     runs-on: ubuntu-22.04
 
     steps:
@@ -114,6 +117,8 @@ jobs:
       with:
         # NOTE: no longer earliest version to support more property validation functions
         release: ${{ matrix.matlab_version }}
+        products: >         
+          Parallel_Computing_Toolbox
 
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
