@@ -1,7 +1,6 @@
 basic_pds/basic_pds.m
 cart_pole_with_friction/cart_pole_nonsmooth.m
 cart_pole_with_friction/cart_pole_smoothing.m
-cart_pole_with_friction/simulate_cart_pole.m
 cls_minimal_examples/bouncing_ball_1d_sim.m
 cls_minimal_examples/bouncing_ball_2d_sim.m
 cls_minimal_examples/bouncing_ball_3d_sim.m

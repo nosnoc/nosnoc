@@ -10,8 +10,8 @@ for ii=1:length(name)
     job = batch(name(ii), 'CaptureDiary', true);
     jobs(ii) = job;
     name(ii)
-    msg = char(formattedDisplayText(jobs, 'SuppressMarkup', true));
-    update_msg(msg);
+    %msg = char(formattedDisplayText(jobs, 'SuppressMarkup', true));
+    %update_msg(msg);
 
     cd(orig_dir);
 end
@@ -27,6 +27,15 @@ while true
         break
     end
     pause(10);
+end
+
+for ii=1:length(name)
+    
+    if isempty(jobs(ii).Tasks.Error)
+        disp([char(ftext(ii)) ' ran without errors']);
+    else
+        disp([char(ftext(ii)) ' ran with error: ' jobs(ii).Tasks.Error.identifier ' ->' jobs(ii).Tasks.Error.message]);
+    end
 end
 
 function update_msg(msg)
