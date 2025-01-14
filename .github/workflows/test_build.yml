@@ -141,7 +141,13 @@ jobs:
       uses: matlab-actions/run-command@v2.1
       with:
         command: install_nosnoc
-    - name: Run script
+    - name: Batch Run Examples
       uses: matlab-actions/run-command@v2
       with:
         command: cd("examples"); batch_all_examples
+    # - name: Comment PR with coverage
+    #   uses: thollander/actions-comment-pull-request@v3
+    #   with:
+    #     github-token: ${{ secrets.GH_TOKEN }}
+    #     file-path: "test-results/SummaryGithub.md"
+    #     comment-tag: example_smoketest
