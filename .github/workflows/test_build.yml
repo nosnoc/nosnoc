@@ -141,3 +141,7 @@ jobs:
       uses: matlab-actions/run-command@v2.1
       with:
         command: install_nosnoc
+    - name: Run script
+      uses: matlab-actions/run-command@v2
+      with:
+        command: addpath("examples"); batch_all_examples
