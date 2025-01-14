@@ -5,16 +5,16 @@ ftext = readlines("all_examples.txt");
 [path,name,ext] = fileparts(ftext);
 orig_dir = pwd;
 c = parcluster;
-for ii=43:length(name)
+for ii=1:length(name)
     cd(path(ii));
-    jobs(ii) = batch(name(ii), 'CaptureDiary', true);
-
+    jobs{ii} = batch(name(ii), 'CaptureDiary', true);
+    name(ii)
     msg = char(formattedDisplayText(jobs));
     update_msg(msg);
 
     cd(orig_dir);
 end
-
+jobs = [jobs{:}];
 while true
     msg = char(formattedDisplayText(jobs));
     update_msg(msg);
