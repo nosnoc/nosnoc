@@ -41,6 +41,9 @@ end
 % Build markdown table for
 md_fid = fopen("../test-results/examples.md");
 jobs(1)
+c
+
+fprintf(md_fid, '');
 
 function update_msg(msg)
     ASCII_BKSP_CHAR = 8;
