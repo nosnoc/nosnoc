@@ -7,16 +7,17 @@ orig_dir = pwd;
 c = parcluster;
 for ii=1:length(name)
     cd(path(ii));
-    jobs{ii} = batch(name(ii), 'CaptureDiary', true);
+    job = batch(name(ii), 'CaptureDiary', true);
+    jobs(ii) = job;
     name(ii)
-    msg = char(formattedDisplayText(jobs));
+    msg = char(formattedDisplayText(jobs, 'SuppressMarkup', true));
     update_msg(msg);
 
     cd(orig_dir);
 end
-jobs = [jobs{:}];
+
 while true
-    msg = char(formattedDisplayText(jobs));
+    msg = char(formattedDisplayText(jobs, 'SuppressMarkup', true));
     update_msg(msg);
     all_done = true;
     for job=jobs
@@ -25,7 +26,7 @@ while true
     if all_done
         break
     end
-    pause(1);
+    pause(10);
 end
 
 function update_msg(msg)
@@ -35,6 +36,7 @@ function update_msg(msg)
         prev_len = 0;
     end
     
-    disp([ char(repmat(ASCII_BKSP_CHAR,1,prev_len)) msg]);
+    %disp([ char(repmat(ASCII_BKSP_CHAR,1,prev_len)) msg]);
+    disp(msg);
     prev_len = numel(msg)+1;
 end
