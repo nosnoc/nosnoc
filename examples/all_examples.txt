@@ -9,7 +9,6 @@ cls_minimal_examples/falling_rod.m
 cls_tutorial_ocp/disc_around_obstacle.m
 cls_tutorial_ocp/three_cart_ocp_2D.m
 cls_tutorial_ocp/two_cart_ocp_2D.m
-different_integrators/smoothed_pss.m
 different_switching_cases/simplest_example.m
 different_switching_cases/switching_cases.m
 disc_manipulation/disc_around_obstacle.m
@@ -40,10 +39,9 @@ periodic_slip_stick/periodic_slip_stick_codim2.m
 pss_ocp_tutorial_example/pss_tutorial_turbo_car_ocp.m
 relay_feedback_system/relay_feedback_system.m
 sliding_mode_ocp/main_sliding_mode_ocp.m
-sweeping_set/sweeping_set.m
-tank_cascade/main_tank_cascade.m
-three_cart_problem/three_cart_ocp.m
-three_cart_problem/three_cart_sim.m
+tank_cascade_ocp/main_tank_cascade.m
+three_cart_ocp_problem/three_cart_ocp.m
+three_cart_ocp_problem/three_cart_sim.m
 time_freezing_elastic_ball_in_box/main_elastic_ball_in_box.m
 time_freezing_hopper_ocp/hopper_long_ocp.m
 time_freezing_hopper_ocp/hopper_ocp.m
@@ -59,4 +57,4 @@ time_freezing_monoped_ocp/monoped_ocp.m
 time_freezing_pile_of_balls/time_freezing_pile_of_balls.m
 time_freezing_throwing_ball/bouncing_ball_sim.m
 time_freezing_throwing_ball/main_throwing_ball.m
-two_balls_cls/two_balls_spring_example.m
+two_balls_with_spring_cls/two_balls_spring_example.m
