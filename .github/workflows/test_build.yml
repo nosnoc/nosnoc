@@ -144,4 +144,4 @@ jobs:
     - name: Run script
       uses: matlab-actions/run-command@v2
       with:
-        command: addpath("examples"); batch_all_examples
+        command: cd("examples"); batch_all_examples
