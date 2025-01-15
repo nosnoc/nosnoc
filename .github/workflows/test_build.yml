@@ -33,6 +33,7 @@ jobs:
         release: ${{ matrix.matlab_version }}
         products: >
           Parallel_Computing_Toolbox
+        cache: true
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
@@ -145,9 +146,9 @@ jobs:
       uses: matlab-actions/run-command@v2
       with:
         command: cd("examples"); batch_all_examples
-    # - name: Comment PR with coverage
-    #   uses: thollander/actions-comment-pull-request@v3
-    #   with:
-    #     github-token: ${{ secrets.GH_TOKEN }}
-    #     file-path: "test-results/SummaryGithub.md"
-    #     comment-tag: example_smoketest
+    - name: Comment PR with example failures
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        github-token: ${{ secrets.GH_TOKEN }}
+        file-path: "test-results/SummaryGithub.md"
+        comment-tag: example_smoketest

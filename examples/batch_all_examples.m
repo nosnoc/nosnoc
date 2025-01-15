@@ -5,11 +5,11 @@ ftext = readlines("all_examples.txt");
 [fdir,name,ext] = fileparts(ftext);
 orig_dir = pwd;
 c = parcluster;
-for ii=1:length(name)
+c.NumWorkers = feature('numcores');
+for ii=1:2%length(name)
     cd(fdir(ii));
     job = batch(name(ii), 'CaptureDiary', true, 'AutoAttachFiles', false);
     jobs(ii) = job;
-    name(ii)
     %msg = char(formattedDisplayText(jobs, 'SuppressMarkup', true));
     %update_msg(msg);
 
@@ -31,24 +31,20 @@ end
 
 n_failed = 0;
 % Log failures and sucesses
-for ii=1:length(name)
+for ii=1:2%length(name)
     if isempty(jobs(ii).Tasks.Error)
         disp([char(ftext(ii)) ' ran without errors']);
     else
         disp([char(ftext(ii)) ' ran with error: ' jobs(ii).Tasks.ErrorIdentifier ' -> ' jobs(ii).Tasks.ErrorMessage]);
-        
-        jobs(ii).Tasks.Diary
         n_failed = n_failed + 1;
     end
 end
 
 % Build markdown table for
+mkdir ../test-results
 md_fid = fopen("../test-results/examples.md", 'w');
-jobs(1)
-c
 
 if md_fid > 0
-
     if n_failed
         fprintf(md_fid, '| Example | Success |\n');
         fprintf(md_fid, '| --- | --- |\n');
