@@ -87,7 +87,7 @@ xlabel('$t$','Interpreter','latex');
 ylabel('$u$','Interpreter','latex');
 %% 
 t_grid = ocp_solver.get_time_grid();
-f_x_fun = ocp_solver.model.f_x_fun;
+f_x_fun = ocp_solver.dcs.f_x_fun;
 x = x_res;
 u_opt_extended = [];
 s_opt_extended = [];

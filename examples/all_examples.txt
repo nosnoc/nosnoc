@@ -54,6 +54,5 @@ time_freezing_inelastic_tutorial/inelastic_3d_sim.m
 time_freezing_inelastic_tutorial/Painleve_paradox.m
 time_freezing_monoped_ocp/monoped_ocp.m
 time_freezing_pile_of_balls/time_freezing_pile_of_balls.m
-time_freezing_throwing_ball/bouncing_ball_sim.m
 time_freezing_throwing_ball/main_throwing_ball.m
 two_balls_with_spring_cls/two_balls_spring_example.m
