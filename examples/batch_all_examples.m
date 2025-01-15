@@ -6,7 +6,7 @@ ftext = readlines("all_examples.txt");
 orig_dir = pwd;
 c = parcluster;
 c.NumWorkers = feature('numcores');
-for ii=1:2%length(name)
+for ii=1:length(name)
     cd(fdir(ii));
     job = batch(name(ii), 'CaptureDiary', true, 'AutoAttachFiles', false);
     jobs(ii) = job;
@@ -31,7 +31,7 @@ end
 
 n_failed = 0;
 % Log failures and sucesses
-for ii=1:2%length(name)
+for ii=1:length(name)
     if isempty(jobs(ii).Tasks.Error)
         disp([char(ftext(ii)) ' ran without errors']);
     else
@@ -51,7 +51,7 @@ if md_fid > 0
 
         for ii=1:length(name)
             if ~isempty(jobs(ii).Tasks.Error)
-                fprintf(md_fid, '| %s | %s |\n', ftext(ii), [jobs(ii).Tasks.ErrorIdentifier ' -> ' jobs(ii).Tasks.ErrorMessage])
+                fprintf(md_fid, '| `%s` | %s |\n', ftext(ii), [jobs(ii).Tasks.ErrorIdentifier ' -> ' jobs(ii).Tasks.ErrorMessage])
             end
         end
     else
