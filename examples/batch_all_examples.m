@@ -5,11 +5,11 @@ ftext = readlines("all_examples.txt");
 [fdir,name,ext] = fileparts(ftext);
 orig_dir = pwd;
 c = parcluster;
-for ii=1:1%length(name)
+for ii=1:2%length(name)
     if length(fdir(ii)) > 1
         cd(fdir(ii));
     end
-    job = batch(name(ii), 'CaptureDiary', true);
+    job = batch(name(ii), 'CaptureDiary', true, 'AutoAttachFiles', false);
     jobs(ii) = job;
     name(ii)
     %msg = char(formattedDisplayText(jobs, 'SuppressMarkup', true));
@@ -32,7 +32,7 @@ while true
 end
 
 % Log failures and sucesses
-for ii=1:1%length(name)
+for ii=1:2%length(name)
     if isempty(jobs(ii).Tasks.Error)
         disp([char(ftext(ii)) ' ran without errors']);
     else
@@ -46,7 +46,6 @@ end
 md_fid = fopen("../test-results/examples.md", 'w');
 jobs(1)
 c
-fprintf(jobs(1).Tasks.diary);
 
 if md_fid > 0
     fprintf(md_fid, '');
