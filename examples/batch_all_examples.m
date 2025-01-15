@@ -6,9 +6,7 @@ ftext = readlines("all_examples.txt");
 orig_dir = pwd;
 c = parcluster;
 for ii=1:length(name)
-    if length(fdir(ii)) > 1
-        cd(fdir(ii));
-    end
+    cd(fdir(ii));
     job = batch(name(ii), 'CaptureDiary', true, 'AutoAttachFiles', false);
     jobs(ii) = job;
     name(ii)
@@ -31,6 +29,7 @@ while true
     pause(10);
 end
 
+n_failed = 0;
 % Log failures and sucesses
 for ii=1:length(name)
     if isempty(jobs(ii).Tasks.Error)
@@ -39,6 +38,7 @@ for ii=1:length(name)
         disp([char(ftext(ii)) ' ran with error: ' jobs(ii).Tasks.ErrorIdentifier ' -> ' jobs(ii).Tasks.ErrorMessage]);
         
         jobs(ii).Tasks.Diary
+        n_failed = n_failed + 1;
     end
 end
 
@@ -48,7 +48,22 @@ jobs(1)
 c
 
 if md_fid > 0
-    fprintf(md_fid, '');
+
+    if n_failed
+        fprintf(md_fid, '| Example | Success |\n');
+        fprintf(md_fid, '| --- | --- |\n');
+
+        for ii=1:length(name)
+            if ~isempty(jobs(ii).Tasks.Error)
+                fprintf(md_fid, '| %s | %s |\n', ftext(ii), [jobs(ii).Tasks.ErrorIdentifier ' -> ' jobs(ii).Tasks.ErrorMessage])
+            end
+        end
+    else
+        fprintf('All examples ran without error')
+    end
+    
+else
+    disp('failed to open file')
 end
 
 
