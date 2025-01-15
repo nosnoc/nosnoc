@@ -5,7 +5,7 @@ ftext = readlines("all_examples.txt");
 [path,name,ext] = fileparts(ftext);
 orig_dir = pwd;
 c = parcluster;
-for ii=1:5%length(name)
+for ii=1:2%length(name)
     cd(path(ii));
     job = batch(name(ii), 'CaptureDiary', true);
     jobs(ii) = job;
@@ -30,11 +30,13 @@ while true
 end
 
 % Log failures and sucesses
-for ii=1:5%length(name)
+for ii=1:2%length(name)
     if isempty(jobs(ii).Tasks.Error)
         disp([char(ftext(ii)) ' ran without errors']);
     else
-        disp([char(ftext(ii)) ' ran with error: ' jobs(ii).Tasks.Error.identifier ' ->' jobs(ii).Tasks.Error.message]);
+        disp([char(ftext(ii)) ' ran with error: ' jobs(ii).Tasks.ErrorIdentifier ' -> ' jobs(ii).Tasks.ErrorMessage]);
+        
+        jobs(ii).Tasks.Diary
     end
 end
 
