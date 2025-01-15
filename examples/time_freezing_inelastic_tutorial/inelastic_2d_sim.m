@@ -48,7 +48,6 @@ problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_FE;
 problem_options.N_sim = N_sim;
 problem_options.n_s = 2;
-solver_options.store_integrator_step_results = 1;
 integrator_opts.use_previous_solution_as_initial_guess = 0;
 %% Call nosnoc Integrator
 integrator = nosnoc.Integrator(model, problem_options, integrator_options);

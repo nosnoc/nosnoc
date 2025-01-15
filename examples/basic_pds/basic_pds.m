@@ -7,7 +7,7 @@ N_sim = 31;
 T_sim = 10;
 N_finite_elements = 2;
 %% nosnoc settings
-solver_options = nosnoc.solver.Options();
+problem_options = nosnoc.Options();
 integrator_options = nosnoc.integrator.Options();
 solver_options = integrator_options.fesd_solver_opts;
 

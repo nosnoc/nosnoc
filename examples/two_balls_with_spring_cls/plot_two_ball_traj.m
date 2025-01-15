@@ -3,8 +3,12 @@ function plot_two_ball_traj(results, title_str)
 if nargin < 2
     title_str = '';
 end
-benchmark_globals;
-N_FE = NFE_VALUES(1);
+N_FE = results.nfe;
+g = 9.81;
+R = 0.2;
+k = 1e4;
+l = 1;
+m = 1;
 
 %% read and plot results
 q1 = results.x(1,:);
@@ -49,7 +53,7 @@ eval(['print -dpdf -painters ' ['two_balls_states'] ])
 %%
 figure
 Lambda_opt = [results.Lambda_normal];
-stem(t_grid(1:N_FE:end),[Lambda_opt,nan],'LineWidth',1.5);
+stem(t_grid(1:(N_FE+1):end),[Lambda_opt,nan],'LineWidth',1.5);
 hold on
 xlim([-0.01 t_grid(end)])
 grid on

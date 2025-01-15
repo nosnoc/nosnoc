@@ -28,7 +28,7 @@ solver_options.complementarity_tol = 1e-5;
 solver_options.homotopy_steering_strategy = "ELL_INF";
 % Some debug options
 solver_options.print_details_if_infeasible = 0;
-solver_options.break_simulation_if_infeasible = 0;
+integrator_options.break_simulation_if_infeasible = 0;
 %%
 model = nosnoc.model.Cls();
 model.e = 0;
