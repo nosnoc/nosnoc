@@ -5,7 +5,7 @@ ftext = readlines("all_examples.txt");
 [fdir,name,ext] = fileparts(ftext);
 orig_dir = pwd;
 c = parcluster;
-c.NumWorkers = feature('numcores');
+c.NumWorkers = feature('numcores')
 for ii=1:length(name)
     cd(fdir(ii));
     job = batch(name(ii), 'CaptureDiary', true, 'AutoAttachFiles', false);
@@ -46,7 +46,7 @@ md_fid = fopen("../test-results/examples.md", 'w');
 
 if md_fid > 0
     if n_failed
-        fprintf(md_fid, '| Example | Success |\n');
+        fprintf(md_fid, '| Example | Error |\n');
         fprintf(md_fid, '| --- | --- |\n');
 
         for ii=1:length(name)
