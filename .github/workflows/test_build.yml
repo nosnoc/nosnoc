@@ -150,5 +150,5 @@ jobs:
       uses: thollander/actions-comment-pull-request@v3
       with:
         github-token: ${{ secrets.GH_TOKEN }}
-        file-path: "test-results/SummaryGithub.md"
+        file-path: "test-results/examples.md"
         comment-tag: example_smoketest
