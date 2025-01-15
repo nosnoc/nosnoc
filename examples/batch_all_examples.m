@@ -41,11 +41,14 @@ for ii=1:2%length(name)
 end
 
 % Build markdown table for
-md_fid = fopen("../test-results/examples.md");
+md_fid = fopen("../test-results/examples.md", 'w');
 jobs(1)
 c
 
-fprintf(md_fid, '');
+if md_fid > 0
+    fprintf(md_fid, '');
+end
+
 
 function update_msg(msg)
     ASCII_BKSP_CHAR = 8;
