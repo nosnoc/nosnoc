@@ -71,6 +71,10 @@ initial_guess.lambda_normal_traj = lambda_normal_guess;
 integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
+results.t_grid = t_grid;
+results.x = x_res;
+results.nfe = N_FE;
+results.Lambda_normal = integrator.get("Lambda_normal");
 plot_two_ball_traj(results);
 
 %% compare
