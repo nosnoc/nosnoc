@@ -55,9 +55,9 @@ if md_fid > 0
             end
         end
     else
-        fprintf('All examples ran without error')
+        fprintf(md_fid, 'All examples ran without error');
     end
-    
+    fclose(md_fid);
 else
     disp('failed to open file')
 end
