@@ -5,7 +5,7 @@ ftext = readlines("all_examples.txt");
 [path,name,ext] = fileparts(ftext);
 orig_dir = pwd;
 %c = parcluster;
-for ii=1:length(name)
+for ii=1:5%length(name)
     cd(path(ii));
     save('ws.mat')
     try
