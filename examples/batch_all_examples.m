@@ -2,11 +2,13 @@ clear all; close all;
 %set(0,'DefaultFigureVisible','off');
 folder  = '.';
 ftext = readlines("all_examples.txt");
-[path,name,ext] = fileparts(ftext);
+[fdir,name,ext] = fileparts(ftext);
 orig_dir = pwd;
 c = parcluster;
-for ii=1:2%length(name)
-    cd(path(ii));
+for ii=1:1%length(name)
+    if length(fdir(ii)) > 1
+        cd(fdir(ii));
+    end
     job = batch(name(ii), 'CaptureDiary', true);
     jobs(ii) = job;
     name(ii)
@@ -30,7 +32,7 @@ while true
 end
 
 % Log failures and sucesses
-for ii=1:2%length(name)
+for ii=1:1%length(name)
     if isempty(jobs(ii).Tasks.Error)
         disp([char(ftext(ii)) ' ran without errors']);
     else
@@ -44,6 +46,7 @@ end
 md_fid = fopen("../test-results/examples.md", 'w');
 jobs(1)
 c
+fprintf(jobs(1).Tasks.diary);
 
 if md_fid > 0
     fprintf(md_fid, '');

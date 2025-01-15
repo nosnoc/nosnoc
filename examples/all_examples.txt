@@ -1,3 +1,4 @@
+test_script.m
 basic_pds/basic_pds.m
 cart_pole_with_friction/cart_pole_nonsmooth.m
 cart_pole_with_friction/cart_pole_smoothing.m
