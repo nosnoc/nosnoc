@@ -116,7 +116,7 @@ legend({'$v_1$','$v_2$'},'Interpreter','latex');
 subplot(222)
 stairs(t_opt(1:N_FE:end),[u_opt,[nan]]','LineWidth',linewidth);
 hold on
-stairs(t_opt(1:N_FE:end),[s_opt',nan],'LineWidth',linewidth);
+stairs(t_opt(1:N_FE:end),[s_opt,nan]','LineWidth',linewidth);
 legend({'$u_1(t)$','$s(t)$'},'Interpreter','latex','location','best');
 grid on
 xlabel('$t$','Interpreter','latex');
