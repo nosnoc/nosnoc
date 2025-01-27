@@ -1,3 +1,4 @@
+time_freezing_monoped_ocp/monoped_ocp.m
 basic_pds/basic_pds.m
 cart_pole_with_friction/cart_pole_nonsmooth.m
 cart_pole_with_friction/cart_pole_smoothing.m
@@ -17,6 +18,8 @@ estimator_tutorial/nosnoc_estimation_problem.m
 friction_example_stewart/main_friction_blocks.m
 gene_regulation/main_irma.m
 gene_regulation/main_two_gene.m
+time_freezing_hopper_ocp/hopper_long_ocp.m
+time_freezing_hopper_ocp/hopper_ocp.m
 generic_mpcc/mpec_ex1.m
 generic_mpcc/mpec_ex2.m
 generic_mpcc/mpec_ex3.m
@@ -42,8 +45,6 @@ tank_cascade_ocp/main_tank_cascade.m
 three_cart_ocp_problem/three_cart_ocp.m
 three_cart_ocp_problem/three_cart_sim.m
 time_freezing_elastic_ball_in_box/main_elastic_ball_in_box.m
-time_freezing_hopper_ocp/hopper_long_ocp.m
-time_freezing_hopper_ocp/hopper_ocp.m
 time_freezing_inelastic_tutorial/elastic_2d_ball.m
 time_freezing_inelastic_tutorial/falling_rod_sim.m
 time_freezing_inelastic_tutorial/inelastic_2d_2contacts_sim.m
@@ -52,7 +53,6 @@ time_freezing_inelastic_tutorial/inelastic_2d_sim_external_force.m
 time_freezing_inelastic_tutorial/inelastic_2d_sim.m
 time_freezing_inelastic_tutorial/inelastic_3d_sim.m
 time_freezing_inelastic_tutorial/Painleve_paradox.m
-time_freezing_monoped_ocp/monoped_ocp.m
 time_freezing_pile_of_balls/time_freezing_pile_of_balls.m
 time_freezing_throwing_ball/main_throwing_ball.m
 two_balls_with_spring_cls/two_balls_spring_example.m
