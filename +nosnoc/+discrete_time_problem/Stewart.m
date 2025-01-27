@@ -870,7 +870,7 @@ classdef Stewart < vdx.problems.Mpcc
             end
 
             if ~exist('plugin')
-                plugin = 'scholtes_ineq';
+                plugin = 'reg_homotopy';
             end
 
             obj.finalize_assignments();

@@ -69,6 +69,7 @@ classdef Options < handle
         p_val
 
         %
+        relaxation_strategy(1,1) MpccMethod = MpccMethod.SCHOLTES
         homotopy_steering_strategy(1,1) HomotopySteeringStrategy = HomotopySteeringStrategy.DIRECT
         lower_bound_relaxation(1,1) logical = 0
 

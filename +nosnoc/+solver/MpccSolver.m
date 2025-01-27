@@ -33,7 +33,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         stats % Struct with stats of the last solve.
         nlp_solver
         plugin % NLP solver: Ipopt, Snopt, Worhop or Uno.
-        relaxation_type
     end
 
     properties (Access=private)
@@ -58,10 +57,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
     methods (Access=public)
         
-        function obj=MpccSolver(relaxation_type, mpcc, opts)
+        function obj=MpccSolver(mpcc, opts)
             import casadi.*
             import nosnoc.solver.*
-            obj.relaxation_type = relaxation_type;
             obj.mpcc = mpcc;
             obj.opts = opts;
             opts.preprocess();
@@ -117,7 +115,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
 
                 % Generate relaxation function
-                psi_fun = get_psi_fun(MpccMethod(obj.relaxation_type), opts.normalize_homotopy_update);
+                psi_fun = get_psi_fun(MpccMethod(opts.relaxation_strategy), opts.normalize_homotopy_update);
 
                 % Get all the vdx.Variable for the complementarities
                 comp_var_names = mpcc.G.get_var_names();
@@ -277,7 +275,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                             end
                             
                             g_comp_expr = psi_fun(G_curr, H_curr, sigma);
-                            [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
+                            [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, opts.relaxation_strategy);
                             nlp.g.(name)(curr{:}) = {g_comp_expr,lb,ub};
                         end
                     end
@@ -448,7 +446,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
 
                 % apply relaxation (defines a particular method, e.g. Scholtes, Kanzow-Schwartz, Fischer Burmeister, etc.)
-                psi_fun = get_psi_fun(MpccMethod(obj.relaxation_type), opts.normalize_homotopy_update);
+                psi_fun = get_psi_fun(MpccMethod(opts.relaxation_strategy), opts.normalize_homotopy_update);
                 lb = [];
                 ub = [];
                 g_comp_expr = [];
@@ -459,7 +457,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     else
                         g_comp_expr_i = psi_fun(G(ii), H(ii), sigma);
                     end
-                    [lb_i, ub_i, g_comp_expr_i] = generate_mpcc_relaxation_bounds(g_comp_expr_i, obj.relaxation_type);
+                    [lb_i, ub_i, g_comp_expr_i] = generate_mpcc_relaxation_bounds(g_comp_expr_i, opts.relaxation_strategy);
                     lb = [lb;lb_i];
                     ub = [ub;ub_i];
                     g_comp_expr = [g_comp_expr;g_comp_expr_i];
