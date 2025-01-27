@@ -873,6 +873,10 @@ classdef Stewart < vdx.problems.Mpcc
                 plugin = 'reg_homotopy';
             end
 
+            if ~exist('regenerate')
+                regenerate = false;
+            end
+
             obj.finalize_assignments();
 
             % Sort by indices to recover almost block-band structure.
@@ -881,7 +885,9 @@ classdef Stewart < vdx.problems.Mpcc
 
             solver_options.assume_lower_bounds = true;
 
-            obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
+            if regenerate || isempty(obj.solver)
+                obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
+            end
         end
 
         function stats = solve(obj)

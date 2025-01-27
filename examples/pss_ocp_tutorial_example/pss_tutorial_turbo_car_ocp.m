@@ -47,7 +47,7 @@ model.g_terminal = [q-200;v-0]; % Add terminal constraint
 % Create a nosnoc solver. 
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 % Solve the problem by internally calling the nosnoc MPEC solver (see generic_mpecs example for its standalone use)
-ocp_solver.solve();
+ocp_solver.solve('mpecopt');
 %% Extract reults - use ocp_solver methods to extact
 t_grid = ocp_solver.get_time_grid(); % get time grid for differential states
 t_grid_u = ocp_solver.get_control_grid(); % get time grid for control variables
