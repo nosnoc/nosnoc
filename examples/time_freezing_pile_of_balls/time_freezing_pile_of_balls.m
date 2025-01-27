@@ -9,7 +9,7 @@ T_sim = 1;
 N_sim = T_sim/h;
 N_finite_elements = 5;
 % animation settings
-run_animation = 1;
+generate_video = false;
 video_speed_up = 0.25;
 %% nosnoc settings
 problem_options = nosnoc.Options();
@@ -129,58 +129,60 @@ ind = diff(t_phy)/h>0.1;
 q = x_res(1:n_q,ind);
 time = t_phy(ind);
 %%
-delete impacting_balls
-filename = 'impacting_balls';
-figure('Renderer', 'painters', 'Position', [10 10 900 600])
-pos = get(gcf, 'Position');
-% for 4k
-width = pos(3)*1.5;
-height = pos(4)*1.5;
-% normal
-width = pos(3);
-height = pos(4);
-frames_gif = zeros(height, width, 1, N_sim, 'uint8');
-frames_video = { };
-N_frames = length(q);
-for ii = 1:N_frames
-    for jj = 0:n_balls-1
-        plot_circle(q(2*(jj+1)-1,ii),q(2*(jj+1),ii),r(jj+1));
+if generate_video
+    delete impacting_balls
+    filename = 'impacting_balls';
+    figure('Renderer', 'painters', 'Position', [10 10 900 600])
+    pos = get(gcf, 'Position');
+    % for 4k
+    width = pos(3)*1.5;
+    height = pos(4)*1.5;
+    % normal
+    width = pos(3);
+    height = pos(4);
+    frames_gif = zeros(height, width, 1, N_sim, 'uint8');
+    frames_video = { };
+    N_frames = length(q);
+    for ii = 1:N_frames
+        for jj = 0:n_balls-1
+            plot_circle(q(2*(jj+1)-1,ii),q(2*(jj+1),ii),r(jj+1));
+            hold on
+        end
+        axis equal
         hold on
+        plot(hh1,hh1*0+wall_down,'k','linewidth',1.5);
+        hold on
+        text(-2,4.5,['Time: ' num2str(time(ii),'%.2f') ' s'],'interpreter','latex','fontsize',15)
+        xlim([wall_left-0.5 wall_right+0.5])
+        ylim([wall_down-0.5 6])
+        xlabel('$x$','Interpreter','latex');
+        ylabel('$y$','Interpreter','latex');
+        frame = gcf;
+        set(frame,'Position',[15 15 width height])
+        f = getframe(frame);
+        frames_video{ii} = f;
+        if ii == 1
+            [frames_gif(:,:,1,ii), cmap] = imresize(rgb2ind(f.cdata, 256, 'nodither'), [height, width]);
+        else
+            frames_gif(:,:,1,ii) = imresize(rgb2ind(f.cdata, cmap, 'nodither'), [height, width]);
+        end
+        if ii~=N_frames
+            clf;
+        end
+        if ii~=length(tt)
+            clf;
+        end
     end
-    axis equal
-    hold on
-    plot(hh1,hh1*0+wall_down,'k','linewidth',1.5);
-    hold on
-    text(-2,4.5,['Time: ' num2str(time(ii),'%.2f') ' s'],'interpreter','latex','fontsize',15)
-    xlim([wall_left-0.5 wall_right+0.5])
-    ylim([wall_down-0.5 6])
-    xlabel('$x$','Interpreter','latex');
-    ylabel('$y$','Interpreter','latex');
-    frame = gcf;
-    set(frame,'Position',[15 15 width height])
-    f = getframe(frame);
-    frames_video{ii} = f;
-    if ii == 1
-        [frames_gif(:,:,1,ii), cmap] = imresize(rgb2ind(f.cdata, 256, 'nodither'), [height, width]);
-    else
-        frames_gif(:,:,1,ii) = imresize(rgb2ind(f.cdata, cmap, 'nodither'), [height, width]);
+    %%
+    % video file
+    pathVideoAVI = [ filename]; % filename, used later to generate mp4
+    writerObj = VideoWriter(pathVideoAVI,'Uncompressed AVI');
+    %writerObj = VideoWriter(pathVideoAVI,'MPEG-4');
+    target_duration = (T_sim/video_speed_up);
+    writerObj.FrameRate = round(N_frames/target_duration);
+    open(writerObj);
+    for ii = 1:N_frames
+        writeVideo(writerObj,frames_video{ii});
     end
-    if ii~=N_frames
-        clf;
-    end
-    if ii~=length(tt)
-        clf;
-    end
+    close(writerObj); % Close the movie file
 end
-%%
-% video file
-pathVideoAVI = [ filename]; % filename, used later to generate mp4
-writerObj = VideoWriter(pathVideoAVI,'Uncompressed AVI');
-%writerObj = VideoWriter(pathVideoAVI,'MPEG-4');
-target_duration = (T_sim/video_speed_up);
-writerObj.FrameRate = round(N_frames/target_duration);
-open(writerObj);
-for ii = 1:N_frames
-    writeVideo(writerObj,frames_video{ii});
-end
-close(writerObj); % Close the movie file

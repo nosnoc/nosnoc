@@ -30,7 +30,7 @@ clear; close all; clc;
 import casadi.*
 import nosnoc.*
 %%
-filename = 'discs_manipulation.gif';
+generate_video = false;
 %% discretizatioon
 N_stg = 15; % control intervals
 N_FE = 2;  % integration steps per control interval
@@ -165,8 +165,11 @@ hold on
 plot(translate(pgon1, [-1,1]), 'FaceColor', facecolor1, 'FaceAlpha', 0.5, 'LineStyle', '--', 'EdgeColor' , linecolor1);
 plot(translate(pgon2, [0,0]), 'FaceColor', facecolor2, 'FaceAlpha', 0.5, 'LineStyle', '--', 'EdgeColor' , linecolor2);
 hold off
-plot_balls(t_opt, p_res, {1:2, 3:4}, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2}, fig, 'tf_discs')
-
+if generate_video
+    plot_balls(t_opt, p_res, {1:2, 3:4}, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2}, fig, 'tf_discs')
+else
+    plot_balls(t_opt, p_res, {1:2, 3:4}, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2}, fig)
+end
 %%
 if 1
     figure('Renderer', 'painters', 'Position', [100 100 1400 600])
