@@ -112,14 +112,15 @@ jobs:
       with:
         submodules: 'recursive'
     - name: Checkout HiGHS
-      uses: actions/checkout@master
+      uses: actions/checkout@v4
       with:
-        name: ERGO-code/HiGHS
+        repository: ERGO-code/HiGHS
+        path: highs
         ref: master
     - name: Build HiGHS
       shell: bash
       run: |
-        cd HiGHS
+        cd highs
         cmake -S . -B build
         cmake --build build
         cd ..
