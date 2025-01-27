@@ -4,7 +4,7 @@ clc;
 delete monoped_ocp.mat
 delete monoped_ocp.gif
 delete monoped_ocp.txt
-oldpath = addpath('robot_model_kinematics')
+oldpath = addpath('robot_model_files')
 
 import casadi.*
 %% robot scene description

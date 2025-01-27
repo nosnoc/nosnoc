@@ -111,6 +111,18 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
+    - name: Checkout HiGHS
+      uses: actions/checkout@master
+      with:
+        name: ERGO-code/HiGHS
+        ref: master
+    - name: Build HiGHS
+      shell: bash
+      run: |
+        cd HiGHS
+        cmake -S . -B build
+        cmake --build build
+        cd ..
     # Install matlab to run tests.
     - name: Install MATLAB
       uses: matlab-actions/setup-matlab@v2.3
