@@ -27,7 +27,7 @@ classdef Integrator < handle
         function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin, extra_args)
             arguments
                 obj nosnoc.Integrator
-                plugin nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
+                plugin = 'reg_homotopy'
                 extra_args.u = []
                 extra_args.x0 = [];
             end
