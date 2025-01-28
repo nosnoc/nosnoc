@@ -16,7 +16,7 @@ if ~vdx_already_installed
     addpath(fullfile(nosnoc_path, 'external', 'vdx'));
 end
 if ~mpecopt_already_installed
-    addpath(fullfile(nosnoc_path, 'external', 'mpecopt', 'src'));
+    addpath(genpath(fullfile(nosnoc_path, 'external', 'mpecopt', 'src')));
 end
 savepath
 
