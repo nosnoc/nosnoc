@@ -58,7 +58,7 @@ classdef MpecoptWrapper < handle & matlab.mixin.indexing.RedefinesParen
                     mpcc.g.lb = p.Results.lbg;
                 end
                 if ~isempty(p.Results.ubg)
-                    mpcc.g.lb = p.Results.ubg;
+                    mpcc.g.ub = p.Results.ubg;
                 end
                 if ~isempty(p.Results.p)
                     mpcc.p.val = p.Results.p;
