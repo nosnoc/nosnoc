@@ -26,8 +26,10 @@ mpcc_struct.f = f;
 mpcc_method = mpcc_method;
 
 mpccsol_opts.homotopy_steering_strategy = homotopy_steering_strategy;
+mpccsol_opts.relaxation_strategy = mpcc_method;
 
-solver = mpccsol('generic_mpcc', mpcc_method, mpcc_struct, mpccsol_opts);
+
+solver = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_struct, mpccsol_opts);
 
 results = solver('x0', x0,...
     'lbx', lbx,...

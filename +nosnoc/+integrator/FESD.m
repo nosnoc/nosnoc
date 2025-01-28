@@ -104,7 +104,7 @@ classdef FESD < handle
 
         function stats = solve(obj, plugin)
             if ~exist('plugin', 'var')
-                plugin = 'scholtes_ineq';
+                plugin = 'reg_homotopy';
             end
             if ~obj.solver_exists
                 obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
