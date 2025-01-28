@@ -7,7 +7,6 @@ import nosnoc.solver.*;
 
 mpccsol_opts = nosnoc.solver.Options();  
 
-
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
 % parameters
@@ -36,10 +35,13 @@ mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 % the parameter relaxation/smoothing parameter sigma is steered outside the optimization , cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf
 
 mpccsol_opts.calculate_stationarity_type  = 1;
-
-solver = mpccsol('generic_mpcc', mpcc_method1, mpcc_data, mpccsol_opts);
-solver_ks = mpccsol('generic_mpcc', mpcc_method2, mpcc_data, mpccsol_opts);
-solver_su = mpccsol('generic_mpcc', mpcc_method3, mpcc_data, mpccsol_opts);
+mpccsol_opts.relaxation_strategy = mpcc_method1;
+solver = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_data, mpccsol_opts);
+mpccsol_opts.relaxation_strategy = mpcc_method1;
+solver_ks = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_data, mpccsol_opts);
+mpccsol_opts.relaxation_strategy = mpcc_method2;
+solver_su = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_data, mpccsol_opts);
+mpccsol_opts.relaxation_strategy = mpcc_method3;
 
 mpcc_results = solver('x0', x0,...
     'lbx', lbx,...

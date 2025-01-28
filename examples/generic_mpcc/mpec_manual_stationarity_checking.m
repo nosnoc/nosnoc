@@ -15,9 +15,6 @@ mpccsol_opts.homotopy_steering_strategy = "Direct";
 
 mpccsol_opts.complementarity_tol = 1e-10;
 
-% mpcc_method =  nosnoc.solver.MpccMethod.KADRANI;
-mpcc_method =  nosnoc.solver.MpccMethod.SCHOLTES_INEQ;
-
 % define MPCC
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
@@ -43,7 +40,7 @@ mpcc.G = x1;
 mpcc.H = x2;
 mpcc.f = f;
 
-solver = mpccsol('solver_mpecc', mpcc_method, mpcc, mpccsol_opts);
+solver = mpccsol('solver_mpecc', 'reg_homotopy', mpcc, mpccsol_opts);
 mpcc_results = solver('x0', x0,'lbx', lbx,'ubx', ubx);
 disp(mpcc_results.x)
 
