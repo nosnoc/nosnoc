@@ -1,13 +1,13 @@
 clear all; close all;
 %set(0,'DefaultFigureVisible','off');
-folder  = '.';
+folder  = '../examples';
 ftext = readlines("all_examples.txt");
 [fdir,name,ext] = fileparts(ftext);
 orig_dir = pwd;
 c = parcluster;
 c.NumWorkers = feature('numcores')
 for ii=1:length(name)
-    cd(fdir(ii));
+    cd(fullfile(folder,fdir(ii)));
     job = batch(name(ii), 'CaptureDiary', true, 'AutoAttachFiles', false);
     jobs(ii) = job;
     %msg = char(formattedDisplayText(jobs, 'SuppressMarkup', true));

@@ -158,7 +158,7 @@ jobs:
     - name: Batch Run Examples
       uses: matlab-actions/run-command@v2
       with:
-        command: cd("examples"); batch_all_examples
+        command: cd("test"); batch_all_examples
     - name: Comment PR with example failures
       uses: thollander/actions-comment-pull-request@v3
       with:
