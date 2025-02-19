@@ -87,7 +87,7 @@ xlabel('$t$','Interpreter','latex');
 ylabel('$u$','Interpreter','latex');
 %% 
 t_grid = ocp_solver.get_time_grid();
-f_x_fun = ocp_solver.model.f_x_fun;
+f_x_fun = ocp_solver.dcs.f_x_fun;
 x = x_res;
 u_opt_extended = [];
 s_opt_extended = [];
@@ -116,7 +116,7 @@ legend({'$v_1$','$v_2$'},'Interpreter','latex');
 subplot(222)
 stairs(t_opt(1:N_FE:end),[u_opt,[nan]]','LineWidth',linewidth);
 hold on
-stairs(t_opt(1:N_FE:end),[s_opt',nan],'LineWidth',linewidth);
+stairs(t_opt(1:N_FE:end),[s_opt,nan]','LineWidth',linewidth);
 legend({'$u_1(t)$','$s(t)$'},'Interpreter','latex','location','best');
 grid on
 xlabel('$t$','Interpreter','latex');

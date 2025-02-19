@@ -31,6 +31,8 @@ clear all
 clc
 close all
 import casadi.*
+%%
+plot_results = false;
 %% model parameters
 e = 0.9; u_max = 9; beta = 0.0; 
 %% NOSNOC settings
@@ -66,12 +68,14 @@ model.g_terminal = q-[q_target];
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 %%
-results.x = ocp_solver.get('x');
-results.u = ocp_solver.get('u');
-results.f = ocp_solver.stats.objective(end);
-results.theta = ocp_solver.get('theta');
-stats = ocp_solver.stats;
-plot_result_ball(model,problem_options,solver_options,results,stats)
-fprintf('Objective values is: %2.4f \n',full(results.f));
-fprintf('Final time is: %2.4f \n',ocp_solver.get('T_final'));
-[tout,yout,error] = bouncing_ball_sim(results.u,ocp_solver.get('T_final'),problem_options.N_stages,model.x0(1:4),beta,0.9,q_target);
+if plot_results
+    results.x = ocp_solver.get('x');
+    results.u = ocp_solver.get('u');
+    results.f = ocp_solver.stats.objective(end);
+    results.theta = ocp_solver.get('theta');
+    stats = ocp_solver.stats;
+    plot_result_ball(model,problem_options,solver_options,results,stats)
+    fprintf('Objective values is: %2.4f \n',full(results.f));
+    fprintf('Final time is: %2.4f \n',ocp_solver.get('T_final'));
+    [tout,yout,error] = bouncing_ball_sim(results.u,ocp_solver.get('T_final'),problem_options.N_stages,model.x0(1:4),beta,0.9,q_target);
+end

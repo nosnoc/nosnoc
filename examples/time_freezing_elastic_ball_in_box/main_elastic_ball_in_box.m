@@ -1,5 +1,7 @@
 clc; close all; clear all;
 import casadi.*
+%%
+plot_results = false;
 %% settings
 % collocation settings
 problem_options = nosnoc.Options();
@@ -28,8 +30,10 @@ problem_options.T = N_periods*(2*pi/abs(omega));
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 %% read and plot results
-x_res = ocp_solver.get('x');
-u_opt = ocp_solver.get('u');
-t_grid = ocp_solver.get_time_grid();
-t_grid_u = ocp_solver.get_control_grid();
-plot_results_elastic_ball_in_box
+if plot_results
+    x_res = ocp_solver.get('x');
+    u_opt = ocp_solver.get('u');
+    t_grid = ocp_solver.get_time_grid();
+    t_grid_u = ocp_solver.get_control_grid();
+    plot_results_elastic_ball_in_box
+end

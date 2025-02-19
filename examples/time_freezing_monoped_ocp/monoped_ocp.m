@@ -4,6 +4,7 @@ clc;
 delete monoped_ocp.mat
 delete monoped_ocp.gif
 delete monoped_ocp.txt
+oldpath = addpath('robot_model_files')
 
 import casadi.*
 %% robot scene description
@@ -269,3 +270,5 @@ ocp_solver.solve();
 
 %% plots and animation
 plot_results_hopping_robot
+
+path = oldpath;

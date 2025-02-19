@@ -31,7 +31,9 @@ jobs:
       with:
         # NOTE: no longer earliest version to support more property validation functions
         release: ${{ matrix.matlab_version }}
-
+        products: >
+          Parallel_Computing_Toolbox
+        cache: true
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
@@ -65,6 +67,7 @@ jobs:
         test-results-junit: "test-results/matlab-results-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
         code-coverage-cobertura: "test-results/coverage-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}.xml"
         strict: true # Non-explicitly suppressed warnings should fail.
+        use-parallel: true
 
     # Run ReportGenerator to generage human readable coverage (only for latest versions of matlab and casadi for now)
     - name: Setup .NET Core # Required to execute ReportGenerator
@@ -97,3 +100,68 @@ jobs:
       with:
         name: "test-results-${{ matrix.matlab_version }}-${{ matrix.casadi.version }}"
         path: test-results/
+
+  run_examples:
+    continue-on-error: true
+    runs-on: ubuntu-22.04
+
+    steps:
+    # Checkout repo
+    - name: Checkout NOSNOC
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    - name: Checkout HiGHS
+      uses: actions/checkout@v4
+      with:
+        repository: ERGO-code/HiGHS
+        path: highs
+        ref: master
+    - name: Build HiGHS
+      shell: bash
+      run: |
+        cd highs
+        cmake -S . -B build
+        cmake --build build
+        cd ..
+    # Install matlab to run tests.
+    - name: Install MATLAB
+      uses: matlab-actions/setup-matlab@v2.3
+      with:
+        # Only test on latest
+        release: "R2024a"
+        products: >
+          Parallel_Computing_Toolbox
+    # Download relevant matlab release artifacts for the casadi release we are using.
+    # TODO: Definitely cache this.
+    - name: Download CasADi release
+      uses: robinraju/release-downloader@v1.11
+      with:
+        repository: "casadi/casadi"
+        tag: "3.6.7"
+        fileName: "casadi-3.6.7-linux64-matlab2018b.zip"
+
+    # untar the casadi 3.5.5 release and then add it to the matlab path.
+    - name: Install CasADi
+      shell: bash
+      run: |
+        mkdir casadi
+        cd casadi
+        unzip $GITHUB_WORKSPACE/casadi-3.6.7-linux64-matlab2018b.zip
+        echo "MATLABPATH=$MATLABPATH:$GITHUB_WORKSPACE/casadi" >> $GITHUB_ENV
+
+    # Run matlab tests from the test directory and dump the results in junit format.
+    - name: Install NOSNOC
+      uses: matlab-actions/run-command@v2.1
+      with:
+        command: install_nosnoc
+    - name: Batch Run Examples
+      uses: matlab-actions/run-command@v2
+      with:
+        command: cd("test"); batch_all_examples
+    - name: Comment PR with example failures
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        github-token: ${{ secrets.GH_TOKEN }}
+        file-path: "test-results/examples.md"
+        comment-tag: example_smoketest

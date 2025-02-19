@@ -21,7 +21,7 @@ solver_options.homotopy_steering_strategy = HomotopySteeringStrategy.ELL_INF;
 solver_options.print_details_if_infeasible = 0;
 solver_options.pause_homotopy_solver_if_infeasible = 0;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
-solver_options.real_time_plot = 0;
+integrator_options_options.real_time_plot = 0;
 solver_options.complementarity_tol = 1e-10;
 solver_options.sigma_N = 1e-11;
 solver_options.decreasing_s_elastic_upper_bound = 1;
@@ -71,6 +71,10 @@ initial_guess.lambda_normal_traj = lambda_normal_guess;
 integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 [t_grid, x_res, t_grid_full, x_res_full] = integrator.simulate();
 %%
+results.t_grid = t_grid;
+results.x = x_res;
+results.nfe = N_FE;
+results.Lambda_normal = integrator.get("Lambda_normal");
 plot_two_ball_traj(results);
 
 %% compare

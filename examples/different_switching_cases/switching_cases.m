@@ -103,7 +103,6 @@ end
 integrator_options = nosnoc.integrator.Options();
 solver_options = integrator_options.fesd_solver_opts;
 solver_options.print_level = 3;
-solver_options.store_integrator_step_results = 1;
 integrator = nosnoc.Integrator(model, problem_options, integrator_options);
 
 if strcmp('spontaneous_switch', switching_case)
