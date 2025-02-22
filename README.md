@@ -8,6 +8,8 @@ The `Python` package `nosnoc_py` with similar functionality is available as well
 - A detailed overview of the theory and methods behind nosnoc can be found in the course material of the
 [Summer School on Direct Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/teaching/ss2023/summer-school-direct-methods-optimal-control-nonsmooth-systems).
 
+- A recent (Feb. 2025) overview of the algorithms behind nosnoc can be found in the slides and lecture recodrings of the
+[Winter School on Numerical Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/event/winter-school-numerical-methods-optimal-control-nonsmooth-systems).
 
 ## General
 **nosnoc** is a tool for numerically solving optimal control problems with nonsmooth dynamical systems that have switches and/or state jumps. It supports:
