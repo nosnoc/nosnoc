@@ -870,7 +870,11 @@ classdef Stewart < vdx.problems.Mpcc
             end
 
             if ~exist('plugin')
-                plugin = 'scholtes_ineq';
+                plugin = 'reg_homotopy';
+            end
+
+            if ~exist('regenerate')
+                regenerate = false;
             end
 
             obj.finalize_assignments();
@@ -881,7 +885,9 @@ classdef Stewart < vdx.problems.Mpcc
 
             solver_options.assume_lower_bounds = true;
 
-            obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
+            if regenerate || isempty(obj.solver)
+                obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
+            end
         end
 
         function stats = solve(obj)
