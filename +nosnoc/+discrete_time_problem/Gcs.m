@@ -731,7 +731,7 @@ classdef Gcs < vdx.problems.Mpcc
             end
 
             if ~exist('plugin')
-                plugin = 'scholtes_ineq';
+                plugin = 'reg_homotopy';
             end
 
             if ~exist('regenerate')
@@ -749,7 +749,7 @@ classdef Gcs < vdx.problems.Mpcc
             end
             solver_options.assume_lower_bounds = true;
 
-            if regenerate || isempty(obj.solver) || (nosnoc.solver.MpccMethod(plugin) ~= obj.solver.relaxation_type)
+            if regenerate || isempty(obj.solver)
                 obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
             end
         end

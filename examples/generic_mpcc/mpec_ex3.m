@@ -45,7 +45,7 @@ mpcc_struct.G = G;
 mpcc_struct.H = H;
 mpcc_struct.f = f;
 
-solver = mpccsol('generic_mpcc', 'scholtes_ineq', mpcc_struct, mpccsol_opts);
+solver = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_struct, mpccsol_opts);
 
 mpcc_results = solver('x0', w0,...
     'lbx', lbw,...

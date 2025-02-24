@@ -104,7 +104,7 @@ classdef FESD < handle
 
         function stats = solve(obj, plugin)
             if ~exist('plugin', 'var')
-                plugin = 'scholtes_ineq';
+                plugin = 'reg_homotopy';
             end
             if ~obj.solver_exists
                 obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
@@ -127,7 +127,7 @@ classdef FESD < handle
         function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin, extra_args)
             arguments
                 obj nosnoc.integrator.FESD
-                plugin nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
+                plugin = 'reg_homotopy'
                 extra_args.u = []
                 extra_args.x0 = [];
             end
