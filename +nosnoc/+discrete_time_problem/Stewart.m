@@ -891,7 +891,12 @@ classdef Stewart < vdx.problems.Mpcc
             end
         end
 
-        function stats = solve(obj)
+        function stats = solve(obj, params)
+            arguments
+                obj,
+                params.IG,
+                params.IH
+            end
             opts = obj.opts;
             T_val = obj.p.T().val;
 
@@ -915,8 +920,8 @@ classdef Stewart < vdx.problems.Mpcc
                     end
                 end
             end
-
-            stats = solve@vdx.problems.Mpcc(obj);
+            params = namedargs2cell(params);
+            stats = solve@vdx.problems.Mpcc(obj, params{:});
         end
 
         function [IG,IH,I00] = process_active_set(obj, active_set)
@@ -945,44 +950,93 @@ classdef Stewart < vdx.problems.Mpcc
             obj.w.theta(0,0,opts.n_s).init = theta_values;
             obj.w.lambda(0,0,opts.n_s).init = lambda_values;
 
-            jj = 1; % Control stage index
-            kk = 0; % FE index
-            t_curr = 0;
-            % Go through the active set by times
-            for ii=1:active_set.get_n_steps()
-                done_stage = false;
-                t_end = active_set.times(ii);
+            if ~isempty(active_set.times)
+                jj = 1; % Control stage index
+                kk = 0; % FE index
+                t_curr = 0;
+                % Go through the active set by times
+                for ii=1:active_set.get_n_steps()
+                    done_stage = false;
+                    t_end = active_set.times(ii);
 
-                region_ii = active_set.regions{ii};
-                n_active = length(region_ii);
+                    region_ii = active_set.regions{ii};
+                    n_active = length(region_ii);
 
-                theta_values = zeros(dims.n_theta,1);
-                theta_values(region_ii) = 1/n_active;
-                lambda_values = ones(dims.n_theta,1);
-                lambda_values(region_ii) = 0;
-                for jj=jj:opts.N_stages
-                    for kk=(kk+1):opts.N_finite_elements(jj)
-                        for ll=1:opts.n_s % TODO(@anton) handle GL
-                            obj.w.theta(jj,kk,ll).init = theta_values;
-                            obj.w.lambda(jj,kk,ll).init = lambda_values;
+                    theta_values = zeros(dims.n_theta,1);
+                    theta_values(region_ii) = 1/n_active;
+                    lambda_values = ones(dims.n_theta,1);
+                    lambda_values(region_ii) = 0;
+                    for jj=jj:opts.N_stages
+                        for kk=(kk+1):opts.N_finite_elements(jj)
+                            for ll=1:opts.n_s % TODO(@anton) handle GL
+                                obj.w.theta(jj,kk,ll).init = theta_values;
+                                obj.w.lambda(jj,kk,ll).init = lambda_values;
+                            end
+                            t_curr = t_curr + opts.h_k(jj);
+                            if t_curr > t_end
+                                done_stage = true;
+                                break
+                            end
                         end
-                        t_curr = t_curr + opts.h_k(jj);
-                        if t_curr > t_end
-                            done_stage = true;
+                        if done_stage
                             break
                         end
+                        kk = 0; % Reset fe counter
                     end
-                    if done_stage
-                        break
+                    % handle entering regions TODO(@anton) verify this is correct
+                    if ii ~= active_set.get_n_steps()
+                        region_next = active_set.regions{ii+1};
+                        entering_regions = setdiff(region_next, region_ii);
+                        lambda_values(entering_regions) = 0;
+                        obj.w.lambda(jj,kk,ll).init = lambda_values;
                     end
-                    kk = 0; % Reset fe counter
                 end
-                % handle entering regions TODO(@anton) verify this is correct
-                if ii ~= active_set.get_n_steps()
-                    region_next = active_set.regions{ii+1};
-                    entering_regions = setdiff(region_next, region_ii);
-                    lambda_values(entering_regions) = 0;
-                    obj.w.lambda(jj,kk,ll).init = lambda_values;
+            else
+                jj = 1; % Control stage index
+                kk = 0; % FE index
+                t_curr = 0;
+                % Go through the active set by times
+                for ii=1:active_set.get_n_steps()
+                    done_stage = false;
+                    stage_end = active_set.stages{ii};
+                    
+                    N_end = stage_end(1);
+                    n_end = stage_end(2);
+
+                    region_ii = active_set.regions{ii};
+                    n_active = length(region_ii);
+
+                    theta_values = zeros(dims.n_theta,1);
+                    theta_values(region_ii) = 1/n_active;
+                    lambda_values = ones(dims.n_theta,1);
+                    lambda_values(region_ii) = 0;
+                    for jj=jj:N_end
+                        if jj==N_end
+                            done = true;
+                            kk_end = n_end;
+                        else
+                            done = false;
+                            kk_end = opts.N_finite_elements(jj);
+                        end
+                        for kk=(kk+1):kk_end
+                            for ll=1:opts.n_s % TODO(@anton) handle GL
+                                fprintf('%d %d %d\n', jj,kk,ll)
+                                obj.w.theta(jj,kk,ll).init = theta_values;
+                                obj.w.lambda(jj,kk,ll).init = lambda_values;
+                            end
+                        end
+                        if ~done
+                            kk = 0; % Reset fe counter
+                        end
+                    end
+                    % handle entering regions TODO(@anton) verify this is correct
+                    if ii ~= active_set.get_n_steps()
+                        fprintf('%d %d %d\n', jj,kk,ll)
+                        region_next = active_set.regions{ii+1};
+                        entering_regions = setdiff(region_next, region_ii);
+                        lambda_values(entering_regions) = 0;
+                        obj.w.lambda(jj,kk,ll).init = lambda_values;
+                    end
                 end
             end
             G_fun = casadi.Function('G', {obj.w.sym,obj.p.sym}, {obj.G.sym});

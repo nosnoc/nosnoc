@@ -12,7 +12,10 @@ problem_options.n_s = 2; % Number of stage points in the RK method (determines a
 % Time-settings
 problem_options.N_stages = 10; % Number of control intervals over the time horizon.
 problem_options.N_finite_elements = 3; % Number of finite element (integration steps) on every control interval (optionally a vector might be passed).
-problem_options.T = 15;    % Time horizon (for a time-optimal problem, the actual horizon length is obtained by solving the problem).
+problem_options.T = 20;    % Time horizon (for a time-optimal problem, the actual horizon length is obtained by solving the problem).
+
+%problem_options.cross_comp_mode = 'stage_stage';
+%problem_options.cross_comp_mode = 'FE_FE';
 
 % settings.nlpsol = 'snopt';  % Note: requires installing.
 
@@ -42,18 +45,20 @@ model.S = [-1;1]; % Region R_1 is defined by c<0 (hence the -1), region R_2 by c
 model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of every region.
 
 model.g_terminal = [q-200;v-0]; % Add terminal constraint
-model.f_q = u^2;
+model.f_q = 10*u^2;
 
 % Define active set guess:
-active_set_guess = nosnoc.activeset.Pss({[1],[2],[1]}, [5,10,15]);
+active_set_guess = nosnoc.activeset.Pss({[1],[2],[1]},'times', [12,15,20]);
+%active_set_guess = nosnoc.activeset.Pss({[1],[2],[1]},'stages', {[3,2],[6,1],[10,3]});
 
-% Create a nosnoc solver. 
+% Create a nosnoc solver.
+solver_options.mpecopt.initialization_strategy = 'TakeProvidedActiveSet';
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 % Set active set
 ocp_solver.set_initial_active_set(active_set_guess);
 [IG,IH,I00] = ocp_solver.discrete_time_problem.process_active_set(active_set_guess);
 % Solve the problem by internally calling the nosnoc MPEC solver (see generic_mpecs example for its standalone use)
-ocp_solver.solve();
+ocp_solver.solve('mpecopt', IG=IG, IH=IH);
 %% Extract reults - use ocp_solver methods to extact
 t_grid = ocp_solver.get_time_grid(); % get time grid for differential states
 t_grid_u = ocp_solver.get_control_grid(); % get time grid for control variables
