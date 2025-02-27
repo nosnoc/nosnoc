@@ -93,12 +93,9 @@ classdef Solver < handle
         function solve(obj, plugin, params)
             arguments
                 obj
-                plugin
-                params.IG = [];
+                plugin = 'reg_homotopy'
+                params.IG = []
                 params.IH = []
-            end
-            if ~exist('plugin', 'var')
-                plugin = 'reg_homotopy';
             end
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
 
@@ -268,7 +265,9 @@ classdef Solver < handle
               case "nosnoc.model.Cls"
                 error('not_implemented')
               case "nosnoc.model.Pds"
-                error('not_implemented')
+                if ~strcmp(class(active_set), "nosnoc.activeset.Pds")
+                    nosnoc.error('type_mismatch', 'Wrong type of active set object passed');
+                end
               case "nosnoc.model.PDSObjects"
                 error('not_implemented')
               otherwise
