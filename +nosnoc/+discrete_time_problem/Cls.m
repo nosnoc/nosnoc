@@ -1305,6 +1305,11 @@ classdef Cls < vdx.problems.Mpcc
         end
 
         function stats = solve(obj)
+            arguments
+                obj
+                params.IG = []
+                params.IH = []
+            end
             opts = obj.opts;
             T_val = obj.p.T().val;
 
@@ -1323,8 +1328,8 @@ classdef Cls < vdx.problems.Mpcc
                     obj.w.h(ii,jj).ub = ubh;
                 end
             end
-
-            stats = solve@vdx.problems.Mpcc(obj);
+            params = namedargs2cell(params);
+            stats = solve@vdx.problems.Mpcc(obj, params{:});
         end
     end
 end

@@ -33,6 +33,7 @@ jobs:
         release: ${{ matrix.matlab_version }}
         products: >
           Parallel_Computing_Toolbox
+          Optimization_Toolbox
         cache: true
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.

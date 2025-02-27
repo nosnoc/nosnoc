@@ -948,6 +948,11 @@ classdef PDSObjects < vdx.problems.Mpcc
         end
 
         function stats = solve(obj)
+            arguments
+                obj
+                params.IG = []
+                params.IH = []
+            end
             opts = obj.opts;
             T_val = obj.p.T().val;
 
@@ -968,8 +973,8 @@ classdef PDSObjects < vdx.problems.Mpcc
                     end
                 end
             end
-
-            stats = solve@vdx.problems.Mpcc(obj);
+            params = namedargs2cell(params);
+            stats = solve@vdx.problems.Mpcc(obj, params{:});
         end
     end
 end

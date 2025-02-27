@@ -901,7 +901,12 @@ classdef Heaviside < vdx.problems.Mpcc
             obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
         end
 
-        function stats = solve(obj)
+        function stats = solve(obj, params)
+            arguments
+                obj
+                params.IG = []
+                params.IH = []
+            end
             opts = obj.opts;
             T_val = obj.p.T().val;
 
@@ -922,8 +927,8 @@ classdef Heaviside < vdx.problems.Mpcc
                     end
                 end
             end
-
-            stats = solve@vdx.problems.Mpcc(obj);
+            params = namedargs2cell(params);
+            stats = solve@vdx.problems.Mpcc(obj, params{:});
         end
     end
 
