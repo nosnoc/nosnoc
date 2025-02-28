@@ -10,7 +10,7 @@ import casadi.*
 R = 3.5;
 %% Define projected system
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation = RKRepresentation.integral;
 problem_options.cross_comp_mode = CrossCompMode.FE_FE;

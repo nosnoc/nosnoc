@@ -10,7 +10,7 @@ N_FE = 3;
 %%
 linewidth = 2.5;
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 3;
 problem_options.time_freezing = 1;

@@ -2,7 +2,7 @@ clear; clc; close all;
 import casadi.*
 % 
 problem_options = nosnoc.Options(); % Initialize all options related to the optimal control or simulation problem.
-solver_options = nosnoc.solver.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
+solver_options = nosnoc.reg_homotopy.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
 mpc_options = nosnoc.mpc.Options(); % Initialize all options related to the MPC implementation. 
 
 % Choosing the Runge - Kutta Method and number of stages

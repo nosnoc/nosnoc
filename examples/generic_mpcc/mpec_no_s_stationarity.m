@@ -7,7 +7,7 @@ import casadi.*;
 import nosnoc.solver.*;
 
 % set options
-mpccsol_opts = nosnoc.solver.Options();  
+mpccsol_opts = nosnoc.reg_homotopy.Options();  
 mpccsol_opts.homotopy_steering_strategy = "Direct";
 % mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 % mpccsol_opts.homotopy_steering_strategy = "ELL_INF"; 

@@ -42,10 +42,9 @@ chicane_width = 2;
 
 %% NOSNOC settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
-
-% Optimal control problem options
-problem_options.n_s = 2;
+solver_options = nosnoc.reg_homotopy.Options();
+problem_options.n_s = 2; 
+solver_options.sigma_0 = 1e0;
 problem_options.use_fesd = 1;
 problem_options.cross_comp_mode = "FE_FE";
 problem_options.T_final_max = 5*pi;

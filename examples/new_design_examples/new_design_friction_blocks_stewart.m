@@ -17,7 +17,7 @@ N_FE = 3; % (per integration step)
 % load general nosnoc problem options
 problem_options = nosnoc.Options();
 % load nosnoc mpcc solver options
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 solver_options.N_homotopy = 10;
 
 problem_options.n_s = 2;

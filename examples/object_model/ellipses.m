@@ -8,7 +8,7 @@ N_finite_elements = 4;
 %% Init nosnoc objects
 model = nosnoc.model.PDSObjects; % Initialize model which is a container for the objects.
 problem_options = nosnoc.Options; % Initialize all options related to the optimal control.
-solver_options = nosnoc.solver.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
+solver_options = nosnoc.reg_homotopy.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
 %% DefinTe model
 % Define controls and control bounds and add them to the model.
 u = SX.sym('u', 2);

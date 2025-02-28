@@ -7,10 +7,10 @@ clear;
 import casadi.*;
 import nosnoc.solver.mpccsol;
 
-mpccsol_opts1 = nosnoc.solver.Options();
+mpccsol_opts1 = nosnoc.reg_homotopy.Options();
 mpccsol_opts1.lift_complementarities = true;
 mpccsol_opts1.calculate_stationarity_type = true;
-mpccsol_opts2 = nosnoc.solver.Options();
+mpccsol_opts2 = nosnoc.reg_homotopy.Options();
 mpccsol_opts2.lift_complementarities = true;
 mpccsol_opts2.calculate_stationarity_type = true;
 x = SX.sym('x',8);

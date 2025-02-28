@@ -34,7 +34,7 @@ import casadi.*
 fuel_cost_on = 0;
 %% Settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 
 %% Options
 problem_options.time_freezing = 1;

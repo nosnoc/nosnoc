@@ -38,7 +38,7 @@ no_friction = 0;
 
 %% load nosnoc default options
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 
 %% 
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;

@@ -9,7 +9,7 @@ T_sim = 0.75;
 
 %% NOSNOC settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.n_s = 1;
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;
 problem_options.rk_representation= 'integral';

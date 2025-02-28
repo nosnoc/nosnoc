@@ -26,7 +26,7 @@ q_target = [3;0.4;0;0];
 
 %% Default settings nosnoc
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 
 %%
 solver_options.print_level = 5;
