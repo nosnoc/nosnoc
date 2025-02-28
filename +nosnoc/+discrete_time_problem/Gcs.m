@@ -754,7 +754,11 @@ classdef Gcs < vdx.problems.Mpcc
             end
         end
 
-        function stats = solve(obj)
+        function stats = solve(obj, active_set)
+            arguments
+                obj
+                active_set nosnoc.activeset.Pds = nosnoc.activeset.Pds.empty;
+            end
             opts = obj.opts;
             T_val = obj.p.T().val;
 
@@ -775,8 +779,145 @@ classdef Gcs < vdx.problems.Mpcc
                     end
                 end
             end
+            if ~isempty(active_set)
+                [IG,IH,~] = obj.process_active_set(active_set);
+            else
+                IG = [];
+                IH = [];
+            end
+            stats = solve@vdx.problems.Mpcc(obj, IG=IG, IH=IH);
+        end
 
-            stats = solve@vdx.problems.Mpcc(obj);
+        function [IG,IH,I00] = process_active_set(obj, active_set)
+        % This method takes a nosnoc active set for a PSS and produces an active set for the
+        % complementarity constraints in this problem. It returns these as a boolean array.
+        %
+        % TODO(@anton) there should be a cleaner way of doing this but this is "easy".
+        % TODO(@anton) this assumes no user complementarities, but how do we handle those?
+        % TODO(@anton) This only works if we lift c. in principle this is why we should backcalculate.
+            arguments
+                obj
+                active_set nosnoc.activeset.Pds
+            end
+            dims = obj.dcs.dims;
+            dcs = obj.dcs;
+            model = obj.model;
+            opts = obj.opts;
+
+            % TODO(@anton) handle initial algebraics
+            active_constraint_0 = active_set.active_constraints{1};
+
+            c_values = ones(dims.n_c,1);
+            lambda_values = zeros(dims.n_c,1);
+            if ~isempty(active_constraint_0)
+                c_values(active_constraint_0) = 0;
+                lambda_values(active_constraint_0) = 1;
+            end
+            obj.w.c_lift(0,0,opts.n_s).init = c_values;
+            obj.w.lambda(0,0,opts.n_s).init = lambda_values;
+
+            if ~isempty(active_set.times)
+                jj = 1; % Control stage index
+                kk = 0; % FE index
+                t_curr = 0;
+                % Go through the active set by times
+                for ii=1:active_set.get_n_steps()
+                    done_stage = false;
+                    t_end = active_set.times(ii);
+
+                    active_constraint_ii = active_set.active_constraints{ii};
+                    n_active = length(active_constraint_ii);
+
+                    c_values = ones(dims.n_c,1);
+                    lambda_values = zeros(dims.n_c,1);
+                    if ~isempty(active_constraint_ii)
+                        c_values(active_constraint_ii) = 0;
+                        lambda_values(active_constraint_ii) = 1;
+                    end
+                    for jj=jj:opts.N_stages
+                        for kk=(kk+1):opts.N_finite_elements(jj)
+                            for ll=1:opts.n_s
+                                obj.w.c_lift(jj,kk,ll).init = c_values;
+                                obj.w.lambda(jj,kk,ll).init = lambda_values;
+                            end
+                            t_curr = t_curr + opts.h_k(jj);
+                            if t_curr > t_end
+                                done_stage = true;
+                                break
+                            end
+                        end
+                        if done_stage
+                            break
+                        end
+                        kk = 0; % Reset fe counter
+                    end
+                    % handle entering active_constraints TODO(@anton) verify this is correct
+                    if ii ~= active_set.get_n_steps()
+                        active_constraint_next = active_set.active_constraints{ii+1};
+                        entering_active_constraints = setdiff(active_constraint_next, active_constraint_ii);
+                        if ~isempty(entering_active_constraints)
+                            c_values(entering_active_constraints) = 0;
+                        end
+                        obj.w.c_lift(jj,kk,ll).init = c_values;
+                    end
+                end
+            else
+                jj = 1; % Control stage index
+                kk = 0; % FE index
+                t_curr = 0;
+                % Go through the active set by times
+                for ii=1:active_set.get_n_steps()
+                    done_stage = false;
+                    stage_end = active_set.stages{ii};
+                    
+                    N_end = stage_end(1);
+                    n_end = stage_end(2);
+
+                    active_constraint_ii = active_set.active_constraints{ii};
+
+                    c_values = ones(dims.n_c,1);
+                    lambda_values = zeros(dims.n_c,1);
+                    if ~isempty(active_constraint_ii)
+                        c_values(active_constraint_ii) = 0;
+                        lambda_values(active_constraint_ii) = 1;
+                    end
+                    for jj=jj:N_end
+                        if jj==N_end
+                            done = true;
+                            kk_end = n_end;
+                        else
+                            done = false;
+                            kk_end = opts.N_finite_elements(jj);
+                        end
+                        for kk=(kk+1):kk_end
+                            for ll=1:opts.n_s
+                                obj.w.c_lift(jj,kk,ll).init = c_values;
+                                obj.w.lambda(jj,kk,ll).init = lambda_values;
+                            end
+                        end
+                        if ~done
+                            kk = 0; % Reset fe counter
+                        end
+                    end
+                    % handle entering active_constraints TODO(@anton) verify this is correct
+                    if ii ~= active_set.get_n_steps()
+                        active_constraint_next = active_set.active_constraints{ii+1};
+                        entering_active_constraints = setdiff(active_constraint_next, active_constraint_ii);
+                        c_values(entering_active_constraints) = 0;
+                        obj.w.c_lift(jj,kk,ll).init = c_values
+                    end
+                end
+            end
+            G_fun = casadi.Function('G', {obj.w.sym,obj.p.sym}, {obj.G.sym});
+            H_fun = casadi.Function('H', {obj.w.sym,obj.p.sym}, {obj.H.sym});
+
+            tol = 1e-5; % TODO(@anton) this shouldn't be necessary?
+            IG = full(G_fun(obj.w.init, obj.p.val)) <= tol;
+            IH = full(H_fun(obj.w.init, obj.p.val)) <= tol;
+
+            % TODO(@anton) Process infeasibilities?
+            infeasible = ~(IG|IH);
+            I00 = IG&IH;
         end
     end
 end

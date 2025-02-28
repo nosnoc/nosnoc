@@ -43,25 +43,28 @@ chicane_width = 2;
 %% NOSNOC settings
 problem_options = nosnoc.Options();
 solver_options = nosnoc.solver.Options();
-problem_options.n_s = 4; 
+problem_options.n_s = 2; 
 solver_options.sigma_0 = 1e0;
 problem_options.use_fesd = 1;
-problem_options.cross_comp_mode = 1;
+problem_options.cross_comp_mode = 'fe_fe';
 problem_options.T_final_max = 5*pi;
 problem_options.T_final_min = 2;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
-problem_options.dcs_mode = 'Heaviside';
+problem_options.dcs_mode = 'Stewart';
 problem_options.g_path_at_fe = 1;
 problem_options.g_path_at_stg = 1;
 problem_options.time_optimal_problem = 1;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1000;
 solver_options.print_level = 5;
+solver_options.mpecopt.settings_casadi_nlp.ipopt.print_level = 5
+problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_1;
+
 
 %% model equations
 model = nosnoc.model.Pss();
 model.x0 = zeros(5,1);
 problem_options.T = 5; 
-problem_options.N_stages = 50; 
+problem_options.N_stages = 30; 
 problem_options.N_finite_elements = 2;
 
 %% Variable defintion
@@ -150,9 +153,16 @@ model.g_terminal = q-q_target;
 % intitial guess for fun
 alpha = [atan2(diff(yy),diff(xx)),0];
 x_guess = vertcat(xx,yy, zeros(2,problem_options.N_stages), alpha);
+
+active_set_guess = nosnoc.activeset.Pss({[1,2]},'times', [problem_options.T]);
+solver_options.mpecopt.initialization_strategy = 'TakeProvidedActiveSet';
 %% Solve
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-ocp_solver.solve();
+
+ocp_solver.set_initial_active_set(active_set_guess);
+[IG,IH,I00] = ocp_solver.discrete_time_problem.process_active_set(active_set_guess);
+
+ocp_solver.solve('mpecopt', IG=IG, IH=IH);
 fprintf('Objective values is: %2.4f \n', ocp_solver.get_objective());
 %% plot
 plot_results_ms(model, problem_options, ocp_solver,...

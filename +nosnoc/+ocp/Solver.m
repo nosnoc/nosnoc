@@ -1,12 +1,15 @@
 classdef Solver < handle
-    properties % TODO separate these by Get/Set access
-        model
-        opts
-        solver_opts
+    properties % TODO separate these by Get/Set access.
+        model % Model for the current OCP, after any pre-processing.
+        opts % Nosnoc/FESD discretization options.
+        solver_opts % Options passed to MPCC solver.
 
-        dcs
-        discrete_time_problem
-        stats
+        dcs % Dynamic Complementarity syste into which the model is processed.
+        discrete_time_problem % Discretized optimal control problem.
+        stats % Stats, containing both solver and reformulation information.
+
+        active_set % Current active set. TODO(@anton) do we need to store this? Should it be updated after solve? etc.
+                   % TODO(@anton) do we want to default this to x0 initialization?
     end
 
     methods
@@ -88,11 +91,12 @@ classdef Solver < handle
         end
 
         function solve(obj, plugin)
-            if ~exist('plugin', 'var')
-                plugin = 'reg_homotopy';
+            arguments
+                obj
+                plugin = 'reg_homotopy'
             end
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
-
+            
             obj.stats = obj.discrete_time_problem.solve();
         end
 
@@ -242,6 +246,33 @@ classdef Solver < handle
             obj.discrete_time_problem.solver.generate_cpp_solver(solver_dir);
         end
 
+        function set_initial_active_set(obj, active_set)
+        % Set initial active set.
+            arguments
+                obj
+                active_set(1,1) 
+            end
+            switch class(obj.model)
+              case "nosnoc.model.Pss"
+                if ~strcmp(class(active_set), "nosnoc.activeset.Pss")
+                    nosnoc.error('type_mismatch', 'Wrong type of active set object passed');
+                end
+              case "nosnoc.model.Heaviside"
+                error('not_implemented')
+              case "nosnoc.model.Cls"
+                error('not_implemented')
+              case "nosnoc.model.Pds"
+                if ~strcmp(class(active_set), "nosnoc.activeset.Pds")
+                    nosnoc.error('type_mismatch', 'Wrong type of active set object passed');
+                end
+              case "nosnoc.model.PDSObjects"
+                error('not_implemented')
+              otherwise
+                nosnoc.error('unknown_model', "Unknown model type.")
+            end
+            obj.active_set = active_set;
+        end
+        
         function do_shift_initialization(obj)
         % This method does a shift initialization by moving each control interval to the left by one.
         %

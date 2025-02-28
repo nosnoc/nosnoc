@@ -4,7 +4,7 @@ classdef Stewart < vdx.problems.Mpcc
         dcs % Dcs object
         opts % Option object
         
-        populated % Boolean variable indicating are the pupulating functions executed.
+        populated % Boolean variable indicating are the populating functions executed.
     end
 
     methods
@@ -141,8 +141,9 @@ classdef Stewart < vdx.problems.Mpcc
                 end
             end
         end
-        % define core runge kutta equations
+        
         function generate_direct_transcription_constraints(obj)
+        % define core runge kutta equations
             import casadi.*
             model = obj.model;
             opts = obj.opts;
@@ -877,20 +878,24 @@ classdef Stewart < vdx.problems.Mpcc
                 regenerate = false;
             end
 
-            obj.finalize_assignments();
-
-            % Sort by indices to recover almost block-band structure.
-            obj.w.sort_by_index();
-            obj.g.sort_by_index();
-
-            solver_options.assume_lower_bounds = true;
-
             if regenerate || isempty(obj.solver)
+                obj.finalize_assignments();
+
+                % Sort by indices to recover almost block-band structure.
+                obj.w.sort_by_index();
+                obj.g.sort_by_index();
+
+                solver_options.assume_lower_bounds = true;
+
                 obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
             end
         end
 
-        function stats = solve(obj)
+        function stats = solve(obj, active_set)
+            arguments
+                obj
+                active_set nosnoc.activeset.Pss = nosnoc.activeset.Pss.empty;
+            end
             opts = obj.opts;
             T_val = obj.p.T().val;
 
@@ -914,8 +919,141 @@ classdef Stewart < vdx.problems.Mpcc
                     end
                 end
             end
+            
+            if ~isempty(active_set)
+                [IG,IH,~] = obj.process_active_set(active_set);
+            else
+                IG = [];
+                IH = [];
+            end
+            stats = solve@vdx.problems.Mpcc(obj, IG=IG, IH=IH);
+        end
 
-            stats = solve@vdx.problems.Mpcc(obj);
+        function [IG,IH,I00] = process_active_set(obj, active_set)
+        % This method takes a nosnoc active set for a PSS and produces an active set for the
+        % complementarity constraints in this problem. It returns these as a boolean array.
+        %
+        % TODO(@anton) there should be a cleaner way of doing this but this is "easy".
+        % TODO(@anton) this assumes no user complementarities, but how do we handle those?
+            arguments
+                obj
+                active_set nosnoc.activeset.Pss
+            end
+            dims = obj.dcs.dims;
+            dcs = obj.dcs;
+            model = obj.model;
+            opts = obj.opts;
+
+            % TODO(@anton) handle initial algebraics
+            region_0 = active_set.regions{1};
+            n_active = length(region_0);
+
+            theta_values = zeros(dims.n_theta,1);
+            theta_values(region_0) = 1/n_active;
+            lambda_values = ones(dims.n_theta,1);
+            lambda_values(region_0) = 0;
+            obj.w.theta(0,0,opts.n_s).init = theta_values;
+            obj.w.lambda(0,0,opts.n_s).init = lambda_values;
+
+            if ~isempty(active_set.times)
+                jj = 1; % Control stage index
+                kk = 0; % FE index
+                t_curr = 0;
+                % Go through the active set by times
+                for ii=1:active_set.get_n_steps()
+                    done_stage = false;
+                    t_end = active_set.times(ii);
+
+                    region_ii = active_set.regions{ii};
+                    n_active = length(region_ii);
+
+                    theta_values = zeros(dims.n_theta,1);
+                    theta_values(region_ii) = 1/n_active;
+                    lambda_values = ones(dims.n_theta,1);
+                    lambda_values(region_ii) = 0;
+                    for jj=jj:opts.N_stages
+                        for kk=(kk+1):opts.N_finite_elements(jj)
+                            for ll=1:opts.n_s % TODO(@anton) handle GL
+                                obj.w.theta(jj,kk,ll).init = theta_values;
+                                obj.w.lambda(jj,kk,ll).init = lambda_values;
+                            end
+                            t_curr = t_curr + opts.h_k(jj);
+                            if t_curr > t_end
+                                done_stage = true;
+                                break
+                            end
+                        end
+                        if done_stage
+                            break
+                        end
+                        kk = 0; % Reset fe counter
+                    end
+                    % handle entering regions TODO(@anton) verify this is correct
+                    if ii ~= active_set.get_n_steps()
+                        region_next = active_set.regions{ii+1};
+                        entering_regions = setdiff(region_next, region_ii);
+                        lambda_values(entering_regions) = 0;
+                        obj.w.lambda(jj,kk,ll).init = lambda_values;
+                    end
+                end
+            else
+                jj = 1; % Control stage index
+                kk = 0; % FE index
+                t_curr = 0;
+                % Go through the active set by times
+                for ii=1:active_set.get_n_steps()
+                    done_stage = false;
+                    stage_end = active_set.stages{ii};
+                    
+                    N_end = stage_end(1);
+                    n_end = stage_end(2);
+
+                    region_ii = active_set.regions{ii};
+                    n_active = length(region_ii);
+
+                    theta_values = zeros(dims.n_theta,1);
+                    theta_values(region_ii) = 1/n_active;
+                    lambda_values = ones(dims.n_theta,1);
+                    lambda_values(region_ii) = 0;
+                    for jj=jj:N_end
+                        if jj==N_end
+                            done = true;
+                            kk_end = n_end;
+                        else
+                            done = false;
+                            kk_end = opts.N_finite_elements(jj);
+                        end
+                        for kk=(kk+1):kk_end
+                            for ll=1:opts.n_s % TODO(@anton) handle GL
+                                fprintf('%d %d %d\n', jj,kk,ll)
+                                obj.w.theta(jj,kk,ll).init = theta_values;
+                                obj.w.lambda(jj,kk,ll).init = lambda_values;
+                            end
+                        end
+                        if ~done
+                            kk = 0; % Reset fe counter
+                        end
+                    end
+                    % handle entering regions TODO(@anton) verify this is correct
+                    if ii ~= active_set.get_n_steps()
+                        fprintf('%d %d %d\n', jj,kk,ll)
+                        region_next = active_set.regions{ii+1};
+                        entering_regions = setdiff(region_next, region_ii);
+                        lambda_values(entering_regions) = 0;
+                        obj.w.lambda(jj,kk,ll).init = lambda_values;
+                    end
+                end
+            end
+            G_fun = casadi.Function('G', {obj.w.sym,obj.p.sym}, {obj.G.sym});
+            H_fun = casadi.Function('H', {obj.w.sym,obj.p.sym}, {obj.H.sym});
+
+            tol = 1e-5; % TODO(@anton) this shouldn't be necessary?
+            IG = full(G_fun(obj.w.init, obj.p.val)) <= tol;
+            IH = full(H_fun(obj.w.init, obj.p.val)) <= tol;
+
+            % TODO(@anton) Process infeasibilities?
+            infeasible = ~(IG|IH);
+            I00 = IG&IH;
         end
     end
 end

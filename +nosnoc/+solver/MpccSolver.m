@@ -1115,6 +1115,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             import casadi.*;
             p = inputParser;
             addParameter(p, 'x0', []);
+            addParameter(p, 'y0', []);
             addParameter(p, 'lbx', []);
             addParameter(p, 'ubx', []);
             addParameter(p, 'lbg', []);
