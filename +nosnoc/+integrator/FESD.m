@@ -102,9 +102,13 @@ classdef FESD < handle
             end
         end
 
-        function stats = solve(obj, plugin)
-            if ~exist('plugin', 'var')
+        function stats = solve(obj)
+            switch class(obj.solver_opts)
+              case "nosnoc.reg_homotopy.Options"
                 plugin = 'reg_homotopy';
+                obj.solver_opts.assume_lower_bounds = true;
+              case "mpecopt.Options"
+                plugin = 'mpecopt';
             end
             if ~obj.solver_exists
                 obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
@@ -124,10 +128,9 @@ classdef FESD < handle
             obj.stats = []; % Clear simulation stats.
         end
 
-        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin, extra_args)
+        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, extra_args)
             arguments
                 obj nosnoc.integrator.FESD
-                plugin = 'reg_homotopy'
                 extra_args.u = []
                 extra_args.x0 = [];
             end
@@ -162,7 +165,7 @@ classdef FESD < handle
                     obj.discrete_time_problem.w.u(1).init = extra_args.u(:,ii);
                     % NOTE: we always have 1 control stage.
                 end
-                solver_stats = obj.solve(plugin);
+                solver_stats = obj.solve();
                 t_current = t_current + opts.T;
                 if solver_stats.converged == 0
                     disp(['integrator_fesd: did not converge in step ', num2str(ii), ' constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
@@ -183,7 +186,7 @@ classdef FESD < handle
                         obj.stats(end) = [];
                         obj.w_all(:,end) = [];
                         % Try solving with new problem
-                        solver_stats = obj.solve(plugin);
+                        solver_stats = obj.solve();
                         % reset the initialization.
                         obj.discrete_time_problem.w.init = w0;
                         if solver_stats.converged == 0
