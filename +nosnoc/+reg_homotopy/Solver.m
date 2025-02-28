@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
+classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
     properties
         mpcc % Either a struct with the (possibly optional) fields (f, p, w, g, G, H) or a subclass of vdx.problems.Mpcc.
         nlp % The relaxed/smoothed nlp which is solved in a homotopy loop with a decreasing relaxation/smoothing parameter. 
@@ -57,9 +57,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
     methods (Access=public)
         
-        function obj=MpccSolver(mpcc, opts)
+        function obj=Solver(mpcc, opts)
             import casadi.*
-            import nosnoc.solver.*
+            import nosnoc.reg_homotopy.*
             obj.mpcc = mpcc;
             obj.opts = opts;
             opts.preprocess();
@@ -327,13 +327,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % Get nlpsol plugin
                 switch opts.solver
                   case 'ipopt'
-                    obj.plugin = nosnoc.solver.plugins.Ipopt();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Ipopt();
                   case 'snopt'
-                    obj.plugin = nosnoc.solver.plugins.Snopt();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Snopt();
                   case 'worhp'
-                    obj.plugin = nosnoc.solver.plugins.Worhp();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Worhp();
                   case 'uno'
-                    obj.plugin = nosnoc.solver.plugins.Uno();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Uno();
                 end
 
                 if ~isempty(opts.ipopt_callback)
@@ -481,13 +481,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % Get nlpsol plugin
                 switch opts.solver
                   case 'ipopt'
-                    obj.plugin = nosnoc.solver.plugins.Ipopt();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Ipopt();
                   case 'snopt'
-                    obj.plugin = nosnoc.solver.plugins.Snopt();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Snopt();
                   case 'worhp'
-                    obj.plugin = nosnoc.solver.plugins.Worhp();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Worhp();
                   case 'uno'
-                    obj.plugin = nosnoc.solver.plugins.Uno();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Uno();
                 end
 
                 % TODO figure out how to get mpcc in here without the horrible hack in the case of vdx mpcc passed in
