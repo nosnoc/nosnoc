@@ -6,6 +6,6 @@ function mpccsol = mpccsol(name, plugin, mpcc, options)
     if strcmp(plugin, 'reg_homotopy')
         mpccsol = nosnoc.reg_homotopy.Solver(mpcc, options);
     elseif strcmp(plugin, 'mpecopt')
-        mpccsol = Mpecopt(mpcc, options);
+        mpccsol = mpecopt.Solver(mpcc, options);
     end
 end
