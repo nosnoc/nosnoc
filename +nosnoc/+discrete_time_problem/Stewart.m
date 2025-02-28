@@ -894,7 +894,7 @@ classdef Stewart < vdx.problems.Mpcc
         function stats = solve(obj, active_set)
             arguments
                 obj
-                active_set nosnoc.activeset.Pss = nosnoc.activeset.Pss.empty;
+                active_set = nosnoc.activeset.Pss.empty;
             end
             opts = obj.opts;
             T_val = obj.p.T().val;
