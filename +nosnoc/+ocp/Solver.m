@@ -90,11 +90,18 @@ classdef Solver < handle
             end
         end
 
-        function solve(obj, plugin)
+        function solve(obj)
             arguments
                 obj
-                plugin = 'reg_homotopy'
             end
+            switch class(obj.solver_opts)
+              case "nosnoc.reg_homotopy.Options"
+                plugin = 'reg_homotopy';
+                obj.solver_opts.assume_lower_bounds = true;
+              case "mpecopt.Options"
+                plugin = 'mpecopt';
+            end
+            
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
             
             obj.stats = obj.discrete_time_problem.solve();

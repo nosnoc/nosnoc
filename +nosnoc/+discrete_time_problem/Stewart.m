@@ -885,7 +885,7 @@ classdef Stewart < vdx.problems.Mpcc
                 obj.w.sort_by_index();
                 obj.g.sort_by_index();
 
-                solver_options.assume_lower_bounds = true;
+                
 
                 obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
             end
