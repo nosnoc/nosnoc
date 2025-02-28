@@ -7,12 +7,8 @@ function [x_res, u_res, t_res, t_control, lambda_res, c_res] = solve_pds_ocp(use
     [model, problem_options] = pds_ocp_dynamics(use_fesd, N_stages, n_s, T, x_target);
 
     % Solve
-    active_set_guess = nosnoc.activeset.Pds({[],[1]},'times', [problem_options.T*0.5,problem_options.T]);
-    %active_set_guess = nosnoc.activeset.Pds({[]},'times', [problem_options.T]);
-    solver_options.mpecopt.initialization_strategy = 'TakeProvidedActiveSet';
     ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-    ocp_solver.set_initial_active_set(active_set_guess);
-    ocp_solver.solve('mpecopt');
+    ocp_solver.solve();
 
     x_res = ocp_solver.get('x');
     u_res = ocp_solver.get('u');

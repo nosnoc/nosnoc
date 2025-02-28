@@ -22,8 +22,8 @@ function [model, problem_options] = pds_ocp_dynamics(use_fesd, N_stages, n_s, T,
     model.x0 = [x0];
     u = SX.sym('u1', 2);;
     model.u = [u];
-    model.lbu = [-5;-5];
-    model.ubu = [5;5];
+    model.lbu = [-1;-1];
+    model.ubu = [1;1];
     model.u0 = [0;0];
     P = [1/4, 0;
         0, 1/16];
