@@ -7,12 +7,12 @@ classdef BnlpLpcc < nosnoc.mpc.Base
         problem_options nosnoc.Options % nosnoc problem options.
         solver_options mpecopt.Options % mpecopt solver options.
         model % nosnoc model.
-
         
+        last_solve_successful(1,1) logical = false % true if last solve was successful, false otherwise. 
     end
     
     methods
-        function obj = FullMpcc(model, mpc_options, problem_options, solver_options)
+        function obj = BnlpLpcc(model, mpc_options, problem_options, solver_options)
             obj.mpc_options = mpc_options;
             obj.problem_options = problem_options;
             obj.solver_options = solver_options;
@@ -25,7 +25,8 @@ classdef BnlpLpcc < nosnoc.mpc.Base
 
             % Update sigma_0 to the fast one if we have 
             if obj.last_solve_successful
-                obj.solver_options.sigma_0 = obj.mpc_options.fullmpcc_fast_sigma_0;
+                solver_options.initialization_strategy = 'TakeInitialGuessDirectly';
+                solver_options.max_iter = 1;
             end
             obj.ocp_solver.set_x0(x0);
             obj.ocp_solver.solve();
@@ -41,11 +42,7 @@ classdef BnlpLpcc < nosnoc.mpc.Base
             % did not converge.
             preparation_timer = tic;
             if isfield(obj.ocp_solver.stats, "converged") && obj.ocp_solver.stats.converged
-                if obj.mpc_options.fullmpcc_do_shift_initialization
-                    obj.ocp_solver.do_shift_initialization();
-                else
-                    obj.ocp_solver.do_warmstart();
-                end
+                obj.ocp_solver.do_warmstart();
                 obj.last_solve_successful = true;
             else
                 obj.last_solve_successful = false;
