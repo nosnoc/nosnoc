@@ -30,7 +30,7 @@ import casadi.*
 
 unfold_struct(scenario,'caller');
 %% Solver settings
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 solver_options.print_level = 3;;
 solver_options.N_homotopy = 15;
 solver_options.complementarity_tol = 1e-12;

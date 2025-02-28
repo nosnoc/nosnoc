@@ -38,7 +38,7 @@ import casadi.*
 filename = 'discs_switch_position.gif';
 %%
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  
 problem_options.time_freezing = 1;

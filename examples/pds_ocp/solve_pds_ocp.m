@@ -1,6 +1,6 @@
 function [x_res, u_res, t_res, t_control, lambda_res, c_res] = solve_pds_ocp(use_fesd, N_stages, n_s, T, x_target)
     
-    solver_options = nosnoc.solver.Options();
+    solver_options = nosnoc.reg_homotopy.Options();
     solver_options.complementarity_tol = 1e-10;
     solver_options.print_level = 3;
     

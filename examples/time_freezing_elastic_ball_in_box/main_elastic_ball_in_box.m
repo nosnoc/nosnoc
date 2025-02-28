@@ -5,7 +5,7 @@ plot_results = false;
 %% settings
 % collocation settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.n_s = 2;
 % problem_options.time_freezing_time_rescaling = 1;
 problem_options.use_speed_of_time_variables =  1; 

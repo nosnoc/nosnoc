@@ -10,7 +10,7 @@ run_gurobi = 0; run_bonmin = 0;
 run_experiments = [run_fesd run_std run_gurobi run_bonmin];
 %% NOSNOC settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.use_fesd = 1;
 problem_options.time_optimal_problem = 1;
 problem_options.n_s = 2;

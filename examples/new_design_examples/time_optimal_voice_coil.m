@@ -11,7 +11,7 @@ import nosnoc.*
 
 %% populate options
 problem_options = nosnoc.Options(); % 
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 
 %% set some options
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;

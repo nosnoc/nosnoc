@@ -11,7 +11,7 @@ generate_video = false;
 %% create nosnoc model and options objects
 model = nosnoc.model.Pds();
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 
 %% Parameters
 T = 5;  % time horizon

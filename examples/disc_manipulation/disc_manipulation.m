@@ -37,7 +37,7 @@ N_FE = 2;  % integration steps per control interval
 T = 2;
 %% init
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 model = nosnoc.model.Cls();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;

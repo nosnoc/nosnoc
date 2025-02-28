@@ -14,7 +14,7 @@ import casadi.*
 % model = nosnoc.model.Pds();
 model = nosnoc.model.PDSObjects; % Initialize model which is a container for the objects.
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 
 %% Parameters
 T = 5;  % time horizon
