@@ -27,7 +27,7 @@ mpcc_data.f = f;
 
 mpcc_method1 = 'scholtes_ineq';
 mpcc_method2 = 'kanzow_schwartz_ineq';
-mpcc_method3 =  nosnoc.solver.MpccMethod.SCHOLTES_EQ;
+mpcc_method3 =  nosnoc.reg_homotopy.MpccMethod.SCHOLTES_EQ;
 
 mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 % the parameter relaxation/smoothing parameter s is minmized in the objective, its penality (1/sigma) is steered outside, cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf 
