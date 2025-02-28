@@ -1,5 +1,5 @@
 function [lb,ub,g_comp] = generate_mpcc_relaxation_bounds(g_comp, relaxation_type)
-    import nosnoc.solver.*
+    import nosnoc.reg_homotopy.*
     n_comp = size(g_comp, 1);
     switch MpccMethod(relaxation_type)
       case MpccMethod.SCHOLTES_EQ

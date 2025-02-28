@@ -69,7 +69,7 @@ classdef Options < handle
         p_val
 
         %
-        relaxation_strategy(1,1) nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
+        relaxation_strategy(1,1) nosnoc.reg_homotopy.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
         homotopy_steering_strategy(1,1) HomotopySteeringStrategy = HomotopySteeringStrategy.DIRECT
         lower_bound_relaxation(1,1) logical = 0
 
