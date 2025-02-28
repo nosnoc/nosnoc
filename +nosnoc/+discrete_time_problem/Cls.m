@@ -1304,10 +1304,10 @@ classdef Cls < vdx.problems.Mpcc
             obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
         end
 
-        function stats = solve(obj,active_set)
+        function stats = solve(obj, active_set)
             arguments
                 obj
-                active_set nosnoc.activeset.Cls = nosnoc.activeset.Cls.empty;
+                active_set = []
             end
             opts = obj.opts;
             T_val = obj.p.T().val;
