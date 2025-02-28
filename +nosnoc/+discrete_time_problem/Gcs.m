@@ -754,11 +754,10 @@ classdef Gcs < vdx.problems.Mpcc
             end
         end
 
-        function stats = solve(obj,params)
+        function stats = solve(obj, active_set)
             arguments
-                obj,
-                params.IG,
-                params.IH
+                obj
+                active_set nosnoc.activeset.Pds = nosnoc.activeset.Pds.empty;
             end
             opts = obj.opts;
             T_val = obj.p.T().val;
@@ -780,8 +779,13 @@ classdef Gcs < vdx.problems.Mpcc
                     end
                 end
             end
-            params = namedargs2cell(params);
-            stats = solve@vdx.problems.Mpcc(obj,params{:});
+            if ~isempty(active_set)
+                [IG,IH,~] = obj.process_active_set(active_set);
+            else
+                IG = [];
+                IH = [];
+            end
+            stats = solve@vdx.problems.Mpcc(obj, IG=IG, IH=IH);
         end
 
         function [IG,IH,I00] = process_active_set(obj, active_set)

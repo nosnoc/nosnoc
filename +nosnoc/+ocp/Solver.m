@@ -90,17 +90,14 @@ classdef Solver < handle
             end
         end
 
-        function solve(obj, plugin, params)
+        function solve(obj, plugin)
             arguments
                 obj
                 plugin = 'reg_homotopy'
-                params.IG = []
-                params.IH = []
             end
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
-
-            params = namedargs2cell(params);
-            obj.stats = obj.discrete_time_problem.solve(params{:});
+            
+            obj.stats = obj.discrete_time_problem.solve();
         end
 
         function ret = get(obj, field)

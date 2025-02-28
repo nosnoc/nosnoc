@@ -878,24 +878,23 @@ classdef Stewart < vdx.problems.Mpcc
                 regenerate = false;
             end
 
-            obj.finalize_assignments();
-
-            % Sort by indices to recover almost block-band structure.
-            obj.w.sort_by_index();
-            obj.g.sort_by_index();
-
-            solver_options.assume_lower_bounds = true;
-
             if regenerate || isempty(obj.solver)
+                obj.finalize_assignments();
+
+                % Sort by indices to recover almost block-band structure.
+                obj.w.sort_by_index();
+                obj.g.sort_by_index();
+
+                solver_options.assume_lower_bounds = true;
+
                 obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
             end
         end
 
-        function stats = solve(obj, params)
+        function stats = solve(obj, active_set)
             arguments
-                obj,
-                params.IG,
-                params.IH
+                obj
+                active_set nosnoc.activeset.Pss = nosnoc.activeset.Pss.empty;
             end
             opts = obj.opts;
             T_val = obj.p.T().val;
@@ -920,8 +919,14 @@ classdef Stewart < vdx.problems.Mpcc
                     end
                 end
             end
-            params = namedargs2cell(params);
-            stats = solve@vdx.problems.Mpcc(obj, params{:});
+            
+            if ~isempty(active_set)
+                [IG,IH,~] = obj.process_active_set(active_set);
+            else
+                IG = [];
+                IH = [];
+            end
+            stats = solve@vdx.problems.Mpcc(obj, IG=IG, IH=IH);
         end
 
         function [IG,IH,I00] = process_active_set(obj, active_set)

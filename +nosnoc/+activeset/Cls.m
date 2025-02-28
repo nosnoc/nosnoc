@@ -1,20 +1,23 @@
-classdef Pds < handle
+classdef Cls < handle
     properties(SetAccess=private)
         active_constraints
+        impulses
         times
         stages
     end
 
     methods
-        function obj = Pds(active_constraints, params)
-        % Construct an initial Pds active set
+        function obj = Cls(active_constraints, params)
+        % Construct an initial Cls active set
         %
         % TODO(@anton) verify regions are nonempty and times are ascending
             arguments
                 active_constraints(1,:) cell
+                impulses(1,:) logical
                 params.times(1,:) double = []
                 params.stages(1,:) cell = {}
             end
+            nosnoc.error('not_implemented', 'CLS active set passing is not yet implemented')
             if ~isempty(params.times) && length(active_constraints) ~= length(params.times) % TODO(@anton) should we assume t_0 = 0?
                 nosnoc.error('size_mismatch', ['Active set components do not have matching size: n_regions=' num2str(length(active_constraints)) ', n_times=' num2str(length(params.times))]);
             elseif ~isempty(params.stages) && length(active_constraints) ~= length(params.stages)
