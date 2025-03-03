@@ -261,11 +261,13 @@ classdef Solver < handle
             end
             switch class(obj.model)
               case "nosnoc.model.Pss"
-                if ~strcmp(class(active_set), "nosnoc.activeset.Pss")
+                if metaclass(active_set) ~= ?nosnoc.activeset.Pss
                     nosnoc.error('type_mismatch', 'Wrong type of active set object passed');
                 end
               case "nosnoc.model.Heaviside"
-                error('not_implemented')
+                if ~ismember(metaclass(active_set), [?nosnoc.activeset.Pss, ?nosnoc.activeset.Heaviside])
+                    nosnoc.error('type_mismatch', 'Wrong type of active set object passed');
+                end
               case "nosnoc.model.Cls"
                 error('not_implemented')
               case "nosnoc.model.Pds"

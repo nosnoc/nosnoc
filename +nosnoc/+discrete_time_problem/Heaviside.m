@@ -943,7 +943,11 @@ classdef Heaviside < vdx.problems.Mpcc
         % TODO(@anton) this assumes no user complementarities, but how do we handle those?
             arguments
                 obj
-                active_set nosnoc.activeset.Heaviside
+                active_set
+            end
+            % Possibly preprocess if passed a PSS active set:
+            if metaclass(active_set) == ?nosnoc.activeset.Pss
+                active_set = nosnoc.activeset.Heaviside.from_pss(active_set, obj.model);
             end
             dims = obj.dcs.dims;
             dcs = obj.dcs;
