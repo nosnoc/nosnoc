@@ -41,4 +41,10 @@ classdef Heaviside < handle
             n_steps = length(obj.regions);
         end
     end
+
+    methods(Static)
+        function obj = from_pss(pss)
+        % Construct a heaviside active set from a pss active set.
+        end
+    end
 end
