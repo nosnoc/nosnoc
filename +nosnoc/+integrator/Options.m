@@ -2,6 +2,8 @@ classdef Options < handle
 
     properties
         integrator_plugin IntegratorType = IntegratorType.FESD; % Type of integrator to use.
+
+        print_level = 0
         
         %-------- FESD Integrator Specific -----------%
         

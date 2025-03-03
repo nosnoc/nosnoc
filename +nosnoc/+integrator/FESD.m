@@ -168,7 +168,9 @@ classdef FESD < handle
                 solver_stats = obj.solve();
                 t_current = t_current + opts.T;
                 if solver_stats.converged == 0
-                    disp(['integrator_fesd: did not converge in step ', num2str(ii), ' constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+                    if integrator_opts.print_level >=2
+                        disp(['integrator_fesd: did not converge in step ', num2str(ii), ' constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+                    end
                     if opts.dcs_mode == "CLS"
                         disp('provided initial guess in integrator step did not converge, trying anther inital guess.');
                         % This is a hack to try and kick the initialization.
@@ -189,16 +191,19 @@ classdef FESD < handle
                         solver_stats = obj.solve();
                         % reset the initialization.
                         obj.discrete_time_problem.w.init = w0;
-                        if solver_stats.converged == 0
-                            disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
-                        elseif opts.print_level >=2
-                            fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
+                        if integrator_opts.print_level >= 2
+                            if solver_stats.converged == 0
+                                disp(['integrator_fesd: did not converge in step ', num2str(ii), 'constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+                                
+                            else
+                                fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
                                 ii, opts.N_sim, t_current, opts.T_sim, solver_stats.cpu_time_total);
+                            end
                         end
                     end
-                elseif opts.print_level >=2
-                    fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
-                        ii, opts.N_sim, t_current, opts.T_sim, solver_stats.cpu_time_total);
+                elseif integrator_opts.print_level >=2
+                        fprintf('Integration step %d / %d (%2.3f s / %2.3f s) converged in %2.3f s. \n',...
+                            ii, opts.N_sim, t_current, opts.T_sim, solver_stats.cpu_time_total);
                 end
                 
                 if obj.opts.dcs_mode ~= DcsMode.CLS
