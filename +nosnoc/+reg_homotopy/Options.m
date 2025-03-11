@@ -120,6 +120,7 @@ classdef Options < handle
             
             obj.opts_casadi_nlp.worhp = struct();
             obj.opts_casadi_nlp.uno = struct();
+            obj.opts_casadi_nlp.fatrop = struct();
         end
 
         function [] = preprocess(obj)

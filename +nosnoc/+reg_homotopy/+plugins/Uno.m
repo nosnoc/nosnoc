@@ -37,6 +37,7 @@ classdef Uno < handle % TODO maybe handle not necessary, revisit.
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'snopt');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'worhp');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'ipopt');
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'fatrop');
             if solver_options.timeout_wall
                 if exist('time_remaining')
                     opts_casadi_nlp.uno.time_limit = char(string(time_remaining));

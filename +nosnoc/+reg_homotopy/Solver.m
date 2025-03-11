@@ -334,6 +334,8 @@ classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
                     obj.plugin = nosnoc.reg_homotopy.plugins.Worhp();
                   case 'uno'
                     obj.plugin = nosnoc.reg_homotopy.plugins.Uno();
+                  case 'fatrop'
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Fatrop();
                 end
 
                 if ~isempty(opts.ipopt_callback)
@@ -488,6 +490,8 @@ classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
                     obj.plugin = nosnoc.reg_homotopy.plugins.Worhp();
                   case 'uno'
                     obj.plugin = nosnoc.reg_homotopy.plugins.Uno();
+                  case 'fatrop'
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Fatrop();
                 end
 
                 % TODO figure out how to get mpcc in here without the horrible hack in the case of vdx mpcc passed in

@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-classdef Ipopt < handle % TODO maybe handle not necessary, revisit.
+classdef Fatrop < handle % TODO maybe handle not necessary, revisit.
     properties
 
     end
@@ -33,25 +33,16 @@ classdef Ipopt < handle % TODO maybe handle not necessary, revisit.
     methods
         function solver = construct_solver(obj, nlp, solver_options, time_remaining)
             opts_casadi_nlp = solver_options.opts_casadi_nlp;
-            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'fatrop');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'snopt');
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'ipopt');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'worhp');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'uno');
-            if solver_options.timeout_cpu
-                if exist('time_remaining')
-                    opts_casadi_nlp.ipopt.max_cpu_time = time_remaining;
-                else
-                    opts_casadi_nlp.ipopt.max_cpu_time = solver_options.timeout_cpu;
-                end
-            elseif solver_options.timeout_wall
-                if exist('time_remaining')
-                    opts_casadi_nlp.ipopt.max_wall_time = time_remaining;
-                else
-                    opts_casadi_nlp.ipopt.max_wall_time = solver_options.timeout_wall;
-                end
-            end
-
-            nlp.create_solver(opts_casadi_nlp);
+            opts_casadi_nlp.expand = true;
+            opts_casadi_nlp.fatrop.mu_init = 0.1;
+            opts_casadi_nlp.structure_detection = 'auto';
+            opts_casadi_nlp.debug = true;
+            opts_casadi_nlp.equality = nlp.g.lb == nlp.g.ub;
+            nlp.create_solver(opts_casadi_nlp, 'fatrop');
         end
 
         function solver_stats = cleanup_solver_stats(obj, solver_stats)

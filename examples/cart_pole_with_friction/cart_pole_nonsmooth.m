@@ -44,16 +44,23 @@ x_ref = [0; 180/180*pi; 0; 0]; % target position
 problem_options = nosnoc.Options();
 problem_options.T = 5;  % Time horizon
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
+problem_options.rk_representation = 'differential';
 problem_options.n_s = 3;
 problem_options.dcs_mode = 'Stewart';
-problem_options.N_stages = 20; % number of control intervals
-problem_options.N_finite_elements = 3; % number of finite element on every control interval
+problem_options.N_stages = 2; % number of control intervals
+problem_options.N_finite_elements = 1; % number of finite element on every control interval
+problem_options.cross_comp_mode = 'FE_FE';
 
 % solver options
 solver_options = nosnoc.reg_homotopy.Options();
 solver_options.N_homotopy = 15;
 solver_options.complementarity_tol = 1e-13;
 solver_options.sigma_N = 1e-13;
+solver_options.solver = 'fatrop';
+
+%mpecopt options
+%solver_options = mpecopt.Options();
+%solver_options.rho_TR_phase_i_init = 1;
 
 % other linear solvers require installation, check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions
 % solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';

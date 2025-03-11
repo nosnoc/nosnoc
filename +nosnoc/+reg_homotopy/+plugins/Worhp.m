@@ -35,6 +35,7 @@ classdef Worhp < handle % TODO maybe handle not necessary, revisit.
             opts_casadi_nlp = solver_options.opts_casadi_nlp;
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'ipopt');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'snopt');
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'fatrop');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'uno');
             if solver_options.timeout_wall
                 if exist('time_remaining')

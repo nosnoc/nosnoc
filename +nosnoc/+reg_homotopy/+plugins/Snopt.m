@@ -34,6 +34,7 @@ classdef Snopt < handle % TODO maybe handle not necessary, revisit.
         function solver = construct_solver(obj, nlp, solver_options, time_remaining)
             opts_casadi_nlp = solver_options.opts_casadi_nlp;
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'ipopt');
+            opts_casadi_nlp = rmfield(opts_casadi_nlp, 'fatrop');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'worhp');
             opts_casadi_nlp = rmfield(opts_casadi_nlp, 'uno');
             if solver_options.timeout_wall
