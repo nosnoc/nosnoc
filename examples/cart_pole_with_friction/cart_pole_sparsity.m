@@ -69,10 +69,4 @@ solver_options.sigma_N = 1e-13;
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
-% evaluate
-x_opt = ocp_solver.get("x");
-distance_to_target = abs(x_ref-x_opt(:,end));
-disp(['final difference to desired angle: ', num2str(distance_to_target(2), '%.3e'), ' rad'])
-
-% visualtize
-plot_cart_pole_trajectory(ocp_solver, problem_options.h_k(1), x_ref)
+nlp = ocp_solver.discrete_time_problem.solver.nlp;
