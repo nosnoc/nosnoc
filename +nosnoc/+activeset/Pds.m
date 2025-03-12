@@ -1,8 +1,8 @@
 classdef Pds < handle
     properties(SetAccess=private)
-        active_constraints
-        times
-        stages
+        active_constraints % List of sets of active constraint indices.
+        times              % Switch times.
+        stages             % Switch (stage, fe) pairs.
     end
 
     methods

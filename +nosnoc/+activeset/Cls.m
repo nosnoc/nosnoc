@@ -1,13 +1,13 @@
 classdef Cls < handle
     properties(SetAccess=private)
-        active_constraints
-        impulses
-        times
-        stages
+        active_constraints % List of sets of active constraint indices.
+        impulses           % List of impulse active sets at switch times.
+        times              % Switch times.
+        stages             % Switch (stage, fe) pairs.
     end
 
     methods
-        function obj = Cls(active_constraints, params)
+        function obj = Cls(active_constraints, impulses, params)
         % Construct an initial Cls active set
         %
         % TODO(@anton) verify regions are nonempty and times are ascending
@@ -24,6 +24,7 @@ classdef Cls < handle
                 nosnoc.error('size_mismatch', ['Active set components do not have matching size: n_regions=' num2str(length(active_constraints)) ', n_times=' num2str(length(params.stages))]);
             end
             obj.active_constraints = active_constraints;
+            obj.impulses = impulses
             obj.times = params.times;
             obj.stages = params.stages;
         end

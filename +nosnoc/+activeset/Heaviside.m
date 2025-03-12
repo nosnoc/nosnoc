@@ -1,10 +1,10 @@
 classdef Heaviside < handle
     properties(SetAccess=private)
-        I_0
-        I_1
-        I_free
-        times
-        stages
+        I_0    % List of sets of indices, whose corresponding step function is set to 0.
+        I_1    % List of sets of indices, whose corresponding step function is set to 1.
+        I_free % List of sets of indices, whose corresponding step function is set to [0,1].
+        times  % Switch times.
+        stages % Switch (stage, fe) pairs.
     end
 
     methods

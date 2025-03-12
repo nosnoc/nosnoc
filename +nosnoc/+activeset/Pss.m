@@ -1,8 +1,8 @@
 classdef Pss < handle
     properties(SetAccess=private)
-        regions
-        times
-        stages
+        regions % List of sets of regions which are active.
+        times   % Switch times.
+        stages  % Switch (stage, fe) pairs.
     end
 
     methods
@@ -13,7 +13,7 @@ classdef Pss < handle
             arguments
                 regions(1,:) cell
                 params.times(1,:) double = []
-                params.stages(1,:) cell = {}
+                params.stages(1,:) cell = {} 
             end
             if ~isempty(params.times) && length(regions) ~= length(params.times) % TODO(@anton) should we assume t_0 = 0?
                 nosnoc.error('size_mismatch', ['Active set components do not have matching size: n_regions=' num2str(length(regions)) ', n_times=' num2str(length(params.times))]);
