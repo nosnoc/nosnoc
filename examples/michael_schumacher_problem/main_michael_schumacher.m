@@ -162,7 +162,7 @@ ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.set_initial_active_set(active_set_guess);
 [IG,IH,I00] = ocp_solver.discrete_time_problem.process_active_set(active_set_guess);
 
-ocp_solver.solve('mpecopt', IG=IG, IH=IH);
+ocp_solver.solve('mpecopt');
 fprintf('Objective values is: %2.4f \n', ocp_solver.get_objective());
 %% plot
 plot_results_ms(model, problem_options, ocp_solver,...

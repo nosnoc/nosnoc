@@ -97,7 +97,7 @@ classdef Solver < handle
             end
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
             
-            obj.stats = obj.discrete_time_problem.solve();
+            obj.stats = obj.discrete_time_problem.solve(obj.active_set);
         end
 
         function ret = get(obj, field)
