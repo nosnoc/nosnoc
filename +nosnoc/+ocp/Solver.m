@@ -96,7 +96,7 @@ classdef Solver < handle
                 plugin = 'reg_homotopy'
             end
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
-            
+
             obj.stats = obj.discrete_time_problem.solve(obj.active_set);
         end
 
