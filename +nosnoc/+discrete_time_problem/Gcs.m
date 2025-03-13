@@ -811,6 +811,17 @@ classdef Gcs < vdx.problems.Mpcc
             if ~model.gcs_lift_gap_functions
                 nosnoc.error("unsupported", "Using active set for a GCS without lifting the gap functions is unsupported.")
             end
+
+            if ~isempty(active_set.times)
+                if active_set.times(end) ~= opts.T;
+                    nosnoc.error("invalid_active_set", "Passed active set guess must have it is last element match the terminal numerical time.")
+                end
+            else
+                end_stage = active_set.stages{end};
+                if end_stage(1) ~= opts.N_stages || end_stage(2) ~= opts.N_finite_elements(end);
+                    nosnoc.error("invalid_active_set", "Passed active set guess must have it is last element match the pair (N_stages, N_finite_elements(end)).")
+                end
+            end
             
             active_constraint_0 = active_set.active_constraints{1};
 

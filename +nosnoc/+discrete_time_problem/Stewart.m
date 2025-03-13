@@ -945,6 +945,17 @@ classdef Stewart < vdx.problems.Mpcc
                 nosnoc.error("unsupported", "Using active set passing with user complementarities is unsupported")
             end
 
+            if ~isempty(active_set.times)
+                if active_set.times(end) ~= opts.T;
+                    nosnoc.error("invalid_active_set", "Passed active set guess must have it is last element match the terminal numerical time.")
+                end
+            else
+                end_stage = active_set.stages{end};
+                if end_stage(1) ~= opts.N_stages || end_stage(2) ~= opts.N_finite_elements(end);
+                    nosnoc.error("invalid_active_set", "Passed active set guess must have it is last element match the terminal numerical time.")
+                end
+            end
+
             region_0 = active_set.regions{1};
             n_active = length(region_0);
             % Compute initial guess for theta/lambda based on the provided active set guess
