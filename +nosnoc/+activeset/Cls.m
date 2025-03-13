@@ -1,8 +1,8 @@
 classdef Cls < handle
     properties(SetAccess=private)
-        active_constraints % List of sets of active constraint indices.
+        active_constraints % List of sets of active constraint indices. E.g. [1,2] means f_{c,1} = 0 and f_{c,2} = 0 on an interval specified in times.
         impulses           % List of impulse active sets at switch times.
-        times              % Switch times.
+        times              % Switch times, i.e., grid points at which the constant active set changes to a new one.
         stages             % Switch (stage, fe) pairs.
     end
 

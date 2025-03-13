@@ -2,8 +2,8 @@ classdef Heaviside < handle
     properties(SetAccess=private)
         I_0    % List of sets of indices, whose corresponding step function is set to 0.
         I_1    % List of sets of indices, whose corresponding step function is set to 1.
-        I_free % List of sets of indices, whose corresponding step function is set to [0,1].
-        times  % Switch times.
+        I_free % List of sets of indices, whose corresponding step function is set to [0,1]. (Corresponds to sliding modes)
+        times  % % Switch times, i.e., grid points at which the constant active set changes to a new one.
         stages % Switch (stage, fe) pairs.
     end
 

@@ -1,7 +1,7 @@
 classdef Pds < handle
     properties(SetAccess=private)
-        active_constraints % List of sets of active constraint indices.
-        times              % Switch times.
+        active_constraints % List of sets of active constraint indices. E.g. [1,2] means c_{1} = 0 and c_{2} = 0 on an interval specified in times.
+        times              % Switch times, i.e., grid points at which the constant active set changes to a new one, provided in regions.
         stages             % Switch (stage, fe) pairs.
     end
 
