@@ -950,7 +950,7 @@ classdef PDSObjects < vdx.problems.Mpcc
         function stats = solve(obj, active_set)
             arguments
                 obj
-                active_set nosnoc.activeset.PDSObjects = nosnoc.activeset.PDSObjects.empty;
+                active_set {mustBeA(active_set,["nosnoc.activeset.PDSObjects","double"])} = nosnoc.activeset.PDSObjects.empty;
             end
             opts = obj.opts;
             T_val = obj.p.T().val;

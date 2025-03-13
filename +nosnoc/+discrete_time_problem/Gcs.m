@@ -757,7 +757,7 @@ classdef Gcs < vdx.problems.Mpcc
         function stats = solve(obj, active_set)
             arguments
                 obj
-                active_set nosnoc.activeset.Pds = nosnoc.activeset.Pds.empty;
+                active_set {mustBeA(active_set,["nosnoc.activeset.Pds","double"])} = nosnoc.activeset.Pds.empty;
             end
             opts = obj.opts;
             T_val = obj.p.T().val;
