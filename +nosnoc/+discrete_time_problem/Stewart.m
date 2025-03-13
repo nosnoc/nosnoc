@@ -946,7 +946,7 @@ classdef Stewart < vdx.problems.Mpcc
             % TODO(@anton) handle initial algebraics
             region_0 = active_set.regions{1};
             n_active = length(region_0);
-
+            % Compute initial guess for theta/lambda based on the provided active set guess
             theta_values = zeros(dims.n_theta,1);
             theta_values(region_0) = 1/n_active;
             lambda_values = ones(dims.n_theta,1);
@@ -965,7 +965,7 @@ classdef Stewart < vdx.problems.Mpcc
 
                     region_ii = active_set.regions{ii};
                     n_active = length(region_ii);
-
+                    % Compute initial guess for theta/lambda based on the provided active set guess
                     theta_values = zeros(dims.n_theta,1);
                     theta_values(region_ii) = 1/n_active;
                     lambda_values = ones(dims.n_theta,1);
@@ -999,7 +999,7 @@ classdef Stewart < vdx.problems.Mpcc
                 jj = 1; % Control stage index
                 kk = 0; % FE index
                 t_curr = 0;
-                % Go through the active set by times
+                % Go through the active set by stages
                 for ii=1:active_set.get_n_steps()
                     done_stage = false;
                     stage_end = active_set.stages{ii};
