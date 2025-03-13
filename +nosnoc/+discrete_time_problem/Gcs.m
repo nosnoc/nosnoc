@@ -792,8 +792,6 @@ classdef Gcs < vdx.problems.Mpcc
         % This method takes a nosnoc active set for a PSS and produces an active set for the
         % complementarity constraints in this problem. It returns these as a boolean array.
         %
-        % TODO(@anton) there should be a cleaner way of doing this but this is "easy".
-        % TODO(@anton) this assumes no user complementarities, but how do we handle those?
         % TODO(@anton) This only works if we lift c. in principle this is why we should backcalculate.
             arguments
                 obj
@@ -804,6 +802,13 @@ classdef Gcs < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
 
+            if ~isempty(model.G_path)
+                nosnoc.error("unsupported", "Using active set passing with user complementarities is unsupported.")
+            end
+
+            if ~model.gcs_lift_gap_functions
+                nosnoc.error("unsupported", "Using active set for a GCS without lifting the gap functions is unsupported.")
+            end
             % TODO(@anton) handle initial algebraics
             active_constraint_0 = active_set.active_constraints{1};
 

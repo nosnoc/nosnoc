@@ -932,8 +932,6 @@ classdef Stewart < vdx.problems.Mpcc
         function [IG,IH,I00] = process_active_set(obj, active_set)
         % This method takes a nosnoc active set for a PSS and produces an active set for the
         % complementarity constraints in this problem. It returns these as a boolean array.
-        %
-        % TODO(@anton) this assumes no user complementarities, but how do we handle those?
             arguments
                 obj
                 active_set nosnoc.activeset.Pss
@@ -943,7 +941,10 @@ classdef Stewart < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
 
-            % TODO(@anton) handle initial algebraics
+            if ~isempty(model.G_path)
+                nosnoc.error("unsupported", "Using active set passing with user complementarities is unsupported")
+            end
+
             region_0 = active_set.regions{1};
             n_active = length(region_0);
             % Compute initial guess for theta/lambda based on the provided active set guess

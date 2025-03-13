@@ -1114,15 +1114,15 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % TODO(@anton) this returns mpccresults struct from homotopy
             import casadi.*;
             p = inputParser;
-            addParameter(p, 'x0', []);
-            addParameter(p, 'y0', []);
-            addParameter(p, 'lbx', []);
-            addParameter(p, 'ubx', []);
-            addParameter(p, 'lbg', []);
-            addParameter(p, 'ubg', []);
-            addParameter(p, 'p', []);
-            addParameter(p, 'lam_g0', []);
-            addParameter(p, 'lam_x0', []);
+            addParameter(p, 'x0', []);      % Initial guess.
+            addParameter(p, 'y0', []);      % Initial complementarity active set guess (ignored by this solver).
+            addParameter(p, 'lbx', []);     % Variable lower bounds.
+            addParameter(p, 'ubx', []);     % Variable upper bounds.
+            addParameter(p, 'lbg', []);     % Constraint lower bounds.
+            addParameter(p, 'ubg', []);     % Constraint upper bounds.
+            addParameter(p, 'p', []);       % Parameter upper bounds.
+            addParameter(p, 'lam_g0', []);  % Initial constraint multipliers. (CasADi+ipopt convention)
+            addParameter(p, 'lam_x0', []);  % Initial variable bound multipliers. (CasADi+ipopt convention)
             % TODO(@anton) Also perhaps initial complementarity multipliers but need to think about
             %              how exactly to implement that.
             parse(p, index_op(1).Indices{:});
