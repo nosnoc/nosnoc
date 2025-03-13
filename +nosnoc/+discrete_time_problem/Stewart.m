@@ -952,6 +952,8 @@ classdef Stewart < vdx.problems.Mpcc
             theta_values(region_0) = 1/n_active;
             lambda_values = ones(dims.n_theta,1);
             lambda_values(region_0) = 0;
+
+            % Set initial algebraic values
             obj.w.theta(0,0,opts.n_s).init = theta_values;
             obj.w.lambda(0,0,opts.n_s).init = lambda_values;
 
@@ -988,7 +990,8 @@ classdef Stewart < vdx.problems.Mpcc
                         end
                         kk = 0; % Reset fe counter
                     end
-                    % handle entering regions TODO(@anton) verify this is correct
+                    % handle entering regions.
+                    % This is done to maintain cross-complementarity feasiblity with the next stage.
                     if ii ~= active_set.get_n_steps()
                         region_next = active_set.regions{ii+1};
                         entering_regions = setdiff(region_next, region_ii);
@@ -1034,7 +1037,8 @@ classdef Stewart < vdx.problems.Mpcc
                             kk = 0; % Reset fe counter
                         end
                     end
-                    % handle entering regions TODO(@anton) verify this is correct
+                    % handle entering regions.
+                    % This is done to maintain cross-complementarity feasiblity with the next stage.
                     if ii ~= active_set.get_n_steps()
                         fprintf('%d %d %d\n', jj,kk,ll)
                         region_next = active_set.regions{ii+1};

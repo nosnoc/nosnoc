@@ -782,6 +782,8 @@ classdef Gcs < vdx.problems.Mpcc
             if ~isempty(active_set)
                 [IG,IH,~] = obj.process_active_set(active_set);
             else
+                % IG and IH are empty which means no active set guess is passed.
+                % Solvers may use the initial guess or some other approach.
                 IG = [];
                 IH = [];
             end
@@ -809,7 +811,7 @@ classdef Gcs < vdx.problems.Mpcc
             if ~model.gcs_lift_gap_functions
                 nosnoc.error("unsupported", "Using active set for a GCS without lifting the gap functions is unsupported.")
             end
-            % TODO(@anton) handle initial algebraics
+            
             active_constraint_0 = active_set.active_constraints{1};
 
             c_values = ones(dims.n_c,1);
@@ -856,7 +858,8 @@ classdef Gcs < vdx.problems.Mpcc
                         end
                         kk = 0; % Reset fe counter
                     end
-                    % handle entering active_constraints TODO(@anton) verify this is correct
+                    % handle entering active_constraints
+                    % This is done to maintain cross-complementarity feasiblity with the next stage.
                     if ii ~= active_set.get_n_steps()
                         active_constraint_next = active_set.active_constraints{ii+1};
                         entering_active_constraints = setdiff(active_constraint_next, active_constraint_ii);
@@ -870,7 +873,7 @@ classdef Gcs < vdx.problems.Mpcc
                 jj = 1; % Control stage index
                 kk = 0; % FE index
                 t_curr = 0;
-                % Go through the active set by times
+                % Go through the active set by stages
                 for ii=1:active_set.get_n_steps()
                     done_stage = false;
                     stage_end = active_set.stages{ii};
@@ -904,7 +907,8 @@ classdef Gcs < vdx.problems.Mpcc
                             kk = 0; % Reset fe counter
                         end
                     end
-                    % handle entering active_constraints TODO(@anton) verify this is correct
+                    % handle entering active_constraints
+                    % This is done to maintain cross-complementarity feasiblity with the next stage.
                     if ii ~= active_set.get_n_steps()
                         active_constraint_next = active_set.active_constraints{ii+1};
                         entering_active_constraints = setdiff(active_constraint_next, active_constraint_ii);
