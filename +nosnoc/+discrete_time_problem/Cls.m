@@ -1307,7 +1307,7 @@ classdef Cls < vdx.problems.Mpcc
         function stats = solve(obj, active_set)
             arguments
                 obj
-                active_set = []
+                active_set {mustBeA(active_set,"nosnoc.activeset.Base")} = nosnoc.activeset.Cls.empty;
             end
             opts = obj.opts;
             T_val = obj.p.T().val;

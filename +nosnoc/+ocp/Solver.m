@@ -8,7 +8,7 @@ classdef Solver < handle
         discrete_time_problem % Discretized optimal control problem.
         stats % Stats, containing both solver and reformulation information.
 
-        active_set % Current active set. TODO(@anton) do we need to store this? Should it be updated after solve? etc.
+        active_set = nosnoc.activeset.Base.empty% Current active set. TODO(@anton) do we need to store this? Should it be updated after solve? etc.
                    % TODO(@anton) do we want to default this to x0 initialization?
     end
 
