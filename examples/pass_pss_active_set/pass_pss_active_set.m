@@ -20,6 +20,7 @@ problem_options.T = T;    % Time horizon (for a time-optimal problem, the actual
 
 problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_1;
 problem_options.cross_comp_mode = 'FE_FE';
+problem_options.dcs_mode = 'Heaviside';
 problem_options.time_optimal_problem = 0;
 
 
@@ -59,13 +60,14 @@ active_set_guess = nosnoc.activeset.Pss({[1]},'times', [T]);
 % active_set_guess = nosnoc.activeset.Pss({[1],[2],[1]},'stages',{[3,2],[6,1],[10,3]});
 
 % Create a nosnoc solver.
-solver_options.mpecopt.initialization_strategy = 'TakeProvidedActiveSet';
-solver_options.mpecopt.rescale_large_objective_gradients = true;
-solver_options.mpecopt.rho_TR_phase_ii_init = 10;
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+mpecopt_options = mpecopt.Options();
+mpecopt.initialization_strategy = 'TakeProvidedActiveSet';
+mpecopt.rescale_large_objective_gradients = true;
+mpecopt.rho_TR_phase_ii_init = 10;
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, mpecopt_options);
 % Set active set
 ocp_solver.set_initial_active_set(active_set_guess);
-ocp_solver.solve('mpecopt');
+ocp_solver.solve();
 
 %% Extract reults - use ocp_solver methods to extact
 t_grid = ocp_solver.get_time_grid(); % get time grid for differential states

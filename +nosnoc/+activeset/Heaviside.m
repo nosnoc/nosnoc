@@ -56,17 +56,20 @@ classdef Heaviside < nosnoc.activeset.Base
             I_0 = {};
             I_1 = {};
             I_free = {};
+            % For each phase we need to translate to step functions
             for ii=1:pss.get_n_steps
                 region_ii = pss.regions{ii};
-                Sp = S(region_ii, :) == 1;
-                Sn = S(region_ii, :) == -1;
-                Sdc = S(region_ii, :) == 0;
-                
-                I_0_ii = Sn(region_ii(1),:);
-                I_1_ii = Sp(region_ii(1),:);
-                I_free_ii = Sdc(region_ii(1),:);
+                Sp = S(region_ii, :) == 1;  % For the current region which indicators are positive.
+                Sn = S(region_ii, :) == -1; % For the current region which indicators are negative.
+                Sdc = S(region_ii, :) == 0; % For the current region which indicators are ignored.
+
+                % Set up initial step activiy
+                I_0_ii = Sn(region_ii(1),:); % Negative means step=0
+                I_1_ii = Sp(region_ii(1),:); % Positive means step=1
+                I_free_ii = Sdc(region_ii(1),:); % Dont care we choose to put in "sliding mode".
                 for jj=2:length(region_ii)
-                    % update here to don't care if they are different from before
+                    % If a given index is both positive and negative in two different regions they must be
+                    % sliding mode so move that indicator to the I_free set.
                     move_to_free = (I_0_ii & Sp(region_ii(jj),:)) | I_1_ii & Sn(region_ii(jj),:);
                     I_0_ii = I_0_ii & ~move_to_free;
                     I_1_ii = I_1_ii & ~move_to_free;

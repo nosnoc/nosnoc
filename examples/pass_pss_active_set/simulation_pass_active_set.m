@@ -23,7 +23,7 @@ problem_options.step_equilibration = "heuristic_diff";
 % problem_options.rho_terminal_numerical_time = 1e4;
 % problem_options.step_equilibration = "direct_homotopy_lift";
 problem_options.cross_comp_mode = "FE_FE";
-problem_options.dcs_mode = 'Heaviside';
+problem_options.dcs_mode = 'Stewart';
 % problem_options.cross_comp_mode = "STAGE_STAGE";
 
 model = nosnoc.model.Pss(); % Initialize a nosnoc model, (depending on the underlying nonsmooth model, several options exist)
@@ -73,20 +73,37 @@ ocp_solver.solve();
 t_grid = ocp_solver.get_time_grid(); % get time grid for differential states
 x_opt = ocp_solver.get("x");  % get optimal solution for differential states
 
-t_grid_full = ocp_solver.get_time_grid_full();
-theta_opt = ocp_solver.get_full("theta");
-lambda_opt = ocp_solver.get_full("lambda");
 
 x_opt = x_opt(1,:);
 figure
 subplot(311)
 plot(t_grid,x_opt);
 xline(t_grid,'k')
-subplot(312)
-plot(t_grid_full,theta_opt,'.-')
-hold on;
-xline(t_grid,'k')
-subplot(313)
-plot(t_grid_full,lambda_opt,'.-')
-hold on;
-xline(t_grid,'k')
+if problem_options.dcs_mode == 'Stewart'
+    t_grid_full = ocp_solver.get_time_grid_full();
+    theta_opt = ocp_solver.get_full("theta");
+    lambda_opt = ocp_solver.get_full("lambda");
+
+    subplot(312)
+    plot(t_grid_full,theta_opt,'.-')
+    hold on;
+    xline(t_grid,'k')
+    subplot(313)
+    plot(t_grid_full,lambda_opt,'.-')
+    hold on;
+    xline(t_grid,'k')
+else
+    t_grid_full = ocp_solver.get_time_grid_full();
+    alpha_opt = ocp_solver.get_full("alpha");
+    lambda_p_opt = ocp_solver.get_full("lambda_p");
+    lambda_n_opt = ocp_solver.get_full("lambda_n");
+    subplot(312)
+    plot(t_grid_full,alpha_opt,'.-')
+    hold on;
+    xline(t_grid,'k')
+    subplot(313)
+    hold on;
+    plot(t_grid_full,lambda_p_opt,'.-')
+    plot(t_grid_full,lambda_n_opt,'--')
+    xline(t_grid,'k')
+end

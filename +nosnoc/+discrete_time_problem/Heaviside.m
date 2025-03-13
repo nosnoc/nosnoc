@@ -896,8 +896,6 @@ classdef Heaviside < vdx.problems.Mpcc
             obj.w.sort_by_index();
             obj.g.sort_by_index();
 
-            solver_options.assume_lower_bounds = true; % For nosnoc specific problems this should always be true otherwise the numerics in the relaxed NLP become nasty due to duplicate lb constraints.
-
             obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
         end
 
@@ -954,14 +952,16 @@ classdef Heaviside < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
 
+            % Get initial active set
             I_0_0 = active_set.I_0{1};
             I_1_0 = active_set.I_1{1};
             I_free_0 = active_set.I_free{1};
 
+            % Create corresponding algebraics.
             alpha_values = zeros(dims.n_alpha,1);
             alpha_values(I_0_0) = 0;
             alpha_values(I_1_0) = 1;
-            alpha_values(I_free_0) = 0.5; % TODO(@anton) is there a generically better formula?
+            alpha_values(I_free_0) = 0.5; 
             lambda_n_values = zeros(dims.n_alpha,1);
             lambda_n_values(I_0_0) = 1;
             lambda_p_values = zeros(dims.n_alpha,1);
@@ -982,14 +982,16 @@ classdef Heaviside < vdx.problems.Mpcc
                     I_1_ii = active_set.I_1{ii};
                     I_free_ii = active_set.I_free{ii};
 
+                    % Generate corresponding algebraics
                     alpha_values = zeros(dims.n_alpha,1);
                     alpha_values(I_0_ii) = 0;
                     alpha_values(I_1_ii) = 1;
-                    alpha_values(I_free_ii) = 0.5; % TODO(@anton) is there a generically better formula?
+                    alpha_values(I_free_ii) = 0.5;
                     lambda_n_values = zeros(dims.n_alpha,1);
                     lambda_n_values(I_0_ii) = 1;
                     lambda_p_values = zeros(dims.n_alpha,1);
                     lambda_p_values(I_1_ii) = 1;
+                    % iterate until we reach the switch point, setting the algebraics
                     for jj=jj:opts.N_stages
                         for kk=(kk+1):opts.N_finite_elements(jj)
                             for ll=1:opts.n_s % TODO(@anton) handle GL
@@ -1008,7 +1010,8 @@ classdef Heaviside < vdx.problems.Mpcc
                         end
                         kk = 0; % Reset fe counter
                     end
-                    % handle entering regions TODO(@anton) verify this is correct
+                    % handle entering regions.
+                    % This is done to maintain cross-complementarity feasiblity with the next stage.
                     if ii ~= active_set.get_n_steps()
                         I_0_next = active_set.I_0{ii+1};
                         I_1_next = active_set.I_1{ii+1};
@@ -1024,7 +1027,7 @@ classdef Heaviside < vdx.problems.Mpcc
                 jj = 1; % Control stage index
                 kk = 0; % FE index
                 t_curr = 0;
-                % Go through the active set by times
+                % Go through the active set by stages
                 for ii=1:active_set.get_n_steps()
                     done_stage = false;
                     stage_end = active_set.stages{ii};
@@ -1032,10 +1035,12 @@ classdef Heaviside < vdx.problems.Mpcc
                     N_end = stage_end(1);
                     n_end = stage_end(2);
 
+                    % Get initial active set.
                     I_0_ii = active_set.I_0{ii};
                     I_1_ii = active_set.I_1{ii};
                     I_free_ii = active_set.I_free{ii};
 
+                    % Create corresponding algebraics.
                     alpha_values = zeros(dims.n_alpha,1);
                     alpha_values(I_0_ii) = 0;
                     alpha_values(I_1_ii) = 1;
@@ -1044,8 +1049,9 @@ classdef Heaviside < vdx.problems.Mpcc
                     lambda_n_values(I_0_ii) = 1;
                     lambda_p_values = zeros(dims.n_alpha,1);
                     lambda_p_values(I_1_ii) = 1;
-
+                    % iterate until we reach the switch point, setting the algebraics
                     for jj=jj:N_end
+                        % if we reached the correct stage then we are done with this phase.
                         if jj==N_end
                             done = true;
                             kk_end = n_end;
@@ -1064,7 +1070,8 @@ classdef Heaviside < vdx.problems.Mpcc
                             kk = 0; % Reset fe counter
                         end
                     end
-                    % handle entering regions TODO(@anton) verify this is correct
+                    % handle entering regions.
+                    % This is done to maintain cross-complementarity feasiblity with the next stage.
                     if ii ~= active_set.get_n_steps()
                         I_0_next = active_set.I_0{ii+1};
                         I_1_next = active_set.I_1{ii+1};
