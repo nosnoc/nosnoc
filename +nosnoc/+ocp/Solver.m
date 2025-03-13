@@ -97,7 +97,7 @@ classdef Solver < handle
             switch class(obj.solver_opts)
               case "nosnoc.reg_homotopy.Options"
                 plugin = 'reg_homotopy';
-                obj.solver_opts.assume_lower_bounds = true;
+                obj.solver_opts.assume_lower_bounds = true; % For nosnoc specific problems this should always be true otherwise the numerics in the relaxed NLP become nasty due to duplicate lb constraints.
               case "mpecopt.Options"
                 plugin = 'mpecopt';
             end
