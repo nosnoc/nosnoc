@@ -1,4 +1,4 @@
-classdef Cls < handle
+classdef Cls < nosnoc.activeset.Base
     properties(SetAccess=private)
         active_constraints % List of sets of active constraint indices. E.g. [1,2] means f_{c,1} = 0 and f_{c,2} = 0 on an interval specified in times.
         impulses           % List of impulse active sets at switch times.

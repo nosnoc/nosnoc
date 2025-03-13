@@ -1,4 +1,4 @@
-classdef Pss < handle
+classdef Pss < nosnoc.activeset.Base
     properties(SetAccess=private)
         regions % List of sets of regions which are active. If multiple regions are active, e.g., R_1 and R_2, then a sliding mode between R_1 and R_2 is assumed.
         times   % Switch times, i.e., grid points at which the constant active set changes to a new one, provided in regions.

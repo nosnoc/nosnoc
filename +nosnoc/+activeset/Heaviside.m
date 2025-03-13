@@ -1,4 +1,4 @@
-classdef Heaviside < handle
+classdef Heaviside < nosnoc.activeset.Base
     properties(SetAccess=private)
         I_0    % List of sets of indices, whose corresponding step function is set to 0.
         I_1    % List of sets of indices, whose corresponding step function is set to 1.
