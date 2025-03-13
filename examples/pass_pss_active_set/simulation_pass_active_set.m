@@ -5,7 +5,7 @@ import nosnoc.*
 sliding_mode = 0;
 
 problem_options = nosnoc.Options(); % Initialize all options related to the optimal control or simulation problem.
-solver_options = nosnoc.solver.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
+solver_options = mpecopt.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
 
 
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; % Type of scheme
@@ -23,6 +23,7 @@ problem_options.step_equilibration = "heuristic_diff";
 % problem_options.rho_terminal_numerical_time = 1e4;
 % problem_options.step_equilibration = "direct_homotopy_lift";
 problem_options.cross_comp_mode = "FE_FE";
+problem_options.dcs_mode = 'Heaviside';
 % problem_options.cross_comp_mode = "STAGE_STAGE";
 
 model = nosnoc.model.Pss(); % Initialize a nosnoc model, (depending on the underlying nonsmooth model, several options exist)
@@ -37,11 +38,16 @@ model.ubx = inf;
 if sliding_mode 
     f_1 = 3;
     f_2 = -1;
+
+    % active_set_guess = nosnoc.activeset.Heaviside({[1], [1 2]},'times', [problem_options.T/2 ,problem_options.T]);
     active_set_guess = nosnoc.activeset.Pss({[1], [1 2]},'times', [problem_options.T/2 ,problem_options.T]);
+
 else
     f_1 = 3;
     f_2 = 1;
-    active_set_guess = nosnoc.activeset.Pss({[1], [2]},'times', [problem_options.T/2 ,problem_options.T]);
+    % active_set_guess = nosnoc.activeset.Heaviside({[1], [2]},'times', [problem_options.T/2 ,problem_options.T]);
+    active_set_guess = nosnoc.activeset.Pss({[1], [1 2]},'times', [problem_options.T/2 ,problem_options.T]);
+    % active_set_guess = nosnoc.activeset.Heaviside({[1], [1 2]},'times', [problem_options.T/2 ,problem_options.T]);
 end
 % Define the regions of the PSS
 model.c = x;
@@ -49,16 +55,14 @@ model.S = [-1;1]; % Region R_1 is defined by c<0 (hence the -1), region R_2 by c
 model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of every region.
 
 
-
 % Create a nosnoc solver.
-solver_options.mpecopt.initialization_strategy = 'TakeProvidedActiveSet';
-solver_options.mpecopt.rescale_large_objective_gradients = true;
-solver_options.mpecopt.rho_TR_phase_ii_init = 1e-3;
+solver_options.initialization_strategy = 'TakeProvidedActiveSet';
+solver_options.rescale_large_objective_gradients = true;
+solver_options.rho_TR_phase_ii_init = 1e-3;
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 % Set active set
 ocp_solver.set_initial_active_set(active_set_guess);
-ocp_solver.solve('mpecopt');
-% ocp_solver.solve('reg_homotopy'); % TODO: After mpecopt called this does not change - is it fixed with next PR, is this indented behaviour?
+ocp_solver.solve();
 
 
 % Create a nosnoc solver using homotopy solver%ocp_solver = nosnoc.ocp.Solver(model, problem_options, homotopy_options);
