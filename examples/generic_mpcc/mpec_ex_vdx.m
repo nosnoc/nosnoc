@@ -39,10 +39,7 @@ mpccsol_opts.calculate_stationarity_type = 1;
 solver = mpccsol('generic_mpcc', 'reg_homotopy', mpcc, mpccsol_opts);
 
 
-mpcc_results = solver('x0', x0,...
-    'lbx', lbx,...
-    'ubx', ubx,...
-    'p',p0);
+mpcc_results = solver('x0', x0,'lbx', lbx,'ubx', ubx,'p',p0);
 
 disp(mpcc_results.x)
 

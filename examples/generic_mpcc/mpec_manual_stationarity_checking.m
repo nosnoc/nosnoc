@@ -43,6 +43,7 @@ mpcc.f = f;
 solver = mpccsol('solver_mpecc', 'reg_homotopy', mpcc, mpccsol_opts);
 mpcc_results = solver('x0', x0,'lbx', lbx,'ubx', ubx);
 disp(mpcc_results.x)
+%% Check stationarity points 
 
 % Try calculating b-stationarity before getting polished result:
 [solution, improved_point, b_stat] = solver.check_b_stationarity(mpcc_results.x);
