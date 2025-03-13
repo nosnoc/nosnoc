@@ -250,7 +250,7 @@ classdef Solver < handle
         % Set initial active set.
             arguments
                 obj
-                active_set(1,1) 
+                active_set(1,1) {mustBeA(active_set, "nosnoc.activeset.Base")} % Passed active set.
             end
             switch class(obj.model)
               case "nosnoc.model.Pss"

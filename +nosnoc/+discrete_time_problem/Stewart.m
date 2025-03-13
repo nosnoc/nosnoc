@@ -894,7 +894,7 @@ classdef Stewart < vdx.problems.Mpcc
         function stats = solve(obj, active_set)
             arguments
                 obj
-                active_set {mustBeA(active_set,"nosnoc.activeset.Base")} = nosnoc.activeset.Pss.empty;
+                active_set {mustBeA(active_set,"nosnoc.activeset.Base")} = nosnoc.activeset.Pss.empty; % Must be either pss active set or an empty base active set.
             end
             opts = obj.opts;
             T_val = obj.p.T().val;
