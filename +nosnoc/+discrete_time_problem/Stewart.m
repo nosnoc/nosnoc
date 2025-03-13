@@ -933,7 +933,6 @@ classdef Stewart < vdx.problems.Mpcc
         % This method takes a nosnoc active set for a PSS and produces an active set for the
         % complementarity constraints in this problem. It returns these as a boolean array.
         %
-        % TODO(@anton) there should be a cleaner way of doing this but this is "easy".
         % TODO(@anton) this assumes no user complementarities, but how do we handle those?
             arguments
                 obj
