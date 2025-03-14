@@ -53,17 +53,19 @@ model.f_q = u^2;
 
 % Define active set guess:
 active_set_guess = nosnoc.activeset.Pss({[1],[2],[1]},'times', [T/4,3/4*T,T]);
-active_set_guess = nosnoc.activeset.Pss({[1]},'times', [T]);
+%active_set_guess = nosnoc.activeset.Pss({[1]},'times', [T]);
 %active_set_guess = nosnoc.activeset.Pss({[1]},'times', [T-5]); % THROWS ERROR!
 % Alternatively you can directly pass the indices of the switches as (control stage, finite element) pairs.
 % This can be nice if you don't know anything about the specific times but know a general switching sequence.
 % active_set_guess = nosnoc.activeset.Pss({[1],[2],[1]},'stages',{[3,2],[6,1],[10,3]});
+% We can also directly pass a Heaviside active set if we want:
+%active_set_guess = nosnoc.activeset.Heaviside({[1],[],[1]},{[],[1],[]},{[],[],[]},'times', [T/4,3/4*T,T]);
 
 % Create a nosnoc solver.
 mpecopt_options = mpecopt.Options();
-mpecopt.initialization_strategy = 'TakeProvidedActiveSet';
-mpecopt.rescale_large_objective_gradients = true;
-mpecopt.rho_TR_phase_ii_init = 10;
+mpecopt_options.initialization_strategy = 'TakeProvidedActiveSet';
+mpecopt_options.rescale_large_objective_gradients = true;
+mpecopt_options.rho_TR_phase_ii_init = 10;
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, mpecopt_options);
 % Set active set
 ocp_solver.set_initial_active_set(active_set_guess);

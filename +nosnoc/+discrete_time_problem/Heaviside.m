@@ -952,12 +952,12 @@ classdef Heaviside < vdx.problems.Mpcc
             model = obj.model;
             opts = obj.opts;
 
-            % Get initial active set
+            % Get initial stage active set.
             I_0_0 = active_set.I_0{1};
             I_1_0 = active_set.I_1{1};
             I_free_0 = active_set.I_free{1};
 
-            % Create corresponding algebraics.
+            % Create corresponding algebraics and set them in initialization.
             alpha_values = zeros(dims.n_alpha,1);
             alpha_values(I_0_0) = 0;
             alpha_values(I_1_0) = 1;
