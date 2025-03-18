@@ -50,7 +50,8 @@ problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 n_s = 3;
 problem_options.n_s = n_s;
 problem_options.dcs_mode = 'Stewart';
-problem_options.N_stages = 2; % number of control intervals
+N_stages = 2;
+problem_options.N_stages = N_stages; % number of control intervals
 N_fe = 2;
 problem_options.N_finite_elements = N_fe; % number of finite element on every control interval
 problem_options.cross_comp_mode = 'FE_FE';
@@ -73,48 +74,74 @@ solver_options.sigma_N = 1e-13;
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 
+%% Sparsity
 close all;
 nlp = ocp_solver.discrete_time_problem.solver.nlp;
-dyn = [];
-alg = [];
+dyn = {};
+alg = {};
+comp = {};
 int = [];
-w = [nlp.w.x(0,0,2);nlp.w.lambda(0,0,2)];
+w = [nlp.w.x(0,0,n_s);nlp.w.lambda(0,0,n_s)];
 w_alt = [nlp.w.x(0,0,2);nlp.w.lambda(0,0,2)];
-for ii=1:N_fe
-    x = [];
-    lam = [];
-    theta = [];
-    mu = [];
-    for jj=1:n_s
-        dyn = [dyn;nlp.g.dynamics(1,ii,jj)];
-        alg = [alg;nlp.g.algebraic(1,ii,jj)];
-        int = [int;nlp.g.dynamics(1,ii,jj);nlp.g.algebraic(1,ii,jj)];
-        w = [w;nlp.w.x(1,ii,jj);nlp.w.lambda(1,ii,jj);nlp.w.theta(1,ii,jj);nlp.w.mu(1,ii,jj)];
-        x = [x;nlp.w.x(1,ii,jj)];
-        lam = [lam;nlp.w.lambda(1,ii,jj)];
-        theta = [theta;nlp.w.theta(1,ii,jj)];
-        mu = [mu;nlp.w.mu(1,ii,jj)];
+
+f = nlp.f;
+
+x = {};
+lam = {};
+theta = {};
+mu = {};
+h = {};
+u = {};
+
+U = {};
+K = {};
+W = {};
+R = {};
+Q = {};
+S = {};
+for ii=1:N_stages
+    w_ii = [];
+    for jj=1:N_fe
+        for kk=1:n_s
+            dyn{ii,jj,kk} = nlp.g.dynamics(ii,jj,kk);
+            alg{ii,jj,kk} = nlp.g.algebraic(ii,jj,kk);
+            int = [int;nlp.g.dynamics(ii,jj,kk);nlp.g.algebraic(ii,jj,kk)];
+            w = [w;nlp.w.x(ii,jj,kk);nlp.w.lambda(ii,jj,kk);nlp.w.theta(ii,jj,kk);nlp.w.mu(ii,jj,kk)];
+            x{ii,jj,kk} = [nlp.w.x(ii,jj,kk)];
+            lam{ii,jj,kk} = [nlp.w.lambda(ii,jj,kk)];
+            theta{ii,jj,kk} = [nlp.w.theta(ii,jj,kk)];
+            mu{ii,jj,kk} = [nlp.w.mu(ii,jj,kk)];
+        end
+        comp{ii,jj} = nlp.g.cross_comp(ii,jj);
+        int = [int;nlp.g.cross_comp(ii,jj)];
+        w = [w;nlp.w.h(ii,jj)];
+        w_alt = [w_alt;vertcat(x{ii,jj,:},lam{ii,jj,:},theta{ii,jj,:},mu{ii,jj,:});nlp.w.h(ii,jj)];
+        h{ii,jj} = nlp.w.h(ii,jj);
     end
-    w = [w;nlp.w.h(1,ii)]
-    w_alt = [w_alt;x;lam;theta;mu;nlp.w.h(1,ii)];
+    u{ii} = nlp.w.u(ii);
+    K{ii} = vertcat(x{ii,:,:},lam{ii,:,:});
+    U{ii} = vertcat(theta{ii,:,:},mu{ii,:,:}, h{ii,:},u{ii});
+    W{ii} = vertcat{K{ii},U{ii}};
+    Q{ii} = f.hessian(K{ii});
+    R{ii} = f.hessian(U{ii});
+    S{ii} = f.jacobian(K{ii}).jacobian(U{ii});
+    w = [w; nlp.w.u(ii)];
+    w_alt = [w_alt;nlp.w.u(ii)];
 end
-w = [w; nlp.w.u(1)];;
-w_alt = [w_alt;nlp.w.u(1)];
-figure
-spy(dyn.jacobian(w))
-title("dyn,interleaved")
-figure
-spy(dyn.jacobian(w_alt))
-title("dyn,blocks")
-figure
-spy(alg.jacobian(w))
-title("alg,interleaved")
-figure
-spy(alg.jacobian(w_alt))
-title("alg,blocks")
-figure
+
 spy(int.jacobian(w))
 title("int,interleaved")
 figure
 spy(int.jacobian(w_alt))
 title("int,blocks")
+
+%% Build KKT matrix
+G = {};
+PI = {};
+for ii=1:N_stages
+    G{ii} = vertcat(dyn{ii,:,:},alg{ii,:,:},comp{ii,:});
+    PI{ii} = SX.sym('pi', length(G{ii}));
+    
+end
+
+% Assume equality for all constraints (not accurate because of inequalities for crosscomps.
