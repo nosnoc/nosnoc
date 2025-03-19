@@ -37,7 +37,7 @@ scenario.x0_vec = linspace(-2,-0.8,N_samples);
 scenario.save_results = 0;
 %% load default nosnoc options
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 
 % modify options
 problem_options.n_s = 2;

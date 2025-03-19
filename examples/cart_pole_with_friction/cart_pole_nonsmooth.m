@@ -50,7 +50,7 @@ problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval
 
 % solver options
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 solver_options.N_homotopy = 15;
 solver_options.complementarity_tol = 1e-13;
 solver_options.sigma_N = 1e-13;

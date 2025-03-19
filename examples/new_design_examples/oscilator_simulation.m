@@ -13,7 +13,7 @@ R_osc  = 1;
 
 %% Options and model objects
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 model = nosnoc.model.Pss();
 %% settings
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; %'Gauss-Legendre';

@@ -24,19 +24,13 @@ classdef Integrator < handle
             end
         end
 
-        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, plugin, extra_args)
+        function [t_grid,x_res,t_grid_full,x_res_full] = simulate(obj, extra_args)
             arguments
                 obj nosnoc.Integrator
-                plugin nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
                 extra_args.u = []
                 extra_args.x0 = [];
             end
-            switch obj.integrator_opts.integrator_plugin
-              case IntegratorType.FESD
-                [t_grid,x_res,t_grid_full,x_res_full] = obj.plugin.simulate(plugin, u=extra_args.u, x0=extra_args.x0);
-              case IntegratorType.SMOOTHED_PSS
-                [t_grid,x_res,t_grid_full,x_res_full] = obj.plugin.simulate(u=extra_args.u, x0=extra_args.x0);
-            end
+            [t_grid,x_res,t_grid_full,x_res_full] = obj.plugin.simulate(u=extra_args.u, x0=extra_args.x0);
             
         end
 

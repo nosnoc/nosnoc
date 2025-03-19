@@ -7,9 +7,12 @@ clear;
 import casadi.*;
 import nosnoc.solver.mpccsol;
 
-mpccsol_opts = nosnoc.solver.Options();
-mpccsol_opts.lift_complementarities = true;
-mpccsol_opts.calculate_stationarity_type = true;
+mpccsol_opts1 = nosnoc.reg_homotopy.Options();
+mpccsol_opts1.lift_complementarities = true;
+mpccsol_opts1.calculate_stationarity_type = true;
+mpccsol_opts2 = nosnoc.reg_homotopy.Options();
+mpccsol_opts2.lift_complementarities = true;
+mpccsol_opts2.calculate_stationarity_type = true;
 x = SX.sym('x',8);
 x_0 = x(1:4);
 x_1 = x(5:6);
@@ -50,8 +53,10 @@ mpcc_struct.H = 2*x_2;
 mpcc_struct.f = f;
 
 % create two solvers with different mpcc relaxation methods: steffensen_ulbrich_eq and steffensen_ulbrich_ineq
-solver_eq = mpccsol('generic_mpcc', 'steffensen_ulbrich_eq', mpcc_struct, mpccsol_opts);
-solver_ineq = mpccsol('generic_mpcc', 'steffensen_ulbrich_ineq', mpcc_struct, mpccsol_opts);
+mpccsol_opts1.relaxation_strategy = 'steffensen_ulbrich_eq';
+solver_eq = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_struct, mpccsol_opts1);
+mpccsol_opts2.relaxation_strategy = 'steffensen_ulbrich_ineq';
+solver_ineq = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_struct, mpccsol_opts2);
 
 mpcc_results = solver_eq('x0', x0,...
     'lbx', lbx,...

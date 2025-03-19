@@ -887,7 +887,7 @@ classdef Heaviside < vdx.problems.Mpcc
             end
 
             if ~exist('plugin')
-                plugin = 'scholtes_ineq';
+                plugin = 'reg_homotopy';
             end
 
             obj.finalize_assignments();
@@ -896,12 +896,14 @@ classdef Heaviside < vdx.problems.Mpcc
             obj.w.sort_by_index();
             obj.g.sort_by_index();
 
-            solver_options.assume_lower_bounds = true;
-
             obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
         end
 
-        function stats = solve(obj)
+        function stats = solve(obj, active_set)
+            arguments
+                obj
+                active_set {mustBeA(active_set,"nosnoc.activeset.Base")} = nosnoc.activeset.Heaviside.empty;
+            end
             opts = obj.opts;
             T_val = obj.p.T().val;
 
@@ -922,9 +924,176 @@ classdef Heaviside < vdx.problems.Mpcc
                     end
                 end
             end
-
-            stats = solve@vdx.problems.Mpcc(obj);
+            if ~isempty(active_set)
+                [IG,IH,~] = obj.process_active_set(active_set);
+            else
+                IG = [];
+                IH = [];
+            end
+            stats = solve@vdx.problems.Mpcc(obj, IG=IG, IH=IH);
         end
-    end
 
+        function [IG,IH,I00] = process_active_set(obj, active_set)
+        % This method takes a nosnoc active set for Heaviside and produces an active set for the
+        % complementarity constraints in this problem. It returns these as a boolean array.
+        %
+        % TODO(@anton) there should be a cleaner way of doing this but this is "easy".
+        % TODO(@anton) this assumes no user complementarities, but how do we handle those?
+            arguments
+                obj
+                active_set
+            end
+            % Possibly preprocess if passed a PSS active set:
+            if metaclass(active_set) == ?nosnoc.activeset.Pss
+                active_set = nosnoc.activeset.Heaviside.from_pss(active_set, obj.model);
+            end
+            dims = obj.dcs.dims;
+            dcs = obj.dcs;
+            model = obj.model;
+            opts = obj.opts;
+
+            % Get initial stage active set.
+            I_0_0 = active_set.I_0{1};
+            I_1_0 = active_set.I_1{1};
+            I_free_0 = active_set.I_free{1};
+
+            % Create corresponding algebraics and set them in initialization.
+            alpha_values = zeros(dims.n_alpha,1);
+            alpha_values(I_0_0) = 0;
+            alpha_values(I_1_0) = 1;
+            alpha_values(I_free_0) = 0.5; 
+            lambda_n_values = zeros(dims.n_alpha,1);
+            lambda_n_values(I_0_0) = 1;
+            lambda_p_values = zeros(dims.n_alpha,1);
+            lambda_p_values(I_1_0) = 1;
+            obj.w.alpha(0,0,opts.n_s).init = alpha_values;
+            obj.w.lambda_n(0,0,opts.n_s).init = lambda_n_values;
+            obj.w.lambda_p(0,0,opts.n_s).init = lambda_p_values;
+
+            if ~isempty(active_set.times)
+                jj = 1; % Control stage index
+                kk = 0; % FE index
+                t_curr = 0;
+                % Go through the active set by times
+                for ii=1:active_set.get_n_steps()
+                    done_stage = false;
+                    t_end = active_set.times(ii);
+                    I_0_ii = active_set.I_0{ii};
+                    I_1_ii = active_set.I_1{ii};
+                    I_free_ii = active_set.I_free{ii};
+
+                    % Generate corresponding algebraics
+                    alpha_values = zeros(dims.n_alpha,1);
+                    alpha_values(I_0_ii) = 0;
+                    alpha_values(I_1_ii) = 1;
+                    alpha_values(I_free_ii) = 0.5;
+                    lambda_n_values = zeros(dims.n_alpha,1);
+                    lambda_n_values(I_0_ii) = 1;
+                    lambda_p_values = zeros(dims.n_alpha,1);
+                    lambda_p_values(I_1_ii) = 1;
+                    % iterate until we reach the switch point, setting the algebraics
+                    for jj=jj:opts.N_stages
+                        for kk=(kk+1):opts.N_finite_elements(jj)
+                            for ll=1:opts.n_s % TODO(@anton) handle GL
+                                obj.w.alpha(jj,kk,ll).init = alpha_values;
+                                obj.w.lambda_n(jj,kk,ll).init = lambda_n_values;
+                                obj.w.lambda_p(jj,kk,ll).init = lambda_p_values;
+                            end
+                            t_curr = t_curr + opts.h_k(jj);
+                            if t_curr > t_end
+                                done_stage = true;
+                                break
+                            end
+                        end
+                        if done_stage
+                            break
+                        end
+                        kk = 0; % Reset fe counter
+                    end
+                    % handle entering regions.
+                    % This is done to maintain cross-complementarity feasiblity with the next stage.
+                    if ii ~= active_set.get_n_steps()
+                        I_0_next = active_set.I_0{ii+1};
+                        I_1_next = active_set.I_1{ii+1};
+                        I_0_leaving = setdiff(I_0_next, I_0_ii);
+                        I_1_leaving = setdiff(I_1_next, I_1_ii);
+                        lambda_n_values(I_0_leaving) = 0;
+                        lambda_p_values(I_1_leaving) = 0;
+                        obj.w.lambda_n(jj,kk,ll).init = lambda_n_values;
+                        obj.w.lambda_p(jj,kk,ll).init = lambda_p_values;
+                    end
+                end
+            else
+                jj = 1; % Control stage index
+                kk = 0; % FE index
+                t_curr = 0;
+                % Go through the active set by stages
+                for ii=1:active_set.get_n_steps()
+                    done_stage = false;
+                    stage_end = active_set.stages{ii};
+                    
+                    N_end = stage_end(1);
+                    n_end = stage_end(2);
+
+                    % Get initial active set.
+                    I_0_ii = active_set.I_0{ii};
+                    I_1_ii = active_set.I_1{ii};
+                    I_free_ii = active_set.I_free{ii};
+
+                    % Create corresponding algebraics.
+                    alpha_values = zeros(dims.n_alpha,1);
+                    alpha_values(I_0_ii) = 0;
+                    alpha_values(I_1_ii) = 1;
+                    alpha_values(I_free_ii) = 0.5; % TODO(@anton) is there a generically better formula?
+                    lambda_n_values = zeros(dims.n_alpha,1);
+                    lambda_n_values(I_0_ii) = 1;
+                    lambda_p_values = zeros(dims.n_alpha,1);
+                    lambda_p_values(I_1_ii) = 1;
+                    % iterate until we reach the switch point, setting the algebraics
+                    for jj=jj:N_end
+                        % if we reached the correct stage then we are done with this phase.
+                        if jj==N_end
+                            done = true;
+                            kk_end = n_end;
+                        else
+                            done = false;
+                            kk_end = opts.N_finite_elements(jj);
+                        end
+                        for kk=(kk+1):kk_end
+                            for ll=1:opts.n_s % TODO(@anton) handle GL
+                                obj.w.alpha(jj,kk,ll).init = alpha_values;
+                                obj.w.lambda_n(jj,kk,ll).init = lambda_n_values;
+                                obj.w.lambda_p(jj,kk,ll).init = lambda_p_values;
+                            end
+                        end
+                        if ~done
+                            kk = 0; % Reset fe counter
+                        end
+                    end
+                    % handle entering regions.
+                    % This is done to maintain cross-complementarity feasiblity with the next stage.
+                    if ii ~= active_set.get_n_steps()
+                        I_0_next = active_set.I_0{ii+1};
+                        I_1_next = active_set.I_1{ii+1};
+                        I_0_leaving = setdiff(I_0_next, I_0_ii);
+                        I_1_leaving = setdiff(I_1_next, I_1_ii);
+                        lambda_n_values(I_0_leaving) = 0;
+                        lambda_p_values(I_1_leaving) = 0;
+                        obj.w.lambda_n(jj,kk,ll).init = lambda_n_values;
+                        obj.w.lambda_p(jj,kk,ll).init = lambda_p_values;
+                    end
+                end
+            end
+            G_fun = casadi.Function('G', {obj.w.sym,obj.p.sym}, {obj.G.sym});
+            H_fun = casadi.Function('H', {obj.w.sym,obj.p.sym}, {obj.H.sym});
+
+            tol = 1e-5; % TODO(@anton) this shouldn't be necessary?
+            IG = full(G_fun(obj.w.init, obj.p.val)) <= tol;
+            IH = full(H_fun(obj.w.init, obj.p.val)) <= tol;
+
+            % TODO(@anton) Process infeasibilities?
+            infeasible = ~(IG|IH);
+            I00 = IG&IH;
+        end 
+    end
 end

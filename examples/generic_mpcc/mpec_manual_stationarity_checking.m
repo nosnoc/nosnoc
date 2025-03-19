@@ -7,16 +7,13 @@ import casadi.*;
 import nosnoc.solver.*;
 
 % set options
-mpccsol_opts = nosnoc.solver.Options();  
+mpccsol_opts = nosnoc.reg_homotopy.Options();  
 mpccsol_opts.homotopy_steering_strategy = "Direct";
 % mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 % mpccsol_opts.homotopy_steering_strategy = "ELL_INF";
 
 
 mpccsol_opts.complementarity_tol = 1e-10;
-
-% mpcc_method =  nosnoc.solver.MpccMethod.KADRANI;
-mpcc_method =  nosnoc.solver.MpccMethod.SCHOLTES_INEQ;
 
 % define MPCC
 x1 = SX.sym('x1');
@@ -43,9 +40,10 @@ mpcc.G = x1;
 mpcc.H = x2;
 mpcc.f = f;
 
-solver = mpccsol('solver_mpecc', mpcc_method, mpcc, mpccsol_opts);
+solver = mpccsol('solver_mpecc', 'reg_homotopy', mpcc, mpccsol_opts);
 mpcc_results = solver('x0', x0,'lbx', lbx,'ubx', ubx);
 disp(mpcc_results.x)
+%% Check stationarity points 
 
 % Try calculating b-stationarity before getting polished result:
 [solution, improved_point, b_stat] = solver.check_b_stationarity(mpcc_results.x);

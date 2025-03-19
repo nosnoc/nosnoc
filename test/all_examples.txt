@@ -25,7 +25,6 @@ generic_mpcc/mpec_ex2.m
 generic_mpcc/mpec_ex3.m
 generic_mpcc/mpec_ex_vdx.m
 generic_mpcc/mpec_manual_stationarity_checking.m
-generic_mpcc/mpec_no_s_stationarity.m
 ivp_problem/illustrate_a_solution.m
 marine_surface_vehicle/msv.m
 michael_schumacher_problem/main_michael_schumacher.m
@@ -55,4 +54,4 @@ time_freezing_inelastic_tutorial/inelastic_3d_sim.m
 time_freezing_inelastic_tutorial/Painleve_paradox.m
 time_freezing_pile_of_balls/time_freezing_pile_of_balls.m
 time_freezing_throwing_ball/main_throwing_ball.m
-two_balls_with_spring_cls/two_balls_spring_example.m
+cls_two_balls_with_spring/two_balls_spring_example.m

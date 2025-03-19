@@ -25,7 +25,7 @@
 
 % This file is part of NOSNOC.
 
-classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
+classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
     properties
         mpcc % Either a struct with the (possibly optional) fields (f, p, w, g, G, H) or a subclass of vdx.problems.Mpcc.
         nlp % The relaxed/smoothed nlp which is solved in a homotopy loop with a decreasing relaxation/smoothing parameter. 
@@ -33,7 +33,6 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
         stats % Struct with stats of the last solve.
         nlp_solver
         plugin % NLP solver: Ipopt, Snopt, Worhop or Uno.
-        relaxation_type
     end
 
     properties (Access=private)
@@ -58,10 +57,9 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
     methods (Access=public)
         
-        function obj=MpccSolver(relaxation_type, mpcc, opts)
+        function obj=Solver(mpcc, opts)
             import casadi.*
-            import nosnoc.solver.*
-            obj.relaxation_type = relaxation_type;
+            import nosnoc.reg_homotopy.*
             obj.mpcc = mpcc;
             obj.opts = opts;
             opts.preprocess();
@@ -117,7 +115,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
 
                 % Generate relaxation function
-                psi_fun = get_psi_fun(MpccMethod(obj.relaxation_type), opts.normalize_homotopy_update);
+                psi_fun = get_psi_fun(MpccMethod(opts.relaxation_strategy), opts.normalize_homotopy_update);
 
                 % Get all the vdx.Variable for the complementarities
                 comp_var_names = mpcc.G.get_var_names();
@@ -196,7 +194,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
 
                         % Build expression and add correct bounds.
                         g_comp_expr = psi_fun(G_curr, H_curr, sigma);
-                        [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
+                        [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.opts.relaxation_strategy);
                         nlp.g.([name '_relaxed']) = {g_comp_expr,lb,ub};
                     else % Do the same behavior as before excep this time for each var(i,j,k,...) index for each variable 'var'.
                         % Get indices that we will need to get all the casadi vars for the vdx.Variable
@@ -277,7 +275,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                             end
                             
                             g_comp_expr = psi_fun(G_curr, H_curr, sigma);
-                            [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, obj.relaxation_type);
+                            [lb, ub, g_comp_expr] = generate_mpcc_relaxation_bounds(g_comp_expr, opts.relaxation_strategy);
                             nlp.g.(name)(curr{:}) = {g_comp_expr,lb,ub};
                         end
                     end
@@ -329,13 +327,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % Get nlpsol plugin
                 switch opts.solver
                   case 'ipopt'
-                    obj.plugin = nosnoc.solver.plugins.Ipopt();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Ipopt();
                   case 'snopt'
-                    obj.plugin = nosnoc.solver.plugins.Snopt();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Snopt();
                   case 'worhp'
-                    obj.plugin = nosnoc.solver.plugins.Worhp();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Worhp();
                   case 'uno'
-                    obj.plugin = nosnoc.solver.plugins.Uno();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Uno();
                 end
 
                 if ~isempty(opts.ipopt_callback)
@@ -448,7 +446,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 end
 
                 % apply relaxation (defines a particular method, e.g. Scholtes, Kanzow-Schwartz, Fischer Burmeister, etc.)
-                psi_fun = get_psi_fun(MpccMethod(obj.relaxation_type), opts.normalize_homotopy_update);
+                psi_fun = get_psi_fun(MpccMethod(opts.relaxation_strategy), opts.normalize_homotopy_update);
                 lb = [];
                 ub = [];
                 g_comp_expr = [];
@@ -459,7 +457,7 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                     else
                         g_comp_expr_i = psi_fun(G(ii), H(ii), sigma);
                     end
-                    [lb_i, ub_i, g_comp_expr_i] = generate_mpcc_relaxation_bounds(g_comp_expr_i, obj.relaxation_type);
+                    [lb_i, ub_i, g_comp_expr_i] = generate_mpcc_relaxation_bounds(g_comp_expr_i, opts.relaxation_strategy);
                     lb = [lb;lb_i];
                     ub = [ub;ub_i];
                     g_comp_expr = [g_comp_expr;g_comp_expr_i];
@@ -483,13 +481,13 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
                 % Get nlpsol plugin
                 switch opts.solver
                   case 'ipopt'
-                    obj.plugin = nosnoc.solver.plugins.Ipopt();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Ipopt();
                   case 'snopt'
-                    obj.plugin = nosnoc.solver.plugins.Snopt();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Snopt();
                   case 'worhp'
-                    obj.plugin = nosnoc.solver.plugins.Worhp();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Worhp();
                   case 'uno'
-                    obj.plugin = nosnoc.solver.plugins.Uno();
+                    obj.plugin = nosnoc.reg_homotopy.plugins.Uno();
                 end
 
                 % TODO figure out how to get mpcc in here without the horrible hack in the case of vdx mpcc passed in
@@ -1116,14 +1114,15 @@ classdef MpccSolver < handle & matlab.mixin.indexing.RedefinesParen
             % TODO(@anton) this returns mpccresults struct from homotopy
             import casadi.*;
             p = inputParser;
-            addParameter(p, 'x0', []);
-            addParameter(p, 'lbx', []);
-            addParameter(p, 'ubx', []);
-            addParameter(p, 'lbg', []);
-            addParameter(p, 'ubg', []);
-            addParameter(p, 'p', []);
-            addParameter(p, 'lam_g0', []);
-            addParameter(p, 'lam_x0', []);
+            addParameter(p, 'x0', []);      % Initial guess.
+            addParameter(p, 'y0', []);      % Initial complementarity active set guess (ignored by this solver).
+            addParameter(p, 'lbx', []);     % Variable lower bounds.
+            addParameter(p, 'ubx', []);     % Variable upper bounds.
+            addParameter(p, 'lbg', []);     % Constraint lower bounds.
+            addParameter(p, 'ubg', []);     % Constraint upper bounds.
+            addParameter(p, 'p', []);       % Parameter upper bounds.
+            addParameter(p, 'lam_g0', []);  % Initial constraint multipliers. (CasADi+ipopt convention)
+            addParameter(p, 'lam_x0', []);  % Initial variable bound multipliers. (CasADi+ipopt convention)
             % TODO(@anton) Also perhaps initial complementarity multipliers but need to think about
             %              how exactly to implement that.
             parse(p, index_op(1).Indices{:});

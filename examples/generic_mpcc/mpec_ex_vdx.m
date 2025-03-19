@@ -5,8 +5,7 @@ clear;
 import casadi.*;
 import nosnoc.solver.*;
 
-mpccsol_opts = nosnoc.solver.Options();  
-
+mpccsol_opts = nosnoc.reg_homotopy.Options();  
 
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
@@ -28,7 +27,7 @@ mpcc.G.x = {x1};
 mpcc.H.x = {x2};
 mpcc.f = f;
 
-mpcc_method1 = 'scholtes_ineq';
+mpccsol_opts.relaxation_strategy = 'scholtes_ineq';
 
 mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 % the parameter relaxation/smoothing parameter s is minmized in the objective, its penality (1/sigma) is steered outside, cf. Table 1 in https://arxiv.org/pdf/2312.11022.pdf 
@@ -37,13 +36,10 @@ mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 
 mpccsol_opts.calculate_stationarity_type = 1;
 
-solver = mpccsol('generic_mpcc', mpcc_method1, mpcc, mpccsol_opts);
+solver = mpccsol('generic_mpcc', 'reg_homotopy', mpcc, mpccsol_opts);
 
 
-mpcc_results = solver('x0', x0,...
-    'lbx', lbx,...
-    'ubx', ubx,...
-    'p',p0);
+mpcc_results = solver('x0', x0,'lbx', lbx,'ubx', ubx,'p',p0);
 
 disp(mpcc_results.x)
 

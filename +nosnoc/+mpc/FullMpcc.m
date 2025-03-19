@@ -6,7 +6,7 @@ classdef FullMpcc < nosnoc.mpc.Base
         ocp_solver nosnoc.ocp.Solver % nosnoc OCP solver used to generate feedback.
         mpc_options nosnoc.mpc.Options % nosnoc mpc specific options.
         problem_options nosnoc.Options % nosnoc problem options.
-        solver_options nosnoc.solver.Options % nosnoc solver options.
+        solver_options nosnoc.reg_homotopy.Options % nosnoc solver options.
         model % nosnoc model.
 
         last_solve_successful(1,1) logical = false % true if last solve was successful, false otherwise.

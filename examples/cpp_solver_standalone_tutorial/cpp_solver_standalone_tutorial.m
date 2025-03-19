@@ -5,7 +5,7 @@ clear;
 import casadi.*;
 import nosnoc.solver.*;
 
-mpccsol_opts = nosnoc.solver.Options();  
+mpccsol_opts = nosnoc.reg_homotopy.Options();  
 
 
 x1 = SX.sym('x1');

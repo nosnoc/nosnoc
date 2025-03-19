@@ -34,7 +34,7 @@ linear_control = 1;
 
 %% nosnoc settings and model
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 model = nosnoc.model.Pss();
 %%
 N_finite_elements = 3;

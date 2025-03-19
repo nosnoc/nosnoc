@@ -37,7 +37,7 @@ plot_results = false;
 e = 0.9; u_max = 9; beta = 0.0; 
 %% NOSNOC settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.time_freezing = 1;
 problem_options.n_s = 4;
 solver_options.homotopy_update_rule = 'superlinear';

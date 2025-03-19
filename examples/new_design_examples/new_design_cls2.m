@@ -8,7 +8,7 @@ T_sim = 1.7;
 
 %% NOSNOC settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.n_s = 2;
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.rk_representation= 'integral';

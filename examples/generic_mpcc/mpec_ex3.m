@@ -4,7 +4,7 @@ clear;
 import casadi.*;
 import nosnoc.solver.mpccsol;
 
-mpccsol_opts = nosnoc.solver.Options();
+mpccsol_opts = nosnoc.reg_homotopy.Options();
 mpccsol_opts.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
 mpccsol_opts.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
 mpccsol_opts.lift_complementarities = false;
@@ -45,7 +45,7 @@ mpcc_struct.G = G;
 mpcc_struct.H = H;
 mpcc_struct.f = f;
 
-solver = mpccsol('generic_mpcc', 'scholtes_ineq', mpcc_struct, mpccsol_opts);
+solver = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_struct, mpccsol_opts);
 
 mpcc_results = solver('x0', w0,...
     'lbx', lbw,...

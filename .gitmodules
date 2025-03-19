@@ -1,3 +1,6 @@
 [submodule "external/vdx"]
 	path = external/vdx
 	url = https://github.com/apozharski/vdx.git
+[submodule "external/mpecopt"]
+	path = external/mpecopt
+	url = git@github.com:nosnoc/mpecopt.git

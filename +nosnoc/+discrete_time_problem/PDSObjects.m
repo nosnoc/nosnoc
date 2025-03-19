@@ -924,7 +924,7 @@ classdef PDSObjects < vdx.problems.Mpcc
             end
 
             if ~exist('plugin')
-                plugin = 'scholtes_ineq';
+                plugin = 'reg_homotopy';
             end
 
             if ~exist('regenerate')
@@ -940,14 +940,17 @@ classdef PDSObjects < vdx.problems.Mpcc
                 obj.w.sort_by_index();
                 obj.g.sort_by_index();
             end
-            solver_options.assume_lower_bounds = true;
 
-            if regenerate || isempty(obj.solver) || (nosnoc.solver.MpccMethod(plugin) ~= obj.solver.relaxation_type)
+            if regenerate || isempty(obj.solver)
                 obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);
             end
         end
 
-        function stats = solve(obj)
+        function stats = solve(obj, active_set)
+            arguments
+                obj
+                active_set {mustBeA(active_set,"nosnoc.activeset.Base")} = nosnoc.activeset.PDSObjects.empty;
+            end
             opts = obj.opts;
             T_val = obj.p.T().val;
 
@@ -968,8 +971,25 @@ classdef PDSObjects < vdx.problems.Mpcc
                     end
                 end
             end
+            if ~isempty(active_set)
+                [IG,IH,~] = obj.process_active_set(active_set);
+            else
+                IG = [];
+                IH = [];
+            end
+            stats = solve@vdx.problems.Mpcc(obj, IG=IG, IH=IH);
+        end
 
-            stats = solve@vdx.problems.Mpcc(obj);
+        function [IG,IH,I00] = process_active_set(obj, active_set)
+        % This method takes a nosnoc active set for a PDSObjects ocp and produces an active set for the
+        % complementarity constraints in this problem. It returns these as a boolean array.
+        %
+        % TODO(@anton) Implement
+            arguments
+                obj
+                active_set nosnoc.activeset.PDSObjects
+            end
+            nosnoc.error('not_implemented', 'Not Implemented');
         end
     end
 end
