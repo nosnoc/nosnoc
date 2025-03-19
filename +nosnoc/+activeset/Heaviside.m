@@ -38,7 +38,48 @@ classdef Heaviside < nosnoc.activeset.Base
         end
 
         function n_steps = get_n_steps(obj)
-            n_steps = length(obj.regions);
+            n_steps = length(obj.I_0);
+        end
+    end
+
+    methods(Static)
+        function obj = from_pss(pss, model)
+        % Construct a heaviside active set from a pss active set.
+        % In order to calculate we need the S from the model.
+        %
+        % Note:
+        %      For don't cares the realization of the PSS active set is non-unique.
+        %      This means that we make the choice of setting this to the sliding mode, i.e. $\lambda_n = \lambda_p = 0$.
+            times = pss.times;
+            stages = pss.stages;
+            S = model.S{1};
+            I_0 = {};
+            I_1 = {};
+            I_free = {};
+            % For each phase we need to translate to step functions
+            for ii=1:pss.get_n_steps
+                region_ii = pss.regions{ii};
+                Sp = S(region_ii, :) == 1;  % For the current region which indicators are positive.
+                Sn = S(region_ii, :) == -1; % For the current region which indicators are negative.
+                Sdc = S(region_ii, :) == 0; % For the current region which indicators are ignored.
+
+                % Set up initial step activiy
+                I_0_ii = Sn(1,:); % Negative means step=0
+                I_1_ii = Sp(1,:); % Positive means step=1
+                I_free_ii = Sdc(1,:); % Dont care we choose to put in "sliding mode".
+                for jj=2:length(region_ii)
+                    % If a given index is both positive and negative in two different regions they must be
+                    % sliding mode so move that indicator to the I_free set.
+                    move_to_free = (I_0_ii & Sp(jj,:)) | I_1_ii & Sn(jj,:);
+                    I_0_ii = I_0_ii & ~move_to_free;
+                    I_1_ii = I_1_ii & ~move_to_free;
+                    I_free_ii = I_free_ii | move_to_free;
+                end
+                I_0{ii} = find(I_0_ii);
+                I_1{ii} = find(I_1_ii);
+                I_free{ii} = find(I_free_ii);
+            end
+            obj = nosnoc.activeset.Heaviside(I_0,I_1,I_free,times=times,stages=stages);
         end
     end
 end
