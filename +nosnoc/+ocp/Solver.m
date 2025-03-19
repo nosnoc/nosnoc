@@ -90,11 +90,18 @@ classdef Solver < handle
             end
         end
 
-        function solve(obj, plugin)
+        function solve(obj)
             arguments
                 obj
-                plugin = 'reg_homotopy'
             end
+            switch class(obj.solver_opts)
+              case "nosnoc.reg_homotopy.Options"
+                plugin = 'reg_homotopy';
+                obj.solver_opts.assume_lower_bounds = true; % For nosnoc specific problems this should always be true otherwise the numerics in the relaxed NLP become nasty due to duplicate lb constraints.
+              case "mpecopt.Options"
+                plugin = 'mpecopt';
+            end
+            
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
 
             obj.stats = obj.discrete_time_problem.solve(obj.active_set);
@@ -254,11 +261,15 @@ classdef Solver < handle
             end
             switch class(obj.model)
               case "nosnoc.model.Pss"
-                if ~strcmp(class(active_set), "nosnoc.activeset.Pss")
+                if metaclass(active_set) == ?nosnoc.activeset.Pss || (metaclass(active_set) == ?nosnoc.activeset.Heaviside && obj.opts.dcs_mode == 'Heaviside')
+                else
                     nosnoc.error('type_mismatch', 'Wrong type of active set object passed');
                 end
+                
               case "nosnoc.model.Heaviside"
-                error('not_implemented')
+                if ~ismember(metaclass(active_set), [?nosnoc.activeset.Heaviside])
+                    nosnoc.error('type_mismatch', 'Wrong type of active set object passed');
+                end
               case "nosnoc.model.Cls"
                 error('not_implemented')
               case "nosnoc.model.Pds"

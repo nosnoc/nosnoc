@@ -4,7 +4,7 @@ import casadi.*
 close all
 %% init nosnoc
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 model = nosnoc.model.Cls();
 %% Simulation settings
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;

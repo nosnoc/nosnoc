@@ -8,7 +8,7 @@ close all
 
 %% settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 problem_options.rk_scheme = RKSchemes.GAUSS_LEGENDRE;   
 problem_options.n_s = 1;                
 % solver_options.N_homotopy = 8;

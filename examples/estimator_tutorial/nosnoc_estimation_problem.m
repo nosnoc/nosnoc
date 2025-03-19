@@ -8,7 +8,7 @@ import nosnoc.*
 %% Problem
 % initalize options
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 % modify problem options
 N_stages = 50; % number of data points 
 N_FE = 2; % number of intermediate integration steps between data points
@@ -53,7 +53,7 @@ x_samples = x_data(1:N_FE:end);
 
 %% Create nosnoc estimation problem
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
+solver_options = nosnoc.reg_homotopy.Options();
 
 problem_options.n_s = 2; % number of runge Kutta stages
 problem_options.dcs_mode = "Stewart";

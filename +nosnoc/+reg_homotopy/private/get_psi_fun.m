@@ -1,6 +1,6 @@
 function psi_fun = get_psi_fun(relaxation_type, normalize)
     import casadi.*
-    import nosnoc.solver.*
+    import nosnoc.reg_homotopy.*
     a = SX.sym('a',1);
     b = SX.sym('b',1);
     sigma = SX.sym('sigma',1);

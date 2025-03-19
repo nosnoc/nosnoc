@@ -4,8 +4,8 @@ function mpccsol = mpccsol(name, plugin, mpcc, options)
 %              For now we just return a class with an overriden paren
 
     if strcmp(plugin, 'reg_homotopy')
-        mpccsol = nosnoc.solver.MpccSolver(mpcc, options);
+        mpccsol = nosnoc.reg_homotopy.Solver(mpcc, options);
     elseif strcmp(plugin, 'mpecopt')
-        mpccsol = Mpecopt(mpcc, options.mpecopt);
+        mpccsol = mpecopt.Solver(mpcc, options);
     end
 end

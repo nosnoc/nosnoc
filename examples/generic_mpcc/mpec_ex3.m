@@ -4,7 +4,7 @@ clear;
 import casadi.*;
 import nosnoc.solver.mpccsol;
 
-mpccsol_opts = nosnoc.solver.Options();
+mpccsol_opts = nosnoc.reg_homotopy.Options();
 mpccsol_opts.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
 mpccsol_opts.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
 mpccsol_opts.lift_complementarities = false;

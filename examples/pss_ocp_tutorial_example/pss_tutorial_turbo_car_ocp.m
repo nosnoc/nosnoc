@@ -3,7 +3,8 @@ import casadi.*
 import nosnoc.*
 % 
 problem_options = nosnoc.Options(); % Initialize all options related to the optimal control or simulation problem.
-solver_options = nosnoc.solver.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
+homotopy_options = nosnoc.reg_homotopy.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
+mpecopt_options = mpecopt.Options(); % Initialize all options needed by the mpecopt active set solver.
 
 % Choosing the Runge - Kutta Method and number of stages
 problem_options.rk_scheme = RKSchemes.RADAU_IIA; % Type of scheme
@@ -44,10 +45,12 @@ model.F = [f_1 f_2]; % The columns of this matrix store the vector fields of eve
 
 model.g_terminal = [q-200;v-0]; % Add terminal constraint
 
-% Create a nosnoc solver. 
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-% Solve the problem by internally calling the nosnoc MPEC solver (see generic_mpecs example for its standalone use)
-ocp_solver.solve('mpecopt');
+% Create a nosnoc solver using homotopy solver
+%ocp_solver = nosnoc.ocp.Solver(model, problem_options, homotopy_options);
+% Create a nosnoc solver using homotopy solver
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, mpecopt_options);
+% Solve the problem by internally calling mpccsol (see generic_mpecs example for its standalone use)
+ocp_solver.solve();
 %% Extract reults - use ocp_solver methods to extact
 t_grid = ocp_solver.get_time_grid(); % get time grid for differential states
 t_grid_u = ocp_solver.get_control_grid(); % get time grid for control variables

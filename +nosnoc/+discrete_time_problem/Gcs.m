@@ -747,7 +747,6 @@ classdef Gcs < vdx.problems.Mpcc
                 obj.w.sort_by_index();
                 obj.g.sort_by_index();
             end
-            solver_options.assume_lower_bounds = true; % For nosnoc specific problems this should always be true otherwise the numerics in the relaxed NLP become nasty due to duplicate lb constraints.
 
             if regenerate || isempty(obj.solver)
                 obj.solver = nosnoc.solver.mpccsol('Mpcc solver', plugin, obj, solver_options);

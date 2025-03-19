@@ -65,11 +65,8 @@ classdef Options < handle
         % TODO: make proper multiple solver class.
         multiple_solvers(1,1) logical = 0
 
-        % All NLP parameters
-        p_val
-
         %
-        relaxation_strategy(1,1) nosnoc.solver.MpccMethod = nosnoc.solver.MpccMethod.SCHOLTES_INEQ
+        relaxation_strategy(1,1) nosnoc.reg_homotopy.MpccMethod = nosnoc.reg_homotopy.MpccMethod.SCHOLTES_INEQ
         homotopy_steering_strategy(1,1) HomotopySteeringStrategy = HomotopySteeringStrategy.DIRECT
         lower_bound_relaxation(1,1) logical = 0
 
@@ -85,9 +82,6 @@ classdef Options < handle
         normalize_homotopy_update(1,1) logical = 1
         norm_function
         calculate_stationarity_type(1,1) logical = 0;
-
-        % Options for mpecopt
-        mpecopt MPECOptimizerOptions
     end
 
     properties(Dependent)
@@ -126,9 +120,6 @@ classdef Options < handle
             
             obj.opts_casadi_nlp.worhp = struct();
             obj.opts_casadi_nlp.uno = struct();
-
-            obj.p_val = [obj.sigma_0];
-            obj.mpecopt = MPECOptimizerOptions();
         end
 
         function [] = preprocess(obj)

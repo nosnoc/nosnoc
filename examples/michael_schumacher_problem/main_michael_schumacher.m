@@ -42,18 +42,21 @@ chicane_width = 2;
 
 %% NOSNOC settings
 problem_options = nosnoc.Options();
-solver_options = nosnoc.solver.Options();
-
-% Optimal control problem options
-problem_options.n_s = 2;
+homotopy_options = nosnoc.reg_homotopy.Options();
+mpecopt_options = mpecopt.Options();
+problem_options.n_s = 2; 
+homotopy_options.sigma_0 = 1e0;
 problem_options.use_fesd = 1;
 problem_options.cross_comp_mode = "FE_FE";
 problem_options.T_final_max = 5*pi;
 problem_options.T_final_min = 2;
-problem_options.dcs_mode = 'Stewart';
+homotopy_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+problem_options.dcs_mode = 'Heaviside';
 problem_options.g_path_at_fe = 1;
 problem_options.g_path_at_stg = 1;
 problem_options.time_optimal_problem = 1;
+homotopy_options.opts_casadi_nlp.ipopt.max_iter = 1000;
+homotopy_options.print_level = 5;
 problem_options.relax_terminal_constraint = ConstraintRelaxationMode.ELL_1;
 
 % Solver options
@@ -162,15 +165,12 @@ model.g_terminal = q-q_target; % temrinal constraint expression
 alpha = [atan2(diff(yy),diff(xx)),0];
 x_guess = vertcat(xx,yy, zeros(2,problem_options.N_stages), alpha); % Not used ATM
 
-%% Compute active set guess for mpecopt solver
-active_set_guess = nosnoc.activeset.Pss({[1,2]},'times', [problem_options.T]); % [1,2] is a slinding mode (i.e. c = 0), and it is assumed to hold over [0,T]
-solver_options.mpecopt.initialization_strategy = 'TakeProvidedActiveSet';
-
+active_set_guess = nosnoc.activeset.Pss({[1,2]},'times', [problem_options.T]);
+mpecopt_options.initialization_strategy = 'TakeProvidedActiveSet';
 %% Solve
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-ocp_solver.set_initial_active_set(active_set_guess); 
-% [IG,IH,I00] = ocp_solver.discrete_time_problem.process_active_set(active_set_guess);
-ocp_solver.solve('mpecopt');
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, mpecopt_options);
+ocp_solver.set_initial_active_set(active_set_guess);
+ocp_solver.solve();
 fprintf('Objective values is: %2.4f \n', ocp_solver.get_objective());
 %% Extract results
 u_opt = ocp_solver.get("u");
