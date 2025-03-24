@@ -80,6 +80,9 @@ classdef Stewart < vdx.problems.Mpcc
                     end
                     % define finte elements lengths as variables
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
+                    % Don't lower bound as we don't need to duplicate the lower bounds with the dynamics variables.
+                    obj.w.Lambda(ii,1:opts.N_finite_elements(ii)) = {{'Lambda', dims.n_lambda}, 0, inf};
+                    obj.w.Theta(ii,1:opts.N_finite_elements(ii)) = {{'Theta', dims.n_theta}, 0, inf};
                 end
                 if opts.use_fesd && opts.use_numerical_clock_state
                     obj.w.numerical_time(ii, 1:opts.N_finite_elements(ii)) = {{['t_' num2str(ii)], 1}};
@@ -688,11 +691,28 @@ classdef Stewart < vdx.problems.Mpcc
                     %lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
+                            Lambda = obj.w.Lambda(ii,jj);
                             sum_lambda = sum2(obj.w.lambda(ii,jj,:));
+                            Theta = obj.w.Theta(ii,jj);
                             sum_theta = sum2(obj.w.theta(ii,jj,:));
-                            obj.G.cross_comp(ii,jj) = {sum_lambda};
-                            obj.H.cross_comp(ii,jj) = {sum_theta};
+                            obj.g.alg_integral(ii,jj) = {[Lambda - sum_lambda;Theta - sum_theta]};
+                            obj.G.cross_comp(ii,jj) = {Lambda};
+                            obj.H.cross_comp(ii,jj) = {Theta};
                             %lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                        end
+                    end
+                    % Also do standard comps:
+                    for ii=1:opts.N_stages
+                        for jj=1:opts.N_finite_elements(ii);
+                            Gij = {};
+                            Hij = {};
+                            for kk=1:opts.n_s
+                                lambda_ijk = obj.w.lambda(ii,jj,kk);
+                                theta_ijk = obj.w.theta(ii,jj,kk);
+
+                                obj.G.standard_comp(ii,jj,kk) = {lambda_ijk};
+                                obj.H.standard_comp(ii,jj,kk) = {theta_ijk};
+                            end
                         end
                     end
                 end

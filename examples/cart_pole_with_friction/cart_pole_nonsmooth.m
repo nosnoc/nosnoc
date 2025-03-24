@@ -63,7 +63,7 @@ solver_options.sigma_N = 1e-13;
 %solver_options.rho_TR_phase_i_init = 1;
 
 % other linear solvers require installation, check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 % create solver and solve problem
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
