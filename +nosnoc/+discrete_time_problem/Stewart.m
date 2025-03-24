@@ -115,7 +115,7 @@ classdef Stewart < vdx.problems.Mpcc
                 if (opts.rk_representation == RKRepresentation.integral ||...
                     opts.rk_representation == RKRepresentation.differential_lift_x)
                     % Remark on VDX syntax obj.w.x(ii,1:_NFE,1:n_s+rbp) - vectorized definition of variables
-                    obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                    obj.w.x(ii,1:opts.N_finite_elements(ii),0:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 else
                     obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s+rbp) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 end
@@ -125,7 +125,7 @@ classdef Stewart < vdx.problems.Mpcc
                 end
                 % TODO @Anton, at some point we might provide initial guesse for lambda,mu, theta
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-                obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf, 1};
+                obj.w.lambda(ii,1:opts.N_finite_elements(ii),0:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf, 1};
                 obj.w.theta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'theta', dims.n_theta},0, inf, 1/dims.n_theta};
                 obj.w.mu(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},-inf,inf};
 
@@ -168,6 +168,7 @@ classdef Stewart < vdx.problems.Mpcc
             obj.g.algebraic(0,0,opts.n_s) = {dcs.g_alg_fun(x_0, z_0, lambda_0, theta_0, mu_0, obj.w.u(1), v_global, [p_global;obj.p.p_time_var(1)])};
             
             x_prev = obj.w.x(0,0,opts.n_s); % last point of previous FE, needed for continuity conditions
+            lam_prev = obj.w.lambda(0,0,opts.n_s);
             if opts.use_fesd && opts.use_numerical_clock_state
                 t_prev = obj.w.numerical_time(0,0);
             end
@@ -212,6 +213,10 @@ classdef Stewart < vdx.problems.Mpcc
                         end
                         t_prev = t_curr;
                     end
+
+                    cont_eq = [x_prev - obj.w.x(ii,jj,0); lam_prev - obj.w.lambda(ii,jj,0)];
+                    obj.g.continuity(ii,jj) = {cont_eq};
+                    x_prev = obj.w.x(ii,jj,0);
 
                     switch opts.rk_representation
                       case RKRepresentation.integral
@@ -379,6 +384,7 @@ classdef Stewart < vdx.problems.Mpcc
                         end
                     end
                     x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
+                    lam_prev = obj.w.lambda(ii,jj,opts.n_s+rbp);
                 end
                 if ~opts.g_path_at_stg && ~opts.g_path_at_fe
                     % if path constraints are only evaluated at the control grid nodes
@@ -679,14 +685,14 @@ classdef Stewart < vdx.problems.Mpcc
                         end
                     end
                   case CrossCompMode.FE_FE
-                    lambda_prev = obj.w.lambda(0,0,opts.n_s);
+                    %lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
+                            sum_lambda = sum2(obj.w.lambda(ii,jj,:));
                             sum_theta = sum2(obj.w.theta(ii,jj,:));
                             obj.G.cross_comp(ii,jj) = {sum_lambda};
                             obj.H.cross_comp(ii,jj) = {sum_theta};
-                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                            %lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
                         end
                     end
                 end

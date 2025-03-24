@@ -55,12 +55,13 @@ problem_options.N_stages = N_stages; % number of control intervals
 N_fe = 2;
 problem_options.N_finite_elements = N_fe; % number of finite element on every control interval
 problem_options.cross_comp_mode = 'FE_FE';
-
+problem_options.euler_cost_integration = 1;
 % solver options
 solver_options = nosnoc.reg_homotopy.Options();
 solver_options.N_homotopy = 15;
 solver_options.complementarity_tol = 1e-13;
 solver_options.sigma_N = 1e-13;
+
 %solver_options.solver = 'fatrop';
 
 %mpecopt options
@@ -124,23 +125,32 @@ for ii=1:N_stages
         h{ii,jj} = nlp.w.h(ii,jj);
     end
     u{ii} = nlp.w.u(ii);
-    K{ii} = vertcat(x{ii,:,:},lam{ii,:,:});
-    U{ii} = vertcat(theta{ii,:,:},mu{ii,:,:}, h{ii,:},u{ii});
+    X{ii} = x{ii,end,end};
+    %K{ii} = vertcat(x{ii,1:end-1,:},x{ii,end,1:end-1});
+    K{ii} = vertcat(x{ii,:,:});
+    Z{ii} = vertcat(lam{ii,:,:},theta{ii,:,:},mu{ii,:,:});
+    U{ii} = vertcat(h{ii,:},u{ii});
     W{ii} = vertcat(K{ii},U{ii});
-    Q{ii} = f.hessian(K{ii});
+    Q{ii} = f.hessian(X{ii});
     R{ii} = f.hessian(U{ii});
-    S{ii} = f.jacobian(K{ii}).jacobian(U{ii});
+    S{ii} = f.jacobian(X{ii}).jacobian(U{ii});
+    H{ii} = [Q{ii}, S{ii};S{ii}', R{ii}];
     w = [w; nlp.w.u(ii)];
     w_alt = [w_alt;nlp.w.u(ii)];
 end
-
+figure
 spy(int.jacobian(w))
 title("int,interleaved")
 figure
 spy(int.jacobian(w_alt))
 title("int,blocks")
 
+figure
+spy(H{1});
+title("$H_1$")
+
 %% Build KKT matrix
+import casadi.*
 G = {};
 PI = {};
 for ii=1:N_stages
