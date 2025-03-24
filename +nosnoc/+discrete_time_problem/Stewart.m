@@ -81,8 +81,8 @@ classdef Stewart < vdx.problems.Mpcc
                     % define finte elements lengths as variables
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                     % Don't lower bound as we don't need to duplicate the lower bounds with the dynamics variables.
-                    obj.w.Lambda(ii,1:opts.N_finite_elements(ii)) = {{'Lambda', dims.n_lambda}, 0, inf};
-                    obj.w.Theta(ii,1:opts.N_finite_elements(ii)) = {{'Theta', dims.n_theta}, 0, inf};
+                    obj.w.Lambda(ii,1:opts.N_finite_elements(ii)) = {{'Lambda', dims.n_lambda}};
+                    obj.w.Theta(ii,1:opts.N_finite_elements(ii)) = {{'Theta', dims.n_theta}};
                 end
                 if opts.use_fesd && opts.use_numerical_clock_state
                     obj.w.numerical_time(ii, 1:opts.N_finite_elements(ii)) = {{['t_' num2str(ii)], 1}};
@@ -696,8 +696,9 @@ classdef Stewart < vdx.problems.Mpcc
                             Theta = obj.w.Theta(ii,jj);
                             sum_theta = sum2(obj.w.theta(ii,jj,:));
                             obj.g.alg_integral(ii,jj) = {[Lambda - sum_lambda;Theta - sum_theta]};
-                            obj.G.cross_comp(ii,jj) = {Lambda};
-                            obj.H.cross_comp(ii,jj) = {Theta};
+                            obj.G.cross_comp(ii,jj) = {Lambda/length(obj.w.lambda(ii,jj,:))};
+                            obj.H.cross_comp(ii,jj) = {Theta/length(obj.w.theta(ii,jj,:))};
+                            %obj.g.cross_comp(ii,jj) = {Theta.*Lambda};
                             %lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
                         end
                     end
