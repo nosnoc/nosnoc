@@ -78,6 +78,7 @@ ocp_solver.solve();
 close all;
 nlp = ocp_solver.discrete_time_problem.solver.nlp;
 dyn = {};
+cont = {};
 alg = {};
 comp = {};
 int = [];
@@ -102,6 +103,9 @@ S = {};
 for ii=1:N_stages
     w_ii = [];
     for jj=1:N_fe
+        cont{ii,jj} = nlp.g.continuity(ii,jj);
+        int = [int;nlp.g.continuity(ii,jj)];
+        w = [w;nlp.w.x(ii,jj,0);nlp.w.lambda(ii,jj,0)];
         for kk=1:n_s
             dyn{ii,jj,kk} = nlp.g.dynamics(ii,jj,kk);
             alg{ii,jj,kk} = nlp.g.algebraic(ii,jj,kk);
@@ -112,6 +116,7 @@ for ii=1:N_stages
             theta{ii,jj,kk} = [nlp.w.theta(ii,jj,kk)];
             mu{ii,jj,kk} = [nlp.w.mu(ii,jj,kk)];
         end
+        
         comp{ii,jj} = nlp.g.cross_comp(ii,jj);
         int = [int;nlp.g.cross_comp(ii,jj)];
         w = [w;nlp.w.h(ii,jj)];
@@ -121,7 +126,7 @@ for ii=1:N_stages
     u{ii} = nlp.w.u(ii);
     K{ii} = vertcat(x{ii,:,:},lam{ii,:,:});
     U{ii} = vertcat(theta{ii,:,:},mu{ii,:,:}, h{ii,:},u{ii});
-    W{ii} = vertcat{K{ii},U{ii}};
+    W{ii} = vertcat(K{ii},U{ii});
     Q{ii} = f.hessian(K{ii});
     R{ii} = f.hessian(U{ii});
     S{ii} = f.jacobian(K{ii}).jacobian(U{ii});

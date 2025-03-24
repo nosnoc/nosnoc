@@ -44,10 +44,10 @@ x_ref = [0; 180/180*pi; 0; 0]; % target position
 problem_options = nosnoc.Options();
 problem_options.T = 5;  % Time horizon
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.rk_representation = 'differential';
+%problem_options.rk_representation = 'differential';
 problem_options.n_s = 2;
 problem_options.dcs_mode = 'Stewart';
-problem_options.N_stages = 2; % number of control intervals
+problem_options.N_stages = 30; % number of control intervals
 problem_options.N_finite_elements = 2; % number of finite element on every control interval
 problem_options.cross_comp_mode = 'FE_FE';
 
