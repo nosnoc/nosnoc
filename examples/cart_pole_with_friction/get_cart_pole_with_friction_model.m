@@ -86,8 +86,8 @@ function model = get_cart_pole_with_friction_model(use_nosnoc, F_friction)
     u_max = 30;
 
     % cost
-    %Q = diag([0.01;0;0;0]);
-    Q = diag([10; 100; 1; 1]);
+    Q = diag([0.01;0;0;0]);
+    %Q = diag([10; 100; 1; 1]);
     R = 1;
     f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u; % running/stage costs
     

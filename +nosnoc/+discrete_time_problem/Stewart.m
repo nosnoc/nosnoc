@@ -67,7 +67,7 @@ classdef Stewart < vdx.problems.Mpcc
             for ii=1:opts.N_stages
                 % other derived values
                 h0 = opts.h_k(ii); % initial guess for length of current FE
-                if obj.opts.use_fesd
+                if opts.use_fesd
                     ubh = (1 + opts.gamma_h) * h0; % upper bound for FE length
                     lbh = (1 - opts.gamma_h) * h0; % lower bound for FE length
                     if opts.time_rescaling && ~opts.use_speed_of_time_variables
@@ -81,8 +81,10 @@ classdef Stewart < vdx.problems.Mpcc
                     % define finte elements lengths as variables
                     obj.w.h(ii,1:opts.N_finite_elements(ii)) = {{'h', 1}, lbh, ubh, h0};
                     % Don't lower bound as we don't need to duplicate the lower bounds with the dynamics variables.
-                    obj.w.Lambda(ii,1:opts.N_finite_elements(ii)) = {{'Lambda', dims.n_lambda}};
-                    obj.w.Theta(ii,1:opts.N_finite_elements(ii)) = {{'Theta', dims.n_theta}};
+                    if opts.cross_comp_mode == CrossCompMode.LIFTED
+                        obj.w.Lambda(ii,1:opts.N_finite_elements(ii)) = {{'Lambda', dims.n_lambda}};
+                        obj.w.Theta(ii,1:opts.N_finite_elements(ii)) = {{'Theta', dims.n_theta}};
+                    end
                 end
                 if opts.use_fesd && opts.use_numerical_clock_state
                     obj.w.numerical_time(ii, 1:opts.N_finite_elements(ii)) = {{['t_' num2str(ii)], 1}};
@@ -118,7 +120,8 @@ classdef Stewart < vdx.problems.Mpcc
                 if (opts.rk_representation == RKRepresentation.integral ||...
                     opts.rk_representation == RKRepresentation.differential_lift_x)
                     % Remark on VDX syntax obj.w.x(ii,1:_NFE,1:n_s+rbp) - vectorized definition of variables
-                    obj.w.x(ii,1:opts.N_finite_elements(ii),0:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                    obj.w.x(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
+                    obj.w.X(ii,1:opts.N_finite_elements(ii)) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 else
                     obj.w.x(ii,1:opts.N_finite_elements(ii),opts.n_s+rbp) = {{'x', dims.n_x}, model.lbx, model.ubx, model.x0};
                 end
@@ -128,7 +131,8 @@ classdef Stewart < vdx.problems.Mpcc
                 end
                 % TODO @Anton, at some point we might provide initial guesse for lambda,mu, theta
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
-                obj.w.lambda(ii,1:opts.N_finite_elements(ii),0:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf, 1};
+                obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf, 1};
+                obj.w.Lambda(ii,1:opts.N_finite_elements(ii)) = {{'Lambda', dims.n_lambda},0, inf, 1}
                 obj.w.theta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'theta', dims.n_theta},0, inf, 1/dims.n_theta};
                 obj.w.mu(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},-inf,inf};
 
@@ -216,10 +220,6 @@ classdef Stewart < vdx.problems.Mpcc
                         end
                         t_prev = t_curr;
                     end
-
-                    cont_eq = [x_prev - obj.w.x(ii,jj,0); lam_prev - obj.w.lambda(ii,jj,0)];
-                    obj.g.continuity(ii,jj) = {cont_eq};
-                    x_prev = obj.w.x(ii,jj,0);
 
                     switch opts.rk_representation
                       case RKRepresentation.integral
@@ -386,8 +386,11 @@ classdef Stewart < vdx.problems.Mpcc
                             obj.g.path(ii,jj) = {dcs.g_path_fun(x_ijk, z_ijk, u_i, v_global, p), model.lbg_path, model.ubg_path};
                         end
                     end
-                    x_prev = obj.w.x(ii,jj,opts.n_s+rbp);
-                    lam_prev = obj.w.lambda(ii,jj,opts.n_s+rbp);
+                    cont_eq = [obj.w.x(ii,jj,opts.n_s+rbp) - obj.w.X(ii,jj); obj.w.lambda(ii,jj,opts.n_s+rbp) - obj.w.Lambda(ii,jj)];
+                    obj.g.continuity(ii,jj) = {cont_eq};
+                    
+                    x_prev = obj.w.X(ii,jj);
+                    lam_prev = obj.w.Lambda(ii,jj);
                 end
                 if ~opts.g_path_at_stg && ~opts.g_path_at_fe
                     % if path constraints are only evaluated at the control grid nodes
@@ -691,6 +694,16 @@ classdef Stewart < vdx.problems.Mpcc
                     %lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
+                            sum_lambda = sum2(obj.w.lambda(ii,jj,:));
+                            sum_theta = sum2(obj.w.theta(ii,jj,:));
+                            obj.G.cross_comp(ii,jj) = {sum_lambda};
+                            obj.H.cross_comp(ii,jj) = {sum_theta};
+                            %lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                        end
+                    end
+                  case CrossCompMode.LIFTED
+                    for ii=1:opts.N_stages
+                        for jj=1:opts.N_finite_elements(ii);
                             Lambda = obj.w.Lambda(ii,jj);
                             sum_lambda = sum2(obj.w.lambda(ii,jj,:));
                             Theta = obj.w.Theta(ii,jj);
@@ -698,8 +711,6 @@ classdef Stewart < vdx.problems.Mpcc
                             obj.g.alg_integral(ii,jj) = {[Lambda - sum_lambda;Theta - sum_theta]};
                             obj.G.cross_comp(ii,jj) = {Lambda/length(obj.w.lambda(ii,jj,:))};
                             obj.H.cross_comp(ii,jj) = {Theta/length(obj.w.theta(ii,jj,:))};
-                            %obj.g.cross_comp(ii,jj) = {Theta.*Lambda};
-                            %lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
                         end
                     end
                     % Also do standard comps:

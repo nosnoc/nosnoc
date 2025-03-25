@@ -4,5 +4,6 @@ classdef CrossCompMode < uint32
         FE_STAGE (3)
         STAGE_FE (4)
         FE_FE (7)
+        LIFTED (8)
     end
 end

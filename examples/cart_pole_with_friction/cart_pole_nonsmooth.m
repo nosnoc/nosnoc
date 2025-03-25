@@ -33,6 +33,9 @@
 % This allows to explore the drawbacks of naive smoothing, e.g., if started
 % with a very low smoothing parameter.
 % For more details see: https://www.syscop.de/files/2023ss/nonsmooth_school/ex1_sol.pdf
+%%
+close all
+clear all
 %% Model
 F_friction = 2; % Friction force amplitude
 

@@ -12,13 +12,18 @@ problem_options.use_speed_of_time_variables =  1;
 problem_options.local_speed_of_time_variable = 1;  
 problem_options.stagewise_clock_constraint = 1;
 problem_options.time_freezing = 1;
-problem_options.N_stages = 40;
-problem_options.N_finite_elements = 4;
+problem_options.N_stages = 30;
+problem_options.N_finite_elements = 3;
+problem_options.cross_comp_mode = "FE_FE";
+problem_options.dcs_mode = 'Stewart';
 % solver_options.homotopy_update_rule = 'superlinear';
 solver_options.N_homotopy = 6;
 solver_options.print_level = 5;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+solver_options.relaxation_strategy = 'SCHOLTES_EQ';
+solver_options.homotopy_steering_strategy = 'DIRECT';
+solver_options.decreasing_s_elastic_upper_bound = true;
 %% Generate Model
 % angulary velocity of reference
 omega = -2*pi; % no impacts
