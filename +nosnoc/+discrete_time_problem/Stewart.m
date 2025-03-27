@@ -132,7 +132,7 @@ classdef Stewart < vdx.problems.Mpcc
                 % TODO @Anton, at some point we might provide initial guesse for lambda,mu, theta
                 obj.w.z(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'z', dims.n_z}, model.lbz, model.ubz, model.z0};
                 obj.w.lambda(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'lambda', dims.n_lambda},0, inf, 1};
-                obj.w.Lambda(ii,1:opts.N_finite_elements(ii)) = {{'Lambda', dims.n_lambda},0, inf, 1}
+                obj.w.Lambda(ii,1:opts.N_finite_elements(ii)) = {{'Lambda', dims.n_lambda},0, inf, 1};
                 obj.w.theta(ii,1:opts.N_finite_elements(ii),1:(opts.n_s)) = {{'theta', dims.n_theta},0, inf, 1/dims.n_theta};
                 obj.w.mu(ii,1:opts.N_finite_elements(ii),1:(opts.n_s+rbp)) = {{'mu', dims.n_mu},-inf,inf};
 
@@ -687,18 +687,18 @@ classdef Stewart < vdx.problems.Mpcc
                             end
                             obj.G.cross_comp(ii,jj) = {vertcat(Gij{:})};
                             obj.H.cross_comp(ii,jj) = {vertcat(Hij{:})};
-                            lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                            lambda_prev = obj.w.Lambda(ii,jj);
                         end
                     end
                   case CrossCompMode.FE_FE
-                    %lambda_prev = obj.w.lambda(0,0,opts.n_s);
+                    lambda_prev = obj.w.lambda(0,0,opts.n_s);
                     for ii=1:opts.N_stages
                         for jj=1:opts.N_finite_elements(ii);
-                            sum_lambda = sum2(obj.w.lambda(ii,jj,:));
+                            sum_lambda = lambda_prev + sum2(obj.w.lambda(ii,jj,:));
                             sum_theta = sum2(obj.w.theta(ii,jj,:));
                             obj.G.cross_comp(ii,jj) = {sum_lambda};
                             obj.H.cross_comp(ii,jj) = {sum_theta};
-                            %lambda_prev = obj.w.lambda(ii,jj,opts.n_s + rbp);
+                            lambda_prev = obj.w.Lambda(ii,jj);
                         end
                     end
                   case CrossCompMode.LIFTED

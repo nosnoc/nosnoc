@@ -54,9 +54,9 @@ N_stages = 30;
 problem_options.N_stages = N_stages; % number of control intervals
 N_fe = 1;
 problem_options.N_finite_elements = N_fe; % number of finite element on every control interval
-problem_options.cross_comp_mode = 'FE_FE';
+problem_options.cross_comp_mode = 'STAGE_FE';
 problem_options.euler_cost_integration = 1;
-problem_options.use_fesd = false;
+problem_options.use_fesd = true;
 % solver options
 solver_options = nosnoc.reg_homotopy.Options();
 solver_options.N_homotopy = 15;
@@ -116,30 +116,32 @@ for ii=1:N_stages
             lam{ii,jj,kk} = [nlp.w.lambda(ii,jj,kk)];
             theta{ii,jj,kk} = [nlp.w.theta(ii,jj,kk)];
             mu{ii,jj,kk} = [nlp.w.mu(ii,jj,kk)];
-            comp{ii,jj,kk} = nlp.g.standard_comp(ii,jj,kk);
-            int = [int;nlp.g.standard_comp(ii,jj,kk)];
+            
         end
-        w = [w;nlp.w.X(ii,jj);nlp.w.Lambda(ii,jj)];
+        comp{ii,jj} = nlp.g.cross_comp(ii,jj);
+        int = [int;comp{ii,jj}];
+        w = [w;nlp.w.X(ii,jj);nlp.w.Lambda(ii,jj);nlp.w.h(ii,jj)];
         %w = [w;nlp.w.h(ii,jj)];
         %w_alt = [w_alt;vertcat(x{ii,jj,:},lam{ii,jj,:},theta{ii,jj,:},mu{ii,jj,:});nlp.w.h(ii,jj)];
         w_alt = [w_alt;vertcat(x{ii,jj,:},lam{ii,jj,:},theta{ii,jj,:},mu{ii,jj,:});nlp.w.X(ii,jj);nlp.w.Lambda(ii,jj)];
-        %h{ii,jj} = nlp.w.h(ii,jj);
+        h{ii,jj} = nlp.w.h(ii,jj);
     end
     u{ii} = nlp.w.u(ii);
     X{ii} = x{ii,end,end};
     %K{ii} = vertcat(x{ii,1:end-1,:},x{ii,end,1:end-1});
     Kx{ii} = vertcat(x{ii,:,:});
+    Kl{ii} = vertcat(lam{ii,:,:},mu{ii,:,:});
+    Ktheta{ii} = vertcat(theta{ii,:,:});
     Kz{ii} = vertcat(lam{ii,:,:},theta{ii,:,:},mu{ii,:,:});
     K{ii} = vertcat(Kx{ii}, Kz{ii});
-    %U{ii} = vertcat(h{ii,:},u{ii});
-    U{ii} = vertcat(u{ii});
+    U{ii} = vertcat(h{ii,:},u{ii});
     W{ii} = vertcat(K{ii},U{ii});
     Q{ii} = f.hessian(X{ii});
     R{ii} = f.hessian(U{ii});
     S{ii} = f.jacobian(X{ii}).jacobian(U{ii});
     H{ii} = [Q{ii}, S{ii};S{ii}', R{ii}];
     w = [w; nlp.w.u(ii)];
-    w_alt = [w_alt;nlp.w.u(ii)];
+    w_alt = vertcat(w_alt,h{ii,:},nlp.w.u(ii));
 end
 figure
 spy(int.jacobian(w))
@@ -156,12 +158,17 @@ title("$H_1$")
 import casadi.*
 G = {};
 Gk = {};
+Gk_fun = {};
 Gx = {};
 Gu = {};
 PI = {};
 for ii=1:N_stages
-    G{ii} = vertcat(dyn{ii,:,:},alg{ii,:,:},comp{ii,:,:});
-    Gk{ii} = G{ii}.jacobian(K{ii});
+    alg_ii = vertcat(alg{ii,:,:});
+    alg_ii(3:3:end) = [];
+    G{ii} = vertcat(dyn{ii,:,:},alg_ii);
+    G_dyn{ii} = vertcat(dyn{ii,:,:});
+    Gk{ii} = G{ii}.jacobian(vertcat(Kx{ii},Kl{ii}));
+    Gk_dyn{ii} = G_dyn{ii}.jacobian(vertcat(Kx{ii}));
     
 end
 
