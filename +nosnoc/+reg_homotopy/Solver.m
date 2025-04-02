@@ -1393,7 +1393,11 @@ function X = all_combinations(varargin)
     X = zeros(prod(sizeThisSet),numSets);
     for i=1:size(X,1)
         ixVect = cell(length(sizeThisSet),1);
-        [ixVect{:}] = ind2sub(flip(sizeThisSet),i);
+        sz = flip(sizeThisSet);
+        if length(sz) == 1
+            sz = [sz,1];
+        end
+        [ixVect{:}] = ind2sub(sz,i);
         ixVect = flip([ixVect{:}]);
         vect = zeros(1, numSets);
         for jj=1:numSets

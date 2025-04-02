@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false # We always want to see where the failures are.
       matrix:
-        matlab_version: ["R2021b", "R2022a", "R2022b", "R2023a", "R2023b", "R2024a"]
+        matlab_version: ["R2021b", "R2022a", "R2022b", "R2023a", "R2023b", "R2024a", "R2024b"]
         casadi:
           - version: "3.5.5"
             file: "casadi-linux-matlabR2014b-v3.5.5.tar.gz"
