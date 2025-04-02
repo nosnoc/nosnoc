@@ -1,6 +1,6 @@
 classdef TestGenericMpcc < matlab.unittest.TestCase
     properties (TestParameter)
-        mpcc_method = cellstr(enumeration('nosnoc.solver.MpccMethod'));
+        mpcc_method = cellstr(enumeration('nosnoc.reg_homotopy.MpccMethod'));
         homotopy_steering_strategy = cellstr(enumeration('HomotopySteeringStrategy'))
     end
     
