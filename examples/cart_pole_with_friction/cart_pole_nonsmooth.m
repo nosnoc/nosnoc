@@ -33,9 +33,9 @@
 % This allows to explore the drawbacks of naive smoothing, e.g., if started
 % with a very low smoothing parameter.
 % For more details see: https://www.syscop.de/files/2023ss/nonsmooth_school/ex1_sol.pdf
+close all;
 %% Model
 F_friction = 2; % Friction force amplitude
-
 % model
 model = get_cart_pole_with_friction_model(true, F_friction);
 x_ref = [0; 180/180*pi; 0; 0]; % target position
@@ -44,25 +44,47 @@ x_ref = [0; 180/180*pi; 0; 0]; % target position
 problem_options = nosnoc.Options();
 problem_options.T = 5;  % Time horizon
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
-problem_options.n_s = 3;
+problem_options.n_s = 2;
+problem_options.cross_comp_mode = 'FE_FE';
+problem_options.cross_comp_mode = 'STAGE_FE';
 problem_options.dcs_mode = 'Stewart';
 problem_options.N_stages = 20; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval
+problem_options.gamma_h = 0;
 
-% solver options
+%% reg solver options
+
 solver_options = nosnoc.reg_homotopy.Options();
 solver_options.N_homotopy = 15;
 solver_options.complementarity_tol = 1e-13;
 solver_options.sigma_N = 1e-13;
 
-% other linear solvers require installation, check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions
-% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+%% active set solver options
+solver_options = mpecopt.Options();
+solver_options.compute_tnlp_stationary_point = false;
+solver_options.settings_lpec.lpec_solver = "Gurobi";
+solver_options.settings_casadi_nlp.ipopt.linear_solver = 'ma27';
+if 1
+active_set_guess = nosnoc.activeset.Pss({[1], [2]},'times', [problem_options.T/2 problem_options.T]);
+active_set_guess = nosnoc.activeset.Pss({[1 2], [1 2]},'times', [problem_options.T/2 problem_options.T]);
+% active_set_guess = nosnoc.activeset.Pss({[1], [2], [1], [2]},'times', [0 problem_options.T/4 problem_options.T/2 problem_options.T]);
+% Create a nosnoc solver.
+% solver_options.rescale_large_objective_gradients = true;
+solver_options.rho_TR_phase_i_init = 1e0;
+solver_options.rho_TR_phase_ii_init = 1e1;
+else
+solver_options.rho_TR_phase_i_init = 1;
+solver_options.rho_TR_phase_ii_init = 1e-1;
+% solver_options.tol_B_stationarity = 1e-14;
+end
 
-% create solver and solve problem
+
+%% create solver and solve problem
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver.set_initial_active_set(active_set_guess);
 ocp_solver.solve();
 
-% evaluate
+%% evaluate
 x_opt = ocp_solver.get("x");
 distance_to_target = abs(x_ref-x_opt(:,end));
 disp(['final difference to desired angle: ', num2str(distance_to_target(2), '%.3e'), ' rad'])

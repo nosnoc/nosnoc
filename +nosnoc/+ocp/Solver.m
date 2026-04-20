@@ -53,9 +53,9 @@ classdef Solver < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Cls"
-                if ~opts.use_fesd
-                    nosnoc.error('fesd_j_without_fesd',"The FESD-J reformulation only makes sense with use_fesd=true.")
-                end
+                % if ~opts.use_fesd
+                %     nosnoc.error('fesd_j_without_fesd',"The FESD-J reformulation only makes sense with use_fesd=true.")
+                % end
                 obj.dcs = nosnoc.dcs.Cls(model);
                 obj.dcs.generate_variables(opts);
                 obj.dcs.generate_equations(opts);
@@ -94,16 +94,24 @@ classdef Solver < handle
             arguments
                 obj
             end
+            % Set rho_h_p
+            try
+                obj.set_param('rho_h_p',{},obj.opts.rho_h)
+            end
             switch class(obj.solver_opts)
               case "nosnoc.reg_homotopy.Options"
                 plugin = 'reg_homotopy';
                 obj.solver_opts.assume_lower_bounds = true; % For nosnoc specific problems this should always be true otherwise the numerics in the relaxed NLP become nasty due to duplicate lb constraints.
               case "mpecopt.Options"
                 plugin = 'mpecopt';
+              case "nosnoc.sqpec.Options"
+                plugin = 'sqpec';
+              case "nosnoc.ccopt.Options"
+                plugin = 'ccopt';
             end
             
             obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
-
+            
             obj.stats = obj.discrete_time_problem.solve(obj.active_set);
         end
 
@@ -230,6 +238,11 @@ classdef Solver < handle
 
         function objective = get_objective(obj)
             objective = obj.discrete_time_problem.f_result;
+        end
+
+        function w_opt = get_w(obj)
+            % return all primal variables
+            w_opt = obj.discrete_time_problem.w.res;
         end
 
         function set(obj, varname, field, indices, value)

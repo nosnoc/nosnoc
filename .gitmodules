@@ -4,3 +4,5 @@
 [submodule "external/mpecopt"]
 	path = external/mpecopt
 	url = git@github.com:nosnoc/mpecopt.git
+[submodule "external/mpecopt/"]
+	url = https://github.com/nosnoc/mpecopt.git

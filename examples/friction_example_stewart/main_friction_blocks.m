@@ -36,7 +36,7 @@ import casadi.*
 % This is an example from 
 % Stewart, D.E., 1996. A numerical method for friction problems with multiple contacts. The ANZIAM Journal, 37(3), pp.288-308.
 % It considers 3 independent switching functions and it demonstrates the
-% generalization of the FESD scheme presented in the NOSNOC software parep
+% generalization of the FESD scheme presented in the NOSNOC software paper
 %% settings
 % collocation settings
 problem_options = nosnoc.Options();

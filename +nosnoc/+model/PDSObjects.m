@@ -148,17 +148,22 @@ classdef PDSObjects < nosnoc.model.Base
         % as an explicit function in $x$.
             import casadi.*
 
+            epsilon = 1e-6;
             % Lambda and gap functions
             lambda = SX.sym(['lambda_' ball1.name '_' ball2.name]);
             c = sum((ball1.x - ball2.x).^2) - (ball1.r + ball2.r)^2;
+            %c = sqrt(sum((ball1.x - ball2.x).^2) + epsilon) - (ball1.r + ball2.r);
 
             % Get normals
-            nabla_c_x1 = c.jacobian(ball1.x)';
-            nabla_c_x2 = c.jacobian(ball2.x)';
+            nabla_c_x1 = c.jacobian(ball1.x)'
+            nabla_c_x2 = c.jacobian(ball2.x)'
 
             % Update dynamics of both balls with normal times lagrange multiplier
             ball1.f_rhs = ball1.f_rhs + nabla_c_x1*lambda;
             ball2.f_rhs = ball2.f_rhs + nabla_c_x2*lambda;
+
+            dyn2 = ball2.f_rhs + nabla_c_x2*lambda;
+            dyn2.jacobian([ball1.x;ball2.x;lambda]);
 
             % Normal expression is just nabla_c as c is explicit in this case.
             normal = [nabla_c_x1;nabla_c_x2];

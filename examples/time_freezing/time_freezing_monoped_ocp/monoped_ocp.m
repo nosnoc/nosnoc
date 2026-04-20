@@ -4,7 +4,7 @@ clc;
 delete monoped_ocp.mat
 delete monoped_ocp.gif
 delete monoped_ocp.txt
-oldpath = addpath('robot_model_files')
+oldpath = addpath('robot_model_files');
 
 import casadi.*
 %% robot scene description
@@ -44,20 +44,22 @@ solver_options.opts_casadi_nlp.ipopt.acceptable_tol = 1e-8;
 solver_options.opts_casadi_nlp.ipopt.acceptable_iter = 3;
 solver_options.complementarity_tol = 1e-6;
 %solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
+solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% time-freezing
 problem_options.s_sot_max = 10;
 problem_options.s_sot_min = 0.99;
 problem_options.rho_sot = 0.00;
-problem_options.time_freezing = 1;
+problem_options.time_freezing = 0;
+problem_options.use_fesd = 0;
 problem_options.pss_lift_step_functions = 0;
 problem_options.stagewise_clock_constraint = 1;
 problem_options.a_n = a_n;
 
 %% Discretization
 problem_options.T = 3.0;
-problem_options.N_stages = 50;
-problem_options.N_finite_elements = 3;
+problem_options.N_stages = 60;
+problem_options.N_finite_elements = 1;
 
 %% friction cone parameters
 model = nosnoc.model.Cls();
@@ -231,7 +233,7 @@ u_ref = [0;0];
 R = 1e-1*eye(2);
 
 % Generate reference trajectory
-x_mid = [q_target(1)/2; 0.6;0;0;q_target(1)/problem_options.T;0;0;0];
+x_mid = [q_target(1)/2; 0.4;0;0;q_target(1)/problem_options.T;0;0;0];
 %x_mid_2 = [2*q_target(1)/4; 0.4;0;0;q_target(1)/problem_options.T;0;0;0];
 %x_mid_3 = [3*q_target(1)/4; 0.6;0;0;q_target(1)/problem_options.T;0;0;0];
 
@@ -247,6 +249,10 @@ model.lsq_T = {x, x_target, Q_terminal};
 %model.g_terminal = q(1:length(q_target))-q_target;
 
 %% Solve OCP with nosnoc
+mpecopt_options = mpecopt.Options();
+mpecopt_options.rho_TR_phase_i_init = 1e-1;
+mpecopt_options.settings_lpec.lpec_solver = "Gurobi";
+mpecopt_options.settings_casadi_nlp.ipopt.linear_solver = 'ma27';
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
 ocp_solver.solve();
 %     x_guess = {};

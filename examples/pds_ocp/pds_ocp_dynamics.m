@@ -9,6 +9,7 @@ function [model, problem_options] = pds_ocp_dynamics(use_fesd, N_stages, n_s, T,
     problem_options.N_stages = N_stages;
     problem_options.T = T;
     problem_options.rho_h = 1e-10;
+    problem_options.gamma_h = .9999;
     problem_options.use_fesd = use_fesd;
     problem_options.gcs_lift_gap_functions = true;
 
@@ -32,7 +33,7 @@ function [model, problem_options] = pds_ocp_dynamics(use_fesd, N_stages, n_s, T,
 
     if exist('x_target')
         % costs
-        R = diag([1e0;1e0]);
+        R = diag([1e1;1e1]);
         Q_T = diag([0;0]);
         model.f_q = u'*R*u;
         model.f_q_T = 0.5*(x-x_target)'*Q_T*(x-x_target);

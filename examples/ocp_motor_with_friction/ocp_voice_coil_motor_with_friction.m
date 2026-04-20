@@ -11,11 +11,12 @@ clc; clear; close all;
 import casadi.*
 problem_options = nosnoc.Options();
 solver_options = nosnoc.reg_homotopy.Options();
+ccopt_options = nosnoc.ccopt.Options();
 
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.cross_comp_mode = 'FE_FE';
-problem_options.N_stages = 30; % number of control intervals
+problem_options.N_stages = 53; % number of control intervals
 problem_options.N_finite_elements = 3; % number of finite element on every control interval (optionally a vector might be passed)
 problem_options.T = 0.08;    % Time horizon
 
@@ -23,6 +24,14 @@ problem_options.T = 0.08;    % Time horizon
 solver_options.N_homotopy = 10;
 % solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 % Discretization parameters
+
+%ccopt_options.opts_madnlp.linear_solver = 'Ma27Solver';
+ccopt_options.opts_madnlp.tol = 1e-8;
+ccopt_options.opts_madnlp.barrier.TYPE = 'MonotoneUpdate';
+ccopt_options.opts_ccopt.relaxation_update.TYPE = 'RolloffRelaxationUpdate';
+ccopt_options.opts_ccopt.relaxation_update.rolloff_slope = 2.0;
+ccopt_options.opts_ccopt.relaxation_update.rolloff_point = 1e-6;
+ccopt_options.opts_ccopt.sigma_min = 1e-8;
 
 %% The Model
 % Parameters
@@ -67,9 +76,17 @@ B = [zeros(4,1);1/L];
 C1 = [0;-F_R/m1;0;0;0]; % v1 >0
 C2 = -C1; %v1<0
 
+use_f_0 = false;
 % switching dynamics with different friction froces
-f_1 = A*x+B*u+C1; % v1>0
-f_2 = A*x+B*u+C2; % v1<0
+if use_f_0
+    % seperate the nonsmooth part; improve usually convergence
+    f_0 =  A*x+B*u;
+    f_1 = C1;
+    f_2 = C2;
+else
+    f_1 = A*x+B*u+C1; % v1>0
+    f_2 = A*x+B*u+C2; % v1<0
+end
 
 % All modes
 F = [f_1, f_2];
@@ -86,7 +103,9 @@ x_target = [0.01;0;0.01;0;0];
 % Stage cost
 model.f_q = u^2;
 model.g_terminal = x-x_target;
-
+if use_f_0
+    model.f_0 = f_0;
+end
 % Inequality constraints
 % cv = 10; cx = 10;
 % model.g_path = [v1-v2;x1-x2];
@@ -94,7 +113,8 @@ model.g_terminal = x-x_target;
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+%ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
 ocp_solver.solve();
 %% plots
 % unfold structure to workspace of this script

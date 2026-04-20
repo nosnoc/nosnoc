@@ -1,8 +1,20 @@
+% This script is another minimal nosnoc MPC example. It shows closed-loop MPC for a
+% piecewise smooth system with plant-model mismatch, where the controller prediction
+% model differs from the simulated plant and the closed-loop response is propagated
+% with a separate, more accurate integrator.
+% 
+% This example solves the underlying OCPs to full  convergence at each MPC step, 
+% while still using MPC-specific warm-start settings to speed up repeated solves. 
+
+% For related features and faster MPC variants, see the other
+% nosnoc examples, in particular the CCOpt-based solvers.
+%%
+
 clear; clc; close all;
 import casadi.*
 % 
 problem_options = nosnoc.Options(); % Initialize all options related to the optimal control or simulation problem.
-solver_options = nosnoc.reg_homotopy.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
+reg_solver_options = nosnoc.reg_homotopy.Options(); % Initialize all options related to the MPEC solver used for solving nosonc problems.
 mpc_options = nosnoc.mpc.Options(); % Initialize all options related to the MPC implementation. 
 
 % Choosing the Runge - Kutta Method and number of stages
@@ -46,19 +58,19 @@ model.f_q = (q-q_goal)^2 + u^2; % Add stage cost
 model.f_q_T = (q-q_goal)^2 + (v-v_goal)^2; % Add terminal quadratic cost
 
 % Setup solver an mpc options
-solver_options.homotopy_update_rule = 'superlinear'; % Use superlinear update rule for relaxation parameter sigma.
-solver_options.homotopy_update_slope = 0.05; % Rate which the relaxation sigma is reduced at: sigma_i+1 = kappa*sigma_i 
-solver_options.homotopy_update_exponent = 2; % Rate which the relaxation sigma is reduced at: sigma_i+1 = sigma_i^kappa
-solver_options.complementarity_tol = 1e-7; % Value to drive the complementarity residual to.
-solver_options.N_homotopy = 10; % Maximum number of homotopy iterations.
+reg_solver_options.homotopy_update_rule = 'superlinear'; % Use superlinear update rule for relaxation parameter sigma.
+reg_solver_options.homotopy_update_slope = 0.05; % Rate which the relaxation sigma is reduced at: sigma_i+1 = kappa*sigma_i 
+reg_solver_options.homotopy_update_exponent = 2; % Rate which the relaxation sigma is reduced at: sigma_i+1 = sigma_i^kappa
+reg_solver_options.complementarity_tol = 1e-7; % Value to drive the complementarity residual to.
+reg_solver_options.N_homotopy = 10; % Maximum number of homotopy iterations.
                                 %solver_options.print_level = 0;
 % solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % Using an HSL solver is a significant speedup over the default 'mumps' but requires installation
 % Set the fast sigma for followup solves to the complementarity tol to only do 1 nlp solve. 
-mpc_options.fullmpcc_fast_sigma_0 = 1e-7;
+mpc_options.fast_sigma_0 = 1e-7;
 N_steps = 25; % number of closed loop mpc steps
 
 % create mpc object
-mpc = nosnoc.mpc.FullMpcc(model, mpc_options, problem_options, solver_options);
+mpc = nosnoc.mpc.FullMpcc(model, mpc_options, problem_options, reg_solver_options);
 
 %% Create sim model and integrator
 

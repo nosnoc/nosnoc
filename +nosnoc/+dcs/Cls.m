@@ -74,9 +74,9 @@ classdef Cls < nosnoc.dcs.Base
                 % Impulse variables
                 obj.Lambda_tangent = define_casadi_symbolic(opts.casadi_symbolic_mode,'Lambda_tangent',dims.n_tangents);
                 if isequal(opts.friction_model,'Polyhedral')
-                    obj.gamma_d = define_casadi_symbolic(opts.casadi_symbolic_mode,'gamma_d',dims.n_c);
-                    obj.beta_d = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_d',dims.n_c); % lift friction cone bound
-                    obj.delta_d = define_casadi_symbolic(opts.casadi_symbolic_mode,'delta_d',dims.n_tangents); % lift lagrangian
+                    obj.gamma_d = define_casadi_symbolic(opts.casadi_symbolic_mode,'gamma_d',dims.n_c); % Lagrange multiplier for (sum(lambda_d) \leq mu lambda_n)
+                    obj.beta_d = define_casadi_symbolic(opts.casadi_symbolic_mode,'beta_d',dims.n_c); % lift friction cone bound 
+                    obj.delta_d = define_casadi_symbolic(opts.casadi_symbolic_mode,'delta_d',dims.n_tangents); % lift lagrangian 
                     % Impulse variables
                     obj.Gamma_d = define_casadi_symbolic(opts.casadi_symbolic_mode,'Gamma_d',dims.n_c);
                     obj.Beta_d = define_casadi_symbolic(opts.casadi_symbolic_mode,'Beta_d',dims.n_c); % lift friction cone bound
@@ -183,7 +183,7 @@ classdef Cls < nosnoc.dcs.Base
                     for ii = 1:dims.n_c
                         ind_temp = dims.n_t*ii-(dims.n_t-1):dims.n_t*ii;
                         g_alg_cls  = [g_alg_cls;obj.beta_d(ii)-(model.mu(ii)*obj.lambda_normal(ii) - sum(obj.lambda_tangent(ind_temp)));...
-                            obj.delta_d(ind_temp) - (model.D_tangent(:,ind_temp)'*model.v + obj.gamma_d(ii))];
+                                      obj.delta_d(ind_temp) - (model.D_tangent(:,ind_temp)'*model.v + obj.gamma_d(ii))];
                         g_impulse = [g_impulse;obj.Beta_d - (model.mu(ii)*obj.Lambda_normal(ii)-sum(obj.Lambda_tangent(ind_temp)));...
                             obj.Delta_d(ind_temp)- (model.D_tangent(:,ind_temp)'*v_post_impact + obj.Gamma_d(ii))];
                     end

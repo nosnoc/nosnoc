@@ -32,7 +32,8 @@ solver_initialization = struct('x0', x0,'lbx', lbx,'ubx', ubx,'p',p0,'lbg',-inf,
 
 mpcc_method1 = 'scholtes_ineq';
 mpcc_method2 = 'kanzow_schwartz_ineq';
-mpcc_method3 =  nosnoc.reg_homotopy.MpccMethod.STEFFENSEN_ULBRICH_INEQ;
+mpcc_method3 =  nosnoc.reg_homotopy.MpccMethod.SCHOLTES_EQ;
+
 
 mpccsol_opts.homotopy_steering_strategy = "ELL_1";
 % the parameter relaxation/smoothing parameter s is minmized in the objective, its penality (1/sigma) is steered outside, cf. Table 1 in https://publications.syscop.de/Nurkanovic2024b.pdf

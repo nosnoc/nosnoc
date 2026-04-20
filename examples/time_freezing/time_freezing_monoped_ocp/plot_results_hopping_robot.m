@@ -2,7 +2,7 @@ import casadi.*
 close all;
 %%
 LineWidth = 3;
-make_animation = 0;
+make_animation = 1;
 plot_kinematics = 0;
 label_fontsize = 24;
 %% visualization
@@ -17,7 +17,8 @@ vx = x_res(5,:);
 vz = x_res(6,:);
 omega_hip = x_res(7,:);
 omega_knee = x_res(8,:);
-t_opt = x_res(9,:);
+% t_opt = x_res(9,:);
+t_opt = ocp_solver.get_time_grid();
 if ~exist('hole_constraint','var')
     hole_constraint = 0;
 end

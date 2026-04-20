@@ -4,7 +4,7 @@ import casadi.*
 
 %% Options
 use_fesd = true;
-N_stages = 10;
+N_stages = 50;
 n_s = 3;
 T = 10;
 x_target = [0;-4];
