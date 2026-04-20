@@ -4,8 +4,8 @@ clc;
 import casadi.*
 
 %% 
-J = 1; % no frictioinal impulse
-% J = 1/32; % frictional impulse apperas
+% J = 1; % no frictioinal impulse
+J = 1/32; % frictional impulse apperas
 above_ground = 0.2;
 
 problem_options = nosnoc.Options();
@@ -18,7 +18,7 @@ problem_options.friction_model = "Polyhedral";
 % problem_options.friction_model = "Conic";
 % problem_options.conic_model_switch_handling = "Abs";
 problem_options.pss_lift_step_functions = 1;
-
+problem_options.use_fesd = 0;
 
 solver_options.opts_casadi_nlp.ipopt.max_iter = 3e3;
 solver_options.print_level = 3;
@@ -32,7 +32,7 @@ integrator_options.break_simulation_if_infeasible = 0;
 %%
 model = nosnoc.model.Cls();
 model.e = 0;
-model.mu = 0.2;
+model.mu = 0.7;
 
 %% The CLS model
 qx = SX.sym('qx',1);
@@ -72,8 +72,8 @@ model.x0 = [0;l/2*cos(theta0)+above_ground;theta0;...
 
 %% Simulation settings
 N_finite_elements = 2;
-T_sim = 1;
-N_sim = 10;
+T_sim = 3;
+N_sim = 60;
 
 problem_options.T_sim = T_sim;
 problem_options.N_finite_elements = N_finite_elements;

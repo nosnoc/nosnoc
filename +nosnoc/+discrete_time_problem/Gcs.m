@@ -23,8 +23,8 @@ classdef Gcs < vdx.problems.Mpcc
             opts = obj.opts;
 
             % Parameters
-            obj.p.rho_h_p = {{'rho_h_p',1}, 1};
-            obj.p.rho_terminal_p = {{'rho_terminal_p',1}, 1};
+            obj.p.rho_h_p = {{'rho_h_p',1}, opts.rho_h};
+            obj.p.rho_terminal_p = {{'rho_terminal_p',1}, opts.rho_terminal};
             obj.p.T = {{'T',1}, opts.T};
             obj.p.p_global = {model.p_global, model.p_global_val};
 

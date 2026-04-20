@@ -65,9 +65,9 @@ classdef FESD < handle
                 obj.discrete_time_problem = nosnoc.discrete_time_problem.Heaviside(obj.dcs, opts);
                 obj.discrete_time_problem.populate_problem();
               case "nosnoc.model.Cls"
-                if ~opts.use_fesd
-                    nosnoc.error('fesd_j_without_fesd',"The FESD-J reformulation only makes sense with use_fesd=true.")
-                end
+                % if ~opts.use_fesd
+                %     nosnoc.error('fesd_j_without_fesd',"The FESD-J reformulation only makes sense with use_fesd=true.")
+                % end
                 obj.dcs = nosnoc.dcs.Cls(model);
                 obj.dcs.generate_variables(opts);
                 obj.dcs.generate_equations(opts);
@@ -109,10 +109,12 @@ classdef FESD < handle
                 obj.solver_opts.assume_lower_bounds = true;
               case "mpecopt.Options"
                 plugin = 'mpecopt';
+              case "nosnoc.ccopt.Options"
+                plugin = 'ccopt';
             end
             if ~obj.solver_exists
                 obj.discrete_time_problem.create_solver(obj.solver_opts, plugin);
-                if isfield(obj.solver_opts.opts_casadi_nlp,'iteration_callback')
+                if strcmp(plugin, 'reg_homotopy') && isfield(obj.solver_opts.opts_casadi_nlp,'iteration_callback')
                     obj.solver_opts.opts_casadi_nlp.iteration_callback.mpcc = obj.discrete_time_problem;
                 end
                 obj.solver_exists = true;
@@ -168,10 +170,8 @@ classdef FESD < handle
                 solver_stats = obj.solve();
                 t_current = t_current + opts.T;
                 if solver_stats.converged == 0
-                    if integrator_opts.print_level >=2
-                        disp(['integrator_fesd: did not converge in step ', num2str(ii), ' constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
-                    end
-                    if opts.dcs_mode == "CLS"
+                    disp(['integrator_fesd: did not converge in step ', num2str(ii), ' constraint violation: ', num2str(solver_stats.constraint_violation, '%.2e')])
+                    if opts.dcs_mode == "CLS" && opts.use_fesd
                         disp('provided initial guess in integrator step did not converge, trying anther inital guess.');
                         % This is a hack to try and kick the initialization.
                         for jj=1:opts.N_finite_elements
@@ -241,7 +241,11 @@ classdef FESD < handle
                     x_step_full = obj.discrete_time_problem.w.x(:,:,:).res;
                     x_res = [x_res, x_step(:,(2+opts.no_initial_impacts):end)];
                     x_res_full = [x_res_full, x_step_full(:,(2+opts.no_initial_impacts):end)];
-                    h = obj.discrete_time_problem.w.h(:,:).res;
+                    if opts.use_fesd
+                        h = obj.discrete_time_problem.w.h(:,:).res;
+                    else
+                        h = ones(1,opts.N_finite_elements) * obj.discrete_time_problem.p.T().val/opts.N_finite_elements;
+                    end
                     for ii=1:length(h)
                         hi = h(ii);
                         if opts.no_initial_impacts && ii==1 

@@ -12,6 +12,7 @@ generate_video = false;
 model = nosnoc.model.Pds();
 problem_options = nosnoc.Options();
 solver_options = nosnoc.reg_homotopy.Options();
+ccopt_options = nosnoc.ccopt.Options();
 
 %% Parameters
 T = 5;  % time horizon
@@ -41,24 +42,34 @@ model.c = [norm_2(x3-x1)-(R+R_obj);norm_2(x3-x2)-(R+R_obj)];
 model.f_x_unconstrained = [u1;u2;0;0];
 
 % costs
-model.f_q = 1e-4*norm_2(model.u)^2;
-model.f_q_T = (x-x_target)'*diag([1e0,1e0,1e0,1e0,1e3,1e3])*(x-x_target);
+model.f_q = 1e-4*norm_2(model.u)^2 + (x-x_target)'*diag([0.0,0.0,0.0,0.0,1e-2,1e-2])*(x-x_target);
+model.f_q_T = (x-x_target)'*diag([1e1,1e1,1e1,1e1,1e3,1e3])*(x-x_target);
 
 % Time discertization settings
 problem_options.T = T;
 problem_options.N_stages = 30; % numbe of control stages\intervals
 problem_options.N_finite_elements = 3; % number of integration steps in every control interval
 problem_options.n_s = 2;
+problem_options.cross_comp_mode = "FE_FE";
 
 % Homotopy solver options
-solver_options.complementarity_tol = 1e-10;
-solver_options.print_level = 3;
-solver_options.opts_casadi_nlp.ipopt.max_iter = 500;
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27'; % if solver fails (i.e. nothing happens) because
-% HLS library not instaled use 'mumps' instead of ma27
+% solver_options.complementarity_tol = 1e-8;
+% solver_options.print_level = 3;
+% solver_options.opts_casadi_nlp.ipopt.max_iter = 500;
+% solver_options.opts_casadi_nlp.ipopt.linear_solver = 'mumps'; % if solver fails (i.e. nothing happens) because
+% % HLS library not instaled use 'mumps' instead of ma27
 
+ccopt_options.opts_madnlp.linear_solver = 'Ma27Solver';
+ccopt_options.opts_madnlp.tol = 1e-8;
+ccopt_options.opts_madnlp.barrier.TYPE = 'MonotoneUpdate';
+ccopt_options.opts_madnlp.barrier.mu_min = 1e-9;
+% ccopt_options.opts_ccopt.relaxation_update.TYPE = 'RolloffRelaxationUpdate';
+% ccopt_options.opts_ccopt.relaxation_update.rolloff_slope = 2.0;
+% ccopt_options.opts_ccopt.relaxation_update.rolloff_point = 1e-8;
+ccopt_options.opts_ccopt.sigma_min = 1e-8;
+%ccopt_options.opts_ccopt.q_regularization = 'critical_rho';
 %% create solver and solve optimal control problem
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
 ocp_solver.solve();
 %% plot
 x_res = ocp_solver.get("x");

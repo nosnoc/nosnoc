@@ -47,7 +47,7 @@ problem_options.dcs_mode = 'CLS';
 problem_options.cross_comp_mode = 7;
 problem_options.friction_model = "Polyhedral";
 problem_options.gamma_h = 1;
-
+problem_options.use_fesd = 0;
 solver_options.sigma_0 = 1e0;
 solver_options.homotopy_steering_strategy = 'DIRECT';
 solver_options.homotopy_update_slope = 0.5;
@@ -157,7 +157,11 @@ model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 % model.g_terminal = [x-x_ref];
 
 %% Call nosnoc solver
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+mpecopt_options = mpecopt.Options();
+sqpec_options = nosnoc.sqpec.Options();
+sqpec_options.max_iter = 6;
+
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, mpecopt_options);
 
 % add inital guess
 lambda_guess = {};
@@ -198,8 +202,10 @@ x_res = ocp_solver.get('x');
 t_grid = ocp_solver.get_time_grid();
 results.u = ocp_solver.get('u');
 results.lambda_tangent = ocp_solver.get('lambda_tangent');
+if problem_options.use_fesd
 Lambda_normal = ocp_solver.get('Lambda_normal');
 lambda_normal = ocp_solver.get('lambda_normal');
+end
 p1x = x_res(1,:);
 p2x = x_res(3,:);
 p1y = x_res(2,:);

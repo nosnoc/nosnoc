@@ -39,6 +39,7 @@ solver_options = nosnoc.reg_homotopy.Options();
 problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;  % number of stages in IRK methods
 problem_options.dcs_mode = 'CLS';
+problem_options.use_fesd = 0;
 problem_options.cross_comp_mode = 7;
 problem_options.friction_model = "Polyhedral";
 problem_options.relax_terminal_numerical_time = 'ELL_2';
@@ -167,7 +168,12 @@ model.f_q = (x-x_ref)'*Q*(x-x_ref)+ u'*R*u;
 model.f_q_T = (x-x_ref)'*Q_terminal*(x-x_ref);
 
 %% Call nosnoc solver
+% mpecopt_options = mpecopt.Options();
+% mpecopt_options.rho_TR_phase_i_init = 1e-1;
+% mpecopt_options.settings_lpec.lpec_solver = "Gurobi";
+% ocp_solver = nosnoc.ocp.Solver(model, problem_options, mpecopt_options);
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+
 lambda_normal_guess = {};
 ocp_solver.set('lambda_normal', 'init', {1:N_stg, 1:N_FE, 1:problem_options.n_s}, [0;0;g;g;g]);
 ocp_solver.solve();

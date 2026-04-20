@@ -2,11 +2,11 @@ classdef FullMpcc < nosnoc.mpc.Base
 % A basic MPC implementation which uses a call to the full MPCC solver to generate feedback.
 % It does either shift or in place warmstarting during the preparation phase and uses a possibly reduced
 % initial relaxation in the homotopy solver if the prior solution converged.
-    properties (Access=private)
+    properties %(Access=private)
         ocp_solver nosnoc.ocp.Solver % nosnoc OCP solver used to generate feedback.
         mpc_options nosnoc.mpc.Options % nosnoc mpc specific options.
         problem_options nosnoc.Options % nosnoc problem options.
-        solver_options nosnoc.reg_homotopy.Options % nosnoc solver options.
+        solver_options % nosnoc solver options.
         model % nosnoc model.
 
         last_solve_successful(1,1) logical = false % true if last solve was successful, false otherwise.
@@ -18,36 +18,46 @@ classdef FullMpcc < nosnoc.mpc.Base
             obj.mpc_options = mpc_options;
             obj.problem_options = problem_options;
             obj.solver_options = solver_options;
-            obj.cold_sigma_0 = solver_options.sigma_0;
+            if isa(obj.solver_options, "nosnoc.reg_homotopy.Options")
+                obj.cold_sigma_0 = solver_options.sigma_0;
+            else
+                obj.cold_sigma_0 = 1.0;
+            end
             obj.ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
         end
         
         function [u, stats] = get_feedback(obj, x0)
             % This method takes a state estimate $x_0$ and returns the corresponding control $u$.
-            feedback_timer = tic;
+            %feedback_timer = tic;
 
             % Update sigma_0 to the fast one if we have 
-            if obj.last_solve_successful
-                obj.solver_options.sigma_0 = obj.mpc_options.fullmpcc_fast_sigma_0;
+            if isa(obj.solver_options, "nosnoc.reg_homotopy.Options") && obj.last_solve_successful
+                obj.solver_options.sigma_0 = obj.mpc_options.fast_sigma_0;
             end
             obj.ocp_solver.set_x0(x0);
             obj.ocp_solver.solve();
             u_res = obj.ocp_solver.get('u');
             u = u_res(:,1);
             stats.ocp_solver_stats = obj.ocp_solver.stats;
-            stats.feedback_time = toc(feedback_timer);
+            if isa(obj.solver_options,'nosnoc.ccopt.Options')
+                stats.feedback_time = obj.ocp_solver.stats.ccopt.total_wall_time;
+            else
+                stats.feedback_time = obj.ocp_solver.stats.wall_time_total;
+            end
         end
 
-        function [stats] = do_preparation(obj)
+        function [stats] = do_preparation(obj, x0_pred)
             % This method should be called after get feedback to do the work of
             % setting up the warm starting, it does nothing if the previous solve
             % did not converge.
             preparation_timer = tic;
             if isfield(obj.ocp_solver.stats, "converged") && obj.ocp_solver.stats.converged
-                if obj.mpc_options.fullmpcc_do_shift_initialization
-                    obj.ocp_solver.do_shift_initialization();
-                else
-                    obj.ocp_solver.do_warmstart();
+                if obj.mpc_options.warmstart_full_mpc
+                    if obj.mpc_options.do_shift_initialization
+                        obj.ocp_solver.do_shift_initialization();
+                    else
+                        obj.ocp_solver.do_warmstart();
+                    end
                 end
                 obj.last_solve_successful = true;
             else
@@ -60,6 +70,11 @@ classdef FullMpcc < nosnoc.mpc.Base
             % This method returns the predicted state from the last solve.
             x_res = obj.ocp_solver.get("x");
             x = x_res(:,obj.problem_options.N_finite_elements(1)+1);
+        end
+
+        function [f_opt] = get_objective(obj)
+            % This method returns the predicted state from the last solve.
+            f_opt = obj.ocp_solver.get_objective();
         end
 
         function ret = get(obj,field)

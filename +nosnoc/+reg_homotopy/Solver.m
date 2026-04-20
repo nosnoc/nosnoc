@@ -130,6 +130,9 @@ classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
                         % Get the corresponding G and H expressions
                         G_curr = mpcc.G.(name)();
                         H_curr = mpcc.H.(name)();
+                        if length(G_curr) == 0
+                            continue
+                        end
                         % select relaxation slacks/parameters
                         switch opts.homotopy_steering_strategy
                           case HomotopySteeringStrategy.DIRECT
@@ -148,8 +151,10 @@ classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
                             end
 
                             % TODO(@anton) this creates a performance bottleneck
-                            sigma = nlp.w.(s_elastic_name)();
-                            sum_elastic = sum_elastic + sum1(sigma);
+                            sigma = nlp.w.(s_elastic_name)()
+                            if length(sigma) >= 1
+                                sum_elastic = sum_elastic + sum1(sigma);
+                            end
                         end
 
                         if opts.lift_complementarities || ~opts.assume_lower_bounds
@@ -418,16 +423,19 @@ classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
                 end
 
                 nlp.finalize_assignments(); % Make sure all nlp pending assignments are flushed.
-                [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(mpcc.G,nlp.w.sym);
-                [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(mpcc.H,nlp.w.sym);
-                obj.ind_nonscalar_G = ind_nonscalar_G;
-                obj.ind_nonscalar_H = ind_nonscalar_H;
-                obj.ind_scalar_G = ind_scalar_G;
-                obj.ind_scalar_H = ind_scalar_H;
-                obj.ind_map_G = ind_map_G;
-                obj.ind_map_H = ind_map_H;
                 % possibly lift complementarities
+                ind_map_G = [];
+                ind_map_H = [];
                 if opts.lift_complementarities
+                    [ind_scalar_G,ind_nonscalar_G, ind_map_G] = find_nonscalar(mpcc.G,nlp.w.sym);
+                    [ind_scalar_H,ind_nonscalar_H, ind_map_H] = find_nonscalar(mpcc.H,nlp.w.sym);
+                    obj.ind_nonscalar_G = ind_nonscalar_G;
+                    obj.ind_nonscalar_H = ind_nonscalar_H;
+                    obj.ind_scalar_G = ind_scalar_G;
+                    obj.ind_scalar_H = ind_scalar_H;
+                    obj.ind_map_G = ind_map_G;
+                    obj.ind_map_H = ind_map_H;
+
                     nlp.w.G_lift = {{'G', length(ind_nonscalar_G)}, 0, inf};
                     G = casadi.(casadi_symbolic_mode)(size(mpcc.H,1), 1);
                     G(ind_scalar_G) = mpcc.G(ind_scalar_G);
@@ -1265,6 +1273,9 @@ classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
                 if obj.opts.warm_start_duals
                     nlp.w.init_mult = nlp.w.mult;
                     nlp.g.init_mult = nlp.g.mult;
+                end
+                if obj.opts.store_all_homotopy_iters
+                    stats.homotopy_iterations = [stats.homotopy_iterations, nlp.w.res];
                 end
                 
                 solver_stats = plugin.cleanup_solver_stats(nlpsol_stats);

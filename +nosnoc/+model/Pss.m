@@ -4,6 +4,7 @@ classdef Pss < nosnoc.model.Base
         S % sign matrix
         c % switching functions defining region boundaries
         g_indicator % Vector of length n_f containing all Stewart indicator functions
+        f_0 % Dynamics that are unchanged in all PSS modes. Relevant for systems of the type  dotx = f_0 + f_pss; where f_pss is a piecewise smooth function.
     end
 
     methods

@@ -61,8 +61,12 @@ classdef Stewart < nosnoc.dcs.Base
             model = obj.model;
             dims = obj.dims;
 
+            if isempty(obj.model.f_0)
+                obj.f_x = zeros(dims.n_x,1);
+            else
+                obj.f_x = obj.model.f_0;
+            end
             
-            obj.f_x = zeros(dims.n_x,1);
             for ii = 1:dims.n_sys
                 obj.f_x = obj.f_x + model.F{ii}*obj.theta_sys{ii};
             end

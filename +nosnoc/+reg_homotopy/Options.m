@@ -51,8 +51,10 @@ classdef Options < handle
         s_elastic_0(1,1) double {mustBeReal, mustBePositive} = 1
         decreasing_s_elastic_upper_bound(1,1) logical = 0
 
+
         polishing_step(1,1) logical = 0 % heuristic for fixing active set, yet exerimental, not recommended to use.
         polishing_derivative_test(1,1) logical = 0 % check in sliding mode also the derivative of switching functions
+        
 
         % Verbose
         print_level = 3
@@ -77,6 +79,8 @@ classdef Options < handle
         timeout_wall(1,1) {mustBeReal, mustBeNonnegative} = 0;
 
         warm_start_duals(1,1) logical = false;
+
+        store_all_homotopy_iters(1,1) logical = 1 % store every NLP solution in the homotopy loop;
 
         % Experimental
         normalize_homotopy_update(1,1) logical = 1

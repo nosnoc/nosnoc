@@ -11,7 +11,7 @@ import casadi.*
 model = nosnoc.model.Pds();
 problem_options = nosnoc.Options();
 solver_options = nosnoc.reg_homotopy.Options();
-
+ccopt_options = nosnoc.ccopt.Options();
 %% parameter
 T = 5;
 R = 1; % radius of manipulators
@@ -60,7 +60,8 @@ model.f_q_T = (x-x_target)'*diag([1,1,1,1,1e3,1e3,0])*(x-x_target);
 problem_options.T = T;
 problem_options.N_stages = 30;
 problem_options.N_finite_elements = 3;
-problem_options.n_s = 2;
+problem_options.n_s = 3;
+problem_options.cross_comp_mode = "FE_FE";
 
 % Homotopy solver settings 
 solver_options.complementarity_tol = 1e-10;
@@ -68,8 +69,17 @@ solver_options.print_level = 3;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 500;
 solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
+ccopt_options.opts_madnlp.linear_solver = 'Ma27Solver';
+ccopt_options.opts_madnlp.tol = 1e-8;
+ccopt_options.opts_madnlp.barrier.TYPE = 'MonotoneUpdate';
+ccopt_options.opts_madnlp.barrier.mu_min = 1e-9;
+ccopt_options.opts_ccopt.relaxation_update.TYPE = 'RolloffRelaxationUpdate';
+ccopt_options.opts_ccopt.relaxation_update.rolloff_slope = 2.5;
+ccopt_options.opts_ccopt.relaxation_update.rolloff_point = 1e-12;
+ccopt_options.opts_ccopt.sigma_min = 1e-8;
+
 %% create solver
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
 ocp_solver.solve();
 %% plot
 x_res = ocp_solver.get("x");

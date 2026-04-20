@@ -109,7 +109,11 @@ classdef Heaviside < nosnoc.dcs.Base
                     obj.theta_expr_sys{ii} = theta_i;
                 end
 
-                obj.f_x = zeros(dims.n_x,1);
+                if isempty(obj.model.f_0)
+                    obj.f_x = zeros(dims.n_x,1);
+                else
+                    obj.f_x = obj.model.f_0;
+                end
                 for ii = 1:dims.n_sys
                     obj.f_x = obj.f_x + model.F{ii}*obj.theta_expr_sys{ii};
                 end

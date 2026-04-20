@@ -263,6 +263,16 @@ classdef Options < handle
         relax_terminal_constraint_from_above(1,1) logical = 0; % boolean: If true we only relax the upper bound of the terminal constraint. TODO(@armin) do we still want this. I have never seen it be useful.
         rho_terminal(1,1) double {mustBePositive} = 1e2; % double: Weight used to penalize terminal constraint violation.
 
+        % ConstraintRelaxationMode: What (if any) relaxation to apply to the path constraints.
+        %
+        % Warning:
+        %    Only implemented for CLS.
+        %
+        % See Also:
+        %    `ConstraintRelaxationMode` for a detailed description of the available relaxation modes.
+        relax_path_constraints(1,1) ConstraintRelaxationMode = ConstraintRelaxationMode.NONE;
+        rho_path(1,1) double {mustBePositive} = 1e2; % double: Weight used to penalize terminal constraint violation.
+
         % boolean: If True the terminal constraint violation penalty is governed by homotopy parameter.
         %
         % Warning:
@@ -397,6 +407,12 @@ classdef Options < handle
                 end
                 obj.time_freezing = 1;
                 obj.dcs_mode = DcsMode.Heaviside;
+            end
+
+            if obj.dcs_mode == DcsMode.CLS && obj.use_fesd == 0
+                nosnoc.warning('time_stepping','use_fesd = 0 with CLS implies using implicit Euler time-stepping, settings n_s = 1, rk_scheme = ''RadauIIA''');
+                obj.rk_scheme = "RADAU_IIA";
+                obj.n_s = 1;
             end
 
             if obj.time_freezing

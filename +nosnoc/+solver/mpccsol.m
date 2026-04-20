@@ -7,5 +7,9 @@ function mpccsol = mpccsol(name, plugin, mpcc, options)
         mpccsol = nosnoc.reg_homotopy.Solver(mpcc, options);
     elseif strcmp(plugin, 'mpecopt')
         mpccsol = mpecopt.Solver(mpcc, options);
+    elseif strcmp(plugin, 'sqpec')
+        mpccsol = nosnoc.sqpec.Solver(mpcc, options);
+    elseif strcmp(plugin, 'ccopt')
+        mpccsol = nosnoc.ccopt.Solver(mpcc, options);
     end
 end

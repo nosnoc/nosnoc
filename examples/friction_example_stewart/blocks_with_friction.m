@@ -76,11 +76,10 @@ S3 = [1;-1];
 model.S = {S1,S2,S3};
 model.c = {c1,c2,c3};
 
-
 %% Modes of the ODEs layers (for all  i = 1,...,n_sys);
 % part independet of the nonsmoothness
 F_external = 0; % external force, e.g., control
-F_input = 10; % variable force exicting
+F_input = 0; % variable force exicting
 f_base = [v1;...
     v2;...
     v3;...

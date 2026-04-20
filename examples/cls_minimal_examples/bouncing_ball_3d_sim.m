@@ -20,11 +20,12 @@ problem_options.rk_scheme = RKSchemes.RADAU_IIA;
 problem_options.n_s = 2;
 problem_options.use_fesd = 1;
 problem_options.dcs_mode = 'CLS';
-problem_options.friction_model = "Polyhedral";
+problem_options.friction_model = "conic";
 problem_options.conic_model_switch_handling = "Abs";
 problem_options.cross_comp_mode = 1;
 problem_options.gamma_h = 1;
 problem_options.fixed_eps_cls = 1;
+problem_options.use_fesd = false;
 
 % nosnoc mpec solver options
 solver_options.print_level = 3;
