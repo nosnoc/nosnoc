@@ -133,6 +133,7 @@ jobs:
         release: "R2024a"
         products: >
           Parallel_Computing_Toolbox
+          Optimization_Toolbox
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
