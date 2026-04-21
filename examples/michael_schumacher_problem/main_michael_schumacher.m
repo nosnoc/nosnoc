@@ -193,8 +193,8 @@ x_guess = vertcat(xx,yy, zeros(2,problem_options.N_stages), alpha); % Not used A
 active_set_guess = nosnoc.activeset.Pss({[1,2]},'times', [problem_options.T]);
 mpecopt_options.initialization_strategy = 'TakeProvidedActiveSet';
 %% Solve
-%ocp_solver = nosnoc.ocp.Solver(model, problem_options, homotopy_options);
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_rolloff);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, homotopy_options);
+%ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_rolloff);
 %% initialize
 for ii=1:problem_options.N_stages
     for jj=1:problem_options.N_finite_elements(ii)

@@ -82,5 +82,9 @@ fig = figure('Position', [10 10 1600 800]);
 indices = {1:2, 3:5};
 
 % Plot example
-plot_pds_sdf_example(h_res, x_res, pd_res, indices, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2,}, fig, 'ellipse_spinning_friction');
-
+create_video = false
+if create_video
+    plot_pds_sdf_example(h_res, x_res, pd_res, indices, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2,}, fig, 'ellipse_spinning_friction');
+else
+    plot_pds_sdf_example(h_res, x_res, pd_res, indices, [pgon1,pgon2], {facecolor1,facecolor2}, {linecolor1,linecolor2,}, fig);
+end
