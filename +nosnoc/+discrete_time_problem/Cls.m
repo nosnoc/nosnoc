@@ -334,16 +334,15 @@ classdef Cls < vdx.problems.Mpcc
                         obj.g.v_continuity(ii,jj) = {v_lbp-v_prev};
                     end
                     relax_path_struct = vdx.RelaxationStruct(opts.relax_path_constraints.to_vdx, 's_path', 'rho_path_p');
-
+                    if opts.use_fesd
+                        h_rescale = 1;
+                    else
+                        h_rescale = h_0; % divide all algebraics variables by this values as they are now impulses and not forces, i.e., getting units and scale right
+                    end
                     switch opts.rk_representation
                         case RKRepresentation.integral
                             % In integral representation stage variables are states.
                             x_ij_end = opts.D_rk(1)*x_lbp;
-                            if opts.use_fesd
-                                h_rescale = 1;
-                            else
-                                h_rescale = h_0; % divide all algebraics variables by this values as they are now impulses and not forces, i.e., getting units and scale right
-                            end
                             for kk=1:opts.n_s
                                 x_ijk = obj.w.x(ii,jj,kk);
                                 z_ijk = obj.w.z(ii,jj,kk);
