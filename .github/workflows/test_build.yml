@@ -134,6 +134,7 @@ jobs:
         products: >
           Parallel_Computing_Toolbox
           Optimization_Toolbox
+          Symbolic_Math_Toolbox
     # Download relevant matlab release artifacts for the casadi release we are using.
     # TODO: Definitely cache this.
     - name: Download CasADi release
