@@ -6,7 +6,7 @@
 clear all
 close all
 import casadi.*
-
+use_ccopt = false;
 %% create nosnoc model and options objects
 model = nosnoc.model.Pds();
 problem_options = nosnoc.Options();
@@ -79,7 +79,11 @@ ccopt_options.opts_ccopt.relaxation_update.rolloff_point = 1e-12;
 ccopt_options.opts_ccopt.sigma_min = 1e-8;
 
 %% create solver
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+if use_ccopt
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
+else
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+end
 ocp_solver.solve();
 %% plot
 x_res = ocp_solver.get("x");

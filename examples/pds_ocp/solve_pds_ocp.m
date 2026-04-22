@@ -6,19 +6,6 @@ function [x_res, u_res, t_res, t_control, lambda_res, c_res] = solve_pds_ocp(use
     
     [model, problem_options] = pds_ocp_dynamics(use_fesd, N_stages, n_s, T, x_target);
 
-    ccopt_rolloff = nosnoc.ccopt.Options();
-    ccopt_rolloff.solver_name = 'CCOpt Rolloff';
-    ccopt_rolloff.opts_madnlp.linear_solver = 'Ma27Solver';
-    ccopt_rolloff.opts_madnlp.barrier.TYPE = 'MonotoneUpdate';
-    ccopt_rolloff.opts_madnlp.barrier.mu_min = 1e-9;
-    ccopt_rolloff.opts_ccopt.relaxation_update.TYPE = 'RolloffRelaxationUpdate';
-    ccopt_rolloff.opts_ccopt.relaxation_update.rolloff_slope = 2.0;
-    ccopt_rolloff.opts_ccopt.relaxation_update.rolloff_point = 1e-6;
-    ccopt_rolloff.opts_ccopt.relaxation_update.sigma_min = 1e-8;
-    ccopt_rolloff.opts_madnlp.tol=1e-8;
-    ccopt_rolloff.opts_madnlp.print_level=3;
-    ccopt_rolloff.opts_madnlp.max_iter=5000;
-    ccopt_rolloff.opts_madnlp.disable_garbage_collector = true;
     % Solve
     ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
     ocp_solver.solve();

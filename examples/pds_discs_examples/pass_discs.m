@@ -8,6 +8,7 @@ close all
 import casadi.*
 %%
 generate_video = false;
+use_ccopt = false;
 %% create nosnoc model and options objects
 model = nosnoc.model.Pds();
 problem_options = nosnoc.Options();
@@ -69,7 +70,11 @@ ccopt_options.opts_madnlp.barrier.mu_min = 1e-9;
 ccopt_options.opts_ccopt.sigma_min = 1e-8;
 %ccopt_options.opts_ccopt.q_regularization = 'critical_rho';
 %% create solver and solve optimal control problem
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+if use_ccopt
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
+else
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+end
 ocp_solver.solve();
 %% plot
 x_res = ocp_solver.get("x");
