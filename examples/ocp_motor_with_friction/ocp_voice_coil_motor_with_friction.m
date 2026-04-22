@@ -113,8 +113,8 @@ end
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-%ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
+ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+%ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
 ocp_solver.solve();
 %% plots
 % unfold structure to workspace of this script

@@ -49,9 +49,9 @@ mpec = struct('x', w,'f',f,'g',g,'G',G,'H',H,'p',p);
 solver_initalization = struct('x0', x0,'lbx',lbx,'ubx',ubx,'lbg',lbg,'ubg',ubg,'p',p0);
 %%  mpecopt settings
 solver_settings = mpecopt.Options();
-solver_settings.settings_lpec.lpec_solver = "Gurobi";
+%solver_settings.settings_lpec.lpec_solver = "Gurobi";
 % solver_settings.rho_TR_phase_i_init = 1e-1;
-solver_settings.settings_lpec.lpec_solver = "Highs_casadi";
+%solver_settings.settings_lpec.lpec_solver = "Highs_casadi";
 
 % solver_settings.rho_TR_phase_ii_init = 1e-1;
 % solver_settings.relax_and_project_homotopy_parameter_steering = "Direct";

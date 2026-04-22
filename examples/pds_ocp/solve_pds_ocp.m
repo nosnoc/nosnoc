@@ -20,7 +20,7 @@ function [x_res, u_res, t_res, t_control, lambda_res, c_res] = solve_pds_ocp(use
     ccopt_rolloff.opts_madnlp.max_iter=5000;
     ccopt_rolloff.opts_madnlp.disable_garbage_collector = true;
     % Solve
-    ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_rolloff);
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
     ocp_solver.solve();
 
     x_res = ocp_solver.get('x');

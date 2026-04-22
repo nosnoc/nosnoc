@@ -2,6 +2,8 @@ clear all
 clc
 close all
 import casadi.*
+
+make_video = false;
 %% discretization parameters
 N_sim = 100;
 T_sim = 10;
@@ -32,7 +34,7 @@ model.f_x_unconstrained = [0; 0; 1];
 model.E = diag([1,1,0]);
 
 integrator = nosnoc.Integrator(model, problem_options, integrator_options);
-[t_grid, x_res] = integrator.simulate('natural_residual_ineq');
+[t_grid, x_res] = integrator.simulate();
 %
 figure
 plot(x_res(1,:), x_res(2,:))
@@ -42,4 +44,8 @@ ylabel('$x_2$','Interpreter','latex')
 grid on
 
 fig = figure('Position', [10 10 1600 800]);
-plot_moving_set([],x_res,[0.5], ["circle"], fig, 'moving_set');
+if make_video
+    plot_moving_set([],x_res,[0.5], ["circle"], fig, 'moving_set');
+else
+    plot_moving_set([],x_res,[0.5], ["circle"], fig);
+end
