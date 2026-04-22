@@ -49,7 +49,7 @@ solver_options.decreasing_s_elastic_upper_bound = true;
 solver_options.N_homotopy = 6;
 solver_options.print_level = 3;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 integrator_opts.use_previous_solution_as_initial_guess = 1;
 %% Call FESD Integrator
 integrator = nosnoc.Integrator(model, problem_options, integrator_options);

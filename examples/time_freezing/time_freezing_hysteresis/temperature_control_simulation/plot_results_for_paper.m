@@ -129,7 +129,7 @@ saveas(gcf,'numerical_vs_physical_time')
 
 %% complementarity stats
 figure
-complementarity_stats = {integrator.stats.complementarity_stats};
+complementarity_stats = {integrator.plugin.stats.complementarity_stats};
 complementarity_stats = cellfun(@(x) x(end), complementarity_stats);
 semilogy(complementarity_stats+1e-16,'k',LineWidth=1.5)
 grid on
