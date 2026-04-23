@@ -1,6 +1,6 @@
 # `nosnoc`
 
-[![Tests](https://github.com/nosnoc/nosnoc/actions/workflows/test_build.yml/badge.svg?branch=main)](https://github.com/nosnoc/nosnoc/actions/workflows/test_build.yml)
+[![Tests](https://github.com/nosnoc/nosnoc/actions/workflows/test_build.yml/badge.svg?event=pull_request)](https://github.com/nosnoc/nosnoc/actions/workflows/test_build.yml)
 [![Documentation](https://img.shields.io/badge/docs-readthedocs-blue)](https://nosnoc.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/github/license/nosnoc/nosnoc)](https://github.com/nosnoc/nosnoc/blob/main/LICENSE)
 [![MATLAB](https://img.shields.io/badge/MATLAB-R2021b--R2026a-orange)](https://www.mathworks.com/products/matlab.html)
@@ -145,7 +145,7 @@ If you use **nosnoc** in research, please cite the software paper:
 
 Depending on which features of **nosnoc** you use, please also cite the corresponding algorithmic or software papers.
 
-### Real-time MPC algorithms
+#### Real-time MPC algorithms
 - 📄 **[Real-Time Algorithms for Model Predictive Control of Hybrid Dynamical Systems](https://arxiv.org/pdf/2604.18432)**
   <details>
   <summary>BibTeX</summary>
@@ -158,7 +158,8 @@ Depending on which features of **nosnoc** you use, please also cite the correspo
     year    = {2026}
   }
 
-### Related software 
+
+#### Related software 
 
 
 - 📄 **[CCOpt: an Open-Source Solver for Large-Scale Mathematical Programs with Complementarity Constraints](https://arxiv.org/pdf/2604.18726)**  💻 **[CCOpt.jl](https://github.com/MadNLP/CCOpt.jl)**
@@ -212,6 +213,7 @@ Depending on which features of **nosnoc** you use, please also cite the correspo
   ```
   </details>
 
+
 #### Finite Elements with Switch Detection
 
 
@@ -247,6 +249,43 @@ Depending on which features of **nosnoc** you use, please also cite the correspo
   }
   ```
   </details>
+
+#### Matheamtical programs with complementarity constraints 
+
+- 📄 **[Solving Mathematical Programs with Complementarity Constraints Arising in Nonsmooth Optimal Control](https://publications.syscop.de/Nurkanovic2024b.pdf)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Nurkanovic2024b,
+    keywords = {mpec,nonsmooth, nosnoc, mpcc, syscop-public},
+    pages = {1--39},
+    year = {2024},
+    journal = {Vietnam Journal of Mathematics},
+    author = {Nurkanovi{\'c}, Armin and Pozharskiy, Anton and Diehl, Moritz},
+    title = {Solving mathematical programs with complementarity constraints arising in nonsmooth optimal control},
+  }
+  ```
+  </details>
+
+
+- 📄 **[A Globally Convergent Method for Computing B-stationary Points of Mathematical Programs with Equilibrium Constraints](https://arxiv.org/pdf/2501.13835)**
+  (paper on mpecopt, which is used in nosnoc) 💻 **[mpecopt](https://github.com/nosnoc/mpecopt)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Nurkanovic2025,
+    title={A globally convergent method for computing B-stationary points of mathematical programs with equilibrium constraints},
+    author={Nurkanovi{\'c}, Armin and Leyffer, Sven},
+    journal={arXiv preprint arXiv:2501.13835},
+    year={2025}
+  }
+  ```
+  </details>
+
+  
+
 
 #### Projected dynamical systems
 
