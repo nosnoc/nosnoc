@@ -48,7 +48,7 @@ latexify_plot();
 use_rtmpc            = 1;    % 1 = Rtmpc (SQPCC-HyRTI), 0 = FullMpcc
 use_ccopt            = 0;    % Recommended for best perfomance but needs CCOpt installation
 model_plant_mismatch = 0;    % 1 = use separate nosnoc integrator as plant
-save_video           = 1;    % save animation as furuta_mpc.mp4
+save_video           = 0;    % save animation as furuta_mpc.mp4
 plot_intermediate    = 1;    % live plot during MPC loop
 
 %% -----------------------------------------------------------------------
