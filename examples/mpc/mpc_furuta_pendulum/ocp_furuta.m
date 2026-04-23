@@ -186,7 +186,7 @@ f_q   = err_vec' * W_x * err_vec  +  W_u * u_sym^2;
 f_q_T = err_vec' * W_T * err_vec;
 
 %% -----------------------------------------------------------------------
-%  nosnoc Problem and Solver Options
+%  nosnoc problem and solver pptions
 % ------------------------------------------------------------------------
 problem_options = nosnoc.Options();
 problem_options.rk_scheme            = RKSchemes.RADAU_IIA;
@@ -207,7 +207,7 @@ solver_options.lift_complementarities           = 0;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 1e3;
 
 %% -----------------------------------------------------------------------
-%  nosnoc Model
+%  nosnoc model
 % ------------------------------------------------------------------------
 model = nosnoc.model.Pss();
 
@@ -229,7 +229,7 @@ model.f_q   = f_q;
 model.f_q_T = f_q_T;
 
 %% -----------------------------------------------------------------------
-%  Create and Solve OCP
+%  Create and solve OCP
 % ------------------------------------------------------------------------
 fprintf('Setting up nosnoc OCP solver...\n');
 ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
@@ -272,6 +272,7 @@ for i = 1:4
     yline(target_vals(i), 'k--', 'LineWidth', 1.0);
     ylabel(state_labels{i}, 'FontSize', 10);
     xlabel('t [s]', 'FontSize', 10);
+    xlim([0 T])
     grid on; box on;
 end
 
@@ -279,6 +280,7 @@ subplot(5,1,5);
 stairs(t_u, [u_sol(:)', u_sol(end)], 'LineWidth', 1.9, 'Color', [0.20 0.20 0.75]);
 yline( U_max, 'r--', 'LineWidth', 1.0);
 yline(-U_max, 'r--', 'LineWidth', 1.0);
+xlim([0 T])
 ylabel('u [V]', 'FontSize', 10); xlabel('t [s]', 'FontSize', 9);
 grid on; box on;
 
@@ -287,26 +289,6 @@ sgtitle('Furuta Pendulum Swing-Up', ...
 
 %% -----------------------------------------------------------------------
 %  Figure 2: Animation
-%
-%  Geometry (right-hand coordinate system, z positive upward):
-%    Motor axis at origin (z-axis).
-%    Arm rotates in horizontal plane: arm tip at
-%      Ax = L1*cos(theta1),  Ay = L1*sin(theta1),  Az = 0
-%
-%    Pendulum joint is at the arm tip.
-%    Pendulum swings in the vertical plane that contains the arm vector.
-%    The out-of-arm-plane horizontal direction (perpendicular to arm):
-%      px = -sin(theta1),  py = cos(theta1)
-%
-%    Rod direction from joint to bob (length l2):
-%      horizontal component: l2*sin(theta2)  in the (px,py) direction
-%      vertical component:  -l2*cos(theta2)  (negative z when theta2=0)
-%
-%    Bob position:
-%      Bx = Ax + l2*sin(theta2)*(-sin(theta1))
-%      By = Ay + l2*sin(theta2)*( cos(theta1))
-%      Bz =    - l2*cos(theta2)
-%
 % ------------------------------------------------------------------------
 fprintf('Generating animation...\n');
 
@@ -355,7 +337,7 @@ h_arm   = plot3(ax3,[0 0],[0 0],[0 0],'-','Color',[0.35 0.65 1.00],'LineWidth',4
 h_jnt   = scatter3(ax3,0,0,0,  70,[0.35 0.65 1.00],'filled');
 h_rod   = plot3(ax3,[0 0],[0 0],[0 0],'-','Color',[1.00 0.55 0.15],'LineWidth',3.0);
 h_bob   = scatter3(ax3,0,0,0, 150,[1.00 0.55 0.15],'filled');
-h_trail = plot3(ax3,NaN,NaN,NaN,':','Color',[1.00 0.55 0.15],'LineWidth',1.0);
+h_trail = plot3(ax3,[],[],[],':','Color',[1.00 0.55 0.15],'LineWidth',1.0);
 h_lbl   = text(ax3,-R*0.92,-R*0.92,l2*1.3,'t = 0.00 s', ...
                'Color','w','FontSize',10,'FontWeight','bold');
 

@@ -1,5 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
+% Adapted for nosnoc / original acados model by Jörg Fischer
+% https://github.com/Jo-Fischer/acados-STM32-NUCLEO-H745ZI/tree/master
 % Description:
 %   Closed-loop MPC for the Furuta Pendulum swing-up using nosnoc.
 %   Coulomb friction is treated correctly as a PSS 
@@ -323,9 +324,8 @@ if model_plant_mismatch
 end
 
 %% -----------------------------------------------------------------------
-%  Build MPC Solver
+%  Set up MPC Solver (real-time or fully converged, ccopt or not)
 % ------------------------------------------------------------------------
-fprintf('Building MPC solver...\n');
 if use_rtmpc
     if use_ccopt
         mpc = nosnoc.mpc.Rtmpc(model, mpc_options, problem_options, ccopt_options, ccopt_options);
@@ -452,7 +452,7 @@ fprintf('Final: theta1=%.3f rad (ref pi=%.3f) | theta2=%.3f rad (ref pi=%.3f)\n'
     x_hist(1,end), pi, x_hist(3,end), pi);
 
 %% -----------------------------------------------------------------------
-%  Summary Figure: Closed-Loop Trajectories
+%  Resulting closed-Loop trajectories
 % ------------------------------------------------------------------------
 figure('Name','Furuta MPC – Closed-Loop Result','Color','w','Position',[100 100 850 700]);
 clrs = [0.18 0.50 0.90; 0.15 0.72 0.48; 0.92 0.38 0.18; 0.70 0.28 0.82];
@@ -461,18 +461,25 @@ for i = 1:4
     subplot(5,1,i);
     plot(t_hist, x_hist(i,:),'LineWidth',2.0,'Color',clrs(i,:)); hold on;
     yline(x_ref(i),'k--','LineWidth',1.0);
-    ylabel(state_labels{i},'FontSize',10); xlabel('$t$ [s]','FontSize',10);
+    ylabel(state_labels{i}); 
+    xlabel('$t$ [s]');
     grid on; box on;
+    xlim([0 T_sim])
+    set(gca,'FontSize',12)
 end
 subplot(5,1,5);
-stairs(t_hist(1:end-1), u_hist,'LineWidth',2.0,'Color',[0.20 0.20 0.75]); hold on;
+stairs(t_hist(1:end), [u_hist,nan],'LineWidth',2.0,'Color',[0.20 0.20 0.75]); hold on;
 yline( U_max,'r--','LineWidth',1.0); yline(-U_max,'r--','LineWidth',1.0);
-ylabel('$u$ [V]','FontSize',10); xlabel('$t$ [s]','FontSize',10);
+ylabel('$u$ [V]'); 
+xlabel('$t$ [s]');
+xlim([0 T_sim])
+ylim([-1.1*U_max 1.1*U_max])
+set(gca,'FontSize',12)
 grid on; box on;
 sgtitle('Furuta Pendulum MPC – Closed Loop','FontWeight','bold','FontSize',13);
 
 %% -----------------------------------------------------------------------
-%  Timing Figure
+%  Timing figure
 % ------------------------------------------------------------------------
 figure('Name','MPC Timing','Color','w','Position',[100 50 700 300]);
 stairs(preparation_times,'DisplayName','Preparation [s]','LineWidth',2); hold on;
@@ -482,20 +489,7 @@ ylabel('Time [s]'); xlabel('MPC step');
 title('MPC Step Computation Times');
 
 %% -----------------------------------------------------------------------
-%  Animation: 3D pendulum only (full figure = single 3D axes)
-%
-%  Geometry (z positive upward):
-%    Motor axis at origin.
-%    Arm rotates horizontally:
-%      Ax = L1*cos(theta1),  Ay = L1*sin(theta1),  Az = 0
-%    Pendulum swings in vertical plane perpendicular to arm.
-%    Perpendicular horizontal direction: (-sin(theta1), cos(theta1))
-%    Bob position:
-%      Bx = Ax + l2*sin(theta2)*(-sin(theta1))
-%      By = Ay + l2*sin(theta2)*( cos(theta1))
-%      Bz =    - l2*cos(theta2)
-%    theta2=0   -> Bz = -l2  (hanging down) ✓
-%    theta2=pi  -> Bz = +l2  (upright)      ✓
+%  Animation: 3D pendulum 
 % ------------------------------------------------------------------------
 fprintf('Generating animation...\n');
 
@@ -546,7 +540,7 @@ h_arm   = plot3(ax3,[0 0],[0 0],[0 0],'-','Color',[0.35 0.65 1.00],'LineWidth',5
 h_jnt   = scatter3(ax3,0,0,0,   80,[0.35 0.65 1.00],'filled');
 h_rod   = plot3(ax3,[0 0],[0 0],[0 0],'-','Color',[1.00 0.55 0.15],'LineWidth',3.5);
 h_bob   = scatter3(ax3,0,0,0,  160,[1.00 0.55 0.15],'filled');
-h_trail = plot3(ax3,NaN,NaN,NaN,':','Color',[1.00 0.55 0.15],'LineWidth',1.2);
+h_trail = plot3(ax3,[],[],[],':','Color',[1.00 0.55 0.15],'LineWidth',1.2);
 
 % Time and state labels (top-left of axes)
 h_tlbl  = text(ax3,-R*0.93,-R*0.93, l2*1.45, 't = 0.00 s',...
@@ -581,9 +575,9 @@ for k = 1:N_cl
     set(h_rod,  'XData',[Ax, Bx], 'YData',[Ay, By], 'ZData',[0, Bz]);
     set(h_bob,  'XData', Bx,      'YData', By,       'ZData', Bz);
 
-    trail_x(end+1) = Bx; %#ok<AGROW>
-    trail_y(end+1) = By; %#ok<AGROW>
-    trail_z(end+1) = Bz; %#ok<AGROW>
+    trail_x(end+1) = Bx; 
+    trail_y(end+1) = By; 
+    trail_z(end+1) = Bz; 
     set(h_trail,'XData',trail_x,'YData',trail_y,'ZData',trail_z);
 
     set(h_tlbl,'String', sprintf('t = %.2f s', t_hist(k)));
@@ -603,5 +597,3 @@ if save_video
     close(vid);
     fprintf('Video saved: furuta_mpc.mp4\n');
 end
-
-fprintf('Done.\n');
