@@ -47,7 +47,7 @@ problem_options.dcs_mode = 'CLS';
 problem_options.cross_comp_mode = 7;
 problem_options.friction_model = "Polyhedral";
 problem_options.gamma_h = 1;
-problem_options.use_fesd = 0;
+problem_options.use_fesd = 1;
 solver_options.sigma_0 = 1e0;
 solver_options.homotopy_steering_strategy = 'DIRECT';
 solver_options.homotopy_update_slope = 0.5;
@@ -56,7 +56,7 @@ solver_options.N_homotopy = 15;
 solver_options.opts_casadi_nlp.ipopt.max_iter = 2e3;
 solver_options.print_level = 3;
 %% IF HLS solvers for Ipopt installed use the settings below for better perfmonace (check https://www.hsl.rl.ac.uk/catalogue/ and casadi.org for instructions) :
-solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
+%solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma27';
 
 %% discretization
 N_stg = 10; % control intervals

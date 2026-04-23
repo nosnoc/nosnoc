@@ -1,0 +1,2 @@
+mpc/mpc_cart_pole/mpc_cart_pole.m => needs model files
+mpc/mpc_pds_manipulation/mpc_pds_two_discs.m => needs plotting files

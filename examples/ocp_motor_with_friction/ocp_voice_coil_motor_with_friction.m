@@ -25,6 +25,7 @@ solver_options.N_homotopy = 10;
 % solver_options.opts_casadi_nlp.ipopt.linear_solver = 'ma57';
 % Discretization parameters
 
+use_ccopt = false;
 %ccopt_options.opts_madnlp.linear_solver = 'Ma27Solver';
 ccopt_options.opts_madnlp.tol = 1e-8;
 ccopt_options.opts_madnlp.barrier.TYPE = 'MonotoneUpdate';
@@ -113,8 +114,11 @@ end
 % model.g_path_lb = -[cv;cx];
 
 %% Solve OCP
-%ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
+if use_ccopt
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
+else
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+end
 ocp_solver.solve();
 %% plots
 % unfold structure to workspace of this script

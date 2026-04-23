@@ -4,15 +4,12 @@ clear;
 import casadi.*;
 import nosnoc.solver.mpccsol;
 
-% mpccsol_opts = nosnoc.reg_homotopy.Options();
-% mpccsol_opts.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
-% mpccsol_opts.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
-% mpccsol_opts.lift_complementarities = false;
-% mpccsol_opts.assume_lower_bounds = true;
-% mpccsol_opts.calculate_stationarity_type = true;
-
-mpccsol_opts = struct();
-mpccsol_opts.casadi_opts.madmpec.bound_relax_factor = double(0.0);
+mpccsol_opts = nosnoc.reg_homotopy.Options();
+mpccsol_opts.opts_casadi_nlp.ipopt.mu_strategy = 'adaptive';
+mpccsol_opts.opts_casadi_nlp.ipopt.mu_oracle = 'quality-function';
+mpccsol_opts.lift_complementarities = false;
+mpccsol_opts.assume_lower_bounds = true;
+mpccsol_opts.calculate_stationarity_type = true;
 
 x1 = SX.sym('x1');
 x2 = SX.sym('x2');
@@ -41,14 +38,14 @@ ubg = zeros(4,1);
 
 p0 = 0;
 
-mpcc_struct.w = w;
+mpcc_struct.x = w;
 mpcc_struct.g = g;
 mpcc_struct.p = p;
 mpcc_struct.G = G;
 mpcc_struct.H = H;
 mpcc_struct.f = f;
 
-solver = mpccsol('generic_mpcc', 'ccopt', mpcc_struct, mpccsol_opts);
+solver = mpccsol('generic_mpcc', 'reg_homotopy', mpcc_struct, mpccsol_opts);
 
 [mpcc_results] = solver('x0', w0,...
     'lbx', lbw,...

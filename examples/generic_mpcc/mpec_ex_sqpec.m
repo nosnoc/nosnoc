@@ -7,8 +7,8 @@ import nosnoc.solver.*;
 use_vdx = 0;
 
 
-%plugin = 'sqpec';
-plugin = 'ccopt';
+plugin = 'sqpec';
+%plugin = 'ccopt';
 % plugin = 'reg_homotopy';
 % plugin = 'mpecopt';
 
@@ -58,7 +58,7 @@ if use_vdx
     mpec.g.sym = g;
 else
     mpec = struct();
-    mpec.w = x;
+    mpec.x = x;
     mpec.G = x1;
     mpec.H = x2 + x1;
     mpec.p = p;

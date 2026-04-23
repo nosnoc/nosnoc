@@ -3,6 +3,8 @@ clear all; clc; close all;
 import casadi.*
 import nosnoc.*
 
+use_ccopt = false;
+
 %% Problem size
 N_blocks = 7;   % increase the number of blocks to have more states (to scale up the problem)
 
@@ -187,8 +189,11 @@ ccopt_options.opts_ccopt.relaxation_update.rolloff_point = 1e-6;
 ccopt_options.opts_ccopt.use_magic_step = false;
 
 %% Create and solve OCP
-%ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
-ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
+if use_ccopt
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, ccopt_options);
+else
+    ocp_solver = nosnoc.ocp.Solver(model, problem_options, solver_options);
+end
 ocp_solver.solve();
 try
     wall_time = sum(ocp_solver.stats.wall_time)

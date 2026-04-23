@@ -45,8 +45,8 @@ problem_options.s_sot_min = 0.1;
 problem_options.use_speed_of_time_variables = 1; 
 problem_options.local_speed_of_time_variable = 1;
 problem_options.stagewise_clock_constraint = 1;
-problem_options.relax_terminal_constraint = 'NONE';
-%problem_options.relax_terminal_numerical_time = 'ELL_2';
+%problem_options.relax_terminal_constraint = 'NONE';
+problem_options.relax_terminal_numerical_time = 'ELL_2';
 % solver settings
 solver_options.complementarity_tol = 1e-8;
 problem_options.cross_comp_mode = 7;
@@ -76,6 +76,7 @@ results.x = ocp_solver.get('x');
 results.u = ocp_solver.get('u');
 results.h = ocp_solver.get('h');
 results.t_grid = ocp_solver.get_time_grid();
+results.T = ocp_solver.get('T_final');
 plot_results_car_hysteresis(results,problem_options,model,ocp_solver.stats)   
 %%
 T_opt = results.T;

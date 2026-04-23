@@ -45,20 +45,20 @@ ubg = [inf(m,1);zeros(n,1)];
 p = [];
 p0 = [];
 
-mpec = struct('w', w,'f',f,'g',g,'G',G,'H',H,'p',p);
+mpec = struct('x', w,'f',f,'g',g,'G',G,'H',H,'p',p);
 solver_initalization = struct('x0', x0,'lbx',lbx,'ubx',ubx,'lbg',lbg,'ubg',ubg,'p',p0);
 %%  mpecopt settings
 solver_settings = mpecopt.Options();
-solver_settings.settings_lpec.lpec_solver = "Gurobi";
+%solver_settings.settings_lpec.lpec_solver = "Gurobi";
 % solver_settings.rho_TR_phase_i_init = 1e-1;
-solver_settings.settings_lpec.lpec_solver = "Highs_casadi";
+%solver_settings.settings_lpec.lpec_solver = "Highs_casadi";
 
 % solver_settings.rho_TR_phase_ii_init = 1e-1;
 % solver_settings.relax_and_project_homotopy_parameter_steering = "Direct";
 % solver_settings.initialization_strategy = "FeasibilityEllInfGeneral";
 %solver = mpecopt.Solver(mpec, solver_settings);
 %%
-plugin = 'ccopt';
+%plugin = 'sqpec';
 sqpec_opts = nosnoc.sqpec.Options();
 sqpec_opts.max_iter = 20;
 sqpec_opts.tol = 1e-6;
@@ -66,19 +66,12 @@ sqpec_opts.tol = 1e-6;
 sqpec_opts.qpec_solver_options = solver_settings;
 sqpec_opts.qpec_solver_options.verbose_solver = false;
 sqpec_opts.qpec_solver_options.verbose_summary = false;
-% mpccsol_opts.qpec_solver_options.print_level = 0;
-% mpccsol_opts.qpec_solver_options.homotopy_steering_strategy = "DIRECT";
-% mpccsol_opts.qpec_solver_options.assume_lower_bounds = true;
-mpccsol_opts.rho_d = 0;
 sqpec_opts.discard_constraints_in_hessian = false;
 % solver_initalization.x0 = result_mpecopt.x;
 
-% mpccsol_opts = nosnoc.reg_homotopy.Options();
-% plugin = 'reg_homotopy';
-opts.casadi_opts = struct();
-opts.casadi_opts.madmpec.bound_relax_factor = 0.0;
-%opts.casadi_opts.madmpec.linear_solver = 'CUDSSSolver';
-solver = mpccsol('generic_mpcc', plugin, mpec, opts);
+plugin = 'reg_homotopy'
+mpccsol_opts = nosnoc.reg_homotopy.Options();
+solver = mpccsol('generic_mpcc', plugin, mpec, mpccsol_opts);
 mpcc_results = solver(solver_initalization);
 w_opt_sqpec = mpcc_results.x;
 f_opt_sqpec = mpcc_results.f;

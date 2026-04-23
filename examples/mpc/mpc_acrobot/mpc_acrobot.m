@@ -395,7 +395,7 @@ ylabel("$u$")
 x_sim = x;
 N = length(x);
 % Visualization with video recording
-save_video  = 1;
+save_video  = 0;
 if save_video
     v = VideoWriter('acrobot.mp4', 'MPEG-4');
     % v = VideoWriter('acrobot.avi');
