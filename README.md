@@ -1,21 +1,22 @@
 # `nosnoc`
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/nosnoc/nosnoc/ci.yml?label=tests)](https://github.com/nosnoc/nosnoc/actions)
+[![Tests](https://github.com/nosnoc/nosnoc/actions/workflows/test_build.yml/badge.svg?branch=main)](https://github.com/nosnoc/nosnoc/actions/workflows/test_build.yml)
 [![Documentation](https://img.shields.io/badge/docs-readthedocs-blue)](https://nosnoc.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/github/license/nosnoc/nosnoc)](https://github.com/nosnoc/nosnoc/blob/main/LICENSE)
-[![MATLAB](https://img.shields.io/badge/MATLAB-R2021b--R2024b-orange)](https://www.mathworks.com/products/matlab.html)
+[![MATLAB](https://img.shields.io/badge/MATLAB-R2021b--R2026a-orange)](https://www.mathworks.com/products/matlab.html)
 [![Python package](https://img.shields.io/badge/python-nosnoc__py-green)](https://github.com/nosnoc/nosnoc_py)
 
 **nosnoc** is an open-source `MATLAB` software package for **NOnSmooth Numerical Optimal Control and Model Predictive Control** of hybrid and nonsmooth dynamical systems. 
 
-- Documentation: [nosnoc.readthedocs.io](https://nosnoc.readthedocs.io/en/latest/index.html)
 - Theory and background: [Winter School on Numerical Methods for Optimal Control of Nonsmooth Systems (with video lectures!)](https://www.syscop.de/event/winter-school-numerical-methods-optimal-control-nonsmooth-systems) and [Summer School on Direct Methods for Optimal Control of Nonsmooth Systems](https://www.syscop.de/teaching/ss2023/summer-school-direct-methods-optimal-control-nonsmooth-systems)
+- Documentation: [nosnoc.readthedocs.io](https://nosnoc.readthedocs.io/en/latest/index.html)
 
 For a **quick start**, we recommend browsing the [`examples`](https://github.com/nosnoc/nosnoc/tree/main/examples).
 
-A related `Python` package, [`nosnoc_py`](https://github.com/nosnoc/nosnoc_py), is available as well.
+For `Python` users we have [`nosnoc_py`](https://github.com/nosnoc/nosnoc_py).
 
-## TL;DR nosnoc is about
+## TL;DR 
+**nosnoc is about:**
 - optimal control and MPC for hybrid and nonsmooth systems
 - FESD discretization with accurate event handling and sensitivities
 - time-freezing reformulations for systems with state jumps
@@ -53,7 +54,7 @@ Its main capabilities include:
 With **nosnoc**, users can formulate and solve problems involving:
 
 - switched systems
-- rigid body models with impacts and friction (with and without time-freezing)
+- rigid body models with impacts and friction (also with time-freezing)
 - piecewise affine and piecewise smooth systems
 - Filippov systems
 - systems with logical Heaviside step functions
@@ -71,8 +72,8 @@ Users may either provide a dynamic complementarity system (DCS) directly, or for
 
 **nosnoc** requires:
 
-- `CasADi` version `>= 3.5.5`
-- `MATLAB` version `>= R2021b, <= R2024b`
+- [`CasADi` version](https://web.casadi.org/get/) `>= 3.5.5`
+- `MATLAB` version `>= R2021b, <= R2026a`
 
 ### Installation for MATLAB
 
@@ -90,7 +91,6 @@ git clone --recursive https://github.com/nosnoc/nosnoc.git
 install_nosnoc
 ~~~
 
-`IPOPT` is shipped with `CasADi`. More information is available on the [IPOPT homepage](https://coin-or.github.io/Ipopt/).
 
 ### Installation for Python
 
@@ -101,8 +101,9 @@ For Python support, see the [`nosnoc_py`](https://github.com/nosnoc/nosnoc_py) r
 ### Core dependency
 
 - [`CasADi`](https://web.casadi.org/) for symbolic modeling and derivative generation
+- `IPOPT` is shipped with `CasADi`. More information is available on the [IPOPT homepage](https://coin-or.github.io/Ipopt/).
 
-### Recommended dependency for fast MPC and Simulation
+### Recommended dependency for fast MPC and Simulation 🚀
 
 For high-performance MPC and fastest simulation performance, **nosnoc** supports `CCOpt`:
 - [`CCOpt.jl`](https://github.com/MadNLP/CCOpt.jl)
@@ -119,14 +120,14 @@ For details please visit the README for [`libMad`](https://github.com/apozharski
 The interface of **nosnoc** is based on the symbolic modeling framework [`CasADi`](https://web.casadi.org/).  
 User inputs should therefore be provided as `CasADi` expressions.
 
-To get started, we recommend the example libraries:
-
-- MATLAB examples: [`examples/matlab`](https://github.com/nosnoc/nosnoc/tree/main/examples)
+To get started, browse the [example library](https://github.com/nosnoc/nosnoc/tree/main/examples).
 
 
-## Citing nosnoc
+## Citing nosnoc 📄
 
 If you use **nosnoc** in research, please cite the software paper:
+
+- 📄 **[nosnoc: A software package for numerical optimal control of nonsmooth systems](https://publications.syscop.de/Nurkanovic2022b.pdf)**
 
 ~~~bibtex
 @article{Nurkanovic2022,
@@ -140,124 +141,195 @@ If you use **nosnoc** in research, please cite the software paper:
 }
 ~~~
 
-### Recommended additional citations
+## Further reading and citations 📄💻
 
-Depending on which features of **nosnoc** you use, please also cite the corresponding methodological papers.
+Depending on which features of **nosnoc** you use, please also cite the corresponding algorithmic or software papers.
 
-#### Real-time MPC algorithms
+### Real-time MPC algorithms
+- 📄 **[Real-Time Algorithms for Model Predictive Control of Hybrid Dynamical Systems](https://arxiv.org/pdf/2604.18432)**
+  <details>
+  <summary>BibTeX</summary>
 
-~~~bibtex
-@Article{Nurkanovic2026a,
-  Title                    = {Real-Time Algorithms for Model Predictive Control of Hybrid Dynamical Systems},
-  Author                   = {Nurkanovi{\'c}, Armin and Pozharskiy, Anton and Diehl, Moritz},
-  Journal                  = {arXiv preprint},
-  Year                     = {2026},
-  Url                      = {https://www.syscop.de/files/users/armin.nurkanovic/Nurkanovic2026a.pdf}
-}
-~~~
+  ```bibtex
+  @article{Nurkanovic2026a,
+    title   = {Real-Time Algorithms for Model Predictive Control of Hybrid Dynamical Systems},
+    author  = {Nurkanovi{\'c}, Armin and Pozharskiy, Anton and Diehl, Moritz},
+    journal = {arXiv preprint arXiv:2604.18432},
+    year    = {2026}
+  }
 
-#### FESD
+### Related software 
 
-~~~bibtex
-@article{Nurkanovic2024,
-  title={Finite elements with switch detection for direct optimal control of nonsmooth systems},
-  author={Nurkanovi{\'c}, Armin and Sperl, Mario and Albrecht, Sebastian and Diehl, Moritz},
-  journal={Numerische Mathematik},
-  pages={1--48},
-  year={2024},
-  publisher={Springer}
-}
-~~~
 
-~~~bibtex
-@article{Nurkanovic2024a,
-  title={Finite Elements with Switch Detection for numerical optimal control of nonsmooth dynamical systems with set-valued heaviside step functions},
-  author={Nurkanovi{\'c}, Armin and Pozharskiy, Anton and Frey, Jonathan and Diehl, Moritz},
-  journal={Nonlinear Analysis: Hybrid Systems},
-  volume={54},
-  pages={101518},
-  year={2024},
-  publisher={Elsevier}
-}
-~~~
+- 📄 **[CCOpt: an Open-Source Solver for Large-Scale Mathematical Programs with Complementarity Constraints](https://arxiv.org/pdf/2604.18726)**  💻 **[CCOpt.jl](https://github.com/MadNLP/CCOpt.jl)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Pozharskiy2026,
+    title   = {CCOpt: an Open-Source Solver for Large-Scale Mathematical Programs with Complementarity Constraints},
+    author  = {Pozharskiy, Anton and Pacaud, Fran{\c{c}}ois and Diehl, Moritz and Nurkanovi{\'c}, Armin},
+    journal = {arXiv preprint arXiv:2604.18726},
+    year    = {2026}
+  }
+  ```
+  </details>
+
+
+- 📄 **[CasADi: a software framework for nonlinear optimization and optimal control](https://cdn.syscop.de/publications/Andersson2019.pdf)** 💻 **[CasADi](https://web.casadi.org/)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Andersson2019,
+	doi = {10.1007/s12532-018-0139-4},
+	volume = {11},
+	pages = {1--36},
+	number = {1},
+	year = {2019},
+	journal = {Mathematical Programming Computation},
+	author = {J. A. E. Andersson and J. Gillis and G. Horn and J. B. Rawlings and M. Diehl},
+	title = {{CasADi} -- A software framework for nonlinear optimization and optimal control}
+  }
+  ```
+  </details>
+
+- 📄 Ipopt: **[On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming](https://link.springer.com/article/10.1007/s10107-004-0559-y)** 💻 **[Ipopt](https://coin-or.github.io/Ipopt/)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Wachter2006,
+    title={On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming},
+    author={W{\"a}chter, Andreas and Biegler, Lorenz T},
+    journal={Mathematical programming},
+    volume={106},
+    number={1},
+    pages={25--57},
+    year={2006},
+    publisher={Springer}
+  }
+  ```
+  </details>
+
+#### Finite Elements with Switch Detection
+
+
+- 📄 **[Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://link.springer.com/article/10.1007/s00211-024-01412-z)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Nurkanovic2024,
+    title     = {Finite elements with switch detection for direct optimal control of nonsmooth systems},
+    author    = {Nurkanovi{\'c}, Armin and Sperl, Mario and Albrecht, Sebastian and Diehl, Moritz},
+    journal   = {Numerische Mathematik},
+    pages     = {1--48},
+    year      = {2024},
+    publisher = {Springer}
+  }
+  ```
+  </details>
+
+- 📄 **[Finite Elements with Switch Detection for numerical optimal control of nonsmooth dynamical systems with set-valued heaviside step functions](https://www.sciencedirect.com/science/article/pii/S1751570X24000554)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Nurkanovic2024a,
+    title     = {Finite Elements with Switch Detection for numerical optimal control of nonsmooth dynamical systems with set-valued heaviside step functions},
+    author    = {Nurkanovi{\'c}, Armin and Pozharskiy, Anton and Frey, Jonathan and Diehl, Moritz},
+    journal   = {Nonlinear Analysis: Hybrid Systems},
+    volume    = {54},
+    pages     = {101518},
+    year      = {2024},
+    publisher = {Elsevier}
+  }
+  ```
+  </details>
+
+#### Projected dynamical systems
+
+- 📄 **[First-Order Sweeping Processes and Extended Projected Dynamical Systems: Equivalence, Time-Discretization and Numerical Optimal Control](https://publications.syscop.de/Pozharskiy2025.pdf)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Pozharskiy2025,
+    keywords = {syscop-public, nonsmooth, fesd, mpec, mpcc},
+    year = {2025},
+    journal = {Proceedings of the European Control Conference (ECC)},
+    author = {Pozharskiy, Anton and Nurkanovi{\'c}, Armin and Diehl, Moritz},
+    title = {First-Order Sweeping Processes and Extended Projected Dynamical Systems: Equivalence, Time-Discretization and Numerical Optimal Control},
+  }
+  ```
+  </details>
+
+- 📄 **[Finite Elements with Switch Detection for Numerical Optimal Control of Projected Dynamical Systems](https://publications.syscop.de/Pozharskiy2024c.pdf)**
+  <details>
+  <summary>BibTeX</summary>
+
+  ```bibtex
+  @article{Pozharskiy2024c,
+    keywords = {syscop-public, nonsmooth, fesd, mpec, mpcc},
+    year = {2024},
+    journal = {Proceedings of the IEEE Conference on Decision and Control (CDC)},
+    author = {Pozharskiy, Anton and Nurkanovi{\'c}, Armin and Diehl, Moritz},
+    title = {Finite Elements with Switch Detection for Numerical Optimal Control of Projected Dynamical Systems},
+  }
+  ```
+  </details>
+
 
 #### Time-freezing
 
-~~~bibtex
-@article{Nurkanovic2021,
-  title={A Time-Freezing Approach for Numerical Optimal Control of Nonsmooth Differential Equations with State Jumps},
-  author={Nurkanovi{\'c}, Armin and Sartor, Thomas and Albrecht, Sebastian and Diehl, Moritz},
-  journal={IEEE Control Systems Letters},
-  year={2021}
-}
-~~~
+- 📄 **[A Time-Freezing Approach for Numerical Optimal Control of Nonsmooth Differential Equations with State Jumps](https://cdn.syscop.de/publications/Nurkanovic2021.pdf)**
+  <details>
+  <summary>BibTeX</summary>
 
-~~~bibtex
-@article{Nurkanovic2023,
-  title={The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps},
-  author={Nurkanovi{\'c}, Armin and Albrecht, Sebastian and Brogliato, Bernard and Diehl, Moritz},
-  journal={Automatica},
-  volume={158},
-  pages={111295},
-  year={2023}
-}
-~~~
+  ```bibtex
+  @article{Nurkanovic2021,
+    title   = {A Time-Freezing Approach for Numerical Optimal Control of Nonsmooth Differential Equations with State Jumps},
+    author  = {Nurkanovi{\'c}, Armin and Sartor, Thomas and Albrecht, Sebastian and Diehl, Moritz},
+    journal = {IEEE Control Systems Letters},
+    year    = {2021}
+  }
+  ```
+  </details>
 
-~~~bibtex
-@article{Nurkanovic2022a,
-  title={Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing},
-  author={Nurkanovi{\'c}, Armin and Diehl, Moritz},
-  journal={IEEE Control Systems Letters},
-  year={2022}
-}
-~~~
+- 📄 **[The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps](https://www.sciencedirect.com/science/article/pii/S0005109823004594)**
+  <details>
+  <summary>BibTeX</summary>
 
-## Related software
+  ```bibtex
+  @article{Nurkanovic2023,
+    title   = {The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps},
+    author  = {Nurkanovi{\'c}, Armin and Albrecht, Sebastian and Brogliato, Bernard and Diehl, Moritz},
+    journal = {Automatica},
+    volume  = {158},
+    pages   = {111295},
+    year    = {2023}
+  }
+  ```
+  </details>
 
-### CCOpt
+- 📄 **[Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing](https://cdn.syscop.de/publications/Nurkanovic2022a.pdf)**
+  <details>
+  <summary>BibTeX</summary>
 
-- [CCOpt.jl](https://github.com/MadNLP/CCOpt.jl)
+  ```bibtex
+  @article{Nurkanovic2022a,
+    title={Continuous optimization for control of hybrid systems with hysteresis via time-freezing},
+    author={Nurkanovi{\'c}, Armin and Diehl, Moritz},
+    journal={IEEE Control Systems Letters},
+    volume={6},
+    pages={3182--3187},
+    year={2022},
+    publisher={IEEE}
+  }
+  ```
+  </details>
 
-~~~bibtex
-@Article{Pozharskiy2026,
-  Title                    = {{CCO}pt: an Open-Source Solver for Large-Scale Mathematical Programs with Complementarity Constraints},
-  Author                   = {Pozharskiy, Anton and Pacaud, Fran{\c{c}}ois and Diehl, Moritz and Nurkanovi{\'c}, Armin},
-  Journal                  = {arXiv preprint},
-  Year                     = {2026},
-  Url                      = {https://www.syscop.de/files/users/armin.nurkanovic/Pozharskiy2026.pdf}
-}
-~~~
-
-### CasADi
-
-- [CasADi -- A software framework for nonlinear optimization and optimal control](https://cdn.syscop.de/publications/Andersson2019.pdf)
-
-### IPOPT
-
-- [On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming](https://link.springer.com/article/10.1007/s10107-004-0559-y)
-
-## Literature
-
-### Real-time MPC algorithms
-
-- [Real-Time Algorithms for Model Predictive Control of Hybrid Dynamical Systems](https://www.syscop.de/files/users/armin.nurkanovic/Nurkanovic2026a.pdf)
-
-### FESD
-
-- [Finite Elements with Switch Detection for Direct Optimal Control of Nonsmooth Systems](https://link.springer.com/article/10.1007/s00211-024-01412-z)
-- [Finite Elements with Switch Detection for numerical optimal control of nonsmooth dynamical systems with set-valued heaviside step functions](https://www.sciencedirect.com/science/article/pii/S1751570X24000554)
-
-### Projected dynamical systems 
-
-- [First-Order Sweeping Processes and Extended Projected Dynamical Systems: Equivalence, Time-Discretization and Numerical Optimal Control](https://publications.syscop.de/Pozharskiy2025.pdf)
-- [Finite Elements with Switch Detection for Numerical Optimal Control of Projected Dynamical Systems](https://publications.syscop.de/Pozharskiy2024c.pdf)
-
-
-### Time-freezing
-
-- [A Time-Freezing Approach for Numerical Optimal Control of Nonsmooth Differential Equations with State Jumps](https://cdn.syscop.de/publications/Nurkanovic2021.pdf)
-- [The Time-Freezing Reformulation for Numerical Optimal Control of Complementarity Lagrangian Systems with State Jumps](https://www.sciencedirect.com/science/article/pii/S0005109823004594)
-- [Continuous Optimization for Control of Hybrid Systems with Hysteresis via Time-Freezing](https://cdn.syscop.de/publications/Nurkanovic2022a.pdf)
 
 ## Contact
 
