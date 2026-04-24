@@ -30,12 +30,12 @@ For `Python` users we have [`nosnoc_py`](https://github.com/nosnoc/nosnoc_py).
 Its main capabilities include:
 
 1. **Real-time MPC algorithms for hybrid systems**
-   - hybrid real-time iterations
-   - hybrid advanced-step controller
-   - hybrid advanced-step real-time iteration
-   - For getting started, see: [`MPC examples`](https://github.com/nosnoc/nosnoc/tree/main/examples/mpc).
-
+   - hybrid real-time iterations (HyRTI)
+   - hybrid advanced-step controller (HyASC)
+   - hybrid advanced-step real-time iteration (HyAS-RTI)
+   
    Fast MPC in **nosnoc** uses **CCOpt**, which is currently our **fastest and most robust solver**, especially suited for MPC applications.
+   For getting started, see: [`MPC examples`](https://github.com/nosnoc/nosnoc/tree/main/examples/mpc).
 
 2. **Automatic discretization via FESD (Finite Elements with Switch Detection)**
    - high accuracy and correct sensitivities
@@ -258,7 +258,6 @@ Depending on which features of **nosnoc** you use, please also cite the correspo
 
   ```bibtex
   @article{Nurkanovic2024b,
-    keywords = {mpec,nonsmooth, nosnoc, mpcc, syscop-public},
     pages = {1--39},
     year = {2024},
     journal = {Vietnam Journal of Mathematics},
@@ -295,7 +294,6 @@ Depending on which features of **nosnoc** you use, please also cite the correspo
 
   ```bibtex
   @article{Pozharskiy2025,
-    keywords = {syscop-public, nonsmooth, fesd, mpec, mpcc},
     year = {2025},
     journal = {Proceedings of the European Control Conference (ECC)},
     author = {Pozharskiy, Anton and Nurkanovi{\'c}, Armin and Diehl, Moritz},
@@ -310,7 +308,6 @@ Depending on which features of **nosnoc** you use, please also cite the correspo
 
   ```bibtex
   @article{Pozharskiy2024c,
-    keywords = {syscop-public, nonsmooth, fesd, mpec, mpcc},
     year = {2024},
     journal = {Proceedings of the IEEE Conference on Decision and Control (CDC)},
     author = {Pozharskiy, Anton and Nurkanovi{\'c}, Armin and Diehl, Moritz},
