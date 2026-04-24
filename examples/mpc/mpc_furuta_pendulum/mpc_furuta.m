@@ -1,6 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Adapted for nosnoc / original acados model by Jörg Fischer
 % https://github.com/Jo-Fischer/acados-STM32-NUCLEO-H745ZI/tree/master
+%
 % Description:
 %   Closed-loop MPC for the Furuta Pendulum swing-up using nosnoc.
 %   Coulomb friction is treated correctly as a PSS 
@@ -13,26 +14,11 @@
 %
 %   Input:   u  motor voltage [V] in [-U_max, U_max]
 %
-%   Cost — exact replication of acados NONLINEAR_LS cost:
-%     output  y  = [pi*(1+cos(theta1/2)); theta1p; pi*(1+cos(theta2/2)); theta2p; u]
-%     yref       = [pi; 0; pi; 0; 0]
-%     => err_vec = y - yref = [pi*cos(theta1/2); theta1p; pi*cos(theta2/2); theta2p]
-%     stage cost = err_vec' * W_x * err_vec + W_u * u^2
-%     Verify: theta=0 (hanging) -> pi*cos(0)   = pi  -> max cost
-%             theta=pi (upright) -> pi*cos(pi/2) = 0   -> zero cost ✓
-%
 %   PSS — additive Coulomb correction 
 %     model.f_0 = f_base  (smooth dynamics, no Coulomb)
 %     F{1}, F{2} = purely the signed Coulomb acceleration increments
-%     Switch 1: sign(theta1p) — arm joint Coulomb (b1coul)
-%     Switch 2: sign(theta2p) — pendulum joint Coulomb (b2coul)
-%
-%   Note on Furuta vs acrobot Coulomb structure:
-%     In the acrobot, mu_i enters directly as a generalised force on ddq_i.
-%     In the Furuta pendulum, b_coul enters the RHS *before* M^{-1}, so
-%     the state-space increment is M\[±b_coul; 0] or M\[0; ±b_coul].
-%     Because M is off-diagonal (coupling), each Coulomb force affects
-%     BOTH accelerations. The increment is symbolic in theta2.
+%     Switch 1: sign(theta1p) - arm joint Coulomb (b1coul)
+%     Switch 2: sign(theta2p) - pendulum joint Coulomb (b2coul)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
