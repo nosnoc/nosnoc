@@ -9,7 +9,7 @@ filename              = 'drone_load_mpc';
 run_animation         = true;
 use_ccopt             = 0;    % Recommended for best perfomance but needs CCOpt installation
 use_rtmpc             = 1; 
-save_video            = false;
+save_video            = 1;
 DT                    = 0.05;
 T_pred                = 0.5;
 T_sim                 = 4.0;
@@ -79,7 +79,7 @@ mpc_options.objective_ratio = 0.98;
 %  CCOpt Solver Options
 ccopt_options = nosnoc.ccopt.Options(); % ccopt options
 ccopt_options.opts_madnlp.linear_solver = 'Ma27Solver';
-ccopt_options.opts_madnlp.tol = tol;
+% ccopt_options.opts_madnlp.tol = tol;
 ccopt_options.opts_madnlp.barrier.TYPE = 'MonotoneUpdate';
 ccopt_options.opts_madnlp.disable_garbage_collector = true;
 % ccopt_options.opts_madnlp.barrier.mu_min = 1e-9;
