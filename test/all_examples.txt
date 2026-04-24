@@ -41,6 +41,8 @@ mpc/mpc_tutorial_example/mpc_tutorial_example.m
 mpc/mpc_tutorial_example/mpc_with_model_plant_mismatch_example.m
 mpc/mpc_furuta_pendulum/ocp_furuta.m
 mpc/mpc_furuta_pendulum/mpc_furuta.m
+mpc/mpc_drone_load_2d/drone_mpc.m
+mpc/mpc_drone_load_2d/drone_ocp.m
 object_model/ellipses.m
 ocp_motor_with_friction/ocp_voice_coil_motor_with_friction.m
 ocp_motor_with_friction/ocp_voice_coil_motor_with_friction_time_optimal.m

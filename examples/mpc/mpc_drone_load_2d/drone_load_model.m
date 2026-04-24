@@ -124,8 +124,8 @@ f_v = [ ...
     f_thrust(1) - c_d*v(1);         % drone x-force
     f_thrust(2) - m_d*g - c_d*v(2); % drone z-force
     tau - c_phi*v(3);               % drone pitch torque
-   -c_l*v(4);                       % load x-force
-   -m_l*g - c_l*v(5)];              % load z-force
+   -c_l*v(4);                       % load x-force (linear air drag froces)
+   -m_l*g - c_l*v(5)];              % load z-force (linear air drag froces + graviry)
 
 %% Contact 1: unilateral tether (distance <= L)
 r_dl = p_d - p_l;
