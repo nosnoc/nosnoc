@@ -106,8 +106,8 @@ classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
             ind_cc2(ind_scalar_H) = ind_map_H;
             ind_cc1(ind_nonscalar_G) = (ng+1):(ng+n_G_lift);
             ind_cc2(ind_nonscalar_H) = (ng+1+n_G_lift):(ng+n_G_lift+n_H_lift);
-            obj.ind_cc1 = ind_cc1;
-            obj.ind_cc2 = ind_cc2;
+            obj.ind_cc1 = ind_cc1 - 1;
+            obj.ind_cc2 = ind_cc2 - 1;
             cctypes = zeros(ncc,1);
             cctypes(ind_nonscalar_G) = cctypes(ind_nonscalar_G) + 2;
             cctypes(ind_nonscalar_H) = cctypes(ind_nonscalar_H) + 1;
@@ -116,8 +116,8 @@ classdef Solver < handle & matlab.mixin.indexing.RedefinesParen
             casadi_opts.print_time = 0; % TODO(@anton) fix this
             casadi_opts.madnlp = opts.opts_madnlp;
             casadi_opts.ccopt = opts.opts_ccopt;
-            casadi_opts.ind_cc = num2cell(horzcat(obj.ind_cc1, obj.ind_cc2),2);
-            casadi_opts.cctypes = num2cell(cctypes);
+            casadi_opts.cc_pairs = num2cell(horzcat(obj.ind_cc1, obj.ind_cc2),2);
+            casadi_opts.cc_types = num2cell(cctypes);
 
             nlp = struct();
             nlp.f = mpcc.f;
